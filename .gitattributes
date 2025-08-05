@@ -1,2 +1,32 @@
-# Auto detect text files and perform LF normalization
-* text=auto
+# Forzar saltos de línea estilo Unix (LF) en todos los archivos de texto
+* text=auto eol=lf
+
+# Archivos comunes de código
+*.cs     text eol=lf
+*.js     text eol=lf
+*.json   text eol=lf
+*.xml    text eol=lf
+*.shader text eol=lf
+*.cginc  text eol=lf
+*.txt    text eol=lf
+*.md     text eol=lf
+*.yml    text eol=lf
+
+# Scripts de línea de comandos
+*.sh     text eol=lf
+# solo si son scripts de Windows
+*.bat    text eol=crlf
+
+# Archivos binarios (no tocar)
+*.png    binary
+*.jpg    binary
+*.jpeg   binary
+*.gif    binary
+*.psd    binary
+*.exe    binary
+*.dll    binary
+*.mp3    binary
+*.mp4    binary
+*.fbx    binary
+*.prefab binary
+*.unity  binary
