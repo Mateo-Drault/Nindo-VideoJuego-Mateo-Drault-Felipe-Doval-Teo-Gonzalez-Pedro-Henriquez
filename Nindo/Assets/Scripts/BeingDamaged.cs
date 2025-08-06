@@ -22,6 +22,7 @@ public class BeingDamaged : MonoBehaviour
     void Start()
     {
         Health = maxHealthAmount;
+        healthScript.UpdateHealthBar(maxHealthAmount, Health);
     }
 
     // Update is called once per frame
@@ -38,13 +39,14 @@ public class BeingDamaged : MonoBehaviour
             knockback.y = 0f;
             rb.AddForce(knockback * knockbackForce, ForceMode.Impulse);
             Invoke(nameof(StopKnockback), knockbackDuration);
-
-            healthScript.UpdateHealthBar(maxHealthAmount,Health);
+             
             Health -= damageAmount;
             if (Health <= 0)
             {
                 Invoke(nameof(Death), knockbackDuration);
             }
+            healthScript.UpdateHealthBar(maxHealthAmount, Health);
+
         }
 
     }
