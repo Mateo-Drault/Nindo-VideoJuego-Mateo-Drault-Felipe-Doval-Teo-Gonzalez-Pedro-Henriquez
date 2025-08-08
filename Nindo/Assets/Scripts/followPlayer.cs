@@ -8,7 +8,7 @@ public class followPlayer : MonoBehaviour
     [SerializeField] private float rotationSpeed;
     [SerializeField] private float speed;
     [SerializeField] private float minDistance;
-    [SerializeField] private float maxDistance;
+    public float maxDistance;
     [SerializeField] Transform playerTransform;
     [SerializeField] private BeingDamaged BeingDamaged;
     [SerializeField] private bool Seen= false;
