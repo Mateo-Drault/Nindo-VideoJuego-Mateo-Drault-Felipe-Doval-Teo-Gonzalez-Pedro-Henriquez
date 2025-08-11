@@ -7,12 +7,12 @@ public class followPlayer : MonoBehaviour
 {
     [SerializeField] private float rotationSpeed;
     [SerializeField] private float speed;
-    [SerializeField] private float minDistance;
-    public float maxDistance;
+    public float minDistance;
+    [SerializeField] private float maxDistance;
     [SerializeField] Transform playerTransform;
     [SerializeField] private BeingDamaged BeingDamaged;
-    [SerializeField] private bool Seen= false;
-
+    [SerializeField] private bool Seen = false;
+    public EnemySwordAnimation EnemySwordAnimation;
 
     // Start is called before the first frame update
     void Start()
@@ -28,7 +28,7 @@ public class followPlayer : MonoBehaviour
         {
             Seen = true;
         }
-        if (Vector3.Distance(transform.position, playerTransform.position) > minDistance & !BeingDamaged.isBeingDamaged & Seen)
+        if (Vector3.Distance(transform.position, playerTransform.position) > minDistance & !BeingDamaged.isBeingDamaged & Seen & !EnemySwordAnimation.isAttacking)
         {
             transform.position = Vector3.MoveTowards(transform.position, playerTransform.position, speed* Time.deltaTime);
 

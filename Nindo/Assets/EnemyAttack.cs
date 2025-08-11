@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class EnemyAttack : MonoBehaviour
 {
+    [SerializeField] private Animator animator;
     [SerializeField] private Transform Player;
     [SerializeField] private EnemySwordAnimation enemySwordAnimation;
     [SerializeField] private followPlayer followPlayer;
@@ -17,9 +18,9 @@ public class EnemyAttack : MonoBehaviour
     void Update()
     {
         Vector3 directionToPlayer = Player.position - transform.position;
-        if(Vector3.Distance(Player.position, transform.position)> followPlayer.maxDistance)
+        if(Vector3.Distance(Player.position, transform.position) <= followPlayer.minDistance)
         {
-            invoke(nameof(enemySwordAnimation.SwordHit), 5f);
+            enemySwordAnimation.SwordHit();
         }
     }
 }

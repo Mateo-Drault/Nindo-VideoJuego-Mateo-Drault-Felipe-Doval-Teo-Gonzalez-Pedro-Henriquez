@@ -4,10 +4,14 @@ using UnityEngine;
 
 public class EnemySwordAnimation : MonoBehaviour
 {
+    [SerializeField]followPlayer followPlayer;
     public Animator animator;
+    public bool isAttacking;
+    public BoxCollider swordCollider;
     // Start is called before the first frame update
     void Start()
     {
+        isAttacking = false;
         
     }
 
@@ -18,6 +22,18 @@ public class EnemySwordAnimation : MonoBehaviour
     }
     public void SwordHit()
     {
-        animator.SetTrigger("hit");
+        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Cylinder_Espadazo"))//animacion de la espada
+        {
+            animator.SetTrigger("hit");
+        }
+    }
+    public void StopAttacking()
+    {
+        isAttacking=false;
+    }
+    public void StartAttaking()
+    {
+        swordCollider.enabled = true;
+        isAttacking = true;
     }
 }
