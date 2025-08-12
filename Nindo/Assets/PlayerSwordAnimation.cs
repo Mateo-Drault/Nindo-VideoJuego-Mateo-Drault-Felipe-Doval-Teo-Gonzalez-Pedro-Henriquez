@@ -1,0 +1,41 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerSwordAnimation : MonoBehaviour
+{
+    public Animator animator;
+    public bool isAttacking;
+    public BoxCollider swordCollider;
+    // Start is called before the first frame update
+    void Start()
+    {
+        isAttacking = false;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            SwordHit();
+        }
+    }
+    public void SwordHit()
+    {
+        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Cylinder_Espadazo"))//animacion de la espada
+        {
+            Debug.Log("hola");
+            animator.SetTrigger("pHit");
+        }
+    }
+    public void StopAttacking()
+    {
+        isAttacking = false;
+    }
+    public void StartAttaking()
+    {
+        swordCollider.enabled = true;
+        isAttacking = true;
+    }
+}

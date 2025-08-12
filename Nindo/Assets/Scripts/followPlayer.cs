@@ -24,6 +24,7 @@ public class followPlayer : MonoBehaviour
     void Update()
     {
         Vector3 directionToPlayer = playerTransform.position - transform.position;
+        directionToPlayer.y = 0;
         if (!Seen && Vector3.Distance(transform.position, playerTransform.position) < maxDistance)
         {
             Seen = true;

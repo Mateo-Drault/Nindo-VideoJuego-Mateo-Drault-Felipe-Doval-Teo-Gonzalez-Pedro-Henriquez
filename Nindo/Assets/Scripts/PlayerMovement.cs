@@ -6,7 +6,9 @@ public class PlayerMovement : MonoBehaviour
 {
     [SerializeField] private float speed = 3f;
     [SerializeField] private float rotationSpeed = 1.0f;
-    private Rigidbody playerRB;
+    [SerializeField] private float maxRiseSpeed = 1;
+    [SerializeField] private float maxFallSpeed = 20;
+    [SerializeField] private Rigidbody playerRB;
     private Vector3 forward, right;
     void Start()
     {
@@ -33,8 +35,10 @@ public class PlayerMovement : MonoBehaviour
             transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
         }
     }
-    private void FixedUpdate()
+    void FixedUpdate()
     {
-
+        Vector3 vel = playerRB.velocity;
+        vel.y = Mathf.Clamp(vel.y, -maxFallSpeed, maxRiseSpeed);
+        playerRB.velocity = vel;
     }
 }
