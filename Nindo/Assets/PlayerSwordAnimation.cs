@@ -32,6 +32,8 @@ public class PlayerSwordAnimation : MonoBehaviour
     public void StopAttacking()
     {
         isAttacking = false;
+        swordCollider.enabled = false;
+
     }
     public void StartAttaking()
     {
