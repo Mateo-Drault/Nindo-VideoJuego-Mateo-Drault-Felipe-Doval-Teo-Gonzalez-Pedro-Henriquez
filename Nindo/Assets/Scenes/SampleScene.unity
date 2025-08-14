@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4513532, g: 0.50093925, b: 0.57282233, a: 1}
+  m_IndirectSpecularColor: {r: 0.4513535, g: 0.50094014, b: 0.5728231, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -639,6 +639,9 @@ MonoBehaviour:
   animator: {fileID: 629060681}
   isAttacking: 0
   swordCollider: {fileID: 629060680}
+  EnemyBodyRenderer: {fileID: 0}
+  originalMateral: {fileID: 0}
+  newMaterial: {fileID: 0}
 --- !u!1 &685350746
 GameObject:
   m_ObjectHideFlags: 0
@@ -750,7 +753,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: bd8ea9d459af2b146b399b9dbb9774e9, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -810,13 +813,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rb: {fileID: 685350748}
   playerTransform: {fileID: 1675802622}
-  knockbackForce: 8.37
-  knockbackDuration: 0.85
+  knockbackForce: 4.186
+  knockbackDuration: 0.425
   Health: 0
   maxHealthAmount: 10
   damageAmount: 2
   enemyEntity: {fileID: 1531957821}
   healthScript: {fileID: 88401256}
+  enemyRenderer: {fileID: 685350750}
+  originalMateral: {fileID: 2100000, guid: bd8ea9d459af2b146b399b9dbb9774e9, type: 2}
+  newMaterial: {fileID: 2100000, guid: a17245330ab162b41a9b35905af53cb3, type: 2}
+  colorDuration: 0.2
   isBeingDamaged: 0
 --- !u!114 &685350754
 MonoBehaviour:
@@ -6417,11 +6424,11 @@ GameObject:
   - component: {fileID: 1675802621}
   - component: {fileID: 1675802620}
   - component: {fileID: 1675802618}
-  - component: {fileID: 1675802617}
+  - component: {fileID: 1675802626}
   - component: {fileID: 1675802623}
+  - component: {fileID: 1675802617}
   - component: {fileID: 1675802625}
   - component: {fileID: 1675802624}
-  - component: {fileID: 1675802626}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -6576,6 +6583,10 @@ MonoBehaviour:
   enemySwordDamage: 2
   playerLifeManager: {fileID: 1675802625}
   PlayerHealthBar: {fileID: 1347469592}
+  originalMaterial: {fileID: 2100000, guid: e03b54e02b6e2624a8211ac6c86e0dba, type: 2}
+  newMaterial: {fileID: 2100000, guid: a17245330ab162b41a9b35905af53cb3, type: 2}
+  invincibilityDuration: 0.5
+  playerRenderer: {fileID: 756205171}
 --- !u!114 &1675802625
 MonoBehaviour:
   m_ObjectHideFlags: 0

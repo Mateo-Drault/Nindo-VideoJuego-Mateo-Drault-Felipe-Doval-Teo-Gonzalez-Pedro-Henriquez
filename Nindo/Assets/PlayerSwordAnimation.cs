@@ -39,5 +39,6 @@ public class PlayerSwordAnimation : MonoBehaviour
     {
         swordCollider.enabled = true;
         isAttacking = true;
+
     }
 }

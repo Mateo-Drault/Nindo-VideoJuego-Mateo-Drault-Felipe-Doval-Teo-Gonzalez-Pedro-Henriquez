@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|c:\\users\\admin\\documents\\github\\nindo-videojuego-mateo-drault-felipe-doval-teo-gonzalez-pedro-henriquez\\nindo\\assets\\scripts\\enemyswordanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\enemyswordanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|c:\\users\\admin\\documents\\github\\nindo-videojuego-mateo-drault-felipe-doval-teo-gonzalez-pedro-henriquez\\nindo\\assets\\playerswordanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|solutionrelative:assets\\playerswordanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|c:\\users\\admin\\documents\\github\\nindo-videojuego-mateo-drault-felipe-doval-teo-gonzalez-pedro-henriquez\\nindo\\assets\\scripts\\playermovement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\playermovement.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
@@ -15,20 +23,20 @@
       "RelativeMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\followplayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|c:\\users\\admin\\documents\\github\\nindo-videojuego-mateo-drault-felipe-doval-teo-gonzalez-pedro-henriquez\\nindo\\assets\\enemyswordanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|solutionrelative:assets\\enemyswordanimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|c:\\users\\admin\\documents\\github\\nindo-videojuego-mateo-drault-felipe-doval-teo-gonzalez-pedro-henriquez\\nindo\\assets\\enemyattack.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|solutionrelative:assets\\enemyattack.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\healthScript.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\healthScript.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|c:\\users\\admin\\documents\\github\\nindo-videojuego-mateo-drault-felipe-doval-teo-gonzalez-pedro-henriquez\\nindo\\assets\\scripts\\beingdamaged.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\assets\\scripts\\beingdamaged.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{C3EB545B-35F4-A923-FD3A-57C521D46EF8}|Assembly-CSharp.csproj|solutionrelative:assets\\scripts\\beingdamaged.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\EnemyAttack.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\EnemyAttack.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\EnemySwordAnimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|solutionrelative:Assets\\EnemySwordAnimation.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -38,7 +46,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 1,
           "Children": [
             {
               "$type": "Document",
@@ -54,6 +62,32 @@
             },
             {
               "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "EnemySwordAnimation.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\Scripts\\EnemySwordAnimation.cs",
+              "RelativeDocumentMoniker": "Assets\\Scripts\\EnemySwordAnimation.cs",
+              "ToolTip": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\Scripts\\EnemySwordAnimation.cs",
+              "RelativeToolTip": "Assets\\Scripts\\EnemySwordAnimation.cs",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAQwCAAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-12T22:05:51.409Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PlayerSwordAnimation.cs",
+              "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\PlayerSwordAnimation.cs",
+              "RelativeDocumentMoniker": "Assets\\PlayerSwordAnimation.cs",
+              "ToolTip": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\PlayerSwordAnimation.cs",
+              "RelativeToolTip": "Assets\\PlayerSwordAnimation.cs",
+              "ViewState": "AgIAAAoAAAAAAAAAAAA1wCIAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-08-12T22:05:16.519Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
               "DocumentIndex": 6,
               "Title": "BeingDamaged.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\Scripts\\BeingDamaged.cs",
@@ -62,12 +96,11 @@
               "RelativeToolTip": "Assets\\Scripts\\BeingDamaged.cs",
               "ViewState": "AgIAABEAAAAAAAAAAAAQwDEAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-11T23:20:32.917Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-11T23:20:32.917Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "EnemyAttack.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\EnemyAttack.cs",
               "RelativeDocumentMoniker": "Assets\\EnemyAttack.cs",
@@ -75,12 +108,11 @@
               "RelativeToolTip": "Assets\\EnemyAttack.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAAJAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-11T22:44:43.773Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-11T22:44:43.773Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 8,
               "Title": "EnemySwordAnimation.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\EnemySwordAnimation.cs",
               "RelativeDocumentMoniker": "Assets\\EnemySwordAnimation.cs",
@@ -88,12 +120,11 @@
               "RelativeToolTip": "Assets\\EnemySwordAnimation.cs",
               "ViewState": "AgIAAAMAAAAAAAAAAAAAACMAAAAlAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-11T22:41:48.719Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-11T22:41:48.719Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 4,
               "Title": "followPlayer.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\Scripts\\followPlayer.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\followPlayer.cs",
@@ -101,12 +132,11 @@
               "RelativeToolTip": "Assets\\Scripts\\followPlayer.cs",
               "ViewState": "AgIAAAgAAAAAAAAAAAAQwB4AAACCAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-07-24T21:52:57.587Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-07-24T21:52:57.587Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "cameraFollow.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\cameraFollow.cs",
               "RelativeDocumentMoniker": "Assets\\cameraFollow.cs",
@@ -117,7 +147,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "PlayerMovement.cs",
               "DocumentMoniker": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\Scripts\\PlayerMovement.cs",
               "RelativeDocumentMoniker": "Assets\\Scripts\\PlayerMovement.cs",

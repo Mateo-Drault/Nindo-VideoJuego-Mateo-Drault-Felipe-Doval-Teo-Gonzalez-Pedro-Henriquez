@@ -8,6 +8,8 @@ public class EnemySwordAnimation : MonoBehaviour
     public Animator animator;
     public bool isAttacking;
     public BoxCollider swordCollider;
+
+
     // Start is called before the first frame update
     void Start()
     {
