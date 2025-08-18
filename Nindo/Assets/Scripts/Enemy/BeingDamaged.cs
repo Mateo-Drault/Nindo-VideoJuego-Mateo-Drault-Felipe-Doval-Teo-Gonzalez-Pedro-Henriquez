@@ -9,17 +9,26 @@ public class BeingDamaged : MonoBehaviour
     [SerializeField] private float knockbackForce;
     [SerializeField] private float knockbackDuration;
 
+    //animaciones
+    [SerializeField] Animator animator;
+    [SerializeField] private float stunDuration;
+    [SerializeField] private float stunTimer;
+    public bool isBeingDamaged = false;
+
+
     public float Health;
     public float maxHealthAmount;
     [SerializeField] private float damageAmount; //se va a cambiar a la espada este valor
     [SerializeField] private GameObject enemyEntity;
     [SerializeField] private healthScript healthScript;
 
+    //Color al ser golpeado
     [SerializeField] private Renderer enemyRenderer;
     [SerializeField] private Material originalMateral;
     [SerializeField] private Material newMaterial;
     [SerializeField] private float colorDuration;
-    public bool isBeingDamaged = false;
+
+    [SerializeField] EnemySwordAnimation enemySwordAnimation;
     // Start is called before the first frame update
     void Start()
     {
@@ -30,19 +39,39 @@ public class BeingDamaged : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        if (isBeingDamaged)
+        {
+            stunTimer-= Time.deltaTime;
+            if (stunTimer <= 0)
+            {
+                animator.SetBool("isStunned", false);
+                isBeingDamaged=false;
+                enemySwordAnimation.isAttacking = false;
+
+            }
+        }
     }
     void OnTriggerEnter(Collider other)
     {
         if (other.CompareTag("Player"))
         {
-            enemyRenderer.material = newMaterial;
+            //Animaciones
+            stunTimer= stunDuration;
+            animator.SetBool("isStunned", true);
+            animator.ResetTrigger("hit");
             isBeingDamaged = true;
+
+            //Knockback
             rb.velocity = Vector3.zero;
             Vector3 knockback = (transform.position - playerTransform.position).normalized;
             knockback.y = 0f;
             rb.AddForce(knockback * knockbackForce, ForceMode.Impulse);
-            Invoke(nameof(StopKnockback), knockbackDuration);
+
+            //Cambio de color
+            enemyRenderer.material = newMaterial;
             Invoke(nameof(BackOriginalMaterial), colorDuration); 
+
+            //Sacar vida y eliminar en caso de tener 0
             Health -= damageAmount;
             if (Health <= 0)
             {
@@ -54,10 +83,7 @@ public class BeingDamaged : MonoBehaviour
         }
 
     }
-    void StopKnockback()
-    {
-        isBeingDamaged= false;
-    }
+
     void Death()
     {
         Destroy(enemyEntity);

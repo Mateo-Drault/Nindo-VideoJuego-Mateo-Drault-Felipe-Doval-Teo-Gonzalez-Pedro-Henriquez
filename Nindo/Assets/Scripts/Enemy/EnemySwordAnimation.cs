@@ -14,7 +14,6 @@ public class EnemySwordAnimation : MonoBehaviour
     void Start()
     {
         isAttacking = false;
-        
     }
 
     // Update is called once per frame

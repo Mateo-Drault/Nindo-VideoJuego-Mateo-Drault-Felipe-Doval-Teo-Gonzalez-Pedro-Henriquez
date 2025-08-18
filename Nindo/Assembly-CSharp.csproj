@@ -60,11 +60,11 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\Player\PlayerHealthBar.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyAttack.cs" />
-    <Compile Include="Assets\Scripts\Player\followPlayer.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerBeingDamaged.cs" />
     <Compile Include="Assets\Scripts\cameraFollow.cs" />
     <Compile Include="Assets\Scripts\Enemy\BeingDamaged.cs" />
     <Compile Include="Assets\PlayerSwordAnimation.cs" />
+    <Compile Include="Assets\Scripts\Enemy\followPlayer.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerLifeManager.cs" />
     <Compile Include="Assets\Scripts\Enemy\healthScript.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemySwordAnimation.cs" />

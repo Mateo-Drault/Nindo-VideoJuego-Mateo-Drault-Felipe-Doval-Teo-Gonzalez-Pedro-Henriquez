@@ -27,7 +27,7 @@ public class PlayerBeingDamaged : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("EnemySword")& !hasRecivedDamage)
+        if (other.CompareTag("EnemySword") & !hasRecivedDamage)
         {
             playerRenderer.material = newMaterial;
             hasRecivedDamage = true;
