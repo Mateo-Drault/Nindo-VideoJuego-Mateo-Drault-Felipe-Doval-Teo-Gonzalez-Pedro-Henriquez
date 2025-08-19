@@ -9,6 +9,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float maxRiseSpeed = 1;
     [SerializeField] private float maxFallSpeed = 20;
     [SerializeField] private Rigidbody playerRB;
+    [SerializeField] private Animator anim;
     private Vector3 forward, right;
     void Start()
     {

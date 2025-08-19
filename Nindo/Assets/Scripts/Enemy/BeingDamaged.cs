@@ -61,7 +61,7 @@ public class BeingDamaged : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
-        if(other.CompareTag("Player"))        
+        if(other.CompareTag("Player")& !hitbox.isParying)        
         {
             actualHitsBeforeParry -=1;
             if (actualHitsBeforeParry <= 0)
@@ -107,6 +107,7 @@ public class BeingDamaged : MonoBehaviour
     }
     void TriggerParry()
     {
+        
         swordAnimator.SetTrigger("triggerParry");
         actualHitsBeforeParry=maxHitsBeforeParry;
         hitbox.currentMode=  EnemyHitbox.HitboxMode.Parry;

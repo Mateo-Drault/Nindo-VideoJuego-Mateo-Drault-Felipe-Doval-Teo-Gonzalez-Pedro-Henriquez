@@ -7,6 +7,7 @@ public class PlayerSwordAnimation : MonoBehaviour
     public Animator animator;
     public bool isAttacking;
     public BoxCollider swordCollider;
+    public bool isStunned;
     // Start is called before the first frame update
     void Start()
     {
@@ -40,5 +41,15 @@ public class PlayerSwordAnimation : MonoBehaviour
         swordCollider.enabled = true;
         isAttacking = true;
 
+    }
+    public void InterrumptAttack()
+    {
+        if (isAttacking)
+        {
+            animator.SetTrigger("stunned");
+            animator.ResetTrigger("pHit");
+            isAttacking = false;
+            isStunned = true;
+        }
     }
 }

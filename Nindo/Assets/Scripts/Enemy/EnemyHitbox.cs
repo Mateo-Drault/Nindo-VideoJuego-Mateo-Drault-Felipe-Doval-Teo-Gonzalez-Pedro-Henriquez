@@ -8,13 +8,16 @@ public class EnemyHitbox : MonoBehaviour
     public enum HitboxMode { Idle, Attack, Parry }
     public HitboxMode currentMode = HitboxMode.Idle;
     [SerializeField] Animator anim;
+    [SerializeField] PlayerSwordAnimation PlayerSwordAnimation;
+    [SerializeField] BoxCollider swordCollider;
+    public bool isParying;
 
 
 
     // Start is called before the first frame update
     void Start()
     {
-        
+        isParying = false;
     }
 
     // Update is called once per frame
@@ -24,6 +27,7 @@ public class EnemyHitbox : MonoBehaviour
         if (animatorStateInfo.IsName("EnemyParry"))
         {
             currentMode = HitboxMode.Parry;
+
         }
         else if (animatorStateInfo.IsName("EnemyAttack"))
         {
@@ -33,5 +37,22 @@ public class EnemyHitbox : MonoBehaviour
         {
             currentMode = HitboxMode.Idle;
         }
+    }
+    private void OnTriggerEnter(Collider other)
+    {
+        if(currentMode==HitboxMode.Parry & other.CompareTag("Player"))
+        {
+            PlayerSwordAnimation.InterrumptAttack();
+        }
+    }
+    public void StartParry()
+    {
+        isParying = true;
+        swordCollider.enabled = true;
+    }
+    public void EndParry()
+    {
+        isParying = false;
+        swordCollider.enabled = false;
     }
 }
