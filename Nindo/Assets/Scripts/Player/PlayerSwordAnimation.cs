@@ -24,9 +24,8 @@ public class PlayerSwordAnimation : MonoBehaviour
     }
     public void SwordHit()
     {
-        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Cylinder_Espadazo"))//animacion de la espada
+        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Golpe"))//animacion de la espada
         {
-            Debug.Log("hola");
             animator.SetTrigger("pHit");
         }
     }

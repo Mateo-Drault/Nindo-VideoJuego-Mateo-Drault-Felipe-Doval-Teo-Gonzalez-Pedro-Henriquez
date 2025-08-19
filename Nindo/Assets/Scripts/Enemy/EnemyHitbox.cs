@@ -9,7 +9,7 @@ public class EnemyHitbox : MonoBehaviour
     public HitboxMode currentMode = HitboxMode.Idle;
     [SerializeField] Animator anim;
     [SerializeField] PlayerSwordAnimation PlayerSwordAnimation;
-    [SerializeField] BoxCollider swordCollider;
+    [SerializeField] CapsuleCollider swordCollider;
     public bool isParying;
 
 
