@@ -29,7 +29,7 @@ public class PlayerMovement : MonoBehaviour
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
         Vector3 direction = horizontalInput * right + verticalInput * forward;
-        if (direction != Vector3.zero)
+        if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
         {
             transform.position += direction * speed * Time.deltaTime;
             Quaternion Target = Quaternion.LookRotation(direction);

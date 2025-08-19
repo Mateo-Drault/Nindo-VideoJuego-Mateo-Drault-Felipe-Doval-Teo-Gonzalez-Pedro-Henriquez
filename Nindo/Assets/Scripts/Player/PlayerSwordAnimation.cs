@@ -49,6 +49,7 @@ public class PlayerSwordAnimation : MonoBehaviour
             animator.SetTrigger("stunned");
             animator.ResetTrigger("pHit");
             isAttacking = false;
+            swordCollider.enabled=false;
         }
     }
 }
