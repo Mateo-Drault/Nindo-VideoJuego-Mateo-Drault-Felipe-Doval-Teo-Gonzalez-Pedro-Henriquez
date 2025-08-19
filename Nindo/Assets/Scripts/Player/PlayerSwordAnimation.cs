@@ -49,7 +49,6 @@ public class PlayerSwordAnimation : MonoBehaviour
             animator.SetTrigger("stunned");
             animator.ResetTrigger("pHit");
             isAttacking = false;
-            isStunned = true;
         }
     }
 }
