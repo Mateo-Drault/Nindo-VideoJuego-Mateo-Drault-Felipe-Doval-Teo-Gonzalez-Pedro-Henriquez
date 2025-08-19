@@ -15,7 +15,7 @@ public class BeingDamaged : MonoBehaviour
     [SerializeField] private float stunTimer;
     public bool isBeingDamaged = false;
 
-
+    //Script vida
     public float Health;
     public float maxHealthAmount;
     [SerializeField] private float damageAmount; //se va a cambiar a la espada este valor
@@ -29,9 +29,17 @@ public class BeingDamaged : MonoBehaviour
     [SerializeField] private float colorDuration;
 
     [SerializeField] EnemySwordAnimation enemySwordAnimation;
+
+    //Parry
+    [SerializeField] private float maxHitsBeforeParry;
+    [SerializeField] private float actualHitsBeforeParry;
+    [SerializeField] private Animator swordAnimator;
+    [SerializeField] private EnemyHitbox hitbox;
+
     // Start is called before the first frame update
     void Start()
     {
+        actualHitsBeforeParry = maxHitsBeforeParry;
         Health = maxHealthAmount;
         healthScript.UpdateHealthBar(maxHealthAmount, Health);
     }
@@ -53,8 +61,13 @@ public class BeingDamaged : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))
+        if(other.CompareTag("Player"))        
         {
+            actualHitsBeforeParry -=1;
+            if (actualHitsBeforeParry <= 0)
+            {
+                TriggerParry();
+            }
             //Animaciones
             stunTimer= stunDuration;
             animator.SetBool("isStunned", true);
@@ -91,5 +104,11 @@ public class BeingDamaged : MonoBehaviour
     void BackOriginalMaterial()
     {
         enemyRenderer.material = originalMateral;
+    }
+    void TriggerParry()
+    {
+        swordAnimator.SetTrigger("triggerParry");
+        actualHitsBeforeParry=maxHitsBeforeParry;
+        hitbox.currentMode=  EnemyHitbox.HitboxMode.Parry;
     }
 }

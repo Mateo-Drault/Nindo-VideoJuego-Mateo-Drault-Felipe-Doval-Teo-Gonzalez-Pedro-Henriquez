@@ -67,6 +67,7 @@
     <Compile Include="Assets\Scripts\Enemy\followPlayer.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerLifeManager.cs" />
     <Compile Include="Assets\Scripts\Enemy\healthScript.cs" />
+    <Compile Include="Assets\Scripts\Enemy\EnemyHitbox.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemySwordAnimation.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerMovement.cs" />
   </ItemGroup>

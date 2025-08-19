@@ -23,7 +23,7 @@ public class EnemySwordAnimation : MonoBehaviour
     }
     public void SwordHit()
     {
-        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Cylinder_Espadazo"))//animacion de la espada
+        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("Attack"))//animacion de la espada
         {
             animator.SetTrigger("hit");
         }
@@ -32,6 +32,7 @@ public class EnemySwordAnimation : MonoBehaviour
     {
         isAttacking=false;
         swordCollider.enabled = false;
+        animator.ResetTrigger("hit");
     }
     public void StartAttaking()
     {
