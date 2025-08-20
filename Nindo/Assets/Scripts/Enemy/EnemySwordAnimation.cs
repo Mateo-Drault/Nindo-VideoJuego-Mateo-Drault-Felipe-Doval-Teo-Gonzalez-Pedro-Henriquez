@@ -43,8 +43,8 @@ public class EnemySwordAnimation : MonoBehaviour
     {
         if (isAttacking)
         {
-            animator.SetTrigger("stunned");
-            animator.ResetTrigger("pHit");
+            animator.SetTrigger("isStunned");
+            animator.ResetTrigger("hit");
             isAttacking = false;
             swordCollider.enabled = false;
         }

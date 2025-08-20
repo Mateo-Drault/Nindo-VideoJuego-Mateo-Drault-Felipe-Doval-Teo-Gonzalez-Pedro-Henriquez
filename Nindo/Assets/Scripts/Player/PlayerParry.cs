@@ -9,7 +9,7 @@ public class PlayerParry : MonoBehaviour
 
     [SerializeField] Animator anim;
     [SerializeField] BoxCollider parryCollider;
-    [SerializeField] EnemyAttack enemyAttack;
+    [SerializeField] EnemySwordAnimation enemySwordAnimation;
 
     public bool isParrying;
 
@@ -43,7 +43,20 @@ public class PlayerParry : MonoBehaviour
     {
         if(currentMode == ParryMode.Parry && other.CompareTag("EnemySword"))
         {
-            enemyAttack.InterruptAttack()
+            enemySwordAnimation.InterruptAttack();
+            Debug.Log("Parreado paaaa");
         }
+    }
+
+    public void StartParry()
+    {
+        anim.SetTrigger("triggerParry");
+        isParrying = true;
+        parryCollider.enabled = true;
+    }
+    public void EndParry()
+    {
+        isParrying = false;
+        parryCollider.enabled = false;
     }
 }

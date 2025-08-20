@@ -5556,8 +5556,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 0.48404756, y: 3.265547, z: 0.66253865}
-  m_Center: {x: -0.16042255, y: 1.9730562, z: -0.37694892}
+  m_Size: {x: 0.48404756, y: 3.4740722, z: 0.78054655}
+  m_Center: {x: -0.16042253, y: 2.0773187, z: -0.4359526}
 --- !u!95 &629060681
 Animator:
   serializedVersion: 5
@@ -5595,6 +5595,23 @@ MonoBehaviour:
   isAttacking: 0
   swordCollider: {fileID: 629060680}
   isStunned: 0
+--- !u!114 &629060685
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629060677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1ca0875f4fac7c4d96fa34106acdc97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentMode: 0
+  anim: {fileID: 629060681}
+  parryCollider: {fileID: 629060680}
+  enemySwordAnimation: {fileID: 1736415047}
+  isParrying: 0
 --- !u!1 &685350746
 GameObject:
   m_ObjectHideFlags: 0
@@ -6959,8 +6976,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 0.49441752, y: 3.168454, z: 0.48443002}
-  m_Center: {x: -0.009675486, y: 2.0145938, z: -0.29375857}
+  m_Size: {x: 0.49441752, y: 3.168454, z: 0.8007821}
+  m_Center: {x: -0.009675524, y: 2.0145938, z: -0.4519293}
 --- !u!23 &1736415051 stripped
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: -7511558181221131132, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
@@ -7291,6 +7308,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 629060684}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 629060685}
   m_SourcePrefab: {fileID: 100100000, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
