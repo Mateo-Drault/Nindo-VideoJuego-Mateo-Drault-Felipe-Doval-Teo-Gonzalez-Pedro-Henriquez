@@ -1,0 +1,62 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerParry : MonoBehaviour
+{
+    public enum ParryMode { Idle, Parry }
+    public ParryMode currentMode = ParryMode.Idle;
+
+    [SerializeField] Animator anim;
+    [SerializeField] BoxCollider parryCollider;
+    [SerializeField] EnemySwordAnimation enemySwordAnimation;
+
+    public bool isParrying;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        isParrying = false;
+        parryCollider.enabled = false;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (Input.GetKeyDown("LeftShift"))
+        {
+            StartParry();
+        }
+
+        AnimatorStateInfo animatorStateInfo = anim.GetCurrentAnimatorStateInfo(0);
+        if (animatorStateInfo.IsName("Parry"))
+        {
+            currentMode = ParryMode.Parry;
+        }
+        else
+        {
+            currentMode = ParryMode.Idle;
+        }
+    }
+
+    private void OnTriggerEnter(Collider other)
+    {
+        if(currentMode == ParryMode.Parry && other.CompareTag("EnemySword"))
+        {
+            enemySwordAnimation.InterruptAttack();
+            Debug.Log("Parreado paaaa");
+        }
+    }
+
+    public void StartParry()
+    {
+        anim.SetTrigger("triggerParry");
+        isParrying = true;
+        parryCollider.enabled = true;
+    }
+    public void EndParry()
+    {
+        isParrying = false;
+        parryCollider.enabled = false;
+    }
+}

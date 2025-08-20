@@ -61,6 +61,7 @@
     <Compile Include="Assets\Scripts\Player\PlayerHealthBar.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyAttack.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerBeingDamaged.cs" />
+    <Compile Include="Assets\Scripts\Player\PlayerParry.cs" />
     <Compile Include="Assets\Scripts\cameraFollow.cs" />
     <Compile Include="Assets\Scripts\Enemy\BeingDamaged.cs" />
     <Compile Include="Assets\endParry.cs" />

@@ -39,4 +39,14 @@ public class EnemySwordAnimation : MonoBehaviour
         swordCollider.enabled = true;
         isAttacking = true;
     }
+    public void InterruptAttack()
+    {
+        if (isAttacking)
+        {
+            animator.SetTrigger("isStunned");
+            animator.ResetTrigger("hit");
+            isAttacking = false;
+            swordCollider.enabled = false;
+        }
+    }
 }
