@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4513532, g: 0.50093925, b: 0.57282233, a: 1}
+  m_IndirectSpecularColor: {r: 0.4513535, g: 0.50094014, b: 0.5728231, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -783,9 +783,10 @@ GameObject:
   - component: {fileID: 685350747}
   - component: {fileID: 685350753}
   - component: {fileID: 685350754}
+  - component: {fileID: 685350755}
   m_Layer: 0
   m_Name: Cube
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -974,6 +975,29 @@ MonoBehaviour:
   Player: {fileID: 1675802622}
   enemySwordAnimation: {fileID: 1736415047}
   followPlayer: {fileID: 685350747}
+--- !u!136 &685350755
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 685350746}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 0
+  serializedVersion: 2
+  m_Radius: 0.949721
+  m_Height: 2.6504195
+  m_Direction: 1
+  m_Center: {x: 0.060596824, y: 0, z: 0.010283589}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -6957,7 +6981,7 @@ MonoBehaviour:
   currentMode: 0
   anim: {fileID: 1736415044}
   PlayerSwordAnimation: {fileID: 629060684}
-  swordCollider: {fileID: 1736415055}
+  swordCollider: {fileID: 685350755}
   isParying: 0
 --- !u!136 &1736415055
 CapsuleCollider:
@@ -6974,14 +6998,14 @@ CapsuleCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 2
-  m_Radius: 1.4025326
+  m_Radius: 0.554118
   m_Height: 3.5624492
   m_Direction: 1
-  m_Center: {x: 0.7405404, y: 1.9650805, z: -0.33699363}
+  m_Center: {x: 0.06885561, y: 1.9650805, z: -0.16026206}
 --- !u!1001 &1796229776
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7032,15 +7056,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 14.326094
+      value: 14.496833
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.2196696
+      value: -0.3448078
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -35.359795
+      value: -35.39092
       objectReference: {fileID: 0}
     - target: {fileID: -5754084199372789682, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_Mesh
