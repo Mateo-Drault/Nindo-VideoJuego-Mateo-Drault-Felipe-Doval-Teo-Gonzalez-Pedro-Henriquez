@@ -11,12 +11,15 @@ public class EnemyHitbox : MonoBehaviour
     [SerializeField] PlayerSwordAnimation PlayerSwordAnimation;
     [SerializeField] CapsuleCollider swordCollider;
     public bool isParying;
+    [SerializeField] private ParticleSystem chispas;
+    [SerializeField] private float chispasDuration = 0.05f;
 
 
 
     // Start is called before the first frame update
     void Start()
     {
+        chispas.Stop();
         isParying = false;
     }
 
@@ -43,10 +46,13 @@ public class EnemyHitbox : MonoBehaviour
         if(currentMode==HitboxMode.Parry & other.CompareTag("Player"))
         {
             PlayerSwordAnimation.InterrumptAttack();
+            chispas.Play();
+            Invoke("EndChispas", chispasDuration);
         }
     }
     public void StartParry()
     {
+        gameObject.tag = "Parry";
         isParying = true;
         swordCollider.enabled = true;
     }
@@ -54,5 +60,11 @@ public class EnemyHitbox : MonoBehaviour
     {
         isParying = false;
         swordCollider.enabled = false;
+        gameObject.tag = "EnemySword";
+
+    }
+    public void EndChispas()
+    {
+        chispas.Stop();
     }
 }
