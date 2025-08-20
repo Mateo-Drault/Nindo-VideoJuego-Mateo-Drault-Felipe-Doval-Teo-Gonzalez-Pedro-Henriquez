@@ -43,8 +43,9 @@ public class EnemyHitbox : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if(currentMode==HitboxMode.Parry & other.CompareTag("Player"))
+        if (currentMode == HitboxMode.Parry & other.CompareTag("Player"))
         {
+            anim.SetTrigger("endParry");
             PlayerSwordAnimation.InterrumptAttack();
             chispas.Play();
             Invoke("EndChispas", chispasDuration);

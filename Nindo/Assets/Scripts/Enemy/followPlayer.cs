@@ -32,7 +32,9 @@ public class followPlayer : MonoBehaviour
         if (Vector3.Distance(transform.position, playerTransform.position) > minDistance & !BeingDamaged.isBeingDamaged & Seen & !EnemySwordAnimation.isAttacking)
         {
             transform.position = Vector3.MoveTowards(transform.position, playerTransform.position, speed* Time.deltaTime);
-
+        }
+        if (!BeingDamaged.isBeingDamaged & Seen & !EnemySwordAnimation.isAttacking)
+        {
             if (transform.position != Vector3.zero)
             {
                 Quaternion Target = Quaternion.LookRotation(directionToPlayer);
