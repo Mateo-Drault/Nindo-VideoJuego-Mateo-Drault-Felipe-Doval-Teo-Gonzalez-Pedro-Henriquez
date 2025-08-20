@@ -6,6 +6,7 @@ TagManager:
   tags:
   - EnemySword
   - Enemy
+  - Parry
   layers:
   - Default
   - TransparentFX
