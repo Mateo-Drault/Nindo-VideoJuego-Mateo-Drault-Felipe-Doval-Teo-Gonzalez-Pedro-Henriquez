@@ -16,6 +16,8 @@ public class PlayerParry : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+        anim.ResetTrigger("triggerParry");
+
         isParrying = false;
         parryCollider.enabled = false;
     }
@@ -23,7 +25,7 @@ public class PlayerParry : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown("LeftShift"))
+        if (Input.GetKeyDown(KeyCode.O))
         {
             StartParry();
         }
@@ -50,13 +52,16 @@ public class PlayerParry : MonoBehaviour
 
     public void StartParry()
     {
+        gameObject.tag = "Parry";
         anim.SetTrigger("triggerParry");
         isParrying = true;
         parryCollider.enabled = true;
     }
     public void EndParry()
     {
+        gameObject.tag = "Player";
         isParrying = false;
         parryCollider.enabled = false;
+        anim.ResetTrigger("triggerParry");
     }
 }

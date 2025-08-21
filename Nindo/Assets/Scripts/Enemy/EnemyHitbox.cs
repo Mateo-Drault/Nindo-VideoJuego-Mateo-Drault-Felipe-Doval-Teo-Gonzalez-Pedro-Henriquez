@@ -32,23 +32,22 @@ public class EnemyHitbox : MonoBehaviour
             currentMode = HitboxMode.Parry;
 
         }
-        else if (animatorStateInfo.IsName("EnemyAttack"))
-        {
-            currentMode = HitboxMode.Attack;
-        }
         else
         {
-            currentMode = HitboxMode.Idle;
+            isParying = false;
+            swordCollider.enabled = false;
+            gameObject.tag = "EnemySword";
         }
     }
     private void OnTriggerEnter(Collider other)
     {
         if (currentMode == HitboxMode.Parry & other.CompareTag("Player"))
         {
-            anim.SetTrigger("endParry");
             PlayerSwordAnimation.InterrumptAttack();
             chispas.Play();
             Invoke("EndChispas", chispasDuration);
+            anim.SetTrigger("endParry");
+
         }
     }
     public void StartParry()

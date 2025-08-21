@@ -5595,6 +5595,23 @@ MonoBehaviour:
   isAttacking: 0
   swordCollider: {fileID: 629060680}
   isStunned: 0
+--- !u!114 &629060687
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 629060677}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1ca0875f4fac7c4d96fa34106acdc97, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentMode: 0
+  anim: {fileID: 629060681}
+  parryCollider: {fileID: 629060680}
+  enemySwordAnimation: {fileID: 1736415047}
+  isParrying: 0
 --- !u!1 &685350746
 GameObject:
   m_ObjectHideFlags: 0
@@ -6752,11 +6769,11 @@ MeshCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 0
+  m_Enabled: 1
   serializedVersion: 5
-  m_Convex: 0
+  m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 6981290006637109699, guid: 570b3b67b5dc1fc459edb84946c3bd0a, type: 3}
 --- !u!114 &1675802624
@@ -7004,10 +7021,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 2
-  m_Radius: 0.8773174
-  m_Height: 3.3068407
+  m_Radius: 1.1879737
+  m_Height: 3.5261087
   m_Direction: 1
-  m_Center: {x: 0.9468572, y: -1.3451499, z: 0.61124676}
+  m_Center: {x: 0.8685585, y: -1.2355158, z: 1.0909568}
 --- !u!1001 &1796229776
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7260,15 +7277,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 2.7286415
+      value: 14.326094
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -21.805107
+      value: -0.2196696
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: 32.534874
+      value: -35.359795
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_Name
@@ -7291,6 +7308,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       insertIndex: -1
       addedObject: {fileID: 629060684}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 629060687}
   m_SourcePrefab: {fileID: 100100000, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
