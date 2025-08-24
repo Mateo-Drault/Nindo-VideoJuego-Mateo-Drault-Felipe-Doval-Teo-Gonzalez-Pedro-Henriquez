@@ -10,6 +10,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float maxFallSpeed = 20;
     [SerializeField] private Rigidbody playerRB;
     [SerializeField] private Animator anim;
+    [SerializeField] private LockOnTarget lockOnTarget;
     private Vector3 forward, right;
     void Start()
     {
@@ -32,8 +33,11 @@ public class PlayerMovement : MonoBehaviour
         if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
         {
             transform.position += direction * speed * Time.deltaTime;
-            Quaternion Target = Quaternion.LookRotation(direction);
-            transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
+            if (!lockOnTarget.isLocked)
+            {
+                Quaternion Target = Quaternion.LookRotation(direction);
+                transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
+            }
         }
     }
     void FixedUpdate()

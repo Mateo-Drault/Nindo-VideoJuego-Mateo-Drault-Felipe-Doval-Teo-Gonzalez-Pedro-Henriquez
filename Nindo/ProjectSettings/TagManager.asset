@@ -7,6 +7,7 @@ TagManager:
   - EnemySword
   - Enemy
   - Parry
+  - PlayerBody
   layers:
   - Default
   - TransparentFX
@@ -14,10 +15,10 @@ TagManager:
   - 
   - Water
   - UI
-  - 
-  - 
-  - 
-  - 
+  - Player
+  - Enemy
+  - PlayerWeapon
+  - EnemyWeapon
   - 
   - 
   - 
@@ -43,4 +44,16 @@ TagManager:
   m_SortingLayers:
   - name: Default
     uniqueID: 0
+    locked: 0
+  - name: 
+    uniqueID: 4264663717
+    locked: 0
+  - name: 
+    uniqueID: 3996295377
+    locked: 0
+  - name: 
+    uniqueID: 179117581
+    locked: 0
+  - name: 
+    uniqueID: 1781219217
     locked: 0

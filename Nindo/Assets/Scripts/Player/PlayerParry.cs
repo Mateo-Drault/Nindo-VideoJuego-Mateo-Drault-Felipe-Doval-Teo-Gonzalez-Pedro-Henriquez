@@ -10,6 +10,9 @@ public class PlayerParry : MonoBehaviour
     [SerializeField] Animator anim;
     [SerializeField] BoxCollider parryCollider;
     [SerializeField] EnemySwordAnimation enemySwordAnimation;
+    [SerializeField] private ParticleSystem chispas;
+    [SerializeField] private float chispasDuration = 0.05f;
+
 
     public bool isParrying;
 
@@ -17,6 +20,7 @@ public class PlayerParry : MonoBehaviour
     void Start()
     {
         anim.ResetTrigger("triggerParry");
+        chispas.Stop();
 
         isParrying = false;
         parryCollider.enabled = false;
@@ -25,7 +29,7 @@ public class PlayerParry : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.O))
+        if (Input.GetKeyDown(KeyCode.LeftShift))
         {
             StartParry();
         }
@@ -45,6 +49,8 @@ public class PlayerParry : MonoBehaviour
     {
         if(currentMode == ParryMode.Parry && other.CompareTag("EnemySword"))
         {
+            chispas.Play();
+            Invoke("EndChispas", chispasDuration);
             enemySwordAnimation.InterruptAttack();
             Debug.Log("Parreado paaaa");
         }
@@ -63,5 +69,9 @@ public class PlayerParry : MonoBehaviour
         isParrying = false;
         parryCollider.enabled = false;
         anim.ResetTrigger("triggerParry");
+    }
+    public void EndChispas()
+    {
+        chispas.Stop();
     }
 }
