@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class BeingDamaged : MonoBehaviour
 {
+    //animaciones
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform playerTransform;
     [SerializeField] private float knockbackForce;
@@ -21,13 +22,6 @@ public class BeingDamaged : MonoBehaviour
     [SerializeField] private float damageAmount; //se va a cambiar a la espada este valor
     [SerializeField] private GameObject enemyEntity;
     [SerializeField] private healthScript healthScript;
-
-    //Color al ser golpeado
-    [SerializeField] private Renderer enemyRenderer;
-    [SerializeField] private Material originalMateral;
-    [SerializeField] private Material newMaterial;
-    [SerializeField] private float colorDuration;
-
     [SerializeField] EnemySwordAnimation enemySwordAnimation;
 
     //Parry
@@ -80,10 +74,6 @@ public class BeingDamaged : MonoBehaviour
             knockback.y = 0f;
             rb.AddForce(knockback * knockbackForce, ForceMode.Impulse);
 
-            //Cambio de color
-            enemyRenderer.material = newMaterial;
-            Invoke(nameof(BackOriginalMaterial), colorDuration); 
-
             //Sacar vida y eliminar en caso de tener 0
             Health -= damageAmount;
             if (Health <= 0)
@@ -100,10 +90,6 @@ public class BeingDamaged : MonoBehaviour
     void Death()
     {
         Destroy(enemyEntity);
-    }
-    void BackOriginalMaterial()
-    {
-        enemyRenderer.material = originalMateral;
     }
     void TriggerParry()
     {

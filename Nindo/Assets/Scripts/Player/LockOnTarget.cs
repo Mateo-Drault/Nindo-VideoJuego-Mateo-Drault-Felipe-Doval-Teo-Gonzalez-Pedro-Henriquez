@@ -5,6 +5,13 @@ using UnityEngine;
 
 public class LockOnTarget : MonoBehaviour
 {
+    //Mover camara en un punto medio
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private float normalFOV;
+    [SerializeField] private float adjustedFOV;
+    [SerializeField] private float lerpSpeed;
+
+    //Rotar al objetivo
     public float lockRange = 10f;
     [SerializeField] private Transform target;
     [SerializeField] private LayerMask enemyLayer;
@@ -40,6 +47,11 @@ public class LockOnTarget : MonoBehaviour
                 return;
             }
             LookAt();
+            AdjustCamera();
+        }
+        else
+        {
+            StopAdjustment();
         }
     }
     void LockOnClosestEnemies()
@@ -59,6 +71,13 @@ public class LockOnTarget : MonoBehaviour
         Quaternion TargetRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, TargetRotation, 10f * Time.deltaTime);
     }
-
+    void AdjustCamera()
+    {
+        mainCamera.orthographicSize = Mathf.Lerp(mainCamera.orthographicSize, adjustedFOV, Time.deltaTime * lerpSpeed);
+    }
+    void StopAdjustment()
+    {
+        mainCamera.orthographicSize = Mathf.Lerp(mainCamera.orthographicSize, normalFOV, Time.deltaTime *lerpSpeed);
+    }
 }
 
