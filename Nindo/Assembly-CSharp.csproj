@@ -58,8 +58,10 @@
     <Analyzer Include="D:\2022.3.6f1\Editor\Data\Tools\Unity.SourceGenerators\Unity.Properties.SourceGenerator.dll" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\Scripts\New enemy\EnemyMovement.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerHealthBar.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyAttack.cs" />
+    <Compile Include="Assets\Scripts\New enemy\EnemyDamage.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerBeingDamaged.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerParry.cs" />
     <Compile Include="Assets\Scripts\cameraFollow.cs" />
