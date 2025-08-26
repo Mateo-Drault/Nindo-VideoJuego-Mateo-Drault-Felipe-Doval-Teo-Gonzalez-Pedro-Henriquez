@@ -553,6 +553,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 1675802622}
   offSet: {x: 0, y: 0, z: 0}
+  lockOnTarget: {fileID: 1675802628}
 --- !u!1 &307704417
 GameObject:
   m_ObjectHideFlags: 0
@@ -11515,7 +11516,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd5e209a9330aa841bef862c1ffd717d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 20
+  speed: 10
   rotationSpeed: 15
   maxRiseSpeed: 0.5
   maxFallSpeed: 20
@@ -11717,9 +11718,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 963194227}
   normalFOV: 9.9
-  adjustedFOV: 3
-  lerpSpeed: 4
-  lockRange: 1000
+  adjustedFOV: 8.7
+  lerpSpeed: 5
+  pivot: {fileID: 191792320}
+  lockRange: 20
   target: {fileID: 0}
   enemyLayer:
     serializedVersion: 2

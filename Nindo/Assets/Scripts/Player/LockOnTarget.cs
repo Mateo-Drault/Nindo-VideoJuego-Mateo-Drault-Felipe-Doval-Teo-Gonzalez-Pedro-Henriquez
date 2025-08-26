@@ -9,17 +9,17 @@ public class LockOnTarget : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float normalFOV;
     [SerializeField] private float adjustedFOV;
-    [SerializeField] private float lerpSpeed;
+    public float lerpSpeed;
+    [SerializeField] Transform pivot;
 
     //Rotar al objetivo
     public float lockRange = 10f;
-    [SerializeField] private Transform target;
+    public Transform target;
     [SerializeField] private LayerMask enemyLayer;
     public bool isLocked;
     // Start is called before the first frame update
     void Start()
     {
-        
     }
 
     // Update is called once per frame
@@ -39,18 +39,21 @@ public class LockOnTarget : MonoBehaviour
             }
         }
 
-        if (target != null)
+        if (target != null && Vector3.Distance(transform.position, target.transform.position) <= lockRange)
         {
             if (target.Equals(null))
             {
                 target = null;
                 return;
             }
+
+            MoveCamera();
             LookAt();
             AdjustCamera();
         }
         else
         {
+            ResetPosition();
             StopAdjustment();
         }
     }
@@ -66,7 +69,7 @@ public class LockOnTarget : MonoBehaviour
     }
     void LookAt()
     {
-        Vector3 direction = target.position - transform.position;
+        Vector3 direction = target.position - pivot.position;
         direction.y = 0;
         Quaternion TargetRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, TargetRotation, 10f * Time.deltaTime);
@@ -78,6 +81,14 @@ public class LockOnTarget : MonoBehaviour
     void StopAdjustment()
     {
         mainCamera.orthographicSize = Mathf.Lerp(mainCamera.orthographicSize, normalFOV, Time.deltaTime *lerpSpeed);
+    }
+    void MoveCamera()
+    {
+        isLocked = true;
+    }
+    void ResetPosition()
+    {
+        isLocked = false;
     }
 }
 
