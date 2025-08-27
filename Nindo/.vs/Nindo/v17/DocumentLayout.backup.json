@@ -60,7 +60,7 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\New enemy\\EnemyMovement.cs",
               "ToolTip": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\Scripts\\New enemy\\EnemyMovement.cs",
               "RelativeToolTip": "Assets\\Scripts\\New enemy\\EnemyMovement.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABgAAAABAAAAAAAAAA==",
+              "ViewState": "AgIAAAsAAAAAAAAAAAAQwB0AAAA5AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-08-25T02:02:44.272Z",
               "EditorCaption": ""
@@ -73,9 +73,10 @@
               "RelativeDocumentMoniker": "Assets\\Scripts\\Enemy\\followPlayer.cs",
               "ToolTip": "C:\\Users\\Admin\\Documents\\GitHub\\Nindo-VideoJuego-Mateo-Drault-Felipe-Doval-Teo-Gonzalez-Pedro-Henriquez\\Nindo\\Assets\\Scripts\\Enemy\\followPlayer.cs",
               "RelativeToolTip": "Assets\\Scripts\\Enemy\\followPlayer.cs",
-              "ViewState": "AgIAAAgAAAAAAAAAAAAQwAQAAAAAAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-17T23:07:53.449Z"
+              "WhenOpened": "2025-08-17T23:07:53.449Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",

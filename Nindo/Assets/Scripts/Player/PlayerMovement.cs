@@ -11,6 +11,7 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private Rigidbody playerRB;
     [SerializeField] private Animator anim;
     [SerializeField] private LockOnTarget lockOnTarget;
+    [SerializeField] private PlayerSwordAnimation playerSwordAnimation;
     private Vector3 forward, right;
     void Start()
     {
@@ -30,7 +31,7 @@ public class PlayerMovement : MonoBehaviour
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
         Vector3 direction = horizontalInput * right + verticalInput * forward;
-        if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
+        if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Golpe"))
         {
             transform.position += direction * speed * Time.deltaTime;
             if (!lockOnTarget.isLocked)
