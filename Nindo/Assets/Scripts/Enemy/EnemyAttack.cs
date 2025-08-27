@@ -20,7 +20,7 @@ public class EnemyAttack : MonoBehaviour
         bool Stunned = animator.GetBool("isStunned");
 
         Vector3 directionToPlayer = Player.position - transform.position;
-        if(Vector3.Distance(Player.position, transform.position) <= followPlayer.minDistance & animator & !Stunned)
+        if(Vector3.Distance(Player.position, transform.position) <= followPlayer.minDistance && !Stunned)
         {
             enemySwordAnimation.SwordHit();
         }

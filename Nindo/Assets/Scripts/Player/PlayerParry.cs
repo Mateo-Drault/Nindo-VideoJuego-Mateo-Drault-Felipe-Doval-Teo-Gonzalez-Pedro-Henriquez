@@ -13,8 +13,11 @@ public class PlayerParry : MonoBehaviour
     [SerializeField] private ParticleSystem chispas;
     [SerializeField] private float chispasDuration = 0.05f;
     [SerializeField] private BoxCollider playerBodyCollider;
+    [SerializeField] EnemySwordAnimation swordAnim;
 
-
+    [SerializeField] private PlayerBeingDamaged playerBeingDamaged;
+    [SerializeField] private float inmunityTime;
+    public bool hasParried;
     public bool isParrying;
 
     // Start is called before the first frame update
@@ -48,12 +51,14 @@ public class PlayerParry : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if(currentMode == ParryMode.Parry && other.CompareTag("EnemySword"))
+        if (currentMode == ParryMode.Parry && other.CompareTag("EnemySword") && !playerBeingDamaged.hasRecivedDamage)
         {
+            Debug.Log("parry");
+            hasParried = true;
+            Invoke("EndInmunity", inmunityTime);
             chispas.Play();
             Invoke("EndChispas", chispasDuration);
             enemySwordAnimation.InterruptAttack();
-            Debug.Log("Parreado paaaa");
         }
     }
 
@@ -77,5 +82,10 @@ public class PlayerParry : MonoBehaviour
     public void EndChispas()
     {
         chispas.Stop();
+    }
+    private void EndInmunity()
+    {
+        Debug.Log("parry ended");
+        hasParried = false;
     }
 }

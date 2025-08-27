@@ -5700,7 +5700,7 @@ GameObject:
   - component: {fileID: 622121863}
   - component: {fileID: 622121861}
   - component: {fileID: 622121862}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Particle System Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10546,8 +10546,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 1.3409104, y: 3.265547, z: 0.66253865}
-  m_Center: {x: -0.09146225, y: 1.9730562, z: -0.3769489}
+  m_Size: {x: 2.423977, y: 3.265547, z: 0.8284273}
+  m_Center: {x: 0.08674184, y: 1.9730562, z: -0.64041615}
 --- !u!95 &629060681
 Animator:
   serializedVersion: 5
@@ -10603,6 +10603,11 @@ MonoBehaviour:
   enemySwordAnimation: {fileID: 1736415047}
   chispas: {fileID: 622121861}
   chispasDuration: 0.1
+  playerBodyCollider: {fileID: 1675802626}
+  swordAnim: {fileID: 1736415047}
+  playerBeingDamaged: {fileID: 1675802624}
+  inmunityTime: 0
+  hasParried: 0
   isParrying: 0
 --- !u!1 &685350746
 GameObject:
@@ -11763,7 +11768,7 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 1
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
@@ -11783,10 +11788,12 @@ MonoBehaviour:
   enemySwordDamage: 2
   playerLifeManager: {fileID: 1675802625}
   PlayerHealthBar: {fileID: 1347469592}
+  hasRecivedDamage: 0
   originalMaterial: {fileID: 2100000, guid: e03b54e02b6e2624a8211ac6c86e0dba, type: 2}
   newMaterial: {fileID: 2100000, guid: a17245330ab162b41a9b35905af53cb3, type: 2}
-  invincibilityDuration: 0.5
+  invincibilityDuration: 0.3
   playerRenderer: {fileID: 756205171}
+  PlayerParry: {fileID: 629060687}
 --- !u!114 &1675802625
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11993,8 +12000,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 0
   serializedVersion: 3
-  m_Size: {x: 0.49441752, y: 3.168454, z: 0.48443002}
-  m_Center: {x: -0.009675486, y: 2.0145938, z: -0.29375857}
+  m_Size: {x: 0.49441752, y: 3.168454, z: 0.40657672}
+  m_Center: {x: -0.009675477, y: 2.0145938, z: -0.25483194}
 --- !u!114 &1736415053
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12525,15 +12532,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
-      value: 14.326094
+      value: 12.458564
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: -0.2196696
+      value: 1.2310442
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
-      value: -35.359795
+      value: -31.377422
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_Name
@@ -12541,7 +12548,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_Layer
-      value: 7
+      value: 8
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: a6380b7c3e30cbf4d9f95b28dcac624d, type: 3}
       propertyPath: m_IsActive

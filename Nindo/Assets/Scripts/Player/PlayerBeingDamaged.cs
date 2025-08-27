@@ -7,12 +7,14 @@ public class PlayerBeingDamaged : MonoBehaviour
     [SerializeField] private float enemySwordDamage; //esto va a la espada del enemigo mas adelante
     [SerializeField] private PlayerLifeManager playerLifeManager;
     [SerializeField] private PlayerHealthBar PlayerHealthBar;
-    private bool hasRecivedDamage = false;
+    public bool hasRecivedDamage = false;
     public Material originalMaterial;
     public Material newMaterial;
 
     [SerializeField] private float invincibilityDuration;
     [SerializeField] private Renderer playerRenderer;
+
+    [SerializeField] private PlayerParry PlayerParry;
 
     // Start is called before the first frame update
     void Start()
@@ -27,8 +29,9 @@ public class PlayerBeingDamaged : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("EnemySword") & !hasRecivedDamage)
+        if (other.CompareTag("EnemySword") && !hasRecivedDamage)
         {
+            Debug.Log("daño");
             playerRenderer.material = newMaterial;
             hasRecivedDamage = true;
             playerLifeManager.actualHealth -= enemySwordDamage;
@@ -38,7 +41,7 @@ public class PlayerBeingDamaged : MonoBehaviour
     }
     public void RestartInvincibility()
     {
+        Debug.Log("ended");
         hasRecivedDamage = false;
-        playerRenderer.material = originalMaterial;
     }
 }
