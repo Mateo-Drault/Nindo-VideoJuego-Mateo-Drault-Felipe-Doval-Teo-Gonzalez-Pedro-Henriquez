@@ -2,7 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-
+using TMPro;
+using UnityEngine.UI;
 public class LockOnTarget : MonoBehaviour
 {
     //Mover camara en un punto medio
@@ -17,6 +18,12 @@ public class LockOnTarget : MonoBehaviour
     public Transform target;
     [SerializeField] private LayerMask enemyLayer;
     public bool isLocked;
+
+
+    //Rombo que se posiciona en el fijado
+    [SerializeField] private Image indicatorImage;
+    [SerializeField] private Vector3 imageOffset;
+
     // Start is called before the first frame update
     void Start()
     {
@@ -38,7 +45,6 @@ public class LockOnTarget : MonoBehaviour
                 target = null;
             }
         }
-
         if (target != null && Vector3.Distance(transform.position, target.transform.position) <= lockRange)
         {
             if (target.Equals(null))
@@ -46,16 +52,31 @@ public class LockOnTarget : MonoBehaviour
                 target = null;
                 return;
             }
-
             MoveCamera();
             LookAt();
             AdjustCamera();
+            
         }
         else
         {
             ResetPosition();
             StopAdjustment();
         }
+    }
+    private void LateUpdate()
+    {
+        if (target == null)
+        {
+            indicatorImage.enabled = false;
+        }
+        else
+        {
+            Vector3 screenPos = mainCamera.WorldToScreenPoint(target.position + imageOffset);
+            indicatorImage.enabled = true;
+            indicatorImage.transform.position = screenPos;
+        }
+
+        
     }
     void LockOnClosestEnemies()
     {
