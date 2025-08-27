@@ -93,7 +93,7 @@ public class LockOnTarget : MonoBehaviour
         Vector3 direction = target.position - pivot.position;
         direction.y = 0;
         Quaternion TargetRotation = Quaternion.LookRotation(direction);
-        transform.rotation = Quaternion.Slerp(transform.rotation, TargetRotation, 10f * Time.deltaTime);
+        transform.rotation = Quaternion.Slerp(transform.rotation, TargetRotation, 30f * Time.deltaTime);
     }
     void AdjustCamera()
     {

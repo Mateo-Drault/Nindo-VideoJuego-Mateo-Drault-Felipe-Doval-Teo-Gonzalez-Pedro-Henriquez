@@ -12,6 +12,7 @@ public class PlayerParry : MonoBehaviour
     [SerializeField] EnemySwordAnimation enemySwordAnimation;
     [SerializeField] private ParticleSystem chispas;
     [SerializeField] private float chispasDuration = 0.05f;
+    [SerializeField] private BoxCollider playerBodyCollider;
 
 
     public bool isParrying;
@@ -58,6 +59,8 @@ public class PlayerParry : MonoBehaviour
 
     public void StartParry()
     {
+        Physics.IgnoreCollision(enemySwordAnimation.swordCollider, playerBodyCollider, true);
+
         gameObject.tag = "Parry";
         anim.SetTrigger("triggerParry");
         isParrying = true;
@@ -65,6 +68,7 @@ public class PlayerParry : MonoBehaviour
     }
     public void EndParry()
     {
+        Physics.IgnoreCollision(enemySwordAnimation.swordCollider, playerBodyCollider, false);
         gameObject.tag = "Player";
         isParrying = false;
         parryCollider.enabled = false;
