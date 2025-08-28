@@ -8,6 +8,7 @@ public class EnemySwordAnimation : MonoBehaviour
     public Animator animator;
     public bool isAttacking;
     public BoxCollider swordCollider;
+    public bool isStunned;
 
 
     // Start is called before the first frame update
@@ -19,7 +20,9 @@ public class EnemySwordAnimation : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (isStunned)
+        {
+        }
     }
     public void SwordHit()
     {
@@ -43,10 +46,10 @@ public class EnemySwordAnimation : MonoBehaviour
     {
         if (isAttacking)
         {
-            animator.SetTrigger("isStunned");
             animator.ResetTrigger("hit");
             isAttacking = false;
             swordCollider.enabled = false;
+
         }
     }
 }

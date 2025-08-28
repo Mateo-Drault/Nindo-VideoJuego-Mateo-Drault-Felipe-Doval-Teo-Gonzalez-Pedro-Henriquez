@@ -15,6 +15,8 @@ public class BeingDamaged : MonoBehaviour
     [SerializeField] private float stunDuration;
     [SerializeField] private float stunTimer;
     public bool isBeingDamaged = false;
+    public bool superArmor = false; //no puede recibir mas stun
+
 
     //Script vida
     public float Health;
@@ -63,9 +65,9 @@ public class BeingDamaged : MonoBehaviour
                 TriggerParry();
             }
             //Animaciones
-            stunTimer= stunDuration;
+            stunTimer = stunDuration;
             animator.SetBool("isStunned", true);
-            animator.ResetTrigger("hit");
+            animator.ResetTrigger("hit");            
             isBeingDamaged = true;
 
             //Knockback
@@ -97,5 +99,6 @@ public class BeingDamaged : MonoBehaviour
         swordAnimator.SetTrigger("triggerParry");
         actualHitsBeforeParry=maxHitsBeforeParry;
         hitbox.currentMode=  EnemyHitbox.HitboxMode.Parry;
+        superArmor = true;
     }
 }

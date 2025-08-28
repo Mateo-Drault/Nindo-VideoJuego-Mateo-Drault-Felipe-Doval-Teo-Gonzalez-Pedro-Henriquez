@@ -41,7 +41,10 @@ public class PlayerParry : MonoBehaviour
         AnimatorStateInfo animatorStateInfo = anim.GetCurrentAnimatorStateInfo(0);
         if (animatorStateInfo.IsName("Parry"))
         {
+            Debug.Log("parr");
+
             currentMode = ParryMode.Parry;
+
         }
         else
         {
