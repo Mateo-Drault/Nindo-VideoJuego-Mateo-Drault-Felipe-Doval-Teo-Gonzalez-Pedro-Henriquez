@@ -66,9 +66,9 @@
     <Compile Include="Assets\Scripts\Player\PlayerParry.cs" />
     <Compile Include="Assets\Scripts\cameraFollow.cs" />
     <Compile Include="Assets\Scripts\Enemy\BeingDamaged.cs" />
-    <Compile Include="Assets\endParry.cs" />
     <Compile Include="Assets\Scripts\Enemy\followPlayer.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerLifeManager.cs" />
+    <Compile Include="Assets\Scripts\New enemy\EnemyAnimatorManager.cs" />
     <Compile Include="Assets\Scripts\Player\LockOnTarget.cs" />
     <Compile Include="Assets\PlayerCombat.cs" />
     <Compile Include="Assets\Scripts\Enemy\healthScript.cs" />
@@ -76,6 +76,7 @@
     <Compile Include="Assets\Scripts\Enemy\EnemySwordAnimation.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerMovement.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerSwordAnimation.cs" />
+    <Compile Include="Assets\Scripts\New enemy\EnemyBeingDamaged.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

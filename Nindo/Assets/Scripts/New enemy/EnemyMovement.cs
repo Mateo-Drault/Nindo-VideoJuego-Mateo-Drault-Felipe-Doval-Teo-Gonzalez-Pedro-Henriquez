@@ -14,7 +14,7 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private Animator animator;
 
     public bool seen;
-    public bool isAttacking;
+    public bool isAttacking = false;
     // Start is called before the first frame update
     void Start()
     {
@@ -26,28 +26,32 @@ public class EnemyMovement : MonoBehaviour
     {
 
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
+        Debug.Log(distanceToPlayer);
         if(distanceToPlayer < minDistance & !seen) //Idle
         {
             seen = true;
         }
 
 
-        if (distanceToPlayer > maxDistance & !isAttacking && seen) //Persigue
+        if (distanceToPlayer > maxDistance && !isAttacking && seen) //Persigue
         {
+            Debug.Log("persigue");
             agent.isStopped = false;
             agent.SetDestination(player.position);
-            animator.SetBool("isChasing", true);
-            animator.SetBool("isAttacking", false);
+            //animator.SetBool("isChasing", true); Falta animator
+            //animator.SetBool("isAttacking", false); Falta animator
 
         }
-
+        else
+        {
+            agent.isStopped = true;
+        }
         if (distanceToPlayer <= attackRange) //Ataca
         {
             isAttacking = true;
             agent.isStopped = true;
-            animator.SetBool("isAttacking", true);
-            animator.SetBool("isChasing", false);
+            //animator.SetBool("isAttacking", true); Falta animator
+            //animator.SetBool("isChasing", false); Falta animator
         }
         else
         {
