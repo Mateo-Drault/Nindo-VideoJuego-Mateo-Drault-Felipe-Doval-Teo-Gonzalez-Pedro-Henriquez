@@ -4,14 +4,19 @@ using UnityEngine;
 
 public class EnemyBeingDamaged : MonoBehaviour
 {
-    //animaciones
+    //Componentes
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform playerTransform;
+    [SerializeField] private EnemyHitbox hitbox;
+    [SerializeField] Animator animator;
+
+
+
     [SerializeField] private float knockbackForce;
     [SerializeField] private float knockbackDuration;
 
+
     //animaciones
-    [SerializeField] Animator animator;
     [SerializeField] private float stunDuration;
     [SerializeField] private float stunTimer;
     public bool isBeingDamaged = false;
@@ -24,11 +29,14 @@ public class EnemyBeingDamaged : MonoBehaviour
     [SerializeField] private float damageAmount; //se va a cambiar a la espada este valor
     [SerializeField] private GameObject enemyEntity;
     [SerializeField] private healthScript healthScript;
+
+
     //Parry
     [SerializeField] private float maxHitsBeforeParry;
     [SerializeField] private float actualHitsBeforeParry;
+
+
     //[SerializeField] private Animator swordAnimator; Falta animator
-    [SerializeField] private EnemyHitbox hitbox;
     
 
     // Start is called before the first frame update
@@ -47,9 +55,8 @@ public class EnemyBeingDamaged : MonoBehaviour
             stunTimer -= Time.deltaTime;
             if (stunTimer <= 0)
             {
-                //animator.SetBool("isStunned", false); Falta animator
+                animator.SetBool("isStunned", false);
                 isBeingDamaged = false;
-                //enemySwordAnimation.isAttacking = false; Arreglar
 
             }
         }
@@ -65,15 +72,15 @@ public class EnemyBeingDamaged : MonoBehaviour
             }
             //Animaciones
             stunTimer = stunDuration;
-            //animator.SetBool("isStunned", true); Falta animator
-            //animator.ResetTrigger("hit"); Falta animator
+            animator.SetBool("isStunned", true);
+            animator.ResetTrigger("attack");
             isBeingDamaged = true;
 
-            //Knockback
-            rb.velocity = Vector3.zero;
-            Vector3 knockback = (transform.position - playerTransform.position).normalized;
-            knockback.y = 0f;
-            rb.AddForce(knockback * knockbackForce, ForceMode.Impulse);
+            //Knockback: libo temporal
+            //rb.velocity = Vector3.zero;
+            //Vector3 knockback = (transform.position - playerTransform.position).normalized;
+            //knockback.y = 0f;
+            //rb.AddForce(knockback * knockbackForce, ForceMode.Impulse);
 
             //Sacar vida y eliminar en caso de tener 0
             Health -= damageAmount;

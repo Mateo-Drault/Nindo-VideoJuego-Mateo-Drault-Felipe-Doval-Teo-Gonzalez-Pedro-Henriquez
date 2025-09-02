@@ -13,12 +13,17 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float attackRange;
     [SerializeField] private Animator animator;
 
+    [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
+
     public bool seen;
     public bool isAttacking = false;
+
+    [SerializeField] private float rotationSpeed = 10f;
+
     // Start is called before the first frame update
     void Start()
     {
-
+        agent.updateRotation = false;
     }
 
     // Update is called once per frame
@@ -26,38 +31,74 @@ public class EnemyMovement : MonoBehaviour
     {
 
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        Debug.Log(distanceToPlayer);
-        if(distanceToPlayer < minDistance & !seen) //Idle
+
+        //Recibiendo danio
+        if (enemyBeingDamaged != null && enemyBeingDamaged.isBeingDamaged)
+        {
+            agent.isStopped = true;
+            animator.SetBool("isChasing", false);
+            return;
+        }
+
+        // 
+        if (!seen && distanceToPlayer <= minDistance)
         {
             seen = true;
         }
 
+        if (!seen) return; // si no lo vio, no hace nada más
 
-        if (distanceToPlayer > maxDistance && !isAttacking && seen) //Persigue
+
+        //Atacar
+        if (distanceToPlayer <= maxDistance)
         {
-            Debug.Log("persigue");
-            agent.isStopped = false;
-            agent.SetDestination(player.position);
-            //animator.SetBool("isChasing", true); Falta animator
-            //animator.SetBool("isAttacking", false); Falta animator
-
+            Attack();
         }
+        //Perseguir
+        else if (distanceToPlayer <= minDistance)
+        {
+            Chase();
+        }
+        //Idle
         else
         {
-            agent.isStopped = true;
-        }
-        if (distanceToPlayer <= attackRange) //Ataca
-        {
-            isAttacking = true;
-            agent.isStopped = true;
-            //animator.SetBool("isAttacking", true); Falta animator
-            //animator.SetBool("isChasing", false); Falta animator
-        }
-        else
-        {
-            isAttacking = false;
+            Idle();
         }
 
+    }
+    void Attack()
+    {
+        isAttacking = true;
+        agent.isStopped = true;
+
+        Vector3 directionToPlayer = (player.position - transform.position).normalized;
+        directionToPlayer.y = 0;
+        Quaternion Target = Quaternion.LookRotation(directionToPlayer);
+        transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
+
+        animator.SetBool("isChasing", false);
+        animator.SetTrigger("attack");
+    }
+
+    void Chase()
+    {
+        isAttacking = false;
+        agent.isStopped = false;
+
+        agent.SetDestination(player.position);
+
+
+        animator.ResetTrigger("attack");
+        animator.SetBool("isChasing", true);
+    }
+
+    void Idle()
+    {
+        isAttacking = false;
+        agent.isStopped = true;
+
+        animator.ResetTrigger("attack");
+        animator.SetBool("isChasing", false);
     }
 }
 
