@@ -15,6 +15,9 @@ public class EnemyMovement : MonoBehaviour
 
     [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
 
+
+    [SerializeField] private EnemyCombat enemyCombat;
+
     public bool seen;
     public bool isAttacking = false;
 
@@ -55,7 +58,7 @@ public class EnemyMovement : MonoBehaviour
             Attack();
         }
         //Perseguir
-        else if (distanceToPlayer <= minDistance)
+        else if (distanceToPlayer >= maxDistance && seen)
         {
             Chase();
         }
@@ -68,16 +71,9 @@ public class EnemyMovement : MonoBehaviour
     }
     void Attack()
     {
+        enemyCombat.Attack();
         isAttacking = true;
         agent.isStopped = true;
-
-        Vector3 directionToPlayer = (player.position - transform.position).normalized;
-        directionToPlayer.y = 0;
-        Quaternion Target = Quaternion.LookRotation(directionToPlayer);
-        transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
-
-        animator.SetBool("isChasing", false);
-        animator.SetTrigger("attack");
     }
 
     void Chase()
@@ -86,7 +82,10 @@ public class EnemyMovement : MonoBehaviour
         agent.isStopped = false;
 
         agent.SetDestination(player.position);
-
+        Vector3 directionToPlayer = (player.position - transform.position).normalized;
+        directionToPlayer.y = 0;
+        Quaternion Target = Quaternion.LookRotation(directionToPlayer);
+        transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
 
         animator.ResetTrigger("attack");
         animator.SetBool("isChasing", true);
