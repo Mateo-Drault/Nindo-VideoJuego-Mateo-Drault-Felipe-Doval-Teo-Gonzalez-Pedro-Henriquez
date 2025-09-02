@@ -60,6 +60,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\New enemy\EnemyMovement.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerHealthBar.cs" />
+    <Compile Include="Assets\Scripts\New Player\PlayerMovement.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyAttack.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyCombat.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerBeingDamaged.cs" />
@@ -71,11 +72,11 @@
     <Compile Include="Assets\Scripts\Player\PlayerLifeManager.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyAnimatorManager.cs" />
     <Compile Include="Assets\Scripts\Player\LockOnTarget.cs" />
+    <Compile Include="Assets\Scripts\New Player\PlayerAnimation.cs" />
     <Compile Include="Assets\PlayerCombat.cs" />
     <Compile Include="Assets\Scripts\Enemy\healthScript.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyHitbox.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemySwordAnimation.cs" />
-    <Compile Include="Assets\Scripts\Player\PlayerMovement.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerSwordAnimation.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyBeingDamaged.cs" />
   </ItemGroup>
