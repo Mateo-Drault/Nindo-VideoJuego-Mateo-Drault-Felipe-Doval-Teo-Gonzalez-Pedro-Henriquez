@@ -36,11 +36,8 @@ public class EnemyBeingDamaged : MonoBehaviour
     [SerializeField] private float actualHitsBeforeParry;
 
 
-    //[SerializeField] private Animator swordAnimator; Falta animator
-    
-
-    // Start is called before the first frame update
-    void Start()
+ 
+        void Start()
     {
         actualHitsBeforeParry = maxHitsBeforeParry;
         Health = maxHealthAmount;
