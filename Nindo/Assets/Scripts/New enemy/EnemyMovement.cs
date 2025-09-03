@@ -34,7 +34,7 @@ public class EnemyMovement : MonoBehaviour
     {
 
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
-
+        Debug.Log(distanceToPlayer);
         //Recibiendo danio
         if (enemyBeingDamaged != null && enemyBeingDamaged.isBeingDamaged)
         {
@@ -42,23 +42,19 @@ public class EnemyMovement : MonoBehaviour
             animator.SetBool("isChasing", false);
             return;
         }
-
-        // 
+        //Lo vio
         if (!seen && distanceToPlayer <= minDistance)
         {
             seen = true;
         }
 
-        if (!seen) return; // si no lo vio, no hace nada más
-
-
         //Atacar
-        if (distanceToPlayer <= maxDistance)
+        if (distanceToPlayer <= attackRange && seen && !enemyCombat.isParrying)
         {
             Attack();
         }
         //Perseguir
-        else if (distanceToPlayer >= maxDistance && seen)
+        else if (distanceToPlayer > maxDistance && seen && !isAttacking && !enemyCombat.isParrying)
         {
             Chase();
         }
@@ -78,7 +74,6 @@ public class EnemyMovement : MonoBehaviour
 
     void Chase()
     {
-        isAttacking = false;
         agent.isStopped = false;
 
         agent.SetDestination(player.position);

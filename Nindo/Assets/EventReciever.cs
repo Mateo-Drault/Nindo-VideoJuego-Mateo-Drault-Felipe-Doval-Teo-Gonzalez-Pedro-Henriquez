@@ -14,7 +14,6 @@ public class EventReciever : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
     }
 
     public void StartAttack()
@@ -24,5 +23,13 @@ public class EventReciever : MonoBehaviour
     public void StopAttack()
     {
         enemyCombat.StopAttack();
+    }
+    public void StartParry() //llamado desde la animacion (en el EventReciever)
+    {
+        enemyCombat.StartParry();
+    }
+    public void EndParry() //llamado desde la animacion (en el EventReciever)
+    {
+        enemyCombat.EndParry();
     }
 }
