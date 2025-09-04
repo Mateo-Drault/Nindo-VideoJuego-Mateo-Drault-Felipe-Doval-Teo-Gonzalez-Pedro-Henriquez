@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4513532, g: 0.50093925, b: 0.57282233, a: 1}
+  m_IndirectSpecularColor: {r: 0.4513535, g: 0.50094014, b: 0.5728231, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -12828,11 +12828,11 @@ MonoBehaviour:
   isBeingDamaged: 0
   superArmor: 0
   Health: 0
-  maxHealthAmount: 10
+  maxHealthAmount: 20
   damageAmount: 3
   enemyEntity: {fileID: 699501035}
   healthScript: {fileID: 1797947651}
-  maxHitsBeforeParry: 3
+  maxHitsBeforeParry: 0
   actualHitsBeforeParry: 0
 --- !u!114 &1980087367
 MonoBehaviour:
@@ -12901,7 +12901,6 @@ MonoBehaviour:
   animator: {fileID: 1789169880}
   enemyMovement: {fileID: 1980087364}
   EnemyBeingDamaged: {fileID: 1980087366}
-  maxHitsBeforeParry: 1
   currentMode: 0
   isParrying: 0
   PlayerSwordAnimation: {fileID: 629060684}

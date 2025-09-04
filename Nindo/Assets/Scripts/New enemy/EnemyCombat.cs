@@ -11,7 +11,7 @@ public class EnemyCombat : MonoBehaviour
 
     //Parry
     [SerializeField] private EnemyBeingDamaged EnemyBeingDamaged;
-    [SerializeField] private float maxHitsBeforeParry;
+    private float maxHitsBeforeParry; 
     private float actualHitsBeforeParry;
     public enum HitboxMode { Idle, Attack, Parry }
     public HitboxMode currentMode = HitboxMode.Idle;
