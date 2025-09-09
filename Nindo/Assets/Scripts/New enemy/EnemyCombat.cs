@@ -4,34 +4,35 @@ using UnityEngine;
 
 public class EnemyCombat : MonoBehaviour
 {
-    [SerializeField] private BoxCollider swordCollider;
-    [SerializeField] private Animator animator;
+    //scripts y objetos seteados por el inspector
     [SerializeField] private EnemyMovement enemyMovement;
+    [SerializeField] private EnemyBeingDamaged EnemyBeingDamaged;
+    [SerializeField] private PlayerSwordAnimation PlayerSwordAnimation;
+    [SerializeField] private CapsuleCollider parryCollider;
+    [SerializeField] private MeshCollider swordCollider;
+    [SerializeField] private Animator animator;
 
 
     //Parry
-    [SerializeField] private EnemyBeingDamaged EnemyBeingDamaged;
-    private float maxHitsBeforeParry; 
-    private float actualHitsBeforeParry;
+    [SerializeField] private float maxHitsBeforeParry;
+    [SerializeField] private float actualHitsBeforeParry;
     public enum HitboxMode { Idle, Attack, Parry }
     public HitboxMode currentMode = HitboxMode.Idle;
     [SerializeField] public bool isParrying;
-    [SerializeField] private PlayerSwordAnimation PlayerSwordAnimation;
-    [SerializeField] private CapsuleCollider parryCollider;
 
-    // Start is called before the first frame update
     void Start()
     {
         actualHitsBeforeParry = maxHitsBeforeParry;
         swordCollider.enabled = false;
+        currentMode = HitboxMode.Idle;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (EnemyBeingDamaged.isBeingDamaged) //menos golpes para hacer parry
+        if (EnemyBeingDamaged.parryHit) //menos golpes para hacer parry
         {
-            actualHitsBeforeParry -= 1;
+            HitsToParry();
         }
         if (actualHitsBeforeParry <= 0) //si llega a 0, hacer parry
         {
@@ -46,8 +47,8 @@ public class EnemyCombat : MonoBehaviour
         else
         {
             isParrying = false;
-            swordCollider.enabled = false;
             gameObject.tag = "EnemySword";
+            currentMode = HitboxMode.Idle;
         }
     }
 
@@ -76,6 +77,13 @@ public class EnemyCombat : MonoBehaviour
         actualHitsBeforeParry = maxHitsBeforeParry;
         currentMode = HitboxMode.Parry;
     }
+
+
+    void HitsToParry()
+    {
+        actualHitsBeforeParry -= 1;
+        EnemyBeingDamaged.parryHit = false;
+    }
     public void StartParry() //llamado desde la animacion (en el EventReciever)
     {
         gameObject.tag = "Parry";
@@ -100,6 +108,20 @@ public class EnemyCombat : MonoBehaviour
             //Invoke("EndChispas", chispasDuration);
             animator.SetTrigger("HasParry"); //hacer el parry por el golpe
 
+        }
+    }
+
+    public void InterruptAttack()
+    {
+        if (enemyMovement.isAttacking)
+        {
+            animator.SetBool("isStunned", true);
+            animator.ResetTrigger("hit");
+            enemyMovement.isAttacking = false;
+            swordCollider.enabled = false;
+
+            //se resetea solo
+            EnemyBeingDamaged.isStunned = true;
         }
     }
 }

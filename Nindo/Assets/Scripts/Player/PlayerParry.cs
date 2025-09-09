@@ -13,7 +13,7 @@ public class PlayerParry : MonoBehaviour
     [SerializeField] private ParticleSystem chispas;
     [SerializeField] private float chispasDuration = 0.05f;
     [SerializeField] private BoxCollider playerBodyCollider;
-    [SerializeField] EnemySwordAnimation swordAnim;
+    [SerializeField] EnemyCombat enemyCombat;
 
     [SerializeField] private PlayerBeingDamaged playerBeingDamaged;
     [SerializeField] private float inmunityTime;
@@ -61,7 +61,7 @@ public class PlayerParry : MonoBehaviour
             Invoke("EndInmunity", inmunityTime);
             chispas.Play();
             Invoke("EndChispas", chispasDuration);
-            enemySwordAnimation.InterruptAttack();
+            enemyCombat.InterruptAttack();
         }
     }
 

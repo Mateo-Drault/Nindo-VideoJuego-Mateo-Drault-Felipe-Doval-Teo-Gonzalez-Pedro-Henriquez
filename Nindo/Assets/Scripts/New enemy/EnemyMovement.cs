@@ -5,21 +5,25 @@ using UnityEngine.AI;
 
 public class EnemyMovement : MonoBehaviour
 {
-    public Transform player;
+    //scripts
+    [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
+    [SerializeField] private EnemyCombat enemyCombat;
+    [SerializeField] private Animator animator;
     [SerializeField] private NavMeshAgent agent;
+
+    //etc
+    public Transform player;
     private float distanceToPlayer;
     [SerializeField] private float maxDistance;
     [SerializeField] private float minDistance;
     [SerializeField] private float attackRange;
-    [SerializeField] private Animator animator;
-
-    [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
 
 
-    [SerializeField] private EnemyCombat enemyCombat;
+
 
     public bool seen;
     public bool isAttacking = false;
+    [SerializeField] private bool isAttackingGeneral;
 
     [SerializeField] private float rotationSpeed = 10f;
 
@@ -35,8 +39,19 @@ public class EnemyMovement : MonoBehaviour
 
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
         Debug.Log(distanceToPlayer);
+
+        //Chequear que no este golpeando asi se mueve
+        AnimatorStateInfo animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);
+        if (animatorStateInfo.IsName("Attack") | animatorStateInfo.IsName("Attack 2") | animatorStateInfo.IsName("Attack 3"))
+        {
+            isAttackingGeneral = true;
+        } 
+        else
+        {
+            isAttackingGeneral = false;
+        }
         //Recibiendo danio
-        if (enemyBeingDamaged != null && enemyBeingDamaged.isBeingDamaged)
+        if (enemyBeingDamaged != null && enemyBeingDamaged.isStunned)
         {
             agent.isStopped = true;
             animator.SetBool("isChasing", false);
@@ -54,7 +69,7 @@ public class EnemyMovement : MonoBehaviour
             Attack();
         }
         //Perseguir
-        else if (distanceToPlayer > maxDistance && seen && !isAttacking && !enemyCombat.isParrying)
+        else if (distanceToPlayer > maxDistance && seen && !isAttackingGeneral && !enemyCombat.isParrying)
         {
             Chase();
         }

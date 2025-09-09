@@ -4,14 +4,17 @@ using UnityEngine;
 
 public class EnemyBeingDamaged : MonoBehaviour
 {
-    //Componentes
+    //seteados desde el inspector
+    [SerializeField] private healthScript healthScript;
+    [SerializeField] private EnemyCombat enemyCombat;
+    [SerializeField] private EnemyHitbox hitbox;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform playerTransform;
-    [SerializeField] private EnemyHitbox hitbox;
     [SerializeField] Animator animator;
+    [SerializeField] private GameObject enemyEntity;
 
 
-
+    //knockback
     [SerializeField] private float knockbackForce;
     [SerializeField] private float knockbackDuration;
 
@@ -19,7 +22,7 @@ public class EnemyBeingDamaged : MonoBehaviour
     //animaciones
     [SerializeField] private float stunDuration;
     [SerializeField] private float stunTimer;
-    public bool isBeingDamaged = false;
+    public bool isStunned = false;
     public bool superArmor = false; //no puede recibir mas stun
 
 
@@ -27,19 +30,15 @@ public class EnemyBeingDamaged : MonoBehaviour
     public float Health;
     public float maxHealthAmount;
     [SerializeField] private float damageAmount; //se va a cambiar a la espada este valor
-    [SerializeField] private GameObject enemyEntity;
-    [SerializeField] private healthScript healthScript;
+
 
 
     //Parry
-    [SerializeField] private float maxHitsBeforeParry;
-    [SerializeField] private float actualHitsBeforeParry;
-
+    public bool parryHit;
 
  
         void Start()
     {
-        actualHitsBeforeParry = maxHitsBeforeParry;
         Health = maxHealthAmount;
         healthScript.UpdateHealthBar(maxHealthAmount, Health);
     }
@@ -47,31 +46,27 @@ public class EnemyBeingDamaged : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (isBeingDamaged)
+        if (isStunned)
         {
             stunTimer -= Time.deltaTime;
             if (stunTimer <= 0)
             {
                 animator.SetBool("isStunned", false);
-                isBeingDamaged = false;
+                isStunned = false;
 
             }
         }
     }
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Player"))// & !hitbox.isParying) 
-        {
-            actualHitsBeforeParry -= 1;
-            if (actualHitsBeforeParry <= 0)
-            {
-                //TriggerParry();
-            }
+    if (other.CompareTag("Player"))
+        {           
             //Animaciones
             stunTimer = stunDuration;
             animator.SetBool("isStunned", true);
             animator.ResetTrigger("attack");
-            isBeingDamaged = true;
+            isStunned = true;
+            parryHit = true;
 
             //Knockback: libo temporal
             //rb.velocity = Vector3.zero;
@@ -91,16 +86,8 @@ public class EnemyBeingDamaged : MonoBehaviour
         }
 
     }
-
-    void Death()
+void Death()
     {
         Destroy(enemyEntity);
     }
-   // void TriggerParry()
-    //{
-        //Arreglar!!!!
-        // swordAnimator.SetTrigger("triggerParry"); Falta animator
-        //actualHitsBeforeParry = maxHitsBeforeParry;
-        //hitbox.currentMode = EnemyHitbox.HitboxMode.Parry; 
-    //}
 }
