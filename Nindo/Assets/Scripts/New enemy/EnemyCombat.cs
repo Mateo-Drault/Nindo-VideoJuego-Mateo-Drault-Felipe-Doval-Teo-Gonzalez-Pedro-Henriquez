@@ -19,6 +19,10 @@ public class EnemyCombat : MonoBehaviour
     public enum HitboxMode { Idle, Attack, Parry }
     public HitboxMode currentMode = HitboxMode.Idle;
     [SerializeField] public bool isParrying;
+    [SerializeField] private GameObject Katana;
+
+    public ParticleSystem chispas;
+    [SerializeField] float chispasDuration;
 
     void Start()
     {
@@ -73,12 +77,11 @@ public class EnemyCombat : MonoBehaviour
     void TriggerParry()
     {
         //Arreglar!!!!
+        animator.SetBool("isStunned", false);
         animator.SetTrigger("Parry");
         actualHitsBeforeParry = maxHitsBeforeParry;
         currentMode = HitboxMode.Parry;
     }
-
-
     void HitsToParry()
     {
         actualHitsBeforeParry -= 1;
@@ -86,14 +89,14 @@ public class EnemyCombat : MonoBehaviour
     }
     public void StartParry() //llamado desde la animacion (en el EventReciever)
     {
-        gameObject.tag = "Parry";
+        Katana.tag = "Parry";
         animator.SetTrigger("Parry");
         isParrying = true;
         parryCollider.enabled = true;
     }
     public void EndParry() //llamado desde la animacion (en el EventReciever)
     {
-        gameObject.tag = "Player";
+        Katana.tag = "EnemySword";
         isParrying = false;
         parryCollider.enabled = false;
         animator.ResetTrigger("Parry");
@@ -104,8 +107,8 @@ public class EnemyCombat : MonoBehaviour
         if (currentMode == HitboxMode.Parry & other.CompareTag("Player")) //si el arma del jugador impacta con la espada al hacer parry:
         {
             PlayerSwordAnimation.InterrumptAttack();
-            //chispas.Play(); Falta agregar chispas
-            //Invoke("EndChispas", chispasDuration);
+            chispas.Play();
+            Invoke("EndChispas", chispasDuration);
             animator.SetTrigger("HasParry"); //hacer el parry por el golpe
 
         }
@@ -116,12 +119,16 @@ public class EnemyCombat : MonoBehaviour
         if (enemyMovement.isAttacking)
         {
             animator.SetBool("isStunned", true);
-            animator.ResetTrigger("hit");
+            animator.ResetTrigger("attack");
             enemyMovement.isAttacking = false;
             swordCollider.enabled = false;
 
             //se resetea solo
             EnemyBeingDamaged.isStunned = true;
         }
+    }
+    public void EndChispas()
+    {
+        chispas.Stop();
     }
 }
