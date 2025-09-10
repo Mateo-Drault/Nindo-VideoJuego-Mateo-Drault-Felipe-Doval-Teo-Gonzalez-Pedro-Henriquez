@@ -1,9 +1,39 @@
 fileFormatVersion: 2
-guid: c9fa03171cfa78c46a05ab607c796c7c
+guid: 6824b1dfa7fb3ca40b2a34ea092d2436
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: Farol.002
+    second: {fileID: 2100000, guid: 1fd70891532fbdc4ca247c8e923b7254, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: InternalFlame.006
+    second: {fileID: 2100000, guid: c8f61e506a402994da4e62eab1bca8c4, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: OuterFlame.006
+    second: {fileID: 2100000, guid: 506f21e4be29a664f96cc0fc6abcca3f, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: InnerFlame
+    second: {fileID: 2800000, guid: ccc4c5192edfb6543aa4c211c71b18cc, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Madera_Oscura
+    second: {fileID: 2800000, guid: 6dd694b5325e2bb4495b6e3b43d4ad82, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: OuterFlame
+    second: {fileID: 2800000, guid: 37fe5ad26e123cc419df47f0ab7fa794, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
