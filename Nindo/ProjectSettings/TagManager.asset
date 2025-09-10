@@ -8,6 +8,7 @@ TagManager:
   - Enemy
   - Parry
   - PlayerBody
+  - IdleEnemySword
   layers:
   - Default
   - TransparentFX

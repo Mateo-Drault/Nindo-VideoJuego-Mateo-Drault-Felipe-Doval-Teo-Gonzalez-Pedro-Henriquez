@@ -29,6 +29,12 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float enemyDamage; //conectarlo con el enemigo de mate
     [SerializeField] private float invincibilityDuration;
 
+    void Awake()
+    {
+        if (playerRenderer == null)
+            playerRenderer = GetComponentInChildren<Renderer>();
+    }
+
     void Start()
     {
         isAttacking = false;

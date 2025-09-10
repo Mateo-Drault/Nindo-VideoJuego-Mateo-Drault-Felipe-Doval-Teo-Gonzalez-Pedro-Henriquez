@@ -42,6 +42,10 @@ public class EnemyCombat : MonoBehaviour
         {
             TriggerParry();
         }
+        else
+        {
+            animator.ResetTrigger("Parry");
+        }
         AnimatorStateInfo animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);
         if (animatorStateInfo.IsName("Parrying")) //saber si esta parreando
         {
@@ -76,7 +80,6 @@ public class EnemyCombat : MonoBehaviour
 
     void TriggerParry()
     {
-        //Arreglar!!!!
         animator.SetBool("isStunned", false);
         animator.SetTrigger("Parry");
         actualHitsBeforeParry = maxHitsBeforeParry;
@@ -90,7 +93,6 @@ public class EnemyCombat : MonoBehaviour
     public void StartParry() //llamado desde la animacion (en el EventReciever)
     {
         Katana.tag = "Parry";
-        animator.SetTrigger("Parry");
         isParrying = true;
         parryCollider.enabled = true;
     }
@@ -114,7 +116,7 @@ public class EnemyCombat : MonoBehaviour
         }
     }
 
-    public void InterruptAttack()
+    public void InterruptAttack() //Lo llama la jugador al hacer parry
     {
         if (enemyMovement.isAttacking)
         {
@@ -122,9 +124,9 @@ public class EnemyCombat : MonoBehaviour
             animator.ResetTrigger("attack");
             enemyMovement.isAttacking = false;
             swordCollider.enabled = false;
-
             //se resetea solo
             EnemyBeingDamaged.isStunned = true;
+            EnemyBeingDamaged.stunTimer = EnemyBeingDamaged.stunDuration;
         }
     }
     public void EndChispas()

@@ -33,8 +33,9 @@ public class PlayerParry : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        if (Input.GetKeyDown(KeyCode.E))
         {
+            anim.SetTrigger("triggerParry");
             StartParry();
         }
 
@@ -67,16 +68,13 @@ public class PlayerParry : MonoBehaviour
 
     public void StartParry()
     {
-        Physics.IgnoreCollision(enemySwordAnimation.swordCollider, playerBodyCollider, true);
 
         gameObject.tag = "Parry";
-        anim.SetTrigger("triggerParry");
         isParrying = true;
         parryCollider.enabled = true;
     }
     public void EndParry()
     {
-        Physics.IgnoreCollision(enemySwordAnimation.swordCollider, playerBodyCollider, false);
         gameObject.tag = "Player";
         isParrying = false;
         parryCollider.enabled = false;

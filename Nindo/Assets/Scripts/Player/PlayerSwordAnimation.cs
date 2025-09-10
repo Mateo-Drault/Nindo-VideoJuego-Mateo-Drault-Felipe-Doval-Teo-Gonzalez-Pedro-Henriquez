@@ -13,8 +13,14 @@ public class PlayerSwordAnimation : MonoBehaviour
     public float attackDashSpeed = 5f;//velocidad del dash
     public float attackDashTime = 0.15f;//duración del dash en segundos
     private bool isDashing = false;
+    [SerializeField] private Renderer playerRenderer;
 
     [SerializeField] private PlayerMovement playerMovement; //ARREGLAR
+    void Awake()
+    {
+        if (playerRenderer == null)
+            playerRenderer = GetComponent<Renderer>();
+    }
 
     void Start()
     {

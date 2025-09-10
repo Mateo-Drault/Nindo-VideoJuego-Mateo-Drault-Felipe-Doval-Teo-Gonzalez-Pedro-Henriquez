@@ -20,8 +20,8 @@ public class EnemyBeingDamaged : MonoBehaviour
 
 
     //animaciones
-    [SerializeField] private float stunDuration;
-    [SerializeField] private float stunTimer;
+    [SerializeField] public float stunDuration;
+    [SerializeField] public float stunTimer;
     public bool isStunned = false;
     public bool superArmor = false; //no puede recibir mas stun
 
