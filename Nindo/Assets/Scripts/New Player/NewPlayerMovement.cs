@@ -11,7 +11,6 @@ public class NewPlayerMovement : MonoBehaviour
     [SerializeField] private Rigidbody playerRB;
     [SerializeField] private Animator anim;
     [SerializeField] private LockOnTarget lockOnTarget;
-    [SerializeField] private PlayerSwordAnimation playerSwordAnimation;
     private Vector3 forward, right;
     void Start()
     {

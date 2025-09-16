@@ -44,6 +44,8 @@ sysinfo.txt
 
 # Visual Studio Code
 .vscode/
+.vs/
+
 
 # Yarn Spinner
 *.yarn.txt
