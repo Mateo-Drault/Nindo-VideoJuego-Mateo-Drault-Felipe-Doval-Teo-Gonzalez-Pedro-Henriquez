@@ -32,8 +32,8 @@ public class NewPlayerMovement : MonoBehaviour
         Vector3 direction = horizontalInput * right + verticalInput * forward;
         if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Attacking") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Parrying"))
         {
-            transform.position += direction * speed * Time.deltaTime;
             anim.SetBool("isRunning", true);
+            transform.position += direction * speed * Time.deltaTime;
             if (!lockOnTarget.isLocked)
             {
                 Quaternion Target = Quaternion.LookRotation(direction);
