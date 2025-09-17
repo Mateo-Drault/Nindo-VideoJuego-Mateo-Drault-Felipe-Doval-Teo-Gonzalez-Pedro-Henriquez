@@ -2669,6 +2669,7 @@ GameObject:
   - component: {fileID: 825952087}
   - component: {fileID: 825952096}
   - component: {fileID: 825952097}
+  - component: {fileID: 825952098}
   m_Layer: 0
   m_Name: KaitoEmpty
   m_TagString: PlayerBody
@@ -2689,6 +2690,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   katanaCollider: {fileID: 370810612}
+  playerDamaged: {fileID: 0}
   currentMode: 0
   anim: {fileID: 1596739857}
   chispas: {fileID: 0}
@@ -2703,12 +2705,6 @@ MonoBehaviour:
   attackDashSpeed: 5
   attackDashTime: 0.15
   playerMovement: {fileID: 0}
-  hasRecievedDamage: 0
-  playerRenderer: {fileID: 0}
-  playerLifeManager: {fileID: 825952088}
-  PlayerHealthBar: {fileID: 825952089}
-  enemyDamage: 0
-  invincibilityDuration: 0
 --- !u!114 &825952088
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2749,7 +2745,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   speed: 10
-  rotationSpeed: 1
+  rotationSpeed: 50
   maxRiseSpeed: 0.5
   maxFallSpeed: 20
   playerRB: {fileID: 825952093}
@@ -2801,7 +2797,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 112
   m_CollisionDetection: 0
 --- !u!23 &825952094
 MeshRenderer:
@@ -2901,6 +2897,23 @@ MonoBehaviour:
   isLocked: 0
   indicatorImage: {fileID: 95575968}
   imageOffset: {x: 0.11, y: 1.2, z: 0}
+--- !u!114 &825952098
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 825952086}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a15b6639b23320a45a0de52f3de05ed1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerLifeManager: {fileID: 825952088}
+  playerHealthBar: {fileID: 825952089}
+  enemyDamage: 2
+  hasRecievedDamage: 0
+  invincibilityDuration: 1
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -10870,6 +10883,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   katanaCollider: {fileID: 0}
+  playerDamaged: {fileID: 0}
   currentMode: 0
   anim: {fileID: 0}
   chispas: {fileID: 0}
@@ -10884,12 +10898,6 @@ MonoBehaviour:
   attackDashSpeed: 5
   attackDashTime: 0.15
   playerMovement: {fileID: 0}
-  hasRecievedDamage: 0
-  playerRenderer: {fileID: 0}
-  playerLifeManager: {fileID: 0}
-  PlayerHealthBar: {fileID: 0}
-  enemyDamage: 0
-  invincibilityDuration: 0
 --- !u!114 &1675802628
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12173,8 +12181,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   enemyMovement: {fileID: 1980087364}
-  EnemyBeingDamaged: {fileID: 1980087366}
-  PlayerSwordAnimation: {fileID: 0}
+  enemyBeingDamaged: {fileID: 1980087366}
+  playerCombat: {fileID: 825952087}
   parryCollider: {fileID: 1789169882}
   swordCollider: {fileID: 1444471414}
   animator: {fileID: 1994075574}

@@ -40,7 +40,10 @@ public class NewPlayerMovement : MonoBehaviour
                 transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
             }
         }
-        //if () DESACTIVAR BOOL
+        if (direction == Vector3.zero)
+        {
+            anim.SetBool("isRunning", false);
+        }
     }
     void FixedUpdate()
     {

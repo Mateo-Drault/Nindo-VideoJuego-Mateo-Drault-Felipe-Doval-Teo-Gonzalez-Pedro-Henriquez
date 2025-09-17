@@ -6,8 +6,8 @@ public class EnemyCombat : MonoBehaviour
 {
     //scripts y objetos seteados por el inspector
     [SerializeField] private EnemyMovement enemyMovement;
-    [SerializeField] private EnemyBeingDamaged EnemyBeingDamaged;
-    [SerializeField] private PlayerSwordAnimation PlayerSwordAnimation;
+    [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
+    [SerializeField] private PlayerCombat playerCombat;
     [SerializeField] private CapsuleCollider parryCollider;
     [SerializeField] private MeshCollider swordCollider;
     [SerializeField] private Animator animator;
@@ -34,7 +34,7 @@ public class EnemyCombat : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (EnemyBeingDamaged.parryHit) //menos golpes para hacer parry
+        if (enemyBeingDamaged.parryHit) //menos golpes para hacer parry
         {
             HitsToParry();
         }
@@ -88,7 +88,7 @@ public class EnemyCombat : MonoBehaviour
     void HitsToParry()
     {
         actualHitsBeforeParry -= 1;
-        EnemyBeingDamaged.parryHit = false;
+        enemyBeingDamaged.parryHit = false;
     }
     public void StartParry() //llamado desde la animacion (en el EventReciever)
     {
@@ -108,7 +108,7 @@ public class EnemyCombat : MonoBehaviour
     {
         if (currentMode == HitboxMode.Parry & other.CompareTag("Player")) //si el arma del jugador impacta con la espada al hacer parry:
         {
-            PlayerSwordAnimation.InterrumptAttack();
+            playerCombat.InterrumptAttack();
             chispas.Play();
             Invoke("EndChispas", chispasDuration);
             animator.SetTrigger("HasParry"); //hacer el parry por el golpe
@@ -125,8 +125,8 @@ public class EnemyCombat : MonoBehaviour
             enemyMovement.isAttacking = false;
             swordCollider.enabled = false;
             //se resetea solo
-            EnemyBeingDamaged.isStunned = true;
-            EnemyBeingDamaged.stunTimer = EnemyBeingDamaged.stunDuration;
+            enemyBeingDamaged.isStunned = true;
+            enemyBeingDamaged.stunTimer = enemyBeingDamaged.stunDuration;
         }
     }
     public void EndChispas()

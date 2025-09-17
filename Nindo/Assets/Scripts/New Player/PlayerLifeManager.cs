@@ -16,10 +16,9 @@ public class PlayerLifeManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(actualHealth <= 0)
+        if (actualHealth <= 0)
         {
             Destroy(gameObject);
-
         }
     }
     void restartScene()

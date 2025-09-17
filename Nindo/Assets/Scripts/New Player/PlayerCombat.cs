@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerCombat : MonoBehaviour
 {
     [SerializeField] MeshCollider katanaCollider;
+    [SerializeField] PlayerDamaged playerDamaged;
 
     //PlayerParry cositas
 
@@ -35,26 +36,16 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private PlayerMovement playerMovement; //ARREGLAR
 
 
-    //PlayerBeingDamaged cositas
-
-    public bool hasRecievedDamage = false;
-    [SerializeField] private Renderer playerRenderer;
-    [SerializeField] private PlayerLifeManager playerLifeManager;
-    [SerializeField] private PlayerHealthBar PlayerHealthBar;
-    [SerializeField] private float enemyDamage; //conectarlo con el enemigo de mate
-    [SerializeField] private float invincibilityDuration;
 
     void Awake()
     {
-        if (playerRenderer == null)
-            playerRenderer = GetComponentInChildren<Renderer>();
+
     }
 
     void Start()
     {
         isAttacking = false;
-        PlayerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
-
+       
         anim.ResetTrigger("parry");
         chispas.Stop();
 
@@ -140,16 +131,8 @@ public class PlayerCombat : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("Enemy") && !hasRecievedDamage)
-        {
-            Debug.Log("daño");
-            hasRecievedDamage = true;
-            playerLifeManager.actualHealth -= enemyDamage;
-            PlayerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
-            Invoke("RestartInvincibility", invincibilityDuration);
-        }
 
-        if (currentMode == ParryMode.Parry && other.CompareTag("EnemySword") && !hasRecievedDamage)
+        if (currentMode == ParryMode.Parry && other.CompareTag("EnemySword") && !playerDamaged.hasRecievedDamage)
         {
             hasParried = true;
             Invoke("EndInmunity", inmunityTime);

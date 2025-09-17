@@ -71,6 +71,7 @@
     <Compile Include="Assets\Scripts\New enemy\EnemyCombat.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerBeingDamaged.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\EnvMapAnimator.cs" />
+    <Compile Include="Assets\Scripts\New Player\PlayerDamaged.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_A.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerParry.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01_UGUI.cs" />
