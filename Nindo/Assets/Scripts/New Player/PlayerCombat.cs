@@ -39,8 +39,6 @@ public class PlayerCombat : MonoBehaviour
 
     public bool hasRecievedDamage = false;
     [SerializeField] private Renderer playerRenderer;
-    public Material originalMaterial;
-    public Material newMaterial;
     [SerializeField] private PlayerLifeManager playerLifeManager;
     [SerializeField] private PlayerHealthBar PlayerHealthBar;
     [SerializeField] private float enemyDamage; //conectarlo con el enemigo de mate
@@ -142,10 +140,9 @@ public class PlayerCombat : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("EnemySword") && !hasRecievedDamage)
+        if (other.CompareTag("Enemy") && !hasRecievedDamage)
         {
             Debug.Log("daño");
-            playerRenderer.material = newMaterial;
             hasRecievedDamage = true;
             playerLifeManager.actualHealth -= enemyDamage;
             PlayerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);

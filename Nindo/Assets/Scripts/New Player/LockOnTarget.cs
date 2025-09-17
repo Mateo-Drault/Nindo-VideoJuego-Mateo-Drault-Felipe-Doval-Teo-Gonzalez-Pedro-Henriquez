@@ -80,7 +80,7 @@ public class LockOnTarget : MonoBehaviour
     }
     void LockOnClosestEnemies()
     {
-        Collider[] enemies = Physics.OverlapSphere(transform.position,lockRange, enemyLayer);
+        Collider[] enemies = Physics.OverlapSphere(transform.position, lockRange, enemyLayer);
 
         if (enemies.Length > 0)
         {

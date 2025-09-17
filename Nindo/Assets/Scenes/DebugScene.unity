@@ -534,7 +534,7 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_Sprite: {fileID: 21300000, guid: d775705cbb88ba34a900bf0d988ab82f, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 0.002501011, g: 0, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
@@ -2671,7 +2671,7 @@ GameObject:
   - component: {fileID: 825952097}
   m_Layer: 0
   m_Name: KaitoEmpty
-  m_TagString: Untagged
+  m_TagString: PlayerBody
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2694,7 +2694,7 @@ MonoBehaviour:
   chispas: {fileID: 0}
   chispasDuration: 0.05
   playerBodyCollider: {fileID: 825952092}
-  enemyCombat: {fileID: 0}
+  enemyCombat: {fileID: 1980087370}
   inmunityTime: 3
   hasParried: 0
   isParrying: 0
@@ -2705,10 +2705,8 @@ MonoBehaviour:
   playerMovement: {fileID: 0}
   hasRecievedDamage: 0
   playerRenderer: {fileID: 0}
-  originalMaterial: {fileID: 0}
-  newMaterial: {fileID: 0}
-  playerLifeManager: {fileID: 0}
-  PlayerHealthBar: {fileID: 0}
+  playerLifeManager: {fileID: 825952088}
+  PlayerHealthBar: {fileID: 825952089}
   enemyDamage: 0
   invincibilityDuration: 0
 --- !u!114 &825952088
@@ -2750,9 +2748,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0e6692cb6e501854fb9169c3556f93ba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speed: 7
-  rotationSpeed: 100
-  maxRiseSpeed: 1
+  speed: 10
+  rotationSpeed: 1
+  maxRiseSpeed: 0.5
   maxFallSpeed: 20
   playerRB: {fileID: 825952093}
   anim: {fileID: 1596739857}
@@ -2891,18 +2889,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCamera: {fileID: 963194227}
-  normalFOV: 0
-  adjustedFOV: 0
-  lerpSpeed: 0
-  pivot: {fileID: 0}
+  normalFOV: 9.9
+  adjustedFOV: 8.7
+  lerpSpeed: 5
+  pivot: {fileID: 191792320}
   lockRange: 10
   target: {fileID: 0}
   enemyLayer:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 128
   isLocked: 0
-  indicatorImage: {fileID: 0}
-  imageOffset: {x: 0, y: 0, z: 0}
+  indicatorImage: {fileID: 95575968}
+  imageOffset: {x: 0.11, y: 1.2, z: 0}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -3315,19 +3313,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f0f89e3d0dd2b8043afec63688cd47fc, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f0f89e3d0dd2b8043afec63688cd47fc, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f0f89e3d0dd2b8043afec63688cd47fc, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f0f89e3d0dd2b8043afec63688cd47fc, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f0f89e3d0dd2b8043afec63688cd47fc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -3335,7 +3333,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f0f89e3d0dd2b8043afec63688cd47fc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 90
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: f0f89e3d0dd2b8043afec63688cd47fc, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -9875,7 +9873,7 @@ Animator:
   m_Controller: {fileID: 9100000, guid: d9d8fc457e003ce40b306e5cedda5c47, type: 2}
   m_CullingMode: 0
   m_UpdateMode: 0
-  m_ApplyRootMotion: 0
+  m_ApplyRootMotion: 1
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_WarningMessage: 
@@ -10668,7 +10666,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1675802617
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10888,8 +10886,6 @@ MonoBehaviour:
   playerMovement: {fileID: 0}
   hasRecievedDamage: 0
   playerRenderer: {fileID: 0}
-  originalMaterial: {fileID: 0}
-  newMaterial: {fileID: 0}
   playerLifeManager: {fileID: 0}
   PlayerHealthBar: {fileID: 0}
   enemyDamage: 0
@@ -12088,7 +12084,7 @@ MonoBehaviour:
   enemyCombat: {fileID: 1980087370}
   animator: {fileID: 1994075574}
   agent: {fileID: 1980087359}
-  player: {fileID: 1675802622}
+  player: {fileID: 825952095}
   maxDistance: 3
   minDistance: 7
   attackRange: 3
@@ -13295,10 +13291,10 @@ SceneRoots:
   - {fileID: 705507995}
   - {fileID: 177888043}
   - {fileID: 191792320}
-  - {fileID: 1675802622}
   - {fileID: 1695100958}
   - {fileID: 504879734}
   - {fileID: 1350849406}
   - {fileID: 699501036}
   - {fileID: 1863281048}
+  - {fileID: 1675802622}
   - {fileID: 825952095}
