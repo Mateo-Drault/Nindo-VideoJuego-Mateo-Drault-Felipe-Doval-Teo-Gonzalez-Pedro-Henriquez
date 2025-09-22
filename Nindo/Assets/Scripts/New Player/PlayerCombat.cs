@@ -96,7 +96,7 @@ public class PlayerCombat : MonoBehaviour
         katanaCollider.enabled = false;
     }
 
-    public void StartAttaking()
+    public void StartAttacking()
     {
         katanaCollider.enabled = true;
         isAttacking = true;

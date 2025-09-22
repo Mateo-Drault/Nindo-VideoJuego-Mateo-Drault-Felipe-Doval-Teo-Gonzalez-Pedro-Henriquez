@@ -4,7 +4,23 @@ using UnityEngine;
 
 public class PlayerEventReciever : MonoBehaviour
 {
-    [SerializeField] PlayerCombat playerCombat;
+    public PlayerCombat playerCombat;
 
+    public void StartAttacking()
+    {
+        playerCombat.StartAttacking();
+    }
+    public void StopAttacking()
+    {
+        playerCombat.StopAttacking();
+    }
+    public void StartParry()
+    {
+        playerCombat.StartParry();
+    }
+    public void EndParry()
+    {
+        playerCombat.EndParry();
+    }
 
 }

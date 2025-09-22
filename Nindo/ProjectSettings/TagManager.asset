@@ -9,6 +9,7 @@ TagManager:
   - Parry
   - PlayerBody
   - IdleEnemySword
+  - PlayerSword
   layers:
   - Default
   - TransparentFX
