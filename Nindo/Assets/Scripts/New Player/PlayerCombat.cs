@@ -12,6 +12,8 @@ public class PlayerCombat : MonoBehaviour
     public enum ParryMode { Idle, Parry }
     public ParryMode currentMode = ParryMode.Idle;
 
+    [Header("PlayerParry")]
+
     [SerializeField] Animator anim;
     [SerializeField] private ParticleSystem chispas;
     [SerializeField] private float chispasDuration = 0.05f;
@@ -22,8 +24,8 @@ public class PlayerCombat : MonoBehaviour
     public bool hasParried;
     public bool isParrying;
 
-
-    //PlayerSwordAnimation cositas
+    
+    [Header("PlayerSwordAnimation")]
 
     public bool isAttacking;
     public bool isStunned;
@@ -90,24 +92,25 @@ public class PlayerCombat : MonoBehaviour
     {
         StartCoroutine(AttackDash());
     }
-    public void StopAttacking()
-    {
-        isAttacking = false;
-        katanaCollider.enabled = false;
-    }
-
     public void StartAttacking()
     {
         katanaCollider.enabled = true;
         isAttacking = true;
     }
 
+    public void StopAttacking()
+    {
+        katanaCollider.enabled = false;
+        isAttacking = false;
+    }
+
+
     public void InterrumptAttack()
     {
         if (isAttacking)
         {
-            anim.SetTrigger("stunned");
             anim.ResetTrigger("attack");
+            anim.SetTrigger("stunned");
             isAttacking = false;
             katanaCollider.enabled = false;
         }
@@ -144,7 +147,6 @@ public class PlayerCombat : MonoBehaviour
 
     public void StartParry()
     {
-
         gameObject.tag = "Parry";
         isParrying = true;
         katanaCollider.enabled = true;
@@ -154,7 +156,6 @@ public class PlayerCombat : MonoBehaviour
         gameObject.tag = "Idle";
         isParrying = false;
         katanaCollider.enabled = false;
-        anim.ResetTrigger("parry");
     }
     public void EndChispas()
     {
