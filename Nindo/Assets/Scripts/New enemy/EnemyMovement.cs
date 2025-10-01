@@ -38,7 +38,6 @@ public class EnemyMovement : MonoBehaviour
     {
 
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        Debug.Log(distanceToPlayer);
 
         //Chequear que no este golpeando asi se mueve
         AnimatorStateInfo animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);

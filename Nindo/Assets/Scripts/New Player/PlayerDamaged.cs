@@ -30,6 +30,8 @@ public class PlayerDamaged : MonoBehaviour
             playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
             Invoke("RestartInvincibility", invincibilityDuration);
             hasRecievedDamage = true;
+
+            Debug.Log(other);
         }
     }
 
