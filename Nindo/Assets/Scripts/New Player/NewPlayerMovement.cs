@@ -12,11 +12,6 @@ public class NewPlayerMovement : MonoBehaviour
     [SerializeField] private Animator anim;
     [SerializeField] private LockOnTarget lockOnTarget;
     private Vector3 forward, right;
-
-    [Header("Dash")]
-    [SerializeField] private float dashSpeed;
-    [SerializeField] private float dashTime;
-
     void Start()
     {
         forward = Camera.main.transform.forward;
@@ -55,23 +50,5 @@ public class NewPlayerMovement : MonoBehaviour
         Vector3 vel = playerRB.velocity;
         vel.y = Mathf.Clamp(vel.y, -maxFallSpeed, maxRiseSpeed);
         playerRB.velocity = vel;
-    }
-
-    private void Dash()
-    {
-        if (Input.GetKeyDown(KeyCode.X))
-        {
-            StartCoroutine(DoDash());
-        }
-
-        IEnumerator DoDash()
-        {
-            float startTime = Time.time;
-
-            while (Time.time < startTime + dashTime)
-            {
-                transform.position += direction * speed * Time.deltaTime;
-            }
-        }
     }
 }

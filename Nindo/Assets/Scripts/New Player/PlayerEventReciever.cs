@@ -14,7 +14,7 @@ public class PlayerEventReciever : MonoBehaviour
     public void StopAttacking()
     {
         playerCombat.StopAttacking();
-        gameObject.tag = "IdlePlayerSword";
+        gameObject.tag = "Idle";
     }
     public void StartParry()
     {
