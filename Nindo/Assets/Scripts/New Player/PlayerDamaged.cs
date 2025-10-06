@@ -9,6 +9,7 @@ public class PlayerDamaged : MonoBehaviour
     public float enemyDamage;
     public bool hasRecievedDamage = false;
     public float invincibilityDuration;
+    public GameObject owner;
 
     // Start is called before the first frame update
     void Start()
@@ -24,12 +25,13 @@ public class PlayerDamaged : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("EnemySword") && !hasRecievedDamage)
+        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody"))
         {
             playerLifeManager.actualHealth -= enemyDamage;
             playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
             Invoke("RestartInvincibility", invincibilityDuration);
             hasRecievedDamage = true;
+            
         }
     }
 

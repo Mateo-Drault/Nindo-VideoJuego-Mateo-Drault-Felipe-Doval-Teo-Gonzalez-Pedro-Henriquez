@@ -147,13 +147,13 @@ public class PlayerCombat : MonoBehaviour
 
     public void StartParry()
     {
-        gameObject.tag = "Parry";
+        gameObject.tag = "PlayerParry";
         isParrying = true;
         katanaCollider.enabled = true;
     }
     public void EndParry()
     {
-        gameObject.tag = "Idle";
+        gameObject.tag = "IdlePlayerSword";
         isParrying = false;
         katanaCollider.enabled = false;
     }

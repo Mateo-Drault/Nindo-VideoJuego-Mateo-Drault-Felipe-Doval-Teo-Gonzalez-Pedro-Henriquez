@@ -5,6 +5,7 @@ using UnityEngine;
 public class PlayerEventReciever : MonoBehaviour
 {
     public PlayerCombat playerCombat;
+
     //HACER QUE CAMBIE EL TAG
     public void StartAttacking()
     {
@@ -14,7 +15,7 @@ public class PlayerEventReciever : MonoBehaviour
     public void StopAttacking()
     {
         playerCombat.StopAttacking();
-        gameObject.tag = "Idle";
+        gameObject.tag = "IdlePlayerSword";
     }
     public void StartParry()
     {
