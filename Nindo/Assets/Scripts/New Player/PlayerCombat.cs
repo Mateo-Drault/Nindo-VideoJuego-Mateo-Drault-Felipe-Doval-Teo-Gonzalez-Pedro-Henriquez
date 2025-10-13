@@ -153,7 +153,6 @@ public class PlayerCombat : MonoBehaviour
     }
     public void EndParry()
     {
-        gameObject.tag = "IdlePlayerSword";
         isParrying = false;
         katanaCollider.enabled = false;
     }
