@@ -7,7 +7,6 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] MeshCollider katanaCollider;
     [SerializeField] PlayerDamaged playerDamaged;
 
-    public GameObject Katana;
     //PlayerParry cositas
 
     public enum ParryMode { Idle, Parry }
@@ -50,6 +49,8 @@ public class PlayerCombat : MonoBehaviour
         isAttacking = false;
        
         anim.ResetTrigger("parry");
+        chispas.Stop();
+
         isParrying = false;
         katanaCollider.enabled = false;
     }
@@ -61,7 +62,7 @@ public class PlayerCombat : MonoBehaviour
             SwordHit();
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        if (Input.GetKeyDown(KeyCode.E))
         {
             anim.SetTrigger("parry");
             StartParry();
@@ -93,15 +94,12 @@ public class PlayerCombat : MonoBehaviour
     }
     public void StartAttacking()
     {
-        Katana.tag = "PlayerSwordAttacking";
         katanaCollider.enabled = true;
         isAttacking = true;
-
     }
 
     public void StopAttacking()
     {
-        Katana.tag = "PlayerSword";
         katanaCollider.enabled = false;
         isAttacking = false;
     }
@@ -115,8 +113,6 @@ public class PlayerCombat : MonoBehaviour
             anim.SetTrigger("stunned");
             isAttacking = false;
             katanaCollider.enabled = false;
-            Katana.tag = "PlayerSword";
-
         }
     }
 
@@ -151,13 +147,12 @@ public class PlayerCombat : MonoBehaviour
 
     public void StartParry()
     {
-        Katana.tag = "PlayerSwordParry";
+        gameObject.tag = "PlayerParry";
         isParrying = true;
         katanaCollider.enabled = true;
     }
     public void EndParry()
     {
-        Katana.tag = "PlayerSword";
         isParrying = false;
         katanaCollider.enabled = false;
     }
