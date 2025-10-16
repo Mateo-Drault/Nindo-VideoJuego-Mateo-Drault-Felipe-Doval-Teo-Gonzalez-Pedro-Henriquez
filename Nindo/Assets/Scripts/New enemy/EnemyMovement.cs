@@ -13,10 +13,10 @@ public class EnemyMovement : MonoBehaviour
 
     //etc
     public Transform player;
-    private float distanceToPlayer;
+    public float distanceToPlayer;
     [SerializeField] private float maxDistance;
     [SerializeField] private float minDistance;
-    [SerializeField] private float attackRange;
+    [SerializeField] public float attackRange;
 
 
 
@@ -38,18 +38,16 @@ public class EnemyMovement : MonoBehaviour
     {
 
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        Debug.Log(distanceToPlayer);
-
         //Chequear que no este golpeando asi se mueve
         AnimatorStateInfo animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        if (animatorStateInfo.IsName("Attack") | animatorStateInfo.IsName("Attack 2") | animatorStateInfo.IsName("Attack 3"))
-        {
-            isAttackingGeneral = true;
-        } 
-        else
-        {
-            isAttackingGeneral = false;
-        }
+        //if (animatorStateInfo.IsName("Attack1") | animatorStateInfo.IsName("Attack2") | animatorStateInfo.IsName("Attack3"))
+        //{
+        //    isAttackingGeneral = true;
+        //} 
+        //else
+        //{
+        //    isAttackingGeneral = false;
+        //}
         //Recibiendo danio
         if (enemyBeingDamaged != null && enemyBeingDamaged.isStunned)
         {
@@ -62,42 +60,46 @@ public class EnemyMovement : MonoBehaviour
         {
             seen = true;
         }
+        if (!isAttacking)
+        {
+            //Atacar
+            if (distanceToPlayer <= attackRange && seen && !enemyCombat.isParrying)
+            {
+                Attack();
+            }
+            //Perseguir
+            else if (distanceToPlayer > maxDistance && seen && !enemyCombat.isParrying)
+            {
+                Chase();
+            }
+            //Idle
 
-        //Atacar
-        if (distanceToPlayer <= attackRange && seen && !enemyCombat.isParrying)
-        {
-            Attack();
+            else
+            {
+                Idle();
+            }
         }
-        //Perseguir
-        else if (distanceToPlayer > maxDistance && seen && !isAttackingGeneral && !enemyCombat.isParrying)
-        {
-            Chase();
-        }
-        //Idle
-        else
-        {
-            Idle();
-        }
-
     }
     void Attack()
     {
-        enemyCombat.Attack();
-        isAttacking = true;
         agent.isStopped = true;
+        animator.SetBool("isChasing", false);
+        enemyCombat.Attac();
+
     }
 
     void Chase()
     {
         agent.isStopped = false;
-
         agent.SetDestination(player.position);
+
+        // Girar suavemente hacia el jugador
         Vector3 directionToPlayer = (player.position - transform.position).normalized;
         directionToPlayer.y = 0;
-        Quaternion Target = Quaternion.LookRotation(directionToPlayer);
-        transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
+        Quaternion targetRotation = Quaternion.LookRotation(directionToPlayer);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, rotationSpeed * Time.deltaTime);
 
-        animator.ResetTrigger("attack");
+        // Animaciones de movimiento
         animator.SetBool("isChasing", true);
     }
 
@@ -105,8 +107,6 @@ public class EnemyMovement : MonoBehaviour
     {
         isAttacking = false;
         agent.isStopped = true;
-
-        animator.ResetTrigger("attack");
         animator.SetBool("isChasing", false);
     }
 }

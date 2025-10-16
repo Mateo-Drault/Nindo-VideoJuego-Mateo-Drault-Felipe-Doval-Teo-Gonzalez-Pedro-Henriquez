@@ -28,18 +28,7 @@ public class PlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
-        Vector3 direction = horizontalInput * right + verticalInput * forward;
-        if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Golpe"))
-        {
-            transform.position += direction * speed * Time.deltaTime;
-            if (!lockOnTarget.isLocked)
-            {
-                Quaternion Target = Quaternion.LookRotation(direction);
-                transform.rotation = Quaternion.Slerp(transform.rotation, Target, rotationSpeed * Time.deltaTime);
-            }
-        }
+
     }
     void FixedUpdate()
     {

@@ -1,6 +1,7 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 public class EnemyCombat : MonoBehaviour
 {
@@ -11,6 +12,10 @@ public class EnemyCombat : MonoBehaviour
     [SerializeField] private CapsuleCollider parryCollider;
     [SerializeField] private MeshCollider swordCollider;
     [SerializeField] private Animator animator;
+    [SerializeField] public Transform player;
+    [SerializeField] private EventReciever eventReciever;
+    [SerializeField] private NavMeshAgent agent;
+    public bool isAttackingAnimation = false;
 
 
     //Parry
@@ -59,24 +64,124 @@ public class EnemyCombat : MonoBehaviour
             currentMode = HitboxMode.Idle;
         }
     }
-
-    public void Attack() //atacar (llamado desde EnemyMovement)
+    public void Attac()
     {
-        animator.SetBool("isChasing", false);
-        animator.SetTrigger("attack");
+        if (!enemyMovement.isAttacking)
+            StartCoroutine(AttackCombo());
     }
-    public void StartAttack() //llamado desde la animacion (en el EventReciever)
+
+    private IEnumerator AttackCombo()
     {
+        enemyMovement.isAttacking = true;
+
+        for (int i = 1; i <= 3; i++)
+        {
+            // Girar hacia el jugador antes de atacar
+            yield return RotateTowardsPlayer();
+
+            //  Activar animación de golpe
+            string animName = "Attack" + i;
+            eventReciever.TriggerAttack(animName);
+
+            //  Esperar a que termine la animación del ataque actual
+            yield return WaitForAnimation(animName);
+            isAttackingAnimation = true;
+
+            eventReciever.ResetAttack(animName);
+
+            //  Después de terminar el ataque, recién ahí chequea si sigue en rango
+            float dist = Vector3.Distance(transform.position, player.position);
+            Vector3 toPlayer = (player.position - transform.position).normalized;
+            float angle = Vector3.Angle(transform.forward, toPlayer);
+
+            if (dist > enemyMovement.attackRange)
+                break;
+            else if (angle > 8f)
+                yield return RotateTowardsPlayer();
+        }
+
+
+    }
+
+    private IEnumerator RotateTowardsPlayer()
+    {
+        Vector3 dir = (player.position - transform.position);
+        dir.y = 0;
+        if (dir.sqrMagnitude < 0.001f) yield break;
+
+        Quaternion targetRotation = Quaternion.LookRotation(dir.normalized);
+
+        // Activar animación intermedia solo si hace falta
+        float angle = Quaternion.Angle(transform.rotation, targetRotation);
+        if (angle > 8f)
+        {
+            animator.SetTrigger("Turning"); // trigger de giro
+        }
+
+        // Girar hasta quedar orientado
+        while (Quaternion.Angle(transform.rotation, targetRotation) > 3f)
+        {
+            // Chequeo de distancia mientras gira
+            float dist = Vector3.Distance(transform.position, player.position);
+            if (dist > enemyMovement.attackRange)
+            {
+                // Interrumpe giro si el jugador se aleja
+                animator.ResetTrigger("Turning");
+                yield break;
+            }
+
+            transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, 6f * Time.deltaTime);
+            yield return null;
+        }
+
+        // Giro terminado
+        animator.ResetTrigger("Turning");
+    }
+
+    private IEnumerator WaitForAnimation(string animName)
+    {
+        // Espera a que la animación que disparaste realmente comience
+        AnimatorStateInfo state = eventReciever.animator.GetCurrentAnimatorStateInfo(0);
+        while (!state.IsName(animName))
+        {
+            yield return null;
+            state = eventReciever.animator.GetCurrentAnimatorStateInfo(0);
+        }
+
+        // Ahora la animación empezó, esperamos a que termine
+        while (state.normalizedTime < 1f)
+        {
+            yield return null;
+            state = eventReciever.animator.GetCurrentAnimatorStateInfo(0);
+        }
+    }
+
+
+
+
+
+
+
+
+
+public void StartAttack() //llamado desde la animacion (en el EventReciever)
+    {
+        agent.updateRotation = false;
         swordCollider.enabled = true;
     }
     public void StopAttack() //llamado desde la animacion (en el EventReciever)
     {
+        agent.updateRotation = true;
         swordCollider.enabled = false;
-        animator.ResetTrigger("attack");
+        animator.ResetTrigger("Attack1");
         enemyMovement.isAttacking = false;
     }
 
-
+    public void MidAttack()
+    {
+        swordCollider.enabled = false;
+        animator.SetTrigger("Turning");
+    }
 
     void TriggerParry()
     {
@@ -92,13 +197,13 @@ public class EnemyCombat : MonoBehaviour
     }
     public void StartParry() //llamado desde la animacion (en el EventReciever)
     {
-        Katana.tag = "Parry";
+        gameObject.tag = "Parry";
         isParrying = true;
         parryCollider.enabled = true;
     }
     public void EndParry() //llamado desde la animacion (en el EventReciever)
     {
-        Katana.tag = "EnemySword";
+        gameObject.tag = "Enemy";
         isParrying = false;
         parryCollider.enabled = false;
         animator.ResetTrigger("Parry");
@@ -106,7 +211,7 @@ public class EnemyCombat : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (currentMode == HitboxMode.Parry & other.CompareTag("Player")) //si el arma del jugador impacta con la espada al hacer parry:
+        if (currentMode == HitboxMode.Parry & other.CompareTag("PlayerSwordAttacking")) //si el arma del jugador impacta con la espada al hacer parry:
         {
             playerCombat.InterrumptAttack();
             chispas.Play();

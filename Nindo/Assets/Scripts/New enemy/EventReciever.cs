@@ -1,35 +1,41 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class EventReciever : MonoBehaviour
 {
     public EnemyCombat enemyCombat;
-    // Start is called before the first frame update
-    void Start()
-    {
+    [SerializeField] public Animator animator; // el Animator del Body
 
+    public void StartAttack() => enemyCombat.StartAttack();
+    public void StopAttack() => enemyCombat.StopAttack();
+    public void StartParry() => enemyCombat.StartParry();
+    public void EndParry() => enemyCombat.EndParry();
+
+
+    // 🔹 Llamadas desde EnemyCombat hacia el EventReciever (nuevo)
+    public void TriggerAttack(string animName)
+    {
+        animator.SetTrigger(animName);
+    }
+    public void ResetAttack(string animName)
+    {
+        animator.ResetTrigger(animName);
     }
 
-    // Update is called once per frame
-    void Update()
+    public void TriggerParry()
     {
+        animator.SetTrigger("Parry");
     }
+    public bool IsPlayingAttack()
+    {
+        AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
 
-    public void StartAttack()
-    {
-        enemyCombat.StartAttack();
+        // Devuelve true si la animación del layer 0 todavía no terminó
+        return state.normalizedTime < 1f && state.tagHash == Animator.StringToHash("Attack");
     }
-    public void StopAttack()
+    public void StopAttackAnimation() // llamado desde Animation Event
     {
-        enemyCombat.StopAttack();
-    }
-    public void StartParry() //llamado desde la animacion (en el EventReciever)
-    {
-        enemyCombat.StartParry();
-    }
-    public void EndParry() //llamado desde la animacion (en el EventReciever)
-    {
-        enemyCombat.EndParry();
+        enemyCombat.isAttackingAnimation = false;
     }
 }

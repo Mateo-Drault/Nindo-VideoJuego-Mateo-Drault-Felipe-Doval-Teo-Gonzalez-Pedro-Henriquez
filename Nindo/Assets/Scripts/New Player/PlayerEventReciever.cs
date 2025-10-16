@@ -10,12 +10,12 @@ public class PlayerEventReciever : MonoBehaviour
     public void StartAttacking()
     {
         playerCombat.StartAttacking();
-        gameObject.tag = "PlayerSword";
+        gameObject.tag = "PlayerSwordAttacking";
     }
     public void StopAttacking()
     {
         playerCombat.StopAttacking();
-        gameObject.tag = "IdlePlayerSword";
+        gameObject.tag = "PlayerSword";
     }
     public void StartParry()
     {

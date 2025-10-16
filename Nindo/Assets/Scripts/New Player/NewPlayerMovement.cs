@@ -27,6 +27,8 @@ public class NewPlayerMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Debug.Log($"Horizontal={Input.GetAxis("Horizontal")}, Vertical={Input.GetAxis("Vertical")}");
+
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
         Vector3 direction = horizontalInput * right + verticalInput * forward;
