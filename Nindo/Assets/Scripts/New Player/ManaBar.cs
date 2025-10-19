@@ -8,7 +8,7 @@ public class ManaBar : MonoBehaviour
 
     [SerializeField] Image manaBar;
     public const int maxMana = 100;
-    private float currentMana;
+    public float currentMana;
     private float regeneracionMana;
 
     private void Awake()
@@ -25,7 +25,7 @@ public class ManaBar : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.P))
         {
-            gastarMana(30);
+            gastarMana(10);
         }
     }
 

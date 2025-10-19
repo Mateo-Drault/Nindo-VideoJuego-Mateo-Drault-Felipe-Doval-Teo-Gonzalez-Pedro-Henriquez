@@ -30,12 +30,6 @@ public class PlayerCombat : MonoBehaviour
     public bool isAttacking;
     public bool isStunned;
 
-    [Header("Attack Movement")]
-    public float attackDashSpeed = 5f;//velocidad del dash
-    public float attackDashTime = 0.15f;//duración del dash en segundos
-    private bool isDashing = false;
-
-    [SerializeField] private PlayerMovement playerMovement; //ARREGLAR
 
 
 
@@ -49,8 +43,6 @@ public class PlayerCombat : MonoBehaviour
         isAttacking = false;
        
         anim.ResetTrigger("parry");
-        chispas.Stop();
-
         isParrying = false;
         katanaCollider.enabled = false;
     }
@@ -88,10 +80,7 @@ public class PlayerCombat : MonoBehaviour
             anim.SetTrigger("attack");
         }
     }
-    public void DoAttackDash()
-    {
-        StartCoroutine(AttackDash());
-    }
+
     public void StartAttacking()
     {
         katanaCollider.enabled = true;
@@ -116,22 +105,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    private IEnumerator AttackDash()
-    {
-        if (isDashing) yield break;//evita que se solapen dashes
 
-        isDashing = true;
-        float timer = 0f;
-
-        while (timer < attackDashTime)
-        {
-            transform.position += transform.forward * attackDashSpeed * Time.deltaTime; //ARREGLARRR
-            timer += Time.deltaTime;
-            yield return null;
-        }
-
-        isDashing = false;
-    }
     private void OnTriggerEnter(Collider other)
     {
 

@@ -11,7 +11,20 @@ public class NewPlayerMovement : MonoBehaviour
     [SerializeField] private Rigidbody playerRB;
     [SerializeField] private Animator anim;
     [SerializeField] private LockOnTarget lockOnTarget;
+    [SerializeField] private PlayerDash playerDash;
     private Vector3 forward, right;
+
+    public Vector3 MoveDirection
+    {
+        get
+        {
+            float horizontalInput = Input.GetAxis("Horizontal");
+            float verticalInput = Input.GetAxis("Vertical");
+            Vector3 direction = horizontalInput * right + verticalInput * forward;
+            return direction.normalized;
+        }
+    }
+
     void Start()
     {
         forward = Camera.main.transform.forward;
@@ -32,7 +45,7 @@ public class NewPlayerMovement : MonoBehaviour
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
         Vector3 direction = horizontalInput * right + verticalInput * forward;
-        if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Attacking") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Parrying"))
+        if (direction != Vector3.zero && !anim.GetCurrentAnimatorStateInfo(0).IsName("Stunned") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Attacking") && !anim.GetCurrentAnimatorStateInfo(0).IsName("Parrying") && !playerDash.isDashing)
         {
             anim.SetBool("isRunning", true);
             transform.position += direction * speed * Time.deltaTime;

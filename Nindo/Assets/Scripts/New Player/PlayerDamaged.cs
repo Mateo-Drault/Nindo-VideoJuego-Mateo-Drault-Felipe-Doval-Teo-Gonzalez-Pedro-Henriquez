@@ -25,7 +25,7 @@ public class PlayerDamaged : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody"))
+        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody") )
         {
             playerLifeManager.actualHealth -= enemyDamage;
             playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
