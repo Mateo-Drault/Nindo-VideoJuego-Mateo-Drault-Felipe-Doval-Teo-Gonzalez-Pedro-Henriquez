@@ -10,6 +10,8 @@ public class PlayerDash : MonoBehaviour
     [SerializeField] private NewPlayerMovement playerMovement;
     [SerializeField] private Rigidbody playerRB;
     private Vector3 dashVelocity;
+    [SerializeField] private Animator invisible;
+    [SerializeField] private Animator animator;
 
     [SerializeField] private ManaBar manaBar;
     [SerializeField] private MeshTrail trail;
@@ -27,6 +29,8 @@ public class PlayerDash : MonoBehaviour
         {
             trail.StartCoroutine(trail.ActivateTrail(trail.activeTime));
             DoAttackDash();
+            animator.SetTrigger("Dash");
+            invisible.SetTrigger("Dash");
         }
     }
 
