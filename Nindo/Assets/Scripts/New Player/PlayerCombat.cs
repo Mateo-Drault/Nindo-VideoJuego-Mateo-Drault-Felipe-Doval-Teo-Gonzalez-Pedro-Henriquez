@@ -6,6 +6,7 @@ public class PlayerCombat : MonoBehaviour
 {
     [SerializeField] MeshCollider katanaCollider;
     [SerializeField] PlayerDamaged playerDamaged;
+    [SerializeField] BoxCollider parryCollider;
 
     //PlayerParry cositas
 
@@ -56,8 +57,7 @@ public class PlayerCombat : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            anim.SetTrigger("parry");
-            StartParry();
+            ParryHit();
         }
 
         AnimatorStateInfo animatorStateInfo = anim.GetCurrentAnimatorStateInfo(0);
@@ -78,6 +78,13 @@ public class PlayerCombat : MonoBehaviour
         if (!anim.GetCurrentAnimatorStateInfo(0).IsName("Attacking"))//animación de ataque
         {
             anim.SetTrigger("attack");
+        }
+    }
+    public void ParryHit()
+    {
+        if (!anim.GetCurrentAnimatorStateInfo(0).IsName("Parrying"))//animación de ataque
+        {
+            anim.SetTrigger("parry");
         }
     }
 
@@ -116,6 +123,7 @@ public class PlayerCombat : MonoBehaviour
             chispas.Play();
             Invoke("EndChispas", chispasDuration);
             enemyCombat.InterruptAttack();
+            Debug.Log("PARRRRRRRY");
         }
     }
 
@@ -123,12 +131,15 @@ public class PlayerCombat : MonoBehaviour
     {
         gameObject.tag = "PlayerParry";
         isParrying = true;
-        katanaCollider.enabled = true;
+        parryCollider.enabled = true;
+        currentMode = ParryMode.Parry;
     }
     public void EndParry()
     {
         isParrying = false;
-        katanaCollider.enabled = false;
+        parryCollider.enabled = false;
+        currentMode = ParryMode.Idle;
+
     }
     public void EndChispas()
     {

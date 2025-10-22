@@ -217,7 +217,7 @@ public void StartAttack() //llamado desde la animacion (en el EventReciever)
             chispas.Play();
             Invoke("EndChispas", chispasDuration);
             animator.SetTrigger("HasParry"); //hacer el parry por el golpe
-
+            animator.SetBool("isStunned", false);
         }
     }
 

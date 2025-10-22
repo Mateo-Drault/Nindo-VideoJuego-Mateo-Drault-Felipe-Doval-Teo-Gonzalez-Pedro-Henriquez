@@ -65,7 +65,16 @@
                 isBeingDamaged = false;
             }
         }
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
+        {
+            safeTime -= Time.deltaTime;
+            if (safeTime <= 0)
+            {
+                animator.SetBool("isStunned", false);
+            }
         }
+
+    }
         void OnTriggerEnter(Collider other)
         {
         if (other.CompareTag("PlayerSwordAttacking") && !isBeingDamaged)

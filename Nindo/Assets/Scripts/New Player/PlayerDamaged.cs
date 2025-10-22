@@ -6,6 +6,8 @@ public class PlayerDamaged : MonoBehaviour
 {
     [SerializeField] PlayerLifeManager playerLifeManager;
     [SerializeField] PlayerHealthBar playerHealthBar;
+    [SerializeField] PlayerCombat playerCombat;
+
     public float enemyDamage;
     public bool hasRecievedDamage = false;
     public float invincibilityDuration;
@@ -25,7 +27,7 @@ public class PlayerDamaged : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody") )
+        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody") && !playerCombat.hasParried)
         {
             playerLifeManager.actualHealth -= enemyDamage;
             playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
