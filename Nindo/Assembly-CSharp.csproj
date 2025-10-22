@@ -8,7 +8,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProductVersion>10.0.20506</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
-    <RootNamespace></RootNamespace>
+    <RootNamespace>
+    </RootNamespace>
     <ProjectGuid>{C3EB545B-35F4-A923-FD3A-57C521D46EF8}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -60,6 +61,7 @@
   <ItemGroup>
     <Compile Include="Assets\Scripts\New enemy\EnemyMovement.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyAttack.cs" />
+    <Compile Include="Assets\Scripts\ScriptsBrushes\PrefabBrush.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextEventHandler.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexShakeA.cs" />
     <Compile Include="Assets\Scripts\New Player\PlayerDash.cs" />
@@ -897,6 +899,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Assets\Scripts\Brushes\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
