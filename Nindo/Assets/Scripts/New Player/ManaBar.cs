@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -9,8 +10,9 @@ public class ManaBar : MonoBehaviour
     [SerializeField] Image manaBar;
     public const int maxMana = 100;
     public float currentMana;
-    private float regeneracionMana;
-
+    [SerializeField] int regeneracionMana = 10;
+    [SerializeField] float delayRegeneracion = 2f;
+    [SerializeField] float realTime;
     private void Awake()
     {
         manaBar.fillAmount = maxMana;
@@ -23,9 +25,20 @@ public class ManaBar : MonoBehaviour
 
     private void Update()
     {
+        realTime += Time.deltaTime;
+
+        //Dash
         if (Input.GetKeyDown(KeyCode.P))
         {
             gastarMana(10);
+        }
+
+        //Corrobora si ya pasaron 2 segundos y que la suma entre el mana actual y el sumado no sea más del máximo
+        if(realTime >= delayRegeneracion && currentMana + regeneracionMana <= maxMana)
+        {
+            currentMana += regeneracionMana;
+            UpdateManaBar();
+            realTime = 0;
         }
     }
 
@@ -34,11 +47,11 @@ public class ManaBar : MonoBehaviour
         if (currentMana >= manaGastada)
         {
             currentMana -= manaGastada;
-            UpdateManaBar(currentMana, maxMana);
+            UpdateManaBar();
         }
     }
 
-    public void UpdateManaBar(float currentMana, float maxMana)
+    public void UpdateManaBar()
     {
         manaBar.fillAmount = currentMana / maxMana;
     }
