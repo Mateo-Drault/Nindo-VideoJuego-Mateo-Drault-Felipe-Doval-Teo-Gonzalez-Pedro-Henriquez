@@ -73,6 +73,7 @@
     <Compile Include="Assets\Scripts\Player\PlayerBeingDamaged.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\EnvMapAnimator.cs" />
     <Compile Include="Assets\Scripts\New Player\PlayerDamaged.cs" />
+    <Compile Include="Assets\Scripts\MeshTrail.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_A.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerParry.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01_UGUI.cs" />
@@ -102,7 +103,6 @@
     <Compile Include="Assets\Scripts\New Player\PlayerLifeManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_B.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyAnimatorManager.cs" />
-    <Compile Include="Assets\MeshTrail.cs" />
     <Compile Include="Assets\Scripts\New Player\PlayerAnimation.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\SkewTextExample.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\WarpTextExample.cs" />
