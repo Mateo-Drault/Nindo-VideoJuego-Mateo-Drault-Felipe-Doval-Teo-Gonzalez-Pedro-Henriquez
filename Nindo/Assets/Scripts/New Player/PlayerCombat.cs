@@ -7,7 +7,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] MeshCollider katanaCollider;
     [SerializeField] PlayerDamaged playerDamaged;
     [SerializeField] BoxCollider parryCollider;
-
+    [SerializeField] private GameObject sword;
     //PlayerParry cositas
 
     public enum ParryMode { Idle, Parry }
@@ -129,10 +129,11 @@ public class PlayerCombat : MonoBehaviour
 
     public void StartParry()
     {
-        gameObject.tag = "PlayerParry";
+        sword.tag = "PlayerParry";
         isParrying = true;
         parryCollider.enabled = true;
         currentMode = ParryMode.Parry;
+        Debug.Log("gola");
     }
     public void EndParry()
     {

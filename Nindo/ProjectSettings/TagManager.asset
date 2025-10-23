@@ -11,6 +11,7 @@ TagManager:
   - IdleEnemySword
   - PlayerSword
   - PlayerSwordAttacking
+  - PlayerParry
   layers:
   - Default
   - TransparentFX

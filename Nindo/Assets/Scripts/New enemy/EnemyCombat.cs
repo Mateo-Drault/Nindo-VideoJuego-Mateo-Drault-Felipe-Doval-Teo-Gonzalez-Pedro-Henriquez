@@ -21,6 +21,9 @@ public class EnemyCombat : MonoBehaviour
     //Parry
     [SerializeField] private float maxHitsBeforeParry;
     [SerializeField] private float actualHitsBeforeParry;
+    [SerializeField] private float posturaInicial;
+    [SerializeField] private float posturaActual;
+    [SerializeField] private PosturaScript posturaScript;
     public enum HitboxMode { Idle, Attack, Parry }
     public HitboxMode currentMode = HitboxMode.Idle;
     [SerializeField] public bool isParrying;
@@ -31,6 +34,7 @@ public class EnemyCombat : MonoBehaviour
 
     void Start()
     {
+        posturaActual = posturaInicial;
         actualHitsBeforeParry = maxHitsBeforeParry;
         swordCollider.enabled = false;
         currentMode = HitboxMode.Idle;
@@ -225,13 +229,25 @@ public void StartAttack() //llamado desde la animacion (en el EventReciever)
     {
         if (enemyMovement.isAttacking)
         {
-            animator.SetBool("isStunned", true);
-            animator.ResetTrigger("attack");
-            enemyMovement.isAttacking = false;
-            swordCollider.enabled = false;
-            //se resetea solo
-            enemyBeingDamaged.isStunned = true;
-            enemyBeingDamaged.stunTimer = enemyBeingDamaged.stunDuration;
+            if (posturaActual > 0)
+            {
+                swordCollider.enabled = false;
+                posturaActual -= 1;
+                posturaScript.UpdatePosturaBar(posturaInicial, posturaActual);
+            }
+            else
+            {
+                animator.SetBool("isStunned", true);
+                animator.ResetTrigger("attack");
+                enemyMovement.isAttacking = false;
+                enemyBeingDamaged.isStunned = true;
+                enemyBeingDamaged.stunTimer = enemyBeingDamaged.stunDuration;
+                //se resetea solo
+
+
+            }
+           
+
         }
     }
     public void EndChispas()
