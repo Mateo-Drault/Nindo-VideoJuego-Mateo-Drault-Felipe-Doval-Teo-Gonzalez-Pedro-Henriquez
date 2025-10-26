@@ -20,6 +20,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float chispasDuration = 0.05f;
     [SerializeField] private BoxCollider playerBodyCollider;
     [SerializeField] EnemyCombat enemyCombat;
+    [SerializeField] private KatanaParry katanaParry;
 
     [SerializeField] private float inmunityTime;
     public bool hasParried;
@@ -71,6 +72,18 @@ public class PlayerCombat : MonoBehaviour
         {
             currentMode = ParryMode.Idle;
         }
+        if (currentMode == ParryMode.Parry && katanaParry.katanaIsColliding && !playerDamaged.hasRecievedDamage && !hasParried)
+        {
+            parryCollider.enabled = false;
+            Invoke("EndInmunity", inmunityTime);
+            chispas.Play();
+            Invoke("EndChispas", chispasDuration);
+            enemyCombat.InterruptAttack(); //no tiene que ser directo hacia un enemigo en especifico
+        }
+        if (!anim.GetCurrentAnimatorStateInfo(0).IsName("Parrying")&& isParrying)//animación de ataque
+        {
+            hasParried = false;
+        }
     }
 
     public void SwordHit()
@@ -113,19 +126,6 @@ public class PlayerCombat : MonoBehaviour
     }
 
 
-    private void OnTriggerEnter(Collider other)
-    {
-
-        if (currentMode == ParryMode.Parry && other.CompareTag("EnemySword") && !playerDamaged.hasRecievedDamage)
-        {
-            hasParried = true;
-            Invoke("EndInmunity", inmunityTime);
-            chispas.Play();
-            Invoke("EndChispas", chispasDuration);
-            enemyCombat.InterruptAttack();
-            Debug.Log("PARRRRRRRY");
-        }
-    }
 
     public void StartParry()
     {
@@ -137,9 +137,12 @@ public class PlayerCombat : MonoBehaviour
     }
     public void EndParry()
     {
+        //hasParried = false;
         isParrying = false;
         parryCollider.enabled = false;
         currentMode = ParryMode.Idle;
+        Debug.Log("PARRRRRRRY");
+
 
     }
     public void EndChispas()

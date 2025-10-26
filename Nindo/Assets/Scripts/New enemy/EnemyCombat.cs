@@ -16,7 +16,7 @@ public class EnemyCombat : MonoBehaviour
     [SerializeField] private EventReciever eventReciever;
     [SerializeField] private NavMeshAgent agent;
     public bool isAttackingAnimation = false;
-
+    
 
     //Parry
     [SerializeField] private float maxHitsBeforeParry;
@@ -24,6 +24,7 @@ public class EnemyCombat : MonoBehaviour
     [SerializeField] private float posturaInicial;
     [SerializeField] private float posturaActual;
     [SerializeField] private PosturaScript posturaScript;
+
     public enum HitboxMode { Idle, Attack, Parry }
     public HitboxMode currentMode = HitboxMode.Idle;
     [SerializeField] public bool isParrying;
@@ -85,6 +86,7 @@ public class EnemyCombat : MonoBehaviour
 
             //  Activar animación de golpe
             string animName = "Attack" + i;
+
             eventReciever.TriggerAttack(animName);
 
             //  Esperar a que termine la animación del ataque actual
@@ -227,15 +229,16 @@ public void StartAttack() //llamado desde la animacion (en el EventReciever)
 
     public void InterruptAttack() //Lo llama la jugador al hacer parry
     {
-        if (enemyMovement.isAttacking)
+        if (enemyMovement.isAttacking && !playerCombat.hasParried)
         {
+            playerCombat.hasParried = true;
             if (posturaActual > 0)
             {
                 swordCollider.enabled = false;
                 posturaActual -= 1;
                 posturaScript.UpdatePosturaBar(posturaInicial, posturaActual);
             }
-            else
+            if (posturaActual <= 0)
             {
                 animator.SetBool("isStunned", true);
                 animator.ResetTrigger("attack");

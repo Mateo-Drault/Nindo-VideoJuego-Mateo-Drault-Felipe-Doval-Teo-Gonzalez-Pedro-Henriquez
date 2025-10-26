@@ -4,15 +4,24 @@ using UnityEngine;
 
 public class KatanaParry : MonoBehaviour
 {
-    // Start is called before the first frame update
-    void Start()
+    public bool katanaIsColliding { get; private set; }
+    private void OnTriggerEnter(Collider other)
     {
-        
+        // Detecta si tocó la espada del enemigo o el parry
+        if (other.CompareTag("EnemySword") || other.CompareTag("Parry"))
+        {
+            katanaIsColliding = true;
+            Debug.Log("Katana comenzó a colisionar con: " + other.name);
+        }
     }
 
-    // Update is called once per frame
-    void Update()
+    private void OnTriggerExit(Collider other)
     {
-        
+        // Cuando deja de tocarla, se apaga
+        if (other.CompareTag("EnemySword") || other.CompareTag("Parry"))
+        {
+            katanaIsColliding = false;
+            Debug.Log("Katana dejó de colisionar con: " + other.name);
+        }
     }
 }
