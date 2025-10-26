@@ -35,6 +35,7 @@ public class EnemyCombat : MonoBehaviour
 
     void Start()
     {
+        chispas.Clear();
         posturaActual = posturaInicial;
         actualHitsBeforeParry = maxHitsBeforeParry;
         swordCollider.enabled = false;
