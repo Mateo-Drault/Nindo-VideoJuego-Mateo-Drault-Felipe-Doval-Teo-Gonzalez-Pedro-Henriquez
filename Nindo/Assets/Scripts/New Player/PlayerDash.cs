@@ -25,7 +25,7 @@ public class PlayerDash : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyUp(KeyCode.LeftShift) & manaBar.currentMana >= 20) 
+        if (Input.GetKeyDown(KeyCode.LeftShift) & manaBar.currentMana >= 20) 
         {
             trail.StartCoroutine(trail.ActivateTrail(trail.activeTime));
             DoAttackDash();
