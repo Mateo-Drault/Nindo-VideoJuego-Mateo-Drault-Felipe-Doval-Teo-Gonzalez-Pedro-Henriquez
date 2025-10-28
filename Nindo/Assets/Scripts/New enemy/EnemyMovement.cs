@@ -58,7 +58,8 @@ public class EnemyMovement : MonoBehaviour
         //Lo vio
         if (!seen && distanceToPlayer <= minDistance)
         {
-            seen = true;
+            animator.SetTrigger("Spotted");
+            Invoke("Seen", 0.1f);
         }
         if (!isAttacking)
         {
@@ -80,6 +81,10 @@ public class EnemyMovement : MonoBehaviour
             }
         }
     }
+    void Seen()
+    {
+        seen = true;
+    }
     void Attack()
     {
         agent.isStopped = true;
@@ -90,8 +95,11 @@ public class EnemyMovement : MonoBehaviour
 
     void Chase()
     {
-        agent.isStopped = false;
-        agent.SetDestination(player.position);
+        if (!animator.GetCurrentAnimatorStateInfo(0).IsName("EnemySpotted"))
+        {
+            agent.isStopped = false;
+            agent.SetDestination(player.position);
+        }
 
         // Girar suavemente hacia el jugador
         Vector3 directionToPlayer = (player.position - transform.position).normalized;
