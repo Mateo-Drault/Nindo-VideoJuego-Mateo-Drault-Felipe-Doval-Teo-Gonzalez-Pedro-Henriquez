@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4513532, g: 0.50093925, b: 0.57282233, a: 1}
+  m_IndirectSpecularColor: {r: 0.4513535, g: 0.50094014, b: 0.5728231, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -10392,7 +10392,7 @@ VisualEffect:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1067352020}
   m_Enabled: 1
-  m_Asset: {fileID: 8926484042661614526, guid: 0281a452848f9b84697034cb7aa7af24, type: 3}
+  m_Asset: {fileID: 0}
   m_InitialEventName: OnPlay
   m_InitialEventNameOverriden: 0
   m_StartSeed: 0
@@ -11654,7 +11654,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10303, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 1fd70891532fbdc4ca247c8e923b7254, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -12076,7 +12076,7 @@ GameObject:
   - component: {fileID: 1517266963}
   - component: {fileID: 1517266962}
   - component: {fileID: 1517266967}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: LuchadorEmpty
   m_TagString: Untagged
   m_Icon: {fileID: 0}
