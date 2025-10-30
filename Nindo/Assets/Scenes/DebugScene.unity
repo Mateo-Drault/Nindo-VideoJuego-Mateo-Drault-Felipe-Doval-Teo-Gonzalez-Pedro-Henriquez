@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.4513535, g: 0.50094014, b: 0.5728231, a: 1}
+  m_IndirectSpecularColor: {r: 0.4513532, g: 0.50093925, b: 0.57282233, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -9192,23 +9192,23 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 7f368728ab282d148b4f71ef56018977, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.5
+      value: 2.6
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7f368728ab282d148b4f71ef56018977, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.5
+      value: 2.6
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7f368728ab282d148b4f71ef56018977, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.5
+      value: 2.6
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7f368728ab282d148b4f71ef56018977, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -23.675259
+      value: -23.73
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7f368728ab282d148b4f71ef56018977, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 18.048687
+      value: 18.3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 7f368728ab282d148b4f71ef56018977, type: 3}
       propertyPath: m_LocalPosition.z
