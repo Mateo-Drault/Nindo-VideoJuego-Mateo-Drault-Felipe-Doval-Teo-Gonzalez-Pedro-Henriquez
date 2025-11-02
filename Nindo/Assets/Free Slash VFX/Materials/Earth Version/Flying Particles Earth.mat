@@ -8,8 +8,9 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Flying Particles Earth
-  m_Shader: {fileID: -6465566751694194690, guid: 79658e3bd03538747b0982ae4b4039a5,
-    type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 79658e3bd03538747b0982ae4b4039a5, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _ALPHATEST_ON
   - _RECEIVE_SHADOWS_OFF
@@ -23,6 +24,7 @@ Material:
   disabledShaderPasses:
   - MOTIONVECTORS
   - SHADOWCASTER
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -114,7 +116,7 @@ Material:
     m_Floats:
     - _AddPrecomputedVelocity: 0
     - _AlphaClip: 1
-    - _AlphaToMask: 0
+    - _AlphaToMask: 1
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
