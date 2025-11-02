@@ -53,21 +53,20 @@ public class MainMenu : MonoBehaviour
     fadeImage.rectTransform.sizeDelta = nindoBackground.rectTransform.sizeDelta;
     fadeImage.GetComponent<RectTransform>().anchorMin = nindoBackground.rectTransform.anchorMin;
     fadeImage.GetComponent<RectTransform>().anchorMax = nindoBackground.rectTransform.anchorMax;
-    // Fade in de la nueva imagen
+    // Fade in de la nueva imagen, fade out del background actual y de los botones
     float t = 0f;
     while (t < fadeDuration)
         {
             t += Time.deltaTime;
             float alpha = t / fadeDuration; // de 0 a 1
             menuButtons.alpha = 1f - 5*alpha; // fade out de los botones
-            Title.alpha = alpha;
+            nindoBackground.color = new Color(1, 1, 1, 1f - alpha); // fade out del background actual
+            Title.alpha = alpha; // fade in del título
             fadeImage.color = new Color(1, 1, 1, alpha); // fade in de la nueva imagen
             yield return null;
         }
 
     // Lo termino
-    nindoBackground.sprite = nindoOpenEyes;
-    Destroy(fadeImage.gameObject);
     yield return new WaitForSeconds(1f); // esperar un poquito más antes de empezar el juego
     SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex + 1);
     }
