@@ -80,7 +80,10 @@
             F.SetActive(true);
             isFinishable = true;
         }
-
+        else 
+        {
+            F.SetActive(false);
+        }
     }
         void OnTriggerEnter(Collider other)
         {

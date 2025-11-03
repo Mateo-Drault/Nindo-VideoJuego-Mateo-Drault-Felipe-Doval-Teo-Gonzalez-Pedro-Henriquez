@@ -42,7 +42,7 @@ public class PlayerFinisher : MonoBehaviour
     {
         if (!isDashing)
             StartCoroutine(DashCoroutine(enemy));
-
+    
     Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
         slowMotionActive = false;
@@ -53,25 +53,35 @@ public class PlayerFinisher : MonoBehaviour
 
     private IEnumerator DashCoroutine(Transform enemy)
     {
+        BoxCollider playerCollider = GetComponent<BoxCollider>();
+        if (playerCollider != null) playerCollider.enabled = false;
         isDashing = true;
 
         Vector3 startPos = transform.position;
 
         // Dirección hacia atrás del enemigo
-        Vector3 direction = (transform.position - enemy.position).normalized;
+        Vector3 direction = (enemy.position - transform.position).normalized;
 
         // Posición objetivo justo detrás del enemigo
         Vector3 targetPos = enemy.position + direction * dashDistanceBehindEnemy;
-
+        targetPos.y = 0;
         float elapsed = 0f;
         while (elapsed < dashDuration)
         {
             transform.position = Vector3.Lerp(startPos, targetPos, elapsed / dashDuration);
-            elapsed += Time.deltaTime / Time.timeScale; // importante si hay slow motion
+            elapsed += Time.deltaTime / Time.timeScale;
             yield return null;
         }
 
         transform.position = targetPos;
         isDashing = false;
+        if (playerCollider != null) playerCollider.enabled = true;
     }
+    private void SpawnAfterimage()
+    {
+       // GameObject clone = Instantiate(afterimagePrefab, transform.position, transform.rotation);
+        // Podés destruirlo automáticamente después de un tiempo
+       // Destroy(clone, 0.5f);
+    }
+
 }
