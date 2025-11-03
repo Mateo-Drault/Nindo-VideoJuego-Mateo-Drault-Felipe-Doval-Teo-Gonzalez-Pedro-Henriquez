@@ -5,6 +5,8 @@ using UnityEngine;
 public class PlayerEventReciever : MonoBehaviour
 {
     public PlayerCombat playerCombat;
+    public PlayerFinisher playerFinisher;
+
 
     //HACER QUE CAMBIE EL TAG
     public void StartAttacking()
@@ -15,6 +17,10 @@ public class PlayerEventReciever : MonoBehaviour
     public void StopAttacking()
     {
         playerCombat.StopAttacking();
+    }
+    public void EndFinisher()
+    {
+        playerFinisher.DeactivateSlowMotion();
     }
 
 }

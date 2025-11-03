@@ -30,8 +30,10 @@
         //Script vida
         public float Health;
         public float maxHealthAmount;
+        public float finisherThreshold = 20f;
         [SerializeField] private float damageAmount; //se va a cambiar a la espada este valor
-
+        [SerializeField] private GameObject F;
+        public bool isFinishable;
 
 
         //Parry
@@ -73,6 +75,11 @@
                 animator.SetBool("isStunned", false);
             }
         }
+        if (Health<= finisherThreshold) 
+        {
+            F.SetActive(true);
+            isFinishable = true;
+        }
 
     }
         void OnTriggerEnter(Collider other)
@@ -96,7 +103,7 @@
             }
 
         }
-    void Death()
+    public void Death()
         {
             Destroy(enemyEntity);
         }
