@@ -25,18 +25,24 @@ public class PlayerDamaged : MonoBehaviour
         
     }
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody") && !playerCombat.hasParried)
-        {
-            playerLifeManager.actualHealth -= enemyDamage;
-            playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
-            Invoke("RestartInvincibility", invincibilityDuration);
-            hasRecievedDamage = true;
+//    private void OnTriggerEnter(Collider other)
+//  {
+//        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody") && !playerCombat.hasParried)
+//        {
+//            playerLifeManager.actualHealth -= enemyDamage;
+//            playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+//            Invoke("RestartInvincibility", invincibilityDuration);
+//            hasRecievedDamage = true;
             
-        }
+//        }
+//    }
+    public void TakeDamage()
+    {
+        playerLifeManager.actualHealth -= enemyDamage;
+        playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+        Invoke("RestartInvincibility", invincibilityDuration);
+        hasRecievedDamage = true;
     }
-
     void RestartInvincibility()
     {
         hasRecievedDamage = false;

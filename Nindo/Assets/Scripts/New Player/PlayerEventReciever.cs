@@ -16,15 +16,5 @@ public class PlayerEventReciever : MonoBehaviour
     {
         playerCombat.StopAttacking();
     }
-    public void StartParry()
-    {
-        playerCombat.StartParry();
-        gameObject.tag = "PlayerParry";
-
-    }
-    public void EndParry()
-    {
-        playerCombat.EndParry();
-    }
 
 }

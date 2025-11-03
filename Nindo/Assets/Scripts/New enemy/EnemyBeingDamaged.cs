@@ -77,21 +77,13 @@
     }
         void OnTriggerEnter(Collider other)
         {
-        if (other.CompareTag("PlayerSwordAttacking") && !isBeingDamaged)
+        if (other.CompareTag("PlayerSword") && !isBeingDamaged)
             {           
                 //Animaciones
                 stunTimer = stunDuration;
                 animator.SetBool("isStunned", true);
                 isStunned = true;
                 parryHit = true;
-
-                //Knockback: libo temporal
-                //rb.velocity = Vector3.zero;
-                //Vector3 knockback = (transform.position - playerTransform.position).normalized;
-                //knockback.y = 0f;
-                //rb.AddForce(knockback * knockbackForce, ForceMode.Impulse);
-
-                //Sacar vida y eliminar en caso de tener 0
                 isBeingDamaged = true;
                 Health -= damageAmount;
                     if (Health <= 0)
