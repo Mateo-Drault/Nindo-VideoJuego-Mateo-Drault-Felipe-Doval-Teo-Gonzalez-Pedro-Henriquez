@@ -17,6 +17,9 @@ public class PlayerFinisher : MonoBehaviour
     private bool isDashing = false;
     public Transform Kaito;
 
+    public VisualEffect hit;
+    public VisualEffect slash;
+
 
     public VisualEffect vfx1;
 
@@ -50,7 +53,9 @@ public class PlayerFinisher : MonoBehaviour
     {
         if (!isDashing)
             StartCoroutine(DashCoroutine(enemy));
-    
+
+        hit.Play();
+        slash.Play();
     Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
         slowMotionActive = false;

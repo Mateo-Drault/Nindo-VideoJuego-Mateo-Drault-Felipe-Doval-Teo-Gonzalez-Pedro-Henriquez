@@ -82,10 +82,10 @@ MonoBehaviour:
   - title: Sombra Central
     position:
       serializedVersion: 2
-      x: 3927
-      y: -123
+      x: 3806
+      y: -336
       width: 474
-      height: 2175
+      height: 2156
     contents:
     - model: {fileID: 8926484042661615129}
       id: 0
@@ -170,9 +170,9 @@ MonoBehaviour:
   uiBounds:
     serializedVersion: 2
     x: -56
-    y: -270
+    y: -336
     width: 5070
-    height: 2433
+    height: 2499
 --- !u!114 &114350483966674976
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -1056,7 +1056,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.16
+      m_SerializableObject: 0.41
     m_Space: 2147483647
   m_Property:
     name: Lifetime
@@ -3147,7 +3147,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.16
+      m_SerializableObject: 0.41
     m_Space: 2147483647
   m_Property:
     name: Lifetime
@@ -5437,7 +5437,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.16
+      m_SerializableObject: 0.41
     m_Space: 2147483647
   m_Property:
     name: Lifetime
@@ -8116,7 +8116,7 @@ MonoBehaviour:
   m_Parent: {fileID: 114350483966674976}
   m_Children:
   - {fileID: 8926484042661615131}
-  m_UIPosition: {x: 3952, y: -64}
+  m_UIPosition: {x: 3831, y: -277}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots: []
@@ -8299,7 +8299,7 @@ MonoBehaviour:
   m_UIIgnoredErrors: []
   m_Parent: {fileID: 114350483966674976}
   m_Children: []
-  m_UIPosition: {x: 3952, y: 689}
+  m_UIPosition: {x: 3831, y: 476}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots: []
@@ -8336,7 +8336,7 @@ MonoBehaviour:
   m_Children:
   - {fileID: 8926484042661615152}
   - {fileID: 8926484042661615155}
-  m_UIPosition: {x: 3952, y: 241}
+  m_UIPosition: {x: 3831, y: 28}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
@@ -8878,7 +8878,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.16
+      m_SerializableObject: 0.41
     m_Space: 2147483647
   m_Property:
     name: Lifetime
@@ -9142,7 +9142,7 @@ MonoBehaviour:
   - {fileID: 8926484042661615191}
   - {fileID: 8926484042661615197}
   - {fileID: 8926484042661615203}
-  m_UIPosition: {x: 3952, y: 841}
+  m_UIPosition: {x: 3831, y: 628}
   m_UICollapsed: 0
   m_UISuperCollapsed: 0
   m_InputSlots:
@@ -11175,7 +11175,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.16
+      m_SerializableObject: 0.41
     m_Space: 2147483647
   m_Property:
     name: Lifetime
@@ -14492,7 +14492,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.16
+      m_SerializableObject: 0.41
     m_Space: 2147483647
   m_Property:
     name: Lifetime
@@ -16931,7 +16931,7 @@ MonoBehaviour:
       m_Type:
         m_SerializableType: System.Single, mscorlib, Version=4.0.0.0, Culture=neutral,
           PublicKeyToken=b77a5c561934e089
-      m_SerializableObject: 0.16
+      m_SerializableObject: 0.41
     m_Space: 2147483647
   m_Property:
     name: Lifetime

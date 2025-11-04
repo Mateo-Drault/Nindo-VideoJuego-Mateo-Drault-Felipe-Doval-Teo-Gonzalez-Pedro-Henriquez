@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.VFX;
 public class PlayerCombat : MonoBehaviour
 {
     [Header("Referencias")]
@@ -31,6 +31,7 @@ public class PlayerCombat : MonoBehaviour
     public bool hasParried = false;
     public bool isAttacking = false;
 
+    public VisualEffect parryEffect;
     void Start()
     {
         isAttacking = false;
@@ -132,6 +133,7 @@ public class PlayerCombat : MonoBehaviour
 
     void SuccessfulParry()
     {
+        parryEffect.Play();
         hasParried = true;
         StartPushBack();
         chispas.Play();

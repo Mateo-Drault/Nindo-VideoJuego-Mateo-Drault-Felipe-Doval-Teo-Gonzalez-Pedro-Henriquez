@@ -131,7 +131,7 @@ public class EnemyCombat : MonoBehaviour
     }
     void StunEnemy()
     {
-        animator.SetTrigger("Stunned");
+        animator.SetTrigger("stunned");
         Debug.Log("Enemigo aturdido!");
         posturaActual = posturaInicial;
         posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
