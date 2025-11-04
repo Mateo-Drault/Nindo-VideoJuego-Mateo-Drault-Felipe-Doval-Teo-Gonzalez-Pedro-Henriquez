@@ -1,7 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-
+using UnityEngine.VFX;
 public class PlayerFinisher : MonoBehaviour
 {
     [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
@@ -15,6 +15,10 @@ public class PlayerFinisher : MonoBehaviour
     public float dashDistanceBehindEnemy = 2f; // distancia atrás del enemigo
     public float dashDuration = 0.05f; // duración muy corta para que sea casi instantáneo
     private bool isDashing = false;
+    public Transform Kaito;
+
+
+    public VisualEffect vfx1;
 
     // Start is called before the first frame update
     void Start()
@@ -30,6 +34,10 @@ public class PlayerFinisher : MonoBehaviour
             
             ActivateSlowMotion();
             animator.SetTrigger("Finish");
+        }
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            SpawnDashVFX();
         }
     }
     public void ActivateSlowMotion()
@@ -77,11 +85,19 @@ public class PlayerFinisher : MonoBehaviour
         isDashing = false;
         if (playerCollider != null) playerCollider.enabled = true;
     }
-    private void SpawnAfterimage()
+    public void SpawnDashVFX()
     {
-       // GameObject clone = Instantiate(afterimagePrefab, transform.position, transform.rotation);
-        // Podés destruirlo automáticamente después de un tiempo
-       // Destroy(clone, 0.5f);
+       // Instanciar con la rotación del jugador + un offset fijo
+    Quaternion rotationOffset = Quaternion.Euler(0f, -180f, 0f); // ejemplo: rotar 90° en Y
+    VisualEffect vfxInstance = Instantiate(vfx1, Kaito.position, Kaito.rotation * rotationOffset);
+
+    // Offset local (atrás del jugador)
+    Vector3 localOffset = new Vector3(-5.6400f, 0.6799f, -1.388f);
+    vfxInstance.transform.position += Kaito.TransformDirection(localOffset);
+
+    // Reproducir el efecto
+    vfxInstance.Play();
+    Destroy(vfxInstance.gameObject, 2f);
     }
 
 }

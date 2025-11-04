@@ -22,5 +22,9 @@ public class PlayerEventReciever : MonoBehaviour
     {
         playerFinisher.DeactivateSlowMotion();
     }
+    public void Fbx1()
+    {
+        playerFinisher.SpawnDashVFX();
+    }
 
 }
