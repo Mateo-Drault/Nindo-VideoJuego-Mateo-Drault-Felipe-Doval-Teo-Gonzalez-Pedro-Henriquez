@@ -26,5 +26,12 @@ public class PlayerEventReciever : MonoBehaviour
     {
         playerFinisher.SpawnDashVFX();
     }
-
+    public void EnableComboWindow()
+    {
+        playerCombat.EnableComboWindow();
+    }
+    public void DisableComboWindow()
+    {
+        playerCombat.DisableComboWindow();
+    }
 }

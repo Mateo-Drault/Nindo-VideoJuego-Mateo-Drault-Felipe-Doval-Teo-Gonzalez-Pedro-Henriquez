@@ -102,15 +102,13 @@ public class EnemyCombat : MonoBehaviour
 
         if (dist <= attackRange && angle <= attackAngle)
         {
-            Debug.Log("💥 Golpe válido, llamando a OnHitByEnemy()");
             hasDealtDamage = true; // pego
             playerCombat.OnHitByEnemy();
         }
     }
     public void InterruptAttack() //Lo llama la jugador al hacer parry
     {
-        if (isAttacking)
-        {
+
             isAttacking = false;
 
             // Resetea triggers de animación de ataques
@@ -127,11 +125,10 @@ public class EnemyCombat : MonoBehaviour
             }
 
             Debug.Log("Ataque interrumpido por parry!");
-        }
     }
     void StunEnemy()
     {
-        animator.SetTrigger("stunned");
+        animator.SetBool("isStunned", true);
         Debug.Log("Enemigo aturdido!");
         posturaActual = posturaInicial;
         posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);

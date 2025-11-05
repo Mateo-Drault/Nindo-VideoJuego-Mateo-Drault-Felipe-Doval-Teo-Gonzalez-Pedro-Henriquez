@@ -27,9 +27,11 @@ public class PlayerCombat : MonoBehaviour
     private bool parryPushingBack = false;
     private float parryPushTime = 0f;
 
-    private bool parryActive = false;   // Ventana activa
+    public bool parryActive = false;   // Ventana activa
     public bool hasParried = false;
     public bool isAttacking = false;
+    public bool canCombo;
+    private float comboStep = 0;
 
     public VisualEffect parryEffect;
     void Start()
@@ -80,6 +82,10 @@ public class PlayerCombat : MonoBehaviour
             anim.SetTrigger("attack");
             Invoke(nameof(StartPush), 0.2f);
         }
+        else if (canCombo)
+        {
+            ContinueCombo();
+        }
     }
 
     void StartPush()
@@ -92,12 +98,15 @@ public class PlayerCombat : MonoBehaviour
     {
         katanaCollider.enabled = true;
         isAttacking = true;
+        comboStep = 1; //se puede hacer combo
+
     }
 
     public void StopAttacking()    // llamado desde la animación
     {
         katanaCollider.enabled = false;
         isAttacking = false;
+        comboStep = 0; //no hay combo
     }
     // ------------------parry------------------
     void TryParry()
@@ -121,7 +130,7 @@ public class PlayerCombat : MonoBehaviour
     public void OnHitByEnemy()
     {
         Debug.Log("golpe");
-        if (parryActive && !hasParried)
+        if (parryActive)
         {
             SuccessfulParry();
         }
@@ -133,16 +142,28 @@ public class PlayerCombat : MonoBehaviour
 
     void SuccessfulParry()
     {
+
+        anim.SetTrigger("succesfulParry");
         parryEffect.Play();
         hasParried = true;
         StartPushBack();
         chispas.Play();
         Invoke(nameof(EndChispas), chispasDuration);
         Invoke(nameof(EndInmunity), inmunityTime);
+        StartCoroutine(HitStop(0.055f)); // pausar 0.05 segundos
 
         // Interrumpir ataque enemigo
         enemyCombat.InterruptAttack();
+
     }
+    IEnumerator HitStop(float duration)
+    {
+        float originalTimeScale = Time.timeScale;
+        Time.timeScale = 0f; // pausa total
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = originalTimeScale;
+    }
+
 
     void StartPushBack()
     {
@@ -171,4 +192,30 @@ public class PlayerCombat : MonoBehaviour
             katanaCollider.enabled = false;
         }
     }
+
+    public void ContinueCombo() 
+    {
+        canCombo = false; // evita spamear
+        comboStep++;
+
+        if (comboStep == 2)
+        {
+            anim.SetTrigger("Attack2");
+
+        }
+        else if (comboStep == 3)
+        {
+            anim.SetTrigger("Attack3");
+        }
+    }
+    public void EnableComboWindow()
+    {
+        canCombo = true;
+    }
+    public void DisableComboWindow()
+    {
+        canCombo = false;
+    }
+
+
 }

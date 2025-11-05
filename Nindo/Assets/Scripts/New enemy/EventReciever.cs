@@ -24,4 +24,5 @@ public class EventReciever : MonoBehaviour
         enemyCombat.isAttacking = false;
         enemyCombat.hasDealtDamage = false;
     }
+
 }
