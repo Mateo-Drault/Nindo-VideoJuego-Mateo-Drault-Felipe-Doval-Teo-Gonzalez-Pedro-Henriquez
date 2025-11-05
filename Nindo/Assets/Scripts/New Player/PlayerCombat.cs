@@ -99,7 +99,6 @@ public class PlayerCombat : MonoBehaviour
         katanaCollider.enabled = true;
         isAttacking = true;
         comboStep = 1; //se puede hacer combo
-
     }
 
     public void StopAttacking()    // llamado desde la animación
@@ -201,10 +200,13 @@ public class PlayerCombat : MonoBehaviour
         if (comboStep == 2)
         {
             anim.SetTrigger("Attack2");
+            anim.ResetTrigger("attack");
 
         }
         else if (comboStep == 3)
         {
+            anim.ResetTrigger("Attack2");
+            anim.ResetTrigger("attack");
             anim.SetTrigger("Attack3");
         }
     }
