@@ -45,7 +45,6 @@ public class PlayerCombat : MonoBehaviour
         //Se chequea si esta tocando algun boton de combate
         if (Input.GetKeyDown(KeyCode.Space))
         {
-
             SwordHit();
         }
 

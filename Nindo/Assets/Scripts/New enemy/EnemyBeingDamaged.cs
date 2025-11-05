@@ -61,6 +61,7 @@ using System.Collections;
                 {
                     animator.SetBool("isStunned", false);
                     isStunned = false;
+                    //Agregar partículas o algún tipo de vfx
 
                 }
             }
@@ -89,7 +90,6 @@ using System.Collections;
             safeTime -= Time.deltaTime;
             if (safeTime <= 0)
             {
-
                 isBeingDamaged = false;
                 safeTime = 0.5f;
             }
@@ -117,7 +117,8 @@ using System.Collections;
 
         }
     public void Death()
-        {
-            Destroy(enemyEntity);
-        }
+    {
+        Destroy(enemyEntity);
+        //Agregar partículas o algún tipo de vfx
     }
+}
