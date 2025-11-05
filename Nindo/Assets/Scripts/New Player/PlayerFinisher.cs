@@ -15,7 +15,7 @@ public class PlayerFinisher : MonoBehaviour
     public float dashDistanceBehindEnemy = 2f; // distancia atrás del enemigo
     public float dashDuration = 0.05f; // duración muy corta para que sea casi instantáneo
     private bool isDashing = false;
-    public Transform Kaito;
+    public Transform KaitoTr;
 
     public VisualEffect hit;
     public VisualEffect slash;
@@ -77,7 +77,7 @@ public class PlayerFinisher : MonoBehaviour
 
         // Posición objetivo justo detrás del enemigo
         Vector3 targetPos = enemy.position + direction * dashDistanceBehindEnemy;
-        targetPos.y = 0;
+        targetPos.y = startPos.y;
         float elapsed = 0f;
         while (elapsed < dashDuration)
         {
@@ -94,11 +94,11 @@ public class PlayerFinisher : MonoBehaviour
     {
        // Instanciar con la rotación del jugador + un offset fijo
     Quaternion rotationOffset = Quaternion.Euler(0f, -180f, 0f); // ejemplo: rotar 90° en Y
-    VisualEffect vfxInstance = Instantiate(vfx1, Kaito.position, Kaito.rotation * rotationOffset);
+    VisualEffect vfxInstance = Instantiate(vfx1, KaitoTr.position, KaitoTr.rotation * rotationOffset);
 
     // Offset local (atrás del jugador)
     Vector3 localOffset = new Vector3(-5.6400f, 0.6799f, -1.388f);
-    vfxInstance.transform.position += Kaito.TransformDirection(localOffset);
+    vfxInstance.transform.position += KaitoTr.TransformDirection(localOffset);
 
     // Reproducir el efecto
     vfxInstance.Play();

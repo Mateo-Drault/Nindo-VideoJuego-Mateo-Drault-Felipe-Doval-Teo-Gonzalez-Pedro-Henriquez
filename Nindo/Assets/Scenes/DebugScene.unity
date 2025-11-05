@@ -20,11 +20,11 @@ RenderSettings:
   m_FogDensity: 0.01
   m_LinearFogStart: 0
   m_LinearFogEnd: 300
-  m_AmbientSkyColor: {r: 0.9528302, g: 0.25807667, b: 0.0059925243, a: 1}
-  m_AmbientEquatorColor: {r: 0.2924528, g: 0.24646966, b: 0.24187134, a: 1}
+  m_AmbientSkyColor: {r: 0.5471698, g: 0.5137734, b: 0.44220954, a: 1}
+  m_AmbientEquatorColor: {r: 1, g: 1, b: 1, a: 1}
   m_AmbientGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_AmbientIntensity: 1
-  m_AmbientMode: 1
+  m_AmbientMode: 3
   m_SubtractiveShadowColor: {r: 0.38892838, g: 0.43104365, b: 0.5377358, a: 1}
   m_SkyboxMaterial: {fileID: 2100000, guid: 1c606775929ed25459459c78064348b9, type: 2}
   m_HaloStrength: 0.587
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.7528441, g: 0.7815121, b: 0.8256766, a: 1}
+  m_IndirectSpecularColor: {r: 0.7528441, g: 0.78151214, b: 0.82567656, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -10327,7 +10327,7 @@ MonoBehaviour:
   animator: {fileID: 991265656}
   dashDistanceBehindEnemy: 5
   dashDuration: 0.05
-  Kaito: {fileID: 991265654}
+  KaitoTr: {fileID: 991265654}
   hit: {fileID: 1568403919}
   slash: {fileID: 1569438306}
   vfx1: {fileID: 1854930521148548481, guid: 3692505bd40766e468e6e1e8394fc5cd, type: 3}
@@ -13016,7 +13016,7 @@ Rigidbody:
     m_Bits: 0
   m_ImplicitCom: 1
   m_ImplicitTensor: 1
-  m_UseGravity: 1
+  m_UseGravity: 0
   m_IsKinematic: 0
   m_Interpolate: 0
   m_Constraints: 0
