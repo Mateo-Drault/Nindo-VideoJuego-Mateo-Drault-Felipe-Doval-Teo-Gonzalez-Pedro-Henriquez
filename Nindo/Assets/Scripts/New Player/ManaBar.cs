@@ -10,7 +10,7 @@ public class ManaBar : MonoBehaviour
     [SerializeField] Image manaBar;
     public const int maxMana = 100;
     public float currentMana;
-    [SerializeField] int regeneracionMana = 10;
+    [SerializeField] int regeneracionMana = 5;
     [SerializeField] float delayRegeneracion = 2f;
     [SerializeField] float realTime;
     private void Awake()
@@ -33,10 +33,11 @@ public class ManaBar : MonoBehaviour
             gastarMana(10);
         }
 
-        //Corrobora si ya pasaron 2 segundos y que la suma entre el mana actual y el sumado no sea más del máximo
-        if(realTime >= delayRegeneracion && currentMana + regeneracionMana <= maxMana)
+        //El maná aumenta 5f por segundo, pero está en constante aumento.
+        if(currentMana <= maxMana)
         {
-            currentMana += regeneracionMana;
+            currentMana += regeneracionMana * Time.deltaTime;
+            currentMana = Math.Min(currentMana, maxMana);
             UpdateManaBar();
             realTime = 0;
         }

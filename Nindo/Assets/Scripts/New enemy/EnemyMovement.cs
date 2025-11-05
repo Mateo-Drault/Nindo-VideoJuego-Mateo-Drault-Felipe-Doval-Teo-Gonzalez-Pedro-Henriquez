@@ -9,6 +9,7 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
     [SerializeField] private EnemyCombat enemyCombat;
     [SerializeField] private Animator animator;
+    [SerializeField] private Animator ExclamationMarkAnimator;
     [SerializeField] private NavMeshAgent agent;
 
     //etc
@@ -17,8 +18,10 @@ public class EnemyMovement : MonoBehaviour
     [SerializeField] private float maxDistance;
     [SerializeField] private float minDistance;
     [SerializeField] public float attackRange;
+    [SerializeField] private GameObject exclamationMark;
     public bool canAttack;
-
+    float segundos = 0f;
+    [SerializeField] float tiempoDeAnimacionExclamation;
 
 
     public bool seen;
@@ -36,12 +39,20 @@ public class EnemyMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        segundos += Time.deltaTime;
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
         if (!seen && distanceToPlayer <= minDistance)
         {
             animator.SetTrigger("Spotted");
             Invoke(nameof(Seen), 0.1f);
+            exclamationMark.SetActive(true);
+            ExclamationMarkAnimator.SetTrigger("EnemySpottedSignoExclamacion");
+            segundos = 0.0f;
+        }
+        
+        if (exclamationMark.activeInHierarchy && segundos >= tiempoDeAnimacionExclamation)
+        {
+            exclamationMark.SetActive(false);
         }
 
         // Si está aturdido o atacando, no hacer movimiento
