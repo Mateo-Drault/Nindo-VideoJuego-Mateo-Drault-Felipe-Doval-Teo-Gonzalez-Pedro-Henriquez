@@ -1,4 +1,4 @@
-    using System.Collections;
+using System.Collections;
     using System.Collections.Generic;
     using UnityEngine;
 
@@ -13,17 +13,21 @@
         [SerializeField] Animator animator;
         [SerializeField] private GameObject enemyEntity;
         [SerializeField] private bool isBeingDamaged;
-        [SerializeField] private float safeTime;
+        [SerializeField] private float parriedTime;
+        [SerializeField] private float parriedDuration;
 
-        //knockback
-        [SerializeField] private float knockbackForce;
+
+    //knockback
+    [SerializeField] private float knockbackForce;
         [SerializeField] private float knockbackDuration;
 
 
         //animaciones
         [SerializeField] public float stunDuration;
         [SerializeField] public float stunTimer;
-        public bool isStunned = false;
+        [SerializeField] public float safeTime; // no recibir muchos ataques en uno
+        
+    public bool isStunned = false;
         public bool superArmor = false; //no puede recibir mas stun
 
 
@@ -42,6 +46,7 @@
  
             void Start()
         {
+            parriedTime = parriedDuration;
             Health = maxHealthAmount;
             healthScript.UpdateHealthBar(maxHealthAmount, Health);
         }
@@ -59,19 +64,13 @@
 
                 }
             }
-        if (isBeingDamaged) 
-        {
-            safeTime -= Time.deltaTime;
-            if (safeTime <= 0)
-            {
-                isBeingDamaged = false;
-            }
-        }
+
         if (animator.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
         {
-            safeTime -= Time.deltaTime;
-            if (safeTime <= 0)
+            parriedTime -= Time.deltaTime;
+            if (parriedTime <= 0)
             {
+                parriedTime=parriedDuration;
                 animator.SetBool("isStunned", false);
             }
         }
@@ -84,14 +83,25 @@
         {
             F.SetActive(false);
         }
+
+        if (isBeingDamaged)
+        {
+            safeTime -= Time.deltaTime;
+            if (safeTime <= 0)
+            {
+
+                isBeingDamaged = false;
+                safeTime = 0.5f;
+            }
+        }
     }
         void OnTriggerEnter(Collider other)
         {
         if (other.CompareTag("PlayerSword") && !isBeingDamaged)
             {           
                 //Animaciones
-                stunTimer = stunDuration;
-                animator.SetBool("isStunned", true);
+                //stunTimer = stunDuration;
+                //animator.SetBool("isStunned", true);
                 isStunned = true;
                 parryHit = true;
                 isBeingDamaged = true;

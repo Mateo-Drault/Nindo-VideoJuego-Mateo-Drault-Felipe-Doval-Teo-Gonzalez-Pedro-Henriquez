@@ -29,6 +29,11 @@ public class EnemyCombat : MonoBehaviour
     public ParticleSystem chispas;
     [SerializeField] float chispasDuration;
 
+    //push
+    private bool pushing = false;
+    private float pushTime = 0f;
+
+
     void Start()
     {
         chispas.Clear();
@@ -43,6 +48,22 @@ public class EnemyCombat : MonoBehaviour
         {
             StartCoroutine(AttackComboCoroutine());
         }
+
+        if (pushing)
+        {
+            transform.position += transform.forward * 3f * Time.deltaTime; // velocidad
+            pushTime += Time.deltaTime;
+
+            if (pushTime >= 0.05f) // dura 0.1 segundos
+                pushing = false;
+        }
+
+
+    }
+    void StartPush()
+    {
+        pushing = true;
+        pushTime = 0f;
     }
     IEnumerator RotateTowardsPlayerBeforeAttack()
     {
@@ -71,7 +92,6 @@ public class EnemyCombat : MonoBehaviour
 
             // 🔹 Lanzar animación
             animator.SetTrigger("Attack" + i);
-
             // 🔹 Resetear flag de daño (solo puede golpear una vez por anim)
             hasDealtDamage = false;
 
@@ -91,6 +111,8 @@ public class EnemyCombat : MonoBehaviour
     }
     public void TryDealDamageToPlayer()
     {
+        StartPush();
+
         if (hasDealtDamage) return; // evita repetir el danio
         if (playerCombat == null) return;
 

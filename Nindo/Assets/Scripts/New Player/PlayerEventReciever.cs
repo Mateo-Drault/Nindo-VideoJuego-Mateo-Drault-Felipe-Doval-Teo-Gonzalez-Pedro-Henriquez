@@ -34,4 +34,8 @@ public class PlayerEventReciever : MonoBehaviour
     {
         playerCombat.DisableComboWindow();
     }
+    public void ActivateSlowMotion()
+    {
+        playerFinisher.ActivateSlowMotion();
+    }
 }

@@ -35,9 +35,12 @@ public class PlayerFinisher : MonoBehaviour
         if(enemyBeingDamaged.isFinishable && Input.GetKeyDown(KeyCode.F) && !slowMotionActive) 
         {
             
-            ActivateSlowMotion();
             animator.SetTrigger("Finish");
         }
+//        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Finishing") && !slowMotionActive)
+//        {
+//           ActivateSlowMotion();
+//        }
         if (Input.GetKeyDown(KeyCode.P))
         {
             SpawnDashVFX();
