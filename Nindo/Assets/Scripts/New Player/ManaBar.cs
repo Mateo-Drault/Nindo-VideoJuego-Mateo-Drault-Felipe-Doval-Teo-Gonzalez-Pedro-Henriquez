@@ -33,16 +33,16 @@ public class ManaBar : MonoBehaviour
         }
 
        
-        if(currentMana / maxMana != manaBar.fillAmount)
+        if(currentMana / maxMana != manaBar.fillAmount) //Si el mana actual no es la misma a la que se muestra en pantalla
         {
             float objectiveMana;
             if(currentMana / maxMana > manaBar.fillAmount)
             {
-                objectiveMana = manaBar.fillAmount * 100 + (manaRate * Time.deltaTime);
+                objectiveMana = manaBar.fillAmount * maxMana + (manaRate * Time.deltaTime);
                 objectiveMana = Math.Min(objectiveMana, currentMana);
             } else
             {
-                objectiveMana = manaBar.fillAmount * 100 - (manaRate * Time.deltaTime);
+                objectiveMana = manaBar.fillAmount * maxMana - (manaRate * Time.deltaTime);
                 objectiveMana = Math.Max(objectiveMana, currentMana);
             }
 

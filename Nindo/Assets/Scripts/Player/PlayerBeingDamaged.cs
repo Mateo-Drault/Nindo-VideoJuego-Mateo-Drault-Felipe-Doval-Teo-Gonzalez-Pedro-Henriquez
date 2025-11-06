@@ -18,7 +18,7 @@ public class PlayerBeingDamaged : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        playerLifeManager.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+
     }
 
     // Update is called once per frame
@@ -33,8 +33,7 @@ public class PlayerBeingDamaged : MonoBehaviour
             Debug.Log("daño");
             playerRenderer.material = newMaterial;
             hasRecivedDamage = true;
-            playerLifeManager.actualHealth -= enemySwordDamage;
-            playerLifeManager.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+            playerLifeManager.DamageTaken(enemySwordDamage);
             Invoke("RestartInvincibility", invincibilityDuration);
         }
     }

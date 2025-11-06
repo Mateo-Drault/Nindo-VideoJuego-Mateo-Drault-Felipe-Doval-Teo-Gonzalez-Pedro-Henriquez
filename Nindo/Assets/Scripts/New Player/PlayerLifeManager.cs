@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,29 +6,52 @@ using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 public class PlayerLifeManager : MonoBehaviour
 {
-    public float actualHealth;
-    public float maxHealth;
-    [SerializeField] private Image redBar;
-
-    void Start()
+    public float currentHealth;
+    public float maxHealth = 100f;
+    [SerializeField] private float healthRate = 30f;
+    [SerializeField] private Image healthBar;
+    private void Awake()
     {
-        maxHealth = actualHealth;
+        currentHealth = maxHealth;
+        healthBar.fillAmount = maxHealth;
+
     }
 
     void Update()
     {
-        if (actualHealth <= 0)
+        if (currentHealth <= 0)
         {
-            SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+            restartScene();
             //Destroy(gameObject);
+        }
+
+        if (currentHealth / maxHealth != healthBar.fillAmount) //Si la vida actual no es la misma a la que se muestra en pantalla
+        {
+            float objectiveHealth;
+            if (currentHealth / maxHealth > healthBar.fillAmount)
+            {
+                objectiveHealth = healthBar.fillAmount * maxHealth + (healthRate * Time.deltaTime);
+                objectiveHealth = Math.Min(objectiveHealth, currentHealth);
+            } else
+            {
+                objectiveHealth = healthBar.fillAmount * maxHealth - (healthRate * Time.deltaTime);
+                objectiveHealth = Math.Max(objectiveHealth, currentHealth);
+            }
+            UpdatePlayerCertainHealthBar(objectiveHealth);
         }
     }
     void restartScene()
     {
         SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
-    public void UpdatePlayerHealthBar(float health, float maxHeatlh)
+
+    public void DamageTaken(float damage)
     {
-        redBar.fillAmount = health / maxHeatlh;
+        currentHealth -= damage;
+    }
+
+    public void UpdatePlayerCertainHealthBar(float objective)
+    {
+        healthBar.fillAmount = objective / maxHealth;
     }
 }

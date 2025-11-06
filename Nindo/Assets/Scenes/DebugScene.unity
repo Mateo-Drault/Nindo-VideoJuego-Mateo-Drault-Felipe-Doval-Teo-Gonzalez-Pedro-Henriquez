@@ -9089,9 +9089,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 139ec942860783742ad2726ba0237602, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  actualHealth: 100
-  maxHealth: 1000000
-  redBar: {fileID: 1548365927}
+  currentHealth: 0
+  maxHealth: 100
+  healthRate: 30
+  healthBar: {fileID: 1548365927}
 --- !u!114 &825952091
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9272,7 +9273,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerLifeManager: {fileID: 825952088}
-  playerHealthBar: {fileID: 0}
   playerCombat: {fileID: 825952087}
   enemyDamage: 2
   hasRecievedDamage: 0
