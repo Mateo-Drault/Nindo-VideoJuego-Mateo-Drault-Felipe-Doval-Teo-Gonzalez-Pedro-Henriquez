@@ -15,6 +15,7 @@ public class PlayerDash : MonoBehaviour
 
     [SerializeField] private ManaBar manaBar;
     [SerializeField] private MeshTrail trail;
+    [SerializeField] private float dashManaCost = 20f;
 
     // Start is called before the first frame update
     void Start()
@@ -25,7 +26,7 @@ public class PlayerDash : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.LeftShift) & manaBar.currentMana >= 20) 
+        if (Input.GetKeyDown(KeyCode.LeftShift) & manaBar.currentMana >= dashManaCost) 
         {
             trail.StartCoroutine(trail.ActivateTrail(trail.activeTime));
             DoAttackDash();
@@ -52,7 +53,7 @@ public class PlayerDash : MonoBehaviour
 
     private IEnumerator AttackDash()
     {
-        manaBar.gastarMana(20);
+        manaBar.gastarMana(dashManaCost);
         isDashing = true;
 
         Vector3 dashDirection = playerMovement.MoveDirection;

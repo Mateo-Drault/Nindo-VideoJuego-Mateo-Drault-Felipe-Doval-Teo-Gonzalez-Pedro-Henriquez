@@ -15,6 +15,8 @@ using System.Collections;
         [SerializeField] private bool isBeingDamaged;
         [SerializeField] private float parriedTime;
         [SerializeField] private float parriedDuration;
+        [SerializeField] private ManaBar manaBar;
+        [SerializeField] private float attackManaGain = 5f;
 
 
     //knockback
@@ -91,7 +93,7 @@ using System.Collections;
             if (safeTime <= 0)
             {
                 isBeingDamaged = false;
-                safeTime = 0.5f;
+                safeTime = 0.4f;
             }
         }
     }
@@ -102,6 +104,7 @@ using System.Collections;
                 //Animaciones
                 //stunTimer = stunDuration;
                 //animator.SetBool("isStunned", true);
+                manaBar.gastarMana(-attackManaGain);
                 isStunned = true;
                 parryHit = true;
                 isBeingDamaged = true;

@@ -8,9 +8,9 @@ public class ManaBar : MonoBehaviour
 {
 
     [SerializeField] Image manaBar;
-    public const int maxMana = 100;
+    public const float maxMana = 100f;
     public float currentMana;
-    [SerializeField] int regeneracionMana = 5;
+    [SerializeField] float regeneracionMana = 5f;
     [SerializeField] float delayRegeneracion = 2f;
     [SerializeField] float realTime;
     private void Awake()
@@ -20,7 +20,7 @@ public class ManaBar : MonoBehaviour
 
     public ManaBar()
     {
-        currentMana = 100;
+        currentMana = 100f;
     }
 
     private void Update()
@@ -34,22 +34,19 @@ public class ManaBar : MonoBehaviour
         }
 
         //El maná aumenta 5f por segundo, pero está en constante aumento.
-        if(currentMana <= maxMana)
-        {
-            currentMana += regeneracionMana * Time.deltaTime;
-            currentMana = Math.Min(currentMana, maxMana);
-            UpdateManaBar();
-            realTime = 0;
-        }
+        //if(currentMana <= maxMana)
+        //{
+        //    currentMana += regeneracionMana * Time.deltaTime;
+        //    currentMana = Math.Min(currentMana, maxMana);
+        //    UpdateManaBar();
+        //    realTime = 0;
+        //}
     }
 
-    public void gastarMana(int manaGastada)
+    public void gastarMana(float manaGastada)
     {
-        if (currentMana >= manaGastada)
-        {
-            currentMana -= manaGastada;
-            UpdateManaBar();
-        }
+        currentMana -= manaGastada;
+        UpdateManaBar();
     }
 
     public void UpdateManaBar()

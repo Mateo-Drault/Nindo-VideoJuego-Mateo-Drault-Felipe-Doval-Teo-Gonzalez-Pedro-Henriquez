@@ -11,6 +11,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private ParticleSystem chispas;
     [SerializeField] private EnemyCombat enemyCombat;
     [SerializeField] private Rigidbody rb;
+    [SerializeField] private ManaBar manaBar;
 
     [Header("Configuración")]
     [SerializeField] private float pushForce = 3f;
@@ -20,6 +21,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float parryWindow = 0.3f;     // Ventana activa del parry
     [SerializeField] private float inmunityTime = 0.4f;
     [SerializeField] private float chispasDuration = 0.05f;
+    [SerializeField] private float parryManaGain = 10f;
 
     private bool pushing = false;
     private float pushTime = 0f;
@@ -197,7 +199,7 @@ public class PlayerCombat : MonoBehaviour
 
     void SuccessfulParry()
     {
-
+        manaBar.gastarMana(-parryManaGain);
         anim.SetTrigger("succesfulParry");
         parryEffect.Play();
         hasParried = true;

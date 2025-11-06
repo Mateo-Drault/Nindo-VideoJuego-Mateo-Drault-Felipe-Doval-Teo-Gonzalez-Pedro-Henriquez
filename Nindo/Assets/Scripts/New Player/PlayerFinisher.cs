@@ -15,11 +15,12 @@ public class PlayerFinisher : MonoBehaviour
     public float dashDistanceBehindEnemy = 2f; // distancia atrás del enemigo
     public float dashDuration = 0.05f; // duración muy corta para que sea casi instantáneo
     private bool isDashing = false;
+    [SerializeField] private float finisherManaCost = 50f;
+    [SerializeField] private ManaBar manaBar;
     public Transform KaitoTr;
 
     public VisualEffect hit;
     public VisualEffect slash;
-
 
     public VisualEffect vfx1;
 
@@ -32,9 +33,9 @@ public class PlayerFinisher : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(enemyBeingDamaged.isFinishable && Input.GetKeyDown(KeyCode.F) && !slowMotionActive) 
+        if(enemyBeingDamaged.isFinishable && Input.GetKeyDown(KeyCode.F) && !slowMotionActive && manaBar.currentMana >= finisherManaCost) 
         {
-            
+            manaBar.gastarMana(finisherManaCost);
             animator.SetTrigger("Finish");
         }
 //        if (animator.GetCurrentAnimatorStateInfo(0).IsName("Finishing") && !slowMotionActive)
