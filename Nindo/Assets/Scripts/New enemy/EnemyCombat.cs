@@ -11,7 +11,7 @@ public class EnemyCombat : MonoBehaviour
     [SerializeField] private NavMeshAgent agent;
     [SerializeField] private EnemyMovement enemyMovement;
     [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
-
+    private Coroutine attackRoutine;
 
     [Header("Rango de ataque")]
     [SerializeField] private float attackRange = 2f;   // Distancia máxima para golpear
@@ -29,6 +29,7 @@ public class EnemyCombat : MonoBehaviour
     public ParticleSystem chispas;
     [SerializeField] float chispasDuration;
 
+
     //push
     private bool pushing = false;
     private float pushTime = 0f;
@@ -44,9 +45,10 @@ public class EnemyCombat : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (!isAttacking && enemyMovement.canAttack)
+        Debug.Log(attackRoutine);
+        if (!isAttacking && enemyMovement.canAttack && attackRoutine == null)
         {
-            StartCoroutine(AttackComboCoroutine());
+            attackRoutine = StartCoroutine(AttackComboCoroutine());
         }
 
         if (pushing)
@@ -88,25 +90,29 @@ public class EnemyCombat : MonoBehaviour
 
         for (int i = 1; i <= 3; i++) // combo de 3 ataques
         {
+            animator.ResetTrigger("Attack1");
+            animator.ResetTrigger("Attack2");
+            animator.ResetTrigger("Attack3");
             yield return RotateTowardsPlayerBeforeAttack();
 
-            // 🔹 Lanzar animación
+            // Lanzar animación
             animator.SetTrigger("Attack" + i);
-            // 🔹 Resetear flag de daño (solo puede golpear una vez por anim)
+            // Resetear flag de daño (solo puede golpear una vez por anim)
             hasDealtDamage = false;
 
-            // 🔹 Esperar fin de animación de ataque (ajustá según duración real)
-            yield return new WaitForSeconds(1f);
+            // Esperar fin de animación de ataque (ajustá según duración real)
+            yield return new WaitForSeconds(0.8f);
 
-            // 🔹 Si el jugador se aleja demasiado, cortamos el combo
+            // Si el jugador se aleja demasiado, cortamos el combo
             float dist = Vector3.Distance(transform.position, playerCombat.transform.position);
             if (dist > attackRange * 1.5f)
             {
                 Debug.Log("Jugador se alejó, cortando combo");
                 break;
             }
-        }
 
+        }
+        attackRoutine = null;
         isAttacking = false;
     }
     public void TryDealDamageToPlayer()

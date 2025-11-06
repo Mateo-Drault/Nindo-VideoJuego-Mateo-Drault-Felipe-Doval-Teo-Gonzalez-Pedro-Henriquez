@@ -23,7 +23,7 @@ public class SwordTrail : MonoBehaviour
     private List<TrailPoint> points = new List<TrailPoint>();
     private Mesh mesh;
 
-    private bool trailActive = false;
+    [SerializeField] private bool trailActive = false;
     private bool stoppingTrail = false;
     private float fadeStartTime;
 
@@ -151,6 +151,7 @@ public class SwordTrail : MonoBehaviour
     {
         if (!stoppingTrail)
         {
+            trailActive = false;
             stoppingTrail = true;
             fadeStartTime = Time.time;
 

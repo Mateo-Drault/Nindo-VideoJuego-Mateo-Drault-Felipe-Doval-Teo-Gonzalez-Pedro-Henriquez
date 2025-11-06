@@ -57,14 +57,19 @@ public class PlayerFinisher : MonoBehaviour
         if (!isDashing)
             StartCoroutine(DashCoroutine(enemy));
 
-        hit.Play();
-        slash.Play();
+
     Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
         slowMotionActive = false;
         enemyBeingDamaged.Death();
-        
+        hit.Play();
+        slash.Play();
 
+    }
+
+    public void PlaySlash() 
+    {
+        slash.Play();
     }
 
     private IEnumerator DashCoroutine(Transform enemy)

@@ -39,16 +39,20 @@ public class PlayerEventReciever : MonoBehaviour
     {
         playerFinisher.ActivateSlowMotion();
     }
-    public void AttackEnd() 
+    public void AttackEnd()
     {
         playerCombat.AttackEnd();
     }
-    public void StartTrail() 
+    public void StartTrail()
     {
         SwordTrail.StartTrail();
     }
     public void StopTrail()
     {
         SwordTrail.StopTrail();
+    }
+    public void ActivateSlash()
+    {
+         playerFinisher.PlaySlash();
     }
 }
