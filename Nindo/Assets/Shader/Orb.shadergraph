@@ -5,7 +5,11 @@
     "m_Properties": [],
     "m_Keywords": [],
     "m_Dropdowns": [],
-    "m_CategoryData": [],
+    "m_CategoryData": [
+        {
+            "m_Id": "0750d19104004fc48043ecb3083ec7cb"
+        }
+    ],
     "m_Nodes": [
         {
             "m_Id": "d87ce829e1444e9b9845418cb1722f05"
@@ -72,6 +76,14 @@
 }
 
 {
+    "m_SGVersion": 0,
+    "m_Type": "UnityEditor.ShaderGraph.CategoryData",
+    "m_ObjectId": "0750d19104004fc48043ecb3083ec7cb",
+    "m_Name": "",
+    "m_ChildObjectList": []
+}
+
+{
     "m_SGVersion": 1,
     "m_Type": "UnityEditor.Rendering.Universal.ShaderGraph.UniversalTarget",
     "m_ObjectId": "1baaa370b01544569973a968ed2b6146",
@@ -84,7 +96,7 @@
     "m_ZTestMode": 4,
     "m_ZWriteControl": 0,
     "m_AlphaMode": 0,
-    "m_RenderFace": 2,
+    "m_RenderFace": 0,
     "m_AlphaClip": false,
     "m_CastShadows": true,
     "m_ReceiveShadows": true,

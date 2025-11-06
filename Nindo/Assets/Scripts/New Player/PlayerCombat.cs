@@ -31,7 +31,7 @@ public class PlayerCombat : MonoBehaviour
     public bool hasParried = false;
     public bool isAttacking = false;
     public bool canCombo;
-    private float comboStep = 0;
+    [SerializeField] private float comboStep = 0;
 
     public VisualEffect parryEffect;
     void Start()
@@ -78,12 +78,35 @@ public class PlayerCombat : MonoBehaviour
     {
         if (!isAttacking)
         {
+            comboStep = 1;
+            isAttacking = true;
             anim.SetTrigger("attack");
-            Invoke(nameof(StartPush), 0.2f);
+            return;
         }
+
         else if (canCombo)
         {
             ContinueCombo();
+        }
+    }
+    public void ContinueCombo()
+    {
+        canCombo = false; // evita spamear
+        comboStep++;
+
+        if (comboStep == 2)
+        {
+            anim.SetTrigger("Attack2");
+
+        }
+        else if (comboStep == 3)
+        {
+            anim.SetTrigger("Attack3");
+        }
+        else
+        {
+            comboStep = 0;
+            isAttacking = false;
         }
     }
 
@@ -96,18 +119,52 @@ public class PlayerCombat : MonoBehaviour
     public void StartAttacking()   // llamado desde la animación
     {
         katanaCollider.enabled = true;
-        isAttacking = true;
-        comboStep = 1; //se puede hacer combo
     }
+
 
     public void StopAttacking()    // llamado desde la animación
     {
         katanaCollider.enabled = false;
-        isAttacking = false;
-        comboStep = 0; //no hay combo
     }
-    // ------------------parry------------------
-    void TryParry()
+    // Llamado desde animaciones al final de cada ataque
+    public void AttackEnd()
+    {
+        if (comboStep >= 3) // último golpe
+        {
+            comboStep = 0;
+            isAttacking = false;
+        }
+        else
+        {
+            //se corta combo
+            StartCoroutine(ResetComboDelay());
+        }
+        katanaCollider.enabled = false;
+    }
+    IEnumerator ResetComboDelay()
+    {
+        yield return new WaitForSeconds(0.4f);
+        if (!canCombo)
+        {
+            comboStep = 0;
+            isAttacking = false;
+        }
+    }
+    
+   
+    public void EnableComboWindow()
+    {
+        canCombo = true;
+    }
+    public void DisableComboWindow()
+    {
+        canCombo = false;
+    }
+
+
+
+// ------------------parry------------------
+        void TryParry()
     {
         if (!parryActive)
         {
@@ -184,39 +241,16 @@ public class PlayerCombat : MonoBehaviour
     {
         if (isAttacking)
         {
-            anim.ResetTrigger("attack");
+            anim.ResetTrigger("Attack1");
+            anim.ResetTrigger("Attack2");
+            anim.ResetTrigger("Attack3");
             anim.SetTrigger("stunned");
             isAttacking = false;
             katanaCollider.enabled = false;
-        }
-    }
-
-    public void ContinueCombo() 
-    {
-        canCombo = false; // evita spamear
-        comboStep++;
-
-        if (comboStep == 2)
-        {
-            anim.SetTrigger("Attack2");
-            anim.ResetTrigger("attack");
+            comboStep = 0;
 
         }
-        else if (comboStep == 3)
-        {
-            anim.ResetTrigger("Attack2");
-            anim.ResetTrigger("attack");
-            anim.SetTrigger("Attack3");
-        }
-    }
-    public void EnableComboWindow()
-    {
-        canCombo = true;
-    }
-    public void DisableComboWindow()
-    {
-        canCombo = false;
     }
 
 
-}
+    }

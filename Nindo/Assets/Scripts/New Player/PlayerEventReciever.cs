@@ -6,6 +6,7 @@ public class PlayerEventReciever : MonoBehaviour
 {
     public PlayerCombat playerCombat;
     public PlayerFinisher playerFinisher;
+    public SwordTrail SwordTrail;
 
 
     //HACER QUE CAMBIE EL TAG
@@ -37,5 +38,17 @@ public class PlayerEventReciever : MonoBehaviour
     public void ActivateSlowMotion()
     {
         playerFinisher.ActivateSlowMotion();
+    }
+    public void AttackEnd() 
+    {
+        playerCombat.AttackEnd();
+    }
+    public void StartTrail() 
+    {
+        SwordTrail.StartTrail();
+    }
+    public void StopTrail()
+    {
+        SwordTrail.StopTrail();
     }
 }
