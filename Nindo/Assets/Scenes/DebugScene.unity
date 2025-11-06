@@ -1005,8 +1005,8 @@ Transform:
   m_GameObject: {fileID: 177888039}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 0.2171, y: -0.48, z: 10.858}
-  m_LocalScale: {x: 5.4307356, y: 1, z: 4.5666795}
+  m_LocalPosition: {x: 0.0323, y: -0.48, z: 7.9408}
+  m_LocalScale: {x: 8.386125, y: 1, z: 8.176276}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
@@ -9030,7 +9030,6 @@ GameObject:
   - component: {fileID: 825952093}
   - component: {fileID: 825952092}
   - component: {fileID: 825952091}
-  - component: {fileID: 825952089}
   - component: {fileID: 825952088}
   - component: {fileID: 825952087}
   - component: {fileID: 825952096}
@@ -9092,18 +9091,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   actualHealth: 100
   maxHealth: 1000000
---- !u!114 &825952089
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 825952086}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e86c49d118a20c6449984ea89c1d7216, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
   redBar: {fileID: 1548365927}
 --- !u!114 &825952091
 MonoBehaviour:
@@ -9285,7 +9272,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   playerLifeManager: {fileID: 825952088}
-  playerHealthBar: {fileID: 825952089}
+  playerHealthBar: {fileID: 0}
   playerCombat: {fileID: 825952087}
   enemyDamage: 2
   hasRecievedDamage: 0
@@ -11237,7 +11224,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1347469591}
-  - component: {fileID: 1347469592}
   m_Layer: 0
   m_Name: Player HealthBar
   m_TagString: Untagged
@@ -11261,19 +11247,6 @@ Transform:
   - {fileID: 546935258}
   m_Father: {fileID: 504879734}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1347469592
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1347469590}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e86c49d118a20c6449984ea89c1d7216, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  redBar: {fileID: 1548365927}
 --- !u!1 &1350849402
 GameObject:
   m_ObjectHideFlags: 0
@@ -12310,7 +12283,7 @@ MonoBehaviour:
   currentMana: 100
   regeneracionMana: 10
   delayRegeneracion: 2
-  realTime: 0
+  manaRate: 75
 --- !u!114 &1666417689
 MonoBehaviour:
   m_ObjectHideFlags: 0

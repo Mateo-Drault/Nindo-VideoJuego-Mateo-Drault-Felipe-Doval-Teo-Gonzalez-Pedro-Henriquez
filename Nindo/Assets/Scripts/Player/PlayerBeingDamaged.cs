@@ -6,7 +6,6 @@ public class PlayerBeingDamaged : MonoBehaviour
 {
     [SerializeField] private float enemySwordDamage; //esto va a la espada del enemigo mas adelante
     [SerializeField] private PlayerLifeManager playerLifeManager;
-    [SerializeField] private PlayerHealthBar PlayerHealthBar;
     public bool hasRecivedDamage = false;
     public Material originalMaterial;
     public Material newMaterial;
@@ -19,7 +18,7 @@ public class PlayerBeingDamaged : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        PlayerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+        playerLifeManager.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
     }
 
     // Update is called once per frame
@@ -35,7 +34,7 @@ public class PlayerBeingDamaged : MonoBehaviour
             playerRenderer.material = newMaterial;
             hasRecivedDamage = true;
             playerLifeManager.actualHealth -= enemySwordDamage;
-            PlayerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+            playerLifeManager.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
             Invoke("RestartInvincibility", invincibilityDuration);
         }
     }

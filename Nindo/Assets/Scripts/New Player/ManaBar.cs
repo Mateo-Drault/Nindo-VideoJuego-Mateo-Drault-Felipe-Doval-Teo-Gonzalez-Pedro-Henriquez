@@ -12,7 +12,7 @@ public class ManaBar : MonoBehaviour
     public float currentMana;
     [SerializeField] float regeneracionMana = 5f;
     [SerializeField] float delayRegeneracion = 2f;
-    [SerializeField] float realTime;
+    [SerializeField] float manaRate = 75f;
     private void Awake()
     {
         manaBar.fillAmount = maxMana;
@@ -25,7 +25,6 @@ public class ManaBar : MonoBehaviour
 
     private void Update()
     {
-        realTime += Time.deltaTime;
 
         //Dash
         if (Input.GetKeyDown(KeyCode.P))
@@ -33,24 +32,32 @@ public class ManaBar : MonoBehaviour
             gastarMana(10);
         }
 
-        //El maná aumenta 5f por segundo, pero está en constante aumento.
-        //if(currentMana <= maxMana)
-        //{
-        //    currentMana += regeneracionMana * Time.deltaTime;
-        //    currentMana = Math.Min(currentMana, maxMana);
-        //    UpdateManaBar();
-        //    realTime = 0;
-        //}
+       
+        if(currentMana / maxMana != manaBar.fillAmount)
+        {
+            float objectiveMana;
+            if(currentMana / maxMana > manaBar.fillAmount)
+            {
+                objectiveMana = manaBar.fillAmount * 100 + (manaRate * Time.deltaTime);
+                objectiveMana = Math.Min(objectiveMana, currentMana);
+            } else
+            {
+                objectiveMana = manaBar.fillAmount * 100 - (manaRate * Time.deltaTime);
+                objectiveMana = Math.Max(objectiveMana, currentMana);
+            }
+
+                UpdateCertainManaBar(objectiveMana);
+            
+        }
     }
 
     public void gastarMana(float manaGastada)
     {
         currentMana -= manaGastada;
-        UpdateManaBar();
     }
 
-    public void UpdateManaBar()
+    public void UpdateCertainManaBar(float objective)
     {
-        manaBar.fillAmount = currentMana / maxMana;
+        manaBar.fillAmount = objective / maxMana;
     }
 }

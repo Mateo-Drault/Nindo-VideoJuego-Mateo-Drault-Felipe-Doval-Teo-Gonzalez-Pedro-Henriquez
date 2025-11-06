@@ -5,7 +5,6 @@ using UnityEngine;
 public class PlayerDamaged : MonoBehaviour
 {
     [SerializeField] PlayerLifeManager playerLifeManager;
-    [SerializeField] PlayerHealthBar playerHealthBar;
     [SerializeField] PlayerCombat playerCombat;
 
     public float enemyDamage;
@@ -16,9 +15,8 @@ public class PlayerDamaged : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+        playerLifeManager.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
     }
-
     // Update is called once per frame
     void Update()
     {
@@ -30,7 +28,7 @@ public class PlayerDamaged : MonoBehaviour
 //        if (other.CompareTag("EnemySword") && !hasRecievedDamage && this.CompareTag("PlayerBody") && !playerCombat.hasParried)
 //        {
 //            playerLifeManager.actualHealth -= enemyDamage;
-//            playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+//            playerLifeManager.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
 //            Invoke("RestartInvincibility", invincibilityDuration);
 //            hasRecievedDamage = true;
             
@@ -39,7 +37,7 @@ public class PlayerDamaged : MonoBehaviour
     public void TakeDamage()
     {
         playerLifeManager.actualHealth -= enemyDamage;
-        playerHealthBar.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
+        playerLifeManager.UpdatePlayerHealthBar(playerLifeManager.actualHealth, playerLifeManager.maxHealth);
         Invoke("RestartInvincibility", invincibilityDuration);
         hasRecievedDamage = true;
     }
