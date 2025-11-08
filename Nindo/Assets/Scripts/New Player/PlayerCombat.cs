@@ -12,6 +12,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private EnemyCombat enemyCombat;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private ManaBar manaBar;
+    [SerializeField] private CameraShake cameraShake;
 
     [Header("Configuración")]
     [SerializeField] private float pushForce = 3f;
@@ -211,6 +212,7 @@ public class PlayerCombat : MonoBehaviour
 
         // Interrumpir ataque enemigo
         enemyCombat.InterruptAttack();
+        cameraShake.startShaking = true;
 
     }
     IEnumerator HitStop(float duration)

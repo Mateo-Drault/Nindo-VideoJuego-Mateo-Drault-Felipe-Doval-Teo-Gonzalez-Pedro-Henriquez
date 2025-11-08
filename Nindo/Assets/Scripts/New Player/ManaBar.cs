@@ -10,8 +10,6 @@ public class ManaBar : MonoBehaviour
     [SerializeField] Image manaBar;
     public const float maxMana = 100f;
     public float currentMana;
-    [SerializeField] float regeneracionMana = 5f;
-    [SerializeField] float delayRegeneracion = 2f;
     [SerializeField] float manaRate = 75f;
     private void Awake()
     {
@@ -38,7 +36,7 @@ public class ManaBar : MonoBehaviour
             float objectiveMana;
             if(currentMana / maxMana > manaBar.fillAmount)
             {
-                objectiveMana = manaBar.fillAmount * maxMana + (manaRate * Time.deltaTime);
+                objectiveMana = manaBar.fillAmount * maxMana + (manaRate * Time.deltaTime); 
                 objectiveMana = Math.Min(objectiveMana, currentMana);
             } else
             {
@@ -53,7 +51,10 @@ public class ManaBar : MonoBehaviour
 
     public void gastarMana(float manaGastada)
     {
-        currentMana -= manaGastada;
+        if ((currentMana - manaGastada) >= 0 && (currentMana - manaGastada) <= maxMana) //Para que el mana no exceda el maxMana ni este en negativo
+        {
+            currentMana -= manaGastada;
+        }
     }
 
     public void UpdateCertainManaBar(float objective)

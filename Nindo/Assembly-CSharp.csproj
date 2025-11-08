@@ -89,6 +89,7 @@
     <Compile Include="Assets\Scripts\Enemy\EnemyHitbox.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemySwordAnimation.cs" />
     <Compile Include="Assets\Scripts\New Player\ManaBar.cs" />
+    <Compile Include="Assets\Scripts\CameraShake.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark03.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerSwordAnimation.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyBeingDamaged.cs" />

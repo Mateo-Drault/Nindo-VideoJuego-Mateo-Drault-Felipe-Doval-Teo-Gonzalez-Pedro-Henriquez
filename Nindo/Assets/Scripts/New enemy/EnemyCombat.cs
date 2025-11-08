@@ -143,7 +143,7 @@ public class EnemyCombat : MonoBehaviour
             animator.ResetTrigger("Attack1");
             animator.ResetTrigger("Attack2");
             animator.ResetTrigger("Attack3");
-
+            
             posturaActual -= 1f;
             posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
 

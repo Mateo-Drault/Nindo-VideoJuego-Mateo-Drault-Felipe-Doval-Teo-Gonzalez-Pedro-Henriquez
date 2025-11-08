@@ -21,6 +21,7 @@ public class PosturaScript : MonoBehaviour
     {
         transform.position = target.position + offSet;
     }
+
     public void UpdatePosturaBar(float maxPostura, float postura)
     {
         greyBar.fillAmount = postura / maxPostura;

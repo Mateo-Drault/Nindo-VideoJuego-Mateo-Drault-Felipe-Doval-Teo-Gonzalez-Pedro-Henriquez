@@ -57,7 +57,6 @@ public class PlayerParry : MonoBehaviour
     {
         if (currentMode == ParryMode.Parry && other.CompareTag("EnemySword") && !playerBeingDamaged.hasRecivedDamage)
         {
-            Debug.Log("parry");
             hasParried = true;
             Invoke("EndInmunity", inmunityTime);
             chispas.Play();

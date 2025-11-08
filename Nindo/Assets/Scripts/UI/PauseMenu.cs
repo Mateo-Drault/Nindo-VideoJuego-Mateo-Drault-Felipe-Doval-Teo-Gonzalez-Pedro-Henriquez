@@ -5,7 +5,7 @@ using UnityEngine.SceneManagement;
 
 public class PauseMenu : MonoBehaviour
 {
-    public static bool GameIsPaused = false;
+    [SerializeField] bool GameIsPaused = false;
     [SerializeField] private GameObject pauseMenuUI;
     [SerializeField] private GameObject HUD;
     void Update()
@@ -18,6 +18,7 @@ public class PauseMenu : MonoBehaviour
             }
             else
             {
+                Debug.Log("Hola");
                 Pause();
             }
         }
