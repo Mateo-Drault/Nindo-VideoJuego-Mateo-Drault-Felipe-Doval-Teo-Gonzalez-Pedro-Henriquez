@@ -8,7 +8,7 @@ public class KatanaParry : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         // Detecta si tocó la espada del enemigo o el parry
-        if (other.CompareTag("EnemySword") || other.CompareTag("Parry"))
+        if (other.CompareTag("Enemy"))
         {
             katanaIsColliding = true;
             Debug.Log("Katana comenzó a colisionar con: " + other.name);
@@ -18,10 +18,5 @@ public class KatanaParry : MonoBehaviour
     private void OnTriggerExit(Collider other)
     {
         // Cuando deja de tocarla, se apaga
-        if (other.CompareTag("EnemySword") || other.CompareTag("Parry"))
-        {
-            katanaIsColliding = false;
-            Debug.Log("Katana dejó de colisionar con: " + other.name);
-        }
     }
 }

@@ -84,6 +84,7 @@ public class PlayerCombat : MonoBehaviour
             comboStep = 1;
             isAttacking = true;
             anim.SetTrigger("attack");
+            StartPush();
             return;
         }
 
