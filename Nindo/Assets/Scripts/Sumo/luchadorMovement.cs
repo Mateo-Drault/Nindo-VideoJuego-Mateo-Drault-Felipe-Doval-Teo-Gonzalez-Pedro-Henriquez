@@ -6,9 +6,9 @@ using UnityEngine.AI;
 
 public class luchadorMovement : MonoBehaviour
 {
-    [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
-    [SerializeField] private EnemyCombat enemyCombat;
+    //scripts
     [SerializeField] private Animator animator;
+    [SerializeField] private Animator ExclamationMarkAnimator;
     [SerializeField] private NavMeshAgent agent;
 
     //etc
@@ -17,8 +17,10 @@ public class luchadorMovement : MonoBehaviour
     [SerializeField] private float maxDistance;
     [SerializeField] private float minDistance;
     [SerializeField] public float attackRange;
-
-
+    [SerializeField] private GameObject exclamationMark;
+    public bool canAttack;
+    float segundos = 0f;
+    [SerializeField] float tiempoDeAnimacionExclamation;
 
 
     public bool seen;
@@ -36,53 +38,38 @@ public class luchadorMovement : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-
+        segundos += Time.deltaTime;
         distanceToPlayer = Vector3.Distance(transform.position, player.position);
-        //Chequear que no este golpeando asi se mueve
-        AnimatorStateInfo animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);
-
-        if (enemyBeingDamaged != null && enemyBeingDamaged.isStunned)
-        {
-            agent.isStopped = true;
-            animator.SetBool("isChasing", false);
-            return;
-        }
-        //Lo vio
         if (!seen && distanceToPlayer <= minDistance)
         {
             animator.SetTrigger("Spotted");
-            Invoke("Seen", 0.1f);
-        }
-        if (!isAttacking)
-        {
-            //Atacar
-            if (distanceToPlayer <= attackRange && seen)
-            {
-                Attack();
-            }
-            //Perseguir
-            else if (distanceToPlayer > maxDistance && seen)
-            {
-                Chase();
-            }
-            //Idle
+            Invoke(nameof(Seen), 0.1f);
 
-            else
-            {
-                Idle();
-            }
+        }
+
+        // Si está aturdido o atacando, no hacer movimiento
+        if (isAttacking) return;
+
+        // Determinar comportamiento según distancia
+        if (distanceToPlayer <= attackRange && seen)
+        {
+            canAttack = true;
+            Idle(); // detener el movimiento mientras ataca
+        }
+        else if (distanceToPlayer > attackRange && seen)
+        {
+            canAttack = false;
+            Chase();
+        }
+        else
+        {
+            canAttack = false;
+            Idle();
         }
     }
     void Seen()
     {
         seen = true;
-    }
-    void Attack()
-    {
-        agent.isStopped = true;
-        animator.SetBool("isChasing", false);
-        //enemyCombat.Attac(); hay que arreglar!!!!!!!!!!!!
-
     }
 
     void Chase()

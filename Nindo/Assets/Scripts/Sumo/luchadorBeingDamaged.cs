@@ -6,7 +6,7 @@ public class luchadorBeingDamaged : MonoBehaviour
 {
     //seteados desde el inspector
     [SerializeField] private healthScript healthScript;
-    [SerializeField] private EnemyCombat enemyCombat;
+    [SerializeField] private LuchadorCombat luchadorCombat;
     [SerializeField] private EnemyHitbox hitbox;
     [SerializeField] private Rigidbody rb;
     [SerializeField] private Transform playerTransform;
