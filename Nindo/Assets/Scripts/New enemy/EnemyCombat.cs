@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
-public class EnemyCombat : MonoBehaviour
+public class EnemyCombat : EnemyBase
 {
     [Header("Referencias")]
     [SerializeField] private PlayerCombat playerCombat;
@@ -131,7 +131,7 @@ public class EnemyCombat : MonoBehaviour
         if (dist <= attackRange && angle <= attackAngle)
         {
             hasDealtDamage = true; // pego
-            playerCombat.OnHitByEnemy();
+            playerCombat.OnHitByEnemy(this);
         }
     }
     public void InterruptAttack() //Lo llama la jugador al hacer parry

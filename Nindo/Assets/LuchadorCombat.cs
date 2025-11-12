@@ -2,7 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class LuchadorCombat : MonoBehaviour
+public class LuchadorCombat : EnemyBase
 {
     [Header("Referencias")]
     [SerializeField] private PlayerCombat playerCombat;
@@ -93,10 +93,16 @@ public class LuchadorCombat : MonoBehaviour
             animator.SetTrigger("Attack" + i);
             // Resetear flag de da�o (solo puede golpear una vez por anim)
             hasDealtDamage = false;
+            if (i <3)
+            {
+                // Esperar fin de animaci�n de ataque (ajust� seg�n duraci�n real)
+                yield return new WaitForSeconds(0.6f);
+            }
+            else 
+            {
+                yield return new WaitForSeconds(1.2f);
 
-            // Esperar fin de animaci�n de ataque (ajust� seg�n duraci�n real)
-            yield return new WaitForSeconds(0.8f);
-
+            }
             // Si el jugador se aleja demasiado, cortamos el combo
             float dist = Vector3.Distance(transform.position, playerCombat.transform.position);
             if (dist > attackRange * 1.5f)
@@ -125,7 +131,7 @@ public class LuchadorCombat : MonoBehaviour
         if (dist <= attackRange && angle <= attackAngle)
         {
             hasDealtDamage = true; // pego
-            playerCombat.OnHitByEnemy();
+            playerCombat.OnHitByEnemy(this);
         }
     }
     public void InterruptAttack() //Lo llama la jugador al hacer parry

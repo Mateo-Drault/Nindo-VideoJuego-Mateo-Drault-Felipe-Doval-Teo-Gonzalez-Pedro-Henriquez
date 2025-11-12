@@ -186,12 +186,12 @@ public class PlayerCombat : MonoBehaviour
         parryActive = false;
     }
 
-    public void OnHitByEnemy()
+    public void OnHitByEnemy(EnemyBase atacante)
     {
         Debug.Log("golpe");
         if (parryActive)
         {
-            SuccessfulParry();
+            SuccessfulParry(atacante);
         }
         else
         {
@@ -199,7 +199,7 @@ public class PlayerCombat : MonoBehaviour
         }
     }
 
-    void SuccessfulParry()
+    void SuccessfulParry(EnemyBase atacante)
     {
         manaBar.gastarMana(-parryManaGain);
         anim.SetTrigger("succesfulParry");
@@ -212,7 +212,7 @@ public class PlayerCombat : MonoBehaviour
         StartCoroutine(HitStop(0.055f)); // pausar 0.05 segundos
 
         // Interrumpir ataque enemigo
-        enemyCombat.InterruptAttack();
+        atacante.InterruptAttack();
         cameraShake.startShaking = true;
 
     }
