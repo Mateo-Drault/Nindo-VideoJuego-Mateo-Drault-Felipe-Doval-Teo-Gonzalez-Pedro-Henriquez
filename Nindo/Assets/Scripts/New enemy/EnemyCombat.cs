@@ -12,7 +12,7 @@ public class EnemyCombat : EnemyBase
     [SerializeField] private EnemyMovement enemyMovement;
     [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
     private Coroutine attackRoutine;
-
+    
     [Header("Rango de ataque")]
     [SerializeField] private float attackRange = 2f;   // Distancia máxima para golpear
     [SerializeField] private float attackAngle = 45f;  // Ángulo frontal de golpe
@@ -34,7 +34,7 @@ public class EnemyCombat : EnemyBase
     [SerializeField] private float decayTime = 3f; // si no golpeas se pierde
     public int currentMomentum = 0;
     private float lastParryTime;
-
+    [SerializeField] private DesequilibroBar desequilibroBar;
     private bool isMiniStunned = false;
     [SerializeField] private float miniStunDuration = 0.25f;
 
@@ -45,6 +45,8 @@ public class EnemyCombat : EnemyBase
 
     void Start()
     {
+        currentMomentum = 0;
+        desequilibroBar.UpdateDesequilibrioBar(maxMomentum, currentMomentum);
         chispas.Clear();
         posturaActual = posturaInicial;
 
@@ -158,6 +160,7 @@ public class EnemyCombat : EnemyBase
         if (currentMomentum < maxMomentum)
             {
                 currentMomentum++;
+                desequilibroBar.UpdateDesequilibrioBar(maxMomentum, currentMomentum);
             }
         if (posturaActual <= 0f)
             {
