@@ -17,7 +17,7 @@
         [SerializeField] private float parriedDuration;
         [SerializeField] private ManaBar manaBar;
         [SerializeField] private float attackManaGain = 5f;
-
+        [SerializeField] private DesequilibroBar desequilibroBar;
 
     //knockback
     [SerializeField] private float knockbackForce;
@@ -44,9 +44,12 @@
 
         //Parry
         public bool parryHit;
+        public bool canParry;
+        private bool hadMomentum;
 
- 
-            void Start()
+
+
+    void Start()
         {
             parriedTime = parriedDuration;
             Health = maxHealthAmount;
@@ -103,21 +106,31 @@
             {
                 if (enemyCombat.currentMomentum > 0)
                 {
+                    hadMomentum = true;
                     enemyCombat.currentMomentum--;
+                    desequilibroBar.UpdateDesequilibrioBar(enemyCombat.maxMomentum, enemyCombat.currentMomentum);
                     StartCoroutine(enemyCombat.MiniStun());
+                    if (enemyCombat.currentMomentum <= 0 && hadMomentum)
+                    {
+                        // Si no tiene momentum → parry
+                     canParry= true;
+                     hadMomentum = false;
+                        
+                    }
                 }
-                else
+                else if(canParry)
                 {
                     // Si no tiene momentum → parry
                     animator.SetTrigger("Parry");
-            }
+                    canParry=false;
+                }
 
 
 
-            //Animaciones
-            //stunTimer = stunDuration;
-            //animator.SetBool("isStunned", true);
-            manaBar.gastarMana(-attackManaGain);
+                //Animaciones
+                //stunTimer = stunDuration;
+                //animator.SetBool("isStunned", true);
+                manaBar.gastarMana(-attackManaGain);
                 isStunned = true;
                 parryHit = true;
                 isBeingDamaged = true;

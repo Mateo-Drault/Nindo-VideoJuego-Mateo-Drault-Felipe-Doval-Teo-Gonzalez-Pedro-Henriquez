@@ -16456,6 +16456,7 @@ MonoBehaviour:
   parriedDuration: 10
   manaBar: {fileID: 1666417688}
   attackManaGain: 5
+  desequilibroBar: {fileID: 1897694688}
   knockbackForce: 1.45
   knockbackDuration: 0.1
   stunDuration: 5
@@ -16470,6 +16471,7 @@ MonoBehaviour:
   F: {fileID: 701214769}
   isFinishable: 0
   parryHit: 0
+  canParry: 0
 --- !u!114 &1980087367
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16539,6 +16541,7 @@ MonoBehaviour:
   currentMomentum: 0
   desequilibroBar: {fileID: 1897694688}
   miniStunDuration: 0.25
+  parry3: 0
 --- !u!136 &1980087371
 CapsuleCollider:
   m_ObjectHideFlags: 0

@@ -30,7 +30,7 @@ public class EnemyCombat : EnemyBase
     [SerializeField] float chispasDuration;
 
     [Header("Momentum")]
-    [SerializeField] private int maxMomentum = 3;
+    [SerializeField] public int maxMomentum = 3;
     [SerializeField] private float decayTime = 3f; // si no golpeas se pierde
     public int currentMomentum = 0;
     private float lastParryTime;
@@ -38,6 +38,7 @@ public class EnemyCombat : EnemyBase
     private bool isMiniStunned = false;
     [SerializeField] private float miniStunDuration = 0.25f;
 
+    public bool parry3 = false;
     //push
     private bool pushing = false;
     private float pushTime = 0f;
@@ -125,6 +126,7 @@ public class EnemyCombat : EnemyBase
         attackRoutine = null;
         isAttacking = false;
     }
+
     public void TryDealDamageToPlayer()
     {
         StartPush();
@@ -144,9 +146,13 @@ public class EnemyCombat : EnemyBase
             playerCombat.OnHitByEnemy(this);
         }
     }
+
     public override void InterruptAttack() //Lo llama la jugador al hacer parry
     {
-
+            if(animator.GetCurrentAnimatorStateInfo(0).IsName("Attack3"))
+                {
+                    
+                }
             isAttacking = false;
 
             // Resetea triggers de animación de ataques
