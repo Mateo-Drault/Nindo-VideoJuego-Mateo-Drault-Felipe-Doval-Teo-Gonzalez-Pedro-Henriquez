@@ -29,6 +29,14 @@ public class EnemyCombat : EnemyBase
     public ParticleSystem chispas;
     [SerializeField] float chispasDuration;
 
+    [Header("Momentum")]
+    [SerializeField] private int maxMomentum = 3;
+    [SerializeField] private float decayTime = 3f; // si no golpeas se pierde
+    public int currentMomentum = 0;
+    private float lastParryTime;
+
+    private bool isMiniStunned = false;
+    [SerializeField] private float miniStunDuration = 0.25f;
 
     //push
     private bool pushing = false;
@@ -134,7 +142,7 @@ public class EnemyCombat : EnemyBase
             playerCombat.OnHitByEnemy(this);
         }
     }
-    public void InterruptAttack() //Lo llama la jugador al hacer parry
+    public override void InterruptAttack() //Lo llama la jugador al hacer parry
     {
 
             isAttacking = false;
@@ -147,7 +155,11 @@ public class EnemyCombat : EnemyBase
             posturaActual -= 1f;
             posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
 
-            if (posturaActual <= 0f)
+        if (currentMomentum < maxMomentum)
+            {
+                currentMomentum++;
+            }
+        if (posturaActual <= 0f)
             {
                 StunEnemy();
             }
@@ -160,6 +172,14 @@ public class EnemyCombat : EnemyBase
         Debug.Log("Enemigo aturdido!");
         posturaActual = posturaInicial;
         posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
+    }
+    public IEnumerator MiniStun()
+    {
+        if (isMiniStunned) yield break;
+        isMiniStunned = true;
+        animator.SetTrigger("MiniStun");
+        yield return new WaitForSeconds(miniStunDuration); //HARDCODEADO
+        isMiniStunned = false;
     }
 
     public void EndChispas()

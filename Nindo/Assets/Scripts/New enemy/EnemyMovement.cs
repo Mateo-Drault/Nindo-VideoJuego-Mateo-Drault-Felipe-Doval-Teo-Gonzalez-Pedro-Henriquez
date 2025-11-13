@@ -64,7 +64,7 @@ public class EnemyMovement : MonoBehaviour
             canAttack = true;
             Idle(); // detener el movimiento mientras ataca
         }
-        else if (distanceToPlayer > attackRange && seen)
+        else if (distanceToPlayer > attackRange && seen && !enemyCombat.isAttacking && !animator.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
         {
             canAttack = false;
             Chase();

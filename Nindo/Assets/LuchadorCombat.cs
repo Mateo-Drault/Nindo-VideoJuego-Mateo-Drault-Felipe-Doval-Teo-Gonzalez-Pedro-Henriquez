@@ -134,7 +134,7 @@ public class LuchadorCombat : EnemyBase
             playerCombat.OnHitByEnemy(this);
         }
     }
-    public void InterruptAttack() //Lo llama la jugador al hacer parry
+    public override void InterruptAttack() //Lo llama la jugador al hacer parry
     {
 
         isAttacking = false;

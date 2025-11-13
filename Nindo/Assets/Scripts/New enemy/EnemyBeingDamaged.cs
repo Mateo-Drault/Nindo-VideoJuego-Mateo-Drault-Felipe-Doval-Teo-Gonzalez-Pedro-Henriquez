@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
     using System.Collections.Generic;
     using UnityEngine;
 
@@ -63,7 +63,7 @@ using System.Collections;
                 {
                     animator.SetBool("isStunned", false);
                     isStunned = false;
-                    //Agregar partículas o algún tipo de vfx
+                    //Agregar partÃ­culas o algÃºn tipo de vfx
 
                 }
             }
@@ -100,11 +100,24 @@ using System.Collections;
         void OnTriggerEnter(Collider other)
         {
         if (other.CompareTag("PlayerSword") && !isBeingDamaged)
-            {           
-                //Animaciones
-                //stunTimer = stunDuration;
-                //animator.SetBool("isStunned", true);
-                manaBar.gastarMana(-attackManaGain);
+            {
+                if (enemyCombat.currentMomentum > 0)
+                {
+                    enemyCombat.currentMomentum--;
+                    StartCoroutine(enemyCombat.MiniStun());
+                }
+                else
+                {
+                    // Si no tiene momentum â†’ parry
+                    animator.SetTrigger("Parry");
+            }
+
+
+
+            //Animaciones
+            //stunTimer = stunDuration;
+            //animator.SetBool("isStunned", true);
+            manaBar.gastarMana(-attackManaGain);
                 isStunned = true;
                 parryHit = true;
                 isBeingDamaged = true;
@@ -122,6 +135,6 @@ using System.Collections;
     public void Death()
     {
         Destroy(enemyEntity);
-        //Agregar partículas o algún tipo de vfx
+        //Agregar partÃ­culas o algÃºn tipo de vfx
     }
 }

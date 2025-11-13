@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.7528441, g: 0.78151214, b: 0.82567656, a: 1}
+  m_IndirectSpecularColor: {r: 0.7528441, g: 0.7815121, b: 0.8256766, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -16259,11 +16259,15 @@ MonoBehaviour:
   attackRange: 4
   attackAngle: 45
   hasDealtDamage: 0
-  posturaInicial: 3
+  posturaInicial: 5
   posturaScript: {fileID: 32452608}
   isAttacking: 0
   chispas: {fileID: 437400306}
   chispasDuration: 0.1
+  maxMomentum: 3
+  decayTime: 3
+  currentMomentum: 0
+  miniStunDuration: 0.25
 --- !u!136 &1980087371
 CapsuleCollider:
   m_ObjectHideFlags: 0
