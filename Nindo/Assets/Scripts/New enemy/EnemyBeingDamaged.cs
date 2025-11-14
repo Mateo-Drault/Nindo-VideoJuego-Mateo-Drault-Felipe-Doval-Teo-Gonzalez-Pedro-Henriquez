@@ -1,6 +1,7 @@
 ﻿using System.Collections;
     using System.Collections.Generic;
-    using UnityEngine;
+using Unity.VisualScripting;
+using UnityEngine;
 
     public class EnemyBeingDamaged : MonoBehaviour
     {
@@ -104,7 +105,13 @@
         {
         if (other.CompareTag("PlayerSword") && !isBeingDamaged)
             {
-                if (enemyCombat.currentMomentum > 0)
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName("WaitParry"))
+            {
+
+                animator.SetTrigger("Parry");
+
+            }
+            if (enemyCombat.currentMomentum > 0)
                 {
                     hadMomentum = true;
                     enemyCombat.currentMomentum--;
@@ -112,7 +119,8 @@
                     StartCoroutine(enemyCombat.MiniStun());
                     if (enemyCombat.currentMomentum <= 0 && hadMomentum)
                     {
-                        // Si no tiene momentum → parry
+                    // Si no tiene momentum = parry
+                     animator.SetTrigger("WaitParry");
                      canParry= true;
                      hadMomentum = false;
                         
@@ -123,6 +131,7 @@
                     // Si no tiene momentum → parry
                     animator.SetTrigger("Parry");
                     canParry=false;
+                    
                 }
 
 

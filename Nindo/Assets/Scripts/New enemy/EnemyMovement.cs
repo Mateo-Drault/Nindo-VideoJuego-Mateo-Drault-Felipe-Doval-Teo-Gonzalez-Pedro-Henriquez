@@ -28,11 +28,13 @@ public class EnemyMovement : MonoBehaviour
     public bool isAttacking = false;
     [SerializeField] private bool isAttackingGeneral;
 
+    [SerializeField] public bool canAttackFinal; //MEGA CLAVEEE
     [SerializeField] private float rotationSpeed = 10f;
 
     // Start is called before the first frame update
     void Start()
     {
+        canAttackFinal=true;
         agent.updateRotation = false;
     }
 
@@ -54,12 +56,15 @@ public class EnemyMovement : MonoBehaviour
         {
             exclamationMark.SetActive(false);
         }
-
+        if (animator.GetCurrentAnimatorStateInfo(0).IsName("ChasingPlayer"))
+        {
+            canAttackFinal = true;
+        }
         // Si está aturdido o atacando, no hacer movimiento
         if (isAttacking) return;
 
         // Determinar comportamiento según distancia
-        if (distanceToPlayer <= attackRange && seen)
+        if (distanceToPlayer <= attackRange && seen && canAttackFinal)
         {
             canAttack = true;
             Idle(); // detener el movimiento mientras ataca

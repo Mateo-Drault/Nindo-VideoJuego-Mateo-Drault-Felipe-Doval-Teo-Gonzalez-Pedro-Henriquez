@@ -25,4 +25,9 @@ public class EventReciever : MonoBehaviour
         enemyCombat.hasDealtDamage = false;
     }
 
+    public void ComboEnd() 
+    {
+        enemyCombat.ComboEnd();
+    }
+
 }

@@ -72,6 +72,8 @@ public class EnemyCombat : EnemyBase
         }
 
 
+
+
     }
     void StartPush()
     {
@@ -182,6 +184,24 @@ public class EnemyCombat : EnemyBase
         posturaActual = posturaInicial;
         posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
     }
+
+    public void ComboEnd()
+    {
+
+        enemyMovement.canAttackFinal = false;
+        if (currentMomentum > 0)
+        {
+            animator.SetTrigger("Exausto");
+            animator.ResetTrigger("Attack3");
+        }
+        else
+        {
+            enemyBeingDamaged.canParry=true;
+            animator.SetTrigger("WaitParry");
+            animator.ResetTrigger("Attack3");
+        }
+    }
+
     public IEnumerator MiniStun()
     {
         if (isMiniStunned) yield break;
