@@ -56,7 +56,7 @@ public class EnemyCombat : EnemyBase
     // Update is called once per frame
     void Update()
     {
-        Debug.Log(attackRoutine);
+        //Debug.Log(attackRoutine);
         if (!isAttacking && enemyMovement.canAttack && attackRoutine == null)
         {
             attackRoutine = StartCoroutine(AttackComboCoroutine());
@@ -120,7 +120,7 @@ public class EnemyCombat : EnemyBase
             float dist = Vector3.Distance(transform.position, playerCombat.transform.position);
             if (dist > attackRange * 1.5f)
             {
-                Debug.Log("Jugador se alejó, cortando combo");
+                //Debug.Log("Jugador se alejó, cortando combo");
                 break;
             }
 
@@ -140,7 +140,7 @@ public class EnemyCombat : EnemyBase
         Vector3 toPlayer = (playerCombat.transform.position - transform.position).normalized;
         float angle = Vector3.Angle(transform.forward, toPlayer);
 
-        Debug.Log($"Distancia: {dist}, Ángulo: {angle}");
+        //Debug.Log($"Distancia: {dist}, Ángulo: {angle}");
 
         if (dist <= attackRange && angle <= attackAngle)
         {
@@ -175,12 +175,12 @@ public class EnemyCombat : EnemyBase
                 StunEnemy();
             }
 
-            Debug.Log("Ataque interrumpido por parry!");
+            //Debug.Log("Ataque interrumpido por parry!");
     }
     void StunEnemy()
     {
         animator.SetBool("isStunned", true);
-        Debug.Log("Enemigo aturdido!");
+        //Debug.Log("Enemigo aturdido!");
         posturaActual = posturaInicial;
         posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
     }

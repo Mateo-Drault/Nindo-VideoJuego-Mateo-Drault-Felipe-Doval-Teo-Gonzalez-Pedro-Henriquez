@@ -61,4 +61,9 @@ public class ManaBar : MonoBehaviour
     {
         manaBar.fillAmount = objective / maxMana;
     }
+
+    public void resetMana()
+    {
+        currentMana = maxMana;
+    }
 }

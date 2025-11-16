@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.7528441, g: 0.7815121, b: 0.8256766, a: 1}
+  m_IndirectSpecularColor: {r: 0.7528441, g: 0.78151214, b: 0.82567656, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2016,8 +2016,19 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6824b1dfa7fb3ca40b2a34ea092d2436, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 504913509}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 6824b1dfa7fb3ca40b2a34ea092d2436, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 504913508}
   m_SourcePrefab: {fileID: 100100000, guid: 6824b1dfa7fb3ca40b2a34ea092d2436, type: 3}
+--- !u!1 &319403967 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 6824b1dfa7fb3ca40b2a34ea092d2436, type: 3}
+  m_PrefabInstance: {fileID: 319403966}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &324297757 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6edf2b77f2c51814abd68777cbd65e20, type: 3}
@@ -8577,6 +8588,40 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6824b1dfa7fb3ca40b2a34ea092d2436, type: 3}
   m_PrefabInstance: {fileID: 319403966}
   m_PrefabAsset: {fileID: 0}
+--- !u!65 &504913508
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 319403967}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &504913509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 319403967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5426b4d477b9a27449a454afd33e44da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  checkPoint: {x: 0, y: 0, z: 0}
 --- !u!4 &539183428 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 55da3b3ed3e232a4c9fbc26eebfa8505, type: 3}
@@ -10005,6 +10050,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   currentHealth: 0
   maxHealth: 100
+  manaBar: {fileID: 1666417688}
   healthRate: 30
   healthBar: {fileID: 1548365927}
 --- !u!114 &825952091
