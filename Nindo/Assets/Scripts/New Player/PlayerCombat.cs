@@ -216,7 +216,7 @@ public class PlayerCombat : MonoBehaviour
         cameraShake.startShaking = true;
 
     }
-    IEnumerator HitStop(float duration)
+    public IEnumerator HitStop(float duration)
     {
         float originalTimeScale = Time.timeScale;
         Time.timeScale = 0f; // pausa total

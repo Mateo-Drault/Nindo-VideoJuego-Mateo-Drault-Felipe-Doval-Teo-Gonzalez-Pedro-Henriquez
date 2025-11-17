@@ -2,7 +2,7 @@
     using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
-
+using UnityEngine.VFX;
     public class EnemyBeingDamaged : MonoBehaviour
     {
         //seteados desde el inspector
@@ -19,7 +19,7 @@ using UnityEngine;
         [SerializeField] private ManaBar manaBar;
         [SerializeField] private float attackManaGain = 5f;
         [SerializeField] private DesequilibroBar desequilibroBar;
-
+        [SerializeField] private PlayerCombat playerCombat;
     //knockback
     [SerializeField] private float knockbackForce;
         [SerializeField] private float knockbackDuration;
@@ -48,7 +48,7 @@ using UnityEngine;
         public bool canParry;
         private bool hadMomentum;
 
-
+        [SerializeField] private VisualEffect damagedVFX;
 
     void Start()
         {
@@ -136,9 +136,11 @@ using UnityEngine;
 
 
 
-                //Animaciones
-                //stunTimer = stunDuration;
-                //animator.SetBool("isStunned", true);
+            //Animaciones
+            //stunTimer = stunDuration;
+            //animator.SetBool("isStunned", true);
+            StartCoroutine(StopAtDamage(0.07f));                
+                damagedVFX.Play();
                 manaBar.gastarMana(-attackManaGain);
                 isStunned = true;
                 parryHit = true;
@@ -154,6 +156,13 @@ using UnityEngine;
             }
 
         }
+     IEnumerator StopAtDamage(float duration)
+    {
+        float originalTimeScale = Time.timeScale;
+        Time.timeScale = 0f; // pausa total
+        yield return new WaitForSecondsRealtime(duration);
+        Time.timeScale = originalTimeScale;
+    }
     public void Death()
     {
         Destroy(enemyEntity);
