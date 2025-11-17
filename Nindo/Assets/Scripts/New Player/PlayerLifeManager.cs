@@ -8,6 +8,7 @@ public class PlayerLifeManager : MonoBehaviour
 {
     public float currentHealth;
     public float maxHealth = 100f;
+    [SerializeField] private ManaBar manaBar;
     [SerializeField] private float healthRate = 30f;
     [SerializeField] private Image healthBar;
     private void Awake()
@@ -21,7 +22,7 @@ public class PlayerLifeManager : MonoBehaviour
     {
         if (currentHealth <= 0)
         {
-            restartScene();
+            reviveInCheckpoint();
             //Destroy(gameObject);
         }
 
@@ -40,9 +41,12 @@ public class PlayerLifeManager : MonoBehaviour
             UpdatePlayerCertainHealthBar(objectiveHealth);
         }
     }
-    void restartScene()
+    void reviveInCheckpoint()
     {
-        SceneManager.LoadScene(SceneManager.GetActiveScene().name);
+        transform.position = FindObjectOfType<CheckPoint>().checkPoint;
+        resetLife();
+        manaBar.resetMana();
+        //SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
     public void DamageTaken(float damage)
@@ -53,5 +57,10 @@ public class PlayerLifeManager : MonoBehaviour
     public void UpdatePlayerCertainHealthBar(float objective)
     {
         healthBar.fillAmount = objective / maxHealth;
+    }
+
+    public void resetLife()
+    {
+        currentHealth = maxHealth;
     }
 }
