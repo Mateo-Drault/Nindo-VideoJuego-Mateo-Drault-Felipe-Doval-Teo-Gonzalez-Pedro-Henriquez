@@ -3,57 +3,7 @@ guid: dbac39bfe9be5fd41a31f29a324081f6
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: ArmaduraMiniJefe
-    second: {fileID: 2100000, guid: 736970bf9fffba14fa37fd04758630e7, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: CuerdaMiniJefe
-    second: {fileID: 2100000, guid: 22dc03c418065cd47b081f3605ba8a6a, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: CueroMiniJefe
-    second: {fileID: 2100000, guid: 7ea1ce3a69f77fb478cc3ca446dff664, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: MartilloMiniJefe
-    second: {fileID: 2100000, guid: f668e6e74a4541641a32f258f2b55511, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: NegroMiniJefe
-    second: {fileID: 2100000, guid: a55ae56511579924d8f609987dabcd2d, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: PielMiniJefe
-    second: {fileID: 2100000, guid: a6d24db0b8c81f641adcafe6522a9241, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: RojoOjosMiniJefe
-    second: {fileID: 2100000, guid: fce90c552f6737f40bd030abd6634490, type: 2}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
-      name: fabric_leather_01_diff_4k
-    second: {fileID: 2800000, guid: 494228e569c09b84891fb6d375794f9d, type: 3}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
-      name: plastered_stone_wall_diff_4k
-    second: {fileID: 2800000, guid: 6bc181402cf169b499c7ce67e3aa0dba, type: 3}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
-      name: rock_boulder_dry_diff_4k
-    second: {fileID: 2800000, guid: 062b0ba5fa5147f469d0c740964518f8, type: 3}
+  externalObjects: {}
   materials:
     materialImportMode: 2
     materialName: 0

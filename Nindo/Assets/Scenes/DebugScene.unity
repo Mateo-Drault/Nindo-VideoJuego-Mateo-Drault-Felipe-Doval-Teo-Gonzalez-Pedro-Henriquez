@@ -17584,6 +17584,18 @@ PrefabInstance:
       propertyPath: m_Name
       value: Minijefe
       objectReference: {fileID: 0}
+    - target: {fileID: 8153101253863224186, guid: dbac39bfe9be5fd41a31f29a324081f6, type: 3}
+      propertyPath: m_Materials.Array.data[0]
+      value: 
+      objectReference: {fileID: 2100000, guid: a6d24db0b8c81f641adcafe6522a9241, type: 2}
+    - target: {fileID: 8153101253863224186, guid: dbac39bfe9be5fd41a31f29a324081f6, type: 3}
+      propertyPath: m_Materials.Array.data[1]
+      value: 
+      objectReference: {fileID: 2100000, guid: 22dc03c418065cd47b081f3605ba8a6a, type: 2}
+    - target: {fileID: 8153101253863224186, guid: dbac39bfe9be5fd41a31f29a324081f6, type: 3}
+      propertyPath: m_Materials.Array.data[5]
+      value: 
+      objectReference: {fileID: 2100000, guid: fce90c552f6737f40bd030abd6634490, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
