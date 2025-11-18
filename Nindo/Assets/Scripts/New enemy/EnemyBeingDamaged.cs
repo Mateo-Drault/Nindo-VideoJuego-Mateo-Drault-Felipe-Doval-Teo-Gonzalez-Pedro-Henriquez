@@ -97,7 +97,7 @@ using UnityEngine.VFX;
             if (safeTime <= 0)
             {
                 isBeingDamaged = false;
-                safeTime = 0.4f;
+                safeTime = 0.1f;
             }
         }
     }
