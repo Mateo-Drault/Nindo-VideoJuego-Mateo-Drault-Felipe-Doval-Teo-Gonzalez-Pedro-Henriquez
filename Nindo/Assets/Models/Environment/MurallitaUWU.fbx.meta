@@ -1,24 +1,9 @@
 fileFormatVersion: 2
-guid: c6a819a19f5700c4382c66c623c68f71
+guid: 8c97a7dcc452abb41bc0997cc6a55c7d
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
-  externalObjects:
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: TierraFertil.005
-    second: {fileID: 2100000, guid: 985c4871a7c0b744198e7120c1b84cce, type: 2}
-  - first:
-      type: UnityEngine:Material
-      assembly: UnityEngine.CoreModule
-      name: TrigoImage
-    second: {fileID: 2100000, guid: cbc993dd6715e2540994c1899e3e5560, type: 2}
-  - first:
-      type: UnityEngine:Texture2D
-      assembly: UnityEngine.CoreModule
-      name: TrigoFront
-    second: {fileID: 2800000, guid: 16de15730b3d31146a28c7c682897557, type: 3}
+  externalObjects: {}
   materials:
     materialImportMode: 2
     materialName: 0
