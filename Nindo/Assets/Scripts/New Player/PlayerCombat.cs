@@ -24,7 +24,7 @@ public class PlayerCombat : MonoBehaviour
     [SerializeField] private float chispasDuration = 0.05f;
     [SerializeField] private float parryManaGain = 10f;
 
-    private bool pushing = false;
+    public bool pushing = false;
     private float pushTime = 0f;
 
     private bool parryPushingBack = false;
@@ -101,11 +101,12 @@ public class PlayerCombat : MonoBehaviour
         if (comboStep == 2)
         {
             anim.SetTrigger("Attack2");
-
+            StartPush();
         }
         else if (comboStep == 3)
         {
             anim.SetTrigger("Attack3");
+            StartPush();
         }
         else
         {

@@ -20,10 +20,12 @@ using UnityEngine.VFX;
         [SerializeField] private float attackManaGain = 5f;
         [SerializeField] private DesequilibroBar desequilibroBar;
         [SerializeField] private PlayerCombat playerCombat;
+        [SerializeField] private WhteFlash whiteFlash;
     //knockback
-    [SerializeField] private float knockbackForce;
+        [SerializeField] private float knockbackForce;
         [SerializeField] private float knockbackDuration;
 
+    
 
         //animaciones
         [SerializeField] public float stunDuration;
@@ -139,12 +141,14 @@ using UnityEngine.VFX;
             //Animaciones
             //stunTimer = stunDuration;
             //animator.SetBool("isStunned", true);
-            StartCoroutine(StopAtDamage(0.07f));                
+            StartCoroutine(StopAtDamage(0.07f));     
+            
                 damagedVFX.Play();
                 manaBar.gastarMana(-attackManaGain);
                 isStunned = true;
                 parryHit = true;
                 isBeingDamaged = true;
+                whiteFlash.Flash(); //flash blanco
                 Health -= damageAmount;
                     if (Health <= 0)
                     {
