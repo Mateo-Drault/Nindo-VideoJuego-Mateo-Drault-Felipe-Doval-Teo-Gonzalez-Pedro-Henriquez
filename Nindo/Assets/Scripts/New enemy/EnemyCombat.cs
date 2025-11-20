@@ -215,4 +215,11 @@ public class EnemyCombat : EnemyBase
     {
         chispas.Stop();
     }
+    public void OnParryAnimationEnd()
+    {
+        // empezar el ataque inmediatamente
+        if (!isAttacking)
+            attackRoutine = StartCoroutine(AttackComboCoroutine());
+    }
+
 }

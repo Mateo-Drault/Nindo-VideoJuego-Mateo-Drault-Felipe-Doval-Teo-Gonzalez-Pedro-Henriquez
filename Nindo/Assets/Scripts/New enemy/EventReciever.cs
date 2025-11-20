@@ -29,5 +29,9 @@ public class EventReciever : MonoBehaviour
     {
         enemyCombat.ComboEnd();
     }
+    public void OnParryAnimationEnd()
+    {
+        enemyCombat.OnParryAnimationEnd();
+    }
 
 }

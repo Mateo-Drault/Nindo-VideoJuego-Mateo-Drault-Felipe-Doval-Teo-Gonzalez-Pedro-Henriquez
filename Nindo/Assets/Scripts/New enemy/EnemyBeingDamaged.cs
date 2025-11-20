@@ -103,63 +103,62 @@ using UnityEngine.VFX;
             }
         }
     }
-        void OnTriggerEnter(Collider other)
-        {
+    void OnTriggerEnter(Collider other)
+    {
         if (other.CompareTag("PlayerSword") && !isBeingDamaged)
+        {
+            // Caso 1: ya está esperando un golpe para hacer parry
+            if (canParry)
             {
-            if (animator.GetCurrentAnimatorStateInfo(0).IsName("WaitParry"))
-            {
-
+                damagedVFX.Play();
                 animator.SetTrigger("Parry");
-
+                canParry = false;
+                playerCombat.InterrumptAttack();
+                return;
             }
+
+            // Caso 2: tiene momentum → mini stun
             if (enemyCombat.currentMomentum > 0)
+            {
+                hadMomentum = true;
+                enemyCombat.currentMomentum--;
+                desequilibroBar.UpdateDesequilibrioBar(enemyCombat.maxMomentum, enemyCombat.currentMomentum);
+                StartCoroutine(enemyCombat.MiniStun());
+
+                // Si pierde todo el momentum → entrar en WaitParry
+                if (enemyCombat.currentMomentum <= 0 && hadMomentum)
                 {
-                    hadMomentum = true;
-                    enemyCombat.currentMomentum--;
-                    desequilibroBar.UpdateDesequilibrioBar(enemyCombat.maxMomentum, enemyCombat.currentMomentum);
-                    StartCoroutine(enemyCombat.MiniStun());
-                    if (enemyCombat.currentMomentum <= 0 && hadMomentum)
-                    {
-                    // Si no tiene momentum = parry
-                     animator.SetTrigger("WaitParry");
-                     canParry= true;
-                     hadMomentum = false;
-                        
-                    }
+                    animator.SetTrigger("WaitParry");
+                    canParry = true;
+
+                    hadMomentum = false;
                 }
-                else if(canParry)
-                {
-                    // Si no tiene momentum → parry
-                    animator.SetTrigger("Parry");
-                    canParry=false;
-                    
-                }
+            }
 
 
 
             //Animaciones
             //stunTimer = stunDuration;
             //animator.SetBool("isStunned", true);
-            StartCoroutine(StopAtDamage(0.07f));     
-            
-                damagedVFX.Play();
-                manaBar.gastarMana(-attackManaGain);
-                isStunned = true;
-                parryHit = true;
-                isBeingDamaged = true;
-                whiteFlash.Flash(); //flash blanco
-                Health -= damageAmount;
-                    if (Health <= 0)
-                    {
-                        Invoke(nameof(Death), knockbackDuration);
-                    }
-                    healthScript.UpdateHealthBar(maxHealthAmount, Health);
+            StartCoroutine(StopAtDamage(0.07f));
 
-
+            damagedVFX.Play();
+            manaBar.gastarMana(-attackManaGain);
+            isStunned = true;
+            parryHit = true;
+            isBeingDamaged = true;
+            whiteFlash.Flash(); //flash blanco
+            Health -= damageAmount;
+            if (Health <= 0)
+            {
+                Invoke(nameof(Death), knockbackDuration);
             }
+            healthScript.UpdateHealthBar(maxHealthAmount, Health);
+
 
         }
+    }   
+        
      IEnumerator StopAtDamage(float duration)
     {
         float originalTimeScale = Time.timeScale;

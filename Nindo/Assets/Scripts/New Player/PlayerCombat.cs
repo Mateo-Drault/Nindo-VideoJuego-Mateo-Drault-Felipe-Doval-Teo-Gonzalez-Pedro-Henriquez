@@ -247,10 +247,12 @@ public class PlayerCombat : MonoBehaviour
     {
         if (isAttacking)
         {
+            anim.SetTrigger("Parryed");
+            cameraShake.startShaking = true;
+            StartCoroutine(HitStop(0.1f));
             anim.ResetTrigger("Attack1");
             anim.ResetTrigger("Attack2");
             anim.ResetTrigger("Attack3");
-            anim.SetTrigger("stunned");
             isAttacking = false;
             katanaCollider.enabled = false;
             comboStep = 0;
