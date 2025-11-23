@@ -115,8 +115,24 @@ public class SwordTrail : MonoBehaviour
                 alpha = Mathf.Clamp01(1f - fadeProgress);
             }
 
-            vertices[i * 2] = transform.InverseTransformPoint(points[i].basePos);
-            vertices[i * 2 + 1] = transform.InverseTransformPoint(points[i].tipPos);
+            // Factor de escala según la edad del punto
+            float t = (float)i / (points.Count - 1);
+            // t = 0 → inicio del trail (fino)
+            // t = 1 → final del trail (ancho normal)
+
+            // Determinar la dirección entre base y tip
+            Vector3 baseLocal = transform.InverseTransformPoint(points[i].basePos);
+            Vector3 tipLocal = transform.InverseTransformPoint(points[i].tipPos);
+
+            // Vector base tip (ancho del trail)
+            Vector3 widthDir = tipLocal - baseLocal;
+
+            // Escalo el ancho
+            Vector3 scaledWidth = widthDir * t;
+
+            // Reposicionar los vértices ya escalados
+            vertices[i * 2] = baseLocal;
+            vertices[i * 2 + 1] = baseLocal + scaledWidth;
 
             colors[i * 2] = new Color(1, 1, 1, alpha);
             colors[i * 2 + 1] = new Color(1, 1, 1, alpha);
