@@ -22,7 +22,7 @@ public class EnemyMovement : MonoBehaviour
     public bool canAttack;
     float segundos = 0f;
     [SerializeField] float tiempoDeAnimacionExclamation;
-
+    [SerializeField] public bool stayStill;
 
     public bool seen;
     public bool isAttacking = false;
@@ -36,6 +36,7 @@ public class EnemyMovement : MonoBehaviour
     {
         canAttackFinal=true;
         agent.updateRotation = false;
+        stayStill = false;
     }
 
     // Update is called once per frame
@@ -64,12 +65,12 @@ public class EnemyMovement : MonoBehaviour
         if (isAttacking) return;
 
         // Determinar comportamiento según distancia
-        if (distanceToPlayer <= attackRange && seen && canAttackFinal)
+        if (distanceToPlayer <= attackRange && seen && canAttackFinal)  
         {
             canAttack = true;
             Idle(); // detener el movimiento mientras ataca
         }
-        else if (distanceToPlayer > attackRange && seen && !enemyCombat.isAttacking && !animator.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
+        else if (distanceToPlayer > attackRange && seen && !enemyCombat.isAttacking && !animator.GetCurrentAnimatorStateInfo(0).IsName("Stunned") && !stayStill)
         {
             canAttack = false;
             Chase();

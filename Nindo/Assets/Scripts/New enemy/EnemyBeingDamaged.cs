@@ -24,7 +24,7 @@ using UnityEngine.VFX;
     //knockback
         [SerializeField] private float knockbackForce;
         [SerializeField] private float knockbackDuration;
-
+        [SerializeField] private EnemyMovement enemyMovement;
     
 
         //animaciones
@@ -114,6 +114,7 @@ using UnityEngine.VFX;
                 animator.SetTrigger("Parry");
                 canParry = false;
                 playerCombat.InterrumptAttack();
+                enemyMovement.stayStill=false;
                 return;
             }
 

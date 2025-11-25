@@ -162,32 +162,19 @@ public class EnemyCombat : EnemyBase
             animator.ResetTrigger("Attack2");
             animator.ResetTrigger("Attack3");
             
-            posturaActual -= 1f;
-            posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
 
         if (currentMomentum < maxMomentum)
             {
                 currentMomentum++;
                 desequilibroBar.UpdateDesequilibrioBar(maxMomentum, currentMomentum);
             }
-        if (posturaActual <= 0f)
-            {
-                StunEnemy();
-            }
 
             //Debug.Log("Ataque interrumpido por parry!");
-    }
-    void StunEnemy()
-    {
-        animator.SetBool("isStunned", true);
-        //Debug.Log("Enemigo aturdido!");
-        posturaActual = posturaInicial;
-        posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
     }
 
     public void ComboEnd()
     {
-
+        enemyMovement.stayStill=true;
         enemyMovement.canAttackFinal = false;
         if (currentMomentum > 0)
         {
