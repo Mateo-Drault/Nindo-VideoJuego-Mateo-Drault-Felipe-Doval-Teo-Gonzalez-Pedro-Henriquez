@@ -83,14 +83,16 @@ using UnityEngine.VFX;
                 animator.SetBool("isStunned", false);
             }
         }
-        if (Health<= finisherThreshold) 
+        if (Health <= finisherThreshold)
         {
             F.SetActive(true);
             isFinishable = true;
         }
-        else 
+        else
         {
             F.SetActive(false);
+            isFinishable = true;
+
         }
 
         if (isBeingDamaged)
