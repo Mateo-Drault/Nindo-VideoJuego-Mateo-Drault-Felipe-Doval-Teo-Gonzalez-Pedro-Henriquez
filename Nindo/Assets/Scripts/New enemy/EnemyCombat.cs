@@ -49,7 +49,6 @@ public class EnemyCombat : EnemyBase
         currentMomentum = 0;
         desequilibroBar.UpdateDesequilibrioBar(maxMomentum, currentMomentum);
         chispas.Clear();
-        posturaActual = posturaInicial;
 
     }
 

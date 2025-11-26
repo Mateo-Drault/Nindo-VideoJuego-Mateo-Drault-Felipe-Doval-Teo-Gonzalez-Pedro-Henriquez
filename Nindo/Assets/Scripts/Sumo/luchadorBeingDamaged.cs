@@ -5,7 +5,7 @@ using UnityEngine;
 public class luchadorBeingDamaged : MonoBehaviour
 {
     //seteados desde el inspector
-    [SerializeField] private healthScript healthScript;
+    [SerializeField] private LuchadorHealthScript healthScript;
     [SerializeField] private LuchadorCombat luchadorCombat;
     [SerializeField] private EnemyHitbox hitbox;
     [SerializeField] private Rigidbody rb;
@@ -14,6 +14,7 @@ public class luchadorBeingDamaged : MonoBehaviour
     [SerializeField] private GameObject enemyEntity;
     [SerializeField] private bool isBeingDamaged;
     [SerializeField] private float safeTime;
+    [SerializeField] private DesequilibroBar desequilibroBar;
 
     //knockback
     [SerializeField] private float knockbackForce;
@@ -31,7 +32,10 @@ public class luchadorBeingDamaged : MonoBehaviour
     public float Health;
     public float maxHealthAmount;
     [SerializeField] private float damageAmount; //se va a cambiar a la espada este valor
-
+    [SerializeField] private GameObject F;
+    public bool isFinishable;
+    public float finisherThreshold = 20f;
+    [SerializeField] private WhteFlash whiteFlash;
 
 
     //Parry
@@ -64,6 +68,11 @@ public class luchadorBeingDamaged : MonoBehaviour
                 isBeingDamaged = false;
             }
         }
+        if (Health <= finisherThreshold)
+        {
+            F.SetActive(true);
+            isFinishable = true;
+        }
         if (animator.GetCurrentAnimatorStateInfo(0).IsName("Stunned"))
         {
             safeTime -= Time.deltaTime;
@@ -76,21 +85,21 @@ public class luchadorBeingDamaged : MonoBehaviour
     }
     void OnTriggerEnter(Collider other)
     {
-        if (other.CompareTag("PlayerSwordAttacking") && !isBeingDamaged)
+        if (other.CompareTag("PlayerSword") && !isBeingDamaged)
         {
+            if (luchadorCombat.currentMomentum > 0)
+            {
+                luchadorCombat.currentMomentum--;
+                desequilibroBar.UpdateDesequilibrioBar(luchadorCombat.maxMomentum, luchadorCombat.currentMomentum);
+                StartCoroutine(luchadorCombat.MiniStun());
+            }
             //Animaciones
             stunTimer = stunDuration;
             animator.SetBool("isStunned", true);
-            isStunned = true;
-            //Knockback: libo temporal
-            //rb.velocity = Vector3.zero;
-            //Vector3 knockback = (transform.position - playerTransform.position).normalized;
-            //knockback.y = 0f;
-            //rb.AddForce(knockback * knockbackForce, ForceMode.Impulse);
-
-            //Sacar vida y eliminar en caso de tener 0
+            isStunned = true;            
             isBeingDamaged = true;
             Health -= damageAmount;
+            whiteFlash.Flash();
             if (Health <= 0)
             {
                 Invoke(nameof(Death), knockbackDuration);
@@ -103,6 +112,6 @@ public class luchadorBeingDamaged : MonoBehaviour
     }
     void Death()
     {
-        Destroy(enemyEntity);
+        Destroy(gameObject);
     }
 }

@@ -24,4 +24,8 @@ public class LuchadorReciever : MonoBehaviour
         luchadorCombat.isAttacking = false;
         luchadorCombat.hasDealtDamage = false;
     }
+    public void ComboEnd()
+    {
+        luchadorCombat.ComboEnd();
+    }
 }

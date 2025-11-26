@@ -26,23 +26,29 @@ public class LuchadorCombat : EnemyBase
 
     public ParticleSystem chispas;
     [SerializeField] float chispasDuration;
-
-
+    public float currentMomentum;
+    private bool isMiniStunned = false;
+    [SerializeField] private float miniStunDuration = 0.25f;
     //push
     private bool pushing = false;
     private float pushTime = 0f;
-
+    [SerializeField] public int maxMomentum = 3;
+    [SerializeField] private DesequilibroBar desequilibroBar;
+    public bool isBusy;
+    public bool cancelAttackCombo =false;
 
     // Start is called before the first frame update
     void Start()
     {
         posturaActual = posturaInicial;
+        currentMomentum = 0;
+        desequilibroBar.UpdateDesequilibrioBar(maxMomentum, currentMomentum);
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (!isAttacking && luchadorMovement.canAttack && attackRoutine == null)
+        if (!isAttacking && luchadorMovement.canAttack && attackRoutine == null && !isBusy)
         {
             attackRoutine = StartCoroutine(AttackComboCoroutine());
         }
@@ -54,6 +60,10 @@ public class LuchadorCombat : EnemyBase
 
             if (pushTime >= 0.05f) // dura 0.1 segundos
                 pushing = false;
+        }
+        if (currentMomentum <= 0)
+        {
+            isBusy = false;
         }
     }
     void StartPush()
@@ -81,9 +91,11 @@ public class LuchadorCombat : EnemyBase
     IEnumerator AttackComboCoroutine()
     {
         isAttacking = true;
-
+        cancelAttackCombo = false;
         for (int i = 1; i <= 3; i++) // combo de 3 ataques
         {
+            if(cancelAttackCombo) break;
+
             animator.ResetTrigger("Attack1");
             animator.ResetTrigger("Attack2");
             animator.ResetTrigger("Attack3");
@@ -95,8 +107,9 @@ public class LuchadorCombat : EnemyBase
             hasDealtDamage = false;
             if (i <3)
             {
-                // Esperar fin de animaci�n de ataque (ajust� seg�n duraci�n real)
                 yield return new WaitForSeconds(0.6f);
+                // Esperar fin de animaci�n de ataque (ajust� seg�n duraci�n real)
+
             }
             else 
             {
@@ -144,24 +157,36 @@ public class LuchadorCombat : EnemyBase
         animator.ResetTrigger("Attack2");
         animator.ResetTrigger("Attack3");
 
-        posturaActual -= 1f;
         posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
-
-        if (posturaActual <= 0f)
+        if (currentMomentum < maxMomentum)
         {
-            StunEnemy();
+            currentMomentum++;
+            desequilibroBar.UpdateDesequilibrioBar(maxMomentum, currentMomentum);
         }
 
         Debug.Log("Ataque interrumpido por parry!");
     }
-    void StunEnemy()
+    public IEnumerator MiniStun()
     {
-        animator.SetBool("isStunned", true);
-        Debug.Log("Enemigo aturdido!");
-        posturaActual = posturaInicial;
-        posturaScript?.UpdatePosturaBar(posturaInicial, posturaActual);
+        if (isMiniStunned) yield break;
+        isMiniStunned = true;
+        animator.SetTrigger("MiniStun");
+        yield return new WaitForSeconds(miniStunDuration); //HARDCODEADO
+        isMiniStunned = false;
     }
-
+    public void ComboEnd()
+    {
+        //enemyMovement.stayStill = true;
+        if (currentMomentum > 0)
+        {
+            animator.SetTrigger("Exausto");
+            animator.ResetTrigger("Attack1");
+            animator.ResetTrigger("Attack2");
+            animator.ResetTrigger("Attack3");
+            isBusy = true;
+            cancelAttackCombo = false;
+        }
+    }
     public void EndChispas()
     {
         chispas.Stop();
