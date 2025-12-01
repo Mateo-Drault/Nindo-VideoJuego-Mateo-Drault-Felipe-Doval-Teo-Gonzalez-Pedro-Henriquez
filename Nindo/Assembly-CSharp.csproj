@@ -60,8 +60,9 @@
   <ItemGroup>
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextEventHandler.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexShakeA.cs" />
+    <Compile Include="Assets\Scripts\LuchadorHealthScript.cs" />
     <Compile Include="Assets\Scripts\New Player\NewPlayerMovement.cs" />
-    <Compile Include="Assets\LuchadorHealthScript.cs" />
+    <Compile Include="Assets\Scripts\WhteFlash.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyCombat.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerBeingDamaged.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\EnvMapAnimator.cs" />
@@ -72,7 +73,7 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark01_UGUI.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\SimpleScript.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark04.cs" />
-    <Compile Include="Assets\Scripts\cameraFollow.cs" />
+    <Compile Include="Assets\Scripts\Sound\SoundManager.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ChatController.cs" />
     <Compile Include="Assets\Scripts\Enemy\BeingDamaged.cs" />
     <Compile Include="Assets\Scripts\New Player\PlayerEventReciever.cs" />
@@ -87,15 +88,15 @@
     <Compile Include="Assets\Scripts\ScriptsBrushes\PrefabBrush.cs" />
     <Compile Include="Assets\Scripts\New Player\KatanaColliding.cs" />
     <Compile Include="Assets\Scripts\Enemy\healthScript.cs" />
+    <Compile Include="Assets\Scripts\camera\CameraShake.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\PosturaScript.cs" />
+    <Compile Include="Assets\Scripts\Sound\PlaySoundEnter.cs" />
     <Compile Include="Assets\Scripts\EnemyBase.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemyHitbox.cs" />
     <Compile Include="Assets\Scripts\Enemy\EnemySwordAnimation.cs" />
     <Compile Include="Assets\Scripts\New Player\ManaBar.cs" />
-    <Compile Include="Assets\Scripts\CameraShake.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark03.cs" />
-    <Compile Include="Assets\WhteFlash.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerSwordAnimation.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyBeingDamaged.cs" />
     <Compile Include="Assets\Scripts\Sumo\LuchadorCombat.cs" />
@@ -112,10 +113,11 @@
     <Compile Include="Assets\Scripts\KatanaParry.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerParry.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ObjectSpin.cs" />
+    <Compile Include="Assets\Scripts\DesequilibroBar.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_PhoneNumberValidator.cs" />
     <Compile Include="Assets\Scripts\Sumo\luchadorBeingDamaged.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexJitter.cs" />
-    <Compile Include="Assets\DesequilibroBar.cs" />
+    <Compile Include="Assets\Scripts\Sound\PlaySoundExit.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TextConsoleSimulator.cs" />
     <Compile Include="Assets\Scripts\New Player\LockOnTarget.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TeleType.cs" />
@@ -125,6 +127,7 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\VertexZoom.cs" />
     <Compile Include="Assets\Scripts\Sumo\combateLuchador.cs" />
     <Compile Include="Assets\Scripts\New Player\PlayerLifeManager.cs" />
+    <Compile Include="Assets\Scripts\New enemy\fButton.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextSelector_B.cs" />
     <Compile Include="Assets\Scripts\New Player\PlayerAnimation.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\SkewTextExample.cs" />
@@ -137,8 +140,8 @@
     <Compile Include="Assets\Scripts\UI\PauseMenu.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerMovement.cs" />
     <Compile Include="Assets\Scripts\New enemy\EventReciever.cs" />
-    <Compile Include="Assets\Scripts\fButton.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextInfoDebugTool.cs" />
+    <Compile Include="Assets\Scripts\camera\cameraFollow.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
