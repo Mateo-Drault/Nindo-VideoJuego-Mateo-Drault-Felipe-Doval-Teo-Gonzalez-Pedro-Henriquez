@@ -10839,7 +10839,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 8810fa0368d6ae54889b51c5b79dab2f, type: 3}
   - {fileID: 8300000, guid: 20ad7977e4c6d6c45af26c677a05531b, type: 3}
   - {fileID: 8300000, guid: a120d3f90dd82ec4bb4cdb8f11712754, type: 3}
-  musicVolume: 0.6
+  musicVolume: 0.1
   globalVolume: 1
 --- !u!82 &1300042872
 AudioSource:
