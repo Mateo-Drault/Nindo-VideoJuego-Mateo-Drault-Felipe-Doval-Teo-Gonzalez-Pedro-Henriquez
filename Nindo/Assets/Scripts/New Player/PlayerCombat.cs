@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.VFX;
 public class PlayerCombat : MonoBehaviour
 {
@@ -204,6 +206,7 @@ public class PlayerCombat : MonoBehaviour
     {
         manaBar.gastarMana(-parryManaGain);
         anim.SetTrigger("succesfulParry");
+        SoundManager.PlaySound(SoundType.PARRY, 0.1f);
         parryEffect.Play();
         hasParried = true;
         StartPushBack();

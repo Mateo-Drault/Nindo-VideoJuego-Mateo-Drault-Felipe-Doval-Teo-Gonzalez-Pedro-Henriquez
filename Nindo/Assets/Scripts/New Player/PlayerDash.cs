@@ -32,6 +32,7 @@ public class PlayerDash : MonoBehaviour
             DoAttackDash();
             animator.SetTrigger("Dash");
             invisible.SetTrigger("Dash");
+            SoundManager.PlaySound(SoundType.DASH, 0.5f);
         }
     }
 

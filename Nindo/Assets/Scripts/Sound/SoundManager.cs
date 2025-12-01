@@ -9,7 +9,8 @@ public enum SoundType
     HURT,
     FOOTSTEPS,
     MUSIC,
-    FINISHER
+    FINISHER,
+    DASH
 }
 
 [RequireComponent(typeof(AudioSource))] //Siempre tiene que tener un audio
@@ -17,36 +18,49 @@ public enum SoundType
 public class SoundManager : MonoBehaviour
 {
     [SerializeField] private AudioClip[] soundList;
+    [SerializeField, Range(0, 1f)] private float musicVolume = 0.2f;
+    [SerializeField, Range(0, 1f)] private float globalVolume = 1.0f;
     private static SoundManager instance; // Singleton instance
-    private AudioSource audioSource;
-    private bool musicPlaying = false;
+    private AudioSource sfxSource;
+    private AudioSource musicSource;
 
     private void Awake()
     {
-        instance = this;
+        if (instance == null)
+        {
+            instance = this;
+        }
+        else if (instance != this)
+        {
+            Destroy(instance);
+        }
+        ;
     }
 
     private void Start()
     {
-        audioSource = GetComponent<AudioSource>();
+        sfxSource = GetComponent<AudioSource>();
+        musicSource = GetComponent<AudioSource>();
+        musicSource.loop = true;
+        PlayMusic();
     }
 
     private void Update()
     {
-        StartCoroutine(Music());
+       
     }
+
+    public static float GlobalVolume => instance.globalVolume; //La hago static para poder usarla en PlaySound
 
     public static void PlaySound(SoundType sound, float volume = 1)
     {
-        instance.audioSource.PlayOneShot(instance.soundList[(int)sound], volume); // Reproduce el sonido que le pasas que corresponda al enum y setea el volumen de ese audio
+        instance.sfxSource.PlayOneShot(instance.soundList[(int)sound], volume * GlobalVolume); // Reproduce el sonido que le pasas que corresponda al enum y setea el volumen de ese audio 
     }
 
-    IEnumerator Music()
+    private void PlayMusic()
     {
-        if (musicPlaying) yield break;
-        musicPlaying = true;
-        PlaySound(SoundType.MUSIC, 0.1f);
-        yield return new WaitForSeconds(246);
-        musicPlaying = false;
+        musicSource.clip = soundList[(int)SoundType.MUSIC];
+        musicSource.volume = musicVolume * globalVolume;
+        musicSource.Play();
     }
 }

@@ -10832,12 +10832,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   soundList:
-  - {fileID: 8300000, guid: c8f09d8877575c1479be0299c5bc342b, type: 3}
-  - {fileID: 8300000, guid: 3a9cf21b05f82cd439f615a4b07a4868, type: 3}
+  - {fileID: 8300000, guid: 3516dc99fcc9eaa43b4bd69f2bda7578, type: 3}
+  - {fileID: 8300000, guid: 3996a0f0dbc6cce48be0e5ec2f1e88a3, type: 3}
   - {fileID: 8300000, guid: 2a69907420918aa4ca962ed93fa99b84, type: 3}
   - {fileID: 8300000, guid: 8cfbe4d1e8d7d0e47b929d1130fa26c1, type: 3}
   - {fileID: 8300000, guid: 8810fa0368d6ae54889b51c5b79dab2f, type: 3}
   - {fileID: 8300000, guid: 20ad7977e4c6d6c45af26c677a05531b, type: 3}
+  - {fileID: 8300000, guid: a120d3f90dd82ec4bb4cdb8f11712754, type: 3}
+  musicVolume: 0.6
+  globalVolume: 1
 --- !u!82 &1300042872
 AudioSource:
   m_ObjectHideFlags: 0
@@ -15015,9 +15018,33 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4687443207455371465, guid: ffada03817630754aa4f9a8f2b6b28d2, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 15.200003
+      objectReference: {fileID: 0}
+    - target: {fileID: 4687443207455371465, guid: ffada03817630754aa4f9a8f2b6b28d2, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -15.999999
+      objectReference: {fileID: 0}
+    - target: {fileID: 5605406625569547253, guid: ffada03817630754aa4f9a8f2b6b28d2, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -27
+      objectReference: {fileID: 0}
+    - target: {fileID: 5605406625569547253, guid: ffada03817630754aa4f9a8f2b6b28d2, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -37
+      objectReference: {fileID: 0}
     - target: {fileID: 6892835936751966019, guid: ffada03817630754aa4f9a8f2b6b28d2, type: 3}
       propertyPath: m_Name
       value: HUDCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 8212125865525088508, guid: ffada03817630754aa4f9a8f2b6b28d2, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 208
+      objectReference: {fileID: 0}
+    - target: {fileID: 8212125865525088508, guid: ffada03817630754aa4f9a8f2b6b28d2, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 36
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
