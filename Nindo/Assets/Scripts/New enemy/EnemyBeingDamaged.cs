@@ -91,7 +91,7 @@ using UnityEngine.VFX;
         else
         {
             F.SetActive(false);
-            isFinishable = true;
+            isFinishable = false;
 
         }
 
@@ -171,6 +171,7 @@ using UnityEngine.VFX;
     }
     public void Death()
     {
+        isFinishable = false;
         Destroy(enemyEntity);
         //Agregar partículas o algún tipo de vfx
     }

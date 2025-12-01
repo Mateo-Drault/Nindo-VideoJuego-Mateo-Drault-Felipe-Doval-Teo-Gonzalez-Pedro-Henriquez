@@ -191,7 +191,7 @@ public class PlayerCombat : MonoBehaviour
 
     public void OnHitByEnemy(EnemyBase atacante)
     {
-        Debug.Log("golpe");
+        //Debug.Log("golpe");
         if (parryActive)
         {
             SuccessfulParry(atacante);

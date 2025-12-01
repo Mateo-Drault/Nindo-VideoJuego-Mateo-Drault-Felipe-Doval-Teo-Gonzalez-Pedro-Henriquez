@@ -120,7 +120,7 @@ public class LuchadorCombat : EnemyBase
             float dist = Vector3.Distance(transform.position, playerCombat.transform.position);
             if (dist > attackRange * 1.5f)
             {
-                Debug.Log("Jugador se alej�, cortando combo");
+                //Debug.Log("Jugador se alej�, cortando combo");
                 break;
             }
 
