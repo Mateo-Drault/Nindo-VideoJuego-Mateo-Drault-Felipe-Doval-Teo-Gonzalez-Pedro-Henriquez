@@ -41,13 +41,19 @@ public class SoundManager : MonoBehaviour
     {
         sfxSource = GetComponent<AudioSource>();
         musicSource = GetComponent<AudioSource>();
-        musicSource.loop = true;
         PlayMusic();
     }
 
     private void Update()
     {
-       
+        musicSource.volume = musicVolume * globalVolume; //Para que sea configurable en realtime
+    }
+    private void PlayMusic()
+    {
+        musicSource.loop = true;
+        musicSource.clip = soundList[(int)SoundType.MUSIC];
+        musicSource.volume = musicVolume * globalVolume;
+        musicSource.Play();
     }
 
     public static float GlobalVolume => instance.globalVolume; //La hago static para poder usarla en PlaySound
@@ -57,10 +63,4 @@ public class SoundManager : MonoBehaviour
         instance.sfxSource.PlayOneShot(instance.soundList[(int)sound], volume * GlobalVolume); // Reproduce el sonido que le pasas que corresponda al enum y setea el volumen de ese audio 
     }
 
-    private void PlayMusic()
-    {
-        musicSource.clip = soundList[(int)SoundType.MUSIC];
-        musicSource.volume = musicVolume * globalVolume;
-        musicSource.Play();
-    }
 }
