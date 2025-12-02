@@ -8,9 +8,10 @@ public enum SoundType
     PARRY,
     HURT,
     FOOTSTEPS,
-    MUSIC,
+    BACKGROUND,
     FINISHER,
-    DASH
+    DASH,
+    MENU
 }
 
 [RequireComponent(typeof(AudioSource))] //Siempre tiene que tener un audio
@@ -20,6 +21,8 @@ public class SoundManager : MonoBehaviour
     [SerializeField] private AudioClip[] soundList;
     [SerializeField, Range(0, 1f)] private float musicVolume = 0.2f;
     [SerializeField, Range(0, 1f)] private float globalVolume = 1.0f;
+    [SerializeField] bool isInMenu;
+    [SerializeField] bool isInGameplay;
     private static SoundManager instance; // Singleton instance
     private AudioSource sfxSource;
     private AudioSource musicSource;
@@ -51,8 +54,15 @@ public class SoundManager : MonoBehaviour
     private void PlayMusic()
     {
         musicSource.loop = true;
-        musicSource.clip = soundList[(int)SoundType.MUSIC];
         musicSource.volume = musicVolume * globalVolume;
+        if (isInMenu) //Si estoy en el menu, que ponga la musica del menu
+        {
+            musicSource.clip = soundList[(int)SoundType.MENU];
+        }
+        else if (isInGameplay) //Si estoy en el gameplay, que ponga la musica del gameplay
+        {
+            musicSource.clip = soundList[(int)SoundType.BACKGROUND];
+        }
         musicSource.Play();
     }
 
