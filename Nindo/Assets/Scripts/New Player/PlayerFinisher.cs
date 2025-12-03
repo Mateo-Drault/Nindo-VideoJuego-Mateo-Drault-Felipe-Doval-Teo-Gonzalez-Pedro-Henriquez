@@ -4,13 +4,12 @@ using UnityEngine;
 using UnityEngine.VFX;
 public class PlayerFinisher : MonoBehaviour
 {
-    [SerializeField] private EnemyBeingDamaged enemyBeingDamaged;
+    private EnemyBeingDamaged enemyBeingDamaged;
     public float slowMotionScale = 0.3f; // Escala de tiempo para remate
     public float slowMotionDuration = 0.5f;
     private bool slowMotionActive = false;
-    [SerializeField] private LockOnTarget lockOnTarget;
+    private LockOnTarget lockOnTarget;
     [SerializeField] Animator animator;
-    private float targetAlpha = 0f;
     public float dashDistanceBehindEnemy = 2f; // distancia atrás del enemigo
     public float dashDuration = 0.05f; // duración muy corta para que sea casi instantáneo
     private bool isDashing = false;
@@ -26,13 +25,17 @@ public class PlayerFinisher : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        //Nota para cambiar: Hacer que en caso de que no esté lockeado, agarre el enemigo más cercano.
+        lockOnTarget = FindAnyObjectByType<LockOnTarget>();
+        enemyBeingDamaged = lockOnTarget.target.GetComponent<EnemyBeingDamaged>(); //Agarro el enemyBeingDamaged del enemigo q esté targeteado.
     }
 
     // Update is called once per frame
     void Update()
     {
-        if(enemyBeingDamaged.isFinishable && Input.GetKeyDown(KeyCode.F) && !slowMotionActive && manaBar.currentMana >= finisherManaCost) 
+        lockOnTarget = FindAnyObjectByType<LockOnTarget>();
+        enemyBeingDamaged = lockOnTarget.target.GetComponent<EnemyBeingDamaged>();
+        if (enemyBeingDamaged.isFinishable && Input.GetKeyDown(KeyCode.F) && !slowMotionActive && manaBar.currentMana >= finisherManaCost) 
         {
             manaBar.gastarMana(finisherManaCost);
             animator.SetTrigger("Finish");
@@ -55,7 +58,7 @@ public class PlayerFinisher : MonoBehaviour
     public void DeactivateSlowMotion() //desde el animator
     {
         if (!isDashing)
-            StartCoroutine(DashCoroutine(lockOnTarget.target));
+            StartCoroutine(DashCoroutine(lockOnTarget.targetTr));
 
 
     Time.timeScale = 1f;

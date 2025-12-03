@@ -19,7 +19,7 @@ public class cameraFollow : MonoBehaviour
         Vector3 desiredPosition;
             if (lockOnTarget.isLocked && lockOnTarget.target != null)
             {
-                Vector3 midpoint = (lockOnTarget.transform.position + lockOnTarget.target.position) / 2f; 
+                Vector3 midpoint = (lockOnTarget.transform.position + lockOnTarget.targetTr.position) / 2f; 
                 desiredPosition = midpoint + offSet;
             }
             else

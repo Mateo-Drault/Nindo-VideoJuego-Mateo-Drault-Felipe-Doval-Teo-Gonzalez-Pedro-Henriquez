@@ -15,7 +15,8 @@ public class LockOnTarget : MonoBehaviour
 
     //Rotar al objetivo
     public float lockRange = 10f;
-    public Transform target;
+    public Transform targetTr;
+    public GameObject target;
     [SerializeField] private LayerMask enemyLayer;
     public bool isLocked;
 
@@ -34,7 +35,7 @@ public class LockOnTarget : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            if (target == null)
+            if (targetTr == null)
             {
                 isLocked = true;
                 LockOnClosestEnemies();
@@ -42,14 +43,14 @@ public class LockOnTarget : MonoBehaviour
             else
             {
                 isLocked = false ;
-                target = null;
+                targetTr = null;
             }
         }
-        if (target != null && Vector3.Distance(transform.position, target.transform.position) <= lockRange)
+        if (targetTr != null && Vector3.Distance(transform.position, targetTr.transform.position) <= lockRange)
         {
-            if (target.Equals(null))
+            if (targetTr.Equals(null))
             {
-                target = null;
+                targetTr = null;
                 return;
             }
             MoveCamera();
@@ -65,13 +66,13 @@ public class LockOnTarget : MonoBehaviour
     }
     private void LateUpdate()
     {
-        if (target == null)
+        if (targetTr == null)
         {
             indicatorImage.enabled = false;
         }
         else
         {
-            Vector3 screenPos = mainCamera.WorldToScreenPoint(target.position + imageOffset);
+            Vector3 screenPos = mainCamera.WorldToScreenPoint(targetTr.position + imageOffset);
             indicatorImage.enabled = true;
             indicatorImage.transform.position = screenPos;
         }
@@ -85,12 +86,13 @@ public class LockOnTarget : MonoBehaviour
         if (enemies.Length > 0)
         {
             var closest = enemies.OrderBy(e => Vector3.Distance(transform.position, e.transform.position)).FirstOrDefault();
-            target = closest.transform;
+            targetTr = closest.transform;
+            target = closest.gameObject;
         }
     }
     void LookAt()
     {
-        Vector3 direction = target.position - pivot.position;
+        Vector3 direction = targetTr.position - pivot.position;
         direction.y = 0;
         Quaternion TargetRotation = Quaternion.LookRotation(direction);
         transform.rotation = Quaternion.Slerp(transform.rotation, TargetRotation, 30f * Time.deltaTime);
