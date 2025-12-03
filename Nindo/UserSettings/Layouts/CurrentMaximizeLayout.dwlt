@@ -2210,10 +2210,8 @@ MonoBehaviour:
       e32: 0
       e33: 1
   m_PreviewAnimator: {fileID: 0}
-  m_AnimatorController: {fileID: 9100000, guid: d9d8fc457e003ce40b306e5cedda5c47, type: 2}
   m_AnimatorController: {fileID: 9100000, guid: d7c55201e3b24584c8a42cc02f13b56a, type: 2}
   m_BreadCrumbs:
-  - m_Target: {fileID: -1280670375058623260, guid: d9d8fc457e003ce40b306e5cedda5c47, type: 2}
   - m_Target: {fileID: 8178669346129109539, guid: d7c55201e3b24584c8a42cc02f13b56a, type: 2}
     m_ScrollPosition: {x: 0, y: 0}
   stateMachineGraph: {fileID: 0}
@@ -3980,11 +3978,9 @@ MonoBehaviour:
   m_ObjectsLockedBeforeSerialization: []
   m_InstanceIDsLockedBeforeSerialization: 
   m_PreviewResizer:
-    m_CachedPref: 180
     m_CachedPref: -180
     m_ControlHash: -371814159
     m_PrefName: Preview_InspectorPreview
-  m_LastInspectedObjectInstanceID: -1
   m_LastInspectedObjectInstanceID: 224582
   m_LastVerticalScrollValue: 0
   m_GlobalObjectId: 
