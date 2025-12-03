@@ -8,10 +8,9 @@ public class PlayerFinisher : MonoBehaviour
     public float slowMotionScale = 0.3f; // Escala de tiempo para remate
     public float slowMotionDuration = 0.5f;
     private bool slowMotionActive = false;
-    [SerializeField] Transform enemy; // despues lo cambio al enemigo fijado
+    [SerializeField] private LockOnTarget lockOnTarget;
     [SerializeField] Animator animator;
     private float targetAlpha = 0f;
-
     public float dashDistanceBehindEnemy = 2f; // distancia atrás del enemigo
     public float dashDuration = 0.05f; // duración muy corta para que sea casi instantáneo
     private bool isDashing = false;
@@ -56,7 +55,7 @@ public class PlayerFinisher : MonoBehaviour
     public void DeactivateSlowMotion() //desde el animator
     {
         if (!isDashing)
-            StartCoroutine(DashCoroutine(enemy));
+            StartCoroutine(DashCoroutine(lockOnTarget.target));
 
 
     Time.timeScale = 1f;

@@ -88,7 +88,6 @@
     <Compile Include="Assets\Scripts\ScriptsBrushes\PrefabBrush.cs" />
     <Compile Include="Assets\Scripts\New Player\KatanaColliding.cs" />
     <Compile Include="Assets\Scripts\Enemy\healthScript.cs" />
-    <Compile Include="Assets\Scripts\camera\CameraShake.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\CameraController.cs" />
     <Compile Include="Assets\Scripts\PosturaScript.cs" />
     <Compile Include="Assets\Scripts\Sound\PlaySoundEnter.cs" />
@@ -98,6 +97,7 @@
     <Compile Include="Assets\Scripts\New Player\ManaBar.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\Benchmark03.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerSwordAnimation.cs" />
+    <Compile Include="Assets\Scripts\PuertaCasa.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyBeingDamaged.cs" />
     <Compile Include="Assets\Scripts\Sumo\LuchadorCombat.cs" />
     <Compile Include="Assets\Scripts\New enemy\EnemyMovement.cs" />
@@ -138,10 +138,11 @@
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\ShaderPropAnimator.cs" />
     <Compile Include="Assets\Scripts\New Player\TrailKatanaBone.cs" />
     <Compile Include="Assets\Scripts\UI\PauseMenu.cs" />
+    <Compile Include="Assets\Scripts\Camera\cameraFollow.cs" />
     <Compile Include="Assets\Scripts\Player\PlayerMovement.cs" />
     <Compile Include="Assets\Scripts\New enemy\EventReciever.cs" />
+    <Compile Include="Assets\Scripts\Camera\CameraShake.cs" />
     <Compile Include="Assets\TextMesh Pro\Examples &amp; Extras\Scripts\TMP_TextInfoDebugTool.cs" />
-    <Compile Include="Assets\Scripts\camera\cameraFollow.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\TextMesh Pro\Shaders\TMPro.cginc" />
@@ -425,6 +426,15 @@
     </Reference>
     <Reference Include="Unity.VisualScripting.Antlr3.Runtime">
       <HintPath>Library\PackageCache\com.unity.visualscripting@1.8.0\Runtime\VisualScripting.Flow\Dependencies\NCalc\Unity.VisualScripting.Antlr3.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Android.Types">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\2022.3.6f1\Editor\Data\PlaybackEngines\AndroidPlayer\Unity.Android.Types.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Android.Gradle">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\2022.3.6f1\Editor\Data\PlaybackEngines\AndroidPlayer\Unity.Android.Gradle.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.Android.GradleProject">
+      <HintPath>C:\Program Files\Unity\Hub\Editor\2022.3.6f1\Editor\Data\PlaybackEngines\AndroidPlayer\Unity.Android.GradleProject.dll</HintPath>
     </Reference>
     <Reference Include="netstandard">
       <HintPath>C:\Program Files\Unity\Hub\Editor\2022.3.6f1\Editor\Data\NetStandard\ref\2.1.0\netstandard.dll</HintPath>
