@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public enum SoundType
 {
@@ -26,6 +27,8 @@ public class SoundManager : MonoBehaviour
     private static SoundManager instance; // Singleton instance
     private AudioSource sfxSource;
     private AudioSource musicSource;
+    [SerializeField] private Slider globalSlider;
+    [SerializeField] private Slider musicSlider;
 
     private void Awake()
     {
@@ -45,6 +48,8 @@ public class SoundManager : MonoBehaviour
         sfxSource = GetComponent<AudioSource>();
         musicSource = GetComponent<AudioSource>();
         PlayMusic();
+        musicSlider.onValueChanged.AddListener(MusicVolumeSettings);
+        globalSlider.onValueChanged.AddListener(GlobalVolumeSettings);
     }
 
     private void Update()
@@ -71,6 +76,15 @@ public class SoundManager : MonoBehaviour
     public static void PlaySound(SoundType sound, float volume = 1)
     {
         instance.sfxSource.PlayOneShot(instance.soundList[(int)sound], volume * GlobalVolume); // Reproduce el sonido que le pasas que corresponda al enum y setea el volumen de ese audio 
+    }
+
+    public void MusicVolumeSettings(float volume)
+    {
+        musicVolume = volume;
+    }
+    public void GlobalVolumeSettings(float volume)
+    {
+        globalVolume = volume;
     }
 
 }
