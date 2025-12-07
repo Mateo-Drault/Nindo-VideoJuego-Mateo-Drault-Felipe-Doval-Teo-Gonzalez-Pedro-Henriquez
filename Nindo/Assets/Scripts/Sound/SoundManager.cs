@@ -20,8 +20,9 @@ public enum SoundType
 public class SoundManager : MonoBehaviour
 {
     [SerializeField] private AudioClip[] soundList;
-    [SerializeField, Range(0, 1f)] private float musicVolume = 0.2f;
-    [SerializeField, Range(0, 1f)] private float globalVolume = 1.0f;
+    [SerializeField, Range(0, 1f)] public float musicVolume = 0.2f;
+    [SerializeField, Range(0, 1f)] public float globalVolume = 1.0f;
+    [SerializeField, Range(0, 1f)] public float sfxVolume = 1.0f;
     [SerializeField] bool isInMenu;
     [SerializeField] bool isInGameplay;
     private static SoundManager instance; // Singleton instance
@@ -29,6 +30,7 @@ public class SoundManager : MonoBehaviour
     private AudioSource musicSource;
     [SerializeField] private Slider globalSlider;
     [SerializeField] private Slider musicSlider;
+    [SerializeField] private Slider sfxSlider;
 
     private void Awake()
     {
@@ -50,6 +52,7 @@ public class SoundManager : MonoBehaviour
         PlayMusic();
         musicSlider.onValueChanged.AddListener(MusicVolumeSettings);
         globalSlider.onValueChanged.AddListener(GlobalVolumeSettings);
+        sfxSlider.onValueChanged.AddListener(SfxVolumeSettings);
     }
 
     private void Update()
@@ -72,10 +75,12 @@ public class SoundManager : MonoBehaviour
     }
 
     public static float GlobalVolume => instance.globalVolume; //La hago static para poder usarla en PlaySound
+    public static float SfxVolume => instance.sfxVolume; //La hago static para poder usarla en PlaySound
 
     public static void PlaySound(SoundType sound, float volume = 1)
     {
-        instance.sfxSource.PlayOneShot(instance.soundList[(int)sound], volume * GlobalVolume); // Reproduce el sonido que le pasas que corresponda al enum y setea el volumen de ese audio 
+        instance.sfxSource.PlayOneShot(instance.soundList[(int)sound], volume * GlobalVolume * SfxVolume); // Reproduce el sonido que le pasas que corresponda al enum y setea el volumen de ese audio
+                                                                                                           // Bug con MusicSound influenciando al sfxVolume. No se que onda. Por ver.
     }
 
     public void MusicVolumeSettings(float volume)
@@ -85,6 +90,10 @@ public class SoundManager : MonoBehaviour
     public void GlobalVolumeSettings(float volume)
     {
         globalVolume = volume;
+    }
+    public void SfxVolumeSettings(float volume)
+    {
+        sfxVolume = volume;
     }
 
 }
