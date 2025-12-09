@@ -315,7 +315,7 @@ GameObject:
   - component: {fileID: 410726970}
   - component: {fileID: 410726969}
   m_Layer: 5
-  m_Name: GlobalVolume
+  m_Name: MasterVolume
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -360,7 +360,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Global Volume
+  m_text: Master Volume
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
   m_sharedMaterial: {fileID: 2164040, guid: 5302535af1044152a457ed104f1f4b91, type: 2}
@@ -2698,7 +2698,7 @@ GameObject:
   - component: {fileID: 1715447990}
   - component: {fileID: 1715447991}
   m_Layer: 5
-  m_Name: GlobalSlider
+  m_Name: MasterSlider
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3190,6 +3190,10 @@ PrefabInstance:
       propertyPath: globalSlider
       value: 
       objectReference: {fileID: 1715447991}
+    - target: {fileID: 5678234287621949165, guid: bdb74f7c5a6ba654abe603aef6f6cd3b, type: 3}
+      propertyPath: masterSlider
+      value: 
+      objectReference: {fileID: 1715447991}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3483,6 +3487,17 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1919098309}
   m_CullTransparentMesh: 1
+--- !u!114 &1932171565 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5678234287621949165, guid: bdb74f7c5a6ba654abe603aef6f6cd3b, type: 3}
+  m_PrefabInstance: {fileID: 1830201323}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72506456bbca7ab49a5f6d22cb19fe14, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2025485728
 GameObject:
   m_ObjectHideFlags: 0
@@ -3569,6 +3584,18 @@ MonoBehaviour:
       - m_Target: {fileID: 59585777}
         m_TargetAssemblyTypeName: MainMenu, Assembly-CSharp
         m_MethodName: PlayGame
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+      - m_Target: {fileID: 1932171565}
+        m_TargetAssemblyTypeName: SoundManager, Assembly-CSharp
+        m_MethodName: FadeOut
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
