@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public enum SoundType
@@ -29,49 +30,31 @@ public class SoundManager : MonoBehaviour
     private static SoundManager instance; // Singleton instance
     private AudioSource sfxSource;
     private AudioSource musicSource;
-    [SerializeField] private Slider masterSlider;
-    [SerializeField] private Slider musicSlider;
-    [SerializeField] private Slider sfxSlider;
-
-
-
+    private Slider masterSlider;
+    private Slider musicSlider;
+    private Slider sfxSlider;
 
     private void Awake()
     {
         if (instance == null)
         {
             instance = this;
+
+            //Se mantiene la misma instancia al cambiar de escena
+            DontDestroyOnLoad(gameObject);
+
+            //Suscribo el metodo OnSceneLoaded al evento sceneLoaded
+            SceneManager.sceneLoaded += OnSceneLoaded;
+
+            //Creo los AudioSources
+            sfxSource = gameObject.AddComponent<AudioSource>();
+            musicSource = gameObject.AddComponent<AudioSource>();
         }
         else if (instance != this)
         {
-            Destroy(instance);
+            Destroy(gameObject);
+            return;
         }
-    }
-
-    private void Start()
-    {
-        sfxSource = gameObject.AddComponent<AudioSource>();
-        musicSource = gameObject.AddComponent<AudioSource>();
-
-        SetMasterVolume(masterVolume);
-        SetMusicVolume(musicVolume);
-        SetSfxVolume(sfxVolume);
-
-        //Seteo los sliders al valor de los volumenes
-        SlidersUpdate();
-
-        PlayMusic();
-
-        musicSlider.onValueChanged.AddListener(MusicVolumeSettings);
-        masterSlider.onValueChanged.AddListener(MasterVolumeSettings);
-        sfxSlider.onValueChanged.AddListener(SfxVolumeSettings);
-    }
-
-    public void SlidersUpdate()
-    {
-        musicSlider.value = PlayerPrefs.GetFloat("MusicVolume");
-        masterSlider.value = PlayerPrefs.GetFloat("MasterVolume");
-        sfxSlider.value = PlayerPrefs.GetFloat("SfxVolume");
     }
 
     private void Update()
@@ -80,6 +63,39 @@ public class SoundManager : MonoBehaviour
             musicSource.volume = musicVolume * masterVolume; //Para que sea configurable en realtime
 
     }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "Menu")
+        {
+            isInMenu = true;
+            isInGameplay = false;
+        }
+        else
+        {
+            isInMenu = false;
+            isInGameplay = true;
+        }
+        PlayMusic();
+        Transform MenuTr = GameObject.Find("Menu").GetComponent<Transform>();
+        Transform OptionsMenuTr = MenuTr.Find("OptionsMenu").GetComponent<Transform>();
+
+        masterSlider = OptionsMenuTr.Find("MasterSlider").GetComponent<Slider>();
+        musicSlider = OptionsMenuTr.Find("MusicSlider").GetComponent<Slider>();
+        sfxSlider = OptionsMenuTr.Find("SfxSlider").GetComponent<Slider>();
+
+        //Seteo los sliders al valor de los volumenes
+        musicSlider.value = musicVolume;
+        masterSlider.value = masterVolume;
+        sfxSlider.value = sfxVolume;
+
+        //Listeners que para cuando se muevan ejecuten las funciones que actualizan los volumenes
+        musicSlider.onValueChanged.AddListener(MusicVolumeSettings);
+        masterSlider.onValueChanged.AddListener(MasterVolumeSettings);
+        sfxSlider.onValueChanged.AddListener(SfxVolumeSettings);
+
+    }
+
     private void PlayMusic()
     {
         musicSource.loop = true;
@@ -108,31 +124,14 @@ public class SoundManager : MonoBehaviour
     public void MusicVolumeSettings(float volume)
     {
         musicVolume = volume;
-        SetMusicVolume(musicVolume);
     }
     public void MasterVolumeSettings(float volume)
     {
         masterVolume = volume;
-        SetMasterVolume(masterVolume);
     }
     public void SfxVolumeSettings(float volume)
     {
         sfxVolume = volume;
-        SetSfxVolume(sfxVolume);
-
-    }
-
-    public void SetMusicVolume(float music_Volume)
-    {
-        PlayerPrefs.SetFloat("MusicVolume", music_Volume);
-    }
-    public void SetMasterVolume(float master_Volume)
-    {
-        PlayerPrefs.SetFloat("MasterVolume", master_Volume);
-    }
-    public void SetSfxVolume(float sfx_Volume)
-    {
-        PlayerPrefs.SetFloat("SfxVolume", sfx_Volume);
     }
 
     public void FadeOut()

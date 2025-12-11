@@ -12,6 +12,7 @@ TagManager:
   - PlayerSword
   - PlayerSwordAttacking
   - PlayerParry
+  - Menu
   layers:
   - Default
   - TransparentFX

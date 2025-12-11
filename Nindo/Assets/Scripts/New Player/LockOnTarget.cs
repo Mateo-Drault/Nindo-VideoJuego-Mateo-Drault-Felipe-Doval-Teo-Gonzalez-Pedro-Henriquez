@@ -16,7 +16,7 @@ public class LockOnTarget : MonoBehaviour
     //Rotar al objetivo
     public float lockRange = 10f;
     public Transform targetTr;
-    public GameObject target;
+    public GameObject target = null;
     [SerializeField] private LayerMask enemyLayer;
     public bool isLocked;
 
@@ -28,6 +28,7 @@ public class LockOnTarget : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
+
     }
 
     // Update is called once per frame
