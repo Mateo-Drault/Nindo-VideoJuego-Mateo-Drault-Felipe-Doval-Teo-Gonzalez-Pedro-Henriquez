@@ -16,9 +16,9 @@ public class LockOnTarget : MonoBehaviour
     //Rotar al objetivo
     public float lockRange = 10f;
     public Transform targetTr;
-    public GameObject target = null;
+    public GameObject target;
     [SerializeField] private LayerMask enemyLayer;
-    public bool isLocked;
+    public bool isLocked = false;
 
 
     //Rombo que se posiciona en el fijado
@@ -26,51 +26,38 @@ public class LockOnTarget : MonoBehaviour
     [SerializeField] private Vector3 imageOffset;
 
     // Start is called before the first frame update
-    void Start()
+    void Awake()
     {
-
+        target = null;
+        targetTr = null;
     }
 
     // Update is called once per frame
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Q))
+        if (Input.GetKeyDown(KeyCode.Q) && LockOnClosestEnemies()!= null && !isLocked)
         {
-            if (targetTr == null)
-            {
-                isLocked = true;
-                LockOnClosestEnemies();
-            }
-            else
-            {
-                isLocked = false ;
-                targetTr = null;
-            }
-        }
-        if (targetTr != null && Vector3.Distance(transform.position, targetTr.transform.position) <= lockRange)
-        {
-            if (targetTr.Equals(null))
-            {
-                targetTr = null;
-                return;
-            }
             MoveCamera();
-            LookAt();
-            AdjustCamera();
-            
-        }
-        else
+        } 
+        else if (Input.GetKeyDown(KeyCode.Q) && isLocked)
         {
             ResetPosition();
             StopAdjustment();
         }
+        if (targetTr != null && Vector3.Distance(transform.position, targetTr.transform.position) <= lockRange && isLocked)
+        {
+            LookAt();
+            AdjustCamera();
+        }
     }
     private void LateUpdate()
     {
-        if (targetTr == null)
+        if (!isLocked || Vector3.Distance(transform.position, targetTr.transform.position) >= lockRange)
         {
             indicatorImage.enabled = false;
-        }
+            StopAdjustment();
+            ResetPosition();
+        } 
         else
         {
             Vector3 screenPos = mainCamera.WorldToScreenPoint(targetTr.position + imageOffset);
@@ -80,16 +67,17 @@ public class LockOnTarget : MonoBehaviour
 
         
     }
-    void LockOnClosestEnemies()
+    public GameObject LockOnClosestEnemies()
     {
         Collider[] enemies = Physics.OverlapSphere(transform.position, lockRange, enemyLayer);
-
         if (enemies.Length > 0)
         {
             var closest = enemies.OrderBy(e => Vector3.Distance(transform.position, e.transform.position)).FirstOrDefault();
             targetTr = closest.transform;
             target = closest.gameObject;
+            return target;
         }
+        return null;
     }
     void LookAt()
     {

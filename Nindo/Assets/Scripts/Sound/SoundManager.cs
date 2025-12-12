@@ -100,10 +100,6 @@ public class SoundManager : MonoBehaviour
         masterSlider.value = masterVolume;
         sfxSlider.value = sfxVolume;
 
-        Debug.Log(masterSlider.value);
-        Debug.Log(musicSlider.value);
-        Debug.Log(sfxSlider.value);
-
         //Listeners que para cuando se muevan ejecuten las funciones que actualizan los volumenes
         musicSlider.onValueChanged.AddListener(MusicVolumeSettings);
         masterSlider.onValueChanged.AddListener(MasterVolumeSettings);

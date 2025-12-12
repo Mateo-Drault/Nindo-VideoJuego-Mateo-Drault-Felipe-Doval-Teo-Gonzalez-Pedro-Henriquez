@@ -9,6 +9,7 @@ public class PlayerFinisher : MonoBehaviour
     public float slowMotionDuration = 0.5f;
     private bool slowMotionActive = false;
     private LockOnTarget lockOnTarget;
+    private Transform targetTr;
     [SerializeField] Animator animator;
     public float dashDistanceBehindEnemy = 2f; // distancia atrás del enemigo
     public float dashDuration = 0.05f; // duración muy corta para que sea casi instantáneo
@@ -27,15 +28,22 @@ public class PlayerFinisher : MonoBehaviour
     {
         //Nota para cambiar: Hacer que en caso de que no esté lockeado, agarre el enemigo más cercano.
         lockOnTarget = FindAnyObjectByType<LockOnTarget>();
-        enemyBeingDamaged = lockOnTarget.target.GetComponent<EnemyBeingDamaged>(); //Agarro el enemyBeingDamaged del enemigo q esté targeteado.
+        enemyBeingDamaged = lockOnTarget.target?.GetComponent<EnemyBeingDamaged>(); //Agarro el enemyBeingDamaged del enemigo q esté targeteado.
     }
 
     // Update is called once per frame
     void Update()
     {
         lockOnTarget = FindAnyObjectByType<LockOnTarget>();
-        enemyBeingDamaged = lockOnTarget.target.GetComponent<EnemyBeingDamaged>();
-        if (enemyBeingDamaged.isFinishable && Input.GetKeyDown(KeyCode.F) && !slowMotionActive && manaBar.currentMana >= finisherManaCost) 
+        enemyBeingDamaged = lockOnTarget.target?.GetComponent<EnemyBeingDamaged>();
+        targetTr = lockOnTarget.targetTr;
+        GameObject closerTarget = lockOnTarget.LockOnClosestEnemies();
+        if (enemyBeingDamaged == null && targetTr == null)
+        {
+            targetTr = closerTarget?.GetComponent<Transform>();     //Si no hay enemigo targeteado, agarro el más cercano.
+            enemyBeingDamaged = closerTarget?.GetComponent<EnemyBeingDamaged>(); //Si no hay enemigo targeteado, agarro el más cercano.
+        }
+        if (targetTr != null && enemyBeingDamaged != null && enemyBeingDamaged.isFinishable && Input.GetKeyDown(KeyCode.F) && !slowMotionActive && manaBar.currentMana >= finisherManaCost) 
         {
             manaBar.gastarMana(finisherManaCost);
             animator.SetTrigger("Finish");
@@ -58,13 +66,16 @@ public class PlayerFinisher : MonoBehaviour
     public void DeactivateSlowMotion() //desde el animator
     {
         if (!isDashing)
-            StartCoroutine(DashCoroutine(lockOnTarget.targetTr));
+            StartCoroutine(DashCoroutine(targetTr));
 
 
     Time.timeScale = 1f;
         Time.fixedDeltaTime = 0.02f;
         slowMotionActive = false;
         enemyBeingDamaged.Death();
+        lockOnTarget.isLocked = false; //Actualizo los valores de lockOnTarget porque el enemigo muere
+        lockOnTarget.targetTr = null;
+        lockOnTarget.target = null;
         hit.Play();
         slash.Play();
 

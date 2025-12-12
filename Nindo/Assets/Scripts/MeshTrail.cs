@@ -37,8 +37,6 @@ public class MeshTrail : MonoBehaviour
 
             if(skinnedMeshRenderers == null) 
             {
-                Debug.Log("hola");
-
                 skinnedMeshRenderers = GetComponentsInChildren<SkinnedMeshRenderer>();
 
             }

@@ -25,8 +25,8 @@ public class healthScript : MonoBehaviour
     public void UpdateHealthBar(float maxHealthAmount, float health)
     {
         redBar.fillAmount = health/ maxHealthAmount;
-        Debug.Log(maxHealthAmount);
-        Debug.Log(health);
+        //Debug.Log(maxHealthAmount);
+        //Debug.Log(health);
 
     }
 }

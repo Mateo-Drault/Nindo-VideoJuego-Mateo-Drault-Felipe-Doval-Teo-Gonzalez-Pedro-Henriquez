@@ -23,7 +23,6 @@ public class PauseMenu : MonoBehaviour
             }
             else
             {
-                Debug.Log("Hola");
                 Pause();
             }
         }
