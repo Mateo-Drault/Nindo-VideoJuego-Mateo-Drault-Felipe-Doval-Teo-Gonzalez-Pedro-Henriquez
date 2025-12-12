@@ -6,8 +6,13 @@ using UnityEngine.SceneManagement;
 public class PauseMenu : MonoBehaviour
 {
     [SerializeField] bool GameIsPaused = false;
-    [SerializeField] private GameObject pauseMenuUI;
+    [SerializeField] private GameObject Canvas;
     [SerializeField] private GameObject HUD;
+
+    private void Awake()
+    {
+        Canvas.SetActive(false);
+    }
     void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -26,14 +31,14 @@ public class PauseMenu : MonoBehaviour
 
     public void Resume()
     {
-        pauseMenuUI.SetActive(false);
+        Canvas.SetActive(false);
         Time.timeScale = 1f;
         HUD.SetActive(true);
         GameIsPaused = false;
     }
     void Pause()
     {
-        pauseMenuUI.SetActive(true);
+        Canvas.SetActive(true);
         Time.timeScale = 0f;
         HUD.SetActive(false);
         GameIsPaused = true;

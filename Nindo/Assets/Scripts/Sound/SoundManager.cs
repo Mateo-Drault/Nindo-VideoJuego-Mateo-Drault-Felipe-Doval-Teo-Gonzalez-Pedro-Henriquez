@@ -24,6 +24,8 @@ public class SoundManager : MonoBehaviour
     [SerializeField, Range(0, 1f)] public float masterVolume = 1.0f;
     [SerializeField, Range(0, 1f)] public float sfxVolume = 1.0f;
     [SerializeField] private float fadeDuration = 3f;
+    Transform MenuTr;
+    Transform OptionsMenuTr;
     [SerializeField] bool isInMenu;
     [SerializeField] bool isInGameplay;
     private bool isFading = false;
@@ -77,8 +79,17 @@ public class SoundManager : MonoBehaviour
             isInGameplay = true;
         }
         PlayMusic();
-        Transform MenuTr = GameObject.Find("Menu").GetComponent<Transform>();
-        Transform OptionsMenuTr = MenuTr.Find("OptionsMenu").GetComponent<Transform>();
+        
+        MenuTr = GameObject.Find("Menu").GetComponent<Transform>();
+        Transform MenuContainerTr = MenuTr.Find("MenuContainer")?.GetComponent<Transform>();
+        if (MenuContainerTr == null) // El signo de pregunta: *Adjuntar foto de superman esperanzado*
+        {
+            OptionsMenuTr = MenuTr.Find("OptionsMenu").GetComponent<Transform>(); // En el caso del menu principal
+        } else
+        {
+            OptionsMenuTr = MenuContainerTr.Find("OptionsMenu").GetComponent<Transform>(); // En el caso de menu de pausa
+        }
+
 
         masterSlider = OptionsMenuTr.Find("MasterSlider").GetComponent<Slider>();
         musicSlider = OptionsMenuTr.Find("MusicSlider").GetComponent<Slider>();
@@ -88,6 +99,10 @@ public class SoundManager : MonoBehaviour
         musicSlider.value = musicVolume;
         masterSlider.value = masterVolume;
         sfxSlider.value = sfxVolume;
+
+        Debug.Log(masterSlider.value);
+        Debug.Log(musicSlider.value);
+        Debug.Log(sfxSlider.value);
 
         //Listeners que para cuando se muevan ejecuten las funciones que actualizan los volumenes
         musicSlider.onValueChanged.AddListener(MusicVolumeSettings);

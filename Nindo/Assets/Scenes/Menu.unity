@@ -3194,6 +3194,10 @@ PrefabInstance:
       propertyPath: masterSlider
       value: 
       objectReference: {fileID: 1715447991}
+    - target: {fileID: 5678234287621949165, guid: bdb74f7c5a6ba654abe603aef6f6cd3b, type: 3}
+      propertyPath: FindSlidersScript
+      value: 
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
