@@ -441,6 +441,8 @@ namespace Nindo
             bg.rectTransform.anchorMin = Vector2.zero; bg.rectTransform.anchorMax = Vector2.one; bg.rectTransform.sizeDelta = Vector2.zero;
             var t = Text("Glyph", rt, "", height * 0.56f, Color.black, TextAlignmentOptions.Center, false);
             NoWrap(t);
+            // literal: una tecla reasignada puede llamarse "<" (la del teclado español junto al Shift)
+            t.richText = false;
             t.fontStyle = FontStyles.Bold;
             t.rectTransform.anchorMin = Vector2.zero; t.rectTransform.anchorMax = Vector2.one;
             t.rectTransform.offsetMin = new Vector2(2f, height * 0.12f); t.rectTransform.offsetMax = new Vector2(-2f, 0f);
@@ -449,27 +451,39 @@ namespace Nindo
         }
 
         /// <summary>Pone el símbolo de una tecla hecha con KeyCap: forma (redonda o no), color y ancho a medida.</summary>
-        public static void SetKeyCap(RectTransform key, string glyph)
+        public static void SetKeyCap(RectTransform key, string glyph) => SetKeyCap(key, glyph, CurrentFamily);
+
+        /// <param name="family">0 teclado, 1 Xbox, 2 PlayStation: la página de controles muestra los botones del mando
+        /// aunque se esté usando el teclado (y la tecla A del teclado no es el botón A verde).</param>
+        public static void SetKeyCap(RectTransform key, string glyph, int family)
         {
             var t = key.GetComponentInChildren<TextMeshProUGUI>();
-            if (t == null || glyph == null || t.text == glyph) return;
-            float h = key.sizeDelta.y;
-            bool round = IsFaceButton(glyph);
+            if (t == null || glyph == null) return;
+            bool round = IsFaceButton(glyph, family);
             var cap = key.GetChild(0).GetComponent<Image>();
-            cap.sprite = round ? UISprites.KeyRound : UISprites.KeyCap;
+            var sprite = round ? UISprites.KeyRound : UISprites.KeyCap;
+            if (t.text == glyph && cap.sprite == sprite) return;
+            float h = key.sizeDelta.y;
+            cap.sprite = sprite;
             cap.type = !round && cap.sprite != null && cap.sprite.border.sqrMagnitude > 0f ? UnityEngine.UI.Image.Type.Sliced : UnityEngine.UI.Image.Type.Simple;
             if (cap.sprite != null) cap.pixelsPerUnitMultiplier = cap.sprite.rect.height / Mathf.Max(1f, h);
             t.text = glyph;
             t.fontSize = h * (glyph.Length > 2 ? 0.4f : 0.56f);
-            t.color = GlyphColor(glyph);
+            t.color = GlyphColor(glyph, family);
             // ancho a medida del texto ("Espacio", "Clic izq."), medido con la fuente: es una vez por cambio
             float w = round ? h : Mathf.Max(h, t.GetPreferredValues(glyph, 9999f, h).x + h * 0.56f);
             key.sizeDelta = new Vector2(w, h);
         }
 
-        public static bool IsFaceButton(string g) => g == "□" || g == "○" || g == "△" || g == "×" || ((g == "A" || g == "B" || g == "X" || g == "Y") && Game.Input != null && Game.Input.GlyphFamily == 1);
+        static int CurrentFamily => Game.Input != null ? Game.Input.GlyphFamily : 0;
 
-        public static Color GlyphColor(string g)
+        public static bool IsFaceButton(string g) => IsFaceButton(g, CurrentFamily);
+
+        public static bool IsFaceButton(string g, int family) => g == "□" || g == "○" || g == "△" || g == "×" || ((g == "A" || g == "B" || g == "X" || g == "Y") && family == 1);
+
+        public static Color GlyphColor(string g) => GlyphColor(g, CurrentFamily);
+
+        public static Color GlyphColor(string g, int family)
         {
             switch (g)
             {
@@ -478,7 +492,7 @@ namespace Nindo
                 case "△": return new Color(0.12f, 0.6f, 0.5f);
                 case "×": return new Color(0.27f, 0.42f, 0.8f);
             }
-            if (Game.Input != null && Game.Input.GlyphFamily == 1)
+            if (family == 1)
                 switch (g)
                 {
                     case "A": return new Color(0.27f, 0.6f, 0.18f);
@@ -518,14 +532,28 @@ namespace Nindo
                     { keySb.Append(text, a, b - a + 1); i = b + 1; continue; }
                     glyph = Game.Input.Glyph(act);
                 }
-                Color gc = GlyphColor(glyph);
-                // en el texto claro de los paneles el negro de la tecla de teclado no se ve: dorado
-                if (gc.r + gc.g + gc.b < 0.3f) gc = Gold;
-                keySb.Append("<mark=#F5EBD12E><color=#").Append(ColorUtility.ToHtmlStringRGB(gc)).Append("><b> ")
-                     .Append(glyph).Append(" </b></color></mark>");
+                AppendKeyChip(keySb, glyph, CurrentFamily);
                 i = b + 1;
             }
             return keySb.ToString();
+        }
+
+        /// <summary>Una tecla como ficha dentro de un texto (como las de RichKeys), con su nombre literal: los avisos de
+        /// la página de controles nombran teclas como "[" o "<", que en "[K]" o como etiqueta se romperían.</summary>
+        public static string KeyChip(string glyph, int family)
+        {
+            keySb.Length = 0;
+            AppendKeyChip(keySb, glyph, family);
+            return keySb.ToString();
+        }
+
+        static void AppendKeyChip(StringBuilder sb, string glyph, int family)
+        {
+            Color gc = GlyphColor(glyph, family);
+            // en el texto claro de los paneles el negro de la tecla de teclado no se ve: dorado
+            if (gc.r + gc.g + gc.b < 0.3f) gc = Gold;
+            sb.Append("<mark=#F5EBD12E><color=#").Append(ColorUtility.ToHtmlStringRGB(gc)).Append("><b> <noparse>")
+              .Append(glyph).Append("</noparse> </b></color></mark>");
         }
     }
 

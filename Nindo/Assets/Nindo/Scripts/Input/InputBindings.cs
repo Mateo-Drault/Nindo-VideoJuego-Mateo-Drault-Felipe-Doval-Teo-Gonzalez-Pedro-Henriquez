@@ -381,6 +381,17 @@ namespace Nindo
             return false;
         }
 
+        /// <summary>¿El puntero del mouse está sobre ese rect de la UI? (lo elegido al pasar el mouse no corre la lista)</summary>
+        public static bool PointerOver(RectTransform rt)
+        {
+#if ENABLE_INPUT_SYSTEM
+            var m = Mouse.current;
+            return m != null && Cursor.visible && RectTransformUtility.RectangleContainsScreenPoint(rt, m.position.ReadValue(), null);
+#else
+            return false;
+#endif
+        }
+
         /// <summary>Cancelar la espera de una tecla nueva: Esc o Start siempre; si se espera una del teclado, también la
         /// B del mando (no hay nada del mando para tomar ahí). En el mando la B no cancela: es una tecla que se puede asignar.</summary>
         public static bool CaptureCancelPressed(int dev)
