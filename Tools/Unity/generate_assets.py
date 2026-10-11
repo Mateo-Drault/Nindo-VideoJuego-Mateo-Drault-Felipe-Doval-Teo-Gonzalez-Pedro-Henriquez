@@ -102,6 +102,11 @@ def ui_sprites():
     # bandana: 9-slice (nudo a la izquierda, punta en diagonal a la derecha) para que el nudo no se estire
     # al ancho del HUD; 30 px arriba y abajo para el aleteo de las puntas
     crop_pair("Sprites/EmptyHealthBar.png", "Sprites/HealthBarFull.png", "Health", pad_top=30, pad_bottom=30, frame_border=(252, 0, 60, 0))
+    # el rojo del equipo viene corrido ~50 px a la izquierda del interior de la banda (tapaba el nudo y no llegaba a
+    # la punta): se rehace con la forma del interior del marco, del tamaño del marco y con su mismo 9-slice
+    sys.path.insert(0, os.path.join(REPO, "Tools", "UI"))
+    from hud_bandana import bandana_fill
+    out["Health"] = out["Health"][:2] + (bandana_fill(os.path.join(P_UI, "Health_Frame.png"), os.path.join(P_UI, "Health_Fill.png")),)
     # dragón: más aire arriba (llamas del Filo de Ira sobre el lomo) que abajo (solo la ondulación)
     crop_pair("Sprites/dragonBar.png", "Sprites/dragonFill.png", "Spirit", pad_top=64, pad_bottom=28)
     spirit_profile(os.path.join(P_UI, "Spirit_Frame.png"))

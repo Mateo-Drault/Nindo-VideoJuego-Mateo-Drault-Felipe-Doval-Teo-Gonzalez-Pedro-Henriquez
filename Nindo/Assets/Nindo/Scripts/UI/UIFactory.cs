@@ -223,20 +223,118 @@ namespace Nindo
             return t;
         }
 
-        public static void Outline(TextMeshProUGUI t, float width = 0.2f)
+        /// <summary>
+        /// Halo de tinta para que un texto se lea sobre cualquier fondo (nieve, agua, la noche). Reemplaza al contorno
+        /// negro de antes: TMP lo dibuja centrado en el borde, así que se comía la mitad de cada trazo y en la Shippori
+        /// Mincho (filetes finísimos) "Aldea del Lago" se leía cortado; sobre la tinta de los paneles no aportaba nada
+        /// y sobre lo claro parecía una calcomanía. Comparado en maquetas (actual / fino / sin / sombra suave) sobre
+        /// nieve y bambú: el halo suave (underlay de TMP: casi sin corrimiento, dilatado y difuso) separa la letra del
+        /// fondo claro como tinta corrida en el papel, no se nota sobre los paneles y no adelgaza nada. Es el mismo
+        /// para todos los textos: un material compartido por fuente (no rompe el batching ni crea un material por texto).
+        /// </summary>
+        public static TextMeshProUGUI Legible(TextMeshProUGUI t)
         {
             // un texto creado bajo un padre inactivo (p. ej. los marcadores durante una cinemática)
-            // todavía no corrió el Awake de TMP: setear el borde ahí tira NullReference adentro de TMP
-            if (!t.gameObject.activeInHierarchy) { t.gameObject.AddComponent<DeferredOutline>().width = width; return; }
-            ApplyOutline(t, width);
+            // todavía no corrió el Awake de TMP: cambiarle el material ahí lo pisa su LoadFontAsset
+            if (!t.gameObject.activeInHierarchy) { t.gameObject.AddComponent<DeferredLegible>(); return t; }
+            ApplyLegible(t);
+            return t;
         }
 
-        internal static void ApplyOutline(TextMeshProUGUI t, float width)
+        static readonly System.Collections.Generic.Dictionary<TMP_FontAsset, Material> haloMats = new System.Collections.Generic.Dictionary<TMP_FontAsset, Material>();
+        static readonly Color HaloColor = new Color(0.035f, 0.03f, 0.045f, 0.9f);
+
+        internal static void ApplyLegible(TextMeshProUGUI t)
         {
-            t.outlineWidth = width;   // crea la instancia de material propia del texto
-            t.outlineColor = new Color32(10, 8, 12, 255);
-            // TMP_SDF-Mobile solo dibuja el borde con este keyword (nada lo activa en runtime)
-            t.fontSharedMaterial.EnableKeyword(ShaderUtilities.Keyword_Outline);
+            var f = t.font;
+            if (f == null || f.material == null) return;
+            if (!haloMats.TryGetValue(f, out var m) || m == null)
+            {
+                // copia del material de la fuente (atlas y escala de gradiente) con el underlay de TMP prendido. La
+                // variante UNDERLAY_ON del shader la conserva en el build el material Resources/UI/TextHalo.mat
+                m = new Material(f.material) { name = f.name + " (halo de tinta)" };
+                m.EnableKeyword(ShaderUtilities.Keyword_Underlay);
+                m.SetColor(ShaderUtilities.ID_UnderlayColor, HaloColor);
+                m.SetFloat(ShaderUtilities.ID_UnderlayOffsetX, 0.15f);
+                m.SetFloat(ShaderUtilities.ID_UnderlayOffsetY, -0.2f);
+                m.SetFloat(ShaderUtilities.ID_UnderlayDilate, 0.35f);
+                m.SetFloat(ShaderUtilities.ID_UnderlaySoftness, 0.65f);
+                // _ScaleRatioC (cuánto del gradiente puede usar el halo): TMP lo recalcula solo cuando él toca el material
+                ShaderUtilities.UpdateShaderRatios(m);
+                haloMats[f] = m;
+            }
+            t.fontSharedMaterial = m;
+        }
+
+        // ================================================================== trazo de tinta a medida del texto
+        // BrushBanner (Tools/UI/build_ui_art.py): la tinta cubre pareja entre u 0.025 y 0.80 y entre v 0.14 y 0.87; a
+        // la derecha se secan las cerdas. Antes el trazo medía "texto + margen fijo" con el texto en el centro del
+        // sprite, y los avisos largos terminaban sobre la cola seca (en la nieve no se leían)
+        const float BannerU0 = 0.025f, BannerU1 = 0.80f, BannerV = 0.73f;
+
+        /// <summary>Ancho del trazo cuyo núcleo cubre un contenido de 'contentW' con 'padX' de cada lado.</summary>
+        public static float BannerWidth(float contentW, float padX) => (contentW + 2f * padX) / (BannerU1 - BannerU0);
+
+        /// <summary>El contenido más ancho que entra en un trazo de 'bannerW' (con 'padX' de cada lado).</summary>
+        public static float BannerContent(float bannerW, float padX) => bannerW * (BannerU1 - BannerU0) - 2f * padX;
+
+        /// <summary>Dónde termina (en u) la tinta pareja del trazo, para lo que se ancla en su borde izquierdo.</summary>
+        public const float BannerCoreEnd = BannerU1;
+
+        /// <summary>Cuánto del trazo queda a la izquierda del centro del contenido (el resto, con la cola, a la derecha).</summary>
+        public static float BannerLeftShare => (BannerU0 + BannerU1) * 0.5f;
+
+        /// <summary>
+        /// Ubica un trazo BrushBanner (pivote al centro, anclado en un punto del padre) para que su núcleo cubra el
+        /// contenido que va de x0 a x1, centrado en cy y de alto contentH, con margen. 'mirrored': el trazo está dado
+        /// vuelta (escala x -1: la tinta se junta a la derecha, como en el objetivo contra el borde).
+        /// </summary>
+        public static void FitBanner(RectTransform swash, float x0, float x1, float cy, float contentH, float padX, float padY, bool mirrored = false, float minW = 0f)
+        {
+            float w = Mathf.Max(minW, BannerWidth(x1 - x0, padX));
+            float h = (contentH + 2f * padY) / BannerV;
+            float shift = (0.5f - BannerLeftShare) * w;
+            swash.anchoredPosition = new Vector2((x0 + x1) * 0.5f + (mirrored ? -shift : shift), cy);
+            swash.sizeDelta = new Vector2(w, h);
+        }
+
+        /// <summary>Crea un trazo BrushBanner con pivote y ancla al centro (FitBanner lo ubica).</summary>
+        public static Image Banner(string name, Transform parent, Color c)
+        {
+            var img = Centered(name, parent, c, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(400f, 100f), UISprites.BrushBanner != null ? UISprites.BrushBanner : UISprites.BrushSwash);
+            return img;
+        }
+
+        /// <summary>
+        /// Mide un bloque de texto como lo va a dibujar TMP (texto enriquecido, teclas, tamaño de letra): lo escribe,
+        /// lo arma con el ancho máximo y devuelve el ancho real de lo dibujado y el alto de sus renglones. Si en un
+        /// renglón no entra, lo parte en dos renglones parejos (no uno largo y una palabra suelta). Es una vez por
+        /// cambio de texto, nunca por cuadro.
+        /// </summary>
+        public static Vector2 LayoutBlock(TextMeshProUGUI t, string text, float maxW)
+        {
+#if UNITY_2023_2_OR_NEWER
+            t.textWrappingMode = TextWrappingModes.Normal;
+#else
+            t.enableWordWrapping = true;
+#endif
+            t.text = text;
+            float one = t.GetPreferredValues(text, 99999f, 0f).x;
+            float wrap = maxW;
+            if (one > maxW)
+            {
+                // dos renglones parejos si alcanza; si no, los que hagan falta al ancho máximo
+                wrap = Mathf.Min(maxW, one * 0.56f);
+                if (t.GetPreferredValues(text, wrap, 0f).y > t.GetPreferredValues("Ag\nAg", 99999f, 0f).y + 1f) wrap = maxW;
+            }
+            else wrap = one + 2f;
+            var rt = t.rectTransform;
+            rt.sizeDelta = new Vector2(wrap, rt.sizeDelta.y);
+            t.ForceMeshUpdate();
+            var r = t.GetRenderedValues(true);
+            float h = t.GetPreferredValues(text, wrap, 0f).y;
+            rt.sizeDelta = new Vector2(wrap, h);
+            return new Vector2(Mathf.Min(wrap, r.x > 0f ? r.x : one), h);
         }
 
         // ================================================================== menús
@@ -269,7 +367,7 @@ namespace Nindo
             var trt = t.rectTransform;
             trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
             trt.offsetMin = new Vector2(align == TextAlignmentOptions.Left ? 70f : 0f, 0f); trt.offsetMax = Vector2.zero;
-            if (labelOwnsRow) Outline(t, 0.12f);
+            if (labelOwnsRow) Legible(t);
             item.cursor = cur.rectTransform; item.cursorImage = cur; item.cursorPos = new Vector2(-62f, 0f);
             item.label = t;
             item.Refresh();
@@ -431,14 +529,13 @@ namespace Nindo
         }
     }
 
-    /// <summary>Aplica el borde de un texto recién cuando se activa (TMP ya inicializado).</summary>
-    public class DeferredOutline : MonoBehaviour
+    /// <summary>Le pone el halo de tinta a un texto recién cuando se activa (TMP ya inicializado).</summary>
+    public class DeferredLegible : MonoBehaviour
     {
-        public float width = 0.2f;
         void OnEnable()
         {
             var t = GetComponent<TextMeshProUGUI>();
-            if (t != null) UIFactory.ApplyOutline(t, width);
+            if (t != null) UIFactory.ApplyLegible(t);
             Destroy(this);
         }
     }

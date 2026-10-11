@@ -93,13 +93,13 @@ namespace Nindo
             bossHanko.rectTransform.localRotation = Quaternion.Euler(0, 0, -5f);
             bossName = UIFactory.Text("Name", bossRoot, "", 58, UIFactory.Paper, new Vector2(0f, 0f), new Vector2(84f, 62f), new Vector2(820, 70), TextAlignmentOptions.BottomLeft, true);
             UIFactory.NoWrap(bossName);
-            UIFactory.Outline(bossName, 0.2f);
+            UIFactory.Legible(bossName);
             bossNameRt = bossName.rectTransform;
             bossSub = UIFactory.Text("Sub", bossRoot, "", 28, UIFactory.Gold, new Vector2(0f, 0f), new Vector2(300f, 70f), new Vector2(700, 40), TextAlignmentOptions.BottomLeft);
             UIFactory.NoWrap(bossSub);
-            UIFactory.Outline(bossSub, 0.18f);
+            UIFactory.Legible(bossSub);
             bossPostureLabel = UIFactory.Text("Postura", bossRoot, "Postura", 22, new Color(0.86f, 0.82f, 0.74f), new Vector2(1f, 0f), new Vector2(-200f, 70f), new Vector2(160, 30), TextAlignmentOptions.BottomRight);
-            UIFactory.Outline(bossPostureLabel, 0.18f);
+            UIFactory.Legible(bossPostureLabel);
         }
 
         static readonly Color BossRed = new Color(0.77f, 0.086f, 0.078f);   // (196,22,20)

@@ -78,7 +78,7 @@ namespace Nindo
             finisherIcon = UIFactory.Centered("Icon", finisherRoot, UIFactory.Gold, new Vector2(0f, 0.5f), new Vector2(90f, 0f), new Vector2(36, 36), UISprites.Finisher);
             finisherLabel = UIFactory.NoWrap(UIFactory.Text("Label", finisherRoot, "Ejecutar", 30, UIFactory.Gold, new Vector2(0f, 0.5f), new Vector2(112f, 0f), new Vector2(200, 50), TextAlignmentOptions.Left, true));
             finisherLabel.rectTransform.pivot = new Vector2(0f, 0.5f);
-            UIFactory.Outline(finisherLabel, 0.2f);
+            UIFactory.Legible(finisherLabel);
             finisherRoot.gameObject.SetActive(false);
 
             // interactuar: tecla + texto sobre un trazo de tinta
@@ -88,14 +88,14 @@ namespace Nindo
             interactKey = UIFactory.KeyCap(interactRoot, "E", 40f, new Vector2(0f, 0.5f), new Vector2(26f, 1f));
             interactLabel = UIFactory.NoWrap(UIFactory.Text("Label", interactRoot, "", 28, UIFactory.Paper, new Vector2(0f, 0.5f), new Vector2(54f, 0f), new Vector2(400, 44), TextAlignmentOptions.Left));
             interactLabel.rectTransform.pivot = new Vector2(0f, 0.5f);
-            UIFactory.Outline(interactLabel, 0.18f);
+            UIFactory.Legible(interactLabel);
             interactRoot.gameObject.SetActive(false);
 
             for (int i = 0; i < callouts.Length; i++)
             {
                 var t = UIFactory.NoWrap(UIFactory.Text("Callout", world, "", 38, UIFactory.Gold, Vector2.zero, Vector2.zero, new Vector2(620, 56), TextAlignmentOptions.Bottom, true));
                 t.rectTransform.pivot = new Vector2(0.5f, 0f);
-                UIFactory.Outline(t, 0.3f);
+                UIFactory.Legible(t);
                 t.enabled = false;
                 callouts[i] = new Callout { rt = t.rectTransform, text = t };
             }
@@ -128,7 +128,7 @@ namespace Nindo
                 w.guard.enabled = false;
                 w.status = UIFactory.NoWrap(UIFactory.Text("Status", w.rt, "", 24, UIFactory.Gold, new Vector2(0.5f, 0f), new Vector2(0, 42), new Vector2(320, 34), TextAlignmentOptions.Bottom, true));
                 w.status.rectTransform.pivot = new Vector2(0.5f, 0f);
-                UIFactory.Outline(w.status, 0.25f);
+                UIFactory.Legible(w.status);
                 widgets.Add(w);
             }
             if (w.enemy != null) widgetOf.Remove(w.enemy);
@@ -247,7 +247,7 @@ namespace Nindo
             else lockImg.enabled = false;
 
             // ---------------------------------------------------------------- interactuar
-            if (interactTarget != null && interactTarget.isActiveAndEnabled && p.State == PlayerState.Locomotion && Project(cam, interactTarget.PromptPosition, scale, out var ip))
+            if (InteractStillValid(p) && Project(cam, interactTarget.PromptPosition, scale, out var ip))
             {
                 if (interactTarget != interactShown || interactText != interactTarget.prompt)
                 {
@@ -264,9 +264,32 @@ namespace Nindo
                 interactRoot.anchoredPosition = ip;
                 interactRoot.localScale = Vector3.one * UIAnim.Pop(interactT, 0.12f);
             }
-            else if (interactShown != null) { interactShown = null; interactRoot.gameObject.SetActive(false); }
+            // por el estado del cartel y no por "interactShown != null": la guadaña del prólogo y los sellos se
+            // destruyen al usarlos (en plena cinemática, con las marcas apagadas) y el null de Unity daba falso,
+            // así que "Desatar la cinta" quedaba colgado en pantalla hasta que otro aviso lo reemplazaba
+            else if (interactRoot.gameObject.activeSelf) HideInteractRoot();
 
             UpdateCallouts(cam, scale, p, dt);
+        }
+
+        /// <summary>
+        /// El aviso de interactuar sigue solo si su objetivo existe, está activo, se puede usar y Kaito está cerca y
+        /// libre. El jugador lo actualiza solo caminando: después de una cinemática, un golpe o un gesto quedaba
+        /// apuntando a algo que ya no estaba (o a un santuario en plena pelea).
+        /// </summary>
+        bool InteractStillValid(PlayerController p)
+        {
+            var it = interactTarget;
+            if (it == null || !it.isActiveAndEnabled || !it.CanInteract || p.State != PlayerState.Locomotion) return false;
+            Vector3 d = it.transform.position - p.transform.position;
+            float r = it.radius + 0.6f;   // el margen evita que titile justo en el borde del radio
+            return d.x * d.x + d.z * d.z <= r * r && Mathf.Abs(d.y) <= 3f;
+        }
+
+        void HideInteractRoot()
+        {
+            interactShown = null; interactText = null;
+            interactRoot.gameObject.SetActive(false);
         }
 
         void UpdateWidget(EnemyWidget w, Enemy e, float dt, float t)
@@ -360,6 +383,9 @@ namespace Nindo
         {
             foreach (var c in callouts) if (c.active) { c.active = false; c.text.enabled = false; }
             foreach (var m in markers) if (m.active) { m.active = false; m.img.enabled = false; }
+            // el jugador lo vuelve a pedir al caminar: si sigue cerca, el aviso entra de nuevo con su salto
+            interactTarget = null;
+            if (interactRoot.gameObject.activeSelf) HideInteractRoot();
         }
 
         /// <summary>Punto (en el canvas) arriba de todo lo que tiene el enemigo encima: barra, postura y texto.</summary>
@@ -422,6 +448,8 @@ namespace Nindo
         public void PulseImbalance(Enemy e) { if (e != null && !(e is Boss)) GetWidget(e).visibleUntil = Time.time + 3f; }
         public void SetLockTarget(Enemy e) { if (e != lockTarget) lockPopT = 0f; lockTarget = e; }
         public void SetInteractPrompt(Interactable i) => interactTarget = i;
+        /// <summary>Lo que el aviso de interactuar está mostrando ahora (null si nada): el consejo de rezar lo mira.</summary>
+        public Interactable InteractShown => interactRoot.gameObject.activeSelf ? interactShown : null;
         public void HideInteractPrompt() => interactTarget = null;
 
         // ---------------------------------------------------------------- avisos de combate sobre Kaito

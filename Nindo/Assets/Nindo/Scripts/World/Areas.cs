@@ -148,7 +148,8 @@ namespace Nindo
             Game.Save.SetFlag(Flags.Encounter(id));
             if (!string.IsNullOrEmpty(rewardFlag)) Game.Save.SetFlag(rewardFlag);
             if (barrier != null) { ArenaBarrier.Dissolve(barrier); barrier = null; }
-            if (members.Count > 1) Game.UI?.ShowToast("Victoria", UIFactory.Gold, 1.2f);
+            // sin cartel de "Victoria": en una pelea común ya lo dicen la barrera que se disuelve (si había), la música
+            // que vuelve a la de la zona y los sellos y el objetivo que regresan al HUD. Se anuncia solo con los jefes
             if (!string.IsNullOrEmpty(onCompleteStory)) Game.Story?.OnTrigger(onCompleteStory, null);
         }
 
