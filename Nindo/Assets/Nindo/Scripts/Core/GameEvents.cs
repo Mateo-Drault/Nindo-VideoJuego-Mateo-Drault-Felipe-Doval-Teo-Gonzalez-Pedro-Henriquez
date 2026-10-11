@@ -24,6 +24,8 @@ namespace Nindo
         public static event Action<int> AbilityUsed;
         /// <summary>Sonó el aviso "¡ya!" de un golpe (hyōshigi): atacante o proyectil, y si es imparable.</summary>
         public static event Action<UnityEngine.Component, bool> StrikeCue;
+        /// <summary>Se escribió la partida en disco (el indicador de guardado de la UI).</summary>
+        public static event Action Saved;
 
         public static void RaiseEnemyKilled(Enemy e) => EnemyKilled?.Invoke(e);
         public static void RaiseEnemyFinished(Enemy e, bool finisher) => EnemyFinished?.Invoke(e, finisher);
@@ -41,13 +43,14 @@ namespace Nindo
         public static void RaiseStoryTrigger(string id) => StoryTrigger?.Invoke(id);
         public static void RaiseAbility(int index) => AbilityUsed?.Invoke(index);
         public static void RaiseStrikeCue(UnityEngine.Component source, bool unblockable) => StrikeCue?.Invoke(source, unblockable);
+        public static void RaiseSaved() => Saved?.Invoke();
 
         public static void Clear()
         {
             EnemyKilled = null; EnemyFinished = null; Parry = null; PlayerDamaged = null; PlayerDied = null;
             PlayerRespawned = null; CheckpointActivated = null; SealObtained = null; BossStarted = null;
             BossDefeated = null; ZoneEntered = null; CombatStateChanged = null; FlagSet = null;
-            StoryTrigger = null; AbilityUsed = null; StrikeCue = null;
+            StoryTrigger = null; AbilityUsed = null; StrikeCue = null; Saved = null;
         }
     }
 }

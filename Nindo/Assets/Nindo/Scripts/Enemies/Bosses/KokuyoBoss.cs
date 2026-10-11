@@ -924,7 +924,7 @@ namespace Nindo
         void Bark(string id)
         {
             foreach (var l in StoryText.Dialogue(id))
-                Game.UI?.ShowToast(l.speaker + ": " + l.text, l.speaker == StoryText.Abuelo ? new Color(0.66f, 0.76f, 1f) : new Color(1f, 0.46f, 0.4f), 3.4f);
+                Game.UI?.ShowBark(l.speaker, l.text, l.speaker == StoryText.Abuelo ? new Color(0.66f, 0.76f, 1f) : new Color(1f, 0.46f, 0.4f), 3.4f);
         }
 
         void ShowTip(string text)

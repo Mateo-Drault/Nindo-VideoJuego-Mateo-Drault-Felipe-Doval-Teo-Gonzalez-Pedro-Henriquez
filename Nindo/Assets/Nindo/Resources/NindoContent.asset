@@ -1434,9 +1434,9 @@ MonoBehaviour:
   spiritFrame: {fileID: 21300000, guid: 4b801baa2137a184ab941ac4452019c2, type: 3}
   healthFillArea:
     serializedVersion: 2
-    x: 0.11720867208672087
+    x: 0.1483739837398374
     y: 0
-    width: 0.8306233062330624
+    width: 0.8414634146341463
     height: 1
   spiritFillArea:
     serializedVersion: 2

@@ -67,7 +67,8 @@ namespace Nindo
         public static void Save()
         {
             try { File.WriteAllText(PathFile, JsonUtility.ToJson(Data, true)); }
-            catch (Exception e) { Debug.LogWarning("[Nindo] No se pudo guardar: " + e.Message); }
+            catch (Exception e) { Debug.LogWarning("[Nindo] No se pudo guardar: " + e.Message); return; }
+            GameEvents.RaiseSaved();
         }
 
         public static void Delete()

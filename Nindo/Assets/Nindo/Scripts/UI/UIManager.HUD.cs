@@ -27,10 +27,13 @@ namespace Nindo
         Image healthFrame, healthFill, healthFallbackGhost;
         Material healthFrameMat, healthFillMat;
         float healthShown = 1f, healthGhostValue = 1f, healthGhostHold, healthHit, healthFlash, lastHealth = -1f, healX = 2f, healA;
+        Sprite healthFrameSprite;
+        float healthH, bandU0, bandU1 = 1f, bandX0, bandX1 = HealthWidth;   // la banda en u del sprite y en x del canvas
+        const float HealthWidth = 560f;
 
         // ---- dragón
         RectTransform spiritRoot, spiritBody, eyeRt, emberRoot;
-        Image spiritFrame, spiritFill, eyeImg, eyeGlow, glintImg;
+        Image spiritFrame, spiritFill, eyeImg, eyeGlow;
         Material spiritFrameMat, spiritFillMat;
         Vector2 spiritSize;
         float spiritShown, spiritGhostValue, spiritGhostHold, spiritGhostAge = 1f, spiritPulse, lastSpirit = -1f, spiritShake;
@@ -92,7 +95,7 @@ namespace Nindo
             // ---------------------------------------------------------------- vida (bandana)
             Sprite hf = c.healthFrame;
             float hh = hf != null ? hf.rect.height * HealthScale : 92f;
-            healthRoot = UIFactory.Rect("Health", hudLeft, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), HealthPos, new Vector2(560, hh));
+            healthRoot = UIFactory.Rect("Health", hudLeft, new Vector2(0, 1), new Vector2(0, 1), new Vector2(0, 1), HealthPos, new Vector2(HealthWidth, hh));
             if (hf != null)
             {
                 // 9-slice: el nudo y las puntas mantienen su forma a cualquier ancho (antes se estiraban 1.4x)
@@ -101,11 +104,28 @@ namespace Nindo
                 healthFrameMat = MakeMat(bandana, healthFrame, 0f);
             }
             else UIFactory.Image("Back", healthRoot, new Color(0.25f, 0.04f, 0.04f, 0.9f)).rectTransform.Fill(new Vector2(70, 22), new Vector2(-10, -22));
-            if (bandana == null) healthFallbackGhost = MakeFill("Ghost", healthRoot, new Color(1f, 0.92f, 0.8f, 0.85f), c.healthFill, true);
-            healthFill = MakeFill("Fill", healthRoot, c.healthFill != null ? Color.white : UIFactory.Red, c.healthFill, bandana == null);
-            if (c.healthFill != null && hf != null) PlaceOnSliced(healthFill.rectTransform, hf, c.healthFillArea, 560f, hh);
-            if (healthFallbackGhost != null && hf != null) PlaceOnSliced(healthFallbackGhost.rectTransform, hf, c.healthFillArea, 560f, hh);
+            if (bandana != null && hf != null && c.healthFill != null)
+            {
+                // el relleno tiene el tamaño y el 9-slice del marco (Tools/UI/hud_bandana.py: la forma exacta del interior
+                // de la banda). Antes era el rojo del equipo ubicado aparte, corrido ~50 px a la izquierda: tapaba el
+                // nudo y con la vida llena dejaba la punta sin llenar. El recorte lo hace el shader en u (BandU)
+                healthFill = UIFactory.Sliced("Fill", healthRoot, c.healthFill, Color.white, hh);
+                FillRect(healthFill.rectTransform);
+            }
+            else
+            {
+                if (bandana == null) healthFallbackGhost = MakeFill("Ghost", healthRoot, new Color(1f, 0.92f, 0.8f, 0.85f), c.healthFill, true);
+                healthFill = MakeFill("Fill", healthRoot, c.healthFill != null ? Color.white : UIFactory.Red, c.healthFill, bandana == null);
+                if (c.healthFill != null) FillRect(healthFill.rectTransform);
+                if (healthFallbackGhost != null && c.healthFill != null) FillRect(healthFallbackGhost.rectTransform);
+            }
             healthFillMat = MakeMat(bandana, healthFill, 1f);
+            if (hf != null)
+            {
+                healthFrameSprite = hf; healthH = hh;
+                bandU0 = c.healthFillArea.x; bandU1 = c.healthFillArea.x + c.healthFillArea.width;
+                bandX0 = SlicedX(hf, bandU0, HealthWidth, hh); bandX1 = SlicedX(hf, bandU1, HealthWidth, hh);
+            }
 
             // ---------------------------------------------------------------- espíritu (dragón)
             Sprite sf = c.spiritFrame;
@@ -132,11 +152,11 @@ namespace Nindo
             spiritFillMat = MakeMat(dragon, spiritFill, 1f);
             if (spiritFillMat != null) SetDragonGeometry(spiritFillMat, c.spiritFillArea.width, c.spiritFillArea.x);
 
-            // ojo: brillo de fuego detrás (ira), almendra con pupila rasgada y un destello que nunca se apaga
+            // ojo: brillo de fuego detrás (ira) y la cuña blanca con la ceja de tinta (el idioma de los ojos del menú del
+            // equipo; la almendra dorada con el destello difuso era lo único redondo y con degradé del HUD)
             eyeGlow = UIFactory.Centered("EyeGlow", spiritBody, new Color(1f, 0.45f, 0.1f, 0f), DragonEye, Vector2.zero, new Vector2(22, 22), UISprites.SoftDot);
-            eyeImg = UIFactory.Centered("Eye", spiritBody, EyeGold, DragonEye, Vector2.zero, new Vector2(15f, 9.5f), UISprites.DragonEye);
+            eyeImg = UIFactory.Centered("Eye", spiritBody, EyeWhite, DragonEye, Vector2.zero, new Vector2(18f, 11.5f), UISprites.DragonEye);
             eyeRt = eyeImg.rectTransform;
-            glintImg = UIFactory.Centered("Glint", eyeRt, new Color(1f, 1f, 0.92f, 0.95f), new Vector2(0.42f, 0.66f), Vector2.zero, new Vector2(4.5f, 4.5f), UISprites.SoftDot);
             emberRoot = UIFactory.Rect("Embers", spiritBody, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero, Vector2.zero);
             ReadDragonProfile();
 
@@ -163,17 +183,17 @@ namespace Nindo
             FillRect(sw.rectTransform);
             sw.rectTransform.localScale = new Vector3(-1f, 1f, 1f);   // la tinta se junta a la derecha, contra el borde
             var lbl = UIFactory.Text("Label", obj, "OBJETIVO", 20, UIFactory.Gold, new Vector2(1, 1), new Vector2(-26, -12), new Vector2(300, 26), TextAlignmentOptions.TopRight);
-            UIFactory.Outline(lbl, 0.15f);
+            UIFactory.Legible(lbl);
             float lw = lbl.GetPreferredValues("OBJETIVO", 300f, 26f).x;
             UIFactory.Centered("Bullet", obj, UIFactory.Gold, new Vector2(1, 1), new Vector2(-26f - lw - 36f, -24f), new Vector2(50, 18), UISprites.Kunai);
             objectiveText = UIFactory.Text("Text", obj, "", 27, UIFactory.Paper, new Vector2(1, 1), new Vector2(-26, -38), new Vector2(640, 66), TextAlignmentOptions.TopRight);
             objectiveText.enableAutoSizing = true; objectiveText.fontSizeMin = 21; objectiveText.fontSizeMax = 27;
-            UIFactory.Outline(objectiveText, 0.18f);
+            UIFactory.Legible(objectiveText);
             objectiveLine = UIFactory.Image("Line", obj, UIFactory.Gold, new Vector2(1, 0), new Vector2(-24, 6), new Vector2(380, 10), UISprites.BrushLine);
             objectiveLine.type = Image.Type.Filled; objectiveLine.fillMethod = Image.FillMethod.Horizontal; objectiveLine.fillOrigin = 1; objectiveLine.fillAmount = 0f;
         }
 
-        static readonly Color EyeGold = new Color(1f, 0.8f, 0.28f, 1f);
+        static readonly Color EyeWhite = new Color(1f, 0.98f, 0.92f, 1f), EyeEmber = new Color(1f, 0.6f, 0.2f, 1f), EyeDim = new Color(0.6f, 0.58f, 0.56f, 1f);
         static readonly Color SealIconEmpty = new Color(0.59f, 0.57f, 0.63f, 0.6f), SealIconHas = new Color(0.16f, 0.086f, 0.03f, 1f), SealGold = new Color(0.88f, 0.67f, 0.2f, 1f);
 
         static Material MakeMat(Shader sh, Image img, float mode)
@@ -211,18 +231,36 @@ namespace Nindo
             return img;
         }
 
-        /// <summary>
-        /// Ubica el relleno sobre un marco 9-slice: los extremos del área (en píxeles del sprite) se pasan por el
-        /// mismo mapeo que el marco (puntas a escala, medio estirado), así el relleno calza en la banda.
-        /// </summary>
-        static void PlaceOnSliced(RectTransform fill, Sprite frame, Rect area, float width, float height)
+        /// <summary>x en el canvas (0..width) del punto u del sprite de un marco 9-slice dibujado a width x height: las
+        /// puntas van a escala del alto y el medio se estira.</summary>
+        static float SlicedX(Sprite s, float u, float width, float height)
         {
-            float w = frame.rect.width, k = height / frame.rect.height;
-            float L = frame.border.x, R = frame.border.z;
-            float Map(float x) => x <= L ? x * k : x >= w - R ? width - (w - x) * k : L * k + (x - L) / Mathf.Max(1f, w - L - R) * (width - (L + R) * k);
-            float x0 = Map(area.x * w), x1 = Map((area.x + area.width) * w);
-            fill.anchorMin = new Vector2(0f, 0f); fill.anchorMax = new Vector2(0f, 1f); fill.pivot = new Vector2(0f, 0.5f);
-            fill.anchoredPosition = new Vector2(x0, 0f); fill.sizeDelta = new Vector2(x1 - x0, 0f);
+            float w = s.rect.width, k = height / s.rect.height, L = s.border.x, R = s.border.z, x = u * w;
+            if (x <= L) return x * k;
+            if (x >= w - R) return width - (w - x) * k;
+            return L * k + (x - L) / Mathf.Max(1f, w - L - R) * (width - (L + R) * k);
+        }
+
+        /// <summary>La inversa de <see cref="SlicedX"/>: qué u del sprite cae en la x del canvas.</summary>
+        static float SlicedU(Sprite s, float x, float width, float height)
+        {
+            float w = s.rect.width, k = height / s.rect.height, L = s.border.x, R = s.border.z;
+            if (x <= L * k) return x / k / w;
+            if (x >= width - R * k) return (w - (width - x) / k) / w;
+            return (L + (x - L * k) / Mathf.Max(1f, width - (L + R) * k) * (w - L - R)) / w;
+        }
+
+        /// <summary>
+        /// Fracción de la banda (0 = junto al nudo, 1 = la punta) en u del sprite del relleno, lineal en PANTALLA: el
+        /// 9-slice no es lineal en u (el nudo y la punta van a escala, el medio estirado) y la vida tiene que bajar
+        /// pareja. Fuera de 0..1 sigue en línea recta (el brillo de la curación entra y sale de la banda).
+        /// </summary>
+        float BandU(float f)
+        {
+            if (healthFrameSprite == null) return f;
+            if (f <= 0f) return bandU0 + f * (bandU1 - bandU0);
+            if (f >= 1f) return bandU1 + (f - 1f) * (bandU1 - bandU0);
+            return SlicedU(healthFrameSprite, Mathf.Lerp(bandX0, bandX1, f), HealthWidth, healthH);
         }
 
         static void FillRect(RectTransform rt) { rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one; rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero; }
@@ -374,16 +412,17 @@ namespace Nindo
             }
             else
             {
-                healthFill.fillAmount = healthShown;
-                if (healthFallbackGhost != null) healthFallbackGhost.fillAmount = healthGhostValue;
+                // sin shader el relleno es un Image.Filled sin 9-slice: calza aproximado (el nudo se estira un poco)
+                healthFill.fillAmount = BandU(healthShown);
+                if (healthFallbackGhost != null) healthFallbackGhost.fillAmount = BandU(healthGhostValue);
             }
         }
 
         void SetBandana(Material m, float beat, float t)
         {
             if (m == null) return;
-            m.SetFloat(IdFill, healthShown); m.SetFloat(IdGhost, healthGhostValue); m.SetFloat(IdHit, healthHit); m.SetFloat(IdFlash, healthFlash);
-            m.SetFloat(IdHeal, healX); m.SetFloat(IdHealA, healA); m.SetFloat(IdLow, beat); m.SetFloat(IdT, t);
+            m.SetFloat(IdFill, BandU(healthShown)); m.SetFloat(IdGhost, BandU(healthGhostValue)); m.SetFloat(IdHit, healthHit); m.SetFloat(IdFlash, healthFlash);
+            m.SetFloat(IdHeal, BandU(healX)); m.SetFloat(IdHealA, healA); m.SetFloat(IdLow, beat); m.SetFloat(IdT, t);
         }
 
         // ---------------------------------------------------------------- espíritu + Filo de Ira
@@ -483,9 +522,9 @@ namespace Nindo
         }
 
         // ---------------------------------------------------------------- ojo
-        // siempre abierto con su destello (antes, sin ira, no tenía ojo); parpadea cada 4-7 s, entrecierra sin
-        // Espíritu para el dash (y lo cierra, una raya como en el parpadeo, mientras el dash cansado se recupera);
-        // con la ira arde
+        // siempre abierto (antes, sin ira, no tenía ojo); parpadea cada 4-7 s, entrecierra sin Espíritu para el dash
+        // (y lo cierra, una raya como en el parpadeo, mientras el dash cansado se recupera); con la ira se enciende
+        // como brasa y le arde el fuego detrás
         void UpdateEye(PlayerController p, float dt, float t)
         {
             eyeRt.anchoredPosition = new Vector2(0f, -DragonWave(DragonEye.x, t) * spiritSize.y);
@@ -499,10 +538,7 @@ namespace Nindo
             eyeRt.localScale = new Vector3(1f, Mathf.Max(0.1f, blink * lidShown), 1f);
             float fire = Mathf.Max(readyShown, rageShown);
             float flick = 0.8f + 0.2f * Mathf.PerlinNoise(t * 9f, 0.3f);
-            var iris = Color.Lerp(EyeGold, new Color(1f, 0.4f, 0.08f), fire);
-            iris = Color.Lerp(iris, new Color(0.62f, 0.5f, 0.3f), dimShown * 0.6f);
-            eyeImg.color = iris;
-            glintImg.color = new Color(1f, 1f, 0.92f, 0.95f * (1f - 0.5f * dimShown));
+            eyeImg.color = Color.Lerp(Color.Lerp(EyeWhite, EyeEmber, fire), EyeDim, dimShown * 0.8f);
             eyeGlow.color = new Color(1f, 0.45f, 0.1f, fire * 0.85f * flick);
             eyeGlow.rectTransform.sizeDelta = Vector2.one * Mathf.Lerp(22f, 50f, Mathf.Max(rageShown, readyShown * 0.5f)) * flick;
         }

@@ -22,6 +22,8 @@ namespace Nindo
 
         // paneles y piezas del kit "Tinta y Bandana"
         public static Sprite BrushSwash => Get("BrushSwash");
+        /// <summary>Trazo para poner texto encima: núcleo parejo hasta u ~0.8 (UIFactory.FitBanner).</summary>
+        public static Sprite BrushBanner => Get("BrushBanner");
         public static Sprite BrushLine => Get("BrushLine");
         public static Sprite InkPanel => Get("InkPanel");
         public static Sprite InkCard => Get("InkCard");
@@ -35,6 +37,11 @@ namespace Nindo
         public static Sprite BossBarFill => Get("BossBarFill");
         public static Sprite DragonEye => Get("DragonEye");
         public static Sprite SoftDot => Get("SoftDot");
+
+        // indicador de guardado (UI/SaveIndicator): pergamino, pincel y el sello del nudo
+        public static Sprite ScrollPaper => Get("ScrollPaper");
+        public static Sprite ScrollRod => Get("ScrollRod");
+        public static Sprite Fude => Get("Fude");
 
         // marcadores de combate (blancos con contorno de tinta: se tiñen)
         public static Sprite Unblockable => Get("IconUnblockable");

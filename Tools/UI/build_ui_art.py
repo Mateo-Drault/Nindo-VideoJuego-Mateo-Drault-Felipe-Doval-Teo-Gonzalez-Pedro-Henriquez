@@ -49,9 +49,28 @@ def save(img, name, border=(0, 0, 0, 0), usage=""):
     path = os.path.join(OUT, name + ".png")
     img.save(path, optimize=True)
     size = 1 << max(5, (max(img.size) - 1).bit_length())   # potencia de 2 >= lado mayor: no se reduce al importar
-    write_meta(path, texture_meta(sprite=True, mips=False, compress=False, max_size=size, border=border), force=True)
+    meta = texture_meta(sprite=True, mips=False, compress=False, max_size=size, border=border)
+    # el .meta se reescribe solo si cambia lo que importa (borde de 9-slice, tamaño máximo): Unity actualiza el
+    # formato de los .meta al importarlos y reescribirlos igual ensuciaba el repo con 60 archivos sin cambios reales
+    if not same_import(path + ".meta", meta):
+        write_meta(path, meta, force=True)
     KIT.append((name, img.size, border, usage))
     return img
+
+
+def same_import(meta_path, body):
+    if not os.path.exists(meta_path):
+        return False
+    old = open(meta_path, encoding="utf-8", errors="ignore").read()
+
+    def field(text, key):
+        return next((ln.strip()[len(key):].strip() for ln in text.splitlines() if ln.strip().startswith(key)), None)
+    for key in ("spriteBorder:", "textureType:", "spriteMode:"):
+        if field(old, key) != field(body, key):
+            return False
+    # un tamaño máximo mayor que el pedido no reduce nada (alguno se subió a mano en el editor)
+    a, b = field(old, "maxTextureSize:"), field(body, "maxTextureSize:")
+    return a is not None and b is not None and int(a) >= int(b)
 
 
 # ------------------------------------------------------------------------------------- ruido
@@ -97,9 +116,9 @@ def down(img, w, h):
 
 # ------------------------------------------------------------------------------------- pincelada
 def brush_alpha(L, H, seed, dry=0.55, start_pool=True, taper_end=0.28, taper_start=0.05, bow=0.04, thick=0.40,
-                bristles=46, end_narrow=0.85):
+                bristles=46, end_narrow=0.85, dry_start=0.35):
     """Pincelada horizontal de sumi como alfa [0,1] de L x H: la tinta se junta al empezar y las cerdas se
-    secan hacia la derecha (como el logo del equipo)."""
+    secan hacia la derecha (como el logo del equipo) a partir de u = dry_start."""
     rng = random.Random(seed)
     ys, xs = np.mgrid[0:H, 0:L].astype(np.float32)
     u = xs / (L - 1)
@@ -117,7 +136,7 @@ def brush_alpha(L, H, seed, dry=0.55, start_pool=True, taper_end=0.28, taper_sta
     br2 = vnoise1(2048, bristles * 3, rng)
     idx = ((dn + 1) * 0.5 * 2047).astype(int)
     streak = 0.6 * br[idx] + 0.4 * br2[idx]
-    dryness = dry * ss(0.35, 1.0, u) + 0.25 * dry * (np.abs(dn) ** 3)
+    dryness = dry * ss(dry_start, 1.0, u) + 0.25 * dry * (np.abs(dn) ** 3)
     gaps = ss(dryness - 0.08, dryness + 0.08, streak)
     gaps = 1 - (1 - gaps) * ss(0.03, 0.15, dryness)    # donde el pincel todavía está mojado no hay huecos
     density = 0.88 + 0.12 * vnoise2(H, L, max(8, H // 3), rng)
@@ -129,6 +148,24 @@ def brush_swash():
     a = brush_alpha(L, H, 3, dry=0.8, taper_end=0.35, thick=0.40, end_narrow=0.35, bristles=60)
     return save(down(rgba(a, WHITE), 1024, 200), "BrushSwash",
                 usage="blanco, se tiñe: tinta detrás del título de zona, objetivo, avisos; rojo en la muerte")
+
+
+def brush_banner():
+    """Trazo para poner texto encima (títulos de zona, avisos, interactuar, objetivo, nombre de quien habla): la
+    misma pincelada que BrushSwash pero con el pincel cargado hasta el 70 % y la cola seca corta. En BrushSwash la
+    tinta cubre pareja solo hasta u 0.60 y los textos largos terminaban sobre las cerdas secas (en la nieve no se
+    leían); a la medida del núcleo el trazo tenía que ser 1.8 veces el texto. UIFactory.FitBanner usa el núcleo
+    medido acá (BannerCore)."""
+    L, H = 2048, 400
+    a = brush_alpha(L, H, 3, dry=0.8, taper_end=0.2, thick=0.40, end_narrow=0.35, bristles=60, dry_start=0.68)
+    img = save(down(rgba(a, WHITE), 1024, 200), "BrushBanner",
+               usage="blanco, se tiñe: tinta detrás de textos (núcleo parejo hasta u ~0.8, cola seca corta)")
+    cov = (np.asarray(img)[..., 3] / 255.0)
+    band = cov[int(200 * 0.3):int(200 * 0.7)]
+    dense = np.nonzero((band > 0.6).mean(0) >= 0.75)[0]
+    rows = np.nonzero((cov[:, int(1024 * 0.05):int(1024 * 0.75)] > 0.6).mean(1) >= 0.9)[0]
+    print(f"  BannerCore u {dense[0] / 1024:.3f}..{dense[-1] / 1024:.3f}  v {rows[0] / 200:.3f}..{rows[-1] / 200:.3f}")
+    return img
 
 
 def brush_line():
@@ -447,6 +484,17 @@ def _moon(m, d, s, rng):
     d.rectangle((s * .21, s * .72, s * .74, s * .81), fill=255)
 
 
+@icon("IconKnot", "nudo de la bandana (sello del indicador de guardado)")
+def _knot(m, d, s, rng):
+    c = s / 2
+    # dos lazos que salen del nudo hacia arriba y afuera, y dos puntas que caen abiertas con el corte en V
+    for sg in (-1, 1):
+        d.polygon(jitter_poly([(c + sg * s * .06, s * .46), (c + sg * s * .44, s * .16), (c + sg * s * .47, s * .40), (c + sg * s * .10, s * .56)], rng, s * 0.003), fill=255)
+        d.polygon([(c + sg * s * .03, s * .55), (c + sg * s * .17, s * .52), (c + sg * s * .36, s * .92), (c + sg * s * .25, s * .84), (c + sg * s * .19, s * .95)], fill=255)
+    d.rectangle((c - s * .12, s * .38, c + s * .12, s * .62), fill=255)
+    d.line([(c - s * .12, s * .5), (c + s * .12, s * .5)], fill=0, width=int(s * .035))   # pliegue del nudo
+
+
 def pip(S=32):
     """Rombo de postura con contorno: se tiñe dorado (lleno) o gris (vacío)."""
     m, d, s = canvas(S)
@@ -507,30 +555,25 @@ def boss_bar(W=1400, H=72, seed=61):
 
 
 def dragon_eye(W=64, H=40):
-    """Ojo del dragón del HUD (el arte del equipo no lo trae): almendra con contorno, iris blanco para teñir
-    (oro / brasa) y pupila rasgada de tinta. El brillo y el parpadeo los hace la UI."""
+    """Ojo del dragón del HUD (el arte del equipo no lo trae), en el idioma de los ojos del menú del equipo
+    (Menunindo: blanco angular cortado por una ceja negra): cuña blanca con contorno, ceja de tinta que la corta
+    en diagonal hacia el hocico y pupila en media luna pegada a la ceja. La almendra con iris dorado, pupila
+    rasgada y brillo difuso de antes era el único elemento redondeado y con degradé del HUD (dibujos
+    comparados en el dragón a tamaño real: la cuña de tinta y la roja se perdían sobre el cuerpo marrón o se
+    leían como enemigo). El blanco se tiñe (brasa con el Filo de Ira, gris sin Espíritu); el parpadeo lo hace la UI."""
     k = 4
     w, h = W * k, H * k
     mask = Image.new("L", (w, h), 0)
-    md = ImageDraw.Draw(mask)
-    pts = []
-    for i in range(64):
-        t = i / 63
-        x = w * (0.08 + 0.84 * t)
-        pts.append((x, h * 0.5 - h * 0.36 * math.sin(t * math.pi) ** 0.8 - h * 0.06 * t))      # párpado de arriba
-    for i in range(64):
-        t = 1 - i / 63
-        x = w * (0.08 + 0.84 * t)
-        pts.append((x, h * 0.5 + h * 0.26 * math.sin(t * math.pi) ** 1.1 - h * 0.06 * t))      # de abajo
-    md.polygon(pts, fill=255)
+    ImageDraw.Draw(mask).polygon([(w * .06, h * .62), (w * .40, h * .30), (w * .80, h * .22), (w * .96, h * .40),
+                                  (w * .78, h * .74), (w * .36, h * .80)], fill=255)
     o = 4 * k
     img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
     img.paste(Image.new("RGBA", (w, h), INK + (255,)), (0, 0), mask.filter(ImageFilter.MaxFilter(2 * o + 1)))
     img.paste(Image.new("RGBA", (w, h), WHITE + (255,)), (0, 0), mask)
     d = ImageDraw.Draw(img)
-    cx, cy = w * 0.56, h * 0.47
-    d.ellipse((cx - w * 0.06, cy - h * 0.32, cx + w * 0.06, cy + h * 0.32), fill=INK + (255,))    # pupila rasgada
-    return save(down(img, W, H), "DragonEye", usage="ojo del dragón (iris se tiñe)")
+    d.polygon([(w * .02, h * .40), (w * .98, h * .02), (w * 1.0, h * .38), (w * .50, h * .44), (w * .10, h * .66)], fill=INK + (255,))   # ceja
+    d.polygon([(w * .50, h * .44), (w * .66, h * .40), (w * .70, h * .58), (w * .60, h * .70), (w * .54, h * .60)], fill=INK + (255,))  # pupila
+    return save(down(img, W, H), "DragonEye", usage="ojo del dragón: cuña blanca con ceja de tinta (se tiñe)")
 
 
 def soft_dot(size=64):
@@ -540,6 +583,82 @@ def soft_dot(size=64):
     r = np.hypot(xs - c, ys - c) / c
     a = np.clip(1 - r, 0, 1) ** 2.2
     return save(rgba(a, WHITE), "SoftDot", usage="punto suave")
+
+
+# ------------------------------------------------------------------------------------- indicador de guardado
+# "La firma": abajo a la izquierda se desenrolla un pergamino, el pincel escribe un trazo de tinta, el sello rojo
+# del nudo de la bandana lo firma y se vuelve a enrollar (UI/SaveIndicator). Papel con tinta encima: se lee sobre
+# la nieve y sobre la noche; un trazo claro suelto se perdía en la nieve y la tinta sola, de noche.
+def scroll_paper(W=320, H=104, seed=83):
+    """Tira de washi con los bordes de arriba y abajo apenas irregulares, contorno de tinta y fibras."""
+    rng = random.Random(seed)
+    k = 2
+    w, h = W * k, H * k
+    ys, xs = np.mgrid[0:h, 0:w].astype(np.float32)
+    o = 6 * k
+    wob = (vnoise1(w, 9, rng)[None, :] - 0.5) * 5 * k
+    edge = 6 * k + wob
+    outer = ss(edge - 1.5, edge + 1.5, ys) * (1 - ss(h - edge - 1.5, h - edge + 1.5, ys))
+    inner = ss(edge + o - 1.5, edge + o + 1.5, ys) * (1 - ss(h - edge - o - 1.5, h - edge - o + 1.5, ys))
+    fib = vnoise2(h, w, 5, rng)
+    paper = np.zeros((h, w, 4), np.float32)
+    paper[..., 0] = PAPER[0] - fib * 16
+    paper[..., 1] = PAPER[1] - fib * 18
+    paper[..., 2] = PAPER[2] - fib * 26
+    rgb = paper[..., :3] * inner[..., None] + np.array(INK, np.float32) * (1 - inner[..., None])
+    arr = np.dstack([rgb, outer * 255]).clip(0, 255).astype(np.uint8)
+    return save(down(Image.fromarray(arr, "RGBA"), W, H), "ScrollPaper",
+                usage="papel del pergamino del guardado (se recorta con RectMask2D al desenrollarse)")
+
+
+def scroll_rod(W=28, H=124):
+    """Varilla del pergamino (jiku): laca roja oscura con contorno de tinta y las puntas doradas."""
+    k = 4
+    w, h = W * k, H * k
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((0, 0, w - 1, h - 1), 9 * k, fill=INK + (255,))
+    d.rounded_rectangle((6 * k, 12 * k, w - 6 * k, h - 12 * k), 5 * k, fill=(120, 40, 30, 255))
+    d.line([(10 * k, 16 * k), (10 * k, h - 16 * k)], fill=(190, 90, 60, 255), width=3 * k)   # brillo de la laca
+    for y0 in (4 * k, h - 12 * k):
+        d.rounded_rectangle((4 * k, y0, w - 4 * k, y0 + 8 * k), 3 * k, fill=(214, 178, 104, 255))
+    return save(down(img, W, H), "ScrollRod", usage="varilla del pergamino del guardado (una a cada lado)")
+
+
+def fude(S=96):
+    """Pincel de caligrafía (fude) en diagonal: mango de bambú con nudos, virola roja y la punta de pelo con tinta.
+    La punta queda en la esquina de abajo a la izquierda (el pivote del sprite en Unity va ahí)."""
+    k = 4
+    s = S * k
+    ax, ay, bx, by = s * .94, s * .06, s * .07, s * .93
+
+    def pt(u, off):
+        x, y = ax + (bx - ax) * u, ay + (by - ay) * u
+        nx, ny = (by - ay), -(bx - ax)
+        L = math.hypot(nx, ny)
+        return (x + nx / L * off, y + ny / L * off)
+    hw = s * 0.05
+    handle = [pt(0, -hw), pt(0.6, -hw), pt(0.6, hw), pt(0, hw)]
+    ferrule = [pt(0.6, -hw * 1.15), pt(0.7, -hw * 1.15), pt(0.7, hw * 1.15), pt(0.6, hw * 1.15)]
+    hair = [pt(0.7, -hw * 1.25), pt(0.84, -hw * 0.95), pt(1.0, 0), pt(0.84, hw * 0.95), pt(0.7, hw * 1.25)]
+    mask = Image.new("L", (s, s), 0)
+    md = ImageDraw.Draw(mask)
+    for poly in (handle, ferrule, hair):
+        md.polygon(poly, fill=255)
+    o = 3 * k
+    img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
+    img.paste(Image.new("RGBA", (s, s), INK + (255,)), (0, 0), mask.filter(ImageFilter.MaxFilter(2 * o + 1)))
+    d = ImageDraw.Draw(img)
+    d.polygon(handle, fill=(214, 178, 104, 255))
+    for u in (0.2, 0.42):
+        d.line([pt(u, -hw), pt(u, hw)], fill=(120, 86, 40, 255), width=3 * k)
+    d.line([pt(0.03, -hw * 0.45), pt(0.58, -hw * 0.45)], fill=(245, 222, 160, 255), width=2 * k)
+    d.polygon(ferrule, fill=HANKO + (255,))
+    # pelo: gris tinta con la punta negra (si es todo negro, contra el contorno se veía un rombo)
+    d.polygon(hair, fill=(70, 66, 74, 255))
+    d.polygon([pt(0.86, -hw * 0.8), pt(1.0, 0), pt(0.86, hw * 0.8)], fill=INK + (255,))
+    d.line([pt(0.72, -hw * 0.5), pt(0.9, -hw * 0.25)], fill=(130, 126, 136, 255), width=2 * k)
+    return save(down(img, S, S), "Fude", usage="pincel del indicador de guardado (punta abajo a la izquierda)")
 
 
 # ------------------------------------------------------------------------------------- hoja de contacto
@@ -570,13 +689,14 @@ def main():
         for p in (os.path.join(OUT, name + ".png"), os.path.join(OUT, name + ".png.meta")):
             if os.path.exists(p):
                 os.remove(p)
-    brush_swash(); brush_line(); ink_panel(); ink_card(); ribbon(); keycap(); keyround(); kunai()
+    brush_swash(); brush_banner(); brush_line(); ink_panel(); ink_card(); ribbon(); keycap(); keyround(); kunai()
     for fn in ICONS:
         fn()
     pip()
-    for n in ("ZoneHome", "ZoneFields", "ZoneForest", "ZoneWall", "ZoneGarden", "ZoneDojo", "ZoneMountain", "ZoneLake", "ZoneBamboo", "ZoneMoon", "IconBoss"):
+    for n in ("ZoneHome", "ZoneFields", "ZoneForest", "ZoneWall", "ZoneGarden", "ZoneDojo", "ZoneMountain", "ZoneLake", "ZoneBamboo", "ZoneMoon", "IconBoss", "IconKnot"):
         hanko(n)
     seal_disc(); ring(); boss_bar(); dragon_eye(); soft_dot()
+    scroll_paper(); scroll_rod(); fude()
     for name, size, border, usage in KIT:
         print(f"  {name:18s} {size[0]}x{size[1]}  borde {border}")
     if a.preview:

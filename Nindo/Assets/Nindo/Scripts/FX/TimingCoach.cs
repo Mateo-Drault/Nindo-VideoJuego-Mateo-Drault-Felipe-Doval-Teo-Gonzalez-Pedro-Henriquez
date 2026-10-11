@@ -65,7 +65,7 @@ namespace Nindo
             root = (RectTransform)canvas.transform;
             label = UIFactory.Text("Timing", root, "", 34, Color.white, Vector2.zero, Vector2.zero, new Vector2(320, 60), TextAlignmentOptions.Center, true);
             label.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            UIFactory.Outline(label, 0.3f);
+            UIFactory.Legible(label);
             canvas.enabled = false;
         }
 

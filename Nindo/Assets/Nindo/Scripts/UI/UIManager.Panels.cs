@@ -23,12 +23,14 @@ namespace Nindo
     public partial class UIManager
     {
         // ---- avisos de progreso (en el lugar del título de zona, en cola)
-        struct Banner { public string text; public Color color; public float life; public Sprite icon; }
+        // label: renglón chico arriba (quién habla, en un grito de jefe); text: el aviso; sub: renglón chico debajo
+        // ("Partida guardada" bajo el nombre del santuario: antes iban en un renglón con " — " en el medio)
+        struct Banner { public string label, text, sub; public Color color, labelColor; public float life; public Sprite icon; }
         readonly Queue<Banner> bannerQueue = new Queue<Banner>();
-        RectTransform bannerRoot;
+        RectTransform bannerRoot, bannerSwash;
         CanvasGroup bannerGroup;
         Image bannerIcon;
-        TextMeshProUGUI bannerText;
+        TextMeshProUGUI bannerText, bannerSub, bannerLabel;
         float bannerT, bannerLife, bannerY = -260f;
         bool bannerActive;
 
@@ -48,7 +50,7 @@ namespace Nindo
         string tutorialRaw;
         int tutorialGlyphs = -1;
         bool tutorialVisible;
-        float tutorialOpenT = 9f, tutorialHeight = 110f;
+        float tutorialOpenT = 9f, tutorialHeight = 110f, tutorialWidth = 1100f;
 
         // ---- diálogo
         CanvasGroup dialogueGroup;
@@ -99,31 +101,88 @@ namespace Nindo
             bannerRoot = UIFactory.Rect("Banner", story, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -300), new Vector2(900, 110));
             bannerGroup = bannerRoot.gameObject.AddComponent<CanvasGroup>();
             bannerGroup.alpha = 0f;
-            var sw = UIFactory.Image("Swash", bannerRoot, new Color(0.043f, 0.039f, 0.051f, 0.86f), UISprites.BrushSwash);
-            sw.rectTransform.Fill(new Vector2(-60f, -14f), new Vector2(60f, 14f));
+            bannerSwash = UIFactory.Banner("Swash", bannerRoot, new Color(0.043f, 0.039f, 0.051f, 0.86f)).rectTransform;
             bannerIcon = UIFactory.Centered("Icon", bannerRoot, UIFactory.Gold, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(62, 62), null);
-            bannerText = UIFactory.NoWrap(UIFactory.Text("Text", bannerRoot, "", 40, UIFactory.Gold, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100, 70), TextAlignmentOptions.Center, true));
-            bannerText.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            UIFactory.Outline(bannerText, 0.2f);
+            bannerLabel = UIFactory.Legible(UIFactory.Text("Label", bannerRoot, "", 24, UIFactory.Paper, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100, 34), TextAlignmentOptions.Center));
+            bannerText = UIFactory.Legible(UIFactory.Text("Text", bannerRoot, "", 40, UIFactory.Gold, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100, 70), TextAlignmentOptions.Center, true));
+            bannerSub = UIFactory.Legible(UIFactory.Text("Sub", bannerRoot, "", 28, UIFactory.Paper, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1100, 40), TextAlignmentOptions.Center));
+            foreach (var t in new[] { bannerLabel, bannerText, bannerSub }) t.rectTransform.pivot = new Vector2(0.5f, 0.5f);
         }
 
         /// <summary>
-        /// Aviso de progreso ("Victoria", "Sello del Lago (2/3)", "Santuario... — partida guardada"): sobre un trazo
-        /// de tinta debajo del HUD, en cola (antes uno pisaba al otro en el centro, encima de los enemigos) y
-        /// esperando a que se vaya el título de zona. Los avisos de combate van pegados a Kaito: ShowCallout.
+        /// Aviso de progreso ("Sello del Lago (2/3)", "¡Los tres sellos!..."): sobre un trazo de tinta debajo del HUD,
+        /// en cola (antes uno pisaba al otro en el centro, encima de los enemigos) y esperando a que se vaya el título
+        /// de zona. Los avisos de combate van pegados a Kaito: ShowCallout.
         /// </summary>
-        public void ShowToast(string text, Color c, float life = 1.6f, Sprite icon = null)
+        public void ShowToast(string text, Color c, float life = 1.6f, Sprite icon = null) => EnqueueBanner(new Banner { text = text, color = c, life = life, icon = icon });
+
+        /// <summary>Aviso de dos renglones: el título y, centrado debajo y más chico, el detalle ("Santuario de Kodoyama"
+        /// / "Partida guardada"). Reemplaza a los textos con " — " en el medio.</summary>
+        public void ShowToast(string title, string sub, Color c, float life = 2f, Sprite icon = null) => EnqueueBanner(new Banner { text = title, sub = sub, color = c, life = life, icon = icon });
+
+        /// <summary>Grito en plena pelea: quién habla en un renglón chico de su color y lo que dice debajo, en papel
+        /// (como el nombre y la línea del diálogo; antes era "Kokuyō: ¡Que pelee por su cuenta!" en un renglón).</summary>
+        public void ShowBark(string speaker, string line, Color speakerColor, float life = 3f) => EnqueueBanner(new Banner { label = speaker, text = line, color = UIFactory.Paper, labelColor = speakerColor, life = life });
+
+        void EnqueueBanner(Banner b)
         {
-            if (string.IsNullOrEmpty(text)) return;
-            if (bannerActive && bannerText.text == text) { bannerT = Mathf.Min(bannerT, 0.25f); return; }
-            foreach (var b in bannerQueue) if (b.text == text) return;
+            if (string.IsNullOrEmpty(b.text)) return;
+            if (bannerActive && bannerText.text == b.text && bannerSub.text == (b.sub ?? "")) { bannerT = Mathf.Min(bannerT, 0.25f); return; }
+            foreach (var q in bannerQueue) if (q.text == b.text && q.sub == b.sub) return;
             while (bannerQueue.Count >= 2) bannerQueue.Dequeue();   // como mucho dos esperando: los viejos ya no importan
-            bannerQueue.Enqueue(new Banner { text = text, color = c, life = Mathf.Max(1.2f, life), icon = icon });
+            b.life = Mathf.Max(1.2f, b.life);
+            bannerQueue.Enqueue(b);
+        }
+
+        /// <summary>
+        /// Arma el aviso a la medida de lo que dice: mide cada renglón como lo dibuja TMP (texto enriquecido, teclas,
+        /// el tamaño de pelea), parte en dos renglones parejos lo que no entra y calza el núcleo del trazo con margen.
+        /// En pelea el trazo no puede pasar a la izquierda de la cabeza del dragón (x 610 a 1080p) ni tapar el borde.
+        /// </summary>
+        void LayoutBanner(Banner b, bool fight)
+        {
+            float W = root.rect.width > 1f ? root.rect.width : 1920f;
+            float padX = fight ? 30f : 44f, padY = fight ? 9f : 14f, gap = 2f;
+            float maxSwash = fight ? Mathf.Min((W * 0.5f - 610f) / UIFactory.BannerLeftShare, (W * 0.5f - 30f) / (1f - UIFactory.BannerLeftShare))
+                                   : Mathf.Min(1500f, W - 120f);
+            float maxContent = Mathf.Max(260f, UIFactory.BannerContent(maxSwash, padX));
+            bool icon = b.icon != null;
+            float iconW = icon ? (fight ? 64f : 80f) : 0f;
+
+            bannerText.fontSize = fight ? 30f : 40f;
+            bannerText.color = b.color;
+            var main = UIFactory.LayoutBlock(bannerText, b.text, maxContent - iconW);
+            bool hasSub = !string.IsNullOrEmpty(b.sub), hasLabel = !string.IsNullOrEmpty(b.label);
+            bannerSub.fontSize = fight ? 23f : 28f;
+            var sub = hasSub ? UIFactory.LayoutBlock(bannerSub, b.sub, maxContent) : Vector2.zero;
+            if (!hasSub) bannerSub.text = "";
+            bannerLabel.fontSize = fight ? 21f : 25f;
+            bannerLabel.color = b.labelColor;
+            var lab = hasLabel ? UIFactory.LayoutBlock(bannerLabel, b.label, maxContent) : Vector2.zero;
+            if (!hasLabel) bannerLabel.text = "";
+
+            float cw = Mathf.Max(main.x + iconW, Mathf.Max(sub.x, lab.x));
+            float h = main.y + (hasSub ? sub.y + gap : 0f) + (hasLabel ? lab.y + gap : 0f);
+            float top = h * 0.5f;
+            if (hasLabel) bannerLabel.rectTransform.anchoredPosition = new Vector2(0f, top - lab.y * 0.5f);
+            float mainY = top - (hasLabel ? lab.y + gap : 0f) - main.y * 0.5f;
+            bannerText.rectTransform.anchoredPosition = new Vector2(iconW * 0.5f, mainY);
+            if (hasSub) bannerSub.rectTransform.anchoredPosition = new Vector2(0f, -top + sub.y * 0.5f);
+            bannerIcon.sprite = b.icon;
+            bannerIcon.enabled = icon;
+            bannerIcon.color = b.color;
+            bannerIcon.rectTransform.sizeDelta = Vector2.one * (fight ? 50f : 62f);
+            bannerIcon.rectTransform.anchoredPosition = new Vector2(-main.x * 0.5f, mainY);   // en su lugar, a la izquierda del texto
+            UIFactory.FitBanner(bannerSwash, -cw * 0.5f, cw * 0.5f, 0f, h, padX, padY, false, fight ? 420f : 560f);
+            bannerRoot.sizeDelta = bannerSwash.sizeDelta;
+            // en pelea el borde de arriba queda fijo en la franja del HUD aunque el aviso tenga más renglones; fuera de
+            // pelea va centrado donde el título de zona (el +40 es lo que baja al entrar)
+            bannerY = fight ? -122f - bannerSwash.sizeDelta.y * 0.5f + 40f : -260f;
         }
 
         void UpdateBanner(float dt)
         {
-            // con la muerte o el final lo pendiente ya no corresponde ("Victoria" después de reaparecer)
+            // con la muerte o el final lo pendiente ya no corresponde (un grito del jefe después de reaparecer)
             if (deathPanel.activeSelf || endPanel.activeSelf)
             {
                 bannerQueue.Clear();
@@ -142,28 +201,10 @@ namespace Nindo
                 if (bannerQueue.Count == 0) return;
                 var b = bannerQueue.Dequeue();
                 bannerActive = true; bannerT = 0f; bannerLife = b.life + 0.6f;
-                bannerText.text = b.text; bannerText.color = b.color;
                 // en pelea el aviso sube a la franja del HUD (el objetivo se esconde en combate) y se achica para
                 // pasar entre la cabeza del dragón y el borde derecho: a -260 caía justo sobre la cabeza del jefe,
                 // que con la cámara de pelea queda en el tercio de arriba (los gritos de Kokuyō la tapaban)
-                bool fight = Game.Combat != null && Game.Combat.InCombat;
-                bannerY = fight ? -122f : -260f;
-                bannerText.fontSize = 40f;
-                float tw = bannerText.GetPreferredValues(b.text, 9999f, 70f).x;
-                if (fight)
-                {
-                    bannerText.fontSize = Mathf.Clamp(40f * 560f / Mathf.Max(1f, tw), 24f, 32f);
-                    tw = bannerText.GetPreferredValues(b.text, 9999f, 70f).x;
-                }
-                bannerIcon.sprite = b.icon;
-                bannerIcon.enabled = b.icon != null;
-                bannerIcon.color = b.color;
-                float shift = b.icon != null ? 40f : 0f;
-                bannerText.rectTransform.anchoredPosition = new Vector2(shift, 0f);
-                bannerIcon.rectTransform.anchoredPosition = new Vector2(-tw * 0.5f - 44f + shift, 0f);
-                // en pelea, trazo más corto: con el margen de siempre la punta izquierda rozaba la cabeza del dragón
-                bannerRoot.sizeDelta = fight ? new Vector2(Mathf.Max(480f, tw + 170f + shift * 2f), 96f)
-                                             : new Vector2(Mathf.Max(640f, tw + 260f + shift * 2f), 110f);
+                LayoutBanner(b, Game.Combat != null && Game.Combat.InCombat);
             }
             bannerT += dt;
             // baja 40 px en 0.2 s, queda y se apaga en 0.4 s
@@ -181,19 +222,19 @@ namespace Nindo
             titleRoot = UIFactory.Rect("AreaTitle", story, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f), new Vector2(0.5f, 0.5f), new Vector2(0, -300), new Vector2(1400, 260));
             titleGroup = titleRoot.gameObject.AddComponent<CanvasGroup>();
             titleGroup.alpha = 0f;
-            titleSwash = UIFactory.Centered("Swash", titleRoot, new Color(0.043f, 0.039f, 0.051f, 0.9f), new Vector2(0.5f, 0.5f), new Vector2(0, -18), new Vector2(1180, 200), UISprites.BrushSwash);
+            titleSwash = UIFactory.Banner("Swash", titleRoot, new Color(0.043f, 0.039f, 0.051f, 0.9f));
             titleSwash.type = Image.Type.Filled; titleSwash.fillMethod = Image.FillMethod.Horizontal; titleSwash.fillOrigin = 0;
             for (int i = 0; i < titleSpecks.Length; i++)
                 titleSpecks[i] = UIFactory.Centered("Speck", titleRoot, new Color(0.7f, 0.07f, 0.1f, 0f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(10, 10), UISprites.SoftDot);
             titleStamp = UIFactory.Centered("Stamp", titleRoot, Color.white, new Vector2(0.5f, 0.5f), new Vector2(-480, 12), new Vector2(118, 118), null);
             titleText = UIFactory.NoWrap(UIFactory.Text("Title", titleRoot, "", 76, UIFactory.Paper, new Vector2(0.5f, 0.5f), new Vector2(0, 14), new Vector2(1300, 100), TextAlignmentOptions.Center, true));
             titleText.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            UIFactory.Outline(titleText, 0.2f);
+            UIFactory.Legible(titleText);
             titleRule = UIFactory.Centered("Rule", titleRoot, new Color(UIFactory.Gold.r, UIFactory.Gold.g, UIFactory.Gold.b, 0.85f), new Vector2(0.5f, 0.5f), new Vector2(0, -38), new Vector2(560, 16), UISprites.BrushLine);
             titleRule.type = Image.Type.Filled; titleRule.fillMethod = Image.FillMethod.Horizontal; titleRule.fillOrigin = 0;
             titleSub = UIFactory.Text("Sub", titleRoot, "", 30, UIFactory.Gold, new Vector2(0.5f, 0.5f), new Vector2(0, -74), new Vector2(1200, 50), TextAlignmentOptions.Center);
             titleSub.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            UIFactory.Outline(titleSub, 0.2f);
+            UIFactory.Legible(titleSub);
         }
 
         /// <summary>Título de zona: el sello sale del lugar (Zone.Current), del jefe (si el título es el de un jefe) o la luna (prólogo).</summary>
@@ -225,7 +266,11 @@ namespace Nindo
             titleText.characterSpacing = 4f;
             float tw = titleText.GetPreferredValues(title, 9999f, 100f).x;
             float perSpacing = Mathf.Max(0, title.Length - 1) * titleText.fontSize * 0.01f;
-            titleSwash.rectTransform.sizeDelta = new Vector2(Mathf.Clamp(tw + 420f, 900f, 1380f), 200f);
+            // el núcleo del trazo cubre el sello, el nombre y el subtítulo (antes el nombre iba en el centro de un trazo
+            // de ancho fijo y los largos, "Aldea del Lago Kohan", terminaban sobre las cerdas secas)
+            float ts = string.IsNullOrEmpty(subtitle) ? 0f : Mathf.Min(1200f, titleSub.GetPreferredValues(subtitle, 9999f, 50f).x);
+            float left = Mathf.Min(stamp != null ? -tw * 0.5f - 155f : -tw * 0.5f, -ts * 0.5f), right = Mathf.Max(tw * 0.5f, ts * 0.5f);
+            UIFactory.FitBanner(titleSwash.rectTransform, left, right, -16f, 156f, 56f, 6f, false, 900f);
             titleStamp.sprite = stamp;
             titleStamp.enabled = false;
             titleRule.fillAmount = 0f; titleSub.alpha = 0f; titleText.alpha = 0f; titleSwash.fillAmount = 0f;
@@ -297,7 +342,7 @@ namespace Nindo
             var prt = tutorialPanel.rectTransform;
             prt.anchorMin = prt.anchorMax = new Vector2(0.5f, 0.5f); prt.pivot = new Vector2(0.5f, 0.5f); prt.sizeDelta = new Vector2(1100, 110);
             var lbl = UIFactory.Text("Label", tutorialRoot, "Consejo", 20, UIFactory.Gold, new Vector2(0f, 1f), new Vector2(120, -6), new Vector2(200, 26), TextAlignmentOptions.TopLeft, true);
-            UIFactory.Outline(lbl, 0.15f);
+            UIFactory.Legible(lbl);
             tutorialText = UIFactory.Text("Text", tutorialRoot, "", 34, UIFactory.Paper, TextAlignmentOptions.Center);
             tutorialText.rectTransform.Fill(new Vector2(120, 14), new Vector2(-120, -26));
         }
@@ -316,10 +361,13 @@ namespace Nindo
         {
             tutorialGlyphs = Game.Input != null ? Game.Input.GlyphVersion : -1;
             tutorialText.text = UIFactory.RichKeys(tutorialRaw);
-            // el panel crece con el texto (los consejos largos de dos renglones se salían)
-            tutorialHeight = Mathf.Max(110f, tutorialText.GetPreferredValues(tutorialText.text, 860f, 400f).y + 56f);
-            tutorialRoot.sizeDelta = new Vector2(1100, tutorialHeight);
-            tutorialPanel.rectTransform.SetSize(new Vector2(tutorialPanel.rectTransform.sizeDelta.x, tutorialHeight));
+            // el panel crece con el texto (los consejos largos de dos renglones se salían) y se angosta con los cortos:
+            // "Tip: Q fija a un enemigo" en un panel de 1100 quedaba perdido en el medio de la tinta
+            var pref = tutorialText.GetPreferredValues(tutorialText.text, 860f, 400f);
+            tutorialHeight = Mathf.Max(110f, pref.y + 56f);
+            tutorialWidth = Mathf.Clamp(Mathf.Min(860f, pref.x) + 260f, 640f, 1100f);
+            tutorialRoot.sizeDelta = new Vector2(tutorialWidth, tutorialHeight);
+            tutorialPanel.rectTransform.SetSize(new Vector2(Mathf.Min(tutorialPanel.rectTransform.sizeDelta.x, tutorialWidth), tutorialHeight));
             // los extremos de pincel escalan con el alto (hasta 160: más alto ya no engorda las puntas)
             if (UISprites.InkPanel != null) tutorialPanel.pixelsPerUnitMultiplier = UISprites.InkPanel.rect.height / Mathf.Min(tutorialHeight, 160f);
         }
@@ -341,7 +389,7 @@ namespace Nindo
             if (tutorialOpenT > 0.5f) return;
             tutorialOpenT += dt;
             float w = UIAnim.OutBack(tutorialOpenT / UIAnim.Medium);
-            tutorialPanel.rectTransform.SetSize(new Vector2(Mathf.Max(260f, 1100f * w), tutorialHeight));
+            tutorialPanel.rectTransform.SetSize(new Vector2(Mathf.Max(260f, tutorialWidth * w), tutorialHeight));
             tutorialText.alpha = Mathf.Clamp01((tutorialOpenT - 0.1f) / 0.15f);
         }
 
@@ -354,14 +402,14 @@ namespace Nindo
             var panel = UIFactory.Sliced("Panel", dialogueRoot, UISprites.InkPanel, Color.white, 200f);
             panel.rectTransform.Fill(new Vector2(-40f, 0f), new Vector2(40f, 0f));
             // nombre sobre una pincelada de tinta (antes una cinta roja: se confundía con la bandana de la vida)
-            speakerRibbon = UIFactory.Image("Swash", dialogueRoot, new Color(0.043f, 0.039f, 0.051f, 0.92f), UISprites.BrushSwash);
+            speakerRibbon = UIFactory.Image("Swash", dialogueRoot, new Color(0.043f, 0.039f, 0.051f, 0.92f), UISprites.BrushBanner != null ? UISprites.BrushBanner : UISprites.BrushSwash);
             speakerRibbonRt = speakerRibbon.rectTransform;
             Place(speakerRibbonRt, new Vector2(0f, 1f), new Vector2(-14f, 30f), new Vector2(320, 62));
             speakerRibbonRt.pivot = new Vector2(0f, 1f);
             // el nombre va aparte de la pincelada (no se aplasta mientras se pinta)
             dialogueSpeaker = UIFactory.NoWrap(UIFactory.Text("Speaker", dialogueRoot, "", 34, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(92f, 0f), new Vector2(400, 50), TextAlignmentOptions.Left, true));
             dialogueSpeaker.rectTransform.pivot = new Vector2(0f, 0.5f);   // centrado en la cinta (que va de +30 a -32)
-            UIFactory.Outline(dialogueSpeaker, 0.15f);
+            UIFactory.Legible(dialogueSpeaker);
             var rule = UIFactory.Image("Rule", dialogueRoot, new Color(UIFactory.Gold.r, UIFactory.Gold.g, UIFactory.Gold.b, 0.7f), new Vector2(0f, 1f), new Vector2(84f, -40f), new Vector2(900, 12), UISprites.BrushLine);
             rule.rectTransform.pivot = new Vector2(0f, 0.5f);
             dialogueText = UIFactory.Text("Text", dialogueRoot, "", 36, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(90f, -58f), new Vector2(1120, 130), TextAlignmentOptions.TopLeft);
@@ -397,7 +445,10 @@ namespace Nindo
                     lastSpeaker = lines[i].speaker;
                     dialogueSpeaker.text = lastSpeaker;
                     dialogueSpeaker.color = SpeakerColor(lastSpeaker);
-                    speakerWidth = Mathf.Max(300f, dialogueSpeaker.GetPreferredValues(lastSpeaker, 9999f, 50f).x + 160f);
+                    // el nombre (desde 106 px del borde del trazo) termina dentro de la tinta pareja: con "texto + 160"
+                    // "Espíritu de la Bandana" quedaba sobre las cerdas secas
+                    float nameW = dialogueSpeaker.GetPreferredValues(lastSpeaker, 9999f, 50f).x;
+                    speakerWidth = Mathf.Max(300f, (106f + nameW + 28f) / UIFactory.BannerCoreEnd);
                     speakerSwipe = 0f;
                 }
                 string raw = lines[i].text;
@@ -485,7 +536,7 @@ namespace Nindo
             }
             else UIFactory.Text("Logo", parent, "NINDŌ", 90, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(110, -90), new Vector2(400, 120), TextAlignmentOptions.TopLeft, true);
             var t = UIFactory.Text("Title", parent, title, 44, UIFactory.Gold, new Vector2(0f, 1f), new Vector2(118, -290), new Vector2(500, 60), TextAlignmentOptions.TopLeft, true);
-            UIFactory.Outline(t, 0.15f);
+            UIFactory.Legible(t);
             titleRt = t.rectTransform;
             return col;
         }
@@ -532,7 +583,7 @@ namespace Nindo
             pauseCard.pivot = new Vector2(0.5f, 0.5f);
             card.pixelsPerUnitMultiplier = 1f;
             var ct = UIFactory.Text("Title", pauseCard, "Controles", 36, UIFactory.Gold, new Vector2(0f, 1f), new Vector2(100f, -66f), new Vector2(400, 50), TextAlignmentOptions.TopLeft, true);
-            UIFactory.Outline(ct, 0.15f);
+            UIFactory.Legible(ct);
             (string label, Act act)[] rows =
             {
                 ("Moverse", Act.Submit), ("Atacar", Act.Attack), ("Parry", Act.Parry), ("Esquivar (dash)", Act.Dash), ("Fijar objetivo", Act.Lock),
@@ -720,10 +771,10 @@ namespace Nindo
             deathSwash.type = Image.Type.Filled; deathSwash.fillMethod = Image.FillMethod.Horizontal; deathSwash.fillOrigin = 0;
             deathTitle = UIFactory.NoWrap(UIFactory.Text("Text", deathDim.transform, "Caíste", 150, UIFactory.Paper, new Vector2(0.5f, 0.5f), new Vector2(-30f, 40f), new Vector2(1000, 200), TextAlignmentOptions.Center, true));
             deathTitle.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            UIFactory.Outline(deathTitle, 0.22f);
+            UIFactory.Legible(deathTitle);
             deathSub = UIFactory.Text("Sub", deathDim.transform, "El camino ninja continúa desde el último santuario...", 34, UIFactory.Paper, new Vector2(0.5f, 0.5f), new Vector2(0, -150), new Vector2(1400, 60), TextAlignmentOptions.Center);
             deathSub.rectTransform.pivot = new Vector2(0.5f, 0.5f);
-            UIFactory.Outline(deathSub, 0.2f);
+            UIFactory.Legible(deathSub);
             deathPanel.SetActive(false);
         }
 
