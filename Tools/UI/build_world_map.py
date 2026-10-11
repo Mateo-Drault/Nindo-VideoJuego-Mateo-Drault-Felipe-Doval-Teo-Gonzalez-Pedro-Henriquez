@@ -114,7 +114,7 @@ LAMP_GLOW = np.array([0.46, 0.30, 0.07], np.float32)      # resplandor (se suma 
 LABELS = {
     "hogar": (-36, -193, 0, 0), "campos": (56, -128, 1, 0), "bosque": (-14, -62, -1, 0), "muralla": (22, -39, 1, 1),
     "jardin": (-34, 41, 0, 0), "dojo": (0, 181, 0, 0), "montana": (-175, 48, 0, 0, -34.5), "lago": (128, -20, 0, 0),
-    "lago_cascada": (156, 84, -1, 1), "bambu": (114, 118, 1, 0),
+    "lago_cascada": (186, 95, 0, 1), "bambu": (116, 127, 1, 0),
 }
 
 
@@ -1068,14 +1068,18 @@ def map_json(g):
 def icons():
     import build_ui_art as K   # mismo contorno de tinta y mismo guardado que el resto del kit
 
-    # torii: dos postes, el travesaño de abajo (nuki) y el de arriba con las puntas levantadas (kasagi)
+    # torii: dos postes, el travesaño de abajo (nuki) y el de arriba con las puntas levantadas (kasagi). Todo dentro
+    # del margen del contorno (8 px de 128): las puntas del kasagi y el pie de los postes quedaban sin borde, cortados
     m, d, s = K.canvas(128)
-    d.polygon([(s * .03, s * .17), (s * .2, s * .25), (s * .8, s * .25), (s * .97, s * .17), (s * .93, s * .33), (s * .07, s * .33)], fill=255)
-    d.rectangle((s * .15, s * .43, s * .85, s * .52), fill=255)
+
+    def q(x, y):
+        return s * (0.5 + (x - 0.5) * 0.9), s * (0.17 + (y - 0.17) * 0.96)
+    d.polygon([q(.03, .17), q(.2, .25), q(.8, .25), q(.97, .17), q(.93, .33), q(.07, .33)], fill=255)
+    d.rectangle(q(.15, .43) + q(.85, .52), fill=255)
     for x in (.28, .72):
-        d.polygon([(s * (x - .06), s * .3), (s * (x + .06), s * .3), (s * (x + .075), s * .95), (s * (x - .075), s * .95)], fill=255)
-    d.rectangle((s * .46, s * .3, s * .54, s * .43), fill=255)
-    K.save(K.outlined(m, 128, 8), "MapShrine", usage="santuario en el mapa (torii): bermellón visto, oro el de reaparición")
+        d.polygon([q(x - .06, .3), q(x + .06, .3), q(x + .075, .95), q(x - .075, .95)], fill=255)
+    d.rectangle(q(.46, .3) + q(.54, .43), fill=255)
+    K.save(K.outlined(m, 128, 8), "MapShrine", usage="santuario en el mapa (torii): bermellón rezado, papel sin rezar")
 
     # portal: espiral de pincel que se afina hacia adentro
     m, d, s = K.canvas(128)
@@ -1083,10 +1087,10 @@ def icons():
     for i in range(260):
         t = i / 259
         a = t * math.tau * 2.2
-        r = s * (0.07 + 0.36 * t)
+        r = s * (0.06 + 0.32 * t)          # la vuelta de afuera, su trazo y el contorno entran en el lienzo
         p = (s / 2 + math.cos(a) * r, s / 2 + math.sin(a) * r)
         if prev is not None:
-            w = s * (0.04 + 0.07 * t)
+            w = s * (0.035 + 0.065 * t)
             d.line([prev, p], fill=255, width=int(w))
             d.ellipse((p[0] - w / 2, p[1] - w / 2, p[0] + w / 2, p[1] + w / 2), fill=255)
         prev = p

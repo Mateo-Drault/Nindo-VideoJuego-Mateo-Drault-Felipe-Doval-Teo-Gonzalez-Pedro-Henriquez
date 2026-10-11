@@ -45,6 +45,7 @@ namespace Nindo
             public RectTransform rt;
             public Image img, glow;
             public Vector3 world;
+            public Vector2 at, nudge;   // dónde cae en la lámina (zoom 1) y cuánto se corre para no pisar a su vecina
             public Checkpoint cp;
             public BossArena arena;
             public Portal portal;
@@ -280,6 +281,38 @@ namespace Nindo
             mapKaito.SetAsLastSibling();
         }
 
+        /// <summary>
+        /// Las marcas que se ven no se pisan: un portal o un santuario al lado de la arena de un jefe (el portal de la
+        /// cascada queda a 7 m de Mizuchi, 15 px a zoom 1) se corre lo justo para que se lean los dos. El sello del
+        /// jefe no se mueve. El corrimiento está en unidades de la lámina a zoom 1 y se aplica por zoom^-0.7, como el
+        /// tamaño de las marcas: al acercar se separan solas y vuelven a su lugar. Al abrir y al cambiar el tamaño.
+        /// </summary>
+        void DeclutterMarks()
+        {
+            foreach (var m in mapMarks) m.nudge = Vector2.zero;
+            for (int it = 0; it < 24; it++)
+                for (int i = 0; i < mapMarks.Count; i++)
+                {
+                    var a = mapMarks[i];
+                    if (!a.shown) continue;
+                    for (int j = i + 1; j < mapMarks.Count; j++)
+                    {
+                        var b = mapMarks[j];
+                        if (!b.shown) continue;
+                        float wa = a.arena != null ? 0f : 1f, wb = b.arena != null ? 0f : 1f;
+                        if (wa + wb <= 0f) continue;
+                        Vector2 d = b.at + b.nudge - a.at - a.nudge;
+                        // el dibujo ocupa ~85 % de su cuadro (el resto es el margen del contorno)
+                        float need = (a.rt.sizeDelta.x + b.rt.sizeDelta.x) * 0.5f * 0.85f + 2f, dist = d.magnitude;
+                        if (dist >= need) continue;
+                        Vector2 dir = dist > 1e-3f ? d / dist : Vector2.up;
+                        float push = (need - dist) / (wa + wb);
+                        a.nudge -= dir * (push * wa);
+                        b.nudge += dir * (push * wb);
+                    }
+                }
+        }
+
         static Texture2D MapFogTexture(int w, int h)
         {
             return new Texture2D(w, h, TextureFormat.Alpha8, false, true) { name = "Niebla del mapa", filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
@@ -288,7 +321,7 @@ namespace Nindo
         MapMark NewMark(Vector3 world, Sprite sprite, float size, Color tint)
         {
             var img = UIFactory.Centered("Mark", mapMarksRt, tint, new Vector2(0.5f, 0.5f), MapPoint(world), new Vector2(size, size), sprite);
-            var m = new MapMark { rt = img.rectTransform, img = img, world = world };
+            var m = new MapMark { rt = img.rectTransform, img = img, world = world, at = img.rectTransform.anchoredPosition };
             mapMarks.Add(m);
             return m;
         }
@@ -320,11 +353,8 @@ namespace Nindo
             mapContent.sizeDelta = new Vector2(mapSheetW, mapSheetH);
             // lo que vive en el contenido se reubica con la nueva escala (los nombres y las marcas no cambian de tamaño)
             float k = mapSheetW / Mathf.Max(1f, oldW);
-            foreach (var m in mapMarks)
-            {
-                m.rt.anchoredPosition = MapPoint(m.world);
-                if (m.glow != null) m.glow.rectTransform.anchoredPosition = m.rt.anchoredPosition;
-            }
+            foreach (var m in mapMarks) m.at = MapPoint(m.world);
+            DeclutterMarks();
             if (mapContentBuilt && MapFog.Data.labels != null)
                 foreach (var (text, zone) in mapLabels)
                     foreach (var l in MapFog.Data.labels)
@@ -451,6 +481,7 @@ namespace Nindo
                 if (m.rt.gameObject.activeSelf != m.shown) m.rt.gameObject.SetActive(m.shown);
                 if (m.glow != null) m.glow.gameObject.SetActive(m.shown && save.checkpoint == m.cp.id);
             }
+            DeclutterMarks();
             for (int i = 0; i < mapLabels.Count; i++)
             {
                 var (text, zone) = mapLabels[i];
@@ -751,7 +782,8 @@ namespace Nindo
                 if (m.shown)
                 {
                     m.rt.localScale = s;
-                    if (m.glow != null) m.glow.rectTransform.localScale = s;
+                    m.rt.anchoredPosition = m.at + m.nudge * inv;
+                    if (m.glow != null) { m.glow.rectTransform.localScale = s; m.glow.rectTransform.anchoredPosition = m.rt.anchoredPosition; }
                     var c = m.img.color;
                     float a = m.fresh ? freshA : 1f;
                     if (c.a != a) { c.a = a; m.img.color = c; }

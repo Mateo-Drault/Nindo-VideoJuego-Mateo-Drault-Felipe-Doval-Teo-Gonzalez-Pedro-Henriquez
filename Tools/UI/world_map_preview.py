@@ -338,6 +338,29 @@ def column(scr, Wc, Hc, scene, gamepad=False):
             x += d.textlength(label, font=f) + 26
 
 
+def declutter(items, view):
+    """UIMap.DeclutterMarks: las marcas no se pisan (el sello del jefe queda fijo); corrimiento en unidades de la
+    lámina a zoom 1, que se aplica por zoom^-0.7."""
+    for it in items:
+        it["at"] = view.content(it["x"], it["z"])
+        it["nudge"] = np.zeros(2)
+    for _ in range(24):
+        for i, a in enumerate(items):
+            for b in items[i + 1:]:
+                wa, wb = (0.0 if a["kind"] == "boss" else 1.0), (0.0 if b["kind"] == "boss" else 1.0)
+                if wa + wb <= 0:
+                    continue
+                d = b["at"] + b["nudge"] - a["at"] - a["nudge"]
+                need = (a["size"] + b["size"]) * 0.5 * 0.85 + 2
+                dist = float(np.hypot(*d))
+                if dist >= need:
+                    continue
+                u = d / dist if dist > 1e-3 else np.array([0.0, 1.0])
+                push = (need - dist) / (wa + wb)
+                a["nudge"] = a["nudge"] - u * push * wa
+                b["nudge"] = b["nudge"] + u * push * wb
+
+
 def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_prev=None, reveal=1.0, gamepad=False):
     """Pantalla del mapa (canvas Wc x Hc, 1:1) con la niebla del estado dado y las marcas que corresponden."""
     bg = np.zeros((int(Hc), int(Wc), 3), np.float32)
@@ -398,27 +421,35 @@ def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_pr
         if la < 1:
             lay.putalpha(lay.getchannel("A").point(lambda q: int(q * la)))
         marks.alpha_composite(lay)
+    # las marcas que se ven (en el orden en que las crea UIMap: santuarios, jefes, portales) y su despeje
+    items = []
     for cid, x, z, yaw in W.CHECKPOINTS:
-        a = vis(x, z)
-        if a <= 0:
-            continue
-        px, py = view.screen(x, z)
-        if cid == scene["checkpoint"]:
-            paste_c(marks, tint(sprite("SoftDot"), (255, 196, 79, 191)), px, py, (64 * s, 64 * s))
-        lit = scene.get("prayed") is None or cid in scene["prayed"]
-        paste_c(marks, tint(sprite("MapShrine"), SHRINE if lit else SHRINE_BARE), px, py, ((34 if cid == scene["checkpoint"] else 27) * s,) * 2, alpha=a)
+        if vis(x, z) > 0:
+            items.append(dict(kind="cp", id=cid, x=x, z=z, size=34 if cid == scene["checkpoint"] else 27))
     for arch, ax, az, r, bx, bz, yaw in W.BOSSES:
-        a = vis(ax, az)
-        if a <= 0:
-            continue
-        px, py = view.screen(ax, az)
-        name = {"goro": "ZoneMountain", "mizuchi": "ZoneLake", "ozeki": "ZoneBamboo", "kage": "ZoneMoon"}[arch] if arch in scene["bosses_done"] else "IconBoss"
-        paste_c(marks, sprite("Hanko_" + name), px, py, (44 * s, 44 * s), rot=6, alpha=a)
+        if vis(ax, az) > 0:
+            items.append(dict(kind="boss", id=arch, x=ax, z=az, size=44))
     for pid, x, z, yaw, flag in W.PORTALS:
-        a = vis(x, z)
-        if flag in scene["flags"] and a > 0:
-            px, py = view.screen(x, z)
+        if flag in scene["flags"] and vis(x, z) > 0:
+            items.append(dict(kind="portal", id=pid, x=x, z=z, size=30))
+    declutter(items, View(cx, cy, sw, sh))
+    inv = zoom ** -0.7
+    for it in items:
+        cx0, cy0 = view.content(it["x"], it["z"]) + np.array(it["nudge"]) * inv
+        px, py = view.cx + (cx0 - view.pan[0]) * zoom, view.cy - (cy0 - view.pan[1]) * zoom
+        it["px"], it["py"] = px, py
+        a = vis(it["x"], it["z"])
+        if it["kind"] == "cp":
+            if it["id"] == scene["checkpoint"]:
+                paste_c(marks, tint(sprite("SoftDot"), (255, 196, 79, int(191 * a))), px, py, (64 * s, 64 * s))
+            lit = scene.get("prayed") is None or it["id"] in scene["prayed"]
+            paste_c(marks, tint(sprite("MapShrine"), SHRINE if lit else SHRINE_BARE), px, py, (it["size"] * s,) * 2, alpha=a)
+        elif it["kind"] == "boss":
+            name = {"goro": "ZoneMountain", "mizuchi": "ZoneLake", "ozeki": "ZoneBamboo", "kage": "ZoneMoon"}[it["id"]] if it["id"] in scene["bosses_done"] else "IconBoss"
+            paste_c(marks, sprite("Hanko_" + name), px, py, (44 * s, 44 * s), rot=6, alpha=a)
+        else:
             paste_c(marks, tint(sprite("MapPortal"), (127, 224, 160)), px, py, (30 * s, 30 * s), alpha=a)
+    scene["_marks"] = {(it["kind"], it["id"]): (it["px"], it["py"]) for it in items}
     px, py = view.screen(kx, kz)
     ring = Image.new("RGBA", scr.size, (0, 0, 0, 0))
     rr = 30 * s
@@ -439,7 +470,8 @@ def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_pr
     # ---- cartel de lo que está bajo el cursor (fuera del recorte)
     if scene.get("tooltip"):
         tx, tz, t1, t2 = scene["tooltip"]
-        px, py = view.screen(tx, tz)
+        # sobre la marca tal como quedó dibujada (con su despeje)
+        px, py = min(((x, y) for (x, y) in scene["_marks"].values()), key=lambda q: math.dist(q, view.screen(tx, tz)))
         f1, f2 = font(TITLE_TTF, 26), font(BODY_TTF, 20)
         d = ImageDraw.Draw(scr)
         w1 = max(d.textlength(t1, font=f1), d.textlength(t2, font=f2) if t2 else 0)
