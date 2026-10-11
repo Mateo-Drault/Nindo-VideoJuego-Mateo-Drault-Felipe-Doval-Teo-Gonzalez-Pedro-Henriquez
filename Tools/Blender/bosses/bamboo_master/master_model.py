@@ -22,7 +22,7 @@ from mathutils import Vector, Matrix
 import nindo_lib as L
 import nindo_anim as NA
 import master_rig as MR
-from master_kit import Kit, mirror_kit, mirror_weights, tri_count, smooth01, along_bone, chain_weights
+from master_kit import Kit, mirror_kit, mirror_weights, tri_count, smooth01, along_bone, chain_weights, chain_samples
 
 # --------------------------------------------------------------------------- materiales propios
 SLOT_HAND_R, SLOT_HAND_L, SLOT_FOOT_R, SLOT_FOOT_L, SLOT_EYES, SLOT_STAFF, SLOT_SKIN = 4, 5, 6, 7, 8, 9, 10
@@ -275,14 +275,25 @@ def build_brows_whiskers(kits):
         d2 = (t - j).normalized()
         k2.tube([j - d2 * 0.012, j.lerp(t, 0.5) + Vector((0, 0, 0.006)), t], [(0.024, 0.017), (0.016, 0.012), (0.004, 0.003)], 6,
                 C["hair2"], ups=[(0, -0.1, 1)] * 3, phase=math.pi / 6)
-        for seg, rads, bow in ((0, (0.012, 0.0095), 0.012), (1, (0.0095, 0.0068), 0.008), (2, (0.0068, 0.0022), -0.004)):
-            bn = f"Acc_TieWhisker{S}_{seg}"
-            kw = kits[bn] = Kit("part_" + bn, bn)
-            a, b = bh(bn), bt(bn)
-            d = (b - a)
-            mid = a + d * 0.5 + Vector((-bow * sg, 0.0, 0.0))
-            kw.tube([a - d * 0.06, mid, b + d * (0.05 if seg < 2 else 0.0)], [rads[0], (rads[0] + rads[1]) * 0.5, rads[1]], 6,
-                    C["hair"] if seg % 2 == 0 else C["hair2"], phase=math.pi / 6)
+        # bigote largo: un solo cordón por los tres huesos de la cadena (pesos repartidos en cada articulación: cuando la
+        # física lo dobla se curva, no se quiebra en palitos), que se afina hacia la punta y se comba en cada tramo
+        bones = [f"Acc_TieWhisker{S}_{i}" for i in range(3)]
+        J = [bh(b) for b in bones] + [bt(bones[-1])]
+        path, seg = chain_samples(J, 0.03)
+        R_AT = (0.012, 0.0095, 0.0068, 0.0022)         # radio en cada articulación (raíz -> punta)
+        BOW = (0.012, 0.008, -0.004)                   # comba de cada tramo hacia afuera (- = hacia adentro)
+        pts, rads = [], []
+        for i, p in enumerate(path):
+            j = seg[i - 1] if i else 0
+            u = (p - J[j]).length / (J[j + 1] - J[j]).length
+            # comba: cero en las articulaciones, máxima en la mitad del tramo
+            pts.append(p + Vector((-BOW[j] * sg * math.sin(math.pi * u), 0.0, 0.0)))
+            rads.append(R_AT[j] + (R_AT[j + 1] - R_AT[j]) * u)
+        u0 = (J[1] - J[0]).normalized()
+        pts[0] = pts[0] - u0 * 0.008                   # la raíz entra en el bigote grueso
+        kw = kits["Whisker" + S] = Kit("part_Whisker" + S, bones[0], weights=chain_weights(J, bones, span=0.03))
+        kw.tube(pts, rads, 6, C["hair"], phase=math.pi / 6,
+                ring_colors=[C["hair"] if g % 2 == 0 else C["hair2"] for g in seg])
 
 
 # --------------------------------------------------------------------------- tronco (chaleco sin mangas)
@@ -324,35 +335,36 @@ def build_torso(kits):
             t = smooth01((1.26 - co.z) / 0.08)
             return {"Hips": 1.0 - t, bn: t} if t < 1.0 else {bn: 1.0}
         kk = kits["Vest_" + bn] = Kit("vest_" + bn, bn, weights=w_flap)
-        panel(kk, a, 1.28, 0.0, VEST_FLAP, 0.95, 41.0, C["ivory"], C["ivory3"], 0.012)
+        panel(kk, a, 1.28, [0.0, VEST_FLAP], 0.95, 41.0, C["ivory"], C["ivory3"], 0.012)
 
 
-def panel(kk, a, top_z, d0, d1, scale, half, color, inner, thick, cols=5):
+def panel(kk, a, top_z, ds, scale, half, color, inner, thick, cols=5):
     """Paño de faldón con espesor (la cara de adentro 'thick' hacia el cuerpo): 'cols' columnas sobre el arco del saco
-    a escala 'scale' (1 = el radio del saco), de d0 a d1 metros por debajo de 'top_z' siguiendo el vuelo."""
+    a escala 'scale' (1 = el radio del saco) y una fila por cada distancia de 'ds' (metros por debajo de 'top_z'
+    siguiendo el vuelo; filas de más alrededor de donde dobla). Arriba queda abierto: entra bajo el saco y la faja."""
     angs = [a - half + 2.0 * half * i / (cols - 1) for i in range(cols)]
-    tops, bots, outs = [], [], []
-    for aa in angs:
-        hh, dd, oo, tt = MR.robe_frame(aa)
-        hh = Vector((hh.x * scale, hh.y * scale, top_z))
-        tops.append(hh + dd * d0)
-        bots.append(hh + dd * d1)
-        outs.append(oo)
-    vt = [kk.bm.verts.new(p) for p in tops]
-    vb = [kk.bm.verts.new(p) for p in bots]
-    it = [kk.bm.verts.new(p - o * thick) for p, o in zip(tops, outs)]
-    ib = [kk.bm.verts.new(p - o * thick) for p, o in zip(bots, outs)]
-    fo, fi, rim = [], [], []
+    fr = [MR.robe_frame(aa) for aa in angs]
+    vo, vi = [], []
+    for d in ds:
+        ro, ri = [], []
+        for hh, dd, oo, tt in fr:
+            p = Vector((hh.x * scale, hh.y * scale, top_z)) + dd * d
+            ro.append(kk.bm.verts.new(p))
+            ri.append(kk.bm.verts.new(p - oo * thick))
+        vo.append(ro)
+        vi.append(ri)
+    fi, rim = [], []
+    for r in range(len(ds) - 1):
+        for i in range(cols - 1):
+            kk.bm.faces.new((vo[r][i], vo[r][i + 1], vo[r + 1][i + 1], vo[r + 1][i]))
+            fi.append(kk.bm.faces.new((vi[r][i + 1], vi[r][i], vi[r + 1][i], vi[r + 1][i + 1])))
+        rim.append(kk.bm.faces.new((vo[r][0], vo[r + 1][0], vi[r + 1][0], vi[r][0])))
+        rim.append(kk.bm.faces.new((vo[r][-1], vi[r][-1], vi[r + 1][-1], vo[r + 1][-1])))
     for i in range(cols - 1):
-        fo.append(kk.bm.faces.new((vt[i], vt[i + 1], vb[i + 1], vb[i])))
-        fi.append(kk.bm.faces.new((it[i + 1], it[i], ib[i], ib[i + 1])))
-        rim.append(kk.bm.faces.new((vb[i], vb[i + 1], ib[i + 1], ib[i])))
-    rim.append(kk.bm.faces.new((vt[0], vb[0], ib[0], it[0])))
-    rim.append(kk.bm.faces.new((vt[-1], it[-1], ib[-1], vb[-1])))
-    kk._new(vt + vb + it + ib, color, None, None)
+        rim.append(kk.bm.faces.new((vo[-1][i], vo[-1][i + 1], vi[-1][i + 1], vi[-1][i])))
+    kk._new([v for row in vo + vi for v in row], color, None, None)
     kk.tag(fi, inner)
     kk.tag(rim, inner)
-    return vt, vb
 
 
 def build_sash(kits):
@@ -364,15 +376,27 @@ def build_sash(kits):
     knot = MR.SASH_KNOT
     kh.obox(knot + Vector((0.03, 0.025, 0.005)), (0.11, 0.11, 0.095), (1, 0, 0.1), (0, 1, 0), C["jade2"], bevel=0.016,
             up_color=C["jade"])
+    # cada cola es UNA cinta por los tres huesos de su cadena, con pesos repartidos en las articulaciones: doblada
+    # (caballo, patada, la física del juego) se curva como tela; tres cintas rígidas encimadas hacían escalones
     for t, w0 in (("A", 0.105), ("B", 0.09)):
-        for seg in range(3):
-            bn = f"Acc_TieSash{t}_{seg}"
-            kk = kits[bn] = Kit("part_" + bn, bn)
-            a_, t_ = bh(bn), bt(bn)
-            d = t_ - a_
-            w1 = w0 * (1.0 + 0.04 * seg)
-            kk.strip([a_ - d * 0.06, a_ + d * 0.5, t_ + d * (0.05 if seg < 2 else 0.0)], [w1, w1 * 1.03, w1 * 1.06],
-                     [(0.1, -1, 0)] * 3, C["jade"] if seg % 2 == 0 else C["jade2"], thick=0.02)
+        bones = [f"Acc_TieSash{t}_{i}" for i in range(3)]
+        J = [bh(b) for b in bones] + [bt(bones[-1])]
+        path, _ = chain_samples(J, 0.05)
+        total = sum((J[i + 1] - J[i]).length for i in range(3))
+        widths, s_acc = [], 0.0
+        for i, p in enumerate(path):
+            s_acc += (p - path[i - 1]).length if i else 0.0
+            widths.append(w0 * (1.0 + 0.14 * s_acc / total))       # se abre apenas hacia la punta
+        path[0] = path[0] - (J[1] - J[0]).normalized() * 0.014     # la raíz entra en el nudo
+        kk = kits["Sash" + t] = Kit("part_TieSash" + t, bones[0], weights=chain_weights(J, bones, span=0.05))
+        face = Vector((0.1, -1, 0)).normalized()
+        part = kk.strip(path, widths, [face] * len(path), C["jade"], thick=0.02)
+        # la cara de adelante en jade y los cantos y el revés un tono más oscuros (franjas por tramo se leían como
+        # escalones en las dos colas de largo distinto)
+        for f in part.faces:
+            f.normal_update()
+            if f.normal.dot(face) < 0.5:
+                kk.tag([f], C["jade2"])
 
 
 # --------------------------------------------------------------------------- brazos (piel, vendas, manos)
@@ -552,14 +576,14 @@ def build_robe(kits):
     ks.tube([(0, 0.0, 1.235), (0, 0.0, 1.30), (0, 0.0, 1.38)],
             [(MR.ROBE_R[0] + 0.02, MR.ROBE_R[1] + 0.02), (MR.ROBE_R[0] + 0.024, MR.ROBE_R[1] + 0.022), (0.256, 0.196)], 14,
             C["jade"], phase=math.pi / 14, cap0=False, cap1=False, power=2.4, ring_colors=[C["jade"], C["jade2"]])
-    # faldones: dos tramos por paño, con la cara de adentro y el ruedo un tono más oscuros (la tela gruesa del saco)
+    # faldones: un paño continuo por los dos huesos (repartido en la rodilla del paño: la patada lo curva en vez de
+    # partirlo en dos tablas), con la cara de adentro y el ruedo un tono más oscuros (la tela gruesa del saco)
+    L0, L1 = MR.ROBE_LEN
     for a in MR.ROBE_ANGLES:
-        for seg in (1, 2):
-            bn = MR.robe_name(a, seg)
-            kk = kits["Robe_" + bn] = Kit("robe_" + bn, bn)
-            d0 = 0.0 if seg == 1 else MR.ROBE_LEN[0] - 0.02
-            d1 = MR.ROBE_LEN[0] + (0.03 if seg == 1 else MR.ROBE_LEN[1])
-            panel(kk, a, MR.ROBE_TOP_Z, d0, d1, 1.0 + 0.012 * seg, 41.0, C["ivory"], C["ivory3"], 0.018)
+        b1, b2 = MR.robe_name(a, 1), MR.robe_name(a, 2)
+        J = [bh(b1), bh(b2), bt(b2)]
+        kk = kits["Robe_" + b1] = Kit("robe_" + b1, b1, weights=chain_weights(J, [b1, b2], span=0.07))
+        panel(kk, a, MR.ROBE_TOP_Z, [0.0, L0 - 0.07, L0, L0 + 0.07, L0 + L1], 1.012, 41.0, C["ivory"], C["ivory3"], 0.018)
     # mangas anchas con el puño jade (la mano vendada asoma del puño); el borde de abajo cuelga de Sleeve_R
     S, E, W, u, l = arm_points()
     wa = chain_weights([S, E, W], ["UpperArm_R", "Forearm_R"], before="Clav_R", span=0.08)

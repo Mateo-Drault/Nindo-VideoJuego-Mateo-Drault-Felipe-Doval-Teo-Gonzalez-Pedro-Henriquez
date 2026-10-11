@@ -177,6 +177,25 @@ def along_bone(co, head, tail):
     return (co - head).dot(d) / max(1e-6, d.length_squared)
 
 
+def chain_samples(joints, span):
+    """Puntos de una pieza continua que recorre una cadena de huesos (colas de la faja, bigotes): la mitad de
+    cada tramo y un anillo de más a 'span' metros a cada lado de cada articulación interior, para que doble en una curva
+    y no en un escalón. Devuelve (puntos, tramo de cada segmento entre puntos)."""
+    J = [Vector(p) for p in joints]
+    pts, seg = [J[0]], []
+    n = len(J) - 2
+    for i in range(len(J) - 1):
+        a, b = J[i], J[i + 1]
+        L = (b - a).length
+        u = (b - a) / L
+        s = min(span, L * 0.3)
+        stops = ([s] if i > 0 else []) + [L * 0.5] + ([L - s] if i < n else []) + [L]
+        for d in stops:
+            pts.append(a + u * d)
+            seg.append(i)
+    return pts, seg
+
+
 def chain_weights(joints, bones, before=None, after=None, span=0.06):
     """Pesos de un tubo continuo que recorre varios huesos seguidos (hombro -> codo -> muñeca): cada vértice va al
     tramo más cercano y en cada articulación interior se reparte 50/50 con una rampa de 'span' metros a cada lado (el
