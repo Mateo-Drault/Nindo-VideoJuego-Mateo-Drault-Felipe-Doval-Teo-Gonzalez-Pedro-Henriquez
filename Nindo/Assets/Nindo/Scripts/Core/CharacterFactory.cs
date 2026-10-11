@@ -371,6 +371,8 @@ namespace Nindo
             else e = root.AddComponent<Enemy>();
             e.config = cfg;
             e.encounter = encounter;
+            // los grandes tapan a Kaito entero: donde se los ve, la silueta de Kaito puede aparecer
+            if (IsBoss(archetype) || CharacterFor(archetype) == "sumo") XRayOccluder.Attach(anim != null ? anim.transform : root.transform);
             return e;
         }
 

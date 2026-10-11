@@ -1,15 +1,17 @@
-// Silueta de Kaito cuando algo grande lo tapa (el cuerpo del koi, la armadura de Kokuyō, un alero): tinta
+// Silueta de Kaito cuando lo tapa un personaje grande (el cuerpo del koi, la armadura de Kokuyō, el sumo): tinta
 // translúcida con el borde dorado de la bandana. La dibuja FX/XRaySilhouette con copias de sus mallas.
-// ZTest Greater: solo donde la escena está más cerca de la cámara que Kaito. Para que sus propias partes (el brazo
-// detrás del torso, la katana detrás de la pierna) no se dibujen encima de él, la malla se adelanta _Pull metros
-// hacia la cámara antes de comparar: lo que lo tapa tiene que estar al menos ese tanto por delante.
+// ZTest Greater (la escena está más cerca de la cámara que Kaito) y además el stencil: solo donde lo visible es un
+// personaje grande (bit 32, lo escribe Nindo/OccluderMark). Antes bastaba el ZTest con la malla adelantada 0.5 m y
+// sus propias partes (el brazo detrás del torso, la katana detrás de la pierna) se marcaban en amarillo encima de él;
+// los píxeles de Kaito nunca tienen la marca, así que eso ya no puede pasar. Los aleros y árboles los aparta
+// CameraOcclusion: no hace falta silueta para ellos.
 Shader "Nindo/CharacterXRay"
 {
     Properties
     {
         _Ink ("Tinta", Color) = (0.05, 0.04, 0.07, 0.55)
         _Rim ("Borde", Color) = (1, 0.78, 0.3, 1)
-        _Pull ("Adelanto hacia la cámara (m)", Float) = 0.5
+        _Pull ("Adelanto hacia la cámara (m)", Float) = 0.05
     }
 
     SubShader
@@ -22,6 +24,7 @@ Shader "Nindo/CharacterXRay"
             Tags { "LightMode" = "UniversalForward" }
             ZTest Greater
             ZWrite Off
+            Stencil { Ref 32 ReadMask 32 Comp Equal }
             Cull Back
             Blend SrcAlpha OneMinusSrcAlpha
 
