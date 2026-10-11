@@ -26,8 +26,9 @@ namespace Nindo
         {
             public string id, label;
             public int group, ctx, share, k0, k1, p0, p1;
+            public bool hold;   // BindRow.hold
             public Spec(string id, string label, int group, int ctx, int share, int k0, int k1, int p0, int p1)
-            { this.id = id; this.label = label; this.group = group; this.ctx = ctx; this.share = share; this.k0 = k0; this.k1 = k1; this.p0 = p0; this.p1 = p1; }
+            { this.id = id; this.label = label; this.group = group; this.ctx = ctx; this.share = share; this.k0 = k0; this.k1 = k1; this.p0 = p0; this.p1 = p1; hold = false; }
         }
 
         static int K(Key k) => (int)k;
@@ -41,7 +42,8 @@ namespace Nindo
             new Spec("Attack", "Atacar", GroupCombat, Play, 0, BindCode.MouseLeft, K(Key.J), P(GamepadButton.West), P(GamepadButton.RightShoulder)),
             new Spec("Parry", "Parry", GroupCombat, Play, 0, BindCode.MouseRight, K(Key.K), P(GamepadButton.LeftShoulder), 0),
             new Spec("Dash", "Esquivar (dash)", GroupCombat, Play, 0, K(Key.Space), K(Key.LeftShift), P(GamepadButton.East), P(GamepadButton.South)),
-            new Spec("Lock", "Fijar objetivo", GroupCombat, Play, 0, K(Key.Q), BindCode.MouseMiddle, P(GamepadButton.RightStick), 0),
+            // fijar se suelta manteniéndolo (PlayerController.UpdateTargeting): la rueda o un toque del stick no sirven
+            new Spec("Lock", "Fijar objetivo", GroupCombat, Play, 0, K(Key.Q), BindCode.MouseMiddle, P(GamepadButton.RightStick), 0) { hold = true },
             new Spec("LockNext", "Siguiente objetivo", GroupCombat, Play, 0, BindCode.WheelDown, 0, BindCode.RStickRight, 0),
             new Spec("LockPrev", "Objetivo anterior", GroupCombat, Play, 0, BindCode.WheelUp, 0, BindCode.RStickLeft, 0),
             new Spec("Finisher", "Ejecutar", GroupCombat, Play, ShareFinish, K(Key.F), 0, P(GamepadButton.North), 0),
@@ -83,6 +85,7 @@ namespace Nindo
             {
                 var row = FromSpec(MoveSpecs[i], i);
                 row.move = i + 1;
+                row.hold = true;
                 row.shown[BindingTable.Pad] = false;
                 rows.Add(row);
             }
@@ -96,7 +99,7 @@ namespace Nindo
 
         static BindRow FromSpec(Spec s, int order)
         {
-            var row = new BindRow { id = s.id, label = s.label, group = s.group, order = order, context = s.ctx, share = s.share };
+            var row = new BindRow { id = s.id, label = s.label, group = s.group, order = order, context = s.ctx, share = s.share, hold = s.hold };
             row.shown[BindingTable.Keys] = true; row.shown[BindingTable.Pad] = true;
             int[] c = { s.k0, s.k1, s.p0, s.p1 };
             for (int i = 0; i < 4; i++) { row.locked[i] = (c[i] & L) != 0; row.defaults[i] = c[i] & ~L; }

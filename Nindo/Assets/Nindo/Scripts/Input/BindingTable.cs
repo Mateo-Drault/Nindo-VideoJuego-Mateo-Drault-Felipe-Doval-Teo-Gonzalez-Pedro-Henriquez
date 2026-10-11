@@ -41,6 +41,7 @@ namespace Nindo
         public int order;              // orden dentro del grupo en la página de controles
         public int act = -1;           // valor de Act (-1 = movimiento)
         public int move;               // 0 no mueve; 1 arriba, 2 abajo, 3 izquierda, 4 derecha
+        public bool hold;              // se usa manteniendo (moverse; fijar se suelta así): nada de rueda ni toques del stick
         public int context;            // máscara: dónde se usa (BindingCatalog.Play / Menu)
         public int share;              // != 0: puede compartir tecla con las filas del mismo número
         public readonly bool[] shown = new bool[BindingTable.Devices];
@@ -58,7 +59,7 @@ namespace Nindo
         Reserved,           // el control no se asigna a nada (Esc, Win, la cruceta...): ver 'reason'
         LockedElsewhere,    // es la tecla fija de otra acción que choca con esta (Enter para pausar)
         OnlyKey,            // es la única tecla de la otra acción y no hay nada para darle a cambio
-        NeedsHold,          // el movimiento necesita una tecla que se mantenga (no la rueda)
+        NeedsHold,          // la acción se mantiene apretada (moverse, fijar): no sirven la rueda ni los toques del stick
         WrongDevice,
         LastKey,            // quitar dejaría a la acción sin teclas en ese dispositivo
     }
@@ -87,8 +88,9 @@ namespace Nindo
     ///   - Si la tecla nueva ya era de otra acción, se INTERCAMBIAN: la otra recibe la que tenía esta casilla. Se
     ///     eligió sobre rechazar porque respeta lo que el jugador quiso (esa tecla para esta acción), nunca deja a la
     ///     otra sin tecla ni pierde nada, y un aviso de dos renglones dice qué pasó. Se rechaza solo lo que rompería
-    ///     algo: las teclas reservadas, las fijas de otra acción, el movimiento con la rueda y sacarle a otra acción su
-    ///     única tecla sin nada para darle a cambio.
+    ///     algo: las teclas reservadas, las fijas de otra acción, la rueda o un toque del stick para lo que se mantiene
+    ///     apretado (moverse, fijar: se suelta manteniéndolo) y sacarle a otra acción su única tecla sin nada para
+    ///     darle a cambio.
     ///   - Quitar una tecla no puede dejar a una acción sin ninguna en ese dispositivo.
     /// Se guardan solo las casillas que difieren de las de fábrica, por nombre de acción: una acción nueva (p. ej. el
     /// mapa) llega con sus teclas de fábrica y, si alguna ya la usa el jugador para otra cosa, gana la del jugador.
@@ -175,7 +177,7 @@ namespace Nindo
             if (BindCode.DeviceOf(code) != dev || BindCode.IsDisplayOnly(code)) return Refuse(res, BindRefusal.WrongDevice);
             string why = reserved?.Invoke(code);
             if (why != null) { res.reason = why; return Refuse(res, BindRefusal.Reserved); }
-            if (row.move != 0 && BindCode.IsImpulse(code)) return Refuse(res, BindRefusal.NeedsHold);
+            if (row.hold && BindCode.IsImpulse(code)) return Refuse(res, BindRefusal.NeedsHold);
             int old = res.previous;
             if (old == code) { res.outcome = BindOutcome.Same; return res; }
 
@@ -205,7 +207,7 @@ namespace Nindo
                     }
             }
 
-            // qué recibe cada una: la tecla vieja de esta casilla, salvo que no le sirva (la rueda para moverse), ya la
+            // qué recibe cada una: la tecla vieja de esta casilla, salvo que no le sirva (la rueda para moverse o fijar), ya la
             // tenga en su otra casilla o choque con otra acción que también la usa
             var gives = new int[holders.Count];
             for (int h = 0; h < holders.Count; h++)
@@ -214,7 +216,7 @@ namespace Nindo
                 int give = old;
                 if (give != BindCode.None)
                 {
-                    if (rows[q].move != 0 && BindCode.IsImpulse(give)) give = BindCode.None;
+                    if (rows[q].hold && BindCode.IsImpulse(give)) give = BindCode.None;
                     else if (Get(q, dev, 1 - t) == give) give = BindCode.None;
                     else if (HeldByConflicting(give, dev, q, r)) give = BindCode.None;
                 }
@@ -313,7 +315,7 @@ namespace Nindo
                 string name = p.Substring(eq + 1);
                 int c = name == "-" ? BindCode.None : parseCode(name);
                 if (name != "-" && (c == BindCode.None || BindCode.DeviceOf(c) != d || BindCode.IsDisplayOnly(c) ||
-                    reserved?.Invoke(c) != null || (rows[r].move != 0 && BindCode.IsImpulse(c))))
+                    reserved?.Invoke(c) != null || (rows[r].hold && BindCode.IsImpulse(c))))
                 { problems.Add(p); continue; }
                 codes[Ix(r, d, s)] = c;
                 user[Ix(r, d, s)] = true;

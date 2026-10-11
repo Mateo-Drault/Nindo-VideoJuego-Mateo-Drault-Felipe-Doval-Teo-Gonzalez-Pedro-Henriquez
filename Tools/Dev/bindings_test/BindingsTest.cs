@@ -148,6 +148,12 @@ namespace Nindo.Tests
             res = t.Assign(next, Kb, 0, K(Key.W));   // la casilla de la rueda: W era de Mover arriba
             Check(res.outcome == BindOutcome.Taken && t.Get(up, Kb, 0) == 0 && t.Get(up, Kb, 1) == K(Key.UpArrow), "W a Siguiente objetivo: arriba se queda con la flecha");
             Check(t.FindProblem() == null, "sin choques");
+            // lo mismo con fijar: Q a la casilla de la rueda de Siguiente objetivo deja a fijar con el clic medio
+            t.Reset(-1);
+            int lock_ = R(t, "Lock");
+            res = t.Assign(next, Kb, 0, K(Key.Q));
+            Check(res.outcome == BindOutcome.Taken && res.other == lock_ && t.Get(lock_, Kb, 0) == 0 && t.Get(lock_, Kb, 1) == BindCode.MouseMiddle, "Q a Siguiente objetivo: fijar se queda con el clic medio");
+            Check(t.FindProblem() == null, "sin choques");
         }
 
         static void Refusals()
@@ -170,6 +176,13 @@ namespace Nindo.Tests
             Check(!res.Ok && res.refusal == BindRefusal.Locked, "Confirmar es fija");
             res = t.Assign(up, Kb, 0, BindCode.WheelUp);
             Check(!res.Ok && res.refusal == BindRefusal.NeedsHold, "la rueda no mueve");
+            // fijar se suelta manteniéndolo: ni la rueda ni un toque del stick
+            int lk = R(t, "Lock");
+            Check(t.Row(lk).hold && t.Row(up).hold && !t.Row(atk).hold, "fijar y moverse se mantienen");
+            res = t.Assign(lk, Kb, 1, BindCode.WheelUp);
+            Check(!res.Ok && res.refusal == BindRefusal.NeedsHold, "la rueda no fija");
+            res = t.Assign(lk, Pd, 1, BindCode.RStickUp);
+            Check(!res.Ok && res.refusal == BindRefusal.NeedsHold, "un toque del stick no fija");
             res = t.Assign(fin, Kb, 1, BindCode.WheelDown);
             Check(!res.Ok && res.refusal == BindRefusal.OnlyKey && res.other == next, "la rueda es la única de Siguiente objetivo");
             res = t.Assign(atk, Kb, 0, P(GamepadButton.West));
@@ -223,8 +236,8 @@ namespace Nindo.Tests
             problems = u.Load("1|Attack.k0=-|Attack.k1=-", BindingCatalog.ParseCode);
             Check(u.Count(R(u, "Attack"), Kb) == 2, "Atacar sin nada recupera las de fábrica");
             // reservadas y rueda para moverse (alguien editó las preferencias): se ignoran
-            problems = u.Load("1|Attack.k0=Key.Escape|MoveUp.k0=Mouse.WheelUp|Attack.p0=Pad.DpadUp", BindingCatalog.ParseCode);
-            Check(problems.Count == 3 && u.IsDefault(Kb) && u.IsDefault(Pd), "reservadas ignoradas");
+            problems = u.Load("1|Attack.k0=Key.Escape|MoveUp.k0=Mouse.WheelUp|Attack.p0=Pad.DpadUp|Lock.k1=Mouse.WheelDown|Lock.p1=Pad.RStickUp", BindingCatalog.ParseCode);
+            Check(problems.Count == 5 && u.IsDefault(Kb) && u.IsDefault(Pd), "reservadas e impulsos para fijar ignorados");
         }
 
         /// <summary>El mapa llega después (frente ui-map): con sus teclas de fábrica, salvo que el jugador ya las use.</summary>
@@ -232,14 +245,14 @@ namespace Nindo.Tests
         {
             var t = New(Acts);
             var u = New(ActsMap);
-            Check(u.Load(t.Save(BindingCatalog.CodeId), BindingCatalog.ParseCode).Count == 0 && u.Get(R(u, "Map"), Kb, 0) == K(Key.M) && u.Get(R(u, "Map"), Pd, 0) == P(GamepadButton.Select), "Mapa con M y View");
+            Check(u.Load(t.Save(BindingCatalog.CodeId), BindingCatalog.ParseCode).Count == 0 && u.Get(R(u, "Map"), Kb, 0) == K(Key.M) && u.Get(R(u, "Map"), Pd, 0) == P(GamepadButton.Select), "Mapa con M y Vista");
             t.Assign(R(t, "Attack"), Kb, 1, K(Key.M));
             t.Assign(R(t, "Pause"), Pd, 1, P(GamepadButton.Select));
             var problems = u.Load(t.Save(BindingCatalog.CodeId), BindingCatalog.ParseCode);
             Console.WriteLine("con el mapa nuevo: " + string.Join("; ", problems));
             Check(u.Get(R(u, "Attack"), Kb, 1) == K(Key.M), "Atacar conserva la M del jugador");
             Check(u.Count(R(u, "Map"), Kb) == 0 && u.Count(R(u, "Map"), Pd) == 0, "el mapa queda sin tecla (la página lo muestra) en vez de chocar");
-            Check(u.Get(R(u, "Pause"), Pd, 1) == P(GamepadButton.Select), "Pausa conserva View");
+            Check(u.Get(R(u, "Pause"), Pd, 1) == P(GamepadButton.Select), "Pausa conserva Vista");
             Check(u.FindProblem() == null, "sin choques con el mapa");
             // y al revés: una acción que ya no existe en el enum se ignora
             var back = New(Acts);
@@ -298,7 +311,7 @@ namespace Nindo.Tests
                             int c = t.Get(q, dd, ss);
                             if (t.Locked(q, dd, ss) && c != t.Default(q, dd, ss)) { Check(false, $"fuzz {seed} paso {i}: se movió una fija de {t.Row(q).id}"); badAt = i; }
                             if (c != 0 && BindCode.DeviceOf(c) != dd) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} tiene un control del otro dispositivo"); badAt = i; }
-                            if (c != 0 && t.Row(q).move != 0 && BindCode.IsImpulse(c)) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} se mueve con un impulso"); badAt = i; }
+                            if (c != 0 && t.Row(q).hold && BindCode.IsImpulse(c)) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} se mantiene con un impulso"); badAt = i; }
                             if (c != 0 && !t.Locked(q, dd, ss) && BindingCatalog.Reserved(c) != null) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} tiene una reservada"); badAt = i; }
                         }
                     }

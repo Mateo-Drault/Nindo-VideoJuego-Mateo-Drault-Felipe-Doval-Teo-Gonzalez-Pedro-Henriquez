@@ -436,7 +436,7 @@ namespace Nindo
             bool padUser = Game.Input != null && Game.Input.UsingGamepad;
             string cancel = padUser ? ControlsChip(t.Get((int)Act.Pause, BindingTable.Pad, 0), BindingTable.Pad) : ControlsChip(t.Get((int)Act.Pause, BindingTable.Keys, 0), BindingTable.Keys);
             if (s.dev == BindingTable.Keys)
-                ControlsInfo("Presioná la tecla nueva para " + row.label, cancel + (row.move != 0 ? " cancela        También sirven los botones del mouse" : " cancela        También sirven los botones y la rueda del mouse"), UIFactory.Gold, 0f);
+                ControlsInfo("Presioná la tecla nueva para " + row.label, cancel + (row.hold ? " cancela       También sirven los botones del mouse" : " cancela        También sirven los botones y la rueda del mouse"), UIFactory.Gold, 0f);
             else
                 ControlsInfo("Presioná el botón nuevo para " + row.label, cancel + " cancela", UIFactory.Gold, 0f);
         }
@@ -602,7 +602,10 @@ namespace Nindo
                     ControlsInfo(t.Row(res.other).label + " solo tiene " + chip, dev == BindingTable.Keys ? "Primero dale otra tecla" : "Primero dale otro botón", CtlWarn, 4.5f);
                     break;
                 case BindRefusal.NeedsHold:
-                    ControlsInfo("La rueda no sirve para moverse", "Elegí una tecla", CtlWarn, 4f);
+                    // el movimiento del teclado solo puede recibir la rueda; fijar, también un toque del stick
+                    if (t.Row(res.row).move != 0) ControlsInfo("La rueda no sirve para moverse", "Elegí una tecla", CtlWarn, 4f);
+                    else if (dev == BindingTable.Keys) ControlsInfo(label + " necesita una tecla que se pueda mantener", "Mantenela apretada para soltar el objetivo", CtlWarn, 4.5f);
+                    else ControlsInfo(label + " necesita un botón que se pueda mantener", "Mantenelo apretado para soltar el objetivo", CtlWarn, 4.5f);
                     break;
                 case BindRefusal.LastKey:
                     ControlsInfo(label + (dev == BindingTable.Keys ? " necesita al menos una tecla" : " necesita al menos un botón"), null, CtlWarn, 3.5f);
