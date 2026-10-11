@@ -1,0 +1,287 @@
+{
+ "fps": 30,
+ "take": "Scene",
+ "bind_height": 2.672,
+ "bind_height_note": "alto que mide CharacterFactory.NormalizeHeight en la pose por defecto del FBX (el reposo, con el saco tirado y el bastón ocultos incluidos): con este valor en NindoContent la escala es 1",
+ "tris": {
+  "body": 3850,
+  "robe": 896,
+  "thrown": 380,
+  "staff": 386
+ },
+ "facing": "frente +Z en Unity (Blender -Y): modelYaw 0",
+ "clips": {
+  "Idle": {
+   "first": 1,
+   "last": 73,
+   "frames": 72,
+   "seconds": 2.4,
+   "loop": true,
+   "timing": {
+    "kind": "idle"
+   },
+   "events": [],
+   "notes": "guardia de la fase 1 (la mano izquierda en la espalda); provisorio hasta la etapa 2",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "loop_seam_deg": 0.0,
+    "max_height_m": 2.62,
+    "min_z_m": -0.0
+   }
+  },
+  "PoseTest": {
+   "first": 83,
+   "last": 315,
+   "frames": 232,
+   "seconds": 7.7333,
+   "loop": false,
+   "timing": {
+    "kind": "test",
+    "holds": {
+     "30": "guardia",
+     "66": "caballo y palma",
+     "102": "patada de grulla",
+     "138": "bastón",
+     "174": "garra y pico",
+     "210": "puño y espada"
+    }
+   },
+   "events": [],
+   "notes": "poses de prueba del esqueleto (no es un clip de pelea)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.4,
+     "legs": 0.0
+    },
+    "max_height_m": 2.66,
+    "min_z_m": -0.0
+   }
+  }
+ },
+ "parts": {
+  "skinned": [
+   "Master_Body",
+   "Master_Robe",
+   "Master_RobeThrown"
+  ],
+  "rigid": {
+   "Master_Staff": "Staff"
+  },
+  "materials": [
+   "Nindo_Palette",
+   "Master_GlintHandR",
+   "Master_GlintHandL",
+   "Master_GlintFootR",
+   "Master_GlintFootL",
+   "Master_Eyes",
+   "Master_GlintStaff",
+   "Master_Skin"
+  ],
+  "hidden_at_spawn": [
+   "Master_RobeThrown",
+   "Master_Staff"
+  ],
+  "notes": "Master_Robe es el saco de la fase 1 (se apaga al tirarlo); Master_RobeThrown es la copia aplanada que vuela en el cambio de fase (huesos RobeT_*, en reposo adentro de la espalda); Master_Staff es el bastón (hueso Staff, hijo de Root: lo mueve el clip y las manos lo agarran). Los slots Master_Glint* se encienden por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash) y Master_Eyes en jade en la fase 2. Ninguno se llama 'Glint': Enemy no prende nada solo, el jefe elige el miembro que pega."
+ },
+ "chains": {
+  "runtime": [
+   "Acc_TieWhiskerR",
+   "Acc_TieWhiskerL",
+   "Acc_TieSashA",
+   "Acc_TieSashB"
+  ],
+  "colliders": [
+   "AccCol_Chest_17",
+   "AccCol_Belly_19",
+   "AccCol_ThighR_15",
+   "AccCol_ThighL_15"
+  ],
+  "baked": [
+   "Brow_*",
+   "Sleeve_*",
+   "Robe_*"
+  ],
+  "notes": "las cadenas Acc_* van horneadas en los clips; si el jefe agrega SpringChain y llama Rebuild, la física del juego las reemplaza (perfil 'Tie')"
+ },
+ "material_rgb": {
+  "Master_GlintHandR": [
+   0.93,
+   0.91,
+   0.86
+  ],
+  "Master_GlintHandL": [
+   0.93,
+   0.91,
+   0.86
+  ],
+  "Master_GlintFootR": [
+   0.11,
+   0.11,
+   0.13
+  ],
+  "Master_GlintFootL": [
+   0.11,
+   0.11,
+   0.13
+  ],
+  "Master_Eyes": [
+   0.12,
+   0.1,
+   0.09
+  ],
+  "Master_GlintStaff": [
+   0.5,
+   0.63,
+   0.25
+  ],
+  "Master_Skin": [
+   0.8,
+   0.56,
+   0.38
+  ]
+ },
+ "hand_shapes": {
+  "relaxed": {
+   "fing": [
+    14,
+    17,
+    20,
+    24
+   ],
+   "tip": [
+    16,
+    19,
+    22,
+    26
+   ],
+   "spread": 2.0,
+   "thumb": [
+    12,
+    10
+   ]
+  },
+  "palm": {
+   "fing": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "tip": [
+    2,
+    2,
+    2,
+    2
+   ],
+   "spread": -2.0,
+   "thumb": [
+    6,
+    4
+   ]
+  },
+  "fist": {
+   "fing": [
+    88,
+    92,
+    94,
+    96
+   ],
+   "tip": [
+    100,
+    102,
+    104,
+    106
+   ],
+   "spread": -2.0,
+   "thumb": [
+    48,
+    58
+   ]
+  },
+  "beak": {
+   "fing": [
+    34,
+    30,
+    34,
+    42
+   ],
+   "tip": [
+    30,
+    30,
+    32,
+    36
+   ],
+   "spread": -7.0,
+   "thumb": [
+    52,
+    22
+   ]
+  },
+  "claw": {
+   "fing": [
+    22,
+    20,
+    22,
+    26
+   ],
+   "tip": [
+    78,
+    82,
+    84,
+    86
+   ],
+   "spread": 16.0,
+   "thumb": [
+    34,
+    46
+   ]
+  },
+  "sword": {
+   "fing": [
+    0,
+    0,
+    90,
+    94
+   ],
+   "tip": [
+    2,
+    2,
+    104,
+    106
+   ],
+   "spread": -3.0,
+   "thumb": [
+    55,
+    62
+   ]
+  },
+  "grip": {
+   "fing": [
+    62,
+    66,
+    70,
+    74
+   ],
+   "tip": [
+    78,
+    80,
+    82,
+    84
+   ],
+   "spread": -1.0,
+   "thumb": [
+    40,
+    30
+   ]
+  }
+ },
+ "staff": {
+  "length_m": 2.3,
+  "radius_m": 0.028,
+  "bone": "Staff",
+  "tip_local_unity_note": "el hueso va de la punta de abajo (cabeza) a la de arriba (cola): las dos puntas son la cabeza y la cabeza + Y * largo"
+ }
+}

@@ -465,6 +465,18 @@ MonoBehaviour:
     - 1.0
     - 1.2
     - 1.2
+  - id: bamboo_master
+    model: {fileID: 919132149155446097, guid: 191c5633648e5611746e668f0421a7c7, type: 3}
+    controller: {fileID: 9100000, guid: 00038a893675a4c699be298472f4a7fd, type: 2}
+    height: 2.67
+    modelYaw: 0
+    materialSwaps: []
+    stateNames:
+    - Idle
+    - PoseTest
+    stateLengths:
+    - 2.4
+    - 7.7333
   kits:
   - id: kaito_bandana
     model: {fileID: 919132149155446097, guid: ca9a3f83c9c07ac24716e40606d17627, type: 3}

@@ -678,7 +678,19 @@ def controllers():
         st = {n: (ref(g, stable_id("kokuyo", n), 3), round(r["seconds"], 4)) for n, r in info["clips"].items()}
         c["kokuyo"] = controller(os.path.join(P_ANIM, "Kokuyo.controller"), "Kokuyo", st, [st[n] for n in KOKUYO_LOCO],
                                  KOKUYO_LOCO_THRESHOLDS)
+    c.update(bamboo_master_controller())
     return c
+
+
+def bamboo_master_controller():
+    """Chikuō: un estado por clip del sidecar (los de pelea los agrega la etapa de clips con el mismo FBX y GUID)."""
+    bi = bamboo_master_info()
+    if not bi:
+        return {}
+    g = ensure_guid(BAMBOO_FBX)
+    st = {n: (ref(g, stable_id("bamboo_master", n), 3), round(r["seconds"], 4)) for n, r in bi["clips"].items()}
+    return {"bamboo_master": controller(os.path.join(P_ANIM, "BambooMaster.controller"), "BambooMaster", st,
+                                        [st[n] for n in BAMBOO_LOCO])}
 
 
 def mizuchi_koi():
@@ -817,6 +829,43 @@ def kokuyo_assets(mats):
     meta = model_meta(remap=remap, anim_type=2, import_anim=True, clips=clips, readable=False)
     write_meta(KOKUYO_FBX, meta.replace("animationCompression: 1", "animationCompression: 0"), force=True)
     write_meta(KOKUYO_FBX + ".json", TEXT_META)
+
+
+# ============================================================================ Chikuō (jefe del bambú)
+P_BAMBOO = os.path.join(ART, "Characters", "BambooMaster")
+BAMBOO_FBX = os.path.join(P_BAMBOO, "BambooMaster.fbx")
+# hasta que la etapa de clips agregue la caminata, la locomoción es la guardia quieta
+BAMBOO_LOCO = ("Idle", "Idle")
+# brillo (Blinn-Phong) de los materiales propios: vendas y zapatillas de tela, el bambú apenas encerado, los ojos húmedos
+BAMBOO_SMOOTH = {"Master_GlintHandR": 0.1, "Master_GlintHandL": 0.1, "Master_GlintFootR": 0.12, "Master_GlintFootL": 0.12,
+                 "Master_Eyes": 0.45, "Master_GlintStaff": 0.3, "Master_Skin": 0.14}
+
+
+def bamboo_master_info():
+    """BambooMaster.fbx.json: clips, alto de bind y colores que escribe Tools/Blender/bosses/bamboo_master/build_bamboo_master.py."""
+    j = BAMBOO_FBX + ".json"
+    return json.load(open(j, encoding="utf-8")) if os.path.exists(BAMBOO_FBX) and os.path.exists(j) else None
+
+
+def bamboo_master_assets(mats):
+    """Materiales propios de Chikuō y el .meta de su FBX (clips cortados de la toma única 'Scene').
+    Los slots Master_Glint* (palmas, zapatillas, bastón) y Master_Eyes nacen sin emisión: el jefe los enciende por nombre
+    con CharacterGlint.SetGlow (dorado = parry, rojo = dash; los ojos en jade en la fase 2). Sin compresión de animación
+    (los golpes cortos y los pies clavados no aguantan la reducción de claves) y sin 'Optimize Bones': las puntas de las
+    cadenas (Acc_*_end) y las esferas AccCol_* no tienen pesos y SpringChain las necesita si el jefe la usa."""
+    info = bamboo_master_info()
+    if info is None:
+        return
+    km = {n: lit(os.path.join(P_BAMBOO, n + ".mat"), n, None, base_color=(*rgb, 1), smooth=BAMBOO_SMOOTH.get(n, 0.15))
+          for n, rgb in info["material_rgb"].items()}
+    remap = {"Nindo_Palette": mats["palette"], "Nindo_Emissive": mats["emissive"], **km}
+    clips = [dict(name=n, take=info.get("take", "Scene"), id=stable_id("bamboo_master", n), first=r["first"], last=r["last"],
+                  loop=r["loop"]) for n, r in info["clips"].items()]
+    meta = model_meta(remap=remap, anim_type=2, import_anim=True, clips=clips, readable=False)
+    meta = meta.replace("animationCompression: 1", "animationCompression: 0").replace("optimizeBones: 1", "optimizeBones: 0")
+    write_meta(BAMBOO_FBX, meta, force=True)
+    write_meta(BAMBOO_FBX + ".json", TEXT_META)
+    ensure_folder_metas(P_BAMBOO)
 
 
 # ============================================================================ clips nuevos del equipo
@@ -1042,6 +1091,11 @@ def content_asset(mats, ctrls, props, zones, manifest, sprites, fonts_g, audio):
             # Kokuyō mira a -Y en Blender = +Z en Unity (modelYaw 0); la altura es la que mide NormalizeHeight en
             # la pose por defecto del FBX (el reposo, ver build_kokuyo.py): escala 1, los golpes en metros reales
             defs.append(("kokuyo", ensure_guid(KOKUYO_FBX), ctrls["kokuyo"], round(kokuyo_info()["bind_height"], 2), 0))
+        if "bamboo_master" in ctrls:
+            # Chikuō mira a -Y en Blender = +Z en Unity (modelYaw 0); el alto es el de bind que mide NormalizeHeight (con el
+            # rodete): escala 1, y con scale 1 en el arquetipo 'ozeki' los avances de los clips quedan en metros reales
+            defs.append(("bamboo_master", ensure_guid(BAMBOO_FBX), ctrls["bamboo_master"],
+                         round(bamboo_master_info()["bind_height"], 2), 0))
         for cid, mg, (cg, lens), h, yaw in defs:
             # duración del clip de cada estado (CharacterAnimator.Length busca por estado, no por clip)
             names = "".join(f"\n    - {n}" for n in lens) or " []"
@@ -1363,6 +1417,7 @@ def main():
     mats = materials(None)
     character_fbx_metas()
     kokuyo_assets(mats)
+    bamboo_master_assets(mats)
     kaito_assets()
     team_anim_metas()
     ctrls = controllers()

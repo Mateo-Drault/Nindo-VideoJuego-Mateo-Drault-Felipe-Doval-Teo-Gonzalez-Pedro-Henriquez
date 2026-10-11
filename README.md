@@ -217,6 +217,9 @@ $B -b --python Tools/Blender/world/build_world.py -- --export [--map] [--preview
 # Kaito: esqueleto de juego + todos sus clips (chequeos de pies, loops e impactos; hojas con --renders DIR)
 $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --export [--only Run,Attack1] [--renders DIR]
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
+# Chikuō, el Maestro del Bambú: modelo, esqueleto, clips, chequeos y FBX (hojas con --renders DIR [--detail] [--lineup])
+$B -b --factory-startup --python Tools/Blender/bosses/bamboo_master/build_bamboo_master.py -- --export [--renders DIR]
+python3 Tools/Blender/bosses/bamboo_master/check_master_fbx.py   # lo que Unity va a ligar: raíz, curvas, huesos, materiales
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)
