@@ -424,8 +424,8 @@ namespace Nindo
         {
             if (!IsAlive || info.sourceFaction == Faction.Player) return HitResult.Ignored;
 
-            // 1) dash: i-frames (y esquive perfecto)
-            if (State == PlayerState.Dash && stateTime >= config.dashIFrameStart && stateTime <= config.dashIFrameEnd)
+            // 1) dash: i-frames (y esquive perfecto). El paso sin Espíritu no tiene
+            if (State == PlayerState.Dash && !dashTired && stateTime >= config.dashIFrameStart && stateTime <= config.dashIFrameEnd)
             {
                 OnDodged(info);
                 return HitResult.Dodged;

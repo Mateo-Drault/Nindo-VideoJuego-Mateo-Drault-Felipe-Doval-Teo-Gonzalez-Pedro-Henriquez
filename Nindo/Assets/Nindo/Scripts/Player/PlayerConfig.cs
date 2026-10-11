@@ -76,8 +76,8 @@ namespace Nindo
         public float dashIFrameEnd = 0.24f;
         public float dashRecover = 0.08f;
         public float perfectDodgeWindow = 0.16f;
-        [Tooltip("Sin Espíritu: dash 'cansado' (mismos i-frames, más corto, con espera)")] public float tiredDashDistance = 4.5f;
-        public float tiredDashCooldown = 1.2f;
+        [Tooltip("Sin Espíritu: paso corto, sin i-frames y con espera")] public float tiredDashDistance = 3f;
+        public float tiredDashCooldown = 0.8f;
 
         [Header("Finisher")]
         public float finisherCost = 30f;

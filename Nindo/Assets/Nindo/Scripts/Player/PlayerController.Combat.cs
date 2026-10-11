@@ -400,7 +400,7 @@ namespace Nindo
         bool dashTired;
         float tiredDashReadyAt = -9f;
 
-        /// <summary>Sin Espíritu para el dash normal: el próximo será el "cansado" (más corto, con espera).</summary>
+        /// <summary>Sin Espíritu para el dash: el próximo es un paso corto, sin invulnerabilidad y con espera.</summary>
         public bool DashTired => Spirit + 0.01f < config.dashCost;
         /// <summary>Segundos hasta que se pueda volver a hacer el dash cansado (0 = listo). Para el HUD.</summary>
         public float TiredDashReadyIn => Mathf.Max(0f, tiredDashReadyAt - Time.time);
@@ -409,12 +409,15 @@ namespace Nindo
         {
             if (!DashUnlocked) return false;
             if (State == PlayerState.Dash) return false;
-            // sin Espíritu igual se puede esquivar: los imparables no tienen otra respuesta y quien gastó bien el
-            // Espíritu (remate, habilidades) quedaba indefenso. Mismos i-frames, más corto, con espera y sin premio
+            // el dash es mágico y gasta Espíritu (documento de diseño): sin barra no hay dash ni invulnerabilidad.
+            // Antes el dash "cansado" tenía los mismos i-frames y esquivar gratis le sacaba el sentido al Espíritu.
+            // Queda un paso corto, sin i-frames, para salirse del anillo rojo a tiempo; el dragón avisa que falta
             bool tired = DashTired;
             if (tired)
             {
-                if (Time.time < tiredDashReadyAt) { Game.UI?.DenySpirit(); Game.Audio?.Play("denied", null, 0.5f); return false; }
+                Game.UI?.DenySpirit(config.dashCost);
+                Game.Audio?.Play("denied", null, 0.5f);
+                if (Time.time < tiredDashReadyAt) return false;
                 tiredDashReadyAt = Time.time + config.tiredDashCooldown;
             }
             else Spirit -= config.dashCost;
@@ -428,16 +431,15 @@ namespace Nindo
             FaceInstant(dashDir);
             SetState(PlayerState.Dash);
             perfectDodgeDone = false;
-            anim.Play("Dash", 0.03f, 0f, 1.4f);
-            Game.FX?.DashBurst(transform.position, dashDir);
+            anim.Play("Dash", 0.03f, 0f, tired ? 1.1f : 1.4f);
             if (tired)
             {
-                // estela gris y apagada: se lee que fue el dash de emergencia
-                Game.FX?.AfterImages(model != null ? model : transform, 0.24f, 0.06f, new Color(0.55f, 0.57f, 0.62f, 0.3f));
-                Game.Audio?.Play("dash", transform.position, 0.55f, 0.1f);
+                // un paso de pies, no magia: sin estallido ni estela
+                Game.Audio?.Play("dash", transform.position, 0.35f, 0.1f);
             }
             else
             {
+                Game.FX?.DashBurst(transform.position, dashDir);
                 Game.FX?.AfterImages(model != null ? model : transform, 0.3f, 0.045f, RageActive);
                 Game.Audio?.Play("dash", transform.position, 0.8f, 0.1f);
                 Game.Camera?.Punch(2.5f, 0.2f);
@@ -477,8 +479,7 @@ namespace Nindo
         void OnDodged(in DamageInfo info)
         {
             Game.FX?.DodgeSpark(AimPoint);
-            // el dash cansado salva pero no premia (sin Instante Sombra, sin devolver Espíritu ni sumar furia)
-            if (perfectDodgeDone || dashTired) return;
+            if (perfectDodgeDone) return;
             bool perfect = stateTime <= config.perfectDodgeWindow + config.dashIFrameStart;
             if (!perfect && info.kind != AttackKind.Unblockable) return;
             // esquivar a tiempo (o un imparable) devuelve el Espíritu y suma furia
