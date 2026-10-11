@@ -14,6 +14,8 @@ namespace Nindo
         public bool[] seals = new bool[3];
         public float playTime;
         public int deaths;
+        /// <summary>Niebla del mapa: lo que Kaito ya vio, en bits (MapFog). Vacío en las partidas de antes del mapa.</summary>
+        public string mapFog = "";
 
         public bool HasFlag(string f) => flags.Contains(f);
         public void SetFlag(string f)
@@ -66,6 +68,7 @@ namespace Nindo
 
         public static void Save()
         {
+            MapFog.Store(Data);
             try { File.WriteAllText(PathFile, JsonUtility.ToJson(Data, true)); }
             catch (Exception e) { Debug.LogWarning("[Nindo] No se pudo guardar: " + e.Message); return; }
             GameEvents.RaiseSaved();

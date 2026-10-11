@@ -566,8 +566,8 @@ namespace Nindo
             bg.raycastTarget = true;
             pausePanel = bg.gameObject;
             pauseColumn = MenuColumn(bg.transform, "Pausa", out _);
-            string[] labels = { "Continuar", "Opciones", "Volver al menú", "Salir del juego" };
-            UnityEngine.Events.UnityAction[] actions = { () => SetPaused(false), () => OpenOptions(true), () => { SetPaused(false); SaveSystem.Save(); SceneFlow.LoadMenu(); }, Application.Quit };
+            string[] labels = { "Continuar", "Mapa", "Opciones", "Volver al menú", "Salir del juego" };
+            UnityEngine.Events.UnityAction[] actions = { () => SetPaused(false), () => OpenMap(true), () => OpenOptions(true), () => { SetPaused(false); SaveSystem.Save(); SceneFlow.LoadMenu(); }, Application.Quit };
             pauseItemGroups = new CanvasGroup[labels.Length];
             for (int i = 0; i < labels.Length; i++)
             {
@@ -625,7 +625,8 @@ namespace Nindo
             moveKey.anchoredPosition = new Vector2(400f + moveKey.sizeDelta.x * 0.5f, moveKey.anchoredPosition.y);
         }
 
-        public bool PauseOpen => pausePanel.activeSelf || optionsPanel.activeSelf;
+        // el mapa también es una pausa: el HUD, los avisos y el título de zona esperan detrás
+        public bool PauseOpen => pausePanel.activeSelf || optionsPanel.activeSelf || MapOpen;
 
         public void SetPaused(bool p)
         {

@@ -7,7 +7,8 @@ namespace Nindo
 {
     public enum Act
     {
-        Attack, Parry, Dash, Lock, Finisher, Interact, Ability1, Ability2, Pause, LockNext, LockPrev, Submit, Cancel
+        Attack, Parry, Dash, Lock, Finisher, Interact, Ability1, Ability2, Pause, LockNext, LockPrev, Submit, Cancel,
+        Map   // mapa del mundo (UI/UIMap.cs)
     }
 
     /// <summary>
@@ -18,7 +19,8 @@ namespace Nindo
     [DefaultExecutionOrder(-800)]
     public class InputReader : MonoBehaviour
     {
-        const int ActCount = 13;
+        // sale del enum: una acción nueva (Map) no deja los arreglos cortos
+        static readonly int ActCount = System.Enum.GetValues(typeof(Act)).Length;
         readonly float[] pressedAt = new float[ActCount];
         readonly bool[] pressedNow = new bool[ActCount];
         readonly bool[] consumed = new bool[ActCount];
@@ -73,6 +75,7 @@ namespace Nindo
                 if (kb.digit2Key.wasPressedThisFrame || kb.iKey.wasPressedThisFrame) Press(Act.Ability2, false);
                 if (kb.escapeKey.wasPressedThisFrame || kb.pKey.wasPressedThisFrame) Press(Act.Pause, false);
                 if (kb.enterKey.wasPressedThisFrame) Press(Act.Submit, false);
+                if (kb.mKey.wasPressedThisFrame) Press(Act.Map, false);
                 if (kb.escapeKey.wasPressedThisFrame) Press(Act.Cancel, false);
                 parryHeld |= kb.kKey.isPressed;
                 attackHeld |= kb.jKey.isPressed;
@@ -108,6 +111,8 @@ namespace Nindo
                 if (pad.startButton.wasPressedThisFrame) Press(Act.Pause, true);
                 if (pad.buttonSouth.wasPressedThisFrame) Press(Act.Submit, true);
                 if (pad.buttonEast.wasPressedThisFrame) Press(Act.Cancel, true);
+                // mapa: Vista (Select) en cualquier mando y también el panel táctil en los de PlayStation
+                if (pad.selectButton.wasPressedThisFrame || (pad is UnityEngine.InputSystem.DualShock.DualShockGamepad ds && ds.touchpadButton.wasPressedThisFrame)) Press(Act.Map, true);
                 Vector2 rs = pad.rightStick.ReadValue();
                 if (rs.x > 0.7f && !stickFlicked) { Press(Act.LockNext, true); stickFlicked = true; }
                 else if (rs.x < -0.7f && !stickFlicked) { Press(Act.LockPrev, true); stickFlicked = true; }
@@ -129,6 +134,7 @@ namespace Nindo
             if (Input.GetKeyDown(KeyCode.Alpha2)) Press(Act.Ability2, false);
             if (Input.GetKeyDown(KeyCode.Escape)) { Press(Act.Pause, false); Press(Act.Cancel, false); }
             if (Input.GetKeyDown(KeyCode.Return)) Press(Act.Submit, false);
+            if (Input.GetKeyDown(KeyCode.M)) Press(Act.Map, false);
             float wheel = Input.mouseScrollDelta.y;
             if (wheel > 0.1f) Press(Act.LockPrev, false);
             if (wheel < -0.1f) Press(Act.LockNext, false);
@@ -276,6 +282,7 @@ namespace Nindo
                     case Act.LockNext: case Act.LockPrev: return "Stick der.";
                     case Act.Submit: return "×";
                     case Act.Cancel: return "○";
+                    case Act.Map: return "Táctil";
                 }
             else if (GlyphFamily == 1)
                 switch (a)
@@ -291,6 +298,7 @@ namespace Nindo
                     case Act.LockNext: case Act.LockPrev: return "Stick der.";
                     case Act.Submit: return "A";
                     case Act.Cancel: return "B";
+                    case Act.Map: return "Vista";
                 }
             else
                 switch (a)
@@ -307,6 +315,7 @@ namespace Nindo
                     case Act.LockNext: case Act.LockPrev: return "Rueda";
                     case Act.Submit: return "Enter";
                     case Act.Cancel: return "Esc";
+                    case Act.Map: return "M";
                 }
             return a.ToString();
         }
