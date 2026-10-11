@@ -136,11 +136,17 @@ namespace Nindo
             return ps;
         }
 
-        Vector3 Curve(Vector3 a, Vector3 c, Vector3 b, float u)
+        static Vector3 Curve(Vector3 a, Vector3 c, Vector3 b, float u)
         {
             float w = 1f - u;
             return a * (w * w) + c * (2f * w * u) + b * (u * u);
         }
+
+        /// <summary>El arco del haz (u 0-1, de a hacia b): lo usan otros que viajan con la luz (los sellos de la puerta).</summary>
+        public static Vector3 Arc(Vector3 a, Vector3 b, float u) => Curve(a, Control(a, b), b, u);
+
+        // arco hacia arriba (un cuarto de la distancia): la luz sube de la bandana y baja sobre el sello
+        static Vector3 Control(Vector3 a, Vector3 b) => (a + b) * 0.5f + Vector3.up * Vector3.Distance(a, b) * 0.22f;
 
         void LateUpdate()
         {
@@ -154,9 +160,7 @@ namespace Nindo
                 if (fade <= 0f) { Destroy(gameObject); return; }
             }
             Vector3 a = (from != null ? from.position : transform.position) + fromOffset;
-            float dist = Vector3.Distance(a, to);
-            // arco hacia arriba (un cuarto de la distancia): la luz sube de la bandana y baja sobre el sello
-            Vector3 c = (a + to) * 0.5f + Vector3.up * dist * 0.22f;
+            Vector3 c = Control(a, to);
             Vector3 dir = (to - a).normalized;
             Vector3 side = Vector3.Cross(Vector3.up, dir).normalized;
             Vector3 up = Vector3.Cross(dir, side);

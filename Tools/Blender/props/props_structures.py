@@ -1250,17 +1250,110 @@ def build_dojo_main(seed):
 
 
 # ============================================================== 8. dojo_gate
-def round_socket(mb, x, y, z, r=0.3, sy=-1):
-    """Empty stone seal socket: thick ring + recessed dark disc, facing sy*Y."""
-    ring_ = mb.prism((0, 0, 0), r * 1.22, 0.16, 12, "stone", radius_top=r * 1.12, rot=(90 * sy * -1, 0, 0))
-    ring_.transform(loc=(x, y, z))
-    disc = mb.prism((0, 0, 0), r, 0.2, 12, "stone_dark", rot=(90 * sy * -1, 0, 0))
-    disc.transform(loc=(x, y - sy * 0.06, z))
+# Huecos de los sellos. Antes eran un tronco de piedra macizo con un disco oscuro "hundido" que quedaba adentro de la
+# piedra: se veían tres discos lisos y el medallón colocado (key_seal_*, 0.5 m) también quedaba enterrado adentro.
+# Ahora cada hueco es un aro de piedra hueco con un filete de oro, el fondo oscuro y, grabado en oro sobre el fondo,
+# el mismo pictograma que el sello del HUD (Tools/UI/build_ui_art.py: _mountain, _lake, _bamboo; de izquierda a
+# derecha mirando el portón, como en el HUD). SealGate (Unity) apoya el medallón delante del fondo y prende el grabado.
+SEAL_ICON_SIDE = 0.40        # el lienzo del pictograma (128 px en el HUD) en metros: radio máximo 0.24 < medallón 0.25
+SEAL_RING = (0.29, 0.37)     # aro de piedra (radio interior, exterior)
+SEAL_LIP = (0.265, 0.295)    # filete de oro
+SEAL_FLOOR_R = 0.275
+SEAL_FLOOR_OUT = 0.02        # el fondo sale 2 cm del tablero; el grabado, 1.4 cm más
+SEAL_ICON_OUT = 0.014
+
+
+def _line_x(p, q, r, s):
+    """Intersección de las rectas pq y rs (2D)."""
+    d1 = (q[0] - p[0], q[1] - p[1]); d2 = (s[0] - r[0], s[1] - r[1])
+    den = d1[0] * d2[1] - d1[1] * d2[0]
+    t = ((r[0] - p[0]) * d2[1] - (r[1] - p[1]) * d2[0]) / den
+    return (p[0] + d1[0] * t, p[1] + d1[1] * t)
+
+
+def seal_icon_polys(kind):
+    """Pictograma del sello en el lienzo del HUD (u a la derecha, v hacia abajo, 0-1): lista de polígonos."""
+    if kind == "mountain":
+        # la montaña con la línea de nieve calada bajo la cima: un solo polígono con la ranura entrando desde la
+        # ladera izquierda (en el HUD la línea no llega a la ladera derecha: la nieve sigue pegada al cuerpo)
+        M = [(.03, .86), (.40, .14), (.62, .55), (.72, .40), (.97, .86)]
+        zig = [(.26, .42), (.33, .35), (.39, .44), (.46, .35), (.53, .45)]
+        g = 0.03
+        up = [(x, y - g) for x, y in zig]
+        dn = [(x, y + g) for x, y in zig]
+        a_up = _line_x(M[0], M[1], up[0], up[1])
+        a_dn = _line_x(M[0], M[1], dn[0], dn[1])
+        return [[M[0], a_dn] + dn[1:] + list(reversed(up[1:])) + [a_up, M[1], M[2], M[3], M[4]]]
+    if kind == "lake":
+        polys = []
+        for row, y0 in enumerate((0.30, 0.53, 0.76)):
+            top, bot = [], []
+            n = 13
+            for i in range(n):
+                x = 0.07 + 0.86 * i / (n - 1)
+                ph = (x * 2.3 + row * 0.33) * math.tau
+                y = y0 + 0.065 * math.sin(ph)
+                dy = 0.065 * 2.3 * math.tau * math.cos(ph)
+                ln = math.hypot(1.0, dy)
+                nx, ny = -dy / ln, 1.0 / ln
+                top.append((x - nx * 0.05, y - ny * 0.05))
+                bot.append((x + nx * 0.05, y + ny * 0.05))
+            polys.append(top + list(reversed(bot)))
+        return polys
+    # bambú: dos cañas de tres tramos con nudos y tres hojas (una caña sola se leía como una espada)
+    polys = []
+    for (x0, x1) in ((0.24, 0.41), (0.54, 0.71)):
+        for (y0, y1) in ((0.05, 0.30), (0.34, 0.61), (0.65, 0.95)):
+            polys.append([(x0, y0), (x1, y0), (x1, y1), (x0, y1)])
+    # las hojas del HUD con su contorno de tinta se ven más gordas: acá van un poco más anchas
+    polys.append([(0.71, 0.31), (0.98, 0.14), (0.86, 0.38), (0.71, 0.36)])
+    polys.append([(0.71, 0.385), (0.97, 0.46), (0.74, 0.45)])
+    polys.append([(0.24, 0.62), (0.02, 0.49), (0.16, 0.69), (0.24, 0.67)])
+    return polys
+
+
+def relief_y(mb, pts_xz, y_back, y_front, color):
+    """Polígono (x, z) extruido sobre Y, de y_back a y_front (sólido cerrado: las normales salen bien)."""
+    bm = mb.bm
+    b = [bm.verts.new((x, y_back, z)) for x, z in pts_xz]
+    t = [bm.verts.new((x, y_front, z)) for x, z in pts_xz]
+    n = len(pts_xz)
+    for i in range(n):
+        j = (i + 1) % n
+        bm.faces.new((b[i], b[j], t[j], t[i]))
+    bm.faces.new(t)
+    bm.faces.new(list(reversed(b)))
+    return mb._new(b + t, color, None, None)
+
+
+def ring_y(mb, x, z, ri, ro, y_back, y_front, color, ro_front=None, n=16):
+    """Aro hueco que sale del tablero hacia -Y (el borde de afuera se achica a ro_front)."""
+    rf = ro if ro_front is None else ro_front
+
+    def circ(r, y):
+        return [(x + r * math.cos(math.tau * k / n), y, z + r * math.sin(math.tau * k / n)) for k in range(n)]
+    ob, of, inf, ib = circ(ro, y_back), circ(rf, y_front), circ(ri, y_front), circ(ri, y_back)
+    return mb.loft([ob, of, inf, ib, ob], color)
+
+
+def seal_socket(mb, x, y0, z, kind):
+    """Hueco de un sello sobre un tablero cuyo frente está en y0 (mira a -Y)."""
+    ri, ro = SEAL_RING
+    ring_y(mb, x, z, ri, ro, y0 + 0.01, y0 - 0.08, "stone", ro_front=ro - 0.025)
+    li, lo = SEAL_LIP
+    ring_y(mb, x, z, li, lo, y0 + 0.01, y0 - 0.06, "gold_dark")
+    mb.prism((x, y0 + 0.01, z), SEAL_FLOOR_R, 0.01 + SEAL_FLOOR_OUT, 16, "stone_dark", rot=(90, 0, 0))
+    S = SEAL_ICON_SIDE
+    yb, yf = y0 - SEAL_FLOOR_OUT + 0.002, y0 - SEAL_FLOOR_OUT - SEAL_ICON_OUT
+    for poly in seal_icon_polys(kind):
+        pts = [(x + (u - 0.5) * S, z + (0.5 - v) * S) for u, v in poly]
+        assert max(math.hypot(px - x, pz - z) for px, pz in pts) < 0.245, kind
+        relief_y(mb, pts, yb, yf, "gold")
 
 
 def build_dojo_gate(seed):
     """Monumental gate in front of the dojo plateau: 11 m wide, two-tier roof,
-    4.2 x 4.5 m opening with three (unlit) stone seal sockets above it."""
+    4.2 x 4.5 m opening with three seal sockets above it (gilded HUD pictograms, see seal_socket)."""
     mb = L.MeshBuilder("dojo_gate", seed)
     HW = 4.65            # half width of the body
     OW, OH = 2.1, 4.5    # half opening width, opening height
@@ -1294,8 +1387,9 @@ def build_dojo_gate(seed):
     bx(mb, -1.95, 1.95, -YP - 0.3, -YP + 0.12, OH + 0.98, OH + 1.1, "wood_red_dark")
     bx(mb, -HW, HW, -YP - 0.2, -YP + 0.2, 5.95, 6.2, "wood_red_dark")
     bx(mb, -HW, HW, YP - 0.2, YP + 0.2, 5.95, 6.2, "wood_red_dark")
-    for x in (-1.15, 0.0, 1.15):
-        round_socket(mb, x, -YP - 0.24, OH + 0.57, r=0.3, sy=-1)
+    # mirando el portón: montaña a la izquierda (Blender -X = Unity +X), lago al centro, bambú a la derecha
+    for x, kind in ((-1.15, "mountain"), (0.0, "lake"), (1.15, "bamboo")):
+        seal_socket(mb, x, -YP - 0.24, OH + 0.57, kind)
     # threshold + door stops
     bx(mb, -OW, OW, -0.12, 0.12, -0.02, 0.08, "wood_dark")
     for s in (-1, 1):

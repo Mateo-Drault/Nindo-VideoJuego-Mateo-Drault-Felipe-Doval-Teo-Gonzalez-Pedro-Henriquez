@@ -16,6 +16,8 @@ namespace Nindo
         public int deaths;
         /// <summary>Santuarios donde Kaito ya rezó con incienso: quedan con el humo y la brasa (World/ShrineIncense).</summary>
         public List<string> shrines = new List<string>();
+        /// <summary>Sellos ya puestos en la puerta del dojo (World/SealGate): se ponen de a uno, apenas se tienen.</summary>
+        public bool[] sealsPlaced = new bool[3];
 
         public bool HasFlag(string f) => flags.Contains(f);
         public void SetFlag(string f)
@@ -25,6 +27,7 @@ namespace Nindo
             GameEvents.RaiseFlag(f);
         }
         public bool HasSeal(SealId s) => seals != null && seals.Length > (int)s && seals[(int)s];
+        public bool SealPlaced(SealId s) => sealsPlaced != null && sealsPlaced.Length > (int)s && sealsPlaced[(int)s];
         public int SealCount
         {
             get { int n = 0; if (seals != null) foreach (var s in seals) if (s) n++; return n; }
@@ -57,6 +60,7 @@ namespace Nindo
                 data = JsonUtility.FromJson<SaveData>(File.ReadAllText(PathFile)) ?? new SaveData();
                 if (data.seals == null || data.seals.Length != 3) data.seals = new bool[3];
                 if (data.shrines == null) data.shrines = new List<string>();
+                if (data.sealsPlaced == null || data.sealsPlaced.Length != 3) data.sealsPlaced = new bool[3];
                 return true;
             }
             catch (Exception e)
