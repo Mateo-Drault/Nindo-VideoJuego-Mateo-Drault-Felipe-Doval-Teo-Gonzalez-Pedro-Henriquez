@@ -24,7 +24,9 @@ namespace Nindo
         public Label[] labels;
         public Legacy[] legacy;
 
-        [Serializable] public class Label { public string id; public float x, z; public int align, small; }
+        /// <summary>Nombre de zona: dónde, alineación (-1 termina en x, 0 centrado, 1 empieza), chico y giro (grados,
+        /// antihorario: la cresta de la montaña se rotula a lo largo).</summary>
+        [Serializable] public class Label { public string id; public float x, z, rot; public int align, small; }
         [Serializable] public class Legacy { public string[] flags; public float[] d; }
 
         public float X0 => bounds[0];

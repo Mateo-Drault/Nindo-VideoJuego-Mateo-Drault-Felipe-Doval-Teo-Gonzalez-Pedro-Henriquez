@@ -107,12 +107,20 @@ LAMP_GLOW = np.array([0.46, 0.30, 0.07], np.float32)      # resplandor (se suma 
 # dónde va el nombre de cada zona (lo escribe la UI con el título de la Zone): (x, z, alineación, chico). Un nombre
 # mide ~120 m a la escala del mapa y los pasillos (el bosque, el paso de la montaña) tienen 30: van al costado, sobre
 # la niebla o el bosque, sin tapar caminos, santuarios ni jefes. Alineación: -1 el texto termina en x, 0 centrado,
-# 1 empieza en x. Chico: un lugar dentro de una región (la muralla, la cascada)
+# 1 empieza en x. Chico: un lugar dentro de una región (la muralla, la cascada). Giro (grados, antihorario como el
+# eje z de la UI): la montaña es una cresta en diagonal sin lugar para un nombre derecho (al costado quedaba en el
+# renglón del jardín y se leía "Montaña Kodoyama Jardín del Clan"); va a lo largo de la cresta, del lado de la niebla,
+# como se rotulan las cordilleras. La vista previa avisa si un nombre pisa a otro o a una marca (check_labels)
 LABELS = {
     "hogar": (-36, -193, 0, 0), "campos": (56, -128, 1, 0), "bosque": (-14, -62, -1, 0), "muralla": (22, -39, 1, 1),
-    "jardin": (-34, 41, 0, 0), "dojo": (0, 181, 0, 0), "montana": (-162, 45, 0, 0), "lago": (128, -20, 0, 0),
+    "jardin": (-34, 41, 0, 0), "dojo": (0, 181, 0, 0), "montana": (-175, 48, 0, 0, -34.5), "lago": (128, -20, 0, 0),
     "lago_cascada": (156, 84, -1, 1), "bambu": (114, 118, 1, 0),
 }
+
+
+def label(v):
+    """(x, z, alineación, chico, giro) de una entrada de LABELS (el giro es opcional)."""
+    return tuple(v) + (0.0,) * (5 - len(v))
 
 # partidas de antes del mapa (sin niebla guardada): lo que cada flag prueba que Kaito ya recorrió. Caminos de
 # world_plan.PATHS (nombre, desde, hasta: índices de sus puntos) y áreas de world_plan.AREAS; con cualquiera de los
@@ -1051,7 +1059,7 @@ def map_json(g):
         "mistTile": list(MIST_TILE),
         "reachCount": int(reach.sum()),
         "reach": bits_b64(reach),
-        "labels": [{"id": k, "x": v[0], "z": v[1], "align": v[2], "small": v[3]} for k, v in LABELS.items()],
+        "labels": [dict(zip(("id", "x", "z", "align", "small", "rot"), (k,) + label(v))) for k, v in LABELS.items()],
         "legacy": legacy_discs(),
     }
 

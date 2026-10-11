@@ -32,6 +32,7 @@ namespace Nindo
 
         static readonly Color MapVeilColor = new Color(0.012f, 0.012f, 0.03f, 0.72f);
         static readonly Color MapShrineRed = new Color(0.808f, 0.227f, 0.157f);      // bermellón de los torii
+        static readonly Color MapShrineBare = new Color(0.93f, 0.9f, 0.83f);         // todavía sin rezar: madera sin laca
         static readonly Color MapPortalJade = new Color(0.5f, 0.88f, 0.63f);
         static readonly Color MapDim = new Color(0.78f, 0.75f, 0.67f);
         static readonly Color MapLegendText = new Color(0.87f, 0.84f, 0.77f);
@@ -47,7 +48,7 @@ namespace Nindo
             public Checkpoint cp;
             public BossArena arena;
             public Portal portal;
-            public bool shown;
+            public bool shown, fresh;
         }
 
         RectTransform mapRoot, mapView, mapContent, mapMarksRt, mapRodL, mapRodR, mapShadow, mapTip, mapReticle, mapKaito, mapKaitoRing, mapSwash;
@@ -62,11 +63,13 @@ namespace Nindo
         ResourceRequest mapTexRequest;
         readonly List<MapMark> mapMarks = new List<MapMark>();
         readonly List<(TextMeshProUGUI text, string zone)> mapLabels = new List<(TextMeshProUGUI, string)>();
+        readonly List<bool> mapLabelFresh = new List<bool>();
+        bool mapFirstShown = true;
         readonly RectTransform[] mapHintKeys = new RectTransform[5];
         readonly TextMeshProUGUI[] mapHintLabels = new TextMeshProUGUI[5];
         int mapHintVersion = -1, mapFogVersion = -1;
-        bool mapContentBuilt, mapFromPause, mapClosing, mapMouseMode, mapCursorMoved, mapFirstOpen = true;
-        float mapT, mapCloseT, mapHintPoll, mapZoom = 1f, mapZoomT = 1f, mapSheetW = 1133f, mapSheetH = 940f;
+        bool mapContentBuilt, mapFromPause, mapClosing, mapMouseMode, mapMouseOver, mapCursorMoved, mapFirstOpen = true;
+        float mapT, mapCloseT, mapHintPoll, mapZoom = 1f, mapZoomT = 1f, mapSheetW = 1133f, mapSheetH = 940f, mapTipInkH = 78f;
         Vector2 mapPan, mapPanT, mapCursor, mapLastMouse, mapRootSize;
         MapMark mapTipMark;
 #if ENABLE_INPUT_SYSTEM
@@ -101,11 +104,16 @@ namespace Nindo
             mapSealCount = MapText("SealCount", info, 30f, UIFactory.Paper, new Vector2(330f, -567f), true);
             MapText("ExploredLabel", info, 24f, MapDim, new Vector2(112f, -640f), false).text = "Explorado";
             mapExplored = MapText("Explored", info, 32f, UIFactory.Gold, new Vector2(300f, -640f), true);
-            MapLegendRow(info, 0, "MapKaito", Color.white, "Kaito", false);
-            MapLegendRow(info, 1, "MapShrine", MapShrineRed, "Santuario", false);
-            MapLegendRow(info, 2, "MapShrine", MapShrineRed, "Punto de reaparición", true);
-            MapLegendRow(info, 3, "Hanko_IconBoss", Color.white, "Guardián", false);
-            MapLegendRow(info, 4, "MapPortal", MapPortalJade, "Portal al dojo", false);
+            // "Sin rezar" solo si la partida guarda dónde se rezó; con esa fila de más se aprietan (en 1080 de alto no
+            // tienen que tocar las teclas de abajo, que con el mando son tres renglones)
+            bool bare = MapShrinesField != null;
+            float step = bare ? 36f : 40f, dy = 0f;
+            MapLegendRow(info, dy, "MapKaito", Color.white, "Kaito", false);
+            MapLegendRow(info, dy += step, "MapShrine", MapShrineRed, "Santuario", false);
+            if (bare) MapLegendRow(info, dy += step, "MapShrine", MapShrineBare, "Sin rezar", false);
+            MapLegendRow(info, dy += step, "MapShrine", MapShrineRed, "Punto de reaparición", true);
+            MapLegendRow(info, dy += step, "Hanko_IconBoss", Color.white, "Guardián", false);
+            MapLegendRow(info, dy += step, "MapPortal", MapPortalJade, "Portal al dojo", false);
             for (int i = 0; i < mapHintKeys.Length; i++)
             {
                 mapHintKeys[i] = UIFactory.KeyCap(info, "M", 40f, new Vector2(0f, 0f), new Vector2(130f, 66f));
@@ -158,7 +166,7 @@ namespace Nindo
             mapTipSub = UIFactory.Legible(UIFactory.NoWrap(UIFactory.Text("Sub", mapTip, "", 20f, UIFactory.Gold, new Vector2(0.5f, 0.5f), new Vector2(0f, -18f), new Vector2(600f, 28f), TextAlignmentOptions.Center)));
             foreach (var t in new[] { mapTipTitle, mapTipSub }) t.rectTransform.pivot = new Vector2(0.5f, 0.5f);
 
-            // la lámina pesa ~10 MB: se carga de a poco desde ya (la primera M no traba el cuadro); en el menú no hace falta
+            // la lámina pesa ~10 MB (BC7 con mips): se carga de a poco desde ya (la primera M no traba el cuadro); en el menú no hace falta
             if (MapFog.Ready && SceneManager.GetActiveScene().name != "Menu") mapTexRequest = Resources.LoadAsync<Texture2D>("UI/WorldMap");
             mapRoot.gameObject.SetActive(false);
         }
@@ -170,12 +178,24 @@ namespace Nindo
             return UIFactory.Legible(t);
         }
 
-        void MapLegendRow(Transform parent, int row, string sprite, Color tint, string label, bool glow)
+        void MapLegendRow(Transform parent, float dy, string sprite, Color tint, string label, bool glow)
         {
-            float y = -700f - row * 44f;
+            float y = -690f - dy;
             if (glow) UIFactory.Centered("Glow", parent, new Color(1f, 0.77f, 0.31f, 0.75f), new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(54f, 54f), UISprites.SoftDot);
             UIFactory.Centered("Icon", parent, tint, new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(34f, 34f), UISprites.Get(sprite));
             MapText("Legend", parent, 24f, MapLegendText, new Vector2(164f, y), false).text = label;
+        }
+
+        // SaveData.shrines (los santuarios donde Kaito ya rezó con incienso) lo agrega el frente del rezo
+        // (World/ShrineIncense, StoryDirector.Shrines). Se lee por reflexión para que el mapa compile y funcione sin
+        // ese cambio: sin el campo, todo santuario descubierto se ve rezado y la leyenda no tiene "Sin rezar". Con los
+        // dos en main se puede cambiar por Game.Save.shrines. Solo se consulta al abrir el mapa, nunca por cuadro.
+        static readonly System.Reflection.FieldInfo MapShrinesField = typeof(SaveData).GetField("shrines");
+
+        static bool MapShrinePrayed(SaveData save, string id)
+        {
+            if (MapShrinesField == null) return true;
+            return MapShrinesField.GetValue(save) is List<string> prayed && prayed.Contains(id);
         }
 
         /// <summary>Lo que depende del mundo (santuarios, jefes, portales, zonas, la lámina y su material): la primera vez
@@ -235,8 +255,11 @@ namespace Nindo
                     rt.pivot = new Vector2(l.align < 0 ? 1f : l.align > 0 ? 0f : 0.5f, 0.5f);
                     rt.sizeDelta = new Vector2(640f, 48f);
                     rt.anchoredPosition = MapPoint(new Vector3(l.x, 0f, l.z));
+                    rt.localRotation = Quaternion.Euler(0f, 0f, l.rot);
                     UIFactory.Legible(t);
+                    t.gameObject.SetActive(false);
                     mapLabels.Add((t, l.id));
+                    mapLabelFresh.Add(false);
                 }
             // santuarios, guardianes y portales (debajo de Kaito, encima de los nombres)
             foreach (var cp in Object.FindObjectsByType<Checkpoint>(FindObjectsSortMode.None))
@@ -290,7 +313,9 @@ namespace Nindo
             float oldW = mapSheetW;
             mapSheetW = Mathf.Max(200f, Mathf.Min(aw, ah * asp));
             mapSheetH = mapSheetW / asp;
-            float cx = MapColX + MapRodGap + aw * 0.5f - W * 0.5f;
+            // en 21:9 o más ancho, al centro de la pantalla (centrada en lo que deja la columna quedaba corrida a la
+            // derecha con un hueco negro de 300 px contra la columna); si no entra, pegada a la columna
+            float cx = Mathf.Clamp(W * 0.5f, MapColX + MapRodGap + mapSheetW * 0.5f, W - MapPadR - MapRodGap - mapSheetW * 0.5f) - W * 0.5f;
             mapView.anchoredPosition = new Vector2(cx, 0f);
             mapContent.sizeDelta = new Vector2(mapSheetW, mapSheetH);
             // lo que vive en el contenido se reubica con la nueva escala (los nombres y las marcas no cambian de tamaño)
@@ -314,7 +339,9 @@ namespace Nindo
         bool CanOpenMap()
         {
             if (!MapFog.Ready || SceneManager.GetActiveScene().name == "Menu") return false;
-            if (Game.InCutscene || DialogueOpen || deathPanel.activeSelf || endPanel.activeSelf || optionsPanel.activeSelf) return false;
+            // de los menús, solo desde la pausa: en Opciones (y su página de controles, que espera una tecla) la M es otra cosa
+            if (PauseOpen && !pausePanel.activeSelf) return false;
+            if (Game.InCutscene || DialogueOpen || deathPanel.activeSelf || endPanel.activeSelf) return false;
             return Game.Player != null && Game.Player.IsAlive && Game.World != null && Game.World.Built;
         }
 
@@ -406,6 +433,8 @@ namespace Nindo
                     bool cur = save.checkpoint == m.cp.id;
                     m.rt.sizeDelta = Vector2.one * (cur ? 34f : 27f);
                     if (m.glow != null) m.glow.color = new Color(1f, 0.77f, 0.31f, cur ? 0.75f : 0f);
+                    // bermellón donde ya rezó; el resto, la madera sin laca (UpdateMapMarks pone el alfa)
+                    m.img.color = MapShrinePrayed(save, m.cp.id) ? MapShrineRed : MapShrineBare;
                     m.shown = seen;
                 }
                 else if (m.arena != null)
@@ -418,14 +447,18 @@ namespace Nindo
                 }
                 else if (m.portal != null)
                     m.shown = seen && (string.IsNullOrEmpty(m.portal.requiredFlag) || save.HasFlag(m.portal.requiredFlag));
+                m.fresh = m.shown && FoggedAtLastClose(m.world);
                 if (m.rt.gameObject.activeSelf != m.shown) m.rt.gameObject.SetActive(m.shown);
                 if (m.glow != null) m.glow.gameObject.SetActive(m.shown && save.checkpoint == m.cp.id);
             }
-            foreach (var (text, zone) in mapLabels)
+            for (int i = 0; i < mapLabels.Count; i++)
             {
+                var (text, zone) = mapLabels[i];
                 bool on = save.HasFlag("zone_" + zone) || (zone == "hogar" && save.HasFlag(Flags.IntroDone));
+                mapLabelFresh[i] = on && !text.gameObject.activeSelf && !mapFirstShown;
                 if (text.gameObject.activeSelf != on) text.gameObject.SetActive(on);
             }
+            mapFirstShown = false;
             var z = Zone.Current;
             mapZoneTitle.text = z != null ? z.title : "";
             mapZoneSub.text = z != null ? z.subtitle : "";
@@ -453,8 +486,10 @@ namespace Nindo
             bool pad = input.GlyphFamily != 0;
             SetMapHint(0, input.Glyph(Act.Map), "Cerrar");
             SetMapHint(1, input.Glyph(Act.Lock), "Centrar");
-            SetMapHint(2, pad ? input.Glyph(Act.Ability1) : "Rueda", "Acercar");
-            SetMapHint(3, pad ? input.Glyph(Act.Ability2) : null, "Alejar");
+            // los gatillos se leen directo (MapControls), no por la acción que tengan asignada en el juego
+            bool ps = input.GlyphFamily == 2;
+            SetMapHint(2, pad ? (ps ? "R2" : "RT") : "Rueda", "Acercar");
+            SetMapHint(3, pad ? (ps ? "L2" : "LT") : null, "Alejar");
             SetMapHint(4, pad ? "Stick izq." : "WASD", "Mover");
             LayoutMapHints(66f);
         }
@@ -480,7 +515,7 @@ namespace Nindo
             foreach (var r in rows)
             {
                 bool any = false;
-                float x = 110f, y = bottom + (visibleRows - 1 - row) * 52f;
+                float x = 110f, y = bottom + (visibleRows - 1 - row) * 48f;
                 foreach (int i in r)
                 {
                     var key = mapHintKeys[i];
@@ -638,7 +673,12 @@ namespace Nindo
             mapLastMouse = mouse;
             if (mouseDelta.sqrMagnitude > 1f || Mathf.Abs(wheel) > 0.01f || drag) mapMouseMode = true;
             Vector2 mouseMap = mapPan;
-            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(mapView, mouse, null, out var local)) mouseMap = mapPan + local / mapZoom;
+            mapMouseOver = false;
+            if (RectTransformUtility.ScreenPointToLocalPointInRectangle(mapView, mouse, null, out var local))
+            {
+                mouseMap = mapPan + local / mapZoom;
+                mapMouseOver = mapView.rect.Contains(local);   // sobre la columna no se nombra lo que quedó recortado
+            }
 
             // stick, WASD y flechas: un cursor que recorre la lámina (la vista lo sigue cuando se acerca al borde)
             Vector2 move = input != null ? input.Move : Vector2.zero;
@@ -705,13 +745,24 @@ namespace Nindo
             float t = Time.unscaledTime;
             float inv = Mathf.Pow(mapZoom, -0.7f);   // al acercar crecen un poco, no al ritmo de la lámina
             var s = new Vector3(inv, inv, 1f);
+            // lo nuevo entra cuando la niebla de alrededor ya se abrió
+            float freshA = UIAnim.OutCubic((mapT - MapRevealAt - 0.45f) / 0.35f);
             foreach (var m in mapMarks)
                 if (m.shown)
                 {
                     m.rt.localScale = s;
                     if (m.glow != null) m.glow.rectTransform.localScale = s;
+                    var c = m.img.color;
+                    float a = m.fresh ? freshA : 1f;
+                    if (c.a != a) { c.a = a; m.img.color = c; }
                 }
-            foreach (var (text, _) in mapLabels) text.rectTransform.localScale = s;
+            for (int i = 0; i < mapLabels.Count; i++)
+            {
+                var text = mapLabels[i].text;
+                text.rectTransform.localScale = s;
+                float a = mapLabelFresh[i] ? freshA : 1f;
+                if (text.alpha != a) text.alpha = a;
+            }
 
             var p = Game.Player;
             if (p != null)
@@ -732,7 +783,7 @@ namespace Nindo
             // el brillo del santuario de reaparición respira
             foreach (var m in mapMarks)
                 if (m.shown && m.cp != null && m.glow != null && Game.Save.checkpoint == m.cp.id)
-                    m.glow.color = new Color(1f, 0.77f, 0.31f, 0.55f + 0.25f * Mathf.Sin(t * 2.4f));
+                    m.glow.color = new Color(1f, 0.77f, 0.31f, (0.55f + 0.25f * Mathf.Sin(t * 2.4f)) * (m.fresh ? freshA : 1f));
 
             bool reticle = !mapMouseMode && mapCursorMoved;
             if (mapReticle.gameObject.activeSelf != reticle) mapReticle.gameObject.SetActive(reticle);
@@ -742,7 +793,7 @@ namespace Nindo
             MapMark best = null;
             float bestD = (mapMouseMode ? 30f : 36f) / mapZoom;
             bestD *= bestD;
-            if (mapT > MapUnroll && (mapMouseMode || mapCursorMoved))
+            if (mapT > MapUnroll && (mapMouseMode ? mapMouseOver : mapCursorMoved))
                 foreach (var m in mapMarks)
                 {
                     if (!m.shown) continue;
@@ -755,15 +806,27 @@ namespace Nindo
                 if (best != null) SetMapTip(best);
             }
             mapTipGroup.alpha = Mathf.MoveTowards(mapTipGroup.alpha, best != null ? 1f : 0f, dt / 0.12f);
-            if (best != null)
-            {
-                Vector2 v = mapView.anchoredPosition + (best.rt.anchoredPosition - mapPan) * mapZoom + new Vector2(0f, 46f);
-                float hw = mapSwash.sizeDelta.x * 0.4f, top = mapSheetH * 0.5f - 40f;
-                float vx = mapView.anchoredPosition.x;
-                v.x = Mathf.Clamp(v.x, vx - mapSheetW * 0.5f + hw, vx + mapSheetW * 0.5f - hw);
-                v.y = Mathf.Min(v.y, top);
-                mapTip.anchoredPosition = v;
-            }
+            if (best != null) mapTip.anchoredPosition = MapTipPosition(best);
+        }
+
+        /// <summary>
+        /// Dónde va el cartel de una marca (centro del texto, en el padre de la lámina): arriba de la marca y, si ahí
+        /// se saldría por arriba de la lámina, abajo (antes se pegaba al borde y tapaba lo que nombraba). De costado,
+        /// adentro de la lámina: el trazo no es simétrico, 41 % de su ancho a la izquierda del texto y la cola a la
+        /// derecha, que puede pasar sobre la varilla.
+        /// </summary>
+        Vector2 MapTipPosition(MapMark m)
+        {
+            Vector2 at = mapView.anchoredPosition + (m.rt.anchoredPosition - mapPan) * mapZoom;
+            float half = m.rt.sizeDelta.y * 0.5f * m.rt.localScale.y * mapZoom;
+            float w = mapSwash.sizeDelta.x, ink = mapTipInkH * 0.5f;
+            float top = mapSheetH * 0.5f - 6f;
+            float y = at.y + half + 4f + ink;
+            if (y + ink > top) y = at.y - half - 4f - ink;
+            float vx = mapView.anchoredPosition.x;
+            float x0 = vx - mapSheetW * 0.5f + 6f + w * UIFactory.BannerLeftShare;
+            float x1 = vx + mapSheetW * 0.5f - 6f - w * (UIFactory.BannerCoreEnd - UIFactory.BannerLeftShare);
+            return new Vector2(Mathf.Clamp(at.x, x0, x1), y);
         }
 
         void SetMapTip(MapMark m)
@@ -772,14 +835,15 @@ namespace Nindo
             if (m.cp != null)
             {
                 title = m.cp.displayName;
-                sub = Game.Save.checkpoint == m.cp.id ? "Punto de reaparición" : "";
+                sub = Game.Save.checkpoint == m.cp.id ? "Punto de reaparición" : MapShrinePrayed(Game.Save, m.cp.id) ? "" : "Sin rezar todavía";
             }
             else if (m.arena != null)
             {
                 string id = m.arena.archetype;
                 bool done = Game.Save.HasFlag(Flags.Boss(id));
                 bool seen = done || Game.Save.HasFlag(StoryDirector.BossSeenFlag(id));
-                title = !seen ? "Un guardián" : m.arena.Boss != null ? m.arena.Boss.title : MapBossName(id);
+                // vencido, su Boss no se vuelve a crear al cargar la partida: el nombre sale de su arquetipo
+                title = !seen ? "Un guardián" : m.arena.Boss != null ? m.arena.Boss.title : EnemyArchetypes.Get(id).displayName;
                 bool hasSeal = EnemyFactory.BossSeal(id, out var seal);
                 sub = !done ? "Te espera" : !hasSeal ? "Vencido" : Game.Save.HasSeal(seal) ? UISprites.SealName(seal) : "Su sello te espera";
             }
@@ -789,19 +853,19 @@ namespace Nindo
             float w = Mathf.Max(mapTipTitle.GetPreferredValues(title, 9999f, 36f).x, string.IsNullOrEmpty(sub) ? 0f : mapTipSub.GetPreferredValues(sub, 9999f, 28f).x);
             bool two = !string.IsNullOrEmpty(sub);
             mapTipTitle.rectTransform.anchoredPosition = new Vector2(0f, two ? 13f : 0f);
-            UIFactory.FitBanner(mapSwash, -w * 0.5f, w * 0.5f, 0f, two ? 62f : 34f, 30f, 8f, false, 220f);
+            float contentH = two ? 62f : 34f;
+            UIFactory.FitBanner(mapSwash, -w * 0.5f, w * 0.5f, 0f, contentH, 30f, 8f, false, 220f);
+            mapTipInkH = contentH + 16f;   // la tinta pareja del trazo: el contenido y su margen de arriba y abajo
         }
 
-        /// <summary>Nombre de un guardián ya vencido (su Boss no se vuelve a crear al cargar la partida).</summary>
-        static string MapBossName(string archetype)
+        /// <summary>¿Esto estaba bajo la niebla la última vez que se cerró el mapa? (lo descubierto desde entonces)</summary>
+        bool FoggedAtLastClose(Vector3 p)
         {
-            switch (archetype)
-            {
-                case "goro": return "Gorō";
-                case "mizuchi": return "Mizuchi";
-                case "kage": return "Kokuyō";
-                default: return "Guardián del Bambú";
-            }
+            var d = MapFog.Data;
+            if (d == null || mapFogPrevBytes == null) return false;
+            int gx = Mathf.FloorToInt((p.x - d.X0) / d.cell), gy = Mathf.FloorToInt((p.z - d.Z0) / d.cell);
+            if (gx < 0 || gy < 0 || gx >= d.GW || gy >= d.GH) return false;
+            return mapFogPrevBytes[gy * d.GW + gx] > 127;
         }
     }
 }
