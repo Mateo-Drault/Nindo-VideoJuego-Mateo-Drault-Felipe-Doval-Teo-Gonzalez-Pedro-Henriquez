@@ -637,14 +637,16 @@ namespace Nindo
 
         void ApplyMapUnroll(float open)
         {
+            // todo con SetPos / SetSize (solo si cambia): abierto, cada cuadro es el mismo valor
             float vw = Mathf.Max(0f, mapSheetW * open);
-            mapView.sizeDelta = new Vector2(vw, mapSheetH + 2f * MapSoft);
+            mapView.SetSize(new Vector2(vw, mapSheetH + 2f * MapSoft));
             float x = mapView.anchoredPosition.x, rodX = vw * 0.5f + 4f;
-            mapRodL.anchoredPosition = new Vector2(x - rodX, 0f);
-            mapRodR.anchoredPosition = new Vector2(x + rodX, 0f);
-            mapRodL.sizeDelta = mapRodR.sizeDelta = new Vector2(MapRodW, mapSheetH + 56f);
-            mapShadow.anchoredPosition = new Vector2(x + 10f, -14f);
-            mapShadow.sizeDelta = new Vector2(vw + 90f, mapSheetH + 100f);
+            mapRodL.SetPos(new Vector2(x - rodX, 0f));
+            mapRodR.SetPos(new Vector2(x + rodX, 0f));
+            mapRodL.SetSize(new Vector2(MapRodW, mapSheetH + 56f));
+            mapRodR.SetSize(new Vector2(MapRodW, mapSheetH + 56f));
+            mapShadow.SetPos(new Vector2(x + 10f, -14f));
+            mapShadow.SetSize(new Vector2(vw + 90f, mapSheetH + 100f));
         }
 
         // ---- mover, acercar, centrar
@@ -766,8 +768,8 @@ namespace Nindo
 
         void ApplyMapView()
         {
-            mapContent.localScale = new Vector3(mapZoom, mapZoom, 1f);
-            mapContent.anchoredPosition = -mapPan * mapZoom;
+            mapContent.SetScale(mapZoom);
+            mapContent.SetPos(-mapPan * mapZoom);
         }
 
         // ---- marcas: Kaito, cursor, nombres que no crecen con el zoom y el cartel de lo que está bajo el cursor
@@ -775,15 +777,15 @@ namespace Nindo
         {
             float t = Time.unscaledTime;
             float inv = Mathf.Pow(mapZoom, -0.7f);   // al acercar crecen un poco, no al ritmo de la lámina
-            var s = new Vector3(inv, inv, 1f);
+            var s = new Vector3(inv, inv, inv);
             // lo nuevo entra cuando la niebla de alrededor ya se abrió
             float freshA = UIAnim.OutCubic((mapT - MapRevealAt - 0.45f) / 0.35f);
             foreach (var m in mapMarks)
                 if (m.shown)
                 {
-                    m.rt.localScale = s;
-                    m.rt.anchoredPosition = m.at + m.nudge * inv;
-                    if (m.glow != null) { m.glow.rectTransform.localScale = s; m.glow.rectTransform.anchoredPosition = m.rt.anchoredPosition; }
+                    m.rt.SetScale(inv);
+                    m.rt.SetPos(m.at + m.nudge * inv);
+                    if (m.glow != null) { m.glow.rectTransform.SetScale(inv); m.glow.rectTransform.SetPos(m.rt.anchoredPosition); }
                     var c = m.img.color;
                     float a = m.fresh ? freshA : 1f;
                     if (c.a != a) { c.a = a; m.img.color = c; }
@@ -791,7 +793,7 @@ namespace Nindo
             for (int i = 0; i < mapLabels.Count; i++)
             {
                 var text = mapLabels[i].text;
-                text.rectTransform.localScale = s;
+                text.rectTransform.SetScale(inv);
                 float a = mapLabelFresh[i] ? freshA : 1f;
                 if (text.alpha != a) text.alpha = a;
             }
