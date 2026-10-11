@@ -45,7 +45,7 @@ namespace Nindo
         readonly float[] flash = new float[3];
         readonly bool[] flying = new bool[3];
         MeshRenderer link;
-        float linkFill;
+        float linkFill, front = 1f;
         MaterialPropertyBlock mpb;
         bool drawn = true;
         string lastPrompt;
@@ -145,6 +145,10 @@ namespace Nindo
             var s = Game.Save;
             bool open = s.HasFlag(Flags.DojoOpen);
             float t = Time.time;
+            // con Kaito del lado del patio la cámara de juego ve el portón por delante y lo abre en trama alrededor de él:
+            // los medallones se disuelven con el tablero (MakeMedallion), los brillos aditivos no, así que se apagan
+            bool inFront = pl == null || transform.InverseTransformPoint(pl.transform.position).z > 0.3f;
+            front = Mathf.MoveTowards(front, inFront ? 1f : 0f, Time.deltaTime / 0.4f);
             for (int i = 0; i < 3; i++)
             {
                 var id = (SealId)i;
@@ -161,10 +165,12 @@ namespace Nindo
                     ring = flying[i] ? 0.5f : 0.08f + 0.12f * pulse;
                 }
                 else ring = 0f;
-                SetGlow(decals[i], icon);
-                SetGlow(rings[i], ring);
+                SetGlow(decals[i], icon * front);
+                SetGlow(rings[i], ring * front);
             }
+            if (linkFill > 0f && Mathf.Abs(front - linkFront) > 0.01f) { linkFront = front; ApplyLink(); }
         }
+        float linkFront = 1f;
 
         void SetGlow(MeshRenderer r, float k)
         {
@@ -410,9 +416,7 @@ namespace Nindo
         void ApplyLink()
         {
             if (link == null) return;
-            bool on = linkFill > 0.001f;
-            link.enabled = on && drawn;
-            if (!on) return;
+            if (linkFill <= 0.001f) { link.enabled = false; return; }
             // anclada a la izquierda (+X): crece hacia la derecha descubriendo el trazo (la u se recorta, no se aplasta);
             // 7 cm de alto, a la altura de los aros
             const float full = 2.6f;
@@ -420,8 +424,9 @@ namespace Nindo
             t.localScale = new Vector3(full * linkFill, 0.07f, 1f);
             t.localPosition = new Vector3(full * 0.5f - full * linkFill * 0.5f, SocketY, RingZ + 0.004f);
             linkBlock ??= new MaterialPropertyBlock();
-            var c = Gold * 0.9f;
+            var c = Gold * (0.9f * front);
             c.a = 1f;
+            link.enabled = drawn && front > 0.01f;
             linkBlock.SetColor(BaseColorId, c);
             linkBlock.SetColor(ColorId, c);
             linkBlock.SetVector(BaseMapStId, new Vector4(linkFill, 1f, 0f, 0f));
