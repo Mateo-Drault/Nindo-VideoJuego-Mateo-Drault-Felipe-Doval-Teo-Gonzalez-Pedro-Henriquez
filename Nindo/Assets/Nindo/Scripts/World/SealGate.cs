@@ -260,8 +260,9 @@ namespace Nindo
                 // sale despacio de la mano, acelera y frena al llegar (la última décima casi quieta: se lee que encastra)
                 float u = Mathf.SmoothStep(0f, 1f, k);
                 Vector3 p = BandanaStream.Arc(a, b, u);
-                // un giro y medio sobre su eje mientras vuela, para que el oro del canto destelle
-                Quaternion spin = Quaternion.Euler(0f, (1f - u) * 540f, 0f);
+                // una vuelta entera sobre su eje mientras vuela (el oro del canto destella); entera: con una vuelta y
+                // media arrancaba dado vuelta 180° de golpe
+                Quaternion spin = Quaternion.Euler(0f, (1f - u) * 360f, 0f);
                 t.SetPositionAndRotation(p - up, Quaternion.Slerp(r0, r1, u) * spin);
                 t.localScale = Vector3.one;
                 yield return null;
