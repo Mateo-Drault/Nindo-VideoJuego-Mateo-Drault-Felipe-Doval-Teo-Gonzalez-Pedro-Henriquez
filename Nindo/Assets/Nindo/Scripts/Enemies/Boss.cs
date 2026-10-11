@@ -74,7 +74,7 @@ namespace Nindo
             target = Game.Player;
             if (Game.Combat != null) Game.Combat.ActiveBoss = this;
             Game.UI?.ShowBossBar(this);
-            Game.Audio?.PlayMusic(musicKey);
+            Game.Audio?.PlayBossMusic(musicKey);
             GameEvents.RaiseBossStarted(this);
             SetState(EnemyState.Chase);
             nextAttackTime = Time.time + 0.6f;
@@ -149,6 +149,7 @@ namespace Nindo
             Game.Camera?.Punch(-4f, 0.5f);
             Game.FX?.Shockwave(transform.position, 6f, new Color(1f, 0.4f, 0.3f));
             Game.UI?.BossEnraged(this);
+            Game.Audio?.SetBossMusicPhase(newPhase + 1);
             if (target != null && CombatMath.FlatDistance(target.transform.position, transform.position) < 5f)
                 target.Push((target.transform.position - transform.position), 3f);
             config.attackCooldown *= 0.75f;

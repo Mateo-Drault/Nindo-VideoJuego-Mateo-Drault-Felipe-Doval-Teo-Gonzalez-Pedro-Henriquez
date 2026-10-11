@@ -147,8 +147,10 @@ namespace Nindo
         NindoContent.AudioEntry FindMusic(string key)
         {
             var c = Game.LoadContent();
+            // cualquier tema de jefe que falte cae en el de jefe genérico: Mizuchi pedía "boss_lake", que no existía,
+            // y como no había respaldo seguía sonando la música tranquila de exploración en toda la pelea
             string[] chain =
-                key == "boss_final" ? new[] { key, "boss", "combat" } :
+                key.StartsWith("boss_") ? new[] { key, "boss", "combat" } :
                 key == "boss" ? new[] { key, "combat" } :
                 key == "combat" ? new[] { key, "explore" } :
                 key.StartsWith("explore_") ? new[] { key, "explore" } : new[] { key };
@@ -165,6 +167,31 @@ namespace Nindo
         {
             currentMusic = "";
             PlayMusic(exploreMusic, fadeTime);
+        }
+
+        // ------------------------------------------------------------------ música de jefe
+        // Contrato para los jefes: "boss_goro", "boss_lake", "boss_bamboo", "boss_final" (y "ending" en el final).
+        // La fase empieza en 1 al arrancar la pelea; los cambios de fase la suben (Boss.PhaseChange) y cada jefe
+        // puede pedir una en especial (la fase 2 de Gorō). Por ahora cada fase es el mismo tema: las variantes por
+        // fase (secciones, capas, frase de transición) las agrega el sistema de música.
+        public int BossMusicPhase { get; private set; }
+
+        public void PlayBossMusic(string key, float fadeTime = 1.2f)
+        {
+            BossMusicPhase = 1;
+            PlayMusic(key, fadeTime);
+        }
+
+        public void SetBossMusicPhase(int phase)
+        {
+            if (phase <= BossMusicPhase) return;
+            BossMusicPhase = phase;
+        }
+
+        public void StopBossMusic(float fadeTime = 2f)
+        {
+            BossMusicPhase = 0;
+            StopMusic(fadeTime);
         }
 
         public void StopMusic(float fadeTime = 2f)
