@@ -213,6 +213,11 @@ namespace Nindo
                     return new List<DialogueLine> { L(Kokuyo, "¡Todavía no!") };
                 case "kokuyo_hint_suelo":
                     return new List<DialogueLine> { L(Abuelo, "El suelo, Kaito. Su sombra golpea primero.") };
+                // la primera vez que la sombra ataca sola (Acto 1) y la primera vez que sale de la oscuridad (eclipse)
+                case "kokuyo_hint_sombra":
+                    return new List<DialogueLine> { L(Abuelo, "¡Ojo, Kaito! ¡La sombra ataca sola! ¡Desviala cuando se cierre el anillo!") };
+                case "kokuyo_hint_oscuridad":
+                    return new List<DialogueLine> { L(Abuelo, "¡La sombra sigue ahí, en la oscuridad! ¡Cuando aparezca, desviala!") };
                 case "seal_mountain":
                     return new List<DialogueLine> { L(Kaito, "El Sello de la Montaña. Un portal apareció: me lleva de vuelta al dojo.") };
                 case "seal_lake":
@@ -263,7 +268,7 @@ namespace Nindo
         {
             switch (id)
             {
-                case "kage_shadow": return "La sombra no se corta con la katana: clavala con {Ability1} o {Ability2}";
+                case "kage_shadow": return "La sombra no se corta con la katana: desviá sus cortes o clavala con {Ability1} o {Ability2}";
                 default: return "";
             }
         }
