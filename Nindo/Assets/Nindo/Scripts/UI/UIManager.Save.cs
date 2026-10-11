@@ -14,7 +14,8 @@ namespace Nindo
     public partial class UIManager
     {
         const float SaveUnroll = 0.3f, SaveWrite = 0.75f, SaveStampAt = 1.2f, SaveRollAt = 2.45f, SaveEnd = 3f;
-        const float SavePaperW = 236f, SavePaperH = 76f;
+        const float SavePaperH = 76f, SaveTextX = 34f, SaveStampSize = 54f;
+        float savePaperW = 236f;   // a la medida del texto y el sello (BuildSaveIndicator)
 
         RectTransform saveRoot, saveRodR, saveBrush, saveStamp;
         CanvasGroup saveGroup;
@@ -25,24 +26,32 @@ namespace Nindo
 
         void BuildSaveIndicator()
         {
-            saveRoot = UIFactory.Rect("SaveIndicator", story, Vector2.zero, Vector2.zero, new Vector2(0f, 0f), new Vector2(46f, 40f), new Vector2(SavePaperW + 80f, 110f));
+            saveRoot = UIFactory.Rect("SaveIndicator", story, Vector2.zero, Vector2.zero, new Vector2(0f, 0f), new Vector2(46f, 40f), new Vector2(320f, 110f));
             saveGroup = saveRoot.gameObject.AddComponent<CanvasGroup>();
             saveGroup.alpha = 0f;
             saveGroup.blocksRaycasts = false;
 
-            savePaper = UIFactory.Image("Paper", saveRoot, Color.white, new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(SavePaperW, SavePaperH), UISprites.ScrollPaper);
+            saveText = UIFactory.NoWrap(UIFactory.Text("Text", saveRoot, "Guardado", 32, UIFactory.Ink, new Vector2(0f, 0.5f), new Vector2(SaveTextX, 2f), new Vector2(180f, 50f), TextAlignmentOptions.Left, true));
+            saveText.rectTransform.pivot = new Vector2(0f, 0.5f);
+            saveText.color = new Color(0.09f, 0.07f, 0.08f, 1f);
+            // el papel llega hasta el sello, que va a la derecha de la palabra (antes, con ancho fijo, tapaba la "o")
+            float textW = saveText.GetPreferredValues("Guardado", 9999f, 50f).x;
+            float stampX = SaveTextX + textW + 14f + SaveStampSize * 0.5f;
+            savePaperW = stampX + SaveStampSize * 0.5f + 12f - 10f;
+            saveText.rectTransform.sizeDelta = new Vector2(textW + 8f, 50f);
+            saveRoot.sizeDelta = new Vector2(savePaperW + 40f, 110f);
+
+            savePaper = UIFactory.Image("Paper", saveRoot, Color.white, new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(savePaperW, SavePaperH), UISprites.ScrollPaper);
             savePaper.rectTransform.pivot = new Vector2(0f, 0.5f);
             savePaper.type = Image.Type.Filled; savePaper.fillMethod = Image.FillMethod.Horizontal; savePaper.fillOrigin = 0;
             if (savePaper.sprite == null) savePaper.color = UIFactory.Paper;
 
-            saveText = UIFactory.NoWrap(UIFactory.Text("Text", saveRoot, "Guardado", 32, UIFactory.Ink, new Vector2(0f, 0.5f), new Vector2(34f, 2f), new Vector2(180f, 50f), TextAlignmentOptions.Left, true));
-            saveText.rectTransform.pivot = new Vector2(0f, 0.5f);
-            saveText.color = new Color(0.09f, 0.07f, 0.08f, 1f);
+            saveText.transform.SetAsLastSibling();   // la palabra sobre el papel
 
             UIFactory.Centered("RodL", saveRoot, Color.white, new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(14f, SavePaperH + 16f), UISprites.ScrollRod);
             saveRodR = UIFactory.Centered("RodR", saveRoot, Color.white, new Vector2(0f, 0.5f), new Vector2(10f, 0f), new Vector2(14f, SavePaperH + 16f), UISprites.ScrollRod).rectTransform;
 
-            saveStampImg = UIFactory.Centered("Stamp", saveRoot, Color.white, new Vector2(0f, 0.5f), new Vector2(10f + SavePaperW - 40f, 2f), new Vector2(54f, 54f), UISprites.Get("Hanko_IconKnot"));
+            saveStampImg = UIFactory.Centered("Stamp", saveRoot, Color.white, new Vector2(0f, 0.5f), new Vector2(stampX, 2f), new Vector2(SaveStampSize, SaveStampSize), UISprites.Get("Hanko_IconKnot"));
             saveStamp = saveStampImg.rectTransform;
 
             var brush = UIFactory.Centered("Brush", saveRoot, Color.white, new Vector2(0f, 0.5f), Vector2.zero, new Vector2(58f, 58f), UISprites.Fude);
@@ -71,7 +80,7 @@ namespace Nindo
             float open = t < SaveRollAt ? UIAnim.OutCubic(t / SaveUnroll) : 1f - UIAnim.InCubic((t - SaveRollAt) / (SaveEnd - SaveRollAt - 0.1f));
             open = Mathf.Clamp01(open);
             savePaper.fillAmount = open;
-            saveRodR.anchoredPosition = new Vector2(10f + SavePaperW * open, 0f);
+            saveRodR.anchoredPosition = new Vector2(10f + savePaperW * open, 0f);
             saveGroup.alpha = Mathf.Clamp01(t / 0.12f) * (t > SaveEnd - 0.2f ? (SaveEnd - t) / 0.2f : 1f);
 
             // el pincel escribe "Guardado" letra por letra y se va; el texto se enrolla con el papel
@@ -79,7 +88,7 @@ namespace Nindo
             float wk = Mathf.Clamp01((t - SaveUnroll) / SaveWrite);
             int shown = t < SaveRollAt ? Mathf.CeilToInt(wk * n) : n;
             if (saveText.maxVisibleCharacters != shown) saveText.maxVisibleCharacters = shown;
-            float textRight = 34f + saveText.preferredWidth * wk;
+            float textRight = SaveTextX + saveText.preferredWidth * wk;
             saveText.alpha = t < SaveRollAt ? 1f : open;
             bool writing = t > SaveUnroll - 0.1f && t < SaveUnroll + SaveWrite + 0.25f;
             saveBrush.gameObject.SetActive(writing);
