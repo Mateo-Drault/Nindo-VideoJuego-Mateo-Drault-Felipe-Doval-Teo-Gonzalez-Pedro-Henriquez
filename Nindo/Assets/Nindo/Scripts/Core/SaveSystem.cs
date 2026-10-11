@@ -101,6 +101,9 @@ namespace Nindo
         public static bool ShowParryAids => CombatAids >= 2;
         public static bool ShowUnblockableAids => CombatAids >= 1;
         public static bool Fullscreen { get => Screen.fullScreen; set => Screen.fullScreen = value; }
+        /// <summary>Teclas y botones elegidos en Opciones › Controles: versión del formato y solo lo que no es de
+        /// fábrica (BindingTable.Save), así una acción nueva llega con sus teclas y no hay que migrar nada.</summary>
+        public static string ControlBindings { get => PlayerPrefs.GetString("nindo.controls", ""); set => PlayerPrefs.SetString("nindo.controls", value); }
         public static void Save() => PlayerPrefs.Save();
     }
 }
