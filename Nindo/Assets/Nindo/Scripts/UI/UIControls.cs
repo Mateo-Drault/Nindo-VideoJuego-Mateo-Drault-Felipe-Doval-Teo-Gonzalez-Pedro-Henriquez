@@ -181,7 +181,7 @@ namespace Nindo
             // por qué hay teclas apagadas
             y += 10f;
             string note = dev == BindingTable.Keys ? "Las teclas apagadas son fijas: así siempre podés pausar, confirmar y volver."
-                                                   : "Los botones apagados son fijos: así siempre podés moverte, pausar, confirmar y volver.";
+                                                   : "Los botones apagados son fijos: así siempre podés pausar, confirmar y volver.";
             UIFactory.Text("Note", content, note, 21, CtlDim, new Vector2(0f, 1f), new Vector2(70f, -y), new Vector2(820, 30), TextAlignmentOptions.TopLeft);
             y += 44f;
             content.sizeDelta = new Vector2(CtlViewW, y);
@@ -601,8 +601,8 @@ namespace Nindo
                     ControlsInfo(chip + (button ? " queda fijo para " : " queda fija para ") + t.Row(res.other).label, pick, CtlWarn, 4f);
                     break;
                 case BindRefusal.OnlyKey:
-                    ControlsInfo(chip + (button ? " es el único botón de " : " es la única tecla de ") + t.Row(res.other).label,
-                                 button ? "Dale otro antes de usarlo acá" : "Dale otra antes de usarla acá", CtlWarn, 4.5f);
+                    // "Siguiente objetivo solo tiene Rueda ↓": sin "tecla" ni "botón" (la rueda no es ninguna de las dos)
+                    ControlsInfo(t.Row(res.other).label + " solo tiene " + chip, dev == BindingTable.Keys ? "Primero dale otra tecla" : "Primero dale otro botón", CtlWarn, 4.5f);
                     break;
                 case BindRefusal.NeedsHold:
                     ControlsInfo("La rueda no sirve para moverse", "Elegí una tecla", CtlWarn, 4f);

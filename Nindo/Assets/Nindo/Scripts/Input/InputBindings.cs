@@ -36,10 +36,11 @@ namespace Nindo
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()
         {
+            // el aviso de cambio de distribución no se toca acá (el Input System puede no estar listo todavía): Init lo
+            // saca y lo vuelve a poner, así nunca queda dos veces
             table = null; names = null; moveGlyph = null; rowUp = -1; Version = 0;
 #if ENABLE_INPUT_SYSTEM
             namesKeyboard = null;
-            InputSystem.onDeviceChange -= OnDeviceChange;
 #endif
         }
 

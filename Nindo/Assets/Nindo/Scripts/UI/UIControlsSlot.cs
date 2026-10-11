@@ -77,7 +77,8 @@ namespace Nindo
             if (key != null)
             {
                 key.SetScale(1f + 0.08f * e + 0.32f * pop * pop);
-                keyGroup.SetAlpha(listening ? 0f : locked ? 0.45f : 1f);
+                // apagada pero legible: a 0.45 la A verde del mando se perdía sobre la tinta
+                keyGroup.SetAlpha(listening ? 0f : locked ? 0.6f : 1f);
             }
             if (line != null)
             {
