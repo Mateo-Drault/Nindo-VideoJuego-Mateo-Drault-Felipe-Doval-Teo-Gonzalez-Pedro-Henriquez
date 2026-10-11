@@ -242,8 +242,9 @@ namespace Nindo
                 case GamepadButton.RightTrigger: return ps ? "R2" : "RT";
                 case GamepadButton.LeftStick: return ps ? "L3" : "LS";
                 case GamepadButton.RightStick: return ps ? "R3" : "RS";
-                case GamepadButton.Start: return ps ? "Options" : "Menu";
-                case GamepadButton.Select: return ps ? "Share" : "View";
+                // los de Xbox como los llama Microsoft en castellano (botón Menú, botón Vista)
+                case GamepadButton.Start: return ps ? "Options" : "Menú";
+                case GamepadButton.Select: return ps ? "Share" : "Vista";
                 case GamepadButton.DpadUp: return "Cruceta ↑";
                 case GamepadButton.DpadDown: return "Cruceta ↓";
                 case GamepadButton.DpadLeft: return "Cruceta ←";
