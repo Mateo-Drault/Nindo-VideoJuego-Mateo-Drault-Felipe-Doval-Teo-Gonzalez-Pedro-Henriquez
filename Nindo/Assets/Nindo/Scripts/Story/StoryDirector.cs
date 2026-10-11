@@ -749,10 +749,10 @@ namespace Nindo
             yield return Game.UI.Fade(0f, 0.9f);
         }
 
-        void OnFlag(string f)
-        {
-            if (f.StartsWith("boss_") || f == Flags.DojoOpen) UpdateObjective();
-        }
+        // cualquier flag puede cambiar el objetivo (antes solo los de jefes y el dojo: "Desatá la cinta de la
+        // guadaña" quedaba trabado después de desatarla hasta que otro evento lo pisaba). SetObjective ignora
+        // el texto repetido, así que refrescar de más no anima nada
+        void OnFlag(string f) => UpdateObjective();
     }
 
     /// <summary>La guadaña del abuelo: al desatar la cinta, Kaito obtiene la bandana y la katana.</summary>
