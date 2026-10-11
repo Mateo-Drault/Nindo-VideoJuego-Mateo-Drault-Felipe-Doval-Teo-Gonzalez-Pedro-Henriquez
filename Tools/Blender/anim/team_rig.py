@@ -104,6 +104,8 @@ CHARS = {
     ),
 }
 
+# polo del codo cuando el clip no lo pide: atrás, afuera y abajo
+ARM_POLE = {"r": (-0.3, 0.6, -0.4), "l": (0.3, 0.6, -0.4)}
 GRIP_CURL = (62.0, 78.0)          # grados de cada falange al cerrar el puño del todo
 THUMB_CURL = (26.0, 34.0)
 
@@ -406,6 +408,9 @@ class TeamSolver:
         self.rig = ch.rig
         self.misses = {}
         self.hip_drop = 0.0
+        # muñecas posibles (team_limbs): el codo gira, la mano del arma rueda y el antebrazo toma parte del giro
+        import team_limbs
+        self.limbs = team_limbs.Limbs(ch) if ch.spec.get("wrists") else None
 
     # ---------------------------------------------------------------- piezas
     def hand_frame(self, k, d, palm):
@@ -413,7 +418,9 @@ class TeamSolver:
         fd = self.ch.D(d)
         n = self.ch.D(palm)
         n = (n - fd * n.dot(fd)).normalized()
-        lat = n.cross(fd) * hi["chi"]
+        # (dedos, índice, palma) con la misma orientación que M0: con n x fd el marco salía espejado (determinante -1)
+        # y la mano libre se exportaba con un giro cualquiera (muñecas retorcidas hasta 180°, revisión de Felipe)
+        lat = fd.cross(n) * hi["chi"]
         M = Matrix((fd, lat, n)).transposed()
         return M @ hi["M0"].transposed() @ hi["Rh0"]
 
@@ -434,14 +441,18 @@ class TeamSolver:
         wrist = stick_pt - Rh @ (hi["fist"] - Vector())     # fist está en el espacio de la mano (origen en la muñeca)
         return compose(wrist, Rh)
 
-    def place_hand(self, pose, k, H, pole_c):
-        """Ubica brazo y mano: el IK lleva la punta del antebrazo adonde la mano la espera."""
+    def place_hand(self, pose, k, H, pole_c, free=True):
+        """Ubica brazo y mano: el IK lleva la punta del antebrazo adonde la mano la espera. 'free': la mano no
+        sostiene nada (con team_limbs se puede enderezar si la muñeca no da)."""
         ch, R = self.ch, self.rig
         d = ch.side[k]
         hi = ch.hand_info[k]
-        tgt = H @ hi["fore_tail_local"]
-        self.reach_with_clavicle(pose, k, tgt)
-        miss = pose.two_bone(d["upper"], d["fore"], tgt, ch.D(pole_c))
+        if self.limbs:
+            miss, H = self.limbs.place(pose, self, k, H, ch.D(pole_c), free)
+        else:
+            tgt = H @ hi["fore_tail_local"]
+            self.reach_with_clavicle(pose, k, tgt)
+            miss = pose.two_bone(d["upper"], d["fore"], tgt, ch.D(pole_c))
         # la mano queda donde se pidió (si el brazo no llegó, se despega lo que faltó: lo mide 'miss')
         if d["hand_ctrl"]:
             pose.place(d["hand_ctrl"], H @ R.rel[d["hand"]].inverted())
@@ -541,6 +552,9 @@ class TeamSolver:
             Rh = Fk @ w["K"]
             grip = ch.P(g("grip", ch.land["wrist_" + k]))
             hands[k] = compose(grip - Rh @ w["grip_local"], Rh)
+            if self.limbs:
+                hands[k] = self.limbs.roll_weapon(pose, self, k, hands[k], grip, blade, self.limbs.KATANA_ROLL,
+                                                  ch.D(g("elbow_" + k, ARM_POLE[k])))
         elif w and w["kind"] == "club":
             haft = ch.D(g("haft", (0, 0, 1)))
             face = ch.D(g("face", (0, -1, 0)))
@@ -575,9 +589,13 @@ class TeamSolver:
                 Hg = self.katana_left(hands[w["hand"]])
                 Hf = hands["l"]
                 hands["l"] = compose(Hf.translation.lerp(Hg.translation, gl), Hf.to_quaternion().slerp(Hg.to_quaternion(), gl).to_matrix())
+                if self.limbs and gl > 0.5:
+                    hands["l"] = self.limbs.roll_weapon(pose, self, "l", hands["l"], hands["l"] @ ch.hand_info["l"]["fist"], blade,
+                                                        self.limbs.GRIP_ROLL, ch.D(g("elbow_l", ARM_POLE["l"])))
         for k in "rl":
-            dflt = (-0.3, 0.6, -0.4) if k == "r" else (0.3, 0.6, -0.4)
-            misses["hand_" + k] = self.place_hand(pose, k, hands[k], g("elbow_" + k, dflt))
+            # la que sostiene el arma (o agarra el mango) no se endereza: la hoja apunta donde pide el clip
+            free = not (w and (w["kind"] == "club" or w.get("hand") == k or (k == "l" and g("grip_l", 0.0) > 0.5)))
+            misses["hand_" + k] = self.place_hand(pose, k, hands[k], g("elbow_" + k, ARM_POLE[k]), free)
             self.curl(pose, k, g("fist_" + k, 1.0 if (w and (w["kind"] == "club" or w.get("hand") == k)) else 0.0))
         # ---- piernas
         ml = 0.0
@@ -718,6 +736,13 @@ def bake(ch, clip, solver):
     caída automática de cadera por cuadro, faltas de alcance)."""
     frames, ctrls, roots, drops, misses = [], [], [], [], []
     clip.ch = ch
+    if solver.limbs:
+        # el codo de cada cuadro sigue al del anterior: en un loop arranca desde el final (sin salto en la costura)
+        solver.limbs.reset()
+        if clip.loop:
+            for f in range(max(0, clip.frames - 8), clip.frames):
+                solver.solve(NA.Pose(ch.rig), clip.controls(f))
+            solver.limbs.report = {"r": [], "l": []}
     for f in range(clip.frames + 1):
         c = clip.controls(f)
         pose = NA.Pose(ch.rig)
