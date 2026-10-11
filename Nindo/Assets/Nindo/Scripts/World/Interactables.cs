@@ -42,6 +42,8 @@ namespace Nindo
     /// <summary>
     /// Santuario: punto de reaparición. Pasar a menos de 6 m ya lo registra (antes había que rezar: el que no rezaba
     /// reaparecía 75-90 m atrás, lejos del jefe); rezar además cura, guarda y reinicia los encuentros pendientes.
+    /// Rezar es una escena (StoryDirector.PrayAt): la primera vez en cada santuario Kaito prende incienso y queda
+    /// humeando (ShrineIncense); las siguientes, un rezo corto.
     /// </summary>
     public class Checkpoint : Interactable
     {
@@ -49,9 +51,12 @@ namespace Nindo
         public string displayName = "Santuario";
         public Transform spawnPoint;
         static readonly Dictionary<string, Checkpoint> byId = new Dictionary<string, Checkpoint>();
-        Light glow;
+        ShrineIncense incense;
         bool activated;
         string registeredId;   // id con el que quedó en byId (puede diferir de "id" si se cambió después)
+
+        /// <summary>El incensario de este santuario (el humo y la brasa después de rezar).</summary>
+        public ShrineIncense Incense => incense;
 
         void Awake()
         {
@@ -69,9 +74,9 @@ namespace Nindo
         void Start() => Register();
 
         /// <summary>
-        /// Registra el santuario con su id actual y busca su luz. Awake corre dentro de AddComponent,
-        /// antes de que WorldBuilder asigne el id y agregue la "ShrineLight": por eso se llama
-        /// explícitamente después de configurarlo (y Checkpoint.Get funciona ya durante la construcción).
+        /// Registra el santuario con su id actual y le pone su incensario. Awake corre dentro de AddComponent,
+        /// antes de que WorldBuilder asigne el id: por eso se llama explícitamente después de configurarlo (y
+        /// Checkpoint.Get funciona ya durante la construcción).
         /// </summary>
         public void Register()
         {
@@ -80,7 +85,7 @@ namespace Nindo
                 Unregister();
                 if (!string.IsNullOrEmpty(id)) { byId[id] = this; registeredId = id; }
             }
-            if (glow == null) glow = GetComponentInChildren<Light>();
+            if (incense == null) incense = ShrineIncense.Attach(this);
         }
 
         void Unregister()
@@ -102,29 +107,43 @@ namespace Nindo
 
         public override void Interact(PlayerController p)
         {
-            Activate(p, true);
+            // la escena del rezo cura y guarda en su momento (con las manos juntas) y cierra con FinishRest
+            if (Game.Story != null) Game.Story.PrayAt(this);
+            else Activate(p, true);
         }
 
+        /// <summary>Llegar al santuario por la historia (fin del prólogo, viaje por portal): punto de reaparición y guardado.</summary>
         public void Activate(PlayerController p, bool fromPlayer)
         {
-            Game.Save.checkpoint = id;
-            SaveSystem.Save();
-            if (p != null) p.RestoreAll();
+            Rest(p);
             Game.FX?.SealGlow(transform.position + Vector3.up);
             Game.Audio?.Play("checkpoint", transform.position, 0.9f);
-            // siempre dice que guardó: pasar cerca ya lo registra (y guarda), así que al rezar casi nunca es "el primero"
-            // el guardado lo cuenta el pergamino de abajo a la izquierda: el cartel dice dónde y qué pasó
-            if (fromPlayer) Game.UI?.ShowToast(displayName, "Vida restaurada", UIFactory.Gold, 2f);
-            // reaparecen los enemigos de encuentros no completados (como en un souls, pero suave)
-            if (fromPlayer) Encounter.ResetAllIncomplete();
+            if (fromPlayer) FinishRest();
+        }
+
+        /// <summary>El rezo hace efecto: punto de reaparición, vida y espíritu, y guarda (sale el pergamino de guardado).</summary>
+        public void Rest(PlayerController p)
+        {
+            Game.Save.checkpoint = id;
+            if (p != null) p.RestoreAll();
+            SaveSystem.Save();
             GameEvents.RaiseCheckpoint(id);
             activated = true;
         }
 
+        /// <summary>Al terminar el rezo: el cartel y los enemigos de encuentros pendientes de vuelta en su lugar.</summary>
+        public void FinishRest()
+        {
+            // el guardado lo cuenta el pergamino de abajo a la izquierda: el cartel dice dónde y qué pasó
+            Game.UI?.ShowToast(displayName, "Vida restaurada", UIFactory.Gold, 2f);
+            // reaparecen los enemigos de encuentros no completados (como en un souls, pero suave)
+            Encounter.ResetAllIncomplete();
+        }
+
         void Update()
         {
-            if (glow != null) glow.intensity = (Game.Save.checkpoint == id ? 2.4f : 1.2f) * (0.9f + 0.1f * Mathf.Sin(Time.time * 3f));
             AutoRegister();
+            Game.Story?.TickShrineTip(this);
         }
 
         /// <summary>Radio en el que pasar cerca ya deja el santuario como punto de reaparición (m).</summary>
@@ -143,7 +162,9 @@ namespace Nindo
             if (d.y * d.y > 9f || d.x * d.x + d.z * d.z > AutoRegisterRadius * AutoRegisterRadius) return;
             Game.Save.checkpoint = id;
             SaveSystem.Save();
-            Game.FX?.SealGlow(transform.position + Vector3.up);
+            // un aviso suave (motas que suben del incensario): el destello de SealGlow, a cada paso cerca de un
+            // santuario, era más fuerte que rezar
+            if (incense != null) incense.Awaken();
             Game.Audio?.Play("checkpoint", transform.position, 0.45f);
             // el cartel una vez por santuario y por sesión: yendo y viniendo entre dos santuarios cercanos (lago,
             // muelles) alcanzan el brillo y el sonido

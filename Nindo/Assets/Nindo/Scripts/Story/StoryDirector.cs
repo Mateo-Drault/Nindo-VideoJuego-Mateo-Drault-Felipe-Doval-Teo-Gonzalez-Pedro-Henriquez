@@ -45,6 +45,7 @@ namespace Nindo
         // ================================================================== inicio
         public void Begin(bool newGame)
         {
+            SetupWallSeal();   // el sello de sombra del portón de la muralla, si sigue cerrado (StoryDirector.Wall)
             var s = Game.Save;
             P.SetKatanaVisible(s.HasFlag(Flags.KatanaObtained));
             UpdateObjective();
@@ -422,7 +423,8 @@ namespace Nindo
                 case "wall_guards":
                     StartCoroutine(Cutscene(Say("wall_guards"), false));
                     break;
-                case "enc_done_wall": StartCoroutine(Cutscene(WallOpens())); break;
+                // el portón ya no se abre solo: tiene un sello de sombra que Kaito abre con la bandana (StoryDirector.Wall)
+                case "enc_done_wall": StartCoroutine(Cutscene(WallGuardsDown())); break;
                 case "garden": StartCoroutine(Cutscene(Say("garden"), false)); break;
                 case "sumo_intro":
                 {
@@ -462,16 +464,6 @@ namespace Nindo
             Destroy(grandpa.gameObject);
             Game.Camera.CancelShot(shot);
             Game.Save.SetFlag(Flags.ForestSeen);
-        }
-
-        IEnumerator WallOpens()
-        {
-            Game.Save.SetFlag(Flags.WallGateOpen);
-            Vector3 gate = PointPos("wall_gate", P.transform.position + P.transform.forward * 8f);
-            int shot = Game.Camera.PlayStaticShot(gate + new Vector3(4f, 6f, -12f), gate + Vector3.up * 2f, 34f, 3.2f, 1f, 1f);
-            yield return new WaitForSecondsRealtime(3.4f);
-            yield return Say("wall_open");
-            Game.Camera.CancelShot(shot);
         }
 
         IEnumerator SumoIntro()

@@ -14,6 +14,8 @@ namespace Nindo
         public bool[] seals = new bool[3];
         public float playTime;
         public int deaths;
+        /// <summary>Santuarios donde Kaito ya rezó con incienso: quedan con el humo y la brasa (World/ShrineIncense).</summary>
+        public List<string> shrines = new List<string>();
 
         public bool HasFlag(string f) => flags.Contains(f);
         public void SetFlag(string f)
@@ -54,6 +56,7 @@ namespace Nindo
                 if (!File.Exists(PathFile)) { data = new SaveData(); return false; }
                 data = JsonUtility.FromJson<SaveData>(File.ReadAllText(PathFile)) ?? new SaveData();
                 if (data.seals == null || data.seals.Length != 3) data.seals = new bool[3];
+                if (data.shrines == null) data.shrines = new List<string>();
                 return true;
             }
             catch (Exception e)

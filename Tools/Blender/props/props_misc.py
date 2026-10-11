@@ -542,16 +542,47 @@ def shimenawa(mb, a, b, sag, r, segs=6, sides=4, colors=("rope", "straw")):
                 face_color=lambda k, i: colors[1] if (k + i) % 2 == 0 else None)
 
 
+# Incensario del santuario: el centro de la ceniza (donde Kaito clava el incienso) en coordenadas del prop.
+# World/ShrineIncense.cs lo usa en Unity como (0, KORO_ASH_Z, -KORO_Y) => (0, 0.305, 0.69).
+KORO_Y, KORO_ASH_Z = -0.69, 0.305
+
+
+def koro(mb, x, y, z):
+    """Incensario de bronce (kōro) de tres patas sobre z: panza octogonal, borde con pátina y la ceniza gris arriba."""
+    for k in range(3):
+        a = math.radians(90 + 120 * k)
+        mb.prism((x + 0.095 * math.cos(a), y + 0.095 * math.sin(a), z), 0.026, 0.05, 4, "iron", radius_top=0.018)
+    prof = [(0.095, z + 0.04), (0.145, z + 0.09), (0.152, z + 0.15), (0.128, z + 0.185), (0.15, z + 0.195),
+            (0.158, z + 0.215), (0.134, z + 0.218), (0.13, KORO_ASH_Z)]
+    lathe(mb, prof, 8, "gold_dark", ["gold_dark", "gold_dark", "gold_dark", "copper_green", "copper_green",
+                                     "gold_dark", "stone_dark"], loc=(x, y, 0), top_color="stone_light")
+    # las dos orejas (asas) a los costados
+    for sx in (-1, 1):
+        blk(mb, (x + sx * 0.165, y, z + 0.115), (0.04, 0.05, 0.075), "gold_dark", top="copper_green", open_bottom=False)
+
+
 def build_shrine_checkpoint(seed):
+    """Hokora de piedra y madera con su incensario delante. No brilla: se lee por el techo de cobre, los pilares
+    rojos, la cuerda con los papeles y las puertas de celosía; la luz cálida y el humo los agrega el juego recién
+    cuando Kaito reza ahí (World/ShrineIncense.cs)."""
     mb = L.MeshBuilder("shrine_checkpoint", seed)
     # stone base (two tiers)
     blk(mb, (0, 0, 0), (1.16, 1.0, 0.22), "stone_dark", top="stone").jitter(0.012)
     blk(mb, (0, 0.13, 0.2), (0.76, 0.62, 0.46), "stone", top="stone_light")
-    # hokora house with a glowing open front
+    # hokora house: closed lattice doors (antes un frente abierto que brillaba y no dejaba leer el modelo)
     body = blk(mb, (0, 0.14, 0.64), (0.56, 0.46, 0.6), "wood")
     for f in body.faces:
         f.normal_update()
-    inset(mb, [f for f in body.faces if f.normal.y < -0.9], 0.07, -0.16, "glow_spirit")
+    inset(mb, [f for f in body.faces if f.normal.y < -0.9], 0.05, -0.035, "wood_black")
+    # un espejo de bronce adentro que asoma entre las varillas
+    # (girado 90° en X: el eje del torno pasa a -Y, z del perfil = -y)
+    lathe(mb, [(0.085, 0.057), (0.085, 0.067)], 8, "gold", loc=(0, 0, 0.97), rot=(90, 0, 0), cap_top=True,
+          cap_bottom=False, top_color="gold")
+    for x in (-0.165, -0.07, 0.07, 0.165):
+        mb.box((x, -0.085, 0.94), (0.026, 0.03, 0.5), "wood_light")
+    for z in (0.83, 1.05):
+        mb.box((0, -0.085, z), (0.46, 0.03, 0.026), "wood_light")
+    mb.box((0, -0.09, 0.94), (0.034, 0.036, 0.5), "wood_dark")
     for sx in (-1, 1):
         blk(mb, (sx * 0.29, -0.1, 0.64), (0.08, 0.08, 0.62), "wood_red")
     # copper roof + ridge + chigi
@@ -565,12 +596,28 @@ def build_shrine_checkpoint(seed):
     shimenawa(mb, (-0.36, -0.15, 1.18), (0.36, -0.15, 1.18), 0.07, 0.04, segs=6, sides=3)
     shide(mb, -0.14, -0.17, 1.12)
     shide(mb, 0.14, -0.17, 1.12)
-    # incense bowl with glowing ember
-    lathe(mb, [(0.09, 0.2), (0.16, 0.29), (0.17, 0.35), (0.13, 0.36)], 6, "stone_dark",
-          ["stone_dark", "stone_light", "stone_light"], loc=(0, -0.3, 0), top_color="glow_fire")
-    mb.collider_box((1.2, 1.0, 1.8))
-    mb.tag("light_warm", "smoke", "nonstatic")
-    mb.set("light_offset", [0.0, -0.45, 0.9])
+    # ofrendas: dos botellitas de sake (heishi) delante de las puertas
+    for sx in (-1, 1):
+        lathe(mb, [(0.032, 0.66), (0.043, 0.7), (0.036, 0.75), (0.016, 0.79), (0.02, 0.81)], 6, "cloth_white",
+              loc=(sx * 0.21, -0.11, 0), top_color="gold_dark")
+    # escalón de piedra con el incensario: Kaito se arrodilla delante y clava el incienso en la ceniza
+    blk(mb, (0, KORO_Y, 0), (0.5, 0.38, 0.1), "stone", top="stone_light").jitter(0.006)
+    koro(mb, 0.0, KORO_Y, 0.1)
+    # la caja llega hasta 3 cm delante de la ceniza: Kaito (radio 0.35) se arrodilla a 0.4 m de ella sin chocarla
+    # (StoryDirector.Shrines: MinReach) y nadie atraviesa el incensario caminando
+    mb.collider_box((1.2, 1.22, 1.8), (0.0, -0.11, 0.9))
+    mb.tag("nonstatic")
+    return mb.finish()
+
+
+def build_incense_stick(seed):
+    """Tres varitas de incienso juntas (senkō): el origen va abajo, donde se clavan en la ceniza; las puntas se
+    abren apenas para leerse como un manojo. Brasa y humo los pone el juego (World/ShrineIncense.cs)."""
+    mb = L.MeshBuilder("incense_stick", seed)
+    for dx, dy in ((-0.016, 0.004), (0.0, -0.006), (0.016, 0.004)):
+        mb.plank_line((dx * 0.25, dy * 0.25, 0.0), (dx, dy, 0.25), 0.012, 0.012, "moss")
+    mb.collider_none()
+    mb.tag("nonstatic")
     return mb.finish()
 
 
@@ -1467,6 +1514,7 @@ PROPS = {
     "torch_brazier": build_torch_brazier,
     "campfire": build_campfire,
     "shrine_checkpoint": build_shrine_checkpoint,
+    "incense_stick": build_incense_stick,
     "portal_ring": build_portal_ring,
     "seal_pedestal": build_seal_pedestal,
     "key_seal_mountain": build_key_seal_mountain,

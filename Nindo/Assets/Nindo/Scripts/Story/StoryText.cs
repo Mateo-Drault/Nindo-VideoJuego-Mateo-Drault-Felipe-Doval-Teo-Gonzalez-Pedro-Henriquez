@@ -140,9 +140,15 @@ namespace Nindo
                         L(Ninja, "¡Alto ahí! Nadie cruza la muralla Kurokage."),
                         L(Kaito, "Entonces voy a tener que abrirla yo."),
                     };
+                // vencidos los guardias: el portón tiene un sello de sombra (StoryDirector.WallGuardsDown)
+                case "wall_sealed":
+                    return new List<DialogueLine> {
+                        L(Kaito, "El portón está atado con cuerdas de sombra... Así no se abre ni a golpes."),
+                        L(Espiritu, "Esa sombra la tejió el clan. Acercate al portón y soltá la luz de la bandana."),
+                    };
                 case "wall_open":
                     return new List<DialogueLine> {
-                        L(Kaito, "El portón está abierto. Más allá está el jardín del clan."),
+                        L(Kaito, "¡Se abrió! Más allá está el jardín del clan. Aguantá, abuelo."),
                     };
                 case "garden":
                     return new List<DialogueLine> {
@@ -264,7 +270,29 @@ namespace Nindo
             switch (id)
             {
                 case "kage_shadow": return "La sombra no se corta con la katana: clavala con {Ability1} o {Ability2}";
+                // el primer santuario después del prólogo (StoryDirector.TickShrineTip)
+                case "shrine_pray": return "Rezá en los santuarios con {Interact}: te curan, guardan la partida y, si caés, volvés ahí.";
                 default: return "";
+            }
+        }
+
+        /// <summary>
+        /// Lo que Kaito reza en voz baja con las manos juntas, la primera vez en cada santuario (sale arriba sin pausar la
+        /// escena). La primera de la partida es por el abuelo; después cambia con lo que avanzó, para no repetirse.
+        /// </summary>
+        public static string PrayerLine(bool first, SaveData s)
+        {
+            if (first) return "Abuelo... donde sea que te tengan, aguantá. Ya voy a buscarte.";
+            int seals = s.SealCount;
+            if (seals >= 3) return "Los tres sellos, abuelo. Esta noche volvés a casa.";
+            if (seals == 2) return "Dos sellos, abuelo. Me falta uno solo.";
+            if (seals == 1) return "Ya tengo un sello, abuelo. Esperame.";
+            int n = s.shrines != null ? s.shrines.Count : 0;
+            switch (n % 3)
+            {
+                case 0: return "Que el camino me lleve hasta vos, abuelo.";
+                case 1: return "Abuelo, cuidate. Te voy a traer de vuelta a casa.";
+                default: return "Cada santuario me acerca un poco más a vos.";
             }
         }
 
@@ -283,6 +311,8 @@ namespace Nindo
             if (s.SealCount >= 3) return "Volvé a la puerta del dojo con los tres sellos";
             string zone = Zone.Current != null ? Zone.Current.id : "";
             bool pastWall = s.HasFlag(Flags.WallGateOpen) || s.HasFlag(Flags.DojoGateSeen) || s.SealCount > 0 || PastTheWall(zone);
+            // guardias vencidos y el portón con su sello de sombra (WallSeal)
+            if (!pastWall && s.HasFlag(Flags.Encounter("wall"))) return "Abrí el portón de la muralla con la bandana";
             if (!pastWall)
                 return s.HasFlag(Flags.ForestSeen) ? "Cruzá la muralla del clan Kurokage" : "Seguí el rastro de los secuestradores hacia el bosque";
             // en la tierra de un guardián: qué falta ahí

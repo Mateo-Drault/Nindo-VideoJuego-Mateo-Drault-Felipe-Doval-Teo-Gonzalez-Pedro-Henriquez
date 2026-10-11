@@ -358,9 +358,9 @@ namespace Nindo
                     var cp = go.AddComponent<Checkpoint>();
                     cp.id = p.Length > 2 ? p[2] : "cp";
                     cp.displayName = StoryText.CheckpointName(cp.id);
-                    var lg = new GameObject("ShrineLight"); lg.transform.SetParent(go.transform, false); lg.transform.localPosition = new Vector3(0, 1.3f, 0.6f);
-                    var l = lg.AddComponent<Light>(); l.type = LightType.Point; l.color = new Color(1f, 0.8f, 0.45f); l.range = 6f; l.intensity = 1.5f; l.shadows = LightShadows.None;
-                    cp.Register();   // ya con su id y su luz (Awake corrió antes de asignarlos)
+                    // sin luz propia (la "ShrineLight" lo encendía de lejos y tapaba el modelo): la luz cálida tenue es
+                    // del incienso, recién cuando Kaito reza ahí (ShrineIncense)
+                    cp.Register();   // ya con su id (Awake corrió antes de asignarlo)
                     points[cp.id] = cp.transform;
                     break;
                 }

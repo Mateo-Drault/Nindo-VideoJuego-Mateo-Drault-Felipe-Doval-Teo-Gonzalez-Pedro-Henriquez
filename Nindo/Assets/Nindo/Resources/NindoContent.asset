@@ -609,6 +609,8 @@ MonoBehaviour:
     model: {fileID: 919132149155446097, guid: 27feedbc56d5e069cb88a1dcca15e296, type: 3}
   - id: house_village_b
     model: {fileID: 919132149155446097, guid: d6f08043f6b9c7e62c7602e31e03df3b, type: 3}
+  - id: incense_stick
+    model: {fileID: 919132149155446097, guid: 5357bda64a4ccbf284cf555b406b6820, type: 3}
   - id: key_seal_bamboo
     model: {fileID: 919132149155446097, guid: 96a8969abcf7e91896c81858a9ec018b, type: 3}
   - id: key_seal_lake
@@ -810,6 +812,18 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: bandana_charge
+    clips:
+    - {fileID: 8300000, guid: a5b14aa03a37c453ebfee56e43c51569, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bandana_release
+    clips:
+    - {fileID: 8300000, guid: 6b4e98a09c17c430004b3f588e7f3f86, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: barrier
     clips:
     - {fileID: 8300000, guid: 5fb8c1e3693a57dfca9c95ef5dfd0a77, type: 3}
@@ -993,6 +1007,12 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 2a69907420918aa4ca962ed93fa99b84, type: 3}
     volume: 0.9
+    pitchVariance: 0.06
+    spatial: 1
+  - key: incense_light
+    clips:
+    - {fileID: 8300000, guid: 0cd3a16833eb68a8c0b8746d58924f16, type: 3}
+    volume: 1.0
     pitchVariance: 0.06
     spatial: 1
   - key: jet_charge
@@ -1292,6 +1312,12 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: wall_seal_break
+    clips:
+    - {fileID: 8300000, guid: 6248cb0e91cd5049a6bcf13348c2048d, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: water_splash
     clips:
     - {fileID: 8300000, guid: fd10c1eb65c74f6c86e42c7abd1e13af, type: 3}

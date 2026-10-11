@@ -219,6 +219,7 @@ $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --ex
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
+python3 Tools/Audio/sfx_world_story.py              # rezo con incienso y sello de la muralla (síntesis pura, sin descargas)
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)
 python3 Tools/UI/build_ui_art.py [--preview carpeta]
 # metas, materiales, controllers, NindoContent, escenas  (correr después de cualquiera de los anteriores)
