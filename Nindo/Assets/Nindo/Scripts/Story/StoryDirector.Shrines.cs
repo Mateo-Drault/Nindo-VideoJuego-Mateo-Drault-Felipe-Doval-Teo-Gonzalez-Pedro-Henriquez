@@ -186,21 +186,23 @@ namespace Nindo
             string state = real ? PrayQuickState : PrayOldState;
             float len = real ? a.Length(state, PrayQuickSeconds) : a.Length(state, 1.333f);
             yield return KneelAt(cp, new Vector2(0f, QuickReach));
-            int shot = PushInShot();
-            a.Play(state, 0.2f);
             bool rested = false;
-            float t = 0f, n = 0f;
-            while (n < 1f && t < len * 1.5f)
+            // si lo encontraron mientras rodeaba el santuario, ni se arrodilla
+            if (!PrayInterrupted)
             {
-                // fuera de una cinemática los enemigos siguen: si uno lo encuentra, se levanta y pelea
-                if (Game.Combat != null && Game.Combat.InCombat) break;
-                n = a.TryNormalizedTime(state, out float an) ? an : t / len;
-                if (!rested && n >= (real ? NQuickPalms : NOldPalms)) { rested = true; PrayRest(cp, false, false); }
-                t += Time.deltaTime;
-                yield return null;
+                int shot = PushInShot();
+                a.Play(state, 0.2f);
+                float t = 0f, n = 0f;
+                while (n < 1f && t < len * 1.5f && !PrayInterrupted)
+                {
+                    n = a.TryNormalizedTime(state, out float an) ? an : t / len;
+                    if (!rested && n >= (real ? NQuickPalms : NOldPalms)) { rested = true; PrayRest(cp, false, false); }
+                    t += Time.deltaTime;
+                    yield return null;
+                }
+                Game.Camera.CancelShot(shot);
             }
             EndKneel();
-            Game.Camera.CancelShot(shot);
             if (rested) cp.FinishRest();
             P.ExitScripted();
             Game.Input?.ClearBuffer();
@@ -225,10 +227,18 @@ namespace Nindo
             float sx = lp.x >= 0f ? 1f : -1f;
             // caja del santuario en coordenadas del prop: x ±0.6, z de -0.5 a 0.72; las esquinas con 0.45 de margen
             if (lp.z < -0.5f) yield return WalkTo(tr.TransformPoint(new Vector3(sx * 1.05f, 0f, -0.95f)));
-            if (lp.z < 1.05f && (Mathf.Abs(lp.x) > 0.55f || lp.z < -0.5f)) yield return WalkTo(tr.TransformPoint(new Vector3(sx * 1.05f, 0f, 1.2f)));
+            if (lp.z < 1.05f && (Mathf.Abs(lp.x) > 0.55f || lp.z < -0.5f) && !PrayInterrupted) yield return WalkTo(tr.TransformPoint(new Vector3(sx * 1.05f, 0f, 1.2f)));
+            if (PrayInterrupted) yield break;
             yield return WalkTo(kneel);
+            if (PrayInterrupted) yield break;
             yield return NudgeTo(kneel, Quaternion.LookRotation(-fwd), 0.3f);
         }
+
+        /// <summary>
+        /// El rezo corto no es una cinemática y los enemigos siguen: si uno lo encuentra (mientras rodea el santuario o
+        /// arrodillado) se corta y Kaito vuelve a sus manos. En el entero (cinemática) los enemigos esperan.
+        /// </summary>
+        static bool PrayInterrupted => !Game.InCutscene && Game.Combat != null && Game.Combat.InCombat;
 
         IEnumerator WalkTo(Vector3 target, float maxTime = 2.5f)
         {
@@ -236,7 +246,7 @@ namespace Nindo
             if (CombatMath.FlatDistance(target, P.transform.position) < 0.25f) yield break;
             P.ScriptedMoveTo(target, 2.1f);
             float t = 0f;
-            while (!P.ScriptedArrived && t < maxTime) { t += Time.deltaTime; yield return null; }
+            while (!P.ScriptedArrived && t < maxTime && !PrayInterrupted) { t += Time.deltaTime; yield return null; }
         }
 
         IEnumerator NudgeTo(Vector3 pos, Quaternion rot, float seconds)
