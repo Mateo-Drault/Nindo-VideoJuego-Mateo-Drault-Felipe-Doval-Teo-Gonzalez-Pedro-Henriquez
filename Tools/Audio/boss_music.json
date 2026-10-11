@@ -1,0 +1,283 @@
+{
+ "_nota": "Generado por Tools/Audio/build_boss_music.py. Por fase: clip en loop, intro o transición que se toca una vez antes (PlayScheduled del loop a las 'muestras' de la intro) y, si la fase es otro punto del mismo clip, la muestra de entrada. Los cambios de fase conviene hacerlos en el próximo límite de compás del clip que suena (compas_s desde el comienzo del clip).",
+ "jefes": {
+  "boss_goro": {
+   "1": {
+    "clip": "boss_goro",
+    "intro": "boss_goro_intro"
+   },
+   "2": {
+    "clip": "boss_goro_2",
+    "intro": "boss_goro_2_in"
+   }
+  },
+  "boss_lake": {
+   "1": {
+    "clip": "boss_lake",
+    "intro": "boss_lake_intro"
+   },
+   "2": {
+    "clip": "boss_lake",
+    "entrada": "desarrollo",
+    "entrada_muestra": 3229016
+   },
+   "3": {
+    "clip": "boss_lake_3"
+   }
+  },
+  "boss_bamboo": {
+   "1": {
+    "clip": "boss_bamboo",
+    "intro": "boss_bamboo_intro"
+   },
+   "2": {
+    "clip": "boss_bamboo",
+    "entrada": "c_taiko",
+    "entrada_muestra": 3112942
+   },
+   "3": {
+    "clip": "boss_bamboo",
+    "entrada": "b",
+    "entrada_muestra": 1867765
+   }
+  },
+  "boss_final": {
+   "1": {
+    "clip": "boss_final",
+    "intro": "boss_final_intro"
+   },
+   "2": {
+    "clip": "boss_final_2"
+   },
+   "3": {
+    "clip": "boss_final_3"
+   }
+  },
+  "ending": {
+   "1": {
+    "clip": "ending"
+   }
+  }
+ },
+ "clips": {
+  "boss_goro_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 700942,
+   "segundos": 15.8944,
+   "sr": 44100,
+   "bpm": 130.0,
+   "compas_s": 1.846154,
+   "tambores_s": 13.851,
+   "LUFS": -22.04
+  },
+  "boss_goro": {
+   "tipo": "loop",
+   "muestras": 3256616,
+   "segundos": 73.8462,
+   "sr": 44100,
+   "bpm": 130.0,
+   "compas_s": 1.846154,
+   "LUFS": -14.0
+  },
+  "boss_goro_2_in": {
+   "tipo": "transición (una vez)",
+   "muestras": 738360,
+   "segundos": 16.7429,
+   "sr": 44100,
+   "bpm": 137.738,
+   "compas_s": 1.742437,
+   "tambores_s": 13.072,
+   "LUFS": -18.99
+  },
+  "boss_goro_2": {
+   "tipo": "loop",
+   "muestras": 2151492,
+   "segundos": 48.7867,
+   "sr": 44100,
+   "bpm": 137.738,
+   "compas_s": 1.742437,
+   "LUFS": -12.48
+  },
+  "boss_lake_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 69483,
+   "segundos": 1.5756,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "LUFS": -16.07
+  },
+  "boss_lake": {
+   "tipo": "loop",
+   "muestras": 5650780,
+   "segundos": 128.1356,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "entradas": {
+    "apertura": {
+     "compas": 0,
+     "muestra": 0,
+     "s": 0.0
+    },
+    "tema_a": {
+     "compas": 6,
+     "muestra": 538169,
+     "s": 12.2034
+    },
+    "tema_a2": {
+     "compas": 22,
+     "muestra": 1973288,
+     "s": 44.7458
+    },
+    "desarrollo": {
+     "compas": 36,
+     "muestra": 3229016,
+     "s": 73.2203
+    },
+    "cumbre": {
+     "compas": 47,
+     "muestra": 4215661,
+     "s": 95.5932
+    },
+    "corte": {
+     "compas": 55,
+     "muestra": 4933220,
+     "s": 111.8644
+    }
+   },
+   "LUFS": -14.0
+  },
+  "boss_lake_3": {
+   "tipo": "loop",
+   "muestras": 4305356,
+   "segundos": 97.6271,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "LUFS": -13.65
+  },
+  "boss_bamboo_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 53231,
+   "segundos": 1.2071,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "LUFS": -22.81
+  },
+  "boss_bamboo": {
+   "tipo": "loop",
+   "muestras": 6303706,
+   "segundos": 142.9412,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "entradas": {
+    "tema": {
+     "compas": 0,
+     "muestra": 0,
+     "s": 0.0
+    },
+    "a": {
+     "compas": 8,
+     "muestra": 622589,
+     "s": 14.1177
+    },
+    "b": {
+     "compas": 24,
+     "muestra": 1867765,
+     "s": 42.3529
+    },
+    "c_taiko": {
+     "compas": 40,
+     "muestra": 3112942,
+     "s": 70.5883
+    },
+    "d": {
+     "compas": 48,
+     "muestra": 3735530,
+     "s": 84.7059
+    },
+    "e": {
+     "compas": 64,
+     "muestra": 4980706,
+     "s": 112.9412
+    }
+   },
+   "LUFS": -14.0
+  },
+  "boss_final_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 578466,
+   "segundos": 13.1171,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "LUFS": -20.11
+  },
+  "boss_final": {
+   "tipo": "loop",
+   "muestras": 1612800,
+   "segundos": 36.5714,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "LUFS": -15.74
+  },
+  "boss_final_2": {
+   "tipo": "loop",
+   "muestras": 3628800,
+   "segundos": 82.2857,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "entradas": {
+    "comienzo": {
+     "compas": 21,
+     "muestra": 0,
+     "s": 0.0
+    },
+    "cumbre": {
+     "compas": 27,
+     "muestra": 604800,
+     "s": 13.7143
+    },
+    "golpe": {
+     "compas": 35,
+     "muestra": 1411200,
+     "s": 32.0
+    },
+    "vuelta": {
+     "compas": 39,
+     "muestra": 1814400,
+     "s": 41.1429
+    },
+    "subida": {
+     "compas": 55,
+     "muestra": 3427200,
+     "s": 77.7143
+    }
+   },
+   "LUFS": -14.59
+  },
+  "boss_final_3": {
+   "tipo": "loop",
+   "muestras": 1612800,
+   "segundos": 36.5714,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "LUFS": -13.04
+  },
+  "ending": {
+   "tipo": "tema entero (vuelve a empezar si sigue sonando)",
+   "muestras": 6177093,
+   "segundos": 140.0701,
+   "sr": 44100,
+   "bpm": 80.0,
+   "compas_s": 3.0,
+   "LUFS": -16.0
+  }
+ }
+}

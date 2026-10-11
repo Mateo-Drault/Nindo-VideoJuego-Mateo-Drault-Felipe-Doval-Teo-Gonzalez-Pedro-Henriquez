@@ -1319,9 +1319,81 @@ MonoBehaviour:
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_bamboo
+    clips:
+    - {fileID: 8300000, guid: 7337ffe86dd885deb10899af24239027, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_intro
+    clips:
+    - {fileID: 8300000, guid: d5e7fb611fe7335b71c77fe09a0248f2, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_final
     clips:
     - {fileID: 8300000, guid: 8d8bc8f6cdb29c63ea162ba4c9716418, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_2
+    clips:
+    - {fileID: 8300000, guid: 92353fd4efc4b3a737b2ba57475c7dd0, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_3
+    clips:
+    - {fileID: 8300000, guid: ff8575d0576283db202300931e533cf2, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_intro
+    clips:
+    - {fileID: 8300000, guid: aa914516683c56dd0bdf67a2efa3544e, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro
+    clips:
+    - {fileID: 8300000, guid: e71ff91b1e703b5756fc87469db0f2bd, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_2
+    clips:
+    - {fileID: 8300000, guid: 7383f7d15bfafc23984b9413fb735892, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_2_in
+    clips:
+    - {fileID: 8300000, guid: 3220d3e4c1cdc27c4a1108883540b480, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_intro
+    clips:
+    - {fileID: 8300000, guid: 82173183461c6fb04d028ece0620551b, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake
+    clips:
+    - {fileID: 8300000, guid: 85cc18ccd693cbeb67140b2002517329, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_3
+    clips:
+    - {fileID: 8300000, guid: 316922e1f9c9e8637737355c7256f488, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_intro
+    clips:
+    - {fileID: 8300000, guid: b8baa24f9ddf81c2bab852aaf491fd7b, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0

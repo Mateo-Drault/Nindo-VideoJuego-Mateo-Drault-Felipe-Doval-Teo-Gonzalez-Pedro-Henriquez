@@ -219,6 +219,8 @@ $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --ex
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
+# música de jefes por fases y del final: pasos (fuentes, Vorbis, recorte, verificación) en su encabezado
+python3 Tools/Audio/build_boss_music.py build|trim|verify|install|preview --out CARPETA
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)
 python3 Tools/UI/build_ui_art.py [--preview carpeta]
 # metas, materiales, controllers, NindoContent, escenas  (correr después de cualquiera de los anteriores)
@@ -292,7 +294,8 @@ Pendiente / para decidir:
 
 Código, diseño y modelos originales de personajes/enemigos: el equipo de Nindō.
 Entornos low‑poly, terreno y efectos sintetizados: generados con los scripts de `Tools/`.
-Música y efectos de terceros: todo CC0, detallado en `Nindo/Assets/Nindo/Audio/CREDITS.md`.
+Música y efectos de terceros: CC0, salvo la música de jefes y del final (PeriTune y TAD, CC BY 4.0: hay que
+darles crédito), detallado en `Nindo/Assets/Nindo/Audio/CREDITS.md`.
 Fuentes: Shippori Mincho B1 y Zen Maru Gothic (SIL Open Font License 1.1), con las vocales con
 macrón agregadas por `Tools/Fonts/add_macrons.py`; copyright y licencia en
 `Nindo/Assets/Nindo/Art/Fonts/OFL.txt`.
