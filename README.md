@@ -250,6 +250,14 @@ determinística, así que re-generar no rompe referencias.
 Después se hace *static batching*, se construye el NavMesh en runtime y se reparten las
 luces puntuales con un pool (solo se encienden las más cercanas).
 
+Al final, `World/ZoneCulling` deja de dibujar lo que ninguna cámara prendida ve ni le tira sombra en ese frame
+(celdas de 32 m, `forceRenderingOff`: no toca colliders ni el batching) y duerme a los enemigos
+quietos a más de 55 m y fuera de cuadro. Para depurar: `Nindo.ZoneCulling.ShowHud = true`,
+`Debug.Log(Nindo.ZoneCulling.Stats)`, `Nindo.ZoneCulling.Benchmark(12f)` (con y sin, en el mismo lugar),
+`Nindo.ZoneCulling.CheckFrame(carpeta)` (el mismo cuadro dibujado dos veces en el mismo frame, con y sin:
+tiene que dar 0 píxeles distintos) y `Nindo.ZoneCulling.On = false` para verlo todo como antes (también en
+la vista Scene).
+
 ---
 
 ## Estado (probado en Unity 6.3 jugando, con el MCP del editor)
