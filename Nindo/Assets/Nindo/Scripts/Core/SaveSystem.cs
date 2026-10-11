@@ -14,8 +14,6 @@ namespace Nindo
         public bool[] seals = new bool[3];
         public float playTime;
         public int deaths;
-        /// <summary>Niebla del mapa: lo que Kaito ya vio, en bits (MapFog). Vacío en las partidas de antes del mapa.</summary>
-        public string mapFog = "";
 
         public bool HasFlag(string f) => flags.Contains(f);
         public void SetFlag(string f)
@@ -29,6 +27,9 @@ namespace Nindo
         {
             get { int n = 0; if (seals != null) foreach (var s in seals) if (s) n++; return n; }
         }
+        /// <summary>Niebla del mapa: lo que Kaito ya vio, en bits (MapFog). Vacío en las partidas de antes del mapa.
+        /// Al final: es el renglón largo del JSON.</summary>
+        public string mapFog = "";
     }
 
     /// <summary>Guardado en JSON (Application.persistentDataPath/nindo_save.json).</summary>
