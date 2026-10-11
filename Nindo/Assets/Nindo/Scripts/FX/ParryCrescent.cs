@@ -3,68 +3,78 @@ using UnityEngine;
 namespace Nindo
 {
     /// <summary>
-    /// Media luna de pincel delante de Kaito mientras dura la ventana de parry (misma tinta que el aviso ensō,
-    /// shader Nindo/Telegraph). El clip ParryStance casi no cambia la silueta y desde la cámara alta no se sabía
-    /// si el parry estaba activo ni cuándo se terminaba. Acá:
-    ///  * dorada mientras la ventana es PERFECTA, blanco acero después;
-    ///  * se achica hacia el centro al ritmo de la ventana: desaparece justo cuando se cierra;
-    ///  * si desvía, destella y se apaga; si no llegó nada, se rompe en gris (con el "fiu" del parry al aire).
-    /// Un solo quad, un MaterialPropertyBlock por frame.
+    /// Ventana del parry de Kaito: una LÍNEA DE ACERO a lo largo de su guardia (shader Nindo/ParrySteel, modo 0). Antes
+    /// era una media luna del mismo trazo de pincel que el aviso ensō de los enemigos y se confundía con otro aviso
+    /// (pedido 27); el nombre de la clase quedó por compatibilidad (FXManager.Crescent, PlayerController). Recta,
+    /// filosa y a la altura del pecho: se lee como la hoja cruzada delante de Kaito, que el clip ParryStance casi no
+    /// muestra desde la cámara alta. Acá:
+    ///  * dorada mientras la ventana es PERFECTA, acero después;
+    ///  * se acorta hacia el centro al ritmo de la ventana: queda en un tercio justo cuando se cierra;
+    ///  * si desvía, destella blanca y se apaga (el destello del choque lo pone FX/ParrySteel); si no llegó nada,
+    ///    se parte al medio y se cae en gris (con el "fiu" del parry al aire); si lo cortan, se apaga.
+    /// Una cinta de cuatro vértices que mira a la cámara, un MaterialPropertyBlock por frame.
     /// </summary>
     public class ParryCrescent : MonoBehaviour
     {
         enum End { None, Success, Whiff, Cancel }
 
-        [Tooltip("Arco de la media luna (grados)")] public float arc = 150f;
-        public float radius = 0.9f;
-        [Tooltip("Altura sobre los pies de Kaito (m): a la altura del pecho, no se mezcla con los anillos del suelo")] public float height = 0.9f;
+        [Tooltip("Medio largo de la línea al abrir la ventana (m)")] public float halfLength = 0.62f;
+        [Tooltip("Al cerrarse la ventana queda esta fracción del largo")] public float minLength = 0.35f;
+        [Tooltip("Altura sobre los pies de Kaito (m): a la de la hoja en guardia")] public float height = 1.0f;
+        [Tooltip("Adelante de Kaito (m)")] public float ahead = 0.45f;
+        [Tooltip("Medio ancho del filo (m); nunca menos de 1.6 px")] public float width = 0.022f;
 
         static readonly Color Steel = new Color(0.82f, 0.9f, 1f);
         static readonly Color Broken = new Color(0.5f, 0.5f, 0.54f);
+        static readonly Color Flash = new Color(1f, 0.97f, 0.92f);
+        // medio ancho de la cinta: entra la tinta de abajo y las mitades que se caen al aire
+        const float RibbonHalfWidth = 0.15f;
 
-        Transform quadT;
+        Transform ribbon;
         MeshRenderer mr;
         Material mat;
-        Mesh quad;
+        Mesh mesh;
         MaterialPropertyBlock mpb;
+        readonly Vector3[] verts = new Vector3[4];
         Transform owner;
-        float window, perfect, t, outT, seed, span;
+        float window, perfect, t, outT, len;
         End end;
         bool active;
 
-        static readonly int IdColor = Shader.PropertyToID("_Color"), IdHotColor = Shader.PropertyToID("_HotColor"), IdInk = Shader.PropertyToID("_Ink"),
-            IdMode = Shader.PropertyToID("_Mode"), IdProgress = Shader.PropertyToID("_Progress"), IdHot = Shader.PropertyToID("_Hot"),
-            IdFlash = Shader.PropertyToID("_Flash"), IdDanger = Shader.PropertyToID("_Danger"), IdAlpha = Shader.PropertyToID("_Alpha"),
-            IdRadius = Shader.PropertyToID("_Radius"), IdWidth = Shader.PropertyToID("_Width"), IdDot = Shader.PropertyToID("_Dot"),
-            IdMinPx = Shader.PropertyToID("_MinPx"), IdOutcome = Shader.PropertyToID("_Outcome"), IdOutT = Shader.PropertyToID("_OutT"),
-            IdSeed = Shader.PropertyToID("_Seed");
+        static readonly int IdColor = Shader.PropertyToID("_Color"), IdGlow = Shader.PropertyToID("_Glow"),
+            IdLen = Shader.PropertyToID("_Len"), IdWidth = Shader.PropertyToID("_Width"), IdFade = Shader.PropertyToID("_Fade"),
+            IdHot = Shader.PropertyToID("_Hot"), IdBreak = Shader.PropertyToID("_Break"), IdExtent = Shader.PropertyToID("_Extent");
 
         void Awake()
         {
-            var sh = Resources.Load<Shader>("Shaders/NindoTelegraph");
+            var sh = Resources.Load<Shader>("Shaders/NindoParrySteel");
             if (sh == null || !sh.isSupported) { enabled = false; return; }
-            mat = new Material(sh) { name = "ParryCrescent" };
+            mat = new Material(sh) { name = "ParryGuard" };
+            mat.SetFloat("_Mode", 0f);
+            // la hoja está delante de Kaito: si él la tapa (mirando hacia el norte), queda detrás de su cuerpo
+            mat.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
+            ParrySteel.ApplyPalette(mat);
             mpb = new MaterialPropertyBlock();
-            quad = new Mesh { name = "CrescentQuad" };
-            quad.vertices = new[] { new Vector3(-0.5f, 0, -0.5f), new Vector3(0.5f, 0, -0.5f), new Vector3(-0.5f, 0, 0.5f), new Vector3(0.5f, 0, 0.5f) };
-            quad.uv = new[] { new Vector2(0, 0), new Vector2(1, 0), new Vector2(0, 1), new Vector2(1, 1) };
-            quad.triangles = new[] { 0, 2, 1, 2, 3, 1 };
-            quad.RecalculateBounds();
-            var go = new GameObject("ParryCrescent");
+            mesh = new Mesh { name = "ParryGuard" };
+            mesh.MarkDynamic();
+            mesh.vertices = verts;
+            mesh.uv = new[] { new Vector2(0, 0), new Vector2(0, 1), new Vector2(1, 0), new Vector2(1, 1) };
+            mesh.triangles = new[] { 0, 1, 2, 2, 1, 3 };
+            var go = new GameObject("ParryGuard");
             go.transform.SetParent(transform, false);
-            go.AddComponent<MeshFilter>().sharedMesh = quad;
+            go.AddComponent<MeshFilter>().sharedMesh = mesh;
             mr = go.AddComponent<MeshRenderer>();
             mr.sharedMaterial = mat;
             mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             mr.receiveShadows = false;
             mr.enabled = false;
-            quadT = go.transform;
+            ribbon = go.transform;
         }
 
         void OnDestroy()
         {
             if (mat != null) Destroy(mat);
-            if (quad != null) Destroy(quad);
+            if (mesh != null) Destroy(mesh);
         }
 
         // ------------------------------------------------------------------ API (la llama Kaito)
@@ -75,17 +85,16 @@ namespace Nindo
             owner = kaito;
             this.window = Mathf.Max(0.02f, window);
             perfect = Mathf.Clamp(perfectWindow, 0f, this.window);
-            t = 0f; outT = 0f; span = arc;
-            seed = Random.value * 10f;
+            t = 0f; outT = 0f; len = halfLength;
             end = End.None;
             active = true;
         }
 
-        /// <summary>Desvió un golpe: destello y se apaga.</summary>
+        /// <summary>Desvió un golpe: destella blanca y se apaga.</summary>
         public void Success() => Finish(End.Success);
-        /// <summary>Se cerró la ventana sin nada que desviar: se rompe en gris.</summary>
+        /// <summary>Se cerró la ventana sin nada que desviar: se parte y se cae en gris.</summary>
         public void Whiff() => Finish(End.Whiff);
-        /// <summary>Kaito salió del parry por otra cosa (golpe, dash, cinemática): se deshace.</summary>
+        /// <summary>Kaito salió del parry por otra cosa (golpe, dash, cinemática): se apaga.</summary>
         public void Cancel() => Finish(End.Cancel);
 
         void Finish(End e)
@@ -105,45 +114,48 @@ namespace Nindo
             if (end == End.None) t += dt;
             else
             {
-                outT += dt / (end == End.Whiff ? 0.22f : end == End.Success ? 0.14f : 0.1f);
+                outT += dt / (end == End.Whiff ? 0.22f : end == End.Success ? 0.06f : 0.1f);
                 if (outT >= 1f) { Hide(); return; }
             }
+            // lo que queda de ventana: se acorta hacia el centro (al terminar queda del último largo)
+            if (end == End.None) len = halfLength * Mathf.Lerp(minLength, 1f, Mathf.Clamp01(1f - t / window));
 
-            // lo que queda de ventana: la media luna se achica hacia el centro (al terminar queda del último tamaño)
-            if (end == End.None) span = arc * Mathf.Lerp(0.45f, 1f, Mathf.Clamp01(1f - t / window));
-            float half = radius * 1.7f + 0.3f;
+            var cam = Game.Camera != null ? Game.Camera.Cam : Camera.main;
+            if (cam == null) return;
             Vector3 fwd = owner.forward; fwd.y = 0f;
             if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.forward;
-            // el trazo arranca del lado izquierdo y gira en sentido horario: centrado en el frente de Kaito
-            Quaternion rot = Quaternion.LookRotation(fwd.normalized, Vector3.up) * Quaternion.Euler(0f, -span * 0.5f, 0f);
-            quadT.SetPositionAndRotation(owner.position + Vector3.up * height, rot);
-            quadT.localScale = new Vector3(half * 2f, 1f, half * 2f);
+            fwd.Normalize();
+            Vector3 center = owner.position + Vector3.up * height + fwd * ahead;
+            Vector3 axis = Vector3.Cross(Vector3.up, fwd);                  // la guardia: de costado a costado
+            // la cinta mira a la cámara alrededor de su eje y +v queda hacia arriba en pantalla (las mitades caen a -v)
+            Vector3 side = Vector3.Cross(axis, cam.transform.position - center).normalized;
+            if (Vector3.Dot(side, cam.transform.up) < 0f) side = -side;
+            float ex = halfLength * 1.04f + 0.05f;
+            // vértices en el espacio de la cinta (cuelga del FXManager, que puede no estar en el origen)
+            verts[0] = ribbon.InverseTransformPoint(center - axis * ex - side * RibbonHalfWidth);
+            verts[1] = ribbon.InverseTransformPoint(center - axis * ex + side * RibbonHalfWidth);
+            verts[2] = ribbon.InverseTransformPoint(center + axis * ex - side * RibbonHalfWidth);
+            verts[3] = ribbon.InverseTransformPoint(center + axis * ex + side * RibbonHalfWidth);
+            mesh.vertices = verts;
+            mesh.RecalculateBounds();
             mr.enabled = true;
 
-            bool inPerfect = t <= perfect;
-            float hot = end == End.None ? (inPerfect ? 0f : Mathf.Clamp01((t - perfect) / 0.03f)) : 1f;
-            Color col = end == End.Whiff ? Broken : TellStyle.Gold;
-            Color hotCol = end == End.Whiff ? Broken : end == End.Success ? TellStyle.GoldHot : Steel;
-            float flash = end == End.Success ? Mathf.Clamp01(1f - outT * 2f) : 0f;
+            Color col = TellStyle.Gold;
+            float glow = 2.2f, fade = 1f, hot = 1f, brk = 0f;
+            if (end == End.None) col = t <= perfect ? TellStyle.Gold : Steel;
+            else if (end == End.Success) { col = Flash; glow = 3.5f; fade = 1f - outT; }
+            else if (end == End.Whiff) { col = Broken; glow = 1f; fade = 1f - outT; hot = 0f; brk = outT; }
+            else { col = t <= perfect ? TellStyle.Gold : Steel; fade = 1f - outT; }
 
             mpb.Clear();
+            mpb.SetVector(IdExtent, new Vector4(ex, RibbonHalfWidth, 0f, 0f));
             mpb.SetColor(IdColor, col);
-            mpb.SetColor(IdHotColor, hotCol);
-            mpb.SetColor(IdInk, TellStyle.Ink);
-            mpb.SetFloat(IdMode, 0f);
-            mpb.SetFloat(IdProgress, span / 360f);
+            mpb.SetFloat(IdGlow, glow);
+            mpb.SetFloat(IdLen, len);
+            mpb.SetFloat(IdWidth, width);
+            mpb.SetFloat(IdFade, fade);
             mpb.SetFloat(IdHot, hot);
-            mpb.SetFloat(IdFlash, flash);
-            mpb.SetFloat(IdDanger, 0f);
-            mpb.SetFloat(IdAlpha, end == End.Whiff ? 0.8f : 1f);
-            mpb.SetFloat(IdRadius, radius / half);
-            mpb.SetFloat(IdWidth, 0.05f / half);
-            mpb.SetFloat(IdDot, 0.08f / half);
-            mpb.SetFloat(IdMinPx, 8f);
-            // final: desviado = se apaga brillando, al aire = se parte en pedazos, cortado = la tinta se deshace
-            mpb.SetFloat(IdOutcome, end == End.None ? 0f : end == End.Whiff ? 1f : end == End.Cancel ? 2f : 3f);
-            mpb.SetFloat(IdOutT, outT);
-            mpb.SetFloat(IdSeed, seed);
+            mpb.SetFloat(IdBreak, brk);
             mr.SetPropertyBlock(mpb);
         }
 
