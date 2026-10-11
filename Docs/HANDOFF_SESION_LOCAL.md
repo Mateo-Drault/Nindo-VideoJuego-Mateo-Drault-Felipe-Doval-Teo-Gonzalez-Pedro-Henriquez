@@ -1,3 +1,5 @@
+> **Desactualizado (octubre 2026): el traspaso vigente es `Docs/HANDOFF_PROXIMA_SESION.md`.**
+
 # Traspaso a la sesión local de Claude Code (Nindō)
 
 > Pegá este archivo entero como primer mensaje de la sesión local de Claude Code (o decile:

@@ -1,0 +1,23 @@
+{
+    "version": 1,
+    "checkpoint": "cp_home",
+    "flags": [
+        "katana",
+        "tip_parry_done",
+        "tip_finisher",
+        "enc_intro",
+        "intro_done",
+        "zone_campos",
+        "zone_bosque",
+        "trig_forest_reveal",
+        "forest_seen",
+        "zone_hogar"
+    ],
+    "seals": [
+        false,
+        false,
+        false
+    ],
+    "playTime": 277.3138122558594,
+    "deaths": 1
+}

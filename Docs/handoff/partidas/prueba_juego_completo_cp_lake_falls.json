@@ -1,0 +1,42 @@
+{
+    "version": 1,
+    "checkpoint": "cp_lake_falls",
+    "flags": [
+        "intro_done",
+        "katana",
+        "enc_intro",
+        "zone_montana",
+        "dash_unlocked",
+        "tip_finisher",
+        "boss_goro",
+        "zone_lago",
+        "enc_lake1",
+        "boss_mizuchi",
+        "zone_bambu",
+        "enc_lake2",
+        "boss_ozeki",
+        "zone_jardin",
+        "zone_dojo",
+        "trig_dojo_gate",
+        "dojo_gate_seen",
+        "dojo_open",
+        "enc_dojo_guards",
+        "boss_kage",
+        "final_boss_done",
+        "zone_bosque",
+        "enc_bamboo1",
+        "trig_sumo_intro",
+        "enc_sumo",
+        "abilities_unlocked",
+        "enc_garden2",
+        "zone_lago_cascada",
+        "falls_seen"
+    ],
+    "seals": [
+        true,
+        true,
+        true
+    ],
+    "playTime": 9995.4384765625,
+    "deaths": 5
+}
