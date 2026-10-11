@@ -54,9 +54,6 @@ namespace Nindo
         UIControlsSlot captureSlot;
         float captureT;
 
-        /// <summary>¿Está abierta la página de controles? (la pausa sigue abierta debajo)</summary>
-        public bool ControlsOpen => controlsOpen;
-
         // ================================================================== armado
         /// <summary>Renglón "Controles" de Opciones, como las demás filas: el nombre a la izquierda y "Teclado y mando ›".</summary>
         Button ControlsEntry(Transform parent, Vector2 size)
