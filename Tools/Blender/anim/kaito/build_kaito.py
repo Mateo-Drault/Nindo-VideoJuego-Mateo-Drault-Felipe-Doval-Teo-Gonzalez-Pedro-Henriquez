@@ -281,6 +281,35 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
     return rep
 
 
+# muñecas (kaito_rig: la katana gira sobre su eje y el codo rota para enderezarlas; las manos libres se recortan a los
+# topes): el doblez de la mano respecto del antebrazo, en grados. Con las poses del B3 la derecha iba doblada 70-160°
+WRIST_MEAN_DEG, WRIST_MAX_DEG = 30.0, 62.0
+ROLL_JUMP_DEG = 35.0        # la hoja que gira sobre su eje más que esto entre dos cuadros se ve como un tirón
+
+
+def wrist_report(clip, wrists):
+    out = {}
+    for k, S in ((0, "R"), (1, "L")):
+        bends = [w[k][0] for w in wrists]
+        twists = [abs(w[k][1]) for w in wrists]
+        f = max(range(len(bends)), key=lambda i: bends[i])
+        mean = sum(bends) / len(bends)
+        out["wrist_" + S] = {"mean": round(mean, 1), "max": round(bends[f], 1), "at": f, "twist_max": round(max(twists), 1)}
+        check(mean <= WRIST_MEAN_DEG and bends[f] <= WRIST_MAX_DEG,
+              f"{clip.name}: muñeca {S} natural (media {mean:.0f}°, máx {bends[f]:.0f}° en f{f}, giro máx {max(twists):.0f}°)",
+              warn=bends[f] <= WRIST_MAX_DEG + 15.0)
+    out["wrist_frames"] = [[w[0][0], w[1][0], round(w[2], 1)] for w in wrists]
+    rolls = [w[2] for w in wrists]
+    jumps = [abs((b - a + 180.0) % 360.0 - 180.0) for a, b in zip(rolls, rolls[1:])]
+    # en los ciclos densos (x2) un cuadro del clip es medio cuadro del juego
+    lim = ROLL_JUMP_DEG / clip.timing.get("time_scale", 1.0)
+    j = max(range(len(jumps)), key=lambda i: jumps[i]) if jumps else 0
+    out["roll_jump_deg"] = round(jumps[j], 1) if jumps else 0.0
+    check(not jumps or jumps[j] <= lim, f"{clip.name}: la hoja no gira de golpe sobre su eje ({jumps[j] if jumps else 0:.0f}° en f{j}-f{j + 1})",
+          warn=True)
+    return out
+
+
 def chain_report(rig, baked):
     """Empalmes que el código hace con crossfades cortos (kaito_clips.CHAINS): el giro local más grande entre
     el cuadro que termina y el que arranca, y cuánto se corre un pie. Un empalme de combo tiene que dar 0; uno
@@ -382,12 +411,37 @@ def main():
         clips = [c for c in clips if c.name in names]
     baked, reports, rootsd = [], {}, {}
     for clip in clips:
-        misses = []
+        # 1) cada cuadro con su mejor giro de la hoja y el costo de toda la grilla; 2) el camino suave de giros
+        # (KR.roll_path, el primero y el último fijos: los empalmes); 3) el clip horneado con esos giros
+        tables, rolls = [], []
+
+        def survey(pose, c):
+            solver.solve(pose, c)
+            tables.append(solver.roll_table)
+            rolls.append(solver.roll_deg)
+        solver.force_roll = None
+        NA.bake_clip(rig, clip, survey, ())
+        last_f = len(rolls) - 1
+        pinned = {0: rolls[0], last_f: rolls[0] if clip.loop else rolls[last_f]}
+        # los cuadros de los empalmes del código (el f2 del Corte 1 del contraataque, la caída del dash, el remate
+        # corto) también quedan con su giro propio: del otro lado del crossfade está el mismo control
+        for a, fa, b, fb_, _ in KC.CHAINS:
+            for nm, f in ((a, fa), (b, fb_)):
+                if nm == clip.name and 0 < f < last_f:
+                    pinned[f] = rolls[f]
+        path = KR.roll_path(tables, pinned, clip.loop, clip.timing.get("time_scale", 1.0))
+        misses, wrists = [], []
+        fi = [0]
 
         def solve(pose, c):
+            solver.force_roll = path[min(fi[0], last_f)]
+            fi[0] += 1
             misses.append(dict(solver.solve(pose, c)))
+            wrists.append((solver.wrist["R"], solver.wrist["L"], solver.roll_deg))
         frames, ctrls, roots = NA.bake_clip(rig, clip, solve, ())
+        solver.force_roll = None
         reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses)
+        reports[clip.name].update(wrist_report(clip, wrists))
         baked.append((clip, frames))
         rootsd[clip.name] = roots
     reports["_chains"] = chain_report(rig, baked)
@@ -544,7 +598,7 @@ def write_sidecar(baked, ranges, reports, fbx_summary):
             "timing": t, "normalized": norm,
             "events": [{"frame": e["frame"], "t": round(e["frame"] / n, 4), "fn": e["fn"]} for e in clip.events],
             "notes": clip.notes,
-            "lint": {k: v for k, v in rep.items() if k not in ("plants", "tip_speed_mps", "summary")},
+            "lint": {k: v for k, v in rep.items() if k not in ("plants", "tip_speed_mps", "summary", "wrist_frames")},
         }
     info = {"fps": NA.FPS, "take": "Scene", "units_per_meter": round(KR.U_PER_M, 4),
             "facing": "frente +Y de la armadura (Blender +X): modelYaw 90 en NindoContent, como siempre",
