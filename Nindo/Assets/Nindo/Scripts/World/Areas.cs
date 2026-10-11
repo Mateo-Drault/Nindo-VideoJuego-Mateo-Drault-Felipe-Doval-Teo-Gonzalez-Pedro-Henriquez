@@ -80,9 +80,10 @@ namespace Nindo
         [Tooltip("Solo lo activa la historia (no por proximidad)")] public bool manualActivation;
         readonly List<Enemy> members = new List<Enemy>();
         readonly List<(string archetype, Vector3 pos, Quaternion rot)> spawns = new List<(string, Vector3, Quaternion)>();
-        bool active, completed;
+        bool active, completed, wantBarrier;
         GameObject barrier;
         static readonly List<Encounter> all = new List<Encounter>();
+        const float BarrierMargin = 2.5f, BarrierMaxGrow = 10f;
 
         public bool Completed => completed;
         public IReadOnlyList<Enemy> Members => members;
@@ -116,9 +117,10 @@ namespace Nindo
 
         void Update()
         {
-            if (completed || Game.Player == null || manualActivation) return;
-            if (!active && CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < activationRadius && !Game.InCutscene)
+            if (completed || Game.Player == null) return;
+            if (!manualActivation && !active && CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < activationRadius && !Game.InCutscene)
                 Activate();
+            if (active && wantBarrier && barrier == null && !Game.InCutscene) TryCloseArea();
         }
 
         public void Activate()
@@ -126,7 +128,28 @@ namespace Nindo
             if (active || completed) return;
             active = true;
             foreach (var m in members) if (m != null && m.IsAlive && !(m is Boss)) m.Alert();
-            if (lockArea && barrier == null) barrier = ArenaBarrier.Create(transform.position, activationRadius + 3f, "Barrier_" + id);
+            wantBarrier = lockArea;
+            if (wantBarrier) TryCloseArea();
+        }
+
+        /// <summary>
+        /// El anillo encierra a Kaito y a todos los enemigos vivos. Antes tenía radio fijo (activación + 3 m): si un
+        /// enemigo veía a Kaito de lejos y avisaba al grupo, el anillo se cerraba con Kaito afuera y la colisión no lo
+        /// dejaba entrar. Ahora crece hasta 10 m para abarcarlos y, si Kaito sigue lejos, espera a que se acerque
+        /// (los enemigos ya lo vienen a buscar) en vez de cerrarse con él del otro lado.
+        /// </summary>
+        void TryCloseArea()
+        {
+            Vector3 c = transform.position;
+            float baseR = activationRadius + 3f, need = baseR;
+            foreach (var m in members)
+                if (m != null && m.IsAlive) need = Mathf.Max(need, CombatMath.FlatDistance(m.transform.position, c) + BarrierMargin);
+            float playerD = CombatMath.FlatDistance(Game.Player.transform.position, c);
+            need = Mathf.Max(need, playerD + BarrierMargin);
+            float r = Mathf.Min(need, baseR + BarrierMaxGrow);
+            if (playerD > r - BarrierMargin * 0.5f) return;   // todavía afuera: se reintenta en el próximo Update
+            barrier = ArenaBarrier.Create(c, r, "Barrier_" + id);
+            wantBarrier = false;
         }
 
         public void OnMemberAlerted(Enemy e)
@@ -145,10 +168,11 @@ namespace Nindo
             if (completed) return;
             completed = true;
             active = false;
+            wantBarrier = false;
             Game.Save.SetFlag(Flags.Encounter(id));
             if (!string.IsNullOrEmpty(rewardFlag)) Game.Save.SetFlag(rewardFlag);
             if (barrier != null) { ArenaBarrier.Dissolve(barrier); barrier = null; }
-            if (members.Count > 1) Game.UI?.ShowToast("Victoria", UIFactory.Gold, 1.2f);
+            // sin cartel "Victoria": en las peleas comunes cortaba el ritmo; los jefes tienen el suyo ("… derrotado")
             if (!string.IsNullOrEmpty(onCompleteStory)) Game.Story?.OnTrigger(onCompleteStory, null);
         }
 
@@ -158,6 +182,7 @@ namespace Nindo
             // santuario liberaba al ninja congelado mientras Kaito todavía no tiene katana
             if (completed || (manualActivation && !active)) return;
             active = false;
+            wantBarrier = false;
             if (barrier != null) { Destroy(barrier); barrier = null; }
             foreach (var m in members) if (m != null) m.ResetEnemy();
         }
