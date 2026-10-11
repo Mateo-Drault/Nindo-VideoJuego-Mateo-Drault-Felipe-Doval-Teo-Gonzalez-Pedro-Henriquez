@@ -149,7 +149,18 @@
 
 ---
 
-## 4. LO QUE FALTA (todo pedido por el usuario; nada terminado)
+## 3b. Hecho el 11 de octubre (probado en Unity y en main, `3ad9195`)
+
+* **18** objetivo y cartel trabados: cualquier flag refresca el objetivo; el cartel de interactuar se esconde si su objetivo se destruyó, quedó lejos o no se puede usar.
+* **19** sin "Victoria" en las peleas comunes.
+* **20** silueta: stencil (bit 32) que marcan jefes y sumos con `Nindo/OccluderMark` (`XRayOccluder`, copias fuera de la jerarquía del jefe). Ya no se marca sobre el propio Kaito. Falta que el usuario la vea y diga si la quiere así o sacarla.
+* **21, 22, 23, 24** (del WIP `c/ui-hud`, mergeado y terminado): avisos medidos y en dos renglones con `BrushBanner`, sin " — " (santuario: nombre + "Vida restaurada"/"Punto de reaparición"; gritos con `ShowBark`), halo de tinta en vez de contorno (`UIFactory.Legible`, `Resources/UI/TextHalo.mat` para el build), relleno de vida nuevo, ojo del dragón nuevo. **Indicador de guardado** (`UIManager.Save.cs`, `GameEvents.Saved`): pergamino, pincel que escribe "Guardado" y sello del nudo.
+* **28** sin Espíritu no hay dash: aviso (dragón + sonido) y un paso de 3 m sin i-frames (0.8 s de espera). El bot ahora recibe golpes si dashea sin Espíritu: tenerlo en cuenta al balancear.
+* **29** el anillo de combate crece hasta 10 m para encerrar a Kaito y a los enemigos, y si Kaito sigue lejos espera a que entre.
+* La rama `c/ui-hud` ya está integrada: se puede borrar su worktree.
+* Ojo en AutoPilot desde RunCommand: formateá los números con `CultureInfo.InvariantCulture` (con la coma decimal, `goto -25,0 …` manda a Kaito a cualquier lado). `Unity_ReadConsole` lo bloquea el clasificador de permisos: usá `Unity_GetConsoleLogs`.
+
+## 4. LO QUE FALTA (todo pedido por el usuario; los de 3b ya están)
 
 Están casi en sus palabras, con notas. **Leé también `Docs/handoff/fase_c_frentes_workflow.js`**: tiene los nueve frentes ya especificados en detalle (contratos entre frentes, alcance, validación) y se puede reusar tal cual pasándole `args: { only: [...] }`.
 
