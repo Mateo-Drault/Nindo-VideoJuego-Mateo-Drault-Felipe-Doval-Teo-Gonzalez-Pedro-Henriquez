@@ -1,0 +1,150 @@
+# Rig de los personajes del equipo (ninja, sumo, Gorō, abuelo y el ninja del secuestro)
+
+Cómo se autora un clip nuevo sobre los modelos del equipo y qué garantiza el pipeline. Código:
+`team_rig.py` (marco de autoría, solver, horneado), `team_limbs.py` (brazos y muñecas), `team_clips_<personaje>.py`
+(los clips), `build_team_anims.py` (chequeos, FBX de animación y sidecar), `team_review.py` (hojas de revisión).
+
+## Comandos
+
+```
+blender -b --factory-startup --python Tools/Blender/anim/build_team_anims.py -- <ninja|sumo|goro|grandpa> [--export] [--only A,B] [--renders DIR]
+```
+
+* sin `--export` solo resuelve y chequea (sale con código 1 si algo falla); con `--export` escribe
+  `Nindo/Assets/Nindo/Art/Characters/TeamAnims/<Personaje>Anims.fbx` y su `.json` (cuadros, timing, lint).
+* `--only` itera sobre algunos clips (no exporta). `--renders` hace una hoja por clip con la cámara del juego.
+* Después, en Unity: `generate_assets.py` (solo las funciones de los controllers/metas que tocás) liga cada clip del
+  sidecar al estado del mismo nombre del controller (`team_states`) y escribe el importador (`team_anim_metas`:
+  Generic, sin compresión, `preserveHierarchy: 1`).
+* Los modelos (`export_<personaje>.py`) solo se re-exportan si cambia la malla, los pesos o el esqueleto.
+
+## Esqueleto de juego (fase C)
+
+Las manos y los pies del sumo, Gorō, el abuelo y el ninja del secuestro colgaban de huesos de IK en la raíz
+(`TargetBrazo`, `TargetPie`, `AntebrazoTarget`, `TibiaTarget`): Unity mezcla cada hueso por separado y en cada cruce de
+clips (y en todo el blend de locomoción) la muñeca y el tobillo se despegaban. Ahora (`charlib.game_limbs`, llamado
+desde cada `export_<personaje>.py`) son hijos del antebrazo y la tibia, con los mismos nombres, cabezas, colas, rolls y
+pose de bind; el martillo de Gorō (`BaseM`) es hijo de `Mano.R`. Los controles siguen en el FBX (sin pesos, quietos)
+porque los kits de zona traen el esqueleto completo y `CharacterKits.Attach` los busca por nombre.
+
+| personaje | mano (der / izq) | pie | cambió de padre |
+|---|---|---|---|
+| ninja | `Mano.L` / `Mano.R` | `Pie.*` | nada (ya era FK) |
+| sumo | `Palma.L` / `Palma.R` | `pie.*` | `Palma.*` -> `Antebrazo.*`, `pie.*` -> `Tibia.*` (pesos de `TargetBrazo/TargetPie` a la mano/el pie, de `PolePie` a la tibia) |
+| Gorō | `Mano.R` / `Mano.L` | `Pie.*` | `Mano.*` -> `Antebrazo.*`, `Pie.*` -> `Tibia.*`, `BaseM` -> `Mano.R` |
+| abuelo | `Mano.L` / `Mano.R` | `Pie.*` | `Mano.*` -> `Antebrazo.*`, `Pie.*` -> `Tibia.*` |
+| ninja del secuestro | `Mano.L.001` / `Mano.R.001` | `Pie.*.001` | igual que el abuelo |
+
+Ojo con los lados: en el ninja, el sumo y el abuelo el `.L` del FBX es la mano DERECHA del personaje (el mapeo por
+geometría vive en `CHARS[...]["right_tag"]`). En los clips siempre se escribe `_r` / `_l` del personaje.
+
+El FBX de animación lleva solo la armadura, con los mismos padres que el modelo; `verify_fbx` falla si un nodo cuelga
+de otro padre, si una ruta no empieza en `Armature/` o si el nodo `Armature` se anima (el bug de los enemigos
+invisibles: un FBX con un solo nodo raíz que Unity aplana).
+
+`SumoPoser` (Unity) sirve para los dos esqueletos: con FK la mano sigue al antebrazo y el pie conserva el giro que le
+dio el clip.
+
+## Marco de autoría
+
+Metros del juego. Origen en el piso bajo el transform del juego, frente = -Y, izquierda del personaje = +X, arriba = +Z.
+Giros en grados XYZ de ese marco: x+ = inclinarse hacia adelante, y+ = hacia su izquierda, z+ = girar hacia su
+izquierda. `TeamChar` convierte al eje y las unidades de cada FBX; los clips no se enteran.
+
+Medidas de reposo en `ch.land` (`pelvis`, `head`, `shoulder_k`, `elbow_k`, `wrist_k`, `hip_k`, `knee_k`, `ankle_k`,
+`sole_z`), largos en `ch.leg_len` / `ch.arm_len`, arma en `ch.weapon_info` (`build_team_anims` las imprime en la línea
+`PERSONAJE`).
+
+## Un clip
+
+```python
+import nindo_anim as NA, team_rig as T
+Key = NA.Key
+POSE = dict(hips=(0, 0.02, -0.05), hips_rot=(8, 0, 0), spine=(10, 0, 0), head=(-8, 0, 0),
+            hand_r=(-0.30, -0.20, 0.90), hand_r_dir=(0, -1, -0.3), hand_r_palm=(1, 0, 0), elbow_r=(-1, 0.4, -0.3),
+            fist_r=1.0, knee_r=(-0.2, -1, 0))
+clip = T.TeamClip("Nombre", n, [Key(0, A), Key(12, B, "inout"), Key(n, A, "sine")], loop=False,
+                  timing=dict(kind="heavy", apex=14, contact=18, active=[18, 22], hold=[8, 14], lunge=0.6, windup=0.65),
+                  travel=T.lunge_travel(n, 14, 18, 0.6, windup_min=0.65)[0],
+                  feet={"r": [T.FootKey(0, x, y), T.FootKey(10, x, y + 0.3, pitch=20.0)], "l": [...]})
+```
+
+`team_clips_<personaje>.clips(ch)` devuelve la lista; cada clip con el nombre del estado del Animator que reemplaza.
+
+### Canales (claves de cada pose; lo que falta en una clave sale de la vecina)
+
+| canal | qué es |
+|---|---|
+| `hips`, `hips_rot` | cadera: desplazamiento (m) y giro (°) respecto del reposo |
+| `spine`, `chest`, `head`, `clav_r`/`clav_l` | giros (°) de columna, pecho, cabeza y clavículas; `breath` 0..1 respira |
+| `hand_k` | dónde va la muñeca (m). Sin él, la muñeca de reposo |
+| `hand_k_dir`, `hand_k_palm` | hacia dónde apuntan los dedos y hacia dónde mira la palma. Con los dos, ese marco; solo `dir`, el giro mínimo desde la mano neutra; ninguno, la mano neutra (sigue al antebrazo, muñeca derecha). Una palma casi paralela a los dedos se mezcla sola con el giro mínimo |
+| `elbow_k` | hacia dónde va el codo (polo; por omisión atrás, afuera y abajo). `team_limbs` lo puede girar alrededor del eje hombro-muñeca para que la muñeca entre (hasta 120°, con costo) |
+| `fist_k` | 0 mano abierta, 1 puño cerrado (falanges a 62/78°, pulgar 26/34°) |
+| `knee_k` | hacia dónde va la rodilla (por omisión adelante) |
+| `foot_k`, `foot_k_rot` | tobillo y giro del pie; mejor con `feet=` (`FootKey`, `gait2`): apoyos en el MUNDO, ruedan sobre punta o talón con el punto de apoyo clavado |
+| `auto_drop` | 1 (por omisión): la cadera baja sola lo que haga falta para que los pies lleguen (el chequeo avisa desde 4 cm) |
+| `travel` | lo que avanzó el transform del juego (lo arman `lunge_travel` / `knock_travel` desde `TeamClip(travel=...)`) |
+| `look` | 0..1: cuadros que se leen del golpe; ahí correr el arma cuesta 4 veces más. Por omisión, de `hold[0]` a `contact + 1` |
+| `extra` | `{hueso: giro}` suelto encima de todo (orejas, cintas) |
+
+Katana (ninja, mano `weapon_info["hand"]`): `grip` (dónde va el puño), `blade` (hacia dónde va la hoja), `edge`
+(hacia dónde mira el filo), `grip_l` 0..1 (la otra mano va al mango, espejo del agarre, más cerca del pomo).
+La hoja va donde la pide el clip: el hueso `Katana` se anima aparte y el puño rueda sobre el mango.
+
+Martillo (Gorō): `grip` (la derecha), `haft` (eje del mango hacia la cabeza), `face` (hacia dónde mira la cara de
+golpe), `grip_l` 0..1 y `slide_l`/`slide_r` (corren las manos por el mango, m), `grip_r` < 1 (la derecha afloja para
+cambiar de agarre: se endereza sin llevarse el martillo), `grip_flip` / `grip_flip_l` (meñique hacia la cabeza, como
+un bastón).
+
+### Lo que hace el solver con las manos (team_limbs.ArmSolver)
+
+* Mide la muñeca contra el reposo del modelo (neutra): flexión 75°, extensión 65°, desvío radial 25°, cubital 38°;
+  `exceso` 1 = en el borde de esa elipse.
+* El giro de la mano sobre el eje del brazo lo toma el antebrazo (85 %, pronación -85° a supinación 90°, 0 = pulgar
+  arriba); en la muñeca quedan hasta 30°.
+* Elige el codo (giro alrededor del eje hombro-muñeca), el giro del puño sobre el mango y su diagonal con la muñeca más
+  cómoda, sin meter el codo en el tronco. Hornea en dos pasadas: junta las soluciones de cada cuadro y elige el camino
+  más barato del clip entero (Viterbi; en un loop cierra sobre sí mismo), repartiendo en rampas de 2 a 6 cuadros los
+  cambios de solución que no se pueden evitar.
+* La mano LIBRE pedida fuera de lo posible se endereza hasta el 85 % del borde (los dedos apuntan un poco distinto de
+  lo pedido). La del arma se endereza hasta el borde llevándose el arma, y eso cuesta por centímetro que se corre la
+  punta o la cabeza (`hold.reach`). La que agarra un mango sin arma propia nunca se endereza: si no entra, falla.
+* Pedir la mano: la palma (`hand_k_palm`) y los dedos (`hand_k_dir`) en el marco de autoría, como se ven en el
+  personaje. Si un pedido no entra, el log dice `muñeca ... libre en su límite (xN)` con el exceso ANTES de enderezar.
+
+### Chequeos (build_team_anims.lint / wrist_checks / mesh_pass)
+
+Manos y pies que llegan; pies apoyados quietos (< 2 cm, `slide_ok` en el timing para un patinazo a propósito);
+patinar tocando el piso medido en la malla deformada; cuerpo y arma que no se meten en el piso; costura de loop
+(< 1°, el último cuadro resuelto contra el primero); contacto y apex contra `EnemyArchetypes.cs` (Hit(...)); la punta
+quieta en la pausa del aviso (< 2.5 m/s) y más rápida en el golpe; embestida que arranca en la suelta; empalmes de
+`chain` (Parried -> Attack1...); el arma en el blend de locomoción. Muñecas: sin matrices espejadas, exceso <= 1 (en el
+mango: aviso hasta 1.35), giro en la muñeca, pronación dentro de lo humano, el arma corrida <= 12° en el aviso y el
+golpe, y saltos del codo / antebrazo de un cuadro al otro (<= 35° más de lo que giró la mano pedida; aviso hasta 55°).
+
+## Dos personajes en el mismo FBX (el abuelo y el ninja del secuestro)
+
+```python
+ch = T.TeamChar("grandpa", T.CHARS["grandpa"])
+kid = ch.partner                     # TeamChar del esqueleto '.001' (partner_spec): mismas unidades, su propio marco
+clip = T.TeamClip("Kidnap", n, keys_del_abuelo, ...)
+clip.partner = T.TeamClip("Kidnap/ninja", n, keys_del_ninja, feet={...})   # mismo largo
+```
+
+* El ninja se autora en SU marco: origen en el piso bajo su cadera de reposo (1.3 m adelante del abuelo) y frente hacia
+  donde mira en el reposo (hacia el abuelo). En el marco del abuelo, un punto (x, y) del ninja es (-x, -1.3 - y).
+* `bake` resuelve los dos en la misma pose (el abuelo primero); `build_team_anims` corre los mismos chequeos sobre el
+  ninja (`reports[clip]["partner"]`) y las hojas de `--renders` lo muestran. `travel` es del transform del NPC: en el
+  marco del ninja el piso corre para el otro lado (`ch.partner.travel_axis`), los pies de los dos quedan clavados.
+* Sin `clip.partner`, el ninja queda en la pose fija del cuadro 2 de la toma `Kidnap` del equipo (`kid_pose`).
+* Las mallas: `Cuerpo` (abuelo) y `Cube` (ninja); el NPC `grandpa` oculta la del ninja.
+
+## Lo que hay que mirar al autorar
+
+* Las poses de aviso desde la cámara del juego (pitch 52°, distancia 24, FOV 30; un personaje de 1.5 m mide ~100 px).
+* Un `WARN ... muñeca` o `codo y antebrazo sin saltos` dice el cuadro: casi siempre es un pedido de mano que la muñeca
+  no puede cumplir (la palma al revés, la hoja paralela al antebrazo). Mover `grip`/`hand_k` o la palma unos
+  centímetros suele resolverlo sin cambiar la silueta.
+* Lo que el log no ve: el pulgar del puño sobre el mango no se cierra sobre él (la malla low poly lo deja arriba) y la
+  diagonal del puño elegida por el solver puede leerse como "mano de costado" en primeros planos.

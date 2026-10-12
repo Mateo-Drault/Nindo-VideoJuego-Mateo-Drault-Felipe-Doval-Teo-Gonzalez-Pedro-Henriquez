@@ -564,6 +564,11 @@ def main():
         clip.limb_rows = {k: list(v) for k, v in solver.limbs.rows.items()}
         print(f"[{clip.name}] {clip.frames} cuadros ({clip.frames / T.FPS:.2f} s){' loop' if clip.loop else ''}")
         reports[clip.name] = lint(ch, clip, frames, ctrls, roots, drops, misses, hits)
+        duo = getattr(clip, "partner", None)
+        if duo is not None:
+            # el segundo esqueleto del FBX (el ninja del secuestro): los mismos chequeos sobre lo suyo
+            duo.limb_rows = {k: list(v) for k, v in solver.partner_solver().limbs.rows.items()}
+            reports[clip.name]["partner"] = lint(ch.partner, duo, frames, duo.ctrls, roots, duo.drops, duo.misses, {})
         rootsd[clip.name] = [(c.get("travel") or 0.0) + clip.root_vel.length * (f / T.FPS) for f, c in enumerate(ctrls)]
         rootsa[clip.name] = roots
         baked.append((clip, frames))
@@ -625,7 +630,7 @@ def main():
             print("EXPORTADO", FBX, "cuadros 1 ..", last, f"{os.path.getsize(FBX) / 1e6:.2f} MB")
     if RENDERS:
         import team_review as TR
-        rv = TR.Review(ch, RENDERS)
+        rv = TR.Review(ch, RENDERS, partner=any(getattr(c, "partner", None) is not None for c, _ in baked))
         for clip, frames in baked:
             fs = sheet_frames(clip)
             # Kaito donde lo alcanza el golpe: a la embestida más el alcance (los demás clips, a 2.4 m)

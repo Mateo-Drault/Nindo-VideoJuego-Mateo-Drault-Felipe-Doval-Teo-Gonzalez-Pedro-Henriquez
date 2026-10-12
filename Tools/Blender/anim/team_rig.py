@@ -98,10 +98,31 @@ CHARS = {
         # el FBX del abuelo trae también al ninja del secuestro (esqueleto '.001'): en los clips nuevos queda
         # quieto en la pose del primer cuadro del secuestro (agazapado, esperando), que es lo que se ve del
         # NPC 'kidnap' mientras el abuelo respira antes de la toma del equipo
-        kidnapper=dict(suffix=".001", take_frame=2),
+        # (partner_spec / TeamChar.partner: el mismo esqueleto con '.001', parado 1.3 m adelante del abuelo y mirándolo)
+        kidnapper=dict(suffix=".001", take_frame=2, fwd=(0, -1, 0)),
         export_kw=dict(apply_scale_options='FBX_SCALE_UNITS'),
     ),
 }
+
+
+def partner_spec(spec, kd):
+    """Ficha del segundo esqueleto que viaja en el FBX de otro personaje (el ninja del secuestro en el del abuelo: los
+    mismos nombres con 'suffix'). Se resuelve con su propio TeamSolver sobre la MISMA pose (bake con clip.partner) y se
+    autora en su propio marco: origen en el piso bajo su cadera de reposo y frente hacia donde mira ('fwd' del mundo de
+    Blender, medido con los pulgares y las rodillas de su reposo)."""
+    suf = kd["suffix"]
+    out = dict(spec)
+    for key in ("pelvis", "head", "clav", "upper", "fore", "hand", "hand_ctrl", "thigh", "shin", "foot", "foot_ctrl"):
+        out[key] = spec[key] + suf if spec[key] else None
+    out["spine"] = [x + suf for x in spec["spine"]]
+    out["chest"] = [x + suf for x in spec["chest"]]
+    out["fingers"] = {k: [[a + suf, b + suf] for a, b in v] for k, v in spec["fingers"].items()}
+    out["thumb"] = {k: [a + suf for a in v] for k, v in spec["thumb"].items()}
+    out["index_pinky"] = {k: tuple(a + suf for a in v) for k, v in spec["index_pinky"].items()}
+    out["follow"] = {a + suf: b + suf for a, b in spec["follow"].items()}
+    out.update(weapon=None, kidnapper=None, fwd=kd["fwd"], suffix=suf)
+    return out
+
 
 # polo del codo cuando el clip no lo pide: atrás, afuera y abajo
 ARM_POLE = {"r": (-0.3, 0.6, -0.4), "l": (0.3, 0.6, -0.4)}
@@ -112,15 +133,21 @@ THUMB_CURL = (26.0, 34.0)
 class TeamChar:
     """Un personaje del equipo cargado en la escena, con la conversión del marco de autoría al esqueleto."""
 
-    def __init__(self, name, spec):
+    def __init__(self, name, spec, base=None):
+        """base: el personaje cuyo FBX ya está cargado y que trae a este como segundo esqueleto (partner_spec): se
+        comparten la armadura, el Rig y las unidades; el marco de autoría es el propio (ver partner_spec)."""
         self.name, self.spec = name, spec
-        import charlib as C
-        src = os.path.join(ASSETS, spec["fbx"])
-        self.src = src
-        self.arm = C.load(src)
-        self.take_actions = [a for a in bpy.data.actions]
+        self._partner = None
+        if base is None:
+            import charlib as C
+            src = os.path.join(ASSETS, spec["fbx"])
+            self.src = src
+            self.arm = C.load(src)
+            self.take_actions = [a for a in bpy.data.actions]
+            self.kid_pose = self.sample_kidnapper() if spec.get("kidnapper") else {}
+        else:
+            self.src, self.arm, self.take_actions, self.kid_pose = base.src, base.arm, base.take_actions, {}
         arm = self.arm
-        self.kid_pose = self.sample_kidnapper() if spec.get("kidnapper") else {}
         if arm.animation_data:
             arm.animation_data.action = None
         for pb in arm.pose.bones:
@@ -130,7 +157,11 @@ class TeamChar:
             pb.scale = (1, 1, 1)
         bpy.context.view_layer.update()
         self.meshes = [o for o in bpy.data.objects if o.type == 'MESH']
-        self.rig = NA.Rig(arm)
+        if base is not None:
+            # solo las mallas que pesan en sus huesos (el radio del cuerpo y las suelas se miden en ellas)
+            own = {n for n in base.rig.names if n.endswith(spec["suffix"])}
+            self.meshes = [o for o in self.meshes if any(g.name in own for g in o.vertex_groups)]
+        self.rig = base.rig if base is not None else NA.Rig(arm)
         # huesos que mueven vértices: un polo sin pesos (el esqueleto de juego ya los pasó a la tibia) queda en reposo
         self.weighted = set()
         for o in self.meshes:
@@ -141,26 +172,37 @@ class TeamChar:
         # alto que mide NormalizeHeight (unión de bounds de las mallas con skin en su pose de bind) -> unidades por
         # metro. Las piezas rígidas (katana, martillo) cuelgan de un hueso: en reposo el martillo de Gorō queda
         # parado en el piso adelante y estiraría la cuenta; en el prefab están en la mano y no la cambian
-        dg = bpy.context.evaluated_depsgraph_get()
-        lo, hi = 1e9, -1e9
-        for o in self.meshes:
-            if not o.vertex_groups:
-                continue
-            oe = o.evaluated_get(dg)
-            me = oe.to_mesh()
-            for v in me.vertices:
-                z = (oe.matrix_world @ v.co).z
-                lo, hi = min(lo, z), max(hi, z)
-            oe.to_mesh_clear()
-        self.ground = lo
-        self.u = (hi - lo) / spec["height"]
+        if base is None:
+            dg = bpy.context.evaluated_depsgraph_get()
+            lo, hi = 1e9, -1e9
+            for o in self.meshes:
+                if not o.vertex_groups:
+                    continue
+                oe = o.evaluated_get(dg)
+                me = oe.to_mesh()
+                for v in me.vertices:
+                    z = (oe.matrix_world @ v.co).z
+                    lo, hi = min(lo, z), max(hi, z)
+                oe.to_mesh_clear()
+            self.ground = lo
+            self.u = (hi - lo) / spec["height"]
+        else:
+            # mismas unidades y mismo piso que el personaje del FBX (los dos viven en el mismo transform del juego)
+            self.ground, self.u = base.ground, base.u
         F = Vector(spec["fwd"]).normalized()
         Z = Vector((0, 0, 1))
         # columnas = adónde va cada eje del marco de autoría: +X (izquierda), +Y (atrás), +Z (arriba)
         self.Rcw = Matrix((Z.cross(F), -F, Z)).transposed()
         self.Rc = rot3(self.Ai) @ self.Rcw            # marco de autoría -> ejes de la armadura
         self.Rci = self.Rc.transposed()
-        self.O = Vector((0.0, 0.0, lo))
+        self.O = Vector((0.0, 0.0, self.ground))
+        if base is not None:
+            # origen en el piso bajo su cadera de reposo: sus clips se autoran como los de cualquiera
+            pw = self.A @ self.rig.rest[spec["pelvis"]].translation
+            self.O = Vector((pw.x, pw.y, self.ground))
+        # hacia dónde corre el piso en el marco de autoría cuando el transform del juego avanza ('travel', ver solve):
+        # +Y para el personaje del FBX; para el segundo esqueleto, el mismo vector del mundo visto desde su marco
+        self.travel_axis = Vector((0.0, 1.0, 0.0)) if base is None else self.Rcw.transposed() @ (base.Rcw @ Vector((0.0, 1.0, 0.0)))
         s = spec
         self.side = {}
         for k, tag in (("r", s["right_tag"]), ("l", s["left_tag"])):
@@ -173,6 +215,18 @@ class TeamChar:
                     d[ctrl] = None
             self.side[k] = d
         self.measure()
+        if self.kid_pose:
+            self.kid_pose = self.straighten_kid_hands(self.kid_pose)
+
+    @property
+    def partner(self):
+        """El segundo personaje del FBX (el ninja del secuestro en el del abuelo) como TeamChar propio, o None."""
+        kd = self.spec.get("kidnapper")
+        if kd is None:
+            return None
+        if self._partner is None:
+            self._partner = TeamChar(self.name + "_partner", partner_spec(self.spec, kd), base=self)
+        return self._partner
 
     # ------------------------------------------------------------------ conversión de marcos
     def P(self, p):
@@ -430,6 +484,26 @@ class TeamChar:
         out = {pb.name: pb.matrix.copy() for pb in arm.pose.bones if pb.name.endswith(kd["suffix"])}
         return out
 
+    def straighten_kid_hands(self, kp):
+        """La pose fija del ninja del secuestro (cuadro de la toma del equipo) con las muñecas dentro de lo posible:
+        en esa toma la mano seguía al control de IK sin mirar el antebrazo (la derecha, 35° pasada del borde). Se
+        endereza como una mano libre de team_limbs (hasta FREE_BEND) y los dedos la siguen."""
+        kid = self.partner
+        R = self.rig
+        out = dict(kp)
+        for k in "rl":
+            arm = TL.Arm(kid, k)
+            H = out[arm.hand]
+            Rh2 = TL.ArmSolver.straighten(None, arm, rot3(out[arm.fore]), rot3(H), TL.FREE_BEND)
+            Dm = compose(H.translation, Rh2) @ H.inverted()
+            for n in R.names:
+                p = R.parent.get(n)
+                while p is not None and p != arm.hand:
+                    p = R.parent.get(p)
+                if (n == arm.hand or p == arm.hand) and n in out:
+                    out[n] = Dm @ out[n]
+        return out
+
     def report(self):
         r = {k: [round(x, 3) for x in v] if isinstance(v, Vector) else v for k, v in self.land.items()}
         r["u"] = round(self.u, 4)
@@ -462,6 +536,13 @@ class TeamSolver:
         self.misses = {}
         self.hip_drop = 0.0
         self.limbs = TL.ArmSolver(ch, self)
+        self._partner = None
+
+    def partner_solver(self):
+        """El TeamSolver del segundo esqueleto del FBX (ver TeamChar.partner), creado la primera vez."""
+        if self._partner is None:
+            self._partner = TeamSolver(self.ch.partner)
+        return self._partner
 
     # ---------------------------------------------------------------- piezas
     def hand_frame(self, k, d, palm):
@@ -563,7 +644,7 @@ class TeamSolver:
         g = lambda k, dflt=None: c.get(k) if c.get(k) is not None else dflt
         travel = g("travel", 0.0)
         # lo clavado en el mundo (pies) se autora en el mundo: en el clip se corre lo que avanzó el transform
-        sh = Vector((0.0, travel, 0.0))
+        sh = ch.travel_axis * travel
         # ---- cadera
         prest = R.rest[sp["pelvis"]]
         Hm = compose(prest.translation + ch.offset_arm(g("hips", (0, 0, 0))),
@@ -848,18 +929,35 @@ def bake(ch, clip, solver):
     caída automática de cadera por cuadro, faltas de alcance)."""
     frames, ctrls, roots, drops, misses = [], [], [], [], []
     clip.ch = ch
+    # el segundo esqueleto del FBX (clip.partner, del mismo largo, autorado para ch.partner) se resuelve en la misma
+    # pose después del primero: lo que no pide queda en la pose fija de kid_pose
+    duo = getattr(clip, "partner", None)
+    ps = None
+    if duo is not None:
+        ps = solver.partner_solver()
+        duo.ch = ch.partner
+        duo.ctrls, duo.drops, duo.misses = [], [], []
     # dos pasadas (team_limbs.ArmSolver): la primera junta las soluciones posibles de cada brazo en cada cuadro y elige el
     # camino del clip entero (en un loop, cerrado sobre sí mismo: la costura no salta); la segunda lo aplica
-    L = solver.limbs
-    L.begin("collect")
+    sols = [(solver, clip)] + ([(ps, duo)] if ps else [])
+    for sv, _ in sols:
+        sv.limbs.begin("collect")
     for f in range(clip.frames if clip.loop else clip.frames + 1):
-        solver.solve(NA.Pose(ch.rig), clip.controls(f))
-    L.plan_path(clip.loop)
-    L.begin("replay")
+        pose = NA.Pose(ch.rig)
+        for sv, cl in sols:
+            sv.solve(pose, cl.controls(f))
+    for sv, _ in sols:
+        sv.limbs.plan_path(clip.loop)
+        sv.limbs.begin("replay")
     for f in range(clip.frames + 1):
         c = clip.controls(f)
         pose = NA.Pose(ch.rig)
         m = solver.solve(pose, c)
+        if ps:
+            dc = duo.controls(f)
+            duo.misses.append(dict(ps.solve(pose, dc)))
+            duo.ctrls.append(dc)
+            duo.drops.append(ps.hip_drop)
         for n in ch.rig.names:
             pose.get(n)
         frames.append(pose.W)
@@ -894,6 +992,8 @@ class TeamClip(NA.Clip):
         # pasos: {k: [FootKey...]} en el piso del mundo (antes del avance del golpe); mandan sobre foot_k de las claves
         self.feet = feet or {}
         self.ch = None
+        # clip del segundo esqueleto del FBX (TeamChar.partner) que se hornea junto con este (ver bake)
+        self.partner = None
 
     # canales propios de los personajes del equipo que no son posiciones (nindo_anim no los conoce)
     SCALARS = ("fist_r", "fist_l", "grip_l", "grip_r", "grip_flip", "grip_flip_l", "slide_r", "slide_l", "auto_drop", "look")

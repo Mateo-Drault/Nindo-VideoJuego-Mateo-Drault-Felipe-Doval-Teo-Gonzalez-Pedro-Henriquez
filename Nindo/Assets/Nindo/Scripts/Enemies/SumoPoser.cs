@@ -63,7 +63,8 @@ namespace Nindo
     /// al costado (shiko), agachado con los puños en el piso (tachiai), los brazos abiertos (agarre).
     /// Brazos y piernas se resuelven con IK de dos huesos hacia puntos del espacio del personaje: no dependen del clip
     /// de abajo (si llegan clips nuevos la pose sigue valiendo; 'weight' la baja). Sirve para el esqueleto del equipo
-    /// (manos y pies cuelgan de controles IK, no del antebrazo: se mueve el control) y para uno FK.
+    /// viejo (manos y pies colgaban de controles IK, no del antebrazo: se mueve el control) y para el de juego de la fase C
+    /// (FK: la mano sigue al antebrazo y el pie conserva el giro que le dio el clip).
     /// Las manos que van a pegar se encienden en el último tramo (dorado / rojo), como el filo de la katana.
     /// Corre después del Animator y antes de VariantMotion (110) y SpringChain (120: la tsuna y el delantal cuelgan
     /// de esta pose). En su propio archivo: DefaultExecutionOrder es del script.
@@ -202,6 +203,7 @@ namespace Nindo
         class Limb
         {
             public Bone upper, lower, control;  // control: el control IK del que cuelga la mano/el pie (null si es FK)
+            public Bone endFK;                  // el pie hijo de la tibia (esqueleto de juego): se le devuelve su giro
             public Transform end;
             public float lowerLen, side;
         }
@@ -292,6 +294,7 @@ namespace Nindo
             if (upper == null || lower == null || end == null) return null;
             var l = new Limb { upper = AddBone(upper), lower = AddBone(lower), end = end };
             if (!end.IsChildOf(lower) && end.parent != null) l.control = AddBone(end.parent);
+            else l.endFK = AddBone(end);
             return l;
         }
 
@@ -431,6 +434,8 @@ namespace Nindo
             Vector3 handRA = armR.end.position, handLA = armL.end.position, footRA = legR.end.position, footLA = legL.end.position;
             Quaternion handRRot = armR.control != null ? armR.control.t.rotation : Quaternion.identity;
             Quaternion handLRot = armL.control != null ? armL.control.t.rotation : Quaternion.identity;
+            // un pie FK gira con la tibia al doblar la rodilla: se guarda cómo lo dejó el clip (plano en el piso)
+            Quaternion footRRot = legR.end.rotation, footLRot = legL.end.rotation;
 
             // cadera abajo y torso inclinado / girado / de costado (sobre su pivote)
             Vector3 drop = -up * (p.drop * u * w);
@@ -444,8 +449,8 @@ namespace Nindo
             head.t.rotation = Quaternion.AngleAxis(-p.lean * 0.45f * w, Vector3.Cross(up, fwd)) * head.t.rotation;
 
             // piernas: los pies donde los puso el clip (la cadera bajó: se doblan) o donde pide la pose
-            Leg(legR, footRA, p.footR, p.wFootR * w, rt, up, fwd, right, u);
-            Leg(legL, footLA, p.footL, p.wFootL * w, rt, up, fwd, right, u);
+            Leg(legR, footRA, footRRot, p.footR, p.wFootR * w, rt, up, fwd, right, u);
+            Leg(legL, footLA, footLRot, p.footL, p.wFootL * w, rt, up, fwd, right, u);
             // brazos: la mano del clip acompaña al torso; la de la pose es un punto del personaje
             Arm(armR, pivot + q * (handRA + drop - pivot), q * handRRot, p.handR, p.wHandR * w, rt, up, fwd, right, u);
             Arm(armL, pivot + q * (handLA + drop - pivot), q * handLRot, p.handL, p.wHandL * w, rt, up, fwd, right, u);
@@ -454,13 +459,14 @@ namespace Nindo
         Vector3 CharPoint(Vector3 c, float side, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
             => rt.position + (right * (c.x * side) + up * c.y + fwd * c.z) * u;
 
-        void Leg(Limb l, Vector3 animTip, Vector3 pose, float w, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
+        void Leg(Limb l, Vector3 animTip, Quaternion animRot, Vector3 pose, float w, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
         {
             Vector3 target = w > 0.001f ? Vector3.Lerp(animTip, CharPoint(pose, l.side, rt, up, fwd, right, u), w) : animTip;
             // rodilla adelante y bien afuera (cuclillas de sumo)
             Vector3 hint = l.upper.t.position + (fwd * 1.0f + right * (l.side * 0.7f)) * u;
             Vector3 reach = SolveTwoBone(l.upper.t, l.lower.t, l.lowerLen, animTip, target, hint);
             if (l.control != null) l.control.t.position += reach - l.end.position;
+            else l.end.rotation = animRot;
         }
 
         void Arm(Limb l, Vector3 animTip, Quaternion animRot, Vector3 pose, float w, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
