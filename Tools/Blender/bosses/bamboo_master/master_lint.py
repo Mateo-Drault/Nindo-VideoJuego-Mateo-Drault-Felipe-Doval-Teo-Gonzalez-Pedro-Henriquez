@@ -106,3 +106,73 @@ def bone_delta_deg(rig, Wa, Wb):
 
 def strike_points(frames, roots, bone, local):
     return [W[bone] @ Vector(local) + r for W, r in zip(frames, roots)]
+
+
+# ============================================================================ suela contra el piso
+# puntos de la suela (reposo, z = 0): talón y bola a los dos lados y el centro de la bola (el eje de un giro), en el pie;
+# la punta a los dos lados, en el dedo (se dobla aparte)
+SOLE_HALF_W = 0.055
+TOUCH_Z = 0.015          # bajo esto la suela toca el piso
+SOLE_SLIP_MAX = 0.02     # lo que se puede correr una suela apoyada en un apoyo seguido (m)
+
+
+def sole_points(rig):
+    """{hueso: [puntos en el espacio del hueso]} de las dos suelas."""
+    out = {}
+    for S, sx in (("R", 1.0), ("L", -1.0)):
+        x = MR.ANKLE.x * sx
+        foot = [Vector((x + d, y, 0.0)) for y in (MR.SOLE_HEEL_Y, MR.SOLE_BALL_Y) for d in (-SOLE_HALF_W, SOLE_HALF_W)]
+        foot.append(Vector((x, MR.SOLE_BALL_Y, 0.0)))
+        toe = [Vector((x + d, MR.SOLE_TOE_Y, 0.0)) for d in (-0.04, 0.04)]
+        out["Foot_" + S] = [rig.rest_inv["Foot_" + S] @ p for p in foot]
+        out["Toe_" + S] = [rig.rest_inv["Toe_" + S] @ p for p in toe]
+    return out
+
+
+def sole_slip(rig, frames, roots, pts=None):
+    """Lo que patina cada suela mientras toca el piso, con el avance del juego: en cada par de cuadros con puntos de la
+    suela por debajo de TOUCH_Z en los dos, se toma el punto que MENOS se movió (el pivote: un pie que rueda del talón a
+    la punta o gira sobre la bola no patina) y se suma a lo largo del apoyo. {pie: (patinada máx. de un apoyo m,
+    [cuadro inicial, final], paso máx. de un cuadro m)}."""
+    pts = pts or sole_points(rig)
+    out = {}
+    for S in "RL":
+        tracks = []
+        for bn in ("Foot_" + S, "Toe_" + S):
+            for p in pts[bn]:
+                tracks.append([W[bn] @ p + r for W, r in zip(frames, roots)])
+        worst, wseg, wstep = 0.0, [0, 0], 0.0
+        run, run_from = 0.0, None
+        for i in range(1, len(frames)):
+            best = None
+            for tr in tracks:
+                a, b = tr[i - 1], tr[i]
+                if a.z < TOUCH_Z and b.z < TOUCH_Z:
+                    d = Vector((b.x - a.x, b.y - a.y)).length
+                    best = d if best is None else min(best, d)
+            if best is None:
+                run, run_from = 0.0, None
+                continue
+            if run_from is None:
+                run_from = i - 1
+            run += best
+            wstep = max(wstep, best)
+            if run > worst:
+                worst, wseg = run, [run_from, i]
+        out["Foot_" + S] = (round(worst, 4), wseg, round(wstep, 4))
+    return out
+
+
+def sole_dump(rig, frames, roots, pts=None):
+    """Para iterar un clip (--slipdump): por cuadro y por pie, la altura del punto más bajo de la suela y lo que se movió
+    el pivote (el punto apoyado que menos se movió) desde el cuadro anterior."""
+    pts = pts or sole_points(rig)
+    lines = []
+    for S in "RL":
+        tracks = [[W[bn] @ p + r for W, r in zip(frames, roots)] for bn in ("Foot_" + S, "Toe_" + S) for p in pts[bn]]
+        for i in range(len(frames)):
+            low = min(tr[i].z for tr in tracks)
+            mv = [Vector((tr[i].x - tr[i - 1].x, tr[i].y - tr[i - 1].y)).length for tr in tracks
+                  if i and tr[i].z < TOUCH_Z and tr[i - 1].z < TOUCH_Z]
+            lines.append(f"    {S} f{i:3d} suela {low * 100:6.1f} cm  pivote {min(mv) * 100 if mv else -1:5.1f} cm")
+    return "\n".join(lines)

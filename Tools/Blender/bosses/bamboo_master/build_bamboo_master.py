@@ -13,6 +13,7 @@ Un solo comando, determinista:
     --detail            con --renders: además las poses de prueba grandes desde tres lados (deformación)
     --report PATH       el detalle de las mediciones en JSON (con --renders va en DIR)
     --roundtrip PATH    con --export: dónde quedan algunos huesos cuadro a cuadro, para check_master_roundtrip.py
+    --slipdump A,B      la altura de la suela y el pivote de cada pie cuadro a cuadro (iterar los apoyos)
 Falla (código 1) si un chequeo no pasa: frente, apoyo en el piso, presupuesto de triángulos, altura de la silueta, nada
 bajo el piso, alcance de manos y pies, deriva de los pies apoyados, costura de los loops, cuerpo contra sí mismo,
 avance que se teletransporta con el reloj del juego, punta rápida fuera del golpe, aviso que no cambia la silueta,
@@ -56,12 +57,14 @@ HEIGHT_CAP = 3.6         # con el bastón arriba o una patada alta; el reposo mi
 GAP = 10                 # cuadros vacíos entre clips en la toma única
 BUDGET = {"body": 4800, "robe": 2400, "thrown": 500, "staff": 450}
 ROUNDTRIP = opt("--roundtrip")
+SLIPDUMP = opt("--slipdump")
 ROUNDTRIP_BONES = ("Hips", "Head", "Hand_R", "Hand_L", "Index_R_2", "Thumb_L_2", "Foot_R", "Toe_L", "Staff", "Acc_TieSashA_2",
                    "Robe_038_2", "Brow_R_2")
 # la cámara del juego (Kaito de espaldas mirando al jefe): lo que se lee desde arriba es la forma, no el detalle
 TELL_CAM = dict(focus=(0.0, -1.6, 1.0), pitch=52.0, dist=24.0, fov=30.0)
 TELL_MIN = 0.15
-GUARD_MIN = 0.15    # la palma estirada hacia Kaito medía 12 % (apunta a la cámara); la grulla con las alas abiertas, 16-31 %
+GUARD_MIN = 0.15
+SOLE_WARN_ONLY = True    # la palma estirada hacia Kaito medía 12 % (apunta a la cámara); la grulla con las alas abiertas, 16-31 %
 failures, warnings = [], []
 
 
@@ -108,6 +111,16 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
     rep["plant_drift_cm"] = worst
     if not test:
         check(worst <= 2.0, f"{clip.name}: pies apoyados quietos (deriva máx. {worst:.2f} cm {wseg[:1]})")
+    # la suela que toca el piso tampoco se arrastra (el apoyo de arriba solo ve el pie quieto; un pie que baja todavía
+    # moviéndose, o que gira con el eje lejos de la bola, patinaba sin que lo marcara)
+    ss = ML.sole_slip(rig, frames, roots)
+    rep["sole_slip_cm"] = {k: [round(v[0] * 100, 1), v[1], round(v[2] * 100, 1)] for k, v in ss.items()}
+    wk = max(ss, key=lambda k: ss[k][0])
+    if SLIPDUMP and wanted(clip.name, SLIPDUMP):
+        print(ML.sole_dump(rig, frames, roots))
+    if not test:
+        check(ss[wk][0] <= ML.SOLE_SLIP_MAX, f"{clip.name}: la suela apoyada no se arrastra ({wk}: {ss[wk][0] * 100:.1f} cm en "
+                                             f"f{ss[wk][1][0]}-{ss[wk][1][1]})", warn=SOLE_WARN_ONLY)
     if clip.loop:
         seam, step = NA.loop_seam_deg(rig, frames)
         rep["loop_seam_deg"] = seam
@@ -271,6 +284,7 @@ def main():
     if not lab:
         lint_chains(rig, MC, clips, framesd, reports)
         lint_variants(clips, ctrlsd, reports)
+        lint_reach(rig, clips, framesd, reports)
     act, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
     last = max(b for a, b in ranges.values())
     # techo y piso de la silueta en todos los cuadros (mallas evaluadas, solo las que se ven en ese cuadro)
@@ -402,7 +416,7 @@ def lint_variants(clips, ctrlsd, reports):
         o = by[b]
         # el miembro que pega y su brillo pueden cambiar (la palma de la fase 1 es el bastón de la 3); los tiempos no
         # (el anillo y el bastón alto también: la barrida con el bastón llega más lejos que la de la pierna sola)
-        own = ("phase", "glow", "notes", "strike", "tip_ratio_max", "ring_m", "staff_high")
+        own = ("phase", "glow", "notes", "strike", "tip_ratio_max", "ring_m", "staff_high", "reach_variants")
         tc = {k: v for k, v in c.timing.items() if k not in own}
         to = {k: v for k, v in o.timing.items() if k not in own}
         same = c.frames == o.frames and c.loop == o.loop and tc == to and \
@@ -411,6 +425,28 @@ def lint_variants(clips, ctrlsd, reports):
         tr_o = [round(x.get("travel") or 0.0, 4) for x in ctrlsd[b]]
         same = same and tr_c == tr_o and (c.root_vel - o.root_vel).length < 1e-6
         check(same, f"{c.name}: variante de {b} con los mismos cuadros, tiempos, eventos y avance")
+
+
+def lint_reach(rig, clips, framesd, reports):
+    """Las variantes de paso corto (timing.reach_variants) son el MISMO golpe hasta la suelta: el jefe pasa de una a otra
+    sin fundido en el cuadro de la suelta (BambooMasterBoss.PickReach), así que hasta el final de la pausa del aviso
+    no puede haber diferencia de giro en ningún hueso."""
+    for c in clips:
+        vs = c.timing.get("reach_variants")
+        if not vs:
+            continue
+        # el jefe cambia de variante cuando arranca la suelta (el apex más lo que avanza la pausa): un cuadro de margen
+        ap, hold = c.timing["apex"], c.timing.get("hold", [0, 0])[1]
+        upto = ap + 1 if hold > ap else ap
+        for v in vs:
+            if v not in framesd:
+                check(False, f"{c.name}: falta la variante {v}")
+                continue
+            worst = max((ML.bone_delta_deg(rig, framesd[c.name][f], framesd[v][f]) + (f,) for f in range(upto + 1)),
+                        key=lambda x: x[0])
+            reports[c.name].setdefault("reach_same_deg", {})[v] = [worst[0], worst[1], worst[3]]
+            check(worst[0] <= 0.5 and worst[2] <= 0.5, f"{c.name}: {v} igual hasta la suelta (f{upto}): {worst[0]:.2f}° en "
+                                                       f"{worst[1]} (f{worst[3]}), cadera {worst[2]:.1f} cm")
 
 
 def lint_tells(scn, arm, meshes, baked, ranges, rootsd, reports):

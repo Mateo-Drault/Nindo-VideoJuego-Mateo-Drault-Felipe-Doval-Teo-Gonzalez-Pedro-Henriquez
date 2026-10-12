@@ -78,9 +78,12 @@ def p3_from(base, track, body=None, notes="", glow="Master_GlintStaff", strike=S
         ov = [Key(k[0], arm_track(k[1], sides), k[2], None, (k[3] if len(k) > 3 else {}).get("stop", ())) for k in track]
     t = dict(b.timing)
     t.update(phase=3, glow=glow, strike=strike)
+    if "reach_variants" in t:
+        t["reach_variants"] = MC.reach_names(base, 3)
     t.update(timing or {})
+    # los pasos del clip base (su pista de pies) siguen valiendo: los brazos y el bastón van encima
     c = MC.MClip(base + "_P3", b.frames, keys, phase=3, base=base, loop=b.loop, lag=dict(b.lag), timing=t,
-                 events=copy.deepcopy(b.events), notes=notes, overlay=ov)
+                 events=copy.deepcopy(b.events), notes=notes, overlay=ov, overlays=b.overlays)
     MC.CLIPS.append(c)
     return c
 
@@ -91,12 +94,15 @@ def torso(over):
 
 
 # ============================================================================ golpes del bastón (variantes)
-def thrust_p3():
+def thrust_p3(var=None):
     """Palm_P3, tsuki del bastón (dorado): el AVISO es el bastón recogido hacia atrás por la izquierda, que lo tira
     hasta la cadera de atrás, el tronco enroscado hacia su izquierda y la punta apenas delante de la derecha (desde
     arriba una línea larga que sale por detrás de él apuntando a Kaito). Con el paso del tui zhang la izquierda empuja,
     el bastón se desliza en la derecha y la punta llega a ~2.2 m del transform a la altura del pecho de Kaito; el tronco
-    gira hacia su derecha (el hombro izquierdo va adelante con la mano que empuja)."""
+    gira hacia su derecha (el hombro izquierdo va adelante con la mano que empuja). En las variantes de paso corto lo
+    empuja menos y lo agarra más largo: con Kaito a 1.2-1.5 m la punta llega a ~1.45 m (con la entera lo atravesaba)."""
+    k = 1.0 if var is None else MC.REACH_K[var]
+    L3 = lambda a, b: tuple(Vector(a).lerp(Vector(b), k))
     over = {4: dict(hips_rot=(0.0, -1.0, 18.0), chest=(1.0, 0.0, 6.0), neck=(-1.0, 0.0, -10.0), head=(-4.0, 0.0, -14.0)),
             10: dict(hips_rot=(0.0, -2.0, 26.0), spine=(0.0, 0.0, 6.0), chest=(-2.0, 0.0, 6.0), neck=(0.0, 0.0, -16.0),
                      head=(-3.0, 0.0, -20.0), clav_r=(0.0, 0.0, 0.0)),
@@ -112,50 +118,63 @@ def thrust_p3():
     B = MC.BODY
     er, el = dict(elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), dict(elbow_r=(-0.6, 0.1, -0.8), elbow_l=(0.5, 0.3, -0.8))
     coil = line(B, (0.02, -0.44, 1.16), (0.3, 0.36, 1.18), 0.42, **er)
+    hold = line(B, (0.02, -0.43, 1.165), (0.31, 0.38, 1.18), 0.41, **er)
     MC.POSES["tsuki aviso 3"] = coil
     track = [(0, G3(), "lin"), (4, line(B, (0.03, -0.5, 1.13), (0.25, 0.28, 1.25), 0.62, **er), "inout"),
-             (10, coil, "inout"), (12, line(B, (0.02, -0.43, 1.165), (0.31, 0.38, 1.18), 0.41, **er), "sine"),
-             (13, line(B, (0.0, -0.58, 1.16), (0.22, 0.08, 1.2), 0.75, **er), "in2"),
-             (15, line(B, (-0.06, -0.94, 1.14), (0.1, -0.6, 1.18), 1.38, **el), "expo_in"),
-             (17, line(B, (-0.07, -1.0, 1.11), (0.09, -0.66, 1.16), 1.42, **el), "out"),
+             (10, coil, "inout"), (12, hold, "sine", {"stop": tuple(hold)}),
+             (13, line(B, L3((0.02, -0.5, 1.16), (0.0, -0.58, 1.16)), L3((0.26, 0.2, 1.2), (0.22, 0.08, 1.2)),
+                       0.55 + 0.2 * k, **er), "in2"),
+             (15, line(B, L3((-0.03, -0.7, 1.15), (-0.06, -0.94, 1.14)), L3((0.16, -0.36, 1.19), (0.1, -0.6, 1.18)),
+                       0.55 + 0.83 * k, **el), "expo_in"),
+             (17, line(B, L3((-0.04, -0.74, 1.13), (-0.07, -1.0, 1.11)), L3((0.15, -0.4, 1.18), (0.09, -0.66, 1.16)),
+                       0.59 + 0.83 * k, **el), "out"),
              # al recoger, la izquierda vuelve por fuera de la cadera (por delante del vientre cruzaba el tronco)
              (21, line(B, (0.0, -0.7, 1.12), (0.3, -0.22, 1.22), 1.05, **er), "inout"),
              (26, line(B, (0.04, -0.53, 1.13), (0.21, 0.18, 1.28), 0.8, **er), "inout"), (34, G3(), "sine")]
-    return p3_from("Palm", track, torso(over),
+    return p3_from("Palm" if var is None else "Palm_" + var, track, torso(over),
                    notes="tsuki del bastón: lo recoge por la izquierda hasta la cadera de atrás (aviso f10) y con el paso lo "
-                         "empuja; se desliza en la derecha y la punta pega a ~2.2 m en f15")
+                         "empuja; se desliza en la derecha y la punta pega a ~2.2 m en f15" +
+                         ("" if var is None else ". Variante de paso corto (agarre largo)"))
 
 
-def smash_p3():
+def smash_p3(var=None):
     """ChopPalm_P3, el bastón que cae de arriba (dorado): lo desliza hasta agarrarlo de la punta de atrás y levanta la
     punta que pega por delante, por encima y hacia atrás; el AVISO es el bastón alzado detrás de la cabeza, casi 4 m de
     alto (desde la cámara del juego una vara larga que se va hacia atrás), el cuerpo estirado sobre la pierna de atrás.
     Baja en arco por encima de la cabeza y la punta cae a la altura del hombro de Kaito a ~2.6 m cuando el pie de
-    adelante se clava."""
+    adelante se clava. En las variantes de paso corto el bastón se le desliza entre las manos al bajar (lo agarra más
+    corto): con Kaito pegado la punta cae a ~1.5 m."""
+    k = 1.0 if var is None else MC.REACH_K[var]
+    L3 = lambda a_, b_: tuple(Vector(a_).lerp(Vector(b_), k))
     over = {11: dict(clav_l=(0.0, -10.0, 0.0)), 13: dict(clav_l=(0.0, -10.0, 0.0))}
     B = MC.BODY
     up = dict(elbow_r=(-0.7, 0.3, 0.6), elbow_l=(0.7, 0.3, 0.5))
     lo = dict(elbow_r=(-0.6, 0.2, -0.8), elbow_l=(0.6, 0.2, -0.8))
     vert = dict(gru=(0.0, -1.0, 0.0), glu=(0.0, -1.0, 0.0))
     raised = end_grip(B, (0.0, 0.02, 2.6), (0.06, -0.24, 2.38), **up)
+    hold = end_grip(B, (0.0, 0.03, 2.61), (0.06, -0.23, 2.39), **up)
     MC.POSES["bastón alzado aviso 3"] = raised
+    end_c = 0.12 + 1.08 * (1.0 - k)
     track = [(0, G3(), "lin"),
              # se para delante a su izquierda: la izquierda sale de la cadera de atrás por afuera del vientre
              (5, end_grip(B, (0.16, -0.6, 1.66), (0.28, -0.42, 1.32), end=0.3, **vert, **lo), "inout"),
              # llega arriba en f9 y se asienta hasta el aviso: la punta, a 4 m de las manos, llegaba todavía rápida
              (9, end_grip(B, (0.0, -0.02, 2.56), (0.06, -0.28, 2.34), **up), "inout"),
              (11, raised, "sine", {"stop": ("staff_pos",)}),
-             (13, end_grip(B, (0.0, 0.03, 2.61), (0.06, -0.23, 2.39), **up), "sine", {"stop": ("staff_pos",)}),
-             (15, end_grip(B, (-0.01, -0.42, 2.42), (0.04, -0.3, 2.06), **vert, **up), "in2"),
+             (13, hold, "sine", {"stop": tuple(hold)}),
+             (15, end_grip(B, (-0.01, -0.42, 2.42), (0.04, -0.3, 2.06), end=0.15 + 0.5 * (1.0 - k), **vert, **up), "in2"),
              # las manos terminan adelante y abajo, lejos del pecho que se dobla: el bastón cae en diagonal
-             (17, end_grip(B, (-0.06, -1.16, 1.04), (0.08, -0.82, 1.2), end=0.12, **lo), "expo_in"),
-             (19, end_grip(B, (-0.06, -1.18, 0.92), (0.08, -0.85, 1.1), end=0.12, **lo), "out"),
+             (17, end_grip(B, L3((0.12, -0.86, 1.3), (-0.06, -1.16, 1.04)), L3((0.24, -0.6, 1.5), (0.08, -0.82, 1.2)), end=end_c,
+                           **lo), "expo_in"),
+             (19, end_grip(B, L3((0.12, -0.88, 1.2), (-0.06, -1.18, 0.92)), L3((0.24, -0.63, 1.41), (0.08, -0.85, 1.1)), end=end_c,
+                           **lo), "out"),
              (23, line(B, (0.0, -0.74, 1.12), (0.3, -0.3, 1.22), 1.0, **lo), "inout"),
              (28, line(B, (0.04, -0.53, 1.13), (0.21, 0.18, 1.28), 0.8, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)),
               "inout"), (36, G3(), "sine")]
-    return p3_from("ChopPalm", track, torso(over), timing={"staff_high": True},
+    return p3_from("ChopPalm" if var is None else "ChopPalm_" + var, track, torso(over), timing={"staff_high": True},
                    notes="el bastón cae de arriba: alzado detrás de la cabeza (aviso f11, la punta a ~4 m), baja en arco y "
-                         "pega a la altura del hombro de Kaito a ~2.6 m en f17")
+                         "pega a la altura del hombro de Kaito a ~2.6 m en f17" +
+                         ("" if var is None else ". Variante de paso corto (el bastón se desliza a un agarre corto)"))
 
 
 def side_staff(z=1.32, grip=0.2):
@@ -382,15 +401,31 @@ def defeat():
     step_l = feet(mod(crossed, hips=(0.0, 0.04, -0.12)), l=air((LX + sl[0]) * 0.5, (LY + sl[1]) * 0.5, 0.26, yaw=-10.0))
     both = feet(mod(crossed, hips=(0.0, 0.05, -0.16)), l=cl)
     low = mod(seated(), hips=(0.0, 0.08, -0.55), spine=(14.0, 0.0, 0.0), head=(-2.0, 0.0, 0.0))
-    low = feet(_side_hand(_side_hand(low, "r"), "l"), r=ball(cr[0][0], cr[0][1], cr[1][2], heel=10.0),
-               l=ball(cl[0][0], cl[0][1], cl[1][2], heel=10.0))
+    # baja con los pies planos (de plano a la bola, mezclado, el pie se corría ~4 cm)
+    low = feet(_side_hand(_side_hand(low, "r"), "l"), r=cr, l=cl)
     sit = seated()
     sat = mod(sit, hips=(0.0, 0.06, -0.955), breath=0.5)
     MC.POSES["piernas cruzadas de pie 3"] = both
+    def lifted(ft, dz):
+        return (tuple(Vector(ft[0]) + Vector((0.0, 0.0, dz))), ft[1], ft[2])
+    fr_low = (low["foot_r"], low["foot_r_rot"], low.get("toe_r", 0.0))
+    fl_low = (low["foot_l"], low["foot_l_rot"], low.get("toe_l", 0.0))
+    fr_sit = (sit["foot_r"], sit["foot_r_rot"], sit.get("toe_r", 0.0))
+    fl_sit = (sit["foot_l"], sit["foot_l_rot"], sit.get("toe_l", 0.0))
+    mid_r = (tuple(Vector(fr_low[0]).lerp(Vector(fr_sit[0]), 0.5) + Vector((0.0, 0.0, 0.07))),
+             tuple(Vector(fr_low[1]).lerp(Vector(fr_sit[1]), 0.5)), (fr_low[2] + fr_sit[2]) * 0.5)
+    mid_l = (tuple(Vector(fl_low[0]).lerp(Vector(fl_sit[0]), 0.5) + Vector((0.0, 0.0, 0.07))),
+             tuple(Vector(fl_low[1]).lerp(Vector(fl_sit[1]), 0.5)), (fl_low[2] + fl_sit[2]) * 0.5)
+    feet_keys = {"r": [(86, fr_low, "lin"), (88, lifted(fr_low, 0.05), "out2"), (93, mid_r, "inout"),
+                       (96, lifted(fr_sit, 0.03), "inout"), (98, fr_sit, "in2"), (150, fr_sit, "lin")],
+                 "l": [(86, fl_low, "lin"), (89, lifted(fl_low, 0.05), "out2"), (94, mid_l, "inout"),
+                       (97, lifted(fl_sit, 0.03), "inout"), (99, fl_sit, "in2"), (150, fl_sit, "lin")]}
+    tr = {sd: [(0, ks[0][1], "lin")] + ks for sd, ks in feet_keys.items()}
+    steps = [(f, {sd: MC._foot_at(tr[sd], f) for sd in ("r", "l")}, "lin") for f in range(86, 151)]
     keys = [(0, G3(), "sine"), (10, tired, "inout"), (20, breathe, "sine"), (28, look, "inout")] + fall + \
            [(44, rest, "out"), (54, step_r, "out2"), (60, crossed, "in2"), (66, step_l, "out2"), (72, both, "in2"),
             (86, low, "inout"), (98, sat, "out"), (112, sit, "inout"), (150, sit, "sine")]
-    return MC.add("Defeat", 150, keys, ph=3, variant=False, lag={"head": 2.0, "neck": 1.0},
+    return MC.add("Defeat", 150, keys, ph=3, variant=False, lag={"head": 2.0, "neck": 1.0}, steps=steps,
                   timing={"kind": "none", "chain_from": "READY", "chain_to": "MEDITATE", "legs_cross": [[56, 150]],
                           "staff_drop": 30, "staff_rest": 40},
                   events=[{"frame": 20, "fn": "Exhale"}, {"frame": 30, "fn": "StaffDrop"}, {"frame": 40, "fn": "StaffLand"},
@@ -491,7 +526,11 @@ def phase_staff():
 # ============================================================================ registro
 def define():
     thrust_p3()
+    for v in MC.REACH_K:
+        thrust_p3(v)
     smash_p3()
+    for v in MC.REACH_K:
+        smash_p3(v)
     crane_p3()
     leap_p3()
     sweep_p3()
