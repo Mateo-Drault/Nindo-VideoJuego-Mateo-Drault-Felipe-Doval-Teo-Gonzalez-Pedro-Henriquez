@@ -11,8 +11,8 @@ namespace Nindo
     /// en los prototipos la versión "en el mundo" se leía como un tajo vertical cuando Kaito mira al costado.
     /// Un quad que mira a la cámara, reciclado; corre en tiempo real (el perfecto trae hit-stop global y el destello
     /// aguanta su pico mientras dura). Corto y chico a propósito: en los dúos de Kokuyō el anillo del golpe siguiente
-    /// arranca 0.05 s después del que se desvía; si hay otro aviso a la vista cerca (Calm), el destello baja al 40 % y
-    /// el perfecto no hace la estrella, para no tapar lo que viene.
+    /// puede arrancar 0.05 s después del que se desvía; si el aviso de otro golpe cercano sale mientras dura (Calm), el
+    /// destello baja al 40 % y el perfecto no hace la estrella, para no tapar lo que viene.
     /// </summary>
     public class ParrySteel : MonoBehaviour
     {
@@ -20,7 +20,7 @@ namespace Nindo
         const float LifeNormal = 0.12f, LifePerfect = 0.17f;
         // medio tamaño del quad: la aguja (0.9 / 1.1 m), las líneas de impacto y las púas entran con un margen
         static readonly Vector2 ExtentNormal = new Vector2(1.0f, 0.85f), ExtentPerfect = new Vector2(1.25f, 1.0f);
-        /// <summary>Otro aviso a esta distancia del choque (y todavía lejos de su golpe) atenúa el destello.</summary>
+        /// <summary>Otro golpe a esta distancia del choque (y todavía lejos de pegar) cuyo aviso sale durante el destello lo atenúa.</summary>
         const float CalmRadius = 6f, CalmMinEta = 0.1f;
 
         /// <summary>
@@ -73,21 +73,44 @@ namespace Nindo
             s.mpb.SetVector(IdExtent, ext);
             s.mpb.SetFloat(IdPerfect, perfect ? 1f : 0f);
             s.mpb.SetFloat(IdSeed, Random.value * 10f);
-            s.mpb.SetFloat(IdCalm, OtherTellNear(contact) ? 1f : 0f);
+            s.mpb.SetFloat(IdCalm, OtherWarningDuring(contact, s.life) ? 1f : 0f);
             s.gameObject.SetActive(true);
             s.UpdateShape();
         }
 
-        /// <summary>¿Hay otro golpe avisándose cerca (el que se desvió ya está pegando: queda afuera por su ETA)?</summary>
-        static bool OtherTellNear(Vector3 p)
+        /// <summary>
+        /// ¿El aviso de otro golpe aparece mientras dura este destello? Se mira por la HORA del golpe y no por un anillo
+        /// ya dibujado: la regla del dúo (KokuyoDuet, 0.9 s o más entre atacantes) hace que en el cuadro del parry el
+        /// anillo siguiente nunca esté todavía, y la sombra planeada (Stalk) ni siquiera está atacando. Un aviso se ve
+        /// MaxLead antes de su golpe (a oscuras, la salida de la sombra: EmergeLeadNow), así que tapa al destello si
+        /// pega antes de ahora + ese adelanto + la vida del destello. El golpe que se desvió queda afuera por CalmMinEta.
+        /// </summary>
+        static bool OtherWarningDuring(Vector3 p, float life)
         {
             var all = Game.Combat != null ? Game.Combat.All : null;
             if (all == null) return false;
+            float now = Time.time;
             for (int i = 0; i < all.Count; i++)
             {
                 var e = all[i];
-                if (e == null || !e.InTell || e.StrikeEta <= CalmMinEta) continue;
-                if (CombatMath.FlatDistance(e.transform.position, p) <= CalmRadius) return true;
+                if (e == null || !e.IsAlive) continue;
+                float eta, lead;
+                if (e is KageShadow k)
+                {
+                    // sus golpes caen siempre sobre Kaito (no hace falta la distancia), planeados o en camino
+                    float at = k.PendingImpactAt;
+                    if (at < 0f) continue;
+                    eta = at - now;
+                    lead = TellStyle.MaxLead(k.PendingKind);
+                    if (k.FromDark) lead = Mathf.Max(lead, k.EmergeLeadNow);
+                }
+                else
+                {
+                    eta = e.StrikeEta;
+                    if (float.IsInfinity(eta) || CombatMath.FlatDistance(e.transform.position, p) > CalmRadius) continue;
+                    lead = TellStyle.MaxLead(e.StepKind);
+                }
+                if (eta > CalmMinEta && eta < lead + life) return true;
             }
             return false;
         }

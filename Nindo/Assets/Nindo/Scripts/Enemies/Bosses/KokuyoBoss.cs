@@ -1188,6 +1188,24 @@ namespace Nindo
             Health = Gates[act - 1] * config.maxHealth + 1f;
             StartTransition(act, false);
         }
+
+        /// <summary>
+        /// Pruebas (AutoPilot "kokuyo patron Pinza"): usa ya el patrón del acto con ese nombre (sin distinguir
+        /// mayúsculas), con sus golpes de la sombra. Solo si no está atacando: así el dúo se planea entero.
+        /// </summary>
+        public bool DebugPattern(string patternName)
+        {
+            if (!Fighting || !IsAlive || transition != null || State == EnemyState.Attack) return false;
+            foreach (var p in config.patterns)
+            {
+                if (!string.Equals(p.name, patternName, System.StringComparison.OrdinalIgnoreCase)) continue;
+                Game.Combat?.RequestAttackToken(this);
+                pattern = p;
+                StartAttack(false);
+                return true;
+            }
+            return false;
+        }
 #endif
     }
 }

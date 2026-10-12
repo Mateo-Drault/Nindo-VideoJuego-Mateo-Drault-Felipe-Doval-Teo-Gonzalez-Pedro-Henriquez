@@ -26,6 +26,7 @@ namespace Nindo
     ///   kokuyo act N           en plena pelea con Kokuyō, salta al acto N (2, 3; 4 = última resistencia)
     ///   kokuyo sombra MOV [l]  su sombra ataca ya: nobi (Acto 1), giri, nui, watari; lado flanco u opuesto
     ///   kokuyo mitad           salta a la segunda mitad del acto en curso (rugido y patrón nuevo al terminar su combo)
+    ///   kokuyo patron NOMBRE   usa ya ese patrón del acto ("Pinza", "Media Luna Negra"...) si no está atacando
     ///   pose ESTADO [vel]      Kaito toca ese estado de su Animator quieto (modo guionado) y vuelve: para revisar
     ///                          clips en Play (p. ej. "pose Death; pose Finisher 1.7; pose WindSlash")
     /// ACT = nombre de <see cref="Act"/> (Attack, Parry, Dash, Lock, Finisher, Interact, Ability1,
@@ -281,7 +282,14 @@ namespace Nindo
                     }
                     // "kokuyo mitad": la vida justo debajo de la mitad del acto (rugido, patrón nuevo, especiales más seguidos)
                     if (k != null && sub == "mitad") { k.DebugSecondHalf(); return null; }
-                    if (k == null || t.Length < 3 || sub != "act") throw new System.ArgumentException("uso: kokuyo act N | kokuyo sombra MOV [lado] | kokuyo mitad (en plena pelea)");
+                    // "kokuyo patron Media Luna Negra": usa ya ese patrón del acto (con los golpes de su sombra)
+                    if (k != null && sub == "patron" && t.Length > 2)
+                    {
+                        string pn = string.Join(" ", t, 2, t.Length - 2);
+                        if (!k.DebugPattern(pn)) Debug.LogWarning("[AutoPilot] Kokuyō no puede usar '" + pn + "' ahora (no es de este acto o está atacando)");
+                        return null;
+                    }
+                    if (k == null || t.Length < 3 || sub != "act") throw new System.ArgumentException("uso: kokuyo act N | kokuyo sombra MOV [lado] | kokuyo patron NOMBRE | kokuyo mitad (en plena pelea)");
                     k.DebugJump(int.Parse(t[2], CultureInfo.InvariantCulture));
                     return null;
                 }
