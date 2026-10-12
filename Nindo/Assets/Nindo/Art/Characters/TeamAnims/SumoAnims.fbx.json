@@ -991,6 +991,220 @@
     "lowest_body_cm": -0.0,
     "lowest_weapon_cm": null
    }
+  },
+  "IdleSleep": {
+   "first": 611,
+   "last": 731,
+   "frames": 120,
+   "seconds": 4.0,
+   "loop": true,
+   "timing": {
+    "ambient": "sleep",
+    "snore": 52,
+    "seat_back": 0.3
+   },
+   "normalized": {},
+   "notes": "duerme sentado con las manos en la panza; ronca al exhalar",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "loop_seam_deg": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.54,
+      "twist": 6.1,
+      "fore": 39.4,
+      "swivel": 2.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       31.4,
+       33.6
+      ]
+     },
+     "l": {
+      "excess": 0.52,
+      "twist": 5.8,
+      "fore": 37.5,
+      "swivel": 2.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       30.2,
+       31.6
+      ]
+     }
+    },
+    "solver_jump_deg": 1.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 1.0,
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": -2.3,
+    "lowest_weapon_cm": null
+   }
+  },
+  "AmbientAlert": {
+   "first": 741,
+   "last": 813,
+   "frames": 72,
+   "seconds": 2.4,
+   "loop": false,
+   "timing": {
+    "ambient": "alert_sleep",
+    "land": 55,
+    "sheet": [
+     0,
+     5,
+     17,
+     26,
+     32,
+     38,
+     42,
+     48,
+     55,
+     61,
+     72
+    ],
+    "chain": [
+     [
+      72,
+      "Idle",
+      0,
+      0.03
+     ]
+    ],
+    "slide_ok": 3.0
+   },
+   "normalized": {},
+   "notes": "se despierta, mira alrededor, ve a Kaito, se levanta y se palmea los muslos",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.4
+    },
+    "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.85,
+      "twist": 12.2,
+      "fore": 61.9,
+      "swivel": 27.0,
+      "clamp": 1.3,
+      "asked_over": 0.0,
+      "pron": [
+       -41.4,
+       56.1
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 12.4,
+      "fore": 63.2,
+      "swivel": 27.0,
+      "clamp": 2.7,
+      "asked_over": 0.0,
+      "pron": [
+       -41.4,
+       57.4
+      ]
+     }
+    },
+    "solver_jump_deg": 22.0,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 55.6,
+    "floor_skate_cm": {
+     "r": [
+      [
+       0,
+       34,
+       0.79,
+       0.43
+      ]
+     ],
+     "l": []
+    },
+    "lowest_body_cm": -2.0,
+    "lowest_weapon_cm": null
+   }
+  },
+  "IdleShiko": {
+   "first": 823,
+   "last": 973,
+   "frames": 150,
+   "seconds": 5.0,
+   "loop": true,
+   "timing": {
+    "ambient": "shiko",
+    "stomps": [
+     47,
+     122
+    ],
+    "sheet": [
+     0,
+     12,
+     28,
+     40,
+     47,
+     54,
+     64,
+     75,
+     103,
+     115,
+     122,
+     139
+    ]
+   },
+   "normalized": {},
+   "notes": "shiko de los dos lados: sube la pierna al costado, la sostiene, pisa y se hunde",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "loop_seam_deg": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.85,
+      "twist": 6.3,
+      "fore": 34.0,
+      "swivel": 19.0,
+      "clamp": 0.3,
+      "asked_over": 0.0,
+      "pron": [
+       -14.2,
+       28.2
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 6.3,
+      "fore": 34.0,
+      "swivel": 19.0,
+      "clamp": 0.3,
+      "asked_over": 0.0,
+      "pron": [
+       -14.2,
+       28.2
+      ]
+     }
+    },
+    "solver_jump_deg": 7.0,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 43.6,
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": -0.0,
+    "lowest_weapon_cm": null
+   }
   }
  },
  "locomotion": {

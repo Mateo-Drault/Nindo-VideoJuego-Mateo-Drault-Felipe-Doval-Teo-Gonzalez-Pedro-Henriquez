@@ -18,8 +18,10 @@ del juego arranca en la suelta, los golpes con avance despegan los dos pies en l
 y aterrizan cuando el transform terminó de avanzar: ningún pie se arrastra por el piso.
 """
 import math
+import sys
 import nindo_anim as NA
 import team_rig as T
+import team_ambient
 
 Key = NA.Key
 RUN_SPEED, WALK_SPEED = 5.0, 2.0          # EnemyArchetypes.Ninja(): runSpeed, walkSpeed
@@ -31,7 +33,9 @@ BLENDS = ([("Walk", 0, "Idle", 0), ("Run", 0, "Walk", 0), ("Guard", 0, "Idle", 0
            ("ExhaustedHit", 0, "Exhausted", 0), ("ExhaustedHit", -1, "Exhausted", 0)]
           + [(c, f, "Idle", 0) for c in ("Attack1", "Attack2", "Attack3", "Thrust", "Counter", "Hit", "HitHeavy", "Spotted")
              for f in (0, -1) if not (c == "Counter" and f == 0)]
-          + [(c, 0, "Idle", 0) for c in ("Parried", "ParriedPerfect", "Death")])
+          + [(c, 0, "Idle", 0) for c in ("Parried", "ParriedPerfect", "Death")]
+          # idles ambientales (team_ambient): el despertar sale de la meditación y termina en la guardia
+          + [("AmbientAlert", 0, "IdleMeditate", 0), ("AmbientAlert", -1, "Idle", 0)])
 
 # ------------------------------------------------------------------ guardia (pose base)
 # pie derecho adelante, cadera girada para que el lado de la espada lidere, la hoja baja apuntando a Kaito
@@ -102,6 +106,7 @@ def clips(ch):
     out += locomotion(ch)
     out += [attack1(), attack2(), attack3(), thrust()]
     out += [guard(), counter(), hit(), hit_heavy(), parried(), parried_perfect(), exhausted(), exhausted_hit(), spotted(), death()]
+    out += team_ambient.ninja_clips(ch, sys.modules[__name__])
     return [edge_start(c) if c.name in EDGE_START else c for c in out]
 
 

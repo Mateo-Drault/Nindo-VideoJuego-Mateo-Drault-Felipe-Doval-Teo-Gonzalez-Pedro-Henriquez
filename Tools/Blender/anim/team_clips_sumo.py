@@ -20,8 +20,10 @@ la mano/pie y las rodillas (que pesan vértices en los polos) rígidas con la ti
 golpes que estos clips ya traen (Attack1..Special) y sigue posando los propios del Ōzeki y de las variantes.
 """
 import math
+import sys
 import nindo_anim as NA
 import team_rig as T
+import team_ambient
 
 Key = NA.Key
 RUN_SPEED, WALK_SPEED = 3.4, 1.6          # EnemyArchetypes.Sumo(): runSpeed, walkSpeed
@@ -85,6 +87,8 @@ def clips(ch):
     out += locomotion(ch)
     out += [attack1(), attack2(), attack3(), special()]
     out += [hit(), hit_heavy(), parried(), parried_perfect(), exhausted(), exhausted_hit(), spotted(), death()]
+    # idles ambientales (team_ambient): duerme sentado o hace el shiko antes de la pelea
+    out += team_ambient.sumo_clips(ch, sys.modules[__name__])
     return out
 
 
