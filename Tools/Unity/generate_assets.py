@@ -435,10 +435,13 @@ def controller(path, name, states, locomotion, loco_thresholds=None):
         locomotion = [m[0] if isinstance(m, tuple) else m for m in locomotion]
         bt_id = stable_id(name, "bt")
         ths = loco_thresholds or (0, 1)
+        # umbrales (x, y): blend tree 2D Freeform Directional sobre VelX/VelZ (la velocidad en el marco del personaje,
+        # Enemy.Locomotion.cs: caminar, rodear de costado y retroceder alrededor de un centro quieto)
+        two_d = isinstance(ths[0], (list, tuple))
         childs = "".join(f"""  - serializedVersion: 2
     m_Motion: {mot}
-    m_Threshold: {th}
-    m_Position: {{x: 0, y: 0}}
+    m_Threshold: {0 if two_d else th}
+    m_Position: {{x: {th[0] if two_d else 0:g}, y: {th[1] if two_d else 0:g}}}
     m_TimeScale: {sc:g}
     m_CycleOffset: 0
     m_DirectBlendParameter: Speed
@@ -452,13 +455,13 @@ BlendTree:
   m_PrefabAsset: {{fileID: 0}}
   m_Name: Locomotion
   m_Childs:
-{childs}  m_BlendParameter: Speed
-  m_BlendParameterY: Speed
+{childs}  m_BlendParameter: {"VelX" if two_d else "Speed"}
+  m_BlendParameterY: {"VelZ" if two_d else "Speed"}
   m_MinThreshold: 0
   m_MaxThreshold: 1
   m_UseAutomaticThresholds: 0
   m_NormalizedBlendValues: 0
-  m_BlendType: 0
+  m_BlendType: {2 if two_d else 0}
 """)
         states = dict(states)
         states = {"Locomotion": f"{{fileID: {bt_id}}}", **states}
@@ -496,6 +499,13 @@ AnimatorState:
   m_TimeParameter:
 """)
     default = state_ids.get("Locomotion", next(iter(state_ids.values())))
+    dir_params = "".join(f"""
+  - m_Name: {pn}
+    m_Type: 1
+    m_DefaultFloat: 0
+    m_DefaultInt: 0
+    m_DefaultBool: 0
+    m_Controller: {{fileID: 9100000}}""" for pn in ("VelX", "VelZ")) if locomotion and two_d else ""
     head = f"""%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!91 &9100000
@@ -512,7 +522,7 @@ AnimatorController:
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
-    m_Controller: {{fileID: 9100000}}
+    m_Controller: {{fileID: 9100000}}{dir_params}
   m_AnimatorLayers:
   - serializedVersion: 5
     m_Name: Base Layer

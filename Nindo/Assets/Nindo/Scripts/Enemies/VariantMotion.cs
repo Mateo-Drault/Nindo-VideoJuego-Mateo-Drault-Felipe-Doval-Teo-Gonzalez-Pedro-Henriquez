@@ -102,8 +102,7 @@ namespace Nindo
             nextScan = Time.time + Random.Range(0.3f, flavor.scanEvery);
         }
 
-        // también rodeando o retrocediendo (los ciclos direccionales de Enemy.Locomotion.cs): si no, la inclinación de la
-        // zona se apagaba y prendía cada vez que el enemigo cambiaba de dirección
+        // en el blend tree (caminar, rodear, retroceder: Enemy.Locomotion.cs) y en el Idle que respira cuando se queda quieto
         bool InLocomotion => enemy.IsAlive && enemy.State != EnemyState.Scripted && enemy.InLocomotionPose;
 
         float Speed01 => hasSpeed ? Mathf.Clamp01(animator.GetFloat(SpeedParam)) : 0f;
@@ -113,8 +112,6 @@ namespace Nindo
             // Enemy fija Animator.speed en cada Update (CharacterAnimator.Tick): se escala recién si sigue siendo ese
             // valor (congelado por hit-stop o un frame sin Tick no se toca, y nunca se acumula)
             if (!InLocomotion || enemy.Anim.Frozen) return;
-            // los ciclos direccionales ya van al ritmo de la velocidad real (Enemy.GaitRate): solo el blend tree se escala
-            if (enemy.Anim.Current != enemy.config.animLocomotion) return;
             float s = enemy.Anim.StateSpeed;
             // el ritmo de quieto solo parado: apenas arranca (caminar, rodear) ya va al de desplazamiento entero
             float rate = Mathf.Lerp(flavor.idleSpeed, moveSpeed, Mathf.InverseLerp(0f, 0.15f, Speed01));
@@ -212,9 +209,10 @@ namespace Nindo
                 case "Repliegue":
                 case "Finta":
                 {
-                    // en el aire mientras recorre el salto (Enemy lo mueve entre activeStart y activeEnd del clip)
+                    // en el aire mientras recorre el salto (Enemy lo mueve entre activeStart y activeEnd del clip); los clips
+                    // propios (HopBack, HopSide) ya saltan agachándose, despegando y cayendo: solo el de respaldo se levanta
                     float k = Mathf.InverseLerp(a.activeStart, a.activeEnd, tl.NormAt(t));
-                    lift = (a.name == "Finta" ? 0.45f : 0.7f) * Mathf.Sin(Mathf.PI * k);
+                    if (a.state != HopBackState && a.state != HopSideState) lift = (a.name == "Finta" ? 0.45f : 0.7f) * Mathf.Sin(Mathf.PI * k);
                     break;
                 }
                 case "Remolino":
@@ -251,7 +249,7 @@ namespace Nindo
         }
 
         // golpes de zona con clip propio (EnemyArchetypes: el salto y el giro ya están en el clip)
-        const string LeapState = "Leap", WhirlState = "Whirl";
+        const string LeapState = "Leap", WhirlState = "Whirl", HopBackState = "HopBack", HopSideState = "HopSide";
 
         static void Restore(Bone b)
         {

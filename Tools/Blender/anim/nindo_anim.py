@@ -751,7 +751,8 @@ class StepTimeline:
         self.tA += extra - self.hold
         self.hold += max(0.0, extra_hold)
         self.T = self.tA + self.hold + self.tR
-        self.creep = min(0.01, (self.active - self.apex) * 0.25)
+        # sin pausa no hay deriva (StepTimeline.cs): con hold = 0 el clip saltaba del apex a apex + creep en un cuadro
+        self.creep = min(0.01, (self.active - self.apex) * 0.25) if self.hold > 0.0 else 0.0
 
     def norm_at(self, t):
         """Tiempo normalizado del clip a 't' segundos del inicio del paso (NormAt de C#)."""

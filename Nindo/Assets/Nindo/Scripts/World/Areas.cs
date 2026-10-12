@@ -120,7 +120,10 @@ namespace Nindo
         void Update()
         {
             if (completed || Game.Player == null) return;
-            if (!manualActivation && !active && CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < activationRadius && !Game.InCutscene)
+            // con alguno en su idle ambiental (meditando, practicando, dormido) el radio del centro no vale: el encuentro arranca
+            // cuando uno de ellos nota a Kaito de cerca (Enemy.TickIdle) y avisa al resto (EnemyAmbient.NoticeRadius)
+            if (!manualActivation && !active && CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < activationRadius && !Game.InCutscene
+                && !EnemyAmbient.AnyHolding(members))
                 Activate();
             if (active && wantBarrier && barrier == null && !Game.InCutscene) TryCloseArea();
         }

@@ -28,7 +28,10 @@ import team_moves
 
 Key = NA.Key
 RUN_SPEED, WALK_SPEED = 3.4, 1.6          # EnemyArchetypes.Sumo(): runSpeed, walkSpeed
-LOCOMOTION = (("Idle", 0.0), ("Walk", WALK_SPEED / RUN_SPEED), ("Run", 1.0))
+# blend tree 2D de locomoción (Enemy.Locomotion.cs): VelX/VelZ = la velocidad en el marco del enemigo, en m/s del clip.
+# El centro quieto (LocoIdle) y el anillo de caminar tienen el largo de Walk (team_moves.SUMO_CYCLE)
+LOCOMOTION = (("LocoIdle", (0.0, 0.0)), ("Walk", (0.0, WALK_SPEED)), ("StrafeR", (WALK_SPEED, 0.0)), ("WalkBack", (0.0, -WALK_SPEED)),
+              ("StrafeL", (-WALK_SPEED, 0.0)), ("Run", (0.0, RUN_SPEED)))
 
 # ------------------------------------------------------------------ guardia
 # piernas abiertas con las puntas afuera y las rodillas sobre los pies, la cadera baja, la panza adelante, los brazos
@@ -59,6 +62,10 @@ def FL(f, dy=0.0, dx=0.0, yaw=None, pitch=0.0, z=0.0, ease="inout", lift=None, r
 
 
 PLANTED = {"r": [FR(0)], "l": [FL(0)]}
+
+# cuadro del clip en que arranca la embestida del juego (AttackDef.lungeFrom, EnemyArchetypes: el builder lo compara): el
+# primero de la suelta (el apex queda quieto); desde ahí el transform recorre cuadro a cuadro team_moves.clip_lunge_travel
+LUNGE_FROM = {"Attack1": 16, "Attack2": 12, "Attack3": 25}
 
 
 # empujones del juego (Enemy): parry 0.4 m (perfecto 0.8; el parry no descuenta knockbackResist), los golpes de Kaito
@@ -175,22 +182,23 @@ def harite_r(n, apex, contact, lunge, windup, name, state):
     pasa ~1 m por delante de la panza, la línea más larga que el sumo puede dibujar desde la cámara del juego. Se sostiene
     estirado 4 cuadros (el golpe empuja), la izquierda tira para atrás a la cadera (contrapeso) y vuelve a la guardia
     arrimando el pie izquierdo."""
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    tr, _ = team_moves.clip_lunge_travel(n, apex, contact, lunge, windup, LUNGE_FROM[state])
     TELL = P(hips=(0.06, 0.10, -0.17), hips_rot=(-2.0, 0.0, -28.0), spine=(0.0, 3.0, -14.0), head=(-8.0, 0.0, 30.0),
-             hand_r=(-0.70, 0.36, 1.78), hand_r_dir=(-0.10, 0.15, 1.0), hand_r_palm=(0.0, -1.0, 0.15), elbow_r=(-0.5, 1.0, -0.6),
+             hand_r=(-0.88, 0.24, 2.00), hand_r_dir=(-0.20, 0.10, 1.0), hand_r_palm=(0.0, -1.0, 0.15), elbow_r=(-0.8, 0.8, -0.3),
              hand_l=(0.30, -0.62, 1.48), hand_l_dir=(0.0, -0.5, 0.85), hand_l_palm=(-0.2, -1.0, -0.3), elbow_l=(1.0, -0.1, -0.5),
              fist_r=0.0, fist_l=0.1)
-    HOLD = dict(TELL, hips=(0.065, 0.11, -0.18), hand_r=(-0.71, 0.40, 1.79), hips_rot=(-2.0, 0.0, -30.0))
+    HOLD = dict(TELL, hips=(0.065, 0.11, -0.18), hand_r=(-0.89, 0.26, 2.01), hips_rot=(-2.0, 0.0, -30.0))
     # la cadera ya giró y avanzó; la mano todavía atrás del hombro (el brazo llega último: látigo)
     SMEAR = dict(HOLD, hips=(0.0, -0.04, -0.18), hips_rot=(8.0, 0.0, 2.0), spine=(8.0, 0.0, 0.0), head=(-12.0, 0.0, 8.0),
-                 hand_r=(-0.58, -0.22, 1.74), hand_r_dir=(0.0, -0.3, 0.95), hand_r_palm=(0.0, -1.0, -0.3), elbow_r=(-0.8, 0.6, -0.6))
-    CONTACT = dict(SMEAR, hips=(-0.02, -0.17, -0.19), hips_rot=(14.0, 0.0, 24.0), spine=(14.0, -2.0, 14.0), head=(-18.0, 0.0, -16.0),
+                 hand_r=(-0.64, -0.20, 1.84), hand_r_dir=(0.0, -0.3, 0.95), hand_r_palm=(0.0, -1.0, -0.3), elbow_r=(-0.8, 0.7, -0.45),
+                 hand_l=(0.42, -0.46, 1.44), hand_l_dir=(0.05, -0.45, 0.40), hand_l_palm=(-0.6, -0.7, -0.3))
+    CONTACT = dict(SMEAR, hips=(-0.02, -0.17, -0.19), hips_rot=(14.0, 0.0, 28.0), spine=(14.0, -2.0, 30.0), head=(-18.0, 0.0, -30.0),
                    hand_r=HARITE_REACH, hand_r_dir=(0.0, -0.42, 0.91), hand_r_palm=(0.0, -0.91, -0.42), elbow_r=(-0.9, 0.3, -0.6),
                    hand_l=(0.52, -0.22, 1.36), hand_l_dir=(0.1, -0.2, -0.97), hand_l_palm=(-1.0, 0.0, 0.0), elbow_l=(1.0, 0.1, -0.4))
-    FOLLOW = dict(CONTACT, hips=(-0.02, -0.19, -0.20), hips_rot=(15.0, 0.0, 27.0), spine=(15.0, -2.0, 16.0),
+    FOLLOW = dict(CONTACT, hips=(-0.02, -0.19, -0.20), hips_rot=(15.0, 0.0, 30.0), spine=(15.0, -2.0, 30.0),
                   hand_r=V3(HARITE_REACH, 0.03, -0.04, -0.03), hand_l=(0.62, 0.06, 1.25), hand_l_dir=(0.2, 0.3, -0.9),
                   elbow_l=(1.0, 0.3, -0.3))
-    STAY = dict(FOLLOW, hips=(-0.02, -0.16, -0.19), hips_rot=(13.0, 0.0, 24.0), hand_r=V3(HARITE_REACH, 0.01, 0.0, -0.06))
+    STAY = dict(FOLLOW, hips=(-0.02, -0.16, -0.19), hips_rot=(13.0, 0.0, 27.0), spine=(14.0, -2.0, 26.0), hand_r=V3(HARITE_REACH, 0.01, 0.0, -0.06))
     PUNISH = dict(STAY, hips=(0.0, -0.08, -0.15), hips_rot=(8.0, 0.0, 12.0), spine=(9.0, 0.0, 6.0), head=(-12.0, 0.0, -6.0),
                   hand_r=(-0.40, -0.66, 1.34), hand_r_dir=(0.0, -0.6, 0.6), hand_r_palm=(0.0, -0.7, -0.7), elbow_r=(-1.0, 0.3, -0.4))
     keys = [
@@ -206,12 +214,17 @@ def harite_r(n, apex, contact, lunge, windup, name, state):
     ]
     # el pie derecho entra con la mano (un paso largo, 0.12 m más allá de la embestida), el izquierdo queda clavado
     # mientras el transform avanza y se arrima después; el derecho vuelve a la guardia al final
-    feet = {"r": [FR(0), FR(apex), FR(contact + 1, lunge + 0.12, pitch=-10.0), FR(contact + 3, lunge + 0.12),
-                  FR(n - 1, lunge, lift=0.04)],
-            "l": [FL(0), FL(8), FL(apex, pitch=14.0), FL(contact + 2, pitch=20.0), FL(contact + 7, lunge, ease="out")]}
+    # (despegar el de atrás con el transform todavía andando lo hacía resbalar al soltarse: se arrima cuando ya llegó)
+    done = next(f for f in range(n + 1) if tr[f] >= lunge - 1e-4)
+    # mientras el transform avanza, los pies se apoyan y se despegan en vertical (un cuadro antes ya están sobre su lugar,
+    # a 2 cm; un cuadro después del despegue todavía ahí): Unity interpola el clip con curvas suaves entre cuadros y un pie
+    # que llegaba todavía yendo se corría ~2 cm después de apoyar
+    feet = {"r": [FR(0), FR(apex), FR(contact, lunge + 0.11, pitch=-6.0, z=0.02, lift=0.08), FR(contact + 1, lunge + 0.12, pitch=-10.0, lift=0.0),
+                  FR(contact + 3, lunge + 0.12), FR(n - 1, lunge, lift=0.04)],
+            "l": [FL(0), FL(8), FL(apex, pitch=14.0), FL(done, pitch=22.0), FL(min(n, done + 4), lunge)]}
     return T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="harite largo; aviso: la mano abierta junto a la oreja",
                       timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 4], hold=[8, apex],
-                                  lunge=lunge, windup=windup, state=state, striker="r", reach=2.2))
+                                  lunge=lunge, windup=windup, state=state, striker="r", reach=2.2, lunge_from=LUNGE_FROM[state]))
 
 
 # la palma del harite en el contacto: el brazo derecho estirado del todo desde el hombro girado e inclinado (medido con
@@ -250,7 +263,7 @@ def attack3():
     sostiene arriba (aviso: desde arriba, una pierna que sale del contorno), baja de golpe y queda en cuclillas."""
     n, apex, contact = 42, 24, 27
     lunge, windup = 0.2, 0.65
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    tr, _ = team_moves.clip_lunge_travel(n, apex, contact, lunge, windup, LUNGE_FROM["Attack3"])
     SHIFT = P(hips=(0.16, 0.02, -0.12), hips_rot=(4.0, 8.0, 0.0), spine=(4.0, 6.0, 0.0), head=(-10.0, -6.0, 0.0),
               hand_r=(-0.60, -0.24, 1.06), hand_l=(0.56, -0.32, 0.92), hand_l_dir=(0.0, -0.5, -0.8), hand_l_palm=(0.0, 1.0, 0.0))
     UP = P(hips=(0.20, 0.04, -0.06), hips_rot=(2.0, 14.0, 0.0), spine=(6.0, -6.0, 0.0), head=(-10.0, -8.0, 0.0),
@@ -283,7 +296,7 @@ def attack3():
             "l": [FL(0), FL(contact + 3), FL(36, lunge, ease="inout")]}
     return T.TeamClip("Attack3", n, keys, travel=tr, feet=feet, notes="shiko; aviso: la pierna derecha arriba al costado",
                       timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 31], hold=[14, apex],
-                                  lunge=lunge, windup=windup, state="Attack3", striker="foot_r", reach=1.2))
+                                  lunge=lunge, windup=windup, state="Attack3", striker="foot_r", reach=1.2, lunge_from=LUNGE_FROM["Attack3"]))
 
 
 def special():

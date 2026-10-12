@@ -17,7 +17,8 @@ namespace Nindo
         readonly Dictionary<string, float> lengths = new Dictionary<string, float>();
         readonly Dictionary<string, int> hashes = new Dictionary<string, int>();
         static readonly int SpeedParam = Animator.StringToHash("Speed");
-        bool hasSpeedParam;
+        static readonly int VelXParam = Animator.StringToHash("VelX"), VelZParam = Animator.StringToHash("VelZ");
+        bool hasSpeedParam, hasDirParams;
 
         float freezeUntil;
         float speedMul = 1f;   // global: SetSpeed (curvas de timing, furia)
@@ -41,6 +42,7 @@ namespace Nindo
                     if (clip != null && !lengths.ContainsKey(clip.name)) lengths[clip.name] = clip.length;
                 foreach (var p in a.parameters)
                     if (p.nameHash == SpeedParam && p.type == AnimatorControllerParameterType.Float) hasSpeedParam = true;
+                    else if (p.nameHash == VelXParam && p.type == AnimatorControllerParameterType.Float) hasDirParams = true;
                 var entry = Game.LoadContent().CharacterByController(a.runtimeAnimatorController);
                 if (entry != null && entry.stateNames != null && entry.stateLengths != null)
                     for (int i = 0; i < entry.stateNames.Length && i < entry.stateLengths.Length; i++)
@@ -91,32 +93,6 @@ namespace Nindo
 
         static readonly HashSet<string> warned = new HashSet<string>();
 
-        /// <summary>
-        /// CrossFade a 'state' en 'fade' segundos arrancando en la fase 'phase' (0..1) de su ciclo: para pasar entre ciclos
-        /// de locomoción que pisan en la misma fase (caminar, rodear, retroceder) sin que los pies salten de lugar. Sirve
-        /// también para el blend tree, cuyo largo depende de la mezcla (por eso la fase y no segundos).
-        /// </summary>
-        public void PlayAtPhase(string state, float fade, float phase, float speed = 1f)
-        {
-            if (!Valid) return;
-            int h = Hash(state);
-            if (!Animator.HasState(0, h))
-            {
-                if (warned.Add(state)) Debug.LogWarning($"[Nindo] El Animator de '{Animator.gameObject.name}' no tiene el estado '{state}'.");
-                return;
-            }
-            Current = state;
-            stateMul = speed;
-            phase = Mathf.Repeat(phase, 1f);
-            // un clip con largo conocido arranca en segundos exactos; el blend tree (su largo depende de la mezcla) en fase,
-            // con el cruce medido como lo mide CrossFade: en largos del estado de origen
-            if (stateLengths.TryGetValue(state, out float l) && l > 0.01f) Animator.CrossFadeInFixedTime(h, fade, 0, phase * l);
-            else Animator.CrossFade(h, fade / Mathf.Max(0.05f, Animator.GetCurrentAnimatorStateInfo(0).length), 0, phase);
-        }
-
-        /// <summary>Fase (0..1) del ciclo que se está mostrando.</summary>
-        public float Phase => Valid ? Mathf.Repeat(Animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 1f) : 0f;
-
         /// <summary>Cambia el multiplicador del estado actual sin volver a entrar (el ritmo de un ciclo que sigue a la
         /// velocidad real).</summary>
         public void SetStateSpeed(float speed) { stateMul = speed; }
@@ -125,6 +101,17 @@ namespace Nindo
         {
             if (!Valid || !hasSpeedParam) return;
             Animator.SetFloat(SpeedParam, normalizedSpeed, 0.08f, dt);
+        }
+
+        /// <summary>El controller tiene la locomoción en un blend tree 2D (VelX/VelZ: velocidad en el marco del personaje, m/s
+        /// a la escala del clip): caminar, rodear de costado y retroceder se mezclan solos según la dirección.</summary>
+        public bool HasDirectional => Valid && hasDirParams;
+
+        public void SetDirectional(Vector2 local, float dt)
+        {
+            if (!Valid || !hasDirParams) return;
+            Animator.SetFloat(VelXParam, local.x, 0.1f, dt);
+            Animator.SetFloat(VelZParam, local.y, 0.1f, dt);
         }
 
         /// <summary>Multiplicador de velocidad global (curvas de timing, furia, etc.).</summary>

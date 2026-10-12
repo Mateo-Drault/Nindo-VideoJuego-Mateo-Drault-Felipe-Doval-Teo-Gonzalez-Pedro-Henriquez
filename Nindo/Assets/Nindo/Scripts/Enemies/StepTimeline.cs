@@ -49,7 +49,9 @@ namespace Nindo
             t.tA += extra - t.hold;
             t.hold += Mathf.Max(0f, extraHold);
             t.T = t.tA + t.hold + t.tR;
-            t.creep = Mathf.Min(0.01f, (t.activeStart - t.apex) * 0.25f);
+            // sin pausa no hay deriva: con hold = 0 el clip saltaba del apex a apex + creep en un cuadro (hasta 0.4 cuadros del
+            // clip de golpe en la suelta: el pie apoyado y la hoja daban un tirón)
+            t.creep = t.hold > 0f ? Mathf.Min(0.01f, (t.activeStart - t.apex) * 0.25f) : 0f;
             t.sustain = 0f;
             return t;
         }
@@ -70,6 +72,36 @@ namespace Nindo
             // al final de la suelta el clip va a r0 veces su velocidad: frena hacia 1 sin saltos
             float r0 = Mathf.Max(1f, 2f * (activeStart - from) / tR * stepLen);
             return activeStart + (t + (r0 - 1f) * FollowTau * (1f - Mathf.Exp(-t / FollowTau))) / stepLen;
+        }
+
+        /// <summary>
+        /// Segundo del paso en que el clip llega a 'norm' (la inversa de NormAt; en la pausa, el primero). Lo usa la
+        /// embestida que sigue los cuadros del clip (Enemy.Locomotion.cs): el transform avanza lo que el clip se autoró
+        /// en cada cuadro entero, así un pie apoyado o el cuerpo en el aire no se corren entre cuadros.
+        /// </summary>
+        public float TimeAt(float norm)
+        {
+            if (norm <= 0f) return 0f;
+            if (norm < apex) return tA * Mathf.Asin(Mathf.Clamp01(norm / apex)) * 2f / Mathf.PI;
+            float from = apex + creep;
+            if (norm < from) return tA + (creep > 0f ? hold * (norm - apex) / creep : 0f);
+            float t0 = tA + hold;
+            if (norm < activeStart) return t0 + tR * Mathf.Sqrt((norm - from) / Mathf.Max(1e-5f, activeStart - from));
+            t0 += tR;
+            if (sustain > 0f)
+            {
+                if (norm < activeEnd) return t0 + sustain * (norm - activeStart) / Mathf.Max(1e-5f, activeEnd - activeStart);
+                return t0 + sustain + (norm - activeEnd) * stepLen;
+            }
+            // seguimiento: activeStart + (x + (r0 - 1) τ (1 - e^(-x/τ))) / stepLen = norm, por Newton (es monótona)
+            float r0 = Mathf.Max(1f, 2f * (activeStart - from) / tR * stepLen);
+            float target = (norm - activeStart) * stepLen, x = target / r0;
+            for (int i = 0; i < 6; i++)
+            {
+                float e = Mathf.Exp(-x / FollowTau);
+                x -= (x + (r0 - 1f) * FollowTau * (1f - e) - target) / (1f + (r0 - 1f) * e);
+            }
+            return t0 + Mathf.Max(0f, x);
         }
 
         /// <summary>
