@@ -552,58 +552,58 @@
     "hip_drop_cm": 20.8,
     "wrists": {
      "r": {
-      "excess": 0.93,
-      "twist": 28.0,
+      "excess": 0.89,
+      "twist": 27.4,
       "fore": 105.6,
       "swivel": 57.0,
-      "clamp": 16.4,
-      "swing": 58.3,
-      "pinned": 0.25,
+      "clamp": 3.1,
+      "swing": 57.5,
+      "pinned": 0.05,
       "pron": [
-       30.5,
+       36.1,
        90.0
       ],
       "clamp_tell": 0.0
      },
      "l": {
-      "excess": 0.74,
-      "twist": 18.1,
+      "excess": 0.72,
+      "twist": 18.8,
       "fore": 57.2,
-      "swivel": 59.5,
+      "swivel": 56.0,
       "clamp": 0.0,
       "asked_over": 0.0,
-      "swing": 27.4,
+      "swing": 34.8,
       "pinned": 0.0,
       "pron": [
-       6.3,
+       5.5,
        44.0
       ],
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 42.0,
+    "solver_jump_deg": 25.8,
     "local_pop_deg": 0.0,
-    "local_max_deg": 101.0,
+    "local_max_deg": 59.0,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
       "min": 10.8,
-      "max": 15.5
+      "max": 12.8
      },
      "l": {
       "ref": 15.1,
-      "min": 12.9,
+      "min": 11.8,
       "max": 15.5
      }
     },
-    "hold_tip_mps": 1.12,
+    "hold_tip_mps": 0.82,
     "peak_frame": 40,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 1.422,
     "game_hold_s": 0.0,
     "contact_tip_m": [
-     -0.02,
-     -2.51,
+     -0.08,
+     -2.55,
      0.97
     ],
     "floor_skate_cm": {
@@ -1294,15 +1294,15 @@
     "wrists": {
      "r": {
       "excess": 0.51,
-      "twist": 22.3,
-      "fore": 91.5,
-      "swivel": 81.0,
+      "twist": 20.8,
+      "fore": 86.3,
+      "swivel": 78.4,
       "clamp": 0.0,
-      "swing": 20.1,
+      "swing": 19.5,
       "pinned": 0.0,
       "pron": [
        27.9,
-       75.9
+       70.7
       ]
      },
      "l": {
@@ -1318,7 +1318,7 @@
       ]
      }
     },
-    "solver_jump_deg": 21.1,
+    "solver_jump_deg": 21.0,
     "local_pop_deg": 0.0,
     "local_max_deg": 38.8,
     "grip_gap_cm": {
@@ -1332,8 +1332,8 @@
      "r": [],
      "l": []
     },
-    "lowest_body_cm": -8.2,
-    "lowest_weapon_cm": -22.4
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": 0.5
    }
   }
  },

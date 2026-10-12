@@ -274,13 +274,17 @@ def heavy():
                grip=(-0.10, 0.20, 2.90), haft=(0.05, 0.98, 0.20), spine=(-14.0, 0.0, 0.0))
     FALL = dict(TOP, hips=(0.0, -0.06, 0.30), hips_rot=(14.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(-14.0, 0.0, 0.0),
                 grip=(-0.22, -0.60, 2.50), haft=(0.10, -0.30, 0.95), face=(0.0, -0.95, -0.30), slide_l=0.3)
+    # el aterrizaje con el puño derecho 13 cm más al centro y el mango más derecho hacia adelante (la cabeza cae casi en
+    # el mismo lugar): con el mango cruzado hacia la izquierda la derecha quedaba en supinación total y la muñeca a 58°
+    # toda la pose sostenida del golpe, con el puño a 16 cm del mango (V-TR-4); ahora 26° y 13.5 cm
     LAND = P2(hips=(0.0, -0.14, -0.50), hips_rot=(28.0, 0.0, 0.0), spine=(16.0, 0.0, 0.0), head=(-28.0, 0.0, 0.0),
              knee_r=(-0.8, -0.8, 0.0), knee_l=(0.8, -0.8, 0.0),
-             grip=(-0.38, -0.92, 1.36), haft=(0.26, -0.92, -0.28), face=(0.0, -0.28, -0.96), slide_l=0.45, elbow_r=(-1.0, 0.3, -0.3), elbow_l=(1.0, 0.3, -0.3))
+             grip=(-0.25, -0.92, 1.36), haft=(0.12, -0.95, -0.28), face=(0.0, -0.28, -0.96), slide_l=0.45, elbow_r=(-1.0, 0.3, -0.3), elbow_l=(1.0, 0.3, -0.3))
     # al subir el martillo por encima del hombro la derecha (que en la guardia ya está en supinación) cambia el agarre:
-    # afloja a mitad de la subida y vuelve a cerrar antes del aviso
-    keys = [Key(0, P(grip_r=1.0, fist_r=1.0)), Key(6, dict(mix(P(), CROUCH, 0.5), grip_r=0.3, fist_r=0.75), "in"),
-            Key(12, dict(CROUCH, grip_r=1.0, fist_r=1.0), "out"), Key(22, DEEP, "sine"), Key(26, TAKEOFF, "out"), Key(apex, TOP, "out"),
+    # afloja a mitad de la subida y vuelve a cerrar antes del aviso. Con claves en f3 y f9 el agarre afloja y cierra en
+    # rampa: con solo la de f6 el antebrazo saltaba 35° en un cuadro y la mano 85° (V-TR-2); ahora como mucho 44°/cuadro
+    keys = [Key(0, P(grip_r=1.0, fist_r=1.0)), Key(3, dict(mix(P(), CROUCH, 0.2), grip_r=0.7, fist_r=0.9), "in"), Key(6, dict(mix(P(), CROUCH, 0.5), grip_r=0.3, fist_r=0.75), "lin"),
+            Key(9, dict(mix(P(), CROUCH, 0.8), grip_r=0.6, fist_r=0.85), "lin"), Key(12, dict(CROUCH, grip_r=1.0, fist_r=1.0), "out"), Key(22, DEEP, "sine"), Key(26, TAKEOFF, "out"), Key(apex, TOP, "out"),
             Key(36, FALL, "in"), Key(contact, LAND, "expo_in"), Key(43, dict(LAND, hips=(0.0, -0.13, -0.46)), "out"),
             Key(50, dict(LAND, grip_r=1.0), "sine"),
             # de vuelta a la guardia el antebrazo pasa de supinación a pronación: a mitad de camino la derecha afloja el

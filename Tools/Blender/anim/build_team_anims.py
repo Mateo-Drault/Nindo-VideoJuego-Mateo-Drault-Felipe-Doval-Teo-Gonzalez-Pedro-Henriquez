@@ -5,6 +5,8 @@
     --renders DIR   una hoja por clip (cámara del juego de frente y de perfil, perfil ortográfico)
     --only A,B      solo esos clips (para iterar; no exporta)
     --frames F      con --renders: cuadros de la hoja (si no, los del timing del clip)
+    --fbx PATH      con --export: escribe el FBX (y su .json) ahí en vez de TeamAnims (para medir sin tocar el repo;
+                    con --only exporta solo esos clips)
 
 El FBX de animación lleva SOLO la armadura (mismos nombres, padres y reposo que el modelo, exportada con los
 mismos ajustes del equipo que usan los export_<personaje>.py): Unity liga sus clips por ruta de transform al
@@ -40,7 +42,7 @@ RENDERS = opt("--renders")
 ONLY = opt("--only")
 FRAMES = opt("--frames")
 OUT_DIR = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Art", "Characters", "TeamAnims")
-FBX = os.path.join(OUT_DIR, CHAR.capitalize() + "Anims.fbx")
+FBX = opt("--fbx") or os.path.join(OUT_DIR, CHAR.capitalize() + "Anims.fbx")
 ARCHETYPES = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Scripts", "Enemies", "EnemyArchetypes.cs")
 GAP = 10
 failures, warnings = [], []
@@ -152,6 +154,7 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
     wrist_checks(ch, clip, frames, rep)
     pop_checks(ch, clip, frames, ctrls, rep)
     grip_checks(ch, clip, frames, ctrls, rep)
+    blade_checks(ch, clip, frames, rep)
     w = ch.weapon_info
     if "contact" in t:
         a = t["contact"]
@@ -300,6 +303,42 @@ def wrist_checks(ch, clip, frames, rep):
           warn=worst <= 55.0)
 
 
+# cámara del juego (pitch 52°) desde 6 lados alrededor del personaje: el enemigo puede mirar para cualquier lado
+BLADE_CAMS = [Vector((math.sin(math.radians(a)) * math.cos(math.radians(52.0)), -math.cos(math.radians(a)) * math.cos(math.radians(52.0)),
+                      math.sin(math.radians(52.0)))) for a in (0, 35, 90, 145, 180, 270)]
+
+
+def blade_checks(ch, clip, frames, rep):
+    """La cara plana de la katana vista desde la cámara del juego (V-TR-1 de la verificación): la media de |normal . cámara|
+    en los cuadros que se leen (inicio del aviso, apex y golpe; timing 'read' en un clip sin golpe; en los loops, el primero
+    y el del medio). Con el filo
+    abajo derecho la cámara de arriba ve la hoja de canto: solo el lomo oscuro y una raya de 1 px (el Attack2 perdió así
+    el 43 % de los píxeles claros). 1 = la cara entera mirando a la cámara desde los 6 lados; un filo inclinado 60° de la
+    vertical (LOOP_EDGE) da ~0.6; uno abajo derecho con la hoja horizontal, ~0.33."""
+    w = ch.weapon_info
+    if not w or w["kind"] != "katana":
+        return
+    t = clip.timing
+    if "contact" in t:
+        look = sorted({t.get("hold", [t["apex"]])[0], t["apex"], t["contact"]})
+    elif "read" in t:
+        look = list(t["read"])
+    elif clip.loop:
+        look = [0, clip.frames // 2]
+    else:
+        return
+    B = ch.spec["weapon"]["bone"]
+    face = {}
+    for f in look:
+        Fk = frames[f][B].to_3x3().normalized() @ w["KB"].transposed()
+        nrm = ch.Dc(Fk.col[0])
+        face[f] = round(sum(abs(nrm.dot(d)) for d in BLADE_CAMS) / len(BLADE_CAMS), 2)
+    rep["blade_face"] = face
+    lo = min(face, key=face.get)
+    check(face[lo] >= 0.5, f"{clip.name}: la cara de la hoja mira a la cámara del juego en el aviso y el golpe "
+                           f"({face[lo]:.2f} en f{lo}; {', '.join(f'f{f} {v:.2f}' for f, v in face.items())})", warn=True)
+
+
 def pop_checks(ch, clip, frames, ctrls, rep):
     """Tics medidos en lo que se exporta (TR-5 de la revisión): el giro LOCAL del brazo, el antebrazo y la mano de un cuadro
     al otro, como lo interpola Unity. Falla (la regla de la revisión) con más de 45° del antebrazo o la mano en un cuadro
@@ -320,7 +359,10 @@ def pop_checks(ch, clip, frames, ctrls, rep):
     bad, soft, top = (0.0, ""), (0.0, ""), 0.0
     for k in "rl":
         d = ch.side[k]
-        move = [0.0] + [(frames[i][d["hand"]].translation - frames[i - 1][d["hand"]].translation).length / ch.u for i in range(1, n)]
+        # lo que viajó la mano respecto de su hombro (V-TR-6 de la verificación): medido en la armadura, el cuerpo que gira o
+        # se lanza en el golpe hacía "viajar" a una mano quieta en el brazo y eximía giros de 100° del brazo
+        rel = [frames[i][d["hand"]].translation - frames[i][d["upper"]].translation for i in range(n)]
+        move = [0.0] + [(rel[i] - rel[i - 1]).length / ch.u for i in range(1, n)]
         for b in (d["upper"], d["fore"], d["hand"]):
             dl = [0.0] + [NA.quat_angle_deg(loc[i - 1][b][1], loc[i][b][1]) for i in range(1, n)]
             for i in range(1, n):
@@ -521,7 +563,8 @@ def blend_checks(ch, baked_by_name, blends):
     """Los cruces de Unity (BLENDS): Unity interpola cada hueso por separado, y un antebrazo en otra rama de la pronación da
     un sacacorchos a media mezcla aunque la mano y la hoja terminen en el mismo lugar (Guard -> Counter giraba 138°). Se mide
     el giro del antebrazo sobre su eje entre los dos clips menos lo que cambió la mano pedida (lo que el clip pidió cambiar
-    no es un salto)."""
+    no es un salto). Aparte, el giro crudo (V-TR-5 de la verificación: restar lo pedido escondía que cada golpe arrancaba
+    rodando el antebrazo 60° en los 0.08 s del cruce): más de 45° es un aviso, aunque lo haya pedido el clip."""
     import team_limbs as TL
     R = ch.rig
     for a, fa, b, fb in blends:
@@ -530,7 +573,7 @@ def blend_checks(ch, baked_by_name, blends):
         (ca, Fa), (cb, Fb) = baked_by_name[a], baked_by_name[b]
         ia, ib = blend_index(ca.frames, False, fa), blend_index(cb.frames, False, fb)
         la, lb = R.to_local(Fa[ia]), R.to_local(Fb[ib])
-        worst, where = 0.0, ""
+        worst, where, raw, raw_at = 0.0, "", 0.0, ""
         for k in "rl":
             fo = ch.side[k]["fore"]
             tw = abs(TL.twist_deg(la[fo][1].inverted() @ lb[fo][1]))
@@ -541,8 +584,12 @@ def blend_checks(ch, baked_by_name, blends):
                 asked = min(asked, 360.0 - asked)
             if tw - asked > worst:
                 worst, where = tw - asked, f"{fo} gira {tw:.0f}°, la mano pedida {asked:.0f}°"
+            if tw > raw:
+                raw, raw_at = tw, fo
         check(worst <= 30.0, f"cruce {a} f{fa} -> {b} f{fb}: antebrazos en la misma rama ({where or 'sin saltos'})",
               warn=worst <= 50.0)
+        check(raw <= 45.0, f"cruce {a} f{fa} -> {b} f{fb}: el antebrazo rueda poco en el cruce de 0.08 s "
+                           f"({raw_at + ' ' if raw_at else ''}{raw:.0f}° crudo)", warn=True)
 
 
 def locomotion_weapon(ch, baked_by_name, states):
@@ -684,18 +731,17 @@ def floor_checks(clip, low_body, low_weapon, low_where):
     t = clip.timing
     bite = range(t["contact"], t["contact"] + 4) if "contact" in t else range(0)
     wb = min(range(len(low_body)), key=lambda i: low_body[i])
-    # una toma del equipo re-resuelta (TakeClip, timing 'take') conserva el cuerpo, los pies y el martillo de la toma: lo
-    # que ya se metía en el piso en la toma se avisa: no es de este pipeline (TeamSolver.solve_take con 'take_raw' la deja
-    # tal cual para compararla)
-    tk = bool(t.get("take"))
-    check(low_body[wb] >= -3.0, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm)", warn=tk)
+    # una toma del equipo re-resuelta (TakeClip) se corrige igual que un clip nuevo (team_rig.take_floor_fix: el pie
+    # gira sobre el tobillo, el martillo alrededor del puño), así que también falla; 'take_raw' en solve_take la deja tal
+    # cual para comparar (la presentación de Gorō: el pie derecho -8.2 cm y el martillo -22.4 cm)
+    check(low_body[wb] >= -3.0, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm)")
     if low_body[wb] < -3.0:
         print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.0f}({low_where[i]})" for i, v in enumerate(low_body) if v < -3.0))
     if min(low_weapon) < 800.0:          # sin arma queda en 900 (centinela)
         bad = [(i, v) for i, v in enumerate(low_weapon) if v < (-6.0 if i in bite else -1.0)]
         ww = min(range(len(low_weapon)), key=lambda i: low_weapon[i])
         check(not bad, f"{clip.name}: el arma no se mete en el piso (f{ww} {low_weapon[ww]:.1f} cm"
-                       f"{'; ' + str(len(bad)) + ' cuadros de más' if bad else ''})", warn=tk)
+                       f"{'; ' + str(len(bad)) + ' cuadros de más' if bad else ''})")
 
 
 # ------------------------------------------------------------------------------- export
@@ -829,7 +875,7 @@ def main():
     if lo:
         locomotion_weapon(ch, by_name, [nm for nm, _ in lo])
     last = max(b for a, b in ranges.values())
-    if EXPORT and not ONLY:
+    if EXPORT and (not ONLY or opt("--fbx")):
         if failures:
             print("NO SE EXPORTA: fallaron chequeos")
         else:

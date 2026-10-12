@@ -13,6 +13,8 @@ blender -b --factory-startup --python Tools/Blender/anim/build_team_anims.py -- 
 * sin `--export` solo resuelve y chequea (sale con código 1 si algo falla); con `--export` escribe
   `Nindo/Assets/Nindo/Art/Characters/TeamAnims/<Personaje>Anims.fbx` y su `.json` (cuadros, timing, lint).
 * `--only` itera sobre algunos clips (no exporta). `--renders` hace una hoja por clip con la cámara del juego.
+* `--export --fbx RUTA` escribe el FBX y su `.json` en otra parte (el scratch), también con `--only`: para medir una
+  variante (píxeles de la hoja, giros) sin tocar el de `TeamAnims`.
 * Después, en Unity: `generate_assets.py` (solo las funciones de los controllers/metas que tocás) liga cada clip del
   sidecar al estado del mismo nombre del controller (`team_states`) y escribe el importador (`team_anim_metas`:
   Generic, sin compresión, `preserveHierarchy: 1`).
@@ -99,8 +101,12 @@ La hoja va donde la pide el clip: el hueso `Katana` se anima aparte y el puño r
 palma en diagonal (`KATANA_DIAG0` = -40°, la izquierda +40°, ±`KATANA_DIAG`): con esa diagonal la guardia queda con la
 muñeca a 16° de recta y el antebrazo neutro. Para que la hoja se lea desde la cámara del juego, en los loops y en los
 avisos el filo va inclinado (`LOOP_EDGE` en team_clips_ninja: 60° de la vertical, la cara clara hacia arriba); un filo
-abajo derecho deja solo el lomo a la vista. Para elegir un filo nuevo conviene recorrer el giro del filo alrededor de la
-hoja (un cuadro suelto, `limbs.begin("free")`) y mirar costo, pronación y cuánto mira la cara hacia arriba.
+abajo derecho deja solo el lomo a la vista. En los golpes, el filo va adelante del tajo pero con la hoja acostada
+(Attack2 sube con el filo adelante y la punta hacia Kaito, todo pronado; Attack3 baja en diagonal con el filo 35° a la
+izquierda; la estocada es de plano, filo afuera; el desvío barre con el filo adelante, como la guardia). Para elegir un
+filo nuevo conviene recorrer el giro del filo alrededor de la hoja (un cuadro suelto, `limbs.begin("free")`) y mirar
+costo, pronación, columpio y cuánto mira la cara a la cámara; en un golpe, que el antebrazo haga todo el tajo en la misma
+rama (pronado o supinado): cambiar de rama en dos cuadros es media vuelta del antebrazo.
 
 Martillo (Gorō): `grip` (la derecha), `haft` (eje del mango hacia la cabeza), `face` (hacia dónde mira la cara de
 golpe), `grip_l` 0..1 y `slide_l`/`slide_r` (corren las manos por el mango, m), `grip_r` < 1 (la derecha afloja para
@@ -110,7 +116,12 @@ mango y va a `hand_r`/`_dir`/`_palm` como mano libre; el martillo queda donde lo
 
 Tomas del equipo: `T.TakeClip(ch, "Intro", "Firstinteraction", 0, 77)` re-resuelve una acción del FBX del modelo (el
 cuerpo, los pies y el arma de la toma; los brazos otra vez por team_limbs, `TeamSolver.solve_take`). Es lo que usa la
-presentación de Gorō; sirve para cualquier toma que el juego siga usando tal cual.
+presentación de Gorō; sirve para cualquier toma que el juego siga usando tal cual. Lo que en la toma atravesaba el piso
+se corrige (`take_floor_fix`): el pie gira sobre el tobillo hasta apoyar la planta (en la presentación, el pie derecho en
+punta de pie estaba 8.2 cm abajo; ahora 16° menos de punta) y el martillo gira alrededor del puño de la derecha hasta
+quedar a 0.5 cm del piso, con una rampa de 4 cuadros (en los dos golpes al piso se hundía 22.4 cm; ahora 5-7° más
+arriba). La mano del martillo gira con él y la otra vuelve a agarrarlo. Las tomas pasan los mismos chequeos de piso que
+los clips nuevos.
 
 ### Lo que hace el solver con las manos (team_limbs.ArmSolver)
 
@@ -147,10 +158,15 @@ mango: aviso hasta 1.35), giro en la muñeca, pronación dentro de lo humano, el
 golpe, y saltos del codo / antebrazo de un cuadro al otro (<= 35° más de lo que giró la mano pedida; aviso hasta 55°).
 Además: la mano en el mango sin quebrarse (columpio <= 55°, falla desde 70°); el antebrazo en su tope más del 25 % de
 los cuadros (aviso); la mano libre pedida con un giro que no entra (aviso, con el cuadro); tics en lo EXPORTADO (el giro
-local del antebrazo o la mano > 45° en un cuadro con la mano viajando < 20 cm y 20° más que el cuadro vecino más rápido:
+local del antebrazo o la mano > 45° en un cuadro con la mano viajando < 20 cm respecto de su hombro y 20° más que el cuadro vecino más rápido:
 falla; lo mismo en el brazo, aviso; quedan libres la mano del arma en el golpe y los 2 primeros cuadros, que Unity cruza
 en 0.08 s); el puño alrededor del mango (la palma a la distancia del agarre ideal ± 2 cm, `grip_gap_cm`); los cruces de
-`BLENDS` (el antebrazo gira <= 30° más que la mano pedida); el arma no se mete en el piso más de 1 cm fuera del golpe.
+`BLENDS` (el antebrazo gira <= 30° más que la mano pedida, y aparte el giro crudo, aviso arriba de 45°: los golpes del
+ninja salvo el Attack1 arrancan con el filo de los loops, `edge_start`, pero las vueltas a Idle todavía ruedan ~57°); el arma no se mete en el piso más de 1 cm fuera del golpe;
+la cara de la katana hacia la cámara del juego (media de |normal . cámara| desde 6 lados a 52°, >= 0.5, aviso) en el
+inicio del aviso, el apex y el golpe, en los loops y en los cuadros `timing["read"]` de un clip sin golpe (`blade_face`
+en el sidecar). Ese número no ve lo que tapa el cuerpo: para comparar de verdad, contar píxeles con máscaras planas
+(Metal / Lomo / Glint) desde la cámara del juego, como hizo la revisión.
 
 ## Dos personajes en el mismo FBX (el abuelo y el ninja del secuestro)
 

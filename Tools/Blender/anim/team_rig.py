@@ -828,8 +828,16 @@ class TeamSolver:
         Los huesos que cuelgan del brazo (dedos) conservan lo local de la toma."""
         ch, R = self.ch, self.rig
         take = c["take"]
+        fix = {} if c.get("take_raw") else (c.get("floor_fix") or {})
         for n in R.names:
             pose.place(n, take[n])
+        # los pies que atravesaban el piso giran sobre el tobillo (take_floor_fix); lo que cuelga del pie, con él
+        for k in "rl":
+            M = fix.get("foot_" + k)
+            if M is not None:
+                d = ch.side[k]
+                for b in R.subtree(d["foot"]) + ([d["foot_ctrl"]] if d["foot_ctrl"] else []):
+                    pose.place(b, M @ take[b])
         if c.get("take_raw"):
             # la toma tal cual (para comparar con lo re-resuelto)
             self.hip_drop, self.misses = 0.0, {"legs": 0.0, "hand_r": 0.0, "hand_l": 0.0}
@@ -838,7 +846,8 @@ class TeamSolver:
         wb = ch.spec["weapon"]["bone"] if w else None
         misses = {"legs": 0.0}
         placed = set()
-        bent = Matrix.Identity(4)
+        # el martillo que se hundía en el piso gira alrededor del puño de la derecha (take_floor_fix): la mano lo sigue
+        bent = fix.get("weapon", Matrix.Identity(4)).copy()
 
         def pole_of(k):
             d = ch.side[k]
@@ -850,11 +859,13 @@ class TeamSolver:
         for k in "rl":
             d = ch.side[k]
             H = take[d["hand"]]
+            if k == "r":
+                H = bent @ H
             hold = None
             if w and w["kind"] == "club":
                 B = bent @ take[wb]
                 base, haft = B.translation, rot3(B).col[1].normalized()
-                fist = (bent @ H) @ ch.hand_info[k]["fist"]
+                fist = (bent @ take[d["hand"]]) @ ch.hand_info[k]["fist"]
                 t = (fist - base).dot(haft)
                 gap = (base + haft * t - fist).length / ch.u
                 if k == "r":
@@ -870,7 +881,7 @@ class TeamSolver:
             misses["hand_" + k] = self.place_hand(pose, k, H, pole_of(k), hold)
             placed |= {d["upper"], d["fore"], d["hand"]}
             if w and w["kind"] == "club" and k == "r":
-                bent = self.bent
+                bent = self.bent @ bent
                 pose.place(wb, bent @ take[wb])
                 placed.add(wb)
         # lo que cuelga de los brazos sigue a su padre con lo local de la toma
@@ -1178,27 +1189,58 @@ class TakeClip(TeamClip):
     def __init__(self, ch, name, action, first, last, notes="", timing=None):
         n = last - first
         super().__init__(name, n, [NA.Key(0, {}), NA.Key(n, {})], loop=False, timing=timing or {}, notes=notes, tremble=0.0)
-        self.take = sample_take(ch, action, first, last)
+        self.take, pts = sample_take(ch, action, first, last, points=True)
+        self.floor_fix = take_floor_fix(ch, self.take, pts)
 
     def controls(self, f):
         i = max(0, min(len(self.take) - 1, int(round(f))))
-        return {"take": self.take[i], "travel": 0.0}
+        return {"take": self.take[i], "floor_fix": self.floor_fix[i], "travel": 0.0}
 
 
-def sample_take(ch, action, first, last):
+def sample_take(ch, action, first, last, points=False):
     """{hueso: matriz en espacio de la armadura} de cada cuadro de una acción del FBX (de 'first' a 'last' de la toma,
-    como los cuenta el controller: el cuadro 0 es el primero de la acción). Deja la armadura en reposo."""
+    como los cuenta el controller: el cuadro 0 es el primero de la acción). Deja la armadura en reposo. Con 'points',
+    también los vértices deformados (marco de autoría, m) de cada pie (> 0.5 de su grupo) y del arma (las mallas sin
+    grupos), para take_floor_fix."""
     import charlib as C
+    import numpy as np
     act = next(a for a in ch.take_actions if a.name.endswith(action))
     arm = ch.arm
     C.use_action(arm, act)
     scn = bpy.context.scene
     f0 = int(round(act.frame_range[0]))
-    out = []
+    Rw, O = np.array(ch.Rcw, dtype=np.float64), np.array(ch.O, dtype=np.float64)
+    sel = []
+    for o in ch.meshes if points else []:
+        if not o.vertex_groups:
+            sel.append((o, "weapon", None))
+            continue
+        for k in "rl":
+            g = o.vertex_groups.get(ch.side[k]["foot"])
+            if g is not None:
+                idx = [v.index for v in o.data.vertices if any(x.group == g.index and x.weight > 0.5 for x in v.groups)]
+                if idx:
+                    sel.append((o, "foot_" + k, np.array(idx)))
+    out, pts = [], []
     for f in range(first, last + 1):
         scn.frame_set(f0 + f)
         bpy.context.view_layer.update()
         out.append({pb.name: pb.matrix.copy() for pb in arm.pose.bones})
+        if not points:
+            continue
+        dg = bpy.context.evaluated_depsgraph_get()
+        row = {}
+        for o, key, idx in sel:
+            oe = o.evaluated_get(dg)
+            me = oe.to_mesh()
+            co = np.empty(len(me.vertices) * 3)
+            me.vertices.foreach_get("co", co)
+            oe.to_mesh_clear()
+            M = np.array(oe.matrix_world, dtype=np.float64)
+            w = co.reshape(-1, 3) @ M[:3, :3].T + M[:3, 3]
+            c = (w - O) @ Rw / ch.u
+            row.setdefault(key, []).append(c if idx is None else c[idx])
+        pts.append({k: np.concatenate(v) for k, v in row.items()})
     arm.animation_data.action = None
     for pb in arm.pose.bones:
         pb.location = (0, 0, 0)
@@ -1206,6 +1248,90 @@ def sample_take(ch, action, first, last):
         pb.rotation_euler = (0, 0, 0)
         pb.scale = (1, 1, 1)
     bpy.context.view_layer.update()
+    return (out, pts) if points else out
+
+
+# una toma corregida (take_floor_fix): lo que queda entre el piso y lo más bajo del martillo (m), y en cuántos cuadros
+# entra y sale el giro que lo levanta (sin la rampa el martillo frenaría de golpe en el cuadro en que toca el piso)
+TAKE_FLOOR, TAKE_FLOOR_RAMP = 0.005, 4
+
+
+def _lift_deg(P, q, k, floor):
+    """Los grados más chicos que hay que girar los puntos P (marco de autoría) alrededor del eje k que pasa por q para
+    que lo más bajo quede a 'floor' del piso (0 si ya está arriba; a lo sumo 45). Se barre de a 1° antes de afinar: con
+    el mango largo, girar de más baja la otra punta al piso (a 45° la cola del martillo de Gorō toca)."""
+    import numpy as np
+    q = np.array(q, dtype=np.float64)
+
+    def low(a):
+        R = np.array(Matrix.Rotation(math.radians(a), 3, k), dtype=np.float64)
+        return float(((P - q) @ R.T + q)[:, 2].min())
+    if low(0.0) >= floor:
+        return 0.0
+    hi = next((float(d) for d in range(1, 46) if low(float(d)) >= floor), None)
+    if hi is None:
+        return 45.0
+    lo = hi - 1.0
+    for _ in range(10):
+        mid = 0.5 * (lo + hi)
+        lo, hi = (lo, mid) if low(mid) >= floor else (mid, hi)
+    return hi
+
+
+def take_floor_fix(ch, take, pts):
+    """Lo que hay que corregir de una toma del equipo para que nada atraviese el piso (V-TR-7 de la verificación: en la
+    presentación de Gorō la cabeza del martillo se hundía 22 cm en los dos golpes al piso y el pie derecho, en punta de
+    pie atrás, 8 cm toda la toma). Por cuadro, {clave: matriz} que se aplica (en la armadura) sobre lo de la toma:
+      * 'foot_r'/'foot_l': el pie gira alrededor del tobillo lo justo para que la planta quede en el piso (baja el
+        talón, sube la punta);
+      * 'weapon': el martillo gira alrededor del puño de la derecha, en el plano vertical del mango, lo justo para que
+        la cabeza quede a TAKE_FLOOR del piso; el giro entra y sale en TAKE_FLOOR_RAMP cuadros (la máxima de los vecinos
+        con una campana), así el golpe frena sobre el piso en vez de pararse en seco. La mano del martillo gira con él (el
+        puño no se despega) y la otra vuelve a agarrar el mango donde quedó (solve_take)."""
+    up = Vector((0.0, 0.0, 1.0))
+    n = len(take)
+    raw = {}
+    w = ch.weapon_info
+    for f in range(n):
+        T = take[f]
+        for k in "rl":
+            P = pts[f].get("foot_" + k)
+            if P is None:
+                continue
+            q = ch.Pc(T[ch.side[k]["foot"]].translation)
+            ax = (Vector(P[int(P[:, 2].argmin())]) - q).cross(up)
+            if ax.length > 1e-4:
+                raw.setdefault("foot_" + k, [None] * n)[f] = (q, ax.normalized(), _lift_deg(P, q, ax.normalized(), 0.0))
+        P = pts[f].get("weapon")
+        if P is None or not w or w["kind"] != "club":
+            continue
+        B = T[ch.spec["weapon"]["bone"]]
+        haft = rot3(B).col[1].normalized()
+        fist = T[ch.side["r"]["hand"]] @ ch.hand_info["r"]["fist"]
+        q = ch.Pc(B.translation + haft * (fist - B.translation).dot(haft))
+        ax = ch.Dc(haft).cross(up)
+        # con el mango casi vertical ese giro ya no sube la cabeza: se apaga en vez de elegir un eje cualquiera
+        fade = min(1.0, ax.length / 0.3)
+        if ax.length > 1e-4:
+            raw.setdefault("weapon", [None] * n)[f] = (q, ax.normalized(), _lift_deg(P, q, ax.normalized(), TAKE_FLOOR) * fade)
+    out = [dict() for _ in range(n)]
+    Rc = ch.Rc.normalized()
+    for key, rows in raw.items():
+        deg = [r[2] if r else 0.0 for r in rows]
+        for f in range(n):
+            if rows[f] is None:
+                continue
+            a = deg[f]
+            if key == "weapon":
+                for j in range(max(0, f - TAKE_FLOOR_RAMP), min(n, f + TAKE_FLOOR_RAMP + 1)):
+                    x = abs(j - f) / (TAKE_FLOOR_RAMP + 1.0)
+                    a = max(a, deg[j] * math.cos(0.5 * math.pi * x) ** 2)
+            if a < 1e-3:
+                continue
+            q, ax, _ = rows[f]
+            Ra = (Rc @ Matrix.Rotation(math.radians(a), 3, ax) @ Rc.inverted()).to_4x4()
+            qa = ch.P(q)
+            out[f][key] = Matrix.Translation(qa) @ Ra @ Matrix.Translation(-qa)
     return out
 
 
