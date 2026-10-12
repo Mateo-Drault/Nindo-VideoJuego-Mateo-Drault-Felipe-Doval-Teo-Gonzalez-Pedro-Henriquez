@@ -4,6 +4,9 @@
 //    MapFog): su borde se deforma ±3 m con ruido y la fibra del papel, así no se ve la grilla;
 //  * la niebla son nubes de tinta (dos capas que se mueven despacio en sentidos opuestos, con el lomo que da a la luna
 //    del noroeste más claro) y, encima, las líneas de las nubes kasumi de los biombos, cada una en su lugar;
+//  * debajo de la rampa del borde la lámina pierde el detalle (se lee de un mip más chico): lo que todavía no se vio
+//    no asoma con sus líneas rectas (arrozales, techos) a través de la niebla a medio despejar;
+//  * lo descubierto lleva la misma fibra del washi que la niebla (si no, al lado de la niebla parecía impreso);
 //  * donde la tinta de la niebla se seca contra lo explorado se junta el pigmento (la línea de marea de la aguada);
 //  * al abrir el mapa lo descubierto desde la última vez se despeja a manchas (_FogPrev -> _FogTex con _Reveal);
 //  * el borde rasgado del papel arriba y abajo (los costados van contra las varillas del pergamino).
@@ -114,7 +117,6 @@ Shader "Nindo/UI Map"
             fixed4 frag(v2f i) : SV_Target
             {
                 float2 uv = i.uv;
-                half3 sheet = (tex2D(_MainTex, uv) + _TextureSampleAdd).rgb;
 
                 // _MistTex cubre la lámina una vez: las kasumi (B) se leen así, cada banda en su lugar; la fibra, las
                 // nubes y la deformación, a las escalas _MistK (no se alinean entre sí: no se ve que se repiten).
@@ -131,7 +133,11 @@ Shader "Nindo/UI Map"
                 float fogPrev = tex2D(_FogPrev, fuv).a;
                 float wipe = smoothstep(m2.g - 0.18, m2.g + 0.18, _Reveal * 1.36 - 0.18);
                 float fog = lerp(fogPrev, fogNow, wipe);
-                float F = smoothstep(0.22, 0.78, fog + (m1.r - 0.5) * 0.12 + (m1.g - 0.5) * 0.30);
+                float F = smoothstep(0.3, 0.7, fog + (m1.r - 0.5) * 0.12 + (m1.g - 0.5) * 0.30);
+
+                // la lámina: hasta 5 mips más borrosa donde la niebla empieza a tapar, y con la fibra del papel
+                half3 sheet = (tex2Dbias(_MainTex, float4(uv, 0, F * 5.0)) + _TextureSampleAdd).rgb;
+                sheet *= 0.92 + 0.10 * m3.r + 0.06 * m1.r;
 
                 // la niebla: nubes de tinta con el lomo de la luna, más cargada contra el borde del papel, y las kasumi
                 float bill = saturate(m1.g * 0.6 + m2.g * 0.5 - 0.1);

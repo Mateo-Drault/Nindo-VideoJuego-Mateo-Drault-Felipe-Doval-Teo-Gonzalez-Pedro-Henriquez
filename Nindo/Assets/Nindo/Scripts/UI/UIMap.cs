@@ -27,7 +27,7 @@ namespace Nindo
     {
         // ---- medidas (canvas de referencia 1920 x 1080 en modo Expand)
         const float MapColX = 660f, MapPadR = 60f, MapPadV = 70f, MapRodW = 34f, MapRodGap = 30f, MapSoft = 26f;
-        const float MapMaxZoom = 2.6f, MapCenterZoom = 1.8f, MapKaitoSize = 44f;
+        const float MapMaxZoom = 2.6f, MapCenterZoom = 1.8f, MapKaitoSize = 44f, MapObjectiveW = 460f;
         const float MapUnroll = 0.42f, MapRoll = 0.24f, MapRevealAt = 0.45f, MapRevealDur = 0.9f;
         const string MapHintFlag = "tut_map";
 
@@ -63,8 +63,13 @@ namespace Nindo
             public string zone;
             public Vector2 at;
             public float w, h, pivotX, rot;
-            public bool hasAnchor, fresh;
+            public bool hasAnchor, fresh, solid;
             public Vector3 anchor;
+            // dónde está en la ventana (centro de la lámina en 0), para que el cartel la esquive: x0, x1, y0, y1 por
+            // caja. Derecho, una; el de la montaña, girado, en cuatro tramos (la caja entera del girado tapaba de más
+            // y el cartel no encontraba lugar en la cumbre)
+            public readonly float[] box = new float[16];
+            public int boxes;
         }
 
         RectTransform mapRoot, mapView, mapContent, mapMarksRt, mapRodL, mapRodR, mapShadow, mapTip, mapReticle, mapKaito, mapKaitoRing, mapSwash;
@@ -72,7 +77,7 @@ namespace Nindo
         CanvasGroup mapGroup, mapMarksGroup, mapInfoGroup, mapTipGroup;
         Image mapVeil, mapColumn, mapZoneHanko, mapKaitoImg, mapRingImg, mapReticleImg;
         readonly Image[] mapSeals = new Image[3];
-        TextMeshProUGUI mapZoneTitle, mapZoneSub, mapSealCount, mapExplored, mapTipTitle, mapTipSub;
+        TextMeshProUGUI mapZoneTitle, mapZoneSub, mapObjective, mapSealCount, mapExplored, mapTipTitle, mapTipSub;
         RawImage mapImage, mapFogFallback;
         Material mapMat;
         Texture2D mapFogTex, mapFogPrevTex;
@@ -85,7 +90,8 @@ namespace Nindo
         readonly TextMeshProUGUI[] mapHintLabels = new TextMeshProUGUI[5];
         readonly int[] mapHintOrder = new int[5];
         int mapHintVersion = -1, mapFogVersion = -1;
-        bool mapContentBuilt, mapFromPause, mapClosing, mapMouseMode, mapMouseOver, mapCursorMoved, mapFirstOpen = true, mapZoomChosen;
+        bool mapContentBuilt, mapFromPause, mapClosing, mapMouseMode, mapMouseOver, mapCursorMoved, mapFirstOpen = true, mapZoomChosen, mapBloomPending;
+        int mapFogVersionClosed = -1;
         float mapT, mapCloseT, mapHintPoll, mapZoom = 1f, mapZoomT = 1f, mapSheetW = 1133f, mapSheetH = 940f, mapTipInkH = 78f;
         int mapTipSide = -1;
         Vector2 mapPan, mapPanT, mapCursor, mapLastMouse, mapRootSize;
@@ -118,21 +124,26 @@ namespace Nindo
             mapZoneHanko.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -6f);
             mapZoneTitle = MapText("Zone", info, 32f, UIFactory.Paper, new Vector2(196f, -404f), true);
             mapZoneSub = MapText("ZoneSub", info, 22f, new Color(0.78f, 0.7f, 0.47f), new Vector2(197f, -440f), false);
-            MapText("SealsLabel", info, 24f, MapDim, new Vector2(112f, -512f), false).text = "Sellos";
+            // el objetivo de ahora (el del HUD, que con el mapa abierto se esconde): a lo que se abre el mapa casi
+            // siempre es a buscar adónde ir. Hasta dos renglones en el ancho de la columna
+            mapObjective = UIFactory.Legible(UIFactory.Text("Objective", info, "", 22f, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(112f, -472f), new Vector2(MapObjectiveW, 64f), TextAlignmentOptions.TopLeft));
+            mapObjective.lineSpacing = -8f;
+            MapText("SealsLabel", info, 24f, MapDim, new Vector2(112f, -576f), false).text = "Sellos";
             for (int i = 0; i < 3; i++)
-                mapSeals[i] = UIFactory.Centered("Seal" + i, info, Color.white, new Vector2(0f, 1f), new Vector2(141f + i * 70f, -567f), new Vector2(58f, 58f), UISprites.Hanko(UISprites.SealIconName((SealId)i)));
-            mapSealCount = MapText("SealCount", info, 30f, UIFactory.Paper, new Vector2(330f, -567f), true);
-            MapText("ExploredLabel", info, 24f, MapDim, new Vector2(112f, -640f), false).text = "Explorado";
-            mapExplored = MapText("Explored", info, 32f, UIFactory.Gold, new Vector2(300f, -640f), true);
+                mapSeals[i] = UIFactory.Centered("Seal" + i, info, Color.white, new Vector2(0f, 1f), new Vector2(226f + i * 58f, -576f), new Vector2(50f, 50f), UISprites.Hanko(UISprites.SealIconName((SealId)i)));
+            mapSealCount = MapText("SealCount", info, 30f, UIFactory.Paper, new Vector2(376f, -576f), true);
+            MapText("ExploredLabel", info, 24f, MapDim, new Vector2(112f, -632f), false).text = "Explorado";
+            mapExplored = MapText("Explored", info, 32f, UIFactory.Gold, new Vector2(300f, -632f), true);
             // "Sin rezar" solo si la partida guarda dónde se rezó; con esa fila de más se aprietan (en 1080 de alto no
-            // tienen que tocar las teclas de abajo, que son tres renglones). Con esa fila, el de reaparición puede no
-            // estar rezado (se registra al pasar cerca): lo que lo marca es el brillo, y la leyenda muestra solo eso
+            // tienen que tocar las teclas de abajo, que son tres renglones). El de reaparición es el mismo torii que en
+            // la lámina, sobre su charco de tinta con la luz: puede no estar rezado (se registra al pasar cerca) y lo
+            // que lo distingue es la luz
             bool bare = MapShrinesField != null;
-            float step = bare ? 34f : 40f, dy = 0f;
+            float step = bare ? 34f : 38f, dy = 0f;
             MapLegendRow(info, dy, "MapKaito", Color.white, "Kaito", false);
             MapLegendRow(info, dy += step, "MapShrine", MapShrineRed, "Santuario", false);
             if (bare) MapLegendRow(info, dy += step, "MapShrine", MapShrineBare, "Sin rezar", false);
-            MapLegendRow(info, dy += step, bare ? null : "MapShrine", MapShrineRed, "Punto de reaparición", true);
+            MapLegendRow(info, dy += step, "MapShrine", MapShrineRed, "Punto de reaparición", true);
             MapLegendRow(info, dy += step, "Hanko_IconBoss", Color.white, "Guardián", false);
             MapLegendRow(info, dy += step, "MapPortal", MapPortalJade, "Portal al dojo", false);
             for (int i = 0; i < mapHintKeys.Length; i++)
@@ -201,8 +212,13 @@ namespace Nindo
 
         void MapLegendRow(Transform parent, float dy, string sprite, Color tint, string label, bool glow)
         {
-            float y = -690f - dy;
-            if (glow) UIFactory.Centered("Glow", parent, new Color(1f, 0.77f, 0.31f, 0.9f), new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(56f, 56f), UISprites.SoftDot);
+            float y = -684f - dy;
+            if (glow)
+            {
+                // como en la lámina (RefreshMap): el charco de tinta, la luz y el torii encima, a 0.7 de su tamaño
+                UIFactory.Centered("Pool", parent, MapGlowInk, new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(78f, 78f), UISprites.SoftDot);
+                UIFactory.Centered("Glow", parent, new Color(1f, 0.77f, 0.31f, 0.86f), new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(60f, 60f), UISprites.SoftDot);
+            }
             if (sprite != null) UIFactory.Centered("Icon", parent, tint, new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(34f, 34f), UISprites.Get(sprite));
             MapText("Legend", parent, 24f, MapLegendText, new Vector2(164f, y), false).text = label;
         }
@@ -286,18 +302,26 @@ namespace Nindo
                         hasAnchor = l.at != null && l.at.Length >= 2, anchor = l.at != null && l.at.Length >= 2 ? new Vector3(l.at[0], 0f, l.at[1]) : Vector3.zero,
                     });
                 }
-            // santuarios, guardianes y portales (debajo de Kaito, encima de los nombres)
-            foreach (var cp in Object.FindObjectsByType<Checkpoint>(FindObjectsSortMode.None))
+            // santuarios, guardianes y portales (debajo de Kaito, encima de los nombres). Los brillos del de reaparición
+            // y el ensō de Kaito, debajo de todas las marcas: el anillo que late pasaba por encima del torii vecino
+            var cps = Object.FindObjectsByType<Checkpoint>(FindObjectsSortMode.None);
+            var glows = new Image[cps.Length];
+            var cores = new Image[cps.Length];
+            for (int i = 0; i < cps.Length; i++)
             {
                 // el brillo del de reaparición va debajo del torii (un hijo se dibujaría encima). SoftDot cae rápido:
                 // de 64 px casi todo quedaba debajo del torii de 34, y el oro solo sobre el papel claro no se veía:
                 // un charco de tinta de 112 y adentro la luz de 80, como un farol de noche
-                var glow = UIFactory.Centered("Glow", mapMarksRt, new Color(MapGlowInk.r, MapGlowInk.g, MapGlowInk.b, 0f), new Vector2(0.5f, 0.5f), MapPoint(cp.transform.position), new Vector2(112f, 112f), UISprites.SoftDot);
-                var core = UIFactory.Centered("Light", glow.rectTransform, new Color(1f, 0.77f, 0.31f, 0f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(80f, 80f), UISprites.SoftDot);
-                var m = NewMark(cp.transform.position, UISprites.Get("MapShrine"), 27f, MapShrineRed);
-                m.cp = cp;
-                m.glow = glow;
-                m.glowCore = core;
+                glows[i] = UIFactory.Centered("Glow", mapMarksRt, new Color(MapGlowInk.r, MapGlowInk.g, MapGlowInk.b, 0f), new Vector2(0.5f, 0.5f), MapPoint(cps[i].transform.position), new Vector2(112f, 112f), UISprites.SoftDot);
+                cores[i] = UIFactory.Centered("Light", glows[i].rectTransform, new Color(1f, 0.77f, 0.31f, 0f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(80f, 80f), UISprites.SoftDot);
+            }
+            mapKaitoRing.SetAsLastSibling();
+            for (int i = 0; i < cps.Length; i++)
+            {
+                var m = NewMark(cps[i].transform.position, UISprites.Get("MapShrine"), 27f, MapShrineRed);
+                m.cp = cps[i];
+                m.glow = glows[i];
+                m.glowCore = cores[i];
             }
             if (Game.World != null)
                 foreach (var a in Game.World.Arenas)
@@ -305,15 +329,15 @@ namespace Nindo
             foreach (var p in Object.FindObjectsByType<Portal>(FindObjectsSortMode.None))
                 NewMark(p.transform.position, UISprites.Get("MapPortal"), 30f, MapPortalJade).portal = p;
             mapReticle.SetAsLastSibling();
-            mapKaitoRing.SetAsLastSibling();
             mapKaito.SetAsLastSibling();
         }
 
         /// <summary>
         /// Las marcas que se ven no se pisan: un portal o un santuario al lado de la arena de un jefe (el portal de la
-        /// cascada queda a 7 m de Mizuchi, 15 px a zoom 1) se corre lo justo para que se lean los dos. El sello del
-        /// jefe no se mueve, y Kaito tampoco: el mapa se abre casi siempre parado en un santuario (recién rezado, al
-        /// reaparecer o al volver por un portal) y la flecha con su anillo tapaba justo el de reaparición. El
+        /// cascada queda a 7 m de Mizuchi, 15 px a zoom 1) se corre lo justo para que se lean los dos. Entre marcas, el
+        /// sello del jefe no se mueve; Kaito no se mueve nunca y todas, el sello también, se le corren: el mapa se abre
+        /// casi siempre parado en un santuario (recién rezado, al reaparecer o al volver por un portal) y después de
+        /// cada jefe se reaparece junto a su arena, donde la flecha tapaba la mitad del sello ganado. El
         /// corrimiento está en unidades de la lámina a zoom 1 y se aplica por zoom^-0.7, como el tamaño de las
         /// marcas: al acercar se separan solas y vuelven a su lugar. Al abrir y al cambiar el tamaño (con el mapa
         /// abierto el juego está en pausa: Kaito no se mueve).
@@ -328,7 +352,7 @@ namespace Nindo
                 {
                     var a = mapMarks[i];
                     if (!a.shown) continue;
-                    if (kaito && a.arena == null)
+                    if (kaito)
                     {
                         Vector2 dk = a.at + a.nudge - k;
                         float needK = (a.rt.sizeDelta.x + MapKaitoSize) * 0.5f * 0.85f + 2f, distK = dk.magnitude;
@@ -385,9 +409,12 @@ namespace Nindo
             float oldW = mapSheetW;
             mapSheetW = Mathf.Max(200f, Mathf.Min(aw, ah * asp));
             mapSheetH = mapSheetW / asp;
-            // en 21:9 o más ancho, al centro de la pantalla (centrada en lo que deja la columna quedaba corrida a la
-            // derecha con un hueco negro de 300 px contra la columna); si no entra, pegada a la columna
-            float cx = Mathf.Clamp(W * 0.5f, MapColX + MapRodGap + mapSheetW * 0.5f, W - MapPadR - MapRodGap - mapSheetW * 0.5f) - W * 0.5f;
+            // en 21:9 o más ancho se centra todo el conjunto (columna y pergamino) con dos franjas parejas a los
+            // costados: con la columna pegada a la izquierda y la lámina al centro de la pantalla quedaban 50 px de un
+            // lado y 700 de negro del otro. Hasta un cuarto del ancho (en 32:9 la columna no se va al medio)
+            float group = MapColX + 2f * MapRodGap + mapSheetW;
+            mapColOff = Mathf.Clamp((W - MapPadR - group) * 0.5f, 0f, W * 0.25f);
+            float cx = MapColX + mapColOff + MapRodGap + mapSheetW * 0.5f - W * 0.5f;
             mapView.anchoredPosition = new Vector2(cx, 0f);
             mapContent.sizeDelta = new Vector2(mapSheetW, mapSheetH);
             // lo que vive en el contenido se reubica con la nueva escala (los nombres y las marcas no cambian de tamaño)
@@ -404,15 +431,29 @@ namespace Nindo
             // columna baja con ella (si no, quedaba arriba con un hueco de 450 px hasta las teclas) y las teclas se
             // apoyan a la altura del pie de la lámina
             float sheetPad = (H - mapSheetH) * 0.5f;
-            float dy = Mathf.Max(0f, sheetPad - MapPadV);
-            mapInfo.anchoredPosition = new Vector2(0f, -dy);
-            if (mapLogo != null) mapLogo.anchoredPosition = new Vector2(110f, -90f - dy);
-            mapTitle.anchoredPosition = new Vector2(118f, -290f - dy);
-            mapHintBottom = Mathf.Max(66f, sheetPad - 4f) + dy;
+            mapInfoDy = Mathf.Max(0f, sheetPad - MapPadV);
+            mapInfo.anchoredPosition = new Vector2(mapColOff, -mapInfoDy);
+            PlaceMapColumn();
+            mapHintBottom = Mathf.Max(66f, sheetPad - 4f) + mapInfoDy;
             LayoutMapHints();
         }
 
-        float mapHintBottom = 66f;
+        float mapHintBottom = 66f, mapColOff, mapInfoDy;
+
+        /// <summary>
+        /// La columna, el logo y el título donde los deja LayoutMap (corridos en 21:9, más abajo en 4:3). Abierto desde
+        /// la pausa es la misma columna, que se corre a su lugar (y vuelve al cerrar) en vez de saltar: el logo bajaba
+        /// 177 px de golpe en 4:3. Abierto con la M ya está en su lugar.
+        /// </summary>
+        void PlaceMapColumn()
+        {
+            float k = 1f;
+            if (mapFromPause) k = mapClosing ? 1f - UIAnim.InOutSine(mapCloseT / MapRoll) : UIAnim.OutCubic(mapT / 0.32f);
+            float ox = mapColOff * k, oy = mapInfoDy * k;
+            mapColumn.rectTransform.SetPos(new Vector2(300f + ox, -root.rect.height * 0.5f));
+            if (mapLogo != null) mapLogo.SetPos(new Vector2(110f + ox, -90f - oy));
+            mapTitle.SetPos(new Vector2(118f + ox, -290f - oy));
+        }
 
         // ================================================================== abrir y cerrar
         bool CanOpenMap()
@@ -424,23 +465,49 @@ namespace Nindo
             return Game.Player != null && Game.Player.IsAlive && Game.World != null && Game.World.Built;
         }
 
+        /// <summary>
+        /// La entrada "Mapa" de la pausa, apagada y salteada al navegar cuando el mapa no se puede abrir (sin
+        /// WorldMap.json, el mundo sin armar): antes se elegía y no pasaba nada. Al abrir la pausa (SetPaused).
+        /// </summary>
+        void RefreshPauseMapItem()
+        {
+            var item = pausePanel.transform.Find("Mapa");
+            var sel = item != null ? item.GetComponent<Selectable>() : null;
+            if (sel == null) return;
+            bool can = CanOpenMap();
+            if (sel.interactable == can) return;
+            sel.interactable = can;
+            var look = item.GetComponent<NindoMenuItem>();
+            if (look != null) { look.labelNormal.a = can ? 1f : 0.4f; look.Refresh(); }
+        }
+
         /// <param name="fromPause">Se abrió desde la pausa: al cerrarlo se vuelve a ella (el juego sigue en pausa).</param>
         public void OpenMap(bool fromPause)
         {
-            if (MapOpen || !CanOpenMap()) return;
+            if (MapOpen) return;
+            if (!CanOpenMap())
+            {
+                // desde la pausa la entrada está apagada (RefreshPauseMapItem); si igual llega un clic, que se oiga
+                if (fromPause) Game.Audio?.Play("denied", null, 0.5f);
+                return;
+            }
             if (!mapContentBuilt) BuildMapContent();
             mapFromPause = fromPause || pausePanel.activeSelf;
             if (pausePanel.activeSelf) pausePanel.SetActive(false);
             Game.Time?.SetPaused(true);
             if (Game.Input != null) { Game.Input.GameplayBlocked = true; Game.Input.ClearBuffer(); }
             EventSystem.current?.SetSelectedGameObject(null);
-            Cursor.visible = true; Cursor.lockState = CursorLockMode.None;
+            // con el mando, la flecha del sistema sobre la lámina era un segundo cursor (MapControls la muestra en
+            // cuanto se mueve el mouse)
+            Cursor.visible = Game.Input == null || !Game.Input.UsingGamepad; Cursor.lockState = CursorLockMode.None;
             mapRoot.gameObject.SetActive(true);
             mapRoot.SetAsLastSibling();
             LayoutMap();
             mapT = 0f; mapClosing = false; mapCloseT = 0f;
             // el primer cuadro ya enrollado y transparente (si se abrió con el clic de la pausa, este cuadro ya pasó por UpdateMap)
-            mapGroup.alpha = 0f; mapColumn.fillAmount = 0f; mapInfoGroup.alpha = 0f; mapMarksGroup.alpha = 0f;
+            // desde la pausa la columna y el velo ya están (es la misma columna): solo se corre y se desenrolla la lámina
+            mapGroup.alpha = mapFromPause ? 1f : 0f; mapColumn.fillAmount = mapFromPause ? 1f : 0f; mapInfoGroup.alpha = 0f; mapMarksGroup.alpha = 0f;
+            PlaceMapColumn();
             ApplyMapUnroll(0f);
             mapTipMark = null; mapTipGroup.alpha = 0f;
             mapCursorMoved = false; mapMouseMode = false;
@@ -461,6 +528,8 @@ namespace Nindo
                 mapFogTex.LoadRawTextureData(mapFogBytes);
                 mapFogTex.Apply(false, false);
             }
+            // lo descubierto desde la última vez se despeja con su sonido (la primera vez no hay "antes")
+            mapBloomPending = !mapFirstOpen && MapFog.Version != mapFogVersionClosed;
             if (mapFirstOpen) { System.Array.Copy(mapFogBytes, mapFogPrevBytes, mapFogBytes.Length); mapFirstOpen = false; }
             mapFogPrevTex.LoadRawTextureData(mapFogPrevBytes);
             mapFogPrevTex.Apply(false, false);
@@ -484,7 +553,7 @@ namespace Nindo
             RefreshMap();
             ApplyMapView();
             Game.Save.SetFlag(MapHintFlag);
-            Game.Audio?.Play("ui_open", null, 0.5f);
+            MapSound("map_unroll", "ui_open");
         }
 
         public void CloseMap()
@@ -492,7 +561,17 @@ namespace Nindo
             if (!MapOpen || mapClosing) return;
             mapClosing = true; mapCloseT = 0f;
             System.Array.Copy(mapFogBytes, mapFogPrevBytes, mapFogBytes.Length);
-            Game.Audio?.Play("ui_close", null, 0.5f);
+            mapFogVersionClosed = mapFogVersion;
+            mapBloomPending = false;
+            MapSound("map_roll", "ui_close");
+        }
+
+        /// <summary>El papel del pergamino (Audio/Sfx/map_*); sin ese clip, el de los menús (o nada, sin 'fallback').</summary>
+        static void MapSound(string key, string fallback)
+        {
+            if (Game.Audio == null) return;
+            if (Game.LoadContent().Sfx(key) != null) Game.Audio.Play(key, null, 0.5f);
+            else if (fallback != null) Game.Audio.Play(fallback, null, 0.5f);
         }
 
         void FinishCloseMap()
@@ -505,6 +584,7 @@ namespace Nindo
                 pauseOpenT = 0.5f;
                 var item = pausePanel.transform.Find("Mapa");
                 Select(item != null ? item.GetComponent<Selectable>() : pauseFirst);
+                Cursor.visible = true;   // la pausa se usa también con el mouse
                 return;
             }
             Game.Time?.SetPaused(false);
@@ -554,6 +634,8 @@ namespace Nindo
             var z = Zone.Current;
             mapZoneTitle.text = z != null ? z.title : "";
             mapZoneSub.text = z != null ? z.subtitle : "";
+            string goal = StoryText.Objective(save);
+            mapObjective.text = string.IsNullOrEmpty(goal) ? "" : "<color=#C7BFAB>Objetivo</color>  " + goal;
             string zi = z != null ? (UISprites.ZoneIconName(z.id) ?? (z.id.StartsWith("lago") ? "ZoneLake" : "ZoneMoon")) : null;
             mapZoneHanko.sprite = UISprites.Hanko(zi);
             mapZoneHanko.enabled = mapZoneHanko.sprite != null;
@@ -671,8 +753,10 @@ namespace Nindo
             {
                 mapCloseT += dt;
                 open = 1f - UIAnim.InCubic(mapCloseT / MapRoll);
-                mapGroup.alpha = 1f - Mathf.Clamp01((mapCloseT - 0.12f) / 0.14f);
-                mapColumn.fillAmount = 1f - UIAnim.InCubic(mapCloseT / MapRoll);
+                // de vuelta a la pausa la columna se queda (vuelve a su lugar): solo se enrolla la lámina
+                mapGroup.alpha = mapFromPause ? 1f : 1f - Mathf.Clamp01((mapCloseT - 0.12f) / 0.14f);
+                mapColumn.fillAmount = mapFromPause ? 1f : 1f - UIAnim.InCubic(mapCloseT / MapRoll);
+                PlaceMapColumn();
                 mapMarksGroup.alpha = Mathf.MoveTowards(mapMarksGroup.alpha, 0f, dt / 0.08f);
                 mapInfoGroup.alpha = Mathf.MoveTowards(mapInfoGroup.alpha, 0f, dt / 0.1f);
                 mapTipGroup.alpha = 0f;
@@ -682,8 +766,10 @@ namespace Nindo
             }
             mapT += dt;
             open = UIAnim.OutCubic((mapT - 0.04f) / MapUnroll);
-            mapGroup.alpha = Mathf.Clamp01(mapT / 0.15f);
-            mapColumn.fillAmount = UIAnim.OutCubic(mapT / 0.2f);
+            mapGroup.alpha = mapFromPause ? 1f : Mathf.Clamp01(mapT / 0.15f);
+            mapColumn.fillAmount = mapFromPause ? 1f : UIAnim.OutCubic(mapT / 0.2f);
+            if (mapT < 0.4f) PlaceMapColumn();
+            if (mapBloomPending && mapT >= MapRevealAt) { mapBloomPending = false; MapSound("map_reveal", null); }
             mapInfoGroup.alpha = UIAnim.OutCubic((mapT - 0.12f) / 0.2f);
             mapMarksGroup.alpha = UIAnim.OutCubic((mapT - 0.32f) / 0.2f);
             ApplyMapUnroll(open);
@@ -768,7 +854,7 @@ namespace Nindo
             float scale = root.localScale.x > 0f ? root.localScale.x : 1f;   // píxeles de pantalla por unidad del canvas
             Vector2 mouseDelta = mouse - mapLastMouse;
             mapLastMouse = mouse;
-            if (mouseDelta.sqrMagnitude > 1f || Mathf.Abs(wheel) > 0.01f || drag) mapMouseMode = true;
+            if (mouseDelta.sqrMagnitude > 1f || Mathf.Abs(wheel) > 0.01f || drag) { mapMouseMode = true; if (!Cursor.visible) Cursor.visible = true; }
             Vector2 mouseMap = mapPan;
             mapMouseOver = false;
             if (RectTransformUtility.ScreenPointToLocalPointInRectangle(mapView, mouse, null, out var local))
@@ -782,6 +868,7 @@ namespace Nindo
             if (move.sqrMagnitude > 0.04f)
             {
                 mapMouseMode = false;
+                if (Cursor.visible && input.UsingGamepad) Cursor.visible = false;
                 mapCursorMoved = true;
                 mapCursor += move * (mapSheetH * 0.6f * dt / mapZoom);
                 Vector2 half = new Vector2(mapSheetW, mapSheetH) * 0.5f;
@@ -824,7 +911,8 @@ namespace Nindo
             float z1 = Mathf.Lerp(mapZoom, mapZoomT, 1f - Mathf.Exp(-dt * 14f));
             if (Mathf.Abs(z1 - z0) > 1e-5f)
             {
-                Vector2 a = mapMouseMode ? mouseMap : mapCursor;
+                // con el mouse sobre la columna no hay punto de la lámina bajo él: se acerca al centro de la vista
+                Vector2 a = mapMouseMode ? (mapMouseOver ? mouseMap : mapPan) : mapCursor;
                 mapPan = a - (a - mapPan) * (z0 / z1);
                 mapPanT = a - (a - mapPanT) * (z0 / z1);
                 mapZoom = z1;
@@ -943,6 +1031,20 @@ namespace Nindo
             rt.SetPos(l.at + new Vector2(shift / mapZoom, 0f));
             float a = alpha * Mathf.SmoothStep(0f, 1f, margin / 24f);
             if (l.text.alpha != a) l.text.alpha = a;
+            l.solid = a > 0.1f;
+            l.boxes = l.rot == 0f ? 1 : 4;
+            for (int k = 0; k < l.boxes; k++)
+            {
+                float bx0 = float.MaxValue, bx1 = float.MinValue, by0 = float.MaxValue, by1 = float.MinValue;
+                for (int c = 0; c < 4; c++)
+                {
+                    float lx = -l.pivotX * w + w * (k + (c & 1)) / l.boxes, ly = (c & 2) == 0 ? -h * 0.5f : h * 0.5f;
+                    Vector2 q = (l.at + new Vector2(lx * ca - ly * sa, lx * sa + ly * ca) - mapPan) * mapZoom;
+                    bx0 = Mathf.Min(bx0, q.x); bx1 = Mathf.Max(bx1, q.x);
+                    by0 = Mathf.Min(by0, q.y); by1 = Mathf.Max(by1, q.y);
+                }
+                l.box[k * 4] = bx0 + shift; l.box[k * 4 + 1] = bx1 + shift; l.box[k * 4 + 2] = by0; l.box[k * 4 + 3] = by1;
+            }
         }
 
         Vector2 MapScreen(Vector2 content) => mapView.anchoredPosition + (content - mapPan) * mapZoom;
@@ -974,17 +1076,27 @@ namespace Nindo
             float bestScore = float.MaxValue;
             int bestSide = 0;
             float dyUp = half + 4f + hh;
-            for (int side = 0; side < 8; side++)
+            for (int side = 0; side < 12; side++)
             {
-                Vector2 c = at + (side == 0 ? new Vector2(0f, dyUp) : side == 1 ? new Vector2(half + 10f + extL, 0f)
-                               : side == 2 ? new Vector2(0f, -dyUp) : side == 3 ? new Vector2(-half - 10f - extR, 0f)
-                               : side == 4 ? new Vector2(extL * 0.6f, dyUp) : side == 5 ? new Vector2(extL * 0.6f, -dyUp)
-                               : side == 6 ? new Vector2(-extR * 0.6f, dyUp) : new Vector2(-extR * 0.6f, -dyUp));
+                // las cuatro diagonales y, más lejos (x1.4, un poco peor puntuadas), las mismas: en la cumbre las de
+                // cerca caían todas sobre otra marca o sobre el nombre de la montaña
+                int dg = side < 8 ? side : side - 4;
+                float far = side < 8 ? 1f : 1.4f;
+                Vector2 c = at + far * (dg == 0 ? new Vector2(0f, dyUp) : dg == 1 ? new Vector2(half + 10f + extL, 0f)
+                               : dg == 2 ? new Vector2(0f, -dyUp) : dg == 3 ? new Vector2(-half - 10f - extR, 0f)
+                               : dg == 4 ? new Vector2(extL * 0.6f, dyUp) : dg == 5 ? new Vector2(extL * 0.6f, -dyUp)
+                               : dg == 6 ? new Vector2(-extR * 0.6f, dyUp) : new Vector2(-extR * 0.6f, -dyUp));
                 Vector2 p = new Vector2(Mathf.Clamp(c.x, x0, x1), Mathf.Clamp(c.y, y0, y1));
-                float score = (p - c).magnitude * 40f + side;
+                float score = (p - c).magnitude * 40f + side + (side < 8 ? 0f : 20f);
                 foreach (var o in mapMarks)
                     if (o.shown) score += MapOverlap(p, extL, extR, hh, MapScreen(o.rt.anchoredPosition), o.rt.sizeDelta.x * 0.5f * o.rt.localScale.x * mapZoom) * (o == m ? 6f : 1f);
                 if (Game.Player != null) score += MapOverlap(p, extL, extR, hh, kaito, kaitoHalf + 6f) * 6f;
+                // los nombres de zona que se ven (su caja de PlaceMapLabel, este mismo cuadro): un nombre tapado
+                // por el cartel pesa el doble que una marca
+                foreach (var l in mapLabels)
+                    if (l.solid && l.text.gameObject.activeSelf)
+                        for (int k = 0; k < l.boxes; k++)
+                            score += MapOverlapBox(p, extL, extR, hh, vx + l.box[k * 4], vx + l.box[k * 4 + 1], l.box[k * 4 + 2], l.box[k * 4 + 3]) * 2f;
                 if (side == mapTipSide) score -= 60f;
                 if (score < bestScore) { bestScore = score; best = p; bestSide = side; }
             }
@@ -994,10 +1106,14 @@ namespace Nindo
 
         /// <summary>Área (px²) en que el trazo del cartel (extL a la izquierda del texto, extR a la derecha) tapa una
         /// marca (un cuadrado de lado 2 * half).</summary>
-        static float MapOverlap(Vector2 c, float extL, float extR, float hh, Vector2 m, float half)
+        static float MapOverlap(Vector2 c, float extL, float extR, float hh, Vector2 m, float half) =>
+            MapOverlapBox(c, extL, extR, hh, m.x - half, m.x + half, m.y - half, m.y + half);
+
+        /// <summary>Área (px²) en que el trazo del cartel tapa una caja (x0..x1, y0..y1).</summary>
+        static float MapOverlapBox(Vector2 c, float extL, float extR, float hh, float x0, float x1, float y0, float y1)
         {
-            float ox = Mathf.Min(c.x + extR, m.x + half) - Mathf.Max(c.x - extL, m.x - half);
-            float oy = Mathf.Min(c.y + hh, m.y + half) - Mathf.Max(c.y - hh, m.y - half);
+            float ox = Mathf.Min(c.x + extR, x1) - Mathf.Max(c.x - extL, x0);
+            float oy = Mathf.Min(c.y + hh, y1) - Mathf.Max(c.y - hh, y0);
             return ox > 0f && oy > 0f ? ox * oy : 0f;
         }
 

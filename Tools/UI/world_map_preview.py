@@ -169,9 +169,38 @@ def ss(e0, e1, x):
     return t * t * (3 - 2 * t)
 
 
-def composite_uv(U, V, sheet, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0, dpx_m=None):
-    """frag() de NindoUIMap.shader, línea por línea. U, V: uv de la lámina de cada píxel (v 0 = sur); sheet: el color
-    de la lámina en esos píxeles (sRGB 0..1). dpx_m: metros por píxel de pantalla (el fwidth del borde rasgado)."""
+MIP_BIAS = 5.0      # NindoUIMap.shader: tex2Dbias(_MainTex, F * 5): bajo la niebla la lámina pierde el detalle
+
+
+def sheet_levels(img, w, h):
+    """La lámina a la resolución que se ve (w x h, el mip que toca) y sus mips más chicos hasta MIP_BIAS niveles más
+    (cada uno la mitad, vuelto a agrandar con bilineal: lo que hace el muestreo trilineal), con la fila 0 abajo."""
+    out = []
+    for lv in range(int(MIP_BIAS) + 1):
+        sw_, sh_ = max(1, w >> lv), max(1, h >> lv)
+        out.append(np.asarray(img.resize((sw_, sh_), Image.LANCZOS), np.float32)[::-1] / 255)
+    return out
+
+
+def sample_levels(levels, U, V, lod):
+    """tex2Dbias: el color de cada píxel entre los dos mips de su nivel (lod, por píxel)."""
+    lo = np.clip(np.floor(lod).astype(np.int64), 0, len(levels) - 1)
+    f = np.clip(lod - lo, 0, 1)[..., None]
+    out = np.zeros(U.shape + (3,), np.float32)
+    for lv in range(len(levels)):
+        sel = lo == lv
+        if not sel.any():
+            continue
+        a = bilinear(levels[lv], U[sel], V[sel], False)
+        b = bilinear(levels[min(lv + 1, len(levels) - 1)], U[sel], V[sel], False)
+        out[sel] = a * (1 - f[sel]) + b * f[sel]
+    return out
+
+
+def composite_uv(U, V, levels, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0, dpx_m=None):
+    """frag() de NindoUIMap.shader, línea por línea. U, V: uv de la lámina de cada píxel (v 0 = sur); levels: la
+    lámina a la resolución que se ve y sus mips (sheet_levels). dpx_m: metros por píxel de pantalla (el fwidth del
+    borde rasgado)."""
     sheet_m = np.array([M.SHEET_W, M.SHEET_H], np.float32)
     k1, k2 = M.MIST_K
     mist_up = mist[::-1]                                         # la textura con la fila 0 abajo, como Unity
@@ -189,7 +218,9 @@ def composite_uv(U, V, sheet, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0, d
         fog = fprev + (fnow - fprev) * wipe
     else:
         fog = fnow
-    F = ss(0.22, 0.78, fog + (m1[..., 0] - 0.5) * 0.12 + (m1[..., 1] - 0.5) * 0.30)
+    F = ss(0.3, 0.7, fog + (m1[..., 0] - 0.5) * 0.12 + (m1[..., 1] - 0.5) * 0.30)
+    sheet = sample_levels(levels, np.clip(U, 0, 1), np.clip(V, 0, 1), F * MIP_BIAS)
+    sheet = sheet * (0.92 + 0.10 * m3[..., 0:1] + 0.06 * m1[..., 0:1])
     bill = np.clip(m1[..., 1] * 0.6 + m2[..., 1] * 0.5 - 0.1, 0, 1)
     fog_col = FOG_LIGHT + (FOG_DARK - FOG_LIGHT) * bill[..., None]
     ey = np.minimum(V, 1 - V) * sheet_m[1]
@@ -207,13 +238,6 @@ def composite_uv(U, V, sheet, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0, d
     aa = max(1e-4, (dpx_m if dpx_m is not None else sheet_m[1] / U.shape[0]) * 1.2)
     alpha = ss(dk - aa, dk + aa, ey) * ((U >= 0) & (U <= 1) & (V >= 0) & (V <= 1))
     return np.clip(col, 0, 1), alpha
-
-
-def composite(sheet, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0):
-    """La lámina entera ya a la escala de la pantalla (fila 0 = norte)."""
-    h, w = sheet.shape[:2]
-    U, V = np.meshgrid((np.arange(w, dtype=np.float32) + 0.5) / w, 1.0 - (np.arange(h, dtype=np.float32) + 0.5) / h)
-    return composite_uv(U, V, sheet, fog_now, mist, t, fog_prev, reveal)
 
 
 # ------------------------------------------------------------------------------------------- maqueta de la pantalla
@@ -275,6 +299,11 @@ def keycap(dst, x, y, glyph, h=40):
     return w
 
 
+def col_offset(Wc, sw):
+    """UIMap.LayoutMap: en pantallas anchas la columna y el pergamino se centran juntos (hasta un cuarto del ancho)."""
+    return min(max((Wc - PAD_R - (COL_X + 2 * ROD_GAP + sw)) * 0.5, 0.0), Wc * 0.25)
+
+
 def layout(Wc, Hc):
     """Rect de la lámina en el canvas (centro y tamaño): el mismo cálculo que UIMap.LayoutMap."""
     aw = Wc - COL_X - PAD_R - 2 * ROD_GAP
@@ -282,7 +311,7 @@ def layout(Wc, Hc):
     asp = M.SHEET_W / M.SHEET_H
     sw = min(aw, ah * asp)
     sh = sw / asp
-    cx = min(max(Wc / 2, COL_X + ROD_GAP + sw / 2), Wc - PAD_R - ROD_GAP - sw / 2)
+    cx = COL_X + col_offset(Wc, sw) + ROD_GAP + sw / 2
     return cx, Hc / 2, sw, sh
 
 
@@ -309,27 +338,50 @@ class View:
 def render_view(map_img, fog, mist, view, t=0.0, fog_prev=None, reveal=1.0):
     """La ventana de la lámina (sw x (sh + 2 SOFT)) como la dibuja el shader con el zoom y el paneo de la vista."""
     w, h = int(round(view.sw)), int(round(view.sh + 2 * SOFT))
-    # la "mip" que corresponde: la lámina a la resolución que se ve (sin pasar la de la textura)
+    # la "mip" que corresponde: la lámina a la resolución que se ve (sin pasar la de la textura) y las de abajo
     tw = min(map_img.size[0], int(round(view.sw * view.zoom)))
     th = int(round(tw * map_img.size[1] / map_img.size[0]))
-    mip = np.asarray(map_img.resize((tw, th), Image.LANCZOS), np.float32)[::-1] / 255   # fila 0 abajo
+    levels = sheet_levels(map_img, tw, th)
     xs = (np.arange(w, dtype=np.float32) + 0.5) - w / 2
     ys = h / 2 - (np.arange(h, dtype=np.float32) + 0.5)
     X, Y = np.meshgrid(xs, ys)
     U = ((X / view.zoom + view.pan[0]) / view.sw + 0.5).astype(np.float32)
     V = ((Y / view.zoom + view.pan[1]) / view.sh + 0.5).astype(np.float32)
-    sheet = bilinear(mip, np.clip(U, 0, 1), np.clip(V, 0, 1), False)
-    rgb, alpha = composite_uv(U, V, sheet, fog, mist, t, fog_prev, reveal, dpx_m=M.SHEET_H / (view.sh * view.zoom))
+    rgb, alpha = composite_uv(U, V, levels, fog, mist, t, fog_prev, reveal, dpx_m=M.SHEET_H / (view.sh * view.zoom))
     # recorte suave de arriba y abajo (RectMask2D softness)
     edge = np.minimum(np.arange(h), h - 1 - np.arange(h)).astype(np.float32)[:, None] + 0.5
     alpha = alpha * np.clip(edge / SOFT, 0, 1)
     return Image.fromarray((np.dstack([rgb, alpha]) * 255).astype(np.uint8), "RGBA")
 
 
+OBJ_W = 460            # UIMap.MapObjectiveW: el objetivo, hasta dos renglones
+DIM = (199, 191, 171)  # UIMap.MapDim
+
+
+def wrap(d, text, fnt, width):
+    """Renglones como los parte TMP (por palabras) en 'width' px."""
+    lines, cur = [], ""
+    for w in text.split(" "):
+        t = (cur + " " + w) if cur else w
+        if d.textlength(t, font=fnt) <= width or not cur:
+            cur = t
+        else:
+            lines.append(cur)
+            cur = w
+    return lines + ([cur] if cur else [])
+
+
+def objective_lines(text):
+    d = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+    return wrap(d, "Objetivo  " + text, font(BODY_TTF, 22), OBJ_W)
+
+
 def column(scr, Wc, Hc, scene, gamepad=False):
-    """La columna de tinta de la izquierda: logo, título, lugar, sellos, explorado, leyenda y teclas. Más alta que 16:9,
-    el contenido baja con la lámina y las teclas se apoyan a la altura de su pie (UIMap.LayoutMap)."""
+    """La columna de tinta de la izquierda: logo, título, lugar, objetivo, sellos, explorado, leyenda y teclas. Más alta
+    que 16:9, el contenido baja con la lámina y las teclas se apoyan a la altura de su pie; en 21:9 se corre con el
+    pergamino (UIMap.LayoutMap)."""
     _, _, sw, sh = layout(Wc, Hc)
+    ox = col_offset(Wc, sw)
     pad = (Hc - sh) / 2
     dy = max(0.0, pad - PAD_V)
     hint_bottom = max(66.0, pad - 4)
@@ -337,43 +389,57 @@ def column(scr, Wc, Hc, scene, gamepad=False):
     col = tint(col, (9, 8, 10))
     col = col.rotate(90, expand=True)
     col.putalpha(col.getchannel("A").point(lambda v: int(v * 0.96)))
-    scr.alpha_composite(col, (int(300 - col.size[0] / 2), int(Hc / 2 - col.size[1] / 2)))
+    scr.alpha_composite(col, (int(300 + ox - col.size[0] / 2), int(Hc / 2 - col.size[1] / 2)))
     logo = Image.open(LOGO).convert("RGBA")
     lw = 330
     logo = tint(logo.resize((lw, int(lw * logo.size[1] / logo.size[0])), Image.LANCZOS), PAPER)
-    scr.alpha_composite(logo, (110, int(90 + dy)))
+    scr.alpha_composite(logo, (int(110 + ox), int(90 + dy)))
     d = ImageDraw.Draw(scr)
-    halo_text(scr, (118, 290 + dy), "Mapa", font(TITLE_TTF, 44), GOLD, anchor="lt")
-    paste_c(scr, sprite("Hanko_" + scene["zone_icon"]), 145, 423 + dy, (70, 70), rot=6)
-    halo_text(scr, (196, 404 + dy), scene["zone"], font(TITLE_TTF, 32), PAPER, anchor="lm")
-    halo_text(scr, (197, 440 + dy), scene["zone_sub"], font(BODY_TTF, 22), (199, 179, 120), anchor="lm")
-    halo_text(scr, (112, 512 + dy), "Sellos", font(BODY_TTF, 24), (199, 191, 171), anchor="lm")
+    X = lambda x: x + ox        # noqa: E731
+    halo_text(scr, (X(118), 290 + dy), "Mapa", font(TITLE_TTF, 44), GOLD, anchor="lt")
+    paste_c(scr, sprite("Hanko_" + scene["zone_icon"]), X(145), 423 + dy, (70, 70), rot=6)
+    halo_text(scr, (X(196), 404 + dy), scene["zone"], font(TITLE_TTF, 32), PAPER, anchor="lm")
+    halo_text(scr, (X(197), 440 + dy), scene["zone_sub"], font(BODY_TTF, 22), (199, 179, 120), anchor="lm")
+    # el objetivo (StoryText.Objective): "Objetivo" apagado y el texto en papel, desde y 472 (arriba), 2 renglones
+    fo = font(BODY_TTF, 22)
+    lines = objective_lines(scene.get("objective", ""))
+    scene["_objective_lines"] = len(lines)
+    for k, ln in enumerate(lines):
+        y = 472 + dy + 13 + k * 25
+        x = X(112)
+        if k == 0 and ln.startswith("Objetivo"):
+            halo_text(scr, (x, y), "Objetivo", fo, DIM, anchor="lm")
+            x += d.textlength("Objetivo  ", font=fo)
+            ln = ln[len("Objetivo  "):]
+        halo_text(scr, (x, y), ln, fo, PAPER, anchor="lm")
+    halo_text(scr, (X(112), 576 + dy), "Sellos", font(BODY_TTF, 24), DIM, anchor="lm")
     for i, (ic, got) in enumerate(zip(("ZoneMountain", "ZoneLake", "ZoneBamboo"), scene["seals"])):
         s = sprite("Hanko_" + ic)
         if not got:
             s = tint(s, (77, 74, 82, 204))                       # UIMap: color (0.3, 0.29, 0.32, 0.8)
-        paste_c(scr, s, 141 + i * 70, 567 + dy, (58, 58))
-    halo_text(scr, (330, 567 + dy), f"{sum(scene['seals'])}/3", font(TITLE_TTF, 30), PAPER, anchor="lm")
-    halo_text(scr, (112, 640 + dy), "Explorado", font(BODY_TTF, 24), (199, 191, 171), anchor="lm")
-    halo_text(scr, (300, 640 + dy), f"{scene['pct']} %", font(TITLE_TTF, 32), GOLD, anchor="lm")
+        paste_c(scr, s, X(226 + i * 58), 576 + dy, (50, 50))
+    halo_text(scr, (X(376), 576 + dy), f"{sum(scene['seals'])}/3", font(TITLE_TTF, 30), PAPER, anchor="lm")
+    halo_text(scr, (X(112), 632 + dy), "Explorado", font(BODY_TTF, 24), DIM, anchor="lm")
+    halo_text(scr, (X(300), 632 + dy), f"{scene['pct']} %", font(TITLE_TTF, 32), GOLD, anchor="lm")
     bare = scene.get("prayed") is not None
     rows = [("MapKaito", None, "Kaito", False), ("MapShrine", SHRINE, "Santuario", False)]
     if bare:
         rows.append(("MapShrine", SHRINE_BARE, "Sin rezar", False))
-    # con "Sin rezar", el de reaparición puede no estar rezado: lo marca el brillo solo (UIMap.BuildMap)
-    rows += [(None if bare else "MapShrine", SHRINE, "Punto de reaparición", True), ("Hanko_IconBoss", None, "Guardián", False), ("MapPortal", (127, 224, 160), "Portal al dojo", False)]
-    step = 34 if bare else 40
+    # el de reaparición: el mismo torii que en la lámina sobre su charco de tinta y su luz (UIMap.MapLegendRow)
+    rows += [("MapShrine", SHRINE, "Punto de reaparición", True), ("Hanko_IconBoss", None, "Guardián", False), ("MapPortal", (127, 224, 160), "Portal al dojo", False)]
+    step = 34 if bare else 38
     for i, (sp, c, label, glow) in enumerate(rows):
-        y = 690 + i * step + dy
+        y = 684 + i * step + dy
         if glow:
-            paste_c(scr, tint(sprite("SoftDot"), (255, 196, 79, 230)), 130, y, (56, 56))
+            paste_c(scr, tint(sprite("SoftDot"), (5, 5, 10, 165)), X(130), y, (78, 78))
+            paste_c(scr, tint(sprite("SoftDot"), (255, 196, 79, 219)), X(130), y, (60, 60))
         if sp is not None:
             s = sprite(sp)
             if c is not None:
                 s = tint(s, c)
-            paste_c(scr, s, 130, y, (34, 34))
-        halo_text(scr, (164, y), label, font(BODY_TTF, 24), (222, 214, 196), anchor="lm")
-    scene["_legend_bottom"] = 690 + (len(rows) - 1) * step + dy + 17
+            paste_c(scr, s, X(130), y, (34, 34))
+        halo_text(scr, (X(164), y), label, font(BODY_TTF, 24), (222, 214, 196), anchor="lm")
+    scene["_legend_bottom"] = 684 + (len(rows) - 1) * step + dy + 17
     # UIMap.RefreshMapHints: en el mando, B / círculo cierra; en el teclado, M, y + / - para el zoom. De a dos por renglón
     flat = [("B", "Cerrar"), ("RS", "Centrar"), ("RT", "Acercar"), ("LT", "Alejar"), ("Stick izq.", "Mover")] if gamepad else \
            [("M", "Cerrar"), ("Q", "Centrar"), ("+", "Acercar"), ("-", "Alejar"), ("WASD", "Mover")]
@@ -382,7 +448,7 @@ def column(scr, Wc, Hc, scene, gamepad=False):
     scene["_hints_top"] = Hc - (hint_bottom + (len(hints) - 1) * 46) - 20
     for r, row in enumerate(hints):
         y = Hc - (hint_bottom + (len(hints) - 1 - r) * 46)
-        x = 110
+        x = X(110)
         for glyph, label in row:
             x += keycap(scr, x, y, glyph) + 10
             halo_text(scr, (x, y), label, f, (222, 214, 196), anchor="lm")
@@ -390,15 +456,15 @@ def column(scr, Wc, Hc, scene, gamepad=False):
 
 
 def declutter(items, view, kaito=None):
-    """UIMap.DeclutterMarks: las marcas no se pisan (el sello del jefe y Kaito quedan fijos); corrimiento en unidades
-    de la lámina a zoom 1, que se aplica por zoom^-0.7."""
+    """UIMap.DeclutterMarks: las marcas no se pisan (entre marcas el sello del jefe queda fijo; de Kaito, que no se
+    mueve, se corren todas); corrimiento en unidades de la lámina a zoom 1, que se aplica por zoom^-0.7."""
     for it in items:
         it["at"] = view.content(it["x"], it["z"])
         it["nudge"] = np.zeros(2)
     k = view.content(*kaito) if kaito is not None else None
     for _ in range(24):
         for i, a in enumerate(items):
-            if k is not None and a["kind"] != "boss":
+            if k is not None:
                 dk = a["at"] + a["nudge"] - k
                 need_k = (a["size"] + 44) * 0.5 * 0.85 + 2
                 dist_k = float(np.hypot(*dk))
@@ -460,6 +526,7 @@ def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_pr
         return fresh_a if fog_prev is not None and fog_prev[gy, gx] >= 0.5 else 1.0
     hx = sw / 2 - 8
     hy = sh / 2 - 8 - 3.5 * sh / M.SHEET_H * zoom
+    scene["_label_boxes"] = []           # cajas en pantalla de los nombres que se leen (el cartel las esquiva)
     for lid, v in M.LABELS.items():
         if lid not in scene["zones"]:
             continue
@@ -492,6 +559,16 @@ def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_pr
         tt = min(1.0, max(0.0, margin / 24.0))
         la *= tt * tt * (3 - 2 * tt)
         px += shift
+        if la > 0.1:
+            # UIMap.PlaceMapLabel: derecho una caja; girado, cuatro tramos
+            nb = 1 if not rot else 4
+            for k in range(nb):
+                bx, by = [], []
+                for lx in (-piv * tw + tw * k / nb, -piv * tw + tw * (k + 1) / nb):
+                    for ly in (-th / 2, th / 2):
+                        bx.append(px - shift - cx + lx * ca - ly * sa)
+                        by.append(-(py - cy) + lx * sa + ly * ca)
+                scene["_label_boxes"].append((cx + min(bx) + shift, cx + max(bx) + shift, cy - max(by), cy - min(by)))
         if la <= 0:
             continue
         lay = Image.new("RGBA", marks.size, (0, 0, 0, 0))
@@ -518,16 +595,25 @@ def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_pr
             items.append(dict(kind="portal", id=pid, x=x, z=z, size=30))
     declutter(items, View(cx, cy, sw, sh), (kx, kz))
     inv = zoom ** -0.7
+    # el ensō de Kaito va debajo de las marcas (UIMap.BuildMapContent), los brillos del de reaparición debajo de él
+    kpx, kpy = view.screen(kx, kz)
+    ring = Image.new("RGBA", scr.size, (0, 0, 0, 0))
+    rr = 30 * s
+    ImageDraw.Draw(ring).ellipse((kpx - rr, kpy - rr, kpx + rr, kpy + rr), outline=(255, 209, 96, 150), width=3)
     for it in items:
         cx0, cy0 = view.content(it["x"], it["z"]) + np.array(it["nudge"]) * inv
         px, py = view.cx + (cx0 - view.pan[0]) * zoom, view.cy - (cy0 - view.pan[1]) * zoom
         it["px"], it["py"], it["half"] = px, py, it["size"] * s / 2
         a = vis(it["x"], it["z"])
+        if it["kind"] == "cp" and it["id"] == scene["checkpoint"]:
+            # UIMap: un charco de tinta y encima la luz (sobre el papel claro el oro solo no se veía)
+            paste_c(marks, tint(sprite("SoftDot"), (5, 5, 10, int(165 * a))), px, py, (112 * s, 112 * s))
+            paste_c(marks, tint(sprite("SoftDot"), (255, 196, 79, int(235 * a))), px, py, (80 * s, 80 * s))
+    marks.alpha_composite(ring)
+    for it in items:
+        px, py = it["px"], it["py"]
+        a = vis(it["x"], it["z"])
         if it["kind"] == "cp":
-            if it["id"] == scene["checkpoint"]:
-                # UIMap: un charco de tinta y encima la luz (sobre el papel claro el oro solo no se veía)
-                paste_c(marks, tint(sprite("SoftDot"), (5, 5, 10, int(165 * a))), px, py, (112 * s, 112 * s))
-                paste_c(marks, tint(sprite("SoftDot"), (255, 196, 79, int(235 * a))), px, py, (80 * s, 80 * s))
             lit = scene.get("prayed") is None or it["id"] in scene["prayed"]
             paste_c(marks, tint(sprite("MapShrine"), SHRINE if lit else SHRINE_BARE), px, py, (it["size"] * s,) * 2, alpha=a)
         elif it["kind"] == "boss":
@@ -536,12 +622,8 @@ def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_pr
         else:
             paste_c(marks, tint(sprite("MapPortal"), (127, 224, 160)), px, py, (30 * s, 30 * s), alpha=a)
     scene["_marks"] = {(it["kind"], it["id"]): (it["px"], it["py"], it["half"]) for it in items}
-    px, py = view.screen(kx, kz)
+    px, py = kpx, kpy
     scene["_kaito"] = (px, py)
-    ring = Image.new("RGBA", scr.size, (0, 0, 0, 0))
-    rr = 30 * s
-    ImageDraw.Draw(ring).ellipse((px - rr, py - rr, px + rr, py + rr), outline=(255, 209, 96, 150), width=3)
-    marks.alpha_composite(ring)
     paste_c(marks, sprite("MapKaito"), px, py, (48 * s, 48 * s), rot=-kyaw)
     if scene.get("cursor"):
         qx, qz = scene["cursor"]
@@ -575,17 +657,23 @@ def mock(map_img, fog, mist, out_path, Wc, Hc, scene, zoom=1.0, pan=None, fog_pr
         obst.append((scene["_kaito"][0], scene["_kaito"][1], 22 * s + 6, 6.0))
         ext_l, ext_r = bw * left, bw * (0.92 - left)
         up_ = half + 4 + ink
+        near = ((0, -up_), (half + 10 + ext_l, 0), (0, up_), (-half - 10 - ext_r, 0),
+                (ext_l * 0.6, -up_), (ext_l * 0.6, up_), (-ext_r * 0.6, -up_), (-ext_r * 0.6, up_))
         best = None
-        for side, (ddx, ddy) in enumerate(((0, -up_), (half + 10 + ext_l, 0), (0, up_), (-half - 10 - ext_r, 0),
-                                           (ext_l * 0.6, -up_), (ext_l * 0.6, up_), (-ext_r * 0.6, -up_), (-ext_r * 0.6, up_))):
+        for side, (ddx, ddy) in enumerate(near + tuple((q[0] * 1.4, q[1] * 1.4) for q in near[4:])):
             qx, qy = px + ddx, py + ddy
             bx_, by_ = min(max(qx, xa), xb), min(max(qy, ya), yb)
-            score = math.hypot(bx_ - qx, by_ - qy) * 40 + side
+            score = math.hypot(bx_ - qx, by_ - qy) * 40 + side + (0 if side < 8 else 20)
             for ox, oy, oh, wt in obst:
                 w_ = min(bx_ + ext_r, ox + oh) - max(bx_ - ext_l, ox - oh)
                 h_ = min(by_ + ink, oy + oh) - max(by_ - ink, oy - oh)
                 if w_ > 0 and h_ > 0:
                     score += w_ * h_ * wt
+            for lx0, lx1, ly0, ly1 in scene["_label_boxes"]:
+                w_ = min(bx_ + ext_r, lx1) - max(bx_ - ext_l, lx0)
+                h_ = min(by_ + ink, ly1) - max(by_ - ink, ly0)
+                if w_ > 0 and h_ > 0:
+                    score += w_ * h_ * 2.0
             if best is None or score < best[0]:
                 best = (score, bx_, by_)
         _, bxc, byc = best
@@ -655,6 +743,22 @@ def check_labels(Wc, Hc):
     return bad
 
 
+def check_objectives():
+    """Todos los objetivos de StoryText.Objective en la columna (UIMap: 'Objetivo' + el texto, OBJ_W, dos renglones):
+    avisa el que no entra. Los de los sellos, con los tres que faltan (el más largo)."""
+    import re
+    src = open(os.path.join(M.ASSETS, "Nindo", "Scripts", "Story", "StoryText.cs"), encoding="utf-8").read()
+    body = src[src.index("public static string Objective(SaveData s)"):]
+    body = body[:body.index("static bool PastTheWall")]
+    # los literales de C# en orden (cada uno desde su comilla de apertura: nunca de una cadena a la siguiente)
+    texts = {t for t in re.findall(r'"((?:[^"\\\n]|\\.)*)"', body) if len(t) >= 12 and "{" not in t}
+    texts = {t for t in texts if not t.startswith(("Montaña (", "Lago (", "Bambú ("))}
+    texts.add("Conseguí los sellos (0/3): Montaña (oeste), Lago (este), Bambú (noreste)")
+    bad = [(t, n) for t in sorted(texts) for n in [len(objective_lines(t))] if n > 2]
+    print(f"objetivos ({len(texts)}):", "entran en dos renglones" if not bad else "; ".join(f"{t!r} usa {n}" for t, n in bad))
+    return bad
+
+
 NAMES = {"hogar": "Hogar de Kaito", "campos": "Campos de Inaba", "bosque": "Linde del Bosque", "muralla": "La Muralla Kurokage",
          "jardin": "Jardín del Clan", "dojo": "Dojo Kurokage", "montana": "Montaña Kodoyama", "lago": "Aldea del Lago Kohan",
          "lago_cascada": "Cascada Kohan", "bambu": "Bosque de Bambú"}
@@ -673,6 +777,7 @@ def run(map_img, meta, mist_img, out_dir, ppm):
     os.makedirs(out_dir, exist_ok=True)
     for Wc, Hc in ((1920, 1080), (2560, 1080), (1920, 1440)):
         check_labels(Wc, Hc)
+    check_objectives()
     map_img.save(os.path.join(out_dir, "map_sheet.jpg"), quality=88)
     mist_img.save(os.path.join(out_dir, "mist.png"))
     mist = np.asarray(mist_img, np.float32) / 255
@@ -686,16 +791,20 @@ def run(map_img, meta, mist_img, out_dir, ppm):
     base = dict(names=NAMES)
     views = [View(*layout(1920, 1080))]
     sf = dict(base, zone="Campos de Inaba", zone_sub="Aldea de granjeros", zone_icon="ZoneFields", seals=(False, False, False), checkpoint="cp_home",
+              objective="Seguí el rastro de los secuestradores hacia el bosque",
               zones={"hogar", "campos"}, bosses_done=set(), flags=set(), kaito=(12, -114, 30), pct=pct(first))
     zf, cf = framed(first)
     mock(map_img, blur121(first), mist, os.path.join(out_dir, "mock_4_first_open.jpg"), 1920, 1080, sf, zoom=zf, pan=views[0].content(*cf))
     s0 = dict(base, zone="Campos de Inaba", zone_sub="Aldea de granjeros", zone_icon="ZoneFields", seals=(False, False, False), checkpoint="cp_fields",
+              objective="Atravesá el Jardín del Clan hasta el dojo",
               zones={"hogar", "campos", "bosque", "muralla", "jardin"}, bosses_done=set(), flags=set(), kaito=(16, -97, 20), pct=pct(early))
     s1 = dict(base, zone="Montaña Kodoyama", zone_sub="Rocas, nieve y silencio", zone_icon="ZoneMountain", seals=(True, False, False), checkpoint="cp_mountain_top",
+              objective="Conseguí los sellos (1/3): Lago (este), Bambú (noreste)",
               zones={"hogar", "campos", "bosque", "muralla", "jardin", "montana", "lago"}, bosses_done={"goro"}, flags={"boss_goro"}, kaito=(-187, 111, 150),
               tooltip=(("cp", "cp_mountain_top"), "Santuario de la Cumbre", "Punto de reaparición"), pct=pct(mid),
               prayed={"cp_home", "cp_fields", "cp_forest", "cp_garden", "cp_mountain", "cp_mountain_top"})
     s2 = dict(base, zone="Jardín del Clan", zone_sub="La aldea de las luciérnagas", zone_icon="ZoneGarden", seals=(True, True, True), checkpoint="cp_dojo_gate",
+              objective="Volvé a la puerta del dojo con los tres sellos",
               zones=set(NAMES), bosses_done={"goro", "mizuchi", "ozeki"}, flags={"boss_goro", "boss_mizuchi", "boss_ozeki"}, kaito=(5, 92, 0), pct=pct(full))
     mock(map_img, blur121(early), mist, os.path.join(out_dir, "mock_0_16x9.jpg"), 1920, 1080, s0)
     mock(map_img, blur121(mid), mist, os.path.join(out_dir, "mock_1_21x9.jpg"), 2560, 1080, s1)
@@ -707,7 +816,7 @@ def run(map_img, meta, mist_img, out_dir, ppm):
     s3 = dict(s1, cursor=(-200, 122), tooltip=(("boss", "goro"), "Gorō", "Sello de la Montaña"))
     mock(map_img, blur121(mid), mist, os.path.join(out_dir, "mock_3_16x9_zoom.jpg"), 1920, 1080, s3, zoom=2.4, gamepad=True)
     # la muralla todavía cerrada: lo de adentro sigue bajo la niebla
-    sw_ = dict(sf, zone="La Muralla Kurokage", zone_sub="", zone_icon="ZoneMoon", zones={"hogar", "campos", "bosque", "muralla"}, kaito=(0, -42, 0), pct=pct(wall_closed), checkpoint="cp_forest")
+    sw_ = dict(sf, zone="La Muralla Kurokage", zone_sub="", zone_icon="ZoneMoon", objective="Cruzá la muralla del clan Kurokage", zones={"hogar", "campos", "bosque", "muralla"}, kaito=(0, -42, 0), pct=pct(wall_closed), checkpoint="cp_forest")
     mock(map_img, blur121(wall_closed), mist, os.path.join(out_dir, "mock_5_wall_closed.jpg"), 1920, 1080, sw_, zoom=2.6, pan=views[0].content(0, -40))
     # lo nuevo se despeja al abrir: de la exploración del comienzo a la del medio
     frames = []

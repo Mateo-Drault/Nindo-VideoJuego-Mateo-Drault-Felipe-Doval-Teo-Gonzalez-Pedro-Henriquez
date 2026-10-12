@@ -47,8 +47,8 @@ namespace Nindo
     }
 
     /// <summary>
-    /// Niebla del mapa: qué celdas (de 4 m) ya vio Kaito. Caminando descubre un radio de 16 m a su alrededor (hasta la
-    /// esquina de la pantalla de juego) y el agua abierta hasta 34 m, cada 2 m de recorrido; con una puerta cerrada no
+    /// Niebla del mapa: qué celdas (de 4 m) ya vio Kaito. Caminando descubre un radio de 18 m a su alrededor (hasta la
+    /// esquina de la pantalla de juego en 16:9; el radio lo dice WorldMap.json) y el agua abierta hasta 34 m, cada 2 m de recorrido; con una puerta cerrada no
     /// descubre lo que hay del otro lado (la muralla, el portón del dojo). Se guarda en la partida como bits en base64
     /// (1726 bytes: ~2.3 KB de texto en el JSON) con un prefijo que dice de qué grilla son ("2:129x107@-258,-218:"):
     /// si se rehace la lámina con otro encuadre, esos bits ya no caen en su lugar y se toman como una partida de antes
@@ -123,17 +123,18 @@ namespace Nindo
         public static void Reveal(Vector3 pos, float radius)
         {
             if (!Ensure()) return;
-            if (RevealDisc(pos.x, pos.z, radius)) { dirty = true; Version++; }
+            if (RevealDisc(pos.x, pos.z, radius, -1)) { dirty = true; Version++; }
         }
 
-        static bool RevealDisc(float x, float z, float r)
+        /// <param name="from">De qué lado de las puertas se mira (-1: el del centro del disco, donde está Kaito).</param>
+        static bool RevealDisc(float x, float z, float r, int from)
         {
             float c = data.cell;
             float rw = water != null ? Mathf.Max(r, data.revealWater) : r;
             int gx0 = Mathf.Max(0, Mathf.FloorToInt((x - rw - data.X0) / c)), gx1 = Mathf.Min(data.GW - 1, Mathf.FloorToInt((x + rw - data.X0) / c));
             int gy0 = Mathf.Max(0, Mathf.FloorToInt((z - rw - data.Z0) / c)), gy1 = Mathf.Min(data.GH - 1, Mathf.FloorToInt((z + rw - data.Z0) / c));
             // de qué lado está Kaito y qué puertas están abiertas (una vez por llamada: cada 2 m de recorrido)
-            int side = SideAt(x, z);
+            int side = from >= 0 ? from : SideAt(x, z);
             bool wallOpen = GateOpen(0), dojoOpen = GateOpen(1);
             bool any = false;
             float r2 = r * r, rw2 = rw * rw;
@@ -296,16 +297,19 @@ namespace Nindo
                 bits = Decode(s.Substring(prefix.Length), nb);
                 if (bits != null) { dirty = false; return; }
             }
-            // partida de antes del mapa (o una niebla de otra grilla): lo que prueban sus flags y su santuario
+            // partida de antes del mapa (o una niebla de otra grilla): lo que prueban sus flags y su santuario. Todo se
+            // mira desde el lado del santuario: un disco del camino de la muralla con el centro ya del otro lado
+            // (z -26 contra la muralla en -30) revelaba, con el portón cerrado, el jardín de adentro
             bits = new byte[nb];
+            var cp = Checkpoint.Get(d.checkpoint);
+            int from = cp != null ? SideAt(cp.transform.position.x, cp.transform.position.z) : 0;
             if (data.legacy != null)
                 foreach (var l in data.legacy)
                 {
                     if (l == null || l.flags == null || l.d == null || !AnyFlag(d, l.flags)) continue;
-                    for (int i = 0; i + 2 < l.d.Length; i += 3) RevealDisc(l.d[i], l.d[i + 1], l.d[i + 2]);
+                    for (int i = 0; i + 2 < l.d.Length; i += 3) RevealDisc(l.d[i], l.d[i + 1], l.d[i + 2], from);
                 }
-            var cp = Checkpoint.Get(d.checkpoint);
-            if (cp != null) RevealDisc(cp.transform.position.x, cp.transform.position.z, data.reveal * 1.5f);
+            if (cp != null) RevealDisc(cp.transform.position.x, cp.transform.position.z, data.reveal * 1.5f, from);
             dirty = true;
         }
 

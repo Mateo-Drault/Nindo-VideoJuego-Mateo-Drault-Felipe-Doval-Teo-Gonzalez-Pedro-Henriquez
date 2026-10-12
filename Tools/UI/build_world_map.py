@@ -69,11 +69,12 @@ IX0, IX1, IZ0, IZ1 = X0 - MARGIN, X1 + MARGIN, Z0 - MARGIN, Z1 + MARGIN
 SHEET_W, SHEET_H = IX1 - IX0, IZ1 - IZ0     # 516 x 428 m
 CELL = 4.0                                  # celda de la niebla (m): 129 x 107 celdas, 1726 bytes en la partida
 GW, GH = int(SHEET_W / CELL), int(SHEET_H / CELL)
-# radio que descubre Kaito al caminar: la cámara de juego (52°, 24 m, FOV 30, 16:9) ve ±11.4 m de costado y de -6.7
-# a +10.3 m de fondo, así que 16 m es hasta la esquina de la pantalla. Con 20 el mapa mostraba el doble de lo que se
-# vio (desde la explanada de la muralla, el patio de adentro con el portón cerrado)
-REVEAL_R = 16.0
-# celdas "descubribles" (el 100 %): alguna parte a <= 8 m de lo transitable. Con el radio de 16 queda margen para
+# radio que descubre Kaito al caminar: la cámara de juego (52°, 24 m, FOV 30) ve hasta 17.8 m en las esquinas de
+# lejos en 16:9 (19 m a los costados en 21:9, 15 m en 4:3). Con 16 lo que se veía en el borde de la pantalla quedaba
+# en la niebla del mapa ("eso lo vi"); con 20 mostraba el doble de lo que se vio. Del otro lado de una puerta cerrada
+# no se descubre nada con ningún radio (side_masks)
+REVEAL_R = 18.0
+# celdas "descubribles" (el 100 %): alguna parte a <= 8 m de lo transitable. Con el radio de 18 queda margen para
 # no tener que pegarse a cada borde: recorriendo caminos y claros (la vista previa) se llega al 100 %
 REACH_D = 8.0
 # el agua abierta no la tapa nada: desde la orilla se ve el lago entero, se descubre hasta WATER_R (y cuenta para el
@@ -175,6 +176,10 @@ LEGACY = [
     (["boss_seen_ozeki", "boss_ozeki"], [("camino_ne", 0, 8)], ["bambu_arena"]),
     (["dojo_open", "zone_dojo"], [("dojo_subida", 0, 1)], ["dojo_patio", "dojo_fondo"]),
 ]
+# hasta qué lado de las puertas llega lo que prueba cada entrada (0 el sur de la muralla, 1 el norte, 2 el patio del
+# dojo; side_of): haber llegado a la muralla no es haberla cruzado. El último punto del camino_hogar (z -26) ya está
+# del lado de adentro y, con el portón cerrado, revelaba el jardín. MapFog también lo mira desde el santuario
+LEGACY_SIDE = {"zone_muralla": 0, "dojo_gate_seen": 1}
 
 
 def to_px(x, z):
@@ -676,7 +681,9 @@ def stamp_props(st, props):
             elif pid == "dojo_gate":
                 st.put(stamp_roof(sx, sz, yaw, color=(0.22, 0.20, 0.24), ridge=(0.50, 0.44, 0.40), gold=True), x, z, shadow=0.7)
             else:
-                st.put(stamp_roof(sx, sz, yaw), x, z, shadow=0.7, shadow_off=(0.45, 0.65))
+                # cada techo con su pizarra (iguales parecían el mismo sello repetido)
+                g = rng.uniform(0.9, 1.1)
+                st.put(stamp_roof(sx, sz, yaw, color=tuple(c * g for c in SLATE)), x, z, shadow=0.7, shadow_off=(0.45, 0.65))
         elif pid == "dojo_main":
             s = size_of(pid)
             st.put(stamp_roof(s[0], s[2], yaw, color=(0.22, 0.20, 0.24), ridge=(0.50, 0.44, 0.40), gold=True), x, z, shadow=0.8, shadow_off=(0.3, 0.45))
@@ -791,6 +798,36 @@ def lake_polygon_mask():
             px, py = to_px(ax, az)
             d.ellipse(((px - r * PPM) * K, (py - r * PPM) * K, (px + r * PPM) * K, (py + r * PPM) * K), fill=0)
     return np.asarray(m.resize((IW, IH), Image.LANCZOS), np.float32) / 255
+
+
+def hand_drawn(st, k6):
+    """La tinta de los sellos como hecha a pincel y no a regla: (1) se deforma con un ruido suave de ±0.6 m cada ~6 m
+    (la muralla deja de ser una recta, el círculo del patio del dojo y los techos dejan de ser perfectos; la sombra se
+    deforma igual, así no se despega) y (2) los trazos oscuros se quiebran en pincel seco: huecos finos donde el pincel
+    se quedaba sin tinta, en manchas, no en todo el trazo. Devuelve la tinta (RGBA 0..1) y la sombra (0..1)."""
+    amp = m2px(0.6)
+    dx = (fbm(36 * k6, 501, 3) - 0.5) * 2.0 * amp
+    dy = (fbm(36 * k6, 502, 3) - 0.5) * 2.0 * amp
+    yy, xx = np.mgrid[0:IH, 0:IW].astype(np.float32)
+    yy += dy
+    xx += dx
+    del dx, dy
+    src = np.asarray(st.ink, np.float32) / 255
+    ink = np.empty_like(src)
+    for c in range(4):
+        ink[..., c] = ndimage.map_coordinates(src[..., c], (yy, xx), order=1, mode="constant", cval=0.0)
+    del src
+    shadow = ndimage.map_coordinates(np.asarray(st.shadow, np.float32) / 255, (yy, xx), order=1, mode="constant", cval=0.0)
+    del yy, xx
+    lum = (ink[..., :3] * np.array([0.299, 0.587, 0.114], np.float32)).sum(-1)
+    dark = ss(0.36, 0.14, lum) * ink[..., 3]
+    # las cerdas dejan rayas a lo largo de la pasada (de este a oeste, como la de las nubes), no puntos sueltos
+    fine = ndimage.uniform_filter1d(vnoise(max(1.5, m2px(0.2)), 511), max(3, int(m2px(1.1))), axis=1)
+    lo, hi = np.percentile(fine[::7, ::7], (2, 98))
+    fine = (fine - lo) / (hi - lo + 1e-6)
+    dry = ss(0.62, 0.86, fine) * ss(0.42, 0.72, vnoise(m2px(3.0), 512))
+    ink[..., 3] *= 1.0 - 0.5 * dry * dark
+    return ink, shadow
 
 
 # ------------------------------------------------------------------------------------------- lámina
@@ -943,11 +980,17 @@ def render(props, cache_dir):
     draw_arenas(st)
     stamp_props(st, props)
     print(f"sellos {time.time() - t0:.1f} s")
-    shadow = np.asarray(st.shadow.filter(ImageFilter.GaussianBlur(PPM * 0.5)), np.float32) / 255
+    ink, shadow = hand_drawn(st, k6)
+    print(f"pincel {time.time() - t0:.1f} s")
+    shadow = ndimage.gaussian_filter(shadow, PPM * 0.5)
     col = col * (1 - 0.38 * shadow[..., None] * (1 - shadow_col * 0.6))
     del shadow
-    ink = np.asarray(st.ink, np.float32) / 255
     a = ink[..., 3:4]
+    # la tinta se corre en las fibras del washi (nijimi): un halo tenue y desparejo alrededor de cada trazo oscuro
+    dark = ss(0.36, 0.14, (ink[..., :3] * np.array([0.299, 0.587, 0.114], np.float32)).sum(-1)) * ink[..., 3]
+    halo = np.clip(ndimage.gaussian_filter(dark, PPM * 0.35) * 1.7 - dark, 0, 1) * (0.55 + 0.9 * (fib - 0.5))
+    col = col * (1 - 0.2 * halo[..., None] * (1 - INK))
+    del dark, halo
     # los sellos también llevan la fibra del papel (si no parecen pegados encima)
     col = col * (1 - a) + ink[..., :3] * (0.94 + 0.08 * fib[..., None]) * a
     del ink, a
@@ -1118,24 +1161,36 @@ def side_masks():
     return north & ~dojo, dojo
 
 
+def side_of(x, z):
+    """El lado de las puertas de un punto, como side_masks: 0 sur de la muralla, 1 norte, 2 patio del dojo."""
+    if z > DOJO_GATE_Z and DOJO_X[0] < x <= DOJO_X[1]:
+        return 2
+    return 1 if z > W.WALL_Z else 0
+
+
 def legacy_discs():
     paths = {name: pts for name, pts, width, ph in W.PATHS}
     areas = {a[0]: a for a in W.AREAS}
     out = []
     for flags, segs, ars in LEGACY:
+        cap = LEGACY_SIDE.get(flags[0], 2)
         d = []
+
+        def add(x, z, r):
+            if side_of(x, z) <= cap:
+                d.extend([x, z, r])
         for name, i0, i1 in segs:
             pts = paths[name][i0:i1 + 1]
             for (ax, az), (bx, bz) in zip(pts[:-1], pts[1:]):
                 n = max(1, int(math.hypot(bx - ax, bz - az) / 6.0))
                 for k in range(n + 1):
                     t = k / n
-                    d += [round(ax + (bx - ax) * t, 1), round(az + (bz - az) * t, 1), REVEAL_R]
+                    add(round(ax + (bx - ax) * t, 1), round(az + (bz - az) * t, 1), REVEAL_R)
             if len(pts) == 1:
-                d += [pts[0][0], pts[0][1], REVEAL_R]
+                add(pts[0][0], pts[0][1], REVEAL_R)
         for an in ars:
             _, x, z, r, hh, soft = areas[an]
-            d += [x, z, round(r + REVEAL_R * 0.6, 1)]
+            add(x, z, round(r + REVEAL_R * 0.6, 1))
         out.append({"flags": flags, "d": d})
     return out
 
@@ -1260,6 +1315,28 @@ def icons():
     img = Image.new("RGBA", (S, S), (255, 255, 255, 0))
     img.putalpha(m)
     K.save(img, "MapShadow", border=(b, b, b, b), usage="sombra suave debajo de la lámina del mapa (teñir negro)")
+    for name in MIP_SPRITES:
+        mip_sprite_meta(name)
+
+
+# lo que la lámina dibuja 3 a 6 veces más chico que su textura (el torii de 128 a 27 px, el sello de 256 a 44): sin
+# mips, el bilineal lee 4 de ~20 texeles por píxel y los travesaños del torii se cortan y titilan al acercar con la
+# rueda (la maqueta de PIL lo esconde). Con mips trilineales (sin "conservar cobertura": eso es para el recorte por
+# alfa y endurecía el borde suave del contorno). Los Hanko son del kit de la interfaz (build_ui_art.py no toca los
+# mips de un .meta que ya existe)
+MIP_SPRITES = ("MapShrine", "MapPortal", "MapKaito", "Hanko_IconBoss", "Hanko_ZoneMountain", "Hanko_ZoneLake", "Hanko_ZoneBamboo", "Hanko_ZoneMoon")
+
+
+def mip_sprite_meta(name):
+    p = os.path.join(OUT, name + ".png.meta")
+    if not os.path.exists(p):
+        return
+    s = open(p, encoding="utf-8").read()
+    t = s.replace("enableMipMap: 0", "enableMipMap: 1")
+    t = t.replace("    filterMode: 1\n", "    filterMode: 2\n", 1)
+    if t != s:
+        with open(p, "w", encoding="utf-8", newline="\n") as f:
+            f.write(t)
 
 
 # ------------------------------------------------------------------------------------------- salida

@@ -651,6 +651,7 @@ namespace Nindo
                 pauseOpenT = 0f;
                 SizeColumn(pauseColumn);
                 RefreshControls();
+                RefreshPauseMapItem();
                 Select(pauseFirst);
             }
             Cursor.visible = p; Cursor.lockState = CursorLockMode.None;
