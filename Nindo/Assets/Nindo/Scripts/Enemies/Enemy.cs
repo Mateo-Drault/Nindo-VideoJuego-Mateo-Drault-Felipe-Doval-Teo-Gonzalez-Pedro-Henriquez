@@ -38,6 +38,8 @@ namespace Nindo
         /// de 7.5 m quedaban fuera del alcance de la katana.</summary>
         public virtual Vector3 HurtCenter(Vector3 from) => transform.position;
         public CharacterAnimator Anim => anim;
+        /// <summary>Lo que hace antes de la pelea (meditar, practicar, dormir...: EnemyAmbient), o null.</summary>
+        public EnemyAmbient Ambient { get; internal set; }
         public bool IsTelegraphingUnblockable { get; private set; }
         public bool IsExhausted => State == EnemyState.Exhausted;
         /// <summary>Agotado con la postura llena (parries o golpes a la guardia): la ejecución está disponible.</summary>
@@ -226,6 +228,7 @@ namespace Nindo
             anim.Play(config.animLocomotion, 0f);
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = true;
             Game.Combat?.Register(this);
+            Ambient?.Restart();     // vuelve a meditar, practicar, dormir... en su lugar
         }
 
         void Warp(Vector3 pos, Quaternion rot)
@@ -242,10 +245,12 @@ namespace Nindo
             IsAggro = true;
             target = Game.Player;
             SetState(EnemyState.Alert);
-            anim.Play(config.animSpotted, 0.1f);
+            // desde un idle ambiental se sobresalta con su clip y el Alert dura lo que tarda en ponerse en guardia
+            float wake = Ambient != null ? Ambient.Wake() : -1f;
+            if (wake < 0f) anim.Play(config.animSpotted, 0.1f);
             Game.UI?.ShowAlertMark(this);
             Game.Audio?.Play("alert", transform.position, 0.6f, 0.1f);
-            stateDuration = Mathf.Clamp(anim.Length(config.animSpotted, 0.6f), 0.4f, 0.9f);
+            stateDuration = wake >= 0f ? wake : Mathf.Clamp(anim.Length(config.animSpotted, 0.6f), 0.4f, 0.9f);
             // alerta a los compañeros del mismo encuentro
             encounter?.OnMemberAlerted(this);
         }
@@ -320,7 +325,8 @@ namespace Nindo
             // los controllers no tienen transiciones (todo es CrossFade por código): al volver a moverse
             // hay que reentrar al blend tree de locomoción, si no se desliza congelado en la última pose
             // (fin de Spotted, Guard, Hit, Counter, intro de jefe...)
-            if ((State == EnemyState.Chase || State == EnemyState.Strafe || State == EnemyState.Idle) && stateTime > 0.02f && anim.Current != config.animLocomotion)
+            if ((State == EnemyState.Chase || State == EnemyState.Strafe || State == EnemyState.Idle) && stateTime > 0.02f && anim.Current != config.animLocomotion
+                && (Ambient == null || !Ambient.HoldsPose))
                 anim.Play(config.animLocomotion, 0.15f);
 
             // el empujón del golpe espera a que termine el hit-stop local (si no, se desliza congelado)
@@ -423,7 +429,8 @@ namespace Nindo
 
         void TickAlert(float dt)
         {
-            if (target != null) Face(target.transform.position, 1f, dt);
+            // sentado en la roca o en el piso no gira hasta pararse (el giro lo sacaría de su lugar)
+            if (target != null && (Ambient == null || Ambient.CanTurn)) Face(target.transform.position, 1f, dt);
             if (stateTime >= stateDuration) SetState(EnemyState.Chase);
         }
 
@@ -1102,7 +1109,9 @@ namespace Nindo
                 return HitResult.Killed;
             }
 
-            float kb = info.knockback * (1f - config.knockbackResist);
+            // sorprendido en un idle ambiental: el sobresalto es la reacción (ni el Hit ni el empujón lo cortan a mitad)
+            bool startled = Ambient != null && Ambient.Waking;
+            float kb = startled ? 0f : info.knockback * (1f - config.knockbackResist);
             if (kb > 0f) knock += info.direction.Flat().normalized * kb;
 
             if (State == EnemyState.Exhausted)
@@ -1116,7 +1125,7 @@ namespace Nindo
             {
                 // aguanta el golpe sin interrumpirse (armadura propia, o ya comprometido con el golpe: cambian golpes)
             }
-            else if (State != EnemyState.Counter)
+            else if (State != EnemyState.Counter && !startled)
             {
                 ReleaseToken();
                 SetState(EnemyState.Stagger);
@@ -1260,6 +1269,7 @@ namespace Nindo
         {
             if (!IsAlive) return;   // un muerto en Scripted cuenta como vivo y el encuentro no termina nunca
             ReleaseToken(); Stop();
+            Ambient?.Release();
             SetState(EnemyState.Scripted);
             anim.Play(config.animLocomotion, 0.15f);
         }
