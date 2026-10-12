@@ -611,12 +611,16 @@ def land_xy(foot):
 
 
 # ============================================================================ guardia, desvío y contraataque
-# la guardia cerrada: el peso todo atrás, el pie de adelante en la bola (postura del gato), el antebrazo derecho
-# vertical delante de la cara con la palma hacia Kaito. Atacarla es el error que enseña paciencia
+# la guardia cerrada es la grulla que abre las alas (la postura del taichí): el peso todo atrás, el pie de adelante en la
+# bola (postura del gato), la palma derecha alzada al costado de la cabeza y abierta hacia Kaito, el codo afuera. Desde
+# arriba es un brazo alto que sale de la silueta de la espera (una palma estirada hacia Kaito apunta a la cámara y casi no
+# se ve; delante de la cara la tapaba la cabeza). Atacarla es el error que enseña paciencia
 G_BODY = feet(mod(BODY, hips=(0.03, 0.15, -0.17), hips_rot=(0.0, 0.0, 18.0), spine=(2.0, 0.0, 4.0), chest=(-2.0, 0.0, 4.0),
                   neck=(-2.0, 0.0, -12.0), head=(-6.0, 0.0, -14.0), knee_l=(0.55, -1.0, 0.0)),
               r=ball(*land_xy(FOOT_R0), heel=14.0))
-_G_R = dict(pos=(-0.13, -0.5, 1.98), fingers=(0.05, -0.12, 1.0), dorsum=(0.2, 1.0, 0.05), elbow=(-0.3, -0.3, -1.0), shape="palm")
+_G_R = dict(pos=(-0.47, -0.3, 2.3), fingers=(-0.3, -0.15, 1.0), dorsum=(0.35, 0.9, 0.15), elbow=(-1.0, 0.15, -0.45), shape="palm")
+# la otra ala (fase 2): la izquierda baja junto a la cadera de adelante, la palma hacia el piso, los dedos hacia Kaito
+_G_L = dict(pos=(0.36, -0.36, 1.2), fingers=(0.25, -1.0, -0.05), dorsum=(0.1, 0.0, 1.0), elbow=(0.8, 0.4, -0.45), shape="palm")
 # fase 3: el bastón horizontal delante del pecho, las manos abiertas a lo ancho (bloqueo alto)
 _G_STAFF = dict(staff_on=1.0, staff_follow=0.0, staff_pos=(0.02, -0.5, 1.72), staff_dir=n(1.0, 0.1, 0.06), staff_up=(0.0, -1.0, 0.0),
                 grip_r=-0.4, grip_l=0.4, grip_r_up=(0.0, 0.0, 1.0), grip_l_up=(0.0, 0.0, 1.0), grip_r_thumb=1.0, grip_l_thumb=-1.0,
@@ -648,9 +652,9 @@ def staff_hands(p, center, d, hr=None, hl=None, **kw):
 
 
 def guard_arms(p, ph, r=None, l=None, staff=None):
-    """Brazos de la guardia cerrada: la derecha delante de la cara (r = corrimiento en el mundo y, opcional, el dorso), la
-    izquierda de la fase 2 cubre el plexo (anclada al pecho), el bastón horizontal de la fase 3 (staff = corrimiento del
-    centro y, opcional, el eje)."""
+    """Brazos de la guardia cerrada: la derecha alzada (r = corrimiento en el mundo y, opcional, el dorso), la izquierda
+    baja de la fase 2 (l = corrimiento), el bastón horizontal de la fase 3 (staff = corrimiento del centro y, opcional,
+    el eje)."""
     if ph == 3:
         q = mod(p, **_G_STAFF)
         if staff:
@@ -663,8 +667,11 @@ def guard_arms(p, ph, r=None, l=None, staff=None):
         gr["pos"] = tuple(Vector(gr["pos"]) + Vector(r[:3]))
         if len(r) > 3:
             gr["dorsum"] = r[3]
+    gl = dict(_G_L)
+    if l:
+        gl["pos"] = tuple(Vector(gl["pos"]) + Vector(l[:3]))
     q = hand(p, "r", **gr)
-    return arms(q, ph, l=l if l is not None else (-0.2, 0.1, 0.06))
+    return arms(q, ph, left=gl if ph == 2 else None)
 
 
 def guard(ph):
@@ -676,22 +683,25 @@ def guard(ph):
     POSES[f"guardia cerrada {ph}"] = g
     return add("Guard", 20, [(0, a, "sine"), (9, mid, "out"), (15, g, "inout"), (20, g, "sine")], ph=ph,
                timing={"kind": "none", "hold_last": True, "chain_from": "READY", "chain_to": "GUARD"},
-               notes="guardia cerrada: el peso atrás en la postura del gato, la palma (o el bastón) delante de la cara. "
-                     "Pose quieta desde f15: el juego deja el último cuadro")
+               notes="guardia cerrada (la grulla abre las alas): el peso atrás en la postura del gato, la palma derecha "
+                     "alzada al costado de la cabeza, la izquierda baja en la fase 2, el bastón cruzado en la 3. Pose quieta "
+                     "desde f15: el juego deja el último cuadro")
 
 
 def guard_hit(ph):
-    """El golpe de Kaito rebota en la guardia (el primero; Enemy.GuardHit devuelve Blocked): la palma lo aparta de un
-    manotazo hacia su derecha y vuelve; el bastón cede y empuja."""
+    """El golpe de Kaito rebota en la guardia (el primero; Enemy.GuardHit devuelve Blocked): la palma alzada baja de un
+    manotazo hacia afuera y adelante, la cadera cede atrás y vuelve; el bastón cede y empuja."""
     g = guard_arms(G_BODY, ph)
-    slap = guard_arms(mod(G_BODY, hips=(0.03, 0.18, -0.17), hips_rot=(0.0, 0.0, 12.0), head=(-9.0, 2.0, -12.0)), ph,
-                      r=(-0.2, 0.02, -0.06, (-0.6, 0.8, 0.0)), l=(-0.18, 0.08, 0.02), staff=(0.03, 0.08, -0.04, (1.0, 0.25, 0.2)))
-    back = guard_arms(mod(G_BODY, hips=(0.03, 0.165, -0.175), head=(-7.0, 1.0, -13.0)), ph, r=(-0.04, 0.0, 0.0),
+    slap = guard_arms(mod(G_BODY, hips=(0.03, 0.2, -0.17), hips_rot=(0.0, 0.0, 11.0), head=(-9.0, 2.0, -12.0)), ph,
+                      r=(-0.14, -0.16, -0.26, (-0.55, 0.75, 0.35)), l=(-0.14, -0.06, 0.06),
+                      staff=(0.03, 0.08, -0.04, (1.0, 0.25, 0.2)))
+    back = guard_arms(mod(G_BODY, hips=(0.03, 0.17, -0.175), head=(-7.0, 1.0, -13.0)), ph, r=(-0.04, -0.03, -0.06),
                       staff=(0.0, 0.02, 0.0))
     return add("GuardHit", 15, [(0, g, "lin"), (2, slap, "snap"), (6, back, "out"), (15, g, "sine")], ph=ph,
                lag={"head": 1.0},
                timing={"kind": "none", "chain_from": "GUARD", "chain_to": "GUARD"}, events=[{"frame": 1, "fn": "Deflect"}],
-               notes="el golpe rebota en la guardia: manotazo hacia afuera en f2 (clang) y vuelve a la guardia en f15")
+               notes="el golpe rebota en la guardia: la palma alzada baja de un manotazo hacia afuera en f2 (clang), la "
+                     "cadera cede 5 cm y vuelve a la guardia en f15")
 
 
 C_BODY = feet(mod(G_BODY, hips=(0.03, 0.16, -0.18), hips_rot=(0.0, -2.0, -10.0), spine=(0.0, 0.0, -6.0), chest=(-2.0, 0.0, -6.0),

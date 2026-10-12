@@ -2340,7 +2340,7 @@
    },
    "normalized": {},
    "events": [],
-   "notes": "guardia cerrada: el peso atrás en la postura del gato, la palma (o el bastón) delante de la cara. Pose quieta desde f15: el juego deja el último cuadro",
+   "notes": "guardia cerrada (la grulla abre las alas): el peso atrás en la postura del gato, la palma derecha alzada al costado de la cabeza, la izquierda baja en la fase 2, el bastón cruzado en la 3. Pose quieta desde f15: el juego deja el último cuadro",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -2359,7 +2359,8 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.006
+    "min_z_m": -0.006,
+    "guard_silhouette_change": 0.189
    }
   },
   "GuardHit": {
@@ -2384,7 +2385,7 @@
      "fn": "Deflect"
     }
    ],
-   "notes": "el golpe rebota en la guardia: manotazo hacia afuera en f2 (clang) y vuelve a la guardia en f15",
+   "notes": "el golpe rebota en la guardia: la palma alzada baja de un manotazo hacia afuera en f2 (clang), la cadera cede 5 cm y vuelve a la guardia en f15",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -2393,8 +2394,8 @@
     "plant_drift_cm": 0.0,
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -2438,8 +2439,8 @@
     "plant_drift_cm": 0.05,
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -3166,7 +3167,7 @@
    },
    "normalized": {},
    "events": [],
-   "notes": "guardia cerrada: el peso atrás en la postura del gato, la palma (o el bastón) delante de la cara. Pose quieta desde f15: el juego deja el último cuadro",
+   "notes": "guardia cerrada (la grulla abre las alas): el peso atrás en la postura del gato, la palma derecha alzada al costado de la cabeza, la izquierda baja en la fase 2, el bastón cruzado en la 3. Pose quieta desde f15: el juego deja el último cuadro",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -3185,7 +3186,8 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.006
+    "min_z_m": -0.006,
+    "guard_silhouette_change": 0.162
    }
   },
   "GuardHit_P2": {
@@ -3210,7 +3212,7 @@
      "fn": "Deflect"
     }
    ],
-   "notes": "el golpe rebota en la guardia: manotazo hacia afuera en f2 (clang) y vuelve a la guardia en f15",
+   "notes": "el golpe rebota en la guardia: la palma alzada baja de un manotazo hacia afuera en f2 (clang), la cadera cede 5 cm y vuelve a la guardia en f15",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -3219,8 +3221,8 @@
     "plant_drift_cm": 0.0,
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -3264,8 +3266,8 @@
     "plant_drift_cm": 0.05,
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -3992,7 +3994,7 @@
    },
    "normalized": {},
    "events": [],
-   "notes": "guardia cerrada: el peso atrás en la postura del gato, la palma (o el bastón) delante de la cara. Pose quieta desde f15: el juego deja el último cuadro",
+   "notes": "guardia cerrada (la grulla abre las alas): el peso atrás en la postura del gato, la palma derecha alzada al costado de la cabeza, la izquierda baja en la fase 2, el bastón cruzado en la 3. Pose quieta desde f15: el juego deja el último cuadro",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -4024,7 +4026,8 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.006
+    "min_z_m": -0.006,
+    "guard_silhouette_change": 0.306
    }
   },
   "GuardHit_P3": {
@@ -4049,7 +4052,7 @@
      "fn": "Deflect"
     }
    ],
-   "notes": "el golpe rebota en la guardia: manotazo hacia afuera en f2 (clang) y vuelve a la guardia en f15",
+   "notes": "el golpe rebota en la guardia: la palma alzada baja de un manotazo hacia afuera en f2 (clang), la cadera cede 5 cm y vuelve a la guardia en f15",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,

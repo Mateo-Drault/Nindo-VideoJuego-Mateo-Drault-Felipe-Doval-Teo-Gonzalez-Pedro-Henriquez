@@ -61,6 +61,7 @@ ROUNDTRIP_BONES = ("Hips", "Head", "Hand_R", "Hand_L", "Index_R_2", "Thumb_L_2",
 # la cámara del juego (Kaito de espaldas mirando al jefe): lo que se lee desde arriba es la forma, no el detalle
 TELL_CAM = dict(focus=(0.0, -1.6, 1.0), pitch=52.0, dist=24.0, fov=30.0)
 TELL_MIN = 0.15
+GUARD_MIN = 0.15    # la palma estirada hacia Kaito medía 12 % (apunta a la cámara); la grulla con las alas abiertas, 16-31 %
 failures, warnings = [], []
 
 
@@ -440,6 +441,22 @@ def lint_tells(scn, arm, meshes, baked, ranges, rootsd, reports):
         reports[clip.name]["tell_silhouette_change"] = round(change, 3)
         check(change >= TELL_MIN, f"{clip.name}: el aviso (f{f}) cambia la silueta desde la cámara del juego "
                                   f"{change * 100:.0f} % (mín. {TELL_MIN * 100:.0f} %)")
+    # la guardia también es un aviso (pegarle es el error que enseña paciencia): desde arriba tiene que dejar de ser la
+    # silueta de la espera, no una palma escondida delante de la cara
+    for clip, frames in baked:
+        ph = getattr(clip, "phase", 1)
+        if clip.name.split("_")[0] != "Guard" or ph not in idles:
+            continue
+        f = clip.frames
+        scn.frame_set(ranges[clip.name][0] + f)
+        arm.location = (0, 0, 0)
+        bpy.context.view_layer.update()
+        m = NA.silhouette_mask(visible(clip, f, meshes), cam)
+        idle, area = idles[ph]
+        change = float((m & ~idle).sum()) / area
+        reports[clip.name]["guard_silhouette_change"] = round(change, 3)
+        check(change >= GUARD_MIN, f"{clip.name}: la guardia cambia la silueta de la espera desde la cámara del juego "
+                                   f"{change * 100:.0f} % (mín. {GUARD_MIN * 100:.0f} %)")
     arm.location = (0, 0, 0)
 
 
