@@ -27,6 +27,9 @@ namespace Nindo
         // el clip lo giraba otra vez
         public const string EndingTurnState = "EndingTurn";
         const float NEndingOffer = 0.726f, EndingTurnSeconds = 2.8f, EndingTurnShift = 0.55f;
+        // el clip saca la cinta del cinturón: la mano izquierda baja a la cadera (f46) y el puño se cierra en el nudo en
+        // 'ribbon' (f50). Por eso la cinta va guardada ahí desde el reencuentro (StowRibbon), no colgando de la mano
+        const float NEndingRibbon = 0.595f, RibbonStowSeconds = 0.35f;
         static readonly Vector3 EndingOfferHand = new Vector3(-0.06f, 0.64f, 0.4f);
         // sin EndingTurn: un paso hacia Kokuyō y el arranque de "Interact" (el brazo izquierdo sale hacia adelante y
         // abajo) a 0.6x, quieto en f4
@@ -45,7 +48,7 @@ namespace Nindo
         /// <summary>Lo que tardan las cuerdas de sombra en aflojarse y caer al piso (ShadowRopes.Drop), antes de deshacerse.</summary>
         const float RopeDropSeconds = 0.55f;
 
-        bool endingMusic;
+        bool endingMusic, ribbonStowed;
         HalfRibbon halfRibbon;
 
         IEnumerator Ending()
@@ -107,6 +110,7 @@ namespace Nindo
             P.Teleport(ribbonSpot - P.transform.rotation * new Vector3(grip.x, 0f, grip.z), Quaternion.LookRotation(dir));
             if (halfRibbon != null) Destroy(halfRibbon.gameObject);
             halfRibbon = HalfRibbon.Create(ribbonSpot, camSide, HalfRibbon.ClothFrom(k != null ? k.transform : null, P.model));
+            ribbonStowed = false;
             // la pelea terminó: la katana ya no está en su mano (apuntaba al abuelo en el reencuentro y la tenía desnuda
             // en la otra mano al ofrecerle la cinta a Kokuyō)
             P.SetKatanaVisible(false);
@@ -137,6 +141,9 @@ namespace Nindo
             while (!P.ScriptedArrived && tw < 2.5f) { tw += Time.deltaTime; yield return null; }
             yield return NudgeTo(meet, Quaternion.LookRotation(-dir), 0.25f);
             EndKneel();
+            // con EndingTurn, la guarda en el cinturón (el nudo baja 17 cm del puño a la faja en 0.35 s: se lee como
+            // meterla en la faja, y a 10 m del plano amplio no salta); sin el clip sigue en la mano hasta ofrecerla
+            if (P.Anim.HasState(EndingTurnState)) StowRibbon();
             int two = ReunionShot(meet, g, camSide);
             Game.Camera.CancelShot(wide);
 
@@ -339,11 +346,36 @@ namespace Nindo
             P.Teleport(P.transform.position + toK * EndingTurnShift, Quaternion.LookRotation(toK));
             a.Play(EndingTurnState, 0f);
             float len = a.Length(EndingTurnState, EndingTurnSeconds);
+            float ribbon = KaitoTimings.Event(EndingTurnState, "ribbon", NEndingRibbon);
             float offer = KaitoTimings.Event(EndingTurnState, "offer", NEndingOffer);
-            yield return Wait(len * offer);
+            // el puño se cierra en el nudo del cinturón ('ribbon'): recién ahí la cinta pasa a la mano. Antes colgaba de
+            // la mano en todo el giro, bajaba con ella hasta la faja y volvía a subir: parecía que no encontraba la tela
+            yield return WaitClip(EndingTurnState, ribbon, len);
+            if (ribbonStowed) halfRibbon.Hold(KaitoBone("Mando.L"), P.transform);
+            yield return WaitClip(EndingTurnState, offer, len);
             // el brazo extendido: un destello dorado tenue en la cinta (la tela es la de la bandana)
             Game.FX?.FlashLight(halfRibbon.Knot, BandanaGlow.Gold, 1.6f, 2.5f, 0.7f);
             yield return Wait(len * (1f - offer));
+        }
+
+        /// <summary>
+        /// Guarda la media cinta en el cinturón, justo donde EndingTurn la va a buscar: se muestrea el clip en 'ribbon' y
+        /// el puño izquierdo (IncenseHold.Grip, como al tomarla) se guarda respecto de la pelvis (Root), así la mano cae
+        /// exacto sobre el nudo aunque el cuerpo gire y se corra durante el clip. En el reencuentro queda adelante a la
+        /// izquierda de la faja, a 7-10 cm del cuerpo (stow_probe.py). Sin huesos o si el muestreo no da una mano junto a
+        /// la cadera, sigue en la mano.
+        /// </summary>
+        void StowRibbon()
+        {
+            var hand = KaitoBone("Mando.L");
+            Transform pelvis = hand != null ? hand.parent : null;
+            while (pelvis != null && pelvis.name != "Root") pelvis = pelvis.parent;
+            if (halfRibbon == null || pelvis == null) return;
+            if (!SampleKaitoClip(EndingTurnState, KaitoTimings.Event(EndingTurnState, "ribbon", NEndingRibbon))) return;
+            Vector3 knot = IncenseHold.Grip(hand, IncenseHold.Knuckle(hand), P.transform);
+            if ((knot - pelvis.position).sqrMagnitude > 0.45f * 0.45f) return;
+            halfRibbon.Stow(pelvis, pelvis.InverseTransformPoint(knot), RibbonStowSeconds);
+            ribbonStowed = true;
         }
 
         /// <summary>

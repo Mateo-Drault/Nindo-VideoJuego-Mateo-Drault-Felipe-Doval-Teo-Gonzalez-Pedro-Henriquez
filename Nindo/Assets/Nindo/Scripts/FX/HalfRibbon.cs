@@ -6,7 +6,8 @@ namespace Nindo
     /// La media cinta de Kokuyō, la que colgaba del pomo de su espada (la otra mitad la sigue llevando en la hombrera):
     /// la misma tela que la bandana de Kaito. Un nudo y dos colas de ~0.45 m, cada una una cadena de puntos (verlet:
     /// gravedad, una brisa leve y el piso) dibujada como cinta de dos caras. Está tirada en el piso, en la mano de Kaito
-    /// (el nudo en el puño, las colas cuelgan y se mecen) o bajando hasta el piso cuando Kaito se la devuelve
+    /// (el nudo en el puño, las colas cuelgan y se mecen), guardada en su cinturón (el nudo sigue a la pelvis y las colas
+    /// caen por delante del muslo) o bajando hasta el piso cuando Kaito se la devuelve
     /// (StoryDirector.Ending). Sin asignaciones por cuadro: una malla de 72 vértices que se rehace en el lugar.
     /// </summary>
     [DefaultExecutionOrder(450)]
@@ -17,14 +18,17 @@ namespace Nindo
         static readonly float[] TailScale = { 1f, 0.84f };
         static readonly Color Fallback = new Color(0.88f, 0.62f, 0.2f);
 
-        enum Mode { Lying, Held, Falling }
+        enum Mode { Lying, Held, Stowed, Falling }
         Mode mode;
         readonly Vector3[] p = new Vector3[2 * N], q = new Vector3[2 * N];
         Vector3[] verts, normals;
         Mesh mesh;
-        Transform hand, knuckle, body;
-        Vector3 anchor, fallFrom, fallTo, sideRef, holdFrom;
-        float floorY, fallT, fallDur = 1f, holdT;
+        Transform hand, knuckle, body, belt;
+        Vector3 anchor, fallFrom, fallTo, sideRef, holdFrom, beltLocal;
+        float floorY, fallT, fallDur = 1f, holdT, holdDur = 0.15f;
+        // guardada: las colas se apartan del muslo (m/s², hacia afuera de la pelvis). Con 1.5, en los tres pasos de
+        // EndingTurn la pierna solo la roza 3 cm en dos cuadros (stow_probe.py); sin empuje la cruzaba 6 cm en cuatro
+        const float StowPush = 1.5f;
 
         /// <summary>El nudo (donde la agarra el puño).</summary>
         public Vector3 Knot => p[0];
@@ -130,7 +134,23 @@ namespace Nindo
             knuckle = IncenseHold.Knuckle(hand);
             holdFrom = p[0];
             holdT = 0f;
+            holdDur = 0.15f;
             mode = Mode.Held;
+        }
+
+        /// <summary>
+        /// La guarda en el cinturón: el nudo pasa en 'seconds' a 'local' respecto de 'belt' (la pelvis de Kaito) y lo
+        /// sigue; las colas cuelgan de plano contra el muslo. Hold la vuelve a tomar desde ahí.
+        /// </summary>
+        public void Stow(Transform belt, Vector3 local, float seconds)
+        {
+            if (belt == null) return;
+            this.belt = belt; beltLocal = local;
+            holdFrom = p[0];
+            holdT = 0f;
+            holdDur = Mathf.Max(0.05f, seconds);
+            hand = null;
+            mode = Mode.Stowed;
         }
 
         /// <summary>Deja la mano y baja en 'seconds' hasta 'floor' (un arco suave, la tela se mece) y queda tendida.</summary>
@@ -158,13 +178,27 @@ namespace Nindo
                 {
                     root = hand != null ? IncenseHold.Grip(hand, knuckle, body) : p[0];
                     // del piso al puño en 0.15 s: la mano casi la toca en el cuadro en que la agarra, pero no exacto
-                    holdT = Mathf.Min(1f, holdT + dt / 0.15f);
+                    holdT = Mathf.Min(1f, holdT + dt / holdDur);
                     root = Vector3.Lerp(holdFrom, root, Mathf.SmoothStep(0f, 1f, holdT));
                     // la tela gira de a poco hasta mostrarle el ancho a la cámara (de canto, una cinta de 8 cm no se lee)
                     Vector3 toCam = Game.Camera != null ? (Game.Camera.transform.position - root).Flat() : Vector3.zero;
                     if (toCam.sqrMagnitude < 1e-4f) toCam = body != null ? body.forward : Vector3.forward;
                     sideRef = Vector3.Slerp(sideRef, toCam.normalized, dt * 4f);
                     wind = (body != null ? body.right : Vector3.right) * (Mathf.Sin(t * 2.3f) * 0.5f + Mathf.Sin(t * 5.1f) * 0.25f);
+                    break;
+                }
+                case Mode.Stowed:
+                {
+                    root = belt != null ? belt.TransformPoint(beltLocal) : p[0];
+                    holdT = Mathf.Min(1f, holdT + dt / holdDur);
+                    root = Vector3.Lerp(holdFrom, root, Mathf.SmoothStep(0f, 1f, holdT));
+                    // hacia afuera de la pelvis (adelante a la izquierda): la tela muestra el ancho para ese lado y las
+                    // colas se apartan de la pierna, que si no las cruza al dar los pasos del giro
+                    Vector3 outw = belt != null ? (root - belt.position).Flat() : Vector3.zero;
+                    if (outw.sqrMagnitude < 1e-4f) outw = body != null ? -body.right : Vector3.left;
+                    outw.Normalize();
+                    sideRef = Vector3.Slerp(sideRef, outw, dt * 6f);
+                    wind = outw * StowPush + (body != null ? body.forward : Vector3.forward) * (Mathf.Sin(t * 1.7f) * 0.25f);
                     break;
                 }
                 case Mode.Falling:

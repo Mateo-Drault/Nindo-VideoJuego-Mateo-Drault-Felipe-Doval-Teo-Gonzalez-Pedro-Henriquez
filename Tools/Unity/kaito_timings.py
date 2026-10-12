@@ -15,7 +15,8 @@ Eventos que leen las escenas (el contrato con kaito-anim):
   PrayQuick:   kneel, palms                                               (StoryDirector.Shrines)
   BandanaPower: glow, release                                             (StoryDirector.Wall / .SealGate)
   WakeUp:      see (levanta la cabeza y ve el secuestro), stand           (StoryDirector.Prologue)
-  EndingTurn:  offer  (el brazo ya extendido con la media cinta)          (StoryDirector.Ending)
+  EndingTurn:  ribbon (el puño toma la cinta del cinturón), offer (el brazo ya extendido con ella)
+               (StoryDirector.Ending)
 
 Uso: python Tools/Unity/kaito_timings.py [--src otro/kaitooo.fbx.json]
 """
