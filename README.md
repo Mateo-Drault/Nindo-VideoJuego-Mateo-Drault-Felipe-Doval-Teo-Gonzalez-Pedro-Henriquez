@@ -71,13 +71,22 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
 | Moverse | WASD / flechas | Stick izq. |
 | Atacar (combo de 3) | J / clic izq. | □ / X · R1 / RB |
 | Parry (un toque justo antes del golpe; no hay guardia sostenida) | K / clic der. | L1 / LB |
-| Esquiva (dash) | Espacio / Shift / L | ○ / B  ·  ✕ / A |
-| Fijar objetivo (cambiar: stick der.) | Q / Tab / rueda | R3 |
+| Esquiva (dash) | Espacio / Shift | ○ / B  ·  ✕ / A |
+| Fijar objetivo (cambiar: rueda o stick der.) | Q / clic de la rueda | R3 |
 | Remate / interactuar | F (E interactúa) | △ / Y |
 | Corte del Viento (habilidad 1) | 1 / U | RT |
 | Torbellino (habilidad 2) | 2 / I | LT |
 | Pausa | Esc / P | Start |
 | Mapa del mundo (pausa el juego; la rueda, + / - o los gatillos acercan, fijar objetivo centra en Kaito) | M | Vista / panel táctil |
+
+Todo se cambia en **Opciones › Controles** (teclado y mouse, y mando, con dos teclas por acción). Si la
+tecla nueva ya era de otra acción se intercambian (si a la otra le queda una tecla y lo que recibiría es de
+otra clase, como un botón del mouse para moverse, solo pierde la suya). Esc y Start pausan siempre y no se
+asignan a nada. Enter / A y Esc / B confirman y vuelven en los menús: se pueden dar a acciones del juego (atacar
+con Enter), pero no a la pausa ni al mapa, que también se leen con un menú abierto; esas dos tampoco toman lo que
+usan los menús (el clic, la rueda, WASD y las flechas, Supr, X del mando, los gatillos y el stick derecho del
+mapa). Así nunca se pierde el menú. Las reglas y cómo se guarda están en
+`Input/BindingTable.cs`; `python Tools/Dev/bindings_test.py` las prueba sin Unity.
 
 ## Sistema de combate (se mantuvo el formato original, pulido)
 
@@ -171,7 +180,8 @@ El HUD es **solo** el arte del equipo: la **bandana roja** (vida) y el **dragón
 Nindo/Assets/Nindo/
   Scripts/        todo el código nuevo (namespace Nindo)
     Core/         Game (service locator), GameBootstrap, eventos, guardado, NindoContent, fábricas
-    Input/        InputReader (teclado + mando, buffer de inputs)
+    Input/        InputReader (teclado + mando, buffer de inputs), InputBindings + BindingTable + BindingCatalog
+                  (controles reasignables: UI/UIControls.cs es su página en Opciones)
     Combat/       tipos de ataque, CombatDirector (tokens), CharacterAnimator (CrossFade por código)
     Player/       PlayerController (+ .Combat), PlayerConfig
     Enemies/      Enemy, Boss, arquetipos (ninja, sumo, goro, mizuchi, ozeki, kage…), variantes de zona,
