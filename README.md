@@ -220,6 +220,7 @@ python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.cont
 # Chikuō, el Maestro del Bambú: modelo, esqueleto, clips, chequeos y FBX (hojas con --renders DIR [--detail] [--lineup])
 $B -b --factory-startup --python Tools/Blender/bosses/bamboo_master/build_bamboo_master.py -- --export [--renders DIR]
 python3 Tools/Blender/bosses/bamboo_master/check_master_fbx.py   # lo que Unity va a ligar: raíz, curvas, huesos, materiales
+# iterar clips sin exportar: --only 'Palm*,Defeat' --renders DIR --sheets Palm_P3 ; poses sueltas: --lab 'sentado 3' --renders DIR
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)

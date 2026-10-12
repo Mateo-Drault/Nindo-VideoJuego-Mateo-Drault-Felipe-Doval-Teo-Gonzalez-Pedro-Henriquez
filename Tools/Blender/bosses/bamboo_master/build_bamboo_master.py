@@ -1,20 +1,24 @@
-"""Chikuō, el Maestro del Bambú: modelo, esqueleto, clips de prueba, chequeos, FBX y renders de revisión.
+"""Chikuō, el Maestro del Bambú: modelo, esqueleto, clips, chequeos, FBX y renders de revisión.
 
 Un solo comando, determinista:
   blender -b --factory-startup --python Tools/Blender/bosses/bamboo_master/build_bamboo_master.py -- [opciones]
     --export            escribe Nindo/Assets/Nindo/Art/Characters/BambooMaster/BambooMaster.fbx (+ BambooMaster.fbx.json)
-    --renders DIR       hojas de revisión (modelo, poses de prueba, manos, elenco) en DIR
+    --renders DIR       hojas de revisión (modelo, una por clip, elenco) en DIR
+    --only A,B          solo esos clips (para iterar; no exporta). Acepta prefijos con '*' (Palm*)
+    --sheets A,B        con --renders: solo las hojas de esos clips (todos se miden igual)
+    --lab A,B           con --renders: hoja de las poses con nombre de master_clips.POSES (iterar poses sueltas)
     --model-only        sin clips (iterar el modelado)
     --blend PATH        guarda el .blend resultante (para mirar a mano)
     --lineup            con --renders: solo la hoja del elenco (Kaito, el abuelo, ninja, sumo, Chikuō)
     --detail            con --renders: además las poses de prueba grandes desde tres lados (deformación)
     --report PATH       el detalle de las mediciones en JSON (con --renders va en DIR)
     --roundtrip PATH    con --export: dónde quedan algunos huesos cuadro a cuadro, para check_master_roundtrip.py
-Falla (código 1) si un chequeo no pasa: frente, apoyo en el piso, presupuesto de triángulos, altura máxima de la
-silueta, nada bajo el piso, alcance de manos y pies, deriva de los pies apoyados y costura de los loops.
-Los clips de pelea son de la etapa 2 (master_clips.py): acá solo 'Idle' (provisorio) y 'PoseTest'.
+Falla (código 1) si un chequeo no pasa: frente, apoyo en el piso, presupuesto de triángulos, altura de la silueta, nada
+bajo el piso, alcance de manos y pies, deriva de los pies apoyados, costura de los loops, cuerpo contra sí mismo,
+avance que se teletransporta con el reloj del juego, punta rápida fuera del golpe, aviso que no cambia la silueta,
+encadenado contra la guardia y variantes de fase distintas de su clip base.
 """
-import sys, os, json, time
+import sys, os, json, time, fnmatch
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 for p in (HERE, os.path.join(ROOT, "Tools", "Blender"), os.path.join(ROOT, "Tools", "Blender", "anim")):
@@ -28,6 +32,8 @@ import nindo_lib as L
 import nindo_anim as NA
 import master_rig as MR
 import master_model as MM
+import master_lint as ML
+import master_springs as MS
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
@@ -38,6 +44,9 @@ def opt(name, default=None):
 
 EXPORT = "--export" in argv
 RENDERS = opt("--renders")
+ONLY = opt("--only")
+SHEETS = opt("--sheets")
+LAB = opt("--lab")
 MODEL_ONLY = "--model-only" in argv
 BLEND = opt("--blend")
 REPORT = opt("--report")
@@ -49,6 +58,9 @@ BUDGET = {"body": 4800, "robe": 2400, "thrown": 500, "staff": 450}
 ROUNDTRIP = opt("--roundtrip")
 ROUNDTRIP_BONES = ("Hips", "Head", "Hand_R", "Hand_L", "Index_R_2", "Thumb_L_2", "Foot_R", "Toe_L", "Staff", "Acc_TieSashA_2",
                    "Robe_038_2", "Brow_R_2")
+# la cámara del juego (Kaito de espaldas mirando al jefe): lo que se lee desde arriba es la forma, no el detalle
+TELL_CAM = dict(focus=(0.0, -1.6, 1.0), pitch=52.0, dist=24.0, fov=30.0)
+TELL_MIN = 0.15
 failures, warnings = [], []
 
 
@@ -56,6 +68,10 @@ def check(ok, msg, warn=False):
     print(("  ok   " if ok else ("  WARN " if warn else "  FAIL ")) + msg)
     if not ok:
         (warnings if warn else failures).append(msg)
+
+
+def wanted(name, pattern):
+    return any(fnmatch.fnmatch(name, p.strip()) for p in pattern.split(","))
 
 
 def foot_points(rig):
@@ -71,6 +87,10 @@ def foot_points(rig):
 
 def lint_clip(rig, clip, frames, ctrls, roots, misses):
     rep = {}
+    t = clip.timing
+    n = clip.frames
+    test = t.get("kind") == "test"
+    # alcance: el IK no puede quedarse corto (mano que se despega del bastón, pie que flota)
     mh = max(max(m["hand_r"], m["hand_l"]) for m in misses)
     ml = max(m["legs"] for m in misses)
     fh = max(range(len(misses)), key=lambda i: max(misses[i]["hand_r"], misses[i]["hand_l"]))
@@ -78,17 +98,77 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
     rep["reach_miss_cm"] = {"hands": round(mh * 100, 1), "legs": round(ml * 100, 1)}
     check(ml <= 0.02, f"{clip.name}: los pies llegan (faltó {ml * 100:.1f} cm en f{fl})")
     check(mh <= 0.02, f"{clip.name}: las manos llegan (faltó {mh * 100:.1f} cm en f{fh})", warn=mh <= 0.05)
+    # pies apoyados: no patinan (con el avance que aplica el juego: 'roots')
     gp, piv = foot_points(rig)
     plants = NA.plant_report(rig, frames, roots, list(gp), gp, pivots=piv)
     worst = max([p["drift_cm"] for v in plants.values() for p in v] or [0.0])
+    wseg = [(k, p["frames"]) for k, v in plants.items() for p in v if p["drift_cm"] == worst]
     rep["plants"] = plants
-    # la prueba de poses desliza los pies entre poses a propósito (no es un clip de juego)
-    if clip.timing.get("kind") != "test":
-        check(worst <= 2.0, f"{clip.name}: pies apoyados quietos (deriva máx. {worst:.2f} cm)")
+    rep["plant_drift_cm"] = worst
+    if not test:
+        check(worst <= 2.0, f"{clip.name}: pies apoyados quietos (deriva máx. {worst:.2f} cm {wseg[:1]})")
     if clip.loop:
         seam, step = NA.loop_seam_deg(rig, frames)
         rep["loop_seam_deg"] = seam
         check(seam <= 0.5, f"{clip.name}: costura del loop {seam:.3f}° (salto típico {step:.2f}°)")
+    # el cuerpo contra sí mismo
+    skip = set()
+    for a, b in t.get("legs_cross", []):
+        skip.update(range(a, b + 1))
+    cl = ML.self_clearance(rig, frames, ctrls)
+    rep["self_clearance_cm"] = {k: [round(v[0] * 100, 1), v[1]] for k, v in cl.items() if v[0] < 0.06}
+    if not test:
+        for k, (c, f) in sorted(cl.items(), key=lambda kv: kv[1][0]):
+            legs = k.startswith(("muslo", "tibia")) and k.count("/") == 1 and "bastón" not in k
+            if legs and f in skip:
+                continue
+            if c < -0.015:
+                check(c >= -0.04, f"{clip.name}: {k} se meten {-c * 100:.1f} cm en f{f}", warn=c >= -0.04)
+    # golpes con el reloj del juego
+    tr = [c.get("travel") or 0.0 for c in ctrls]
+    rr = t.get("release_rate", 1.6)
+    rmax = t.get("root_max", ML.ROOT_MAX)
+    if any(abs(v) > 1e-4 for v in tr) and not clip.root_vel.length:
+        if "contact" in t and "apex" in t:
+            peak = (0.0, 0.0)
+            for wmin in (0.38, 0.55, 0.8):
+                tl = NA.StepTimeline(n, t["apex"], t["contact"], rr, wmin, 0.0)
+                for s, f, v in NA.clock_speeds(tr, tl):
+                    if v > peak[0]:
+                        peak = (v, f)
+        else:
+            peak = max(((abs(tr[i] - tr[i - 1]) * NA.FPS, i) for i in range(1, len(tr))), default=(0.0, 0))
+        rep["root_peak_mps_60hz"] = round(peak[0], 1)
+        check(peak[0] <= rmax, f"{clip.name}: el transform no se teletransporta (pico {peak[0]:.1f} m/s en el cuadro "
+                               f"{peak[1]:.1f} del clip, release_rate {rr}; tope {rmax:.0f})")
+    st = t.get("strike")
+    if st and "contact" in t:
+        pts = ML.strike_points(frames, roots, st[0], st[1])
+        a0, a1 = t["active"]
+        reach = max(Vector((pts[i].x - roots[i].x, pts[i].y - roots[i].y)).length for i in range(a0, a1 + 1))
+        rep["reach_m"] = round(reach, 2)
+        hz = [round(pts[i].z, 2) for i in range(a0, a1 + 1)]
+        rep["strike_height_m"] = [min(hz), max(hz)]
+        print(f"  info {clip.name}: alcance {reach:.2f} m desde el transform, altura {min(hz)}-{max(hz)} m (f{a0}-{a1})")
+        if t.get("kind") in ("parry", "dodge") and not t.get("spin"):
+            apex = t["apex"]
+            t0 = t.get("tell", [0])[0]
+            tl = NA.StepTimeline(n, apex, t["contact"], rr, 0.38, 0.0)
+            gs = NA.clock_speeds(pts, tl)
+            peak = max(v for s, f, v in gs if a0 - 1 <= f <= a1 + 2)
+            outside = [(v, f) for s, f, v in gs if f > t0 and not (apex < f <= a1 + 3)]
+            worst_o = max(outside) if outside else (0.0, 0)
+            ratio = worst_o[0] / peak if peak > 0 else 0.0
+            rep["tip_peak_mps"] = round(peak, 1)
+            rep["tip_outside_ratio"] = round(ratio, 2)
+            lim = t.get("tip_ratio_max", 0.35)
+            check(ratio <= lim, f"{clip.name}: lo que pega va lento fuera del golpe con el reloj del juego "
+                                f"({ratio * 100:.0f} % del pico en el cuadro {worst_o[1]:.1f}; tope {lim * 100:.0f} %, pico "
+                                f"{peak:.1f} m/s)")
+            sp = [0.0] + [(pts[i] - pts[i - 1]).length * NA.FPS for i in range(1, len(pts))]
+            still = [sp[i] for i in (apex, apex + 1)]
+            rep["apex_tip_mps"] = [round(v, 1) for v in still]
+            check(max(still) < 4.0, f"{clip.name}: el aviso se sostiene quieto ({max(still):.1f} m/s en f{apex}-{apex + 1})")
     return rep
 
 
@@ -104,6 +184,23 @@ def bind_height(meshes):
         for p in pts:
             lo, hi = min(lo, p.z), max(hi, p.z)
     return lo, hi
+
+
+def visible(clip, f, meshes):
+    """Las mallas que se ven en el cuadro f del clip (el saco solo en la fase 1, el bastón en la 3, el saco tirado mientras
+    vuela)."""
+    t = clip.timing
+    ph = getattr(clip, "phase", 1)
+    robe_off = t.get("robe_off")
+    out = [meshes["Master_Body"]]
+    if ph == 1 and (robe_off is None or f < robe_off):
+        out.append(meshes["Master_Robe"])
+    if robe_off is not None and f >= robe_off:
+        out.append(meshes["Master_RobeThrown"])
+    sf = t.get("staff_from")
+    if ph == 3 or (sf is not None and f >= sf):
+        out.append(meshes["Master_Staff"])
+    return out
 
 
 def main():
@@ -143,45 +240,61 @@ def main():
     if MODEL_ONLY:
         if RENDERS:
             rv = RV.Review(arm, meshes, RENDERS)
-            if "--lineup" in argv:
-                print(rv.lineup_sheet())
-            else:
-                print(rv.model_sheet())
+            print(rv.lineup_sheet() if "--lineup" in argv else rv.model_sheet())
         finish(t0)
         return
 
     # ---------------------------------------------------------------- clips
+    import master_clips as MC
     import master_poses as MP
     solver = MR.Solver(rig)
+    clips = list(MC.init(solver)) + [c for c in MP.CLIPS if c.name == "PoseTest"]
+    lab = None
+    if LAB:
+        lab = MC.lab_clip([s.strip() for s in LAB.split(",")])
+        clips = [lab]
+    elif ONLY:
+        clips = [c for c in clips if wanted(c.name, ONLY)]
     sprs = MR.springs(rig)
-    baked, reports, rootsd, ctrlsd = [], {}, {}, {}
-    for clip in MP.CLIPS:
+    baked, reports, rootsd, ctrlsd, framesd = [], {}, {}, {}, {}
+    for clip in clips:
         misses = []
 
         def solve(pose, c):
             misses.append(dict(solver.solve(pose, c)))
-        frames, ctrls, roots = NA.bake_clip(rig, clip, solve, sprs)
-        reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses)
+        frames, ctrls, roots = MS.bake_clip(rig, clip, solve, sprs)
+        print(f"-- {clip.name} ({clip.frames} cuadros)")
+        reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses) if clip is not lab else {}
         baked.append((clip, frames))
-        rootsd[clip.name] = roots
-        ctrlsd[clip.name] = ctrls
+        rootsd[clip.name], ctrlsd[clip.name], framesd[clip.name] = roots, ctrls, frames
+    if not lab:
+        lint_chains(rig, MC, clips, framesd, reports)
+        lint_variants(clips, ctrlsd, reports)
     act, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
     last = max(b for a, b in ranges.values())
-    # techo y piso de la silueta en todos los cuadros (mallas evaluadas): el saco tirado vive escondido adentro del
-    # cuerpo y el bastón solo cuenta cuando está en uso
-    vis = [meshes["Master_Body"], meshes["Master_Robe"]]
-    for clip, frames in baked:
+    # techo y piso de la silueta en todos los cuadros (mallas evaluadas, solo las que se ven en ese cuadro)
+    for clip, frames in ([] if lab else baked):
         a, b = ranges[clip.name]
-        rows = NA.mesh_z_frames(vis + [meshes["Master_Staff"]], range(a, b + 1))
-        hi = [max(v[1] for v in r.values()) for r in rows]
-        top = max(range(len(hi)), key=lambda i: hi[i])
-        reports[clip.name]["max_height_m"] = round(hi[top], 2)
-        check(hi[top] <= HEIGHT_CAP, f"{clip.name}: silueta {hi[top]:.2f} m en f{top} (tope {HEIGHT_CAP})")
-        lows = [min((v[0], i, k) for k, v in r.items()) for i, r in enumerate(rows)]
+        mm = [meshes["Master_Body"], meshes["Master_Robe"], meshes["Master_Staff"], meshes["Master_RobeThrown"]]
+        rows = NA.mesh_z_frames(mm, range(a, b + 1))
+        his, lows = [], []
+        for i, r in enumerate(rows):
+            vis = {o.name for o in visible(clip, i, meshes)}
+            if clip.timing.get("staff_high") and "Master_Staff" in vis:
+                vis_h = vis - {"Master_Staff"}
+            else:
+                vis_h = vis
+            his.append(max(v[1] for k, v in r.items() if k in vis_h))
+            lows.append(min((v[0], i, k) for k, v in r.items() if k in vis))
+        top = max(range(len(his)), key=lambda i: his[i])
+        reports[clip.name]["max_height_m"] = round(his[top], 2)
+        check(his[top] <= HEIGHT_CAP, f"{clip.name}: silueta {his[top]:.2f} m en f{top} (tope {HEIGHT_CAP})")
         lo = min(lows)
         bad = [i for z, i, _ in lows if z < -0.03]
         reports[clip.name]["min_z_m"] = round(lo[0], 3)
         check(not bad, f"{clip.name}: nada atraviesa el piso (mín {lo[0]:.3f} m en f{lo[1]}, {lo[2]}; {len(bad)} cuadros bajo -3 cm)")
+    if not lab:
+        lint_tells(scn, arm, meshes, baked, ranges, rootsd, reports)
     scn.frame_set(0)
     if RENDERS or REPORT:
         path = REPORT or os.path.join(RENDERS, "lint_report.json")
@@ -190,43 +303,39 @@ def main():
             json.dump(reports, fh, indent=0)
 
     # ---------------------------------------------------------------- export
-    if EXPORT:
+    if EXPORT and not ONLY and not LAB:
         if failures:
             print("NO SE EXPORTA: fallaron chequeos")
         else:
             NA.export_fbx(FBX, arm, objs, 1, last)
-            # referencia para la ida y vuelta (check_master_roundtrip.py): dónde quedan algunos huesos en el mundo en
-            # cuadros de toda la toma (manos, dedos, pies, bastón, una cola de la faja)
             if ROUNDTRIP:
                 write_roundtrip(scn, arm, last)
-            clipd = {}
-            for clip, frames in baked:
-                a, b = ranges[clip.name]
-                rec = {"first": a, "last": b, "frames": clip.frames, "seconds": round(clip.frames / NA.FPS, 4), "loop": clip.loop,
-                       "timing": clip.timing, "events": [], "notes": clip.notes,
-                       "lint": {k: v for k, v in reports[clip.name].items() if k != "plants"}}
-                clipd[clip.name] = rec
-            info["clips"] = clipd
+            info["clips"] = sidecar_clips(baked, ranges, ctrlsd, reports)
+            info["phase_variants"] = phase_variants(clips)
             info["parts"] = {
                 "skinned": ["Master_Body", "Master_Robe", "Master_RobeThrown"], "rigid": {"Master_Staff": "Staff"},
                 "materials": ["Nindo_Palette"] + MM.EXTRA_MATS,
                 "hidden_at_spawn": ["Master_RobeThrown", "Master_Staff"],
-                "notes": "Master_Robe es el saco de la fase 1 (se apaga al tirarlo); Master_RobeThrown es la copia aplanada que "
-                         "vuela en el cambio de fase (huesos RobeT_*, en reposo adentro de la espalda); Master_Staff es el bastón "
-                         "(hueso Staff, hijo de Root: lo mueve el clip y las manos lo agarran). Los slots Master_Glint* se encienden "
-                         "por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash) y Master_Eyes en jade en la fase 2. "
+                "notes": "Master_Robe es el saco de la fase 1 (se apaga al tirarlo: evento CoatOff de PhaseCoat); Master_RobeThrown "
+                         "es la copia aplanada que vuela en el cambio de fase (huesos RobeT_*, en reposo adentro de la espalda: "
+                         "se enciende en CoatOff y, cuando queda en el piso (CoatRest), conviene hornearla con "
+                         "SkinnedMeshRenderer.BakeMesh en un objeto quieto y apagarla, porque los demás clips la guardan otra "
+                         "vez en la espalda); Master_Staff es el bastón (hueso Staff, hijo de Root: lo mueve el clip y las "
+                         "manos lo agarran), visible desde StaffAppear de PhaseStaff y en todos los clips _P3, Defeat, "
+                         "Meditate y SeatedBow. Los slots Master_Glint* se encienden por nombre con CharacterGlint.SetGlow "
+                         "(timing.glow de cada golpe; dorado = parry, rojo = dash) y Master_Eyes en jade desde EyesIgnite. "
                          "Ninguno se llama 'Glint': Enemy no prende nada solo, el jefe elige el miembro que pega."}
             info["chains"] = {"runtime": ["Acc_TieWhiskerR", "Acc_TieWhiskerL", "Acc_TieSashA", "Acc_TieSashB"],
                               "colliders": [f"AccCol_{n}_{int(round(r * 100))}" for n, _, _, r in MR.CHAIN_COLLIDERS],
                               "baked": ["Brow_*", "Sleeve_*", "Robe_*"],
                               "notes": "las cadenas Acc_* van horneadas en los clips; si el jefe agrega SpringChain y llama "
                                        "Rebuild, la física del juego las reemplaza (perfil 'Tie')"}
-            # colores de los materiales propios (valores de pantalla: el proyecto es Gamma); generate_assets.py los lee de acá
             info["material_rgb"] = {n: [round(c, 4) for c in rgb] for n, rgb in MM.MAT_RGB.items()}
             info["hand_shapes"] = MR.HAND_SHAPES
             info["staff"] = {"length_m": MR.STAFF_LEN, "radius_m": MR.STAFF_R, "bone": "Staff",
                              "tip_local_unity_note": "el hueso va de la punta de abajo (cabeza) a la de arriba (cola): las dos "
                                                      "puntas son la cabeza y la cabeza + Y * largo"}
+            info["root_travel"] = MC.ROOT_TRAVEL_NOTE
             with open(FBX + ".json", "w", encoding="utf-8", newline=chr(10)) as fh:
                 json.dump(info, fh, indent=1, ensure_ascii=False)
             print("EXPORTADO", FBX, "cuadros 1 ..", last, f"{os.path.getsize(FBX) / 1e6:.1f} MB")
@@ -234,29 +343,193 @@ def main():
     # ---------------------------------------------------------------- renders
     if RENDERS:
         rv = RV.Review(arm, meshes, RENDERS)
-        a0, _ = ranges["Idle"]
-        if "--lineup" in argv:
-            print(rv.lineup_sheet(a0))
+        if lab:
+            print(rv.lab_sheet(lab, ranges[lab.name][0]))
             finish(t0)
             return
-        print(rv.model_sheet(frame=0))
-        clip, marks = MP.pose_test_clip()
-        p0, _ = ranges["PoseTest"]
-        hold = {lab: p0 + f for f, lab in marks.items()}
-        poses = [(a0, "Idle (guardia, fase 1)", 1, (), "gold"),
-                 (hold["caballo y palma"], "caballo y palma (aviso dorado)", 1, ("Master_GlintHandR",), "gold"),
-                 (hold["patada de grulla"], "patada de grulla (sin saco)", 2, ("Master_GlintFootR",), "red"),
-                 (hold["patada de grulla"], "patada de grulla (con saco)", 1, (), "gold"),
-                 (hold["bastón"], "bastón", 3, ("Master_GlintStaff",), "gold")]
-        print(rv.pose_sheet(poses))
-        if "--detail" in argv:
-            print(rv.detail_sheet([(hold["caballo y palma"], "caballo y palma", 1), (hold["patada de grulla"], "patada con saco", 1),
-                                   (hold["patada de grulla"], "patada sin saco", 2), (hold["bastón"], "bastón", 3),
-                                   (hold["puño y espada"], "saco tirado en el aire", 2, True)]))
-        print(rv.hands_sheet([(hold["caballo y palma"], "palma / puño"), (hold["garra y pico"], "garra / pico"),
-                              (hold["puño y espada"], "puño / espada"), (hold["bastón"], "agarre")]))
-        print(rv.lineup_sheet(a0))
+        if "--lineup" in argv:
+            print(rv.lineup_sheet(ranges["Idle"][0] if "Idle" in ranges else 0))
+            finish(t0)
+            return
+        if not ONLY and not SHEETS:
+            print(rv.model_sheet(frame=0))
+        for clip, frames in baked:
+            if clip.name == "PoseTest" or (SHEETS and not wanted(clip.name, SHEETS)):
+                continue
+            a, _ = ranges[clip.name]
+            fs = sheet_frames(clip)
+            print(rv.clip_sheet(clip, a, rootsd[clip.name], fs, [frame_label(clip, f) for f in fs], reports.get(clip.name),
+                                lambda f, c=clip: visible(c, f, meshes)))
+        if "PoseTest" in ranges and not ONLY and not SHEETS:
+            pose_test_sheets(rv, ranges)
     finish(t0)
+
+
+def lint_chains(rig, MC, clips, framesd, reports):
+    """La primera y la última pose de cada clip contra la pose con la que encadena (la guardia de su fase, la rodilla en
+    el piso...): un salto de más de 5° en un hueso se ve en el crossfade de 0.08 s."""
+    ref = {}
+    for clip in clips:
+        t = clip.timing
+        ph = getattr(clip, "phase", 1)
+        fr = framesd[clip.name]
+        for which, key, W in (("primera", "chain_from", fr[0]), ("última", "chain_to", fr[-1])):
+            nm = t.get(key)
+            if not nm or clip.loop and which == "última":
+                continue
+            pose = MC.chain_pose(nm, ph)
+            if pose is None:
+                continue
+            k = (nm, ph)
+            if k not in ref:
+                ref[k] = MC.solved(pose)
+            d, bone, hip = ML.bone_delta_deg(rig, W, ref[k])
+            reports[clip.name][f"chain_{key}_deg"] = [d, bone, hip]
+            ok = d <= ML.CHAIN_WARN and hip <= 3.0
+            check(ok or (d <= ML.CHAIN_FAIL and hip <= 6.0), f"{clip.name}: la {which} pose encadena con {nm} (fase {ph}): "
+                                                             f"{d:.1f}° en {bone}, cadera {hip:.1f} cm", warn=not ok and d <= ML.CHAIN_FAIL and hip <= 6.0)
+
+
+def lint_variants(clips, ctrlsd, reports):
+    """Una variante de fase (X_P2, X_P3) tiene que ser intercambiable con su clip base en el Animator: mismos cuadros,
+    tiempos, eventos y avance."""
+    by = {c.name: c for c in clips}
+    for c in clips:
+        b = getattr(c, "base", None)
+        if not b or b not in by:
+            continue
+        o = by[b]
+        # el miembro que pega y su brillo pueden cambiar (la palma de la fase 1 es el bastón de la 3); los tiempos no
+        # (el anillo y el bastón alto también: la barrida con el bastón llega más lejos que la de la pierna sola)
+        own = ("phase", "glow", "notes", "strike", "tip_ratio_max", "ring_m", "staff_high")
+        tc = {k: v for k, v in c.timing.items() if k not in own}
+        to = {k: v for k, v in o.timing.items() if k not in own}
+        same = c.frames == o.frames and c.loop == o.loop and tc == to and \
+            [(e["frame"], e["fn"]) for e in c.events] == [(e["frame"], e["fn"]) for e in o.events]
+        tr_c = [round(x.get("travel") or 0.0, 4) for x in ctrlsd[c.name]]
+        tr_o = [round(x.get("travel") or 0.0, 4) for x in ctrlsd[b]]
+        same = same and tr_c == tr_o and (c.root_vel - o.root_vel).length < 1e-6
+        check(same, f"{c.name}: variante de {b} con los mismos cuadros, tiempos, eventos y avance")
+
+
+def lint_tells(scn, arm, meshes, baked, ranges, rootsd, reports):
+    """Silueta de cada pose de aviso contra la de la guardia de su fase, desde la cámara del juego: la parte del aviso
+    que cae FUERA de la guardia, sobre el área de la guardia (>= 15 %)."""
+    cam = NA.camera(scn, "LintCam")
+    NA.game_camera(cam, **TELL_CAM)
+    idles = {}
+    for clip, frames in baked:
+        if clip.name in ("Idle", "Idle_P2", "Idle_P3"):
+            scn.frame_set(ranges[clip.name][0])
+            arm.location = (0, 0, 0)
+            bpy.context.view_layer.update()
+            m = NA.silhouette_mask(visible(clip, 0, meshes), cam)
+            idles[getattr(clip, "phase", 1)] = (m, max(1, int(m.sum())))
+    for clip, frames in baked:
+        t = clip.timing
+        ph = getattr(clip, "phase", 1)
+        if t.get("kind") not in ("parry", "dodge") or "apex" not in t or ph not in idles:
+            continue
+        f = t["apex"]
+        scn.frame_set(ranges[clip.name][0] + f)
+        arm.location = rootsd[clip.name][f]
+        bpy.context.view_layer.update()
+        m = NA.silhouette_mask(visible(clip, f, meshes), cam)
+        idle, area = idles[ph]
+        change = float((m & ~idle).sum()) / area
+        reports[clip.name]["tell_silhouette_change"] = round(change, 3)
+        check(change >= TELL_MIN, f"{clip.name}: el aviso (f{f}) cambia la silueta desde la cámara del juego "
+                                  f"{change * 100:.0f} % (mín. {TELL_MIN * 100:.0f} %)")
+    arm.location = (0, 0, 0)
+
+
+def sidecar_clips(baked, ranges, ctrlsd, reports):
+    out = {}
+    for clip, frames in baked:
+        a, b = ranges[clip.name]
+        t = dict(clip.timing)
+        nrm = {}
+        n = float(clip.frames)
+        for k in ("apex", "contact", "resume"):
+            if k in t:
+                nrm[k] = round(t[k] / n, 4)
+        for k in ("tell", "hold", "active", "recover", "air"):
+            if k in t:
+                nrm[k] = [round(t[k][0] / n, 4), round(t[k][1] / n, 4)]
+        if "lunge" in t:
+            nrm["lunge"] = [round(t["lunge"][0] / n, 4), round(t["lunge"][1] / n, 4), t["lunge"][2]]
+        rec = {"first": a, "last": b, "frames": clip.frames, "seconds": round(clip.frames / NA.FPS, 4), "loop": clip.loop,
+               "phase": getattr(clip, "phase", 1), "variant_of": getattr(clip, "base", None), "timing": t, "normalized": nrm,
+               "events": [{"frame": e["frame"], "t": round(e["frame"] / n, 4), "fn": e["fn"]} for e in clip.events],
+               "notes": clip.notes}
+        rep = reports.get(clip.name, {})
+        for k in ("reach_m", "strike_height_m"):
+            if k in rep:
+                rec[k] = rep[k]
+        if "contact" in t:
+            rec["release_rate"] = t.get("release_rate", 1.6)
+        tr = [round(c.get("travel") or 0.0, 4) for c in ctrlsd[clip.name]]
+        if any(abs(v) > 1e-4 for v in tr) and not clip.root_vel.length:
+            rec["travel_m"] = tr
+        if clip.root_vel.length > 0:
+            rec["root_velocity_mps"] = round(clip.root_vel.length, 3)
+        rec["lint"] = {k: v for k, v in rep.items() if k not in ("plants",)}
+        out[clip.name] = rec
+    return out
+
+
+def phase_variants(clips):
+    """{clip base: {"2": variante, "3": variante}}: lo que el jefe cambia con un AnimatorOverrideController."""
+    out = {}
+    for c in clips:
+        b = getattr(c, "base", None)
+        if b:
+            out.setdefault(b, {})[str(c.phase)] = c.name
+    return dict(sorted(out.items()))
+
+
+def sheet_frames(clip):
+    fs = sorted({k.frame for k in clip.keys})
+    t = clip.timing
+    for k in ("apex", "contact"):
+        if k in t:
+            fs.append(t[k])
+    fs = sorted(set(fs))
+    if len(fs) > 10:
+        must = {t[k] for k in ("apex", "contact") if k in t}
+        step = (len(fs) - 1) / 9.0
+        fs = sorted({fs[round(i * step)] for i in range(10)} | must)
+    return fs
+
+
+def frame_label(clip, f):
+    t = clip.timing
+    tags = []
+    if t.get("apex") == f:
+        tags.append("aviso")
+    if t.get("contact") == f:
+        tags.append("impacto")
+    if "active" in t and t["active"][1] == f:
+        tags.append("fin golpe")
+    for e in clip.events:
+        if e["frame"] == f and e["fn"] not in ("Apex", "Strike", "Step"):
+            tags.append(e["fn"])
+    return f"f{f}" + (" " + "/".join(tags[:2]) if tags else "")
+
+
+def pose_test_sheets(rv, ranges):
+    import master_poses as MP
+    a0, _ = ranges["Idle"] if "Idle" in ranges else (0, 0)
+    clip, marks = MP.pose_test_clip()
+    p0, _ = ranges["PoseTest"]
+    hold = {lab: p0 + f for f, lab in marks.items()}
+    if "--detail" in argv:
+        print(rv.detail_sheet([(hold["caballo y palma"], "caballo y palma", 1), (hold["patada de grulla"], "patada con saco", 1),
+                               (hold["patada de grulla"], "patada sin saco", 2), (hold["bastón"], "bastón", 3),
+                               (hold["puño y espada"], "saco tirado en el aire", 2, True)]))
+    print(rv.hands_sheet([(hold["caballo y palma"], "palma / puño"), (hold["garra y pico"], "garra / pico"),
+                          (hold["puño y espada"], "puño / espada"), (hold["bastón"], "agarre")]))
+    print(rv.lineup_sheet(a0))
 
 
 def write_roundtrip(scn, arm, last):
@@ -275,6 +548,8 @@ def finish(t0):
     if BLEND:
         bpy.ops.wm.save_as_mainfile(filepath=BLEND)
     print(f"listo en {time.time() - t0:.1f} s; avisos {len(warnings)}")
+    for w in warnings:
+        print("   aviso:", w)
     if failures:
         print("FALLARON", len(failures), "chequeos:")
         for f in failures:

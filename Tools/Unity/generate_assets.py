@@ -683,14 +683,14 @@ def controllers():
 
 
 def bamboo_master_controller():
-    """Chikuō: un estado por clip del sidecar (los de pelea los agrega la etapa de clips con el mismo FBX y GUID)."""
+    """Chikuō: un estado por clip del sidecar (todos en el mismo FBX y GUID) y la locomoción mezclada por velocidad."""
     bi = bamboo_master_info()
     if not bi:
         return {}
     g = ensure_guid(BAMBOO_FBX)
     st = {n: (ref(g, stable_id("bamboo_master", n), 3), round(r["seconds"], 4)) for n, r in bi["clips"].items()}
     return {"bamboo_master": controller(os.path.join(P_ANIM, "BambooMaster.controller"), "BambooMaster", st,
-                                        [st[n] for n in BAMBOO_LOCO])}
+                                        [st[n] for n in BAMBOO_LOCO], BAMBOO_LOCO_THRESHOLDS)}
 
 
 def mizuchi_koi():
@@ -834,8 +834,10 @@ def kokuyo_assets(mats):
 # ============================================================================ Chikuō (jefe del bambú)
 P_BAMBOO = os.path.join(ART, "Characters", "BambooMaster")
 BAMBOO_FBX = os.path.join(P_BAMBOO, "BambooMaster.fbx")
-# hasta que la etapa de clips agregue la caminata, la locomoción es la guardia quieta
-BAMBOO_LOCO = ("Idle", "Idle")
+# locomoción: quieto / camina (1.6 m/s) / corre (4.0 m/s = runSpeed): umbrales de Speed = v / runSpeed. Las variantes de
+# fase (Idle_P2, Walk_P3...) las cambia el jefe con un AnimatorOverrideController sobre estos mismos clips
+BAMBOO_LOCO = ("Idle", "Walk", "Run")
+BAMBOO_LOCO_THRESHOLDS = (0, 0.4, 1)
 # brillo (Blinn-Phong) de los materiales propios: vendas y zapatillas de tela, el bambú apenas encerado, los ojos húmedos
 BAMBOO_SMOOTH = {"Master_GlintHandR": 0.1, "Master_GlintHandL": 0.1, "Master_GlintFootR": 0.12, "Master_GlintFootL": 0.12,
                  "Master_Eyes": 0.45, "Master_GlintStaff": 0.3, "Master_Skin": 0.14}

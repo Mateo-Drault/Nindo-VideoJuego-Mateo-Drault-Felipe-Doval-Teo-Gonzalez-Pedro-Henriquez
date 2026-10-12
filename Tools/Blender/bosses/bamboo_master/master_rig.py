@@ -78,6 +78,15 @@ STAFF_LEN = 2.30
 STAFF_R = 0.028
 STAFF_REST = Vector((-0.62, 0.10, STAFF_LEN * 0.5 + 0.01))
 
+# la mano en la espalda (fase 1: enseña con una sola mano): centro de la palma, dedos y dorso en el MUNDO de reposo; el
+# Solver la lleva pegada a la cadera (Hips), así acompaña cada giro y cada caída de la cadera sin autorarla clave por
+# clave. El dorso apoya sobre la faja (radio de atrás 0.22 m a esa altura) y los dedos apuntan al otro lado
+BACK_HAND_L = (Vector((0.03, 0.285, 1.34)), Vector((-1.0, 0.1, -0.28)).normalized(), Vector((0.0, -1.0, 0.12)).normalized())
+BACK_ELBOW_L = Vector((1.0, 0.55, -0.15)).normalized()
+# la derecha, cuando las dos van atrás (la espera del maestro en la intro): agarra la muñeca izquierda por encima
+BACK_HAND_R = (Vector((-0.09, 0.3, 1.37)), Vector((0.95, 0.1, -0.3)).normalized(), Vector((0.0, -1.0, 0.25)).normalized())
+BACK_ELBOW_R = Vector((-1.0, 0.55, -0.15)).normalized()
+
 # cadenas con física (convención de los kits: Acc_<Nombre>_<i> ... _end): bigotes y colas de la faja
 WHISKER_R = [Vector((-0.048, -0.204, 2.258)), Vector((-0.07, -0.2, 2.12)), Vector((-0.076, -0.196, 1.96)),
              Vector((-0.07, -0.19, 1.80))]
@@ -265,6 +274,12 @@ NEUTRAL = {
     "grip_r": None, "grip_l": None, "grip_r_up": (0.0, 0.0, 1.0), "grip_l_up": (0.0, 0.0, 1.0),
     # hacia qué punta mira cada pulgar (+1 = la de arriba): por defecto los pulgares se miran (agarre de bō)
     "grip_r_thumb": 1.0, "grip_l_thumb": -1.0,
+    # 0..1: cuánto va cada mano a su lugar en la espalda (BACK_HAND_*), pegada a la cadera; en el medio se mezcla con el
+    # control explícito de la mano (para sacarla de la espalda hace falta una clave intermedia al costado de la cadera:
+    # la mezcla directa cruzaría el cuerpo)
+    "back_r": 0.0, "back_l": 0.0,
+    # bastón relativo al personaje (0) o clavado en el mundo del clip (1); staff_follow 0..1 lo pega al pecho
+    "staff_world": 0.0, "staff_follow": 0.0, "staff_cpos": None, "staff_cdir": None, "staff_cup": None,
 }
 
 
@@ -277,6 +292,11 @@ class Solver:
         R = rig
         # ejes de reposo de dedos y pulgar en espacio de la armadura: curva = X propio, apertura = Z propio (dorso)
         self.axes = {n: (rot3(R.rest[n]).col[0].normalized(), rot3(R.rest[n]).col[2].normalized()) for n in FINGER_BONES}
+        # lugar de las manos en la espalda en el espacio de la cadera de reposo (posición, dedos, dorso) y su codo
+        hi = R.rest_inv["Hips"]
+        h3 = rot3(R.rest["Hips"]).transposed()
+        self.back = {S: (hi @ p, h3 @ d, h3 @ u) for S, (p, d, u) in (("R", BACK_HAND_R), ("L", BACK_HAND_L))}
+        self.back_elbow = {"R": h3 @ BACK_ELBOW_R, "L": h3 @ BACK_ELBOW_L}
 
     def solve(self, pose, c):
         c = {**NEUTRAL, **{k: v for k, v in c.items() if v is not None}}
@@ -315,7 +335,22 @@ class Solver:
         staff_on = (c.get("staff_on") or 0.0) >= 0.5
         Ms = None
         if staff_on:
-            Ms = compose(V(c["staff_pos"]) + sh, basis_yz(c["staff_dir"], c["staff_up"]))
+            # el bastón en la mano va relativo al personaje (como las manos); clavado en el piso o tirado va en el
+            # MUNDO del clip (staff_world = 1: se corre con el avance, como un pie apoyado)
+            sw = sh if (c.get("staff_world") or 0.0) >= 0.5 else up
+            Ms = compose(V(c["staff_pos"]) + sw, basis_yz(c["staff_dir"], c["staff_up"]))
+            sf = max(0.0, min(1.0, c.get("staff_follow") or 0.0))
+            if sf > 1e-4 and c.get("staff_cpos") is not None:
+                # agarrado contra el pecho: el bastón acompaña al tronco (las reacciones de la fase 3 son las de las
+                # otras fases con el bastón pegado al pecho; si quedara quieto en el aire las manos se despegarían).
+                # staff_cpos/cdir/cup: centro, eje y cara del bastón en el espacio del hueso Chest
+                p_, d_, u_ = c["staff_cpos"], c["staff_cdir"], c["staff_cup"]
+                Wc = pose.get("Chest")
+                Rc = rot3(Wc)
+                pos = Ms.translation.lerp(Wc @ V(p_), sf)
+                dd = NA.slerp_dir(rot3(Ms).col[1], Rc @ V(d_), sf)
+                uu = NA.slerp_dir(rot3(Ms).col[2], Rc @ V(u_), sf)
+                Ms = compose(pos, basis_yz(dd, uu))
             # la cabeza del hueso es la punta de abajo: el control dice el centro
             Ms.translation = Ms.translation - rot3(Ms).col[1] * (STAFF_LEN * 0.5)
             pose.place("Staff", Ms)
@@ -324,14 +359,40 @@ class Solver:
         for s in ("r", "l"):
             S = s.upper()
             g = c.get("grip_" + s)
+            elbow = c["elbow_" + s]
+            palm, hd, hu = V(c["hand_" + s]) + up, V(c["hand_" + s + "_dir"]), V(c["hand_" + s + "_up"])
+            hf = max(0.0, min(1.0, c.get("hand_" + s + "_follow") or 0.0))
+            if hf > 1e-4 and c.get("hand_" + s + "_cpos") is not None:
+                # la mano de guardia pegada al pecho (caminar, reacciones): hand_*_cpos/cdir/cup/celbow en el espacio de
+                # Chest; así acompaña el giro y el rebote del tronco en vez de quedar flotando donde estaba
+                Wc = pose.get("Chest")
+                Rc = rot3(Wc)
+                palm = palm.lerp(Wc @ V(c["hand_" + s + "_cpos"]), hf)
+                hd = NA.slerp_dir(hd, Rc @ V(c["hand_" + s + "_cdir"]), hf)
+                hu = NA.slerp_dir(hu, Rc @ V(c["hand_" + s + "_cup"]), hf)
+                elbow = NA.slerp_dir(elbow, Rc @ V(c["hand_" + s + "_celbow"]), hf)
+            wb = max(0.0, min(1.0, c.get("back_" + s) or 0.0))
+            if wb > 1e-4:
+                # la mano en la espalda viaja con la cadera: su lugar de reposo llevado por el giro de Hips
+                bp, bd, bu = self.back[S]
+                palm = palm.lerp(Hm @ bp, wb)
+                hd = NA.slerp_dir(hd, rot3(Hm) @ bd, wb)
+                hu = NA.slerp_dir(hu, rot3(Hm) @ bu, wb)
+                elbow = NA.slerp_dir(elbow, rot3(Hm) @ self.back_elbow[S], wb)
+            Rh = basis_yz(hd, hu)
+            wrist = palm - Rh @ PALM_LOCAL
             if staff_on and g is not None:
-                Rh, wrist = self.grip_frame(Ms, S, g, c["grip_" + s + "_up"], c["grip_" + s + "_thumb"])
-            else:
-                Rh = basis_yz(c["hand_" + s + "_dir"], c["hand_" + s + "_up"])
-                palm = V(c["hand_" + s]) + up
-                wrist = palm - Rh @ PALM_LOCAL
+                Rg, wg = self.grip_frame(Ms, S, g, c["grip_" + s + "_up"], c["grip_" + s + "_thumb"])
+                # grip_*_w < 1: la mano va o viene del bastón (lo atrapa, lo suelta): mezcla de muñeca y giro
+                gw = c.get("grip_" + s + "_w")
+                gw = 1.0 if gw is None else max(0.0, min(1.0, gw))
+                if gw >= 0.9999:
+                    Rh, wrist = Rg, wg
+                else:
+                    q = Rh.to_quaternion().slerp(Rg.to_quaternion(), gw)
+                    Rh, wrist = q.to_matrix(), wrist.lerp(wg, gw)
             self.reach_with_clavicle(pose, S, wrist)
-            misses["hand_" + s] = pose.two_bone("UpperArm_" + S, "Forearm_" + S, wrist, c["elbow_" + s])
+            misses["hand_" + s] = pose.two_bone("UpperArm_" + S, "Forearm_" + S, wrist, elbow)
             pose.place("Hand_" + S, compose(pose.tail("Forearm_" + S), Rh))
             pose.twist_follow("Forearm_" + S, "Hand_" + S, 0.5)
             self.fingers(pose, S, c)
@@ -445,7 +506,9 @@ def springs(rig):
         # mangas anchas: el borde pesa y cuelga cuando el brazo se levanta
         sp.append(NA.Spring([f"Sleeve_{S}"], k=160.0, damp=0.2, grav=7.0, max_deg=28.0, hang=0.35))
     for t in ("A", "B"):
-        sp.append(NA.Spring(chain_names("TieSash" + t, 3), k=95.0, damp=0.12, grav=6.0, max_deg=70.0, floor=0.05, hang=0.65,
+        # tope de desvío amplio: en una postura baja la cola rígida queda bajo el piso y con 70° el tope la volvía a meter
+        # después de que el piso la empujara arriba (la barrida y el caballo bajo la clavaban 20 cm)
+        sp.append(NA.Spring(chain_names("TieSash" + t, 3), k=95.0, damp=0.12, grav=6.0, max_deg=120.0, floor=0.06, hang=0.65,
                             colliders=belly + thighs))
     # faldones del saco (y los del chaleco, que cuelgan de los mismos huesos): tela gruesa; el muslo los empuja en una
     # patada (si no, la pierna los atraviesa) y la rodilla no deja que el tramo de abajo se le meta adentro

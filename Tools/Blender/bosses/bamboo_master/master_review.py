@@ -352,6 +352,96 @@ class Review:
         self.sheet({"out": out, "title": title, "width": 1280, "tile_h": 250, "delete": True, "rows": [{"label": "", "tiles": tiles}]})
         return out
 
+    # ------------------------------------------------------------------ clips
+    def show_only(self, objs):
+        names = {o.name for o in objs}
+        for o in self.meshes.values():
+            o.hide_render = o.name not in names
+
+    def clip_sheet(self, clip, start, roots, show, labels, report=None, visfn=None):
+        """Tres filas con el MISMO encuadre en todos los cuadros (se ve el recorrido): la cámara del juego (52°/24 m) con
+        Kaito a 3.6 m, el perfil desde su derecha y el frente con luz de estudio. Se enciende el slot que pega desde el
+        aviso hasta el fin del golpe (como en el juego) y los ojos jade en las fases 2 y 3."""
+        scn = self.scn
+        L = self.look
+        t = clip.timing
+        ph = getattr(clip, "phase", 1)
+        glow_slot = t.get("glow")
+        col = "red" if t.get("kind") == "dodge" else "gold"
+        a0 = t.get("tell", [t.get("apex", 0)])[0]
+        a1 = t.get("active", [0, -1])[1]
+        eyes_from = next((e["frame"] for e in clip.events if e["fn"] == "EyesIgnite"), None)
+        rows = []
+        for title, kind in (("juego 52°/24 m (luna del mundo, Kaito a 3.6 m)", "game"), ("perfil (desde su derecha)", "side"),
+                            ("frente (luz de estudio)", "front")):
+            if kind == "game":
+                L.set_moon(None)
+                self.show_kaito(True)
+                self.place_kaito((0.6, -3.6), 0)
+                self.game_view(focus=(0, -1.6, 1.0), pitch=52, dist=24)
+            else:
+                L.set_moon(Vector((-0.8, -0.35, 0.6)) if kind == "side" else STUDIO, scale=1.0)
+                self.show_kaito(False)
+            pts = []
+            for f in show:
+                scn.frame_set(start + f)
+                self.arm.location = roots[f]
+                if visfn:
+                    self.show_only(visfn(f))
+                bpy.context.view_layer.update()
+                pts += self.subject_points()
+            if kind != "game":
+                ax = 1 if kind == "side" else 0
+                hs = [p[ax] for p in pts]
+                zs = [p.z for p in pts]
+                ch, cz = (min(hs) + max(hs)) / 2, (max(zs) + min(0.0, min(zs))) / 2
+                span = max(max(zs) - min(0.0, min(zs)), (max(hs) - min(hs)) * 720 / 1280) + 0.5
+                c = (0, ch, cz) if kind == "side" else (ch, 0, cz)
+                self.ortho(c, span, -90 if kind == "side" else 0, 0)
+            else:
+                k = self.kaito_piv.location
+                pts += [Vector((k.x, k.y, 0.0)), Vector((k.x, k.y, 1.55))]
+            b = self.border_from(pts, 0.03)
+            tiles = []
+            for f, lab in zip(show, labels):
+                scn.frame_set(start + f)
+                self.arm.location = roots[f]
+                if visfn:
+                    self.show_only(visfn(f))
+                eyes = ph >= 2 or (eyes_from is not None and f >= eyes_from)
+                slots = tuple(glow_slot) if isinstance(glow_slot, (list, tuple)) else (glow_slot,)
+                self.glow(slots if glow_slot and a0 <= f <= a1 else (), col, eyes)
+                p = os.path.join(self.out, f"_{clip.name}_{kind}_{f:03d}.png")
+                self.render_border(p, b)
+                tiles.append({"img": p, "label": lab})
+            rows.append({"label": title, "tiles": tiles})
+        self.arm.location = (0, 0, 0)
+        self.glow(())
+        self.set_phase(1)
+        L.set_moon(None)
+        sub = ""
+        if report:
+            bits = []
+            for k, lab in (("reach_m", "alcance {} m"), ("max_height_m", "alto máx {} m"), ("root_peak_mps_60hz", "avance pico {} m/s"),
+                           ("tip_peak_mps", "golpe {} m/s"), ("tell_silhouette_change", "aviso {}"), ("loop_seam_deg", "costura {}°"),
+                           ("plant_drift_cm", "pies {} cm")):
+                if k in report:
+                    bits.append(lab.format(report[k]))
+            sub = "  |  " + ", ".join(bits)
+        out = os.path.join(self.out, f"clip_{clip.name}.png")
+        self.sheet({"out": out, "title": f"{clip.name}  ({clip.frames} cuadros, {clip.frames / NA.FPS:.2f} s){sub}", "width": 1280,
+                    "tile_h": 210, "delete": True, "rows": rows})
+        return out
+
+    def lab_sheet(self, clip, start):
+        """Las poses sueltas de --lab (cada una sostenida 12 cuadros): frente, perfil y cámara del juego."""
+        names = clip.timing["names"]
+        poses = []
+        for i, nm in enumerate(names):
+            ph = 3 if "3" in nm.split()[-1] else (2 if "2" in nm.split()[-1] else 1)
+            poses.append((start + 12 * (i + 1) - 1, nm, ph, (), "gold"))
+        return self.pose_sheet(poses, title="Chikuō: laboratorio de poses", tag="lab")
+
     # ------------------------------------------------------------------ al lado del elenco del juego
     TEAM = [  # (fbx relativo a Assets, alto en el juego, hacia dónde mira en Blender: 0 = -Y, 90 = +X, 180 = +Y)
         ("Nindo/Art/Models/Characters/Grandpa.fbx", 1.45, 180.0),
