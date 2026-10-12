@@ -64,12 +64,8 @@ namespace Nindo
         MasterClip clip;
         float travelDone, airStretch = 1f;
         bool landed, afterRecoil, dashFx;
-        // el golpe con paso adelante elige su largo (blend tree StepReach entre el paso corto y el autorado): reachW 0 =
-        // corto, 1 = entero; se fija cuando el pie de adelante se apoya
-        MasterClip closeClip;
-        float reachW = 1f;
-        bool reachFrozen;
-        static readonly int StepReachParam = Animator.StringToHash("StepReach");
+        // el golpe con paso adelante elige en la suelta la variante de paso que entra hasta Kaito (PickReach)
+        bool reachPicked;
         // la estela del miembro que pega (mano o pie; el bastón usa la de Enemy)
         bool limbTrailOn;
         string prevChainTo = "READY";
@@ -266,7 +262,7 @@ namespace Nindo
             // el contraataque siempre es el contragolpe: sale de COIL, el final de Counter
             if (State == EnemyState.Counter && pattern != counterPattern) pattern = counterPattern;
             TickStance();
-            if (State != EnemyState.Attack && clip != null) { clip = null; closeClip = null; look.ClearTell(); }
+            if (State != EnemyState.Attack && clip != null) { clip = null; look.ClearTell(); }
             if (limbTrailOn && (clip == null || stepNorm > CurrentAttack.activeEnd + 0.05f)) { limbTrailOn = false; look.StopLimbTrail(); }
             TickTellGlow();
             TickQiWave(dt);
@@ -372,9 +368,7 @@ namespace Nindo
             airStretch = 1f;
             landed = leapFixed = laneFixed = dashFx = false;
             look.ClearTell();
-            closeClip = null;
-            reachW = 1f;
-            reachFrozen = false;
+            reachPicked = false;
             if (clip != null)
             {
                 // un primer cuadro que se aparta más de 2° de la pose con la que encadena salta con el fundido de 0.08 s
@@ -386,8 +380,6 @@ namespace Nindo
                 float fade = afterRecoil ? 0.18f : step == 0 && !counter ? 0.15f : chains ? 0.08f : from == clip.ChainFrom ? 0.15f : 0.2f;
                 if (fade > 0.08f) anim.Play(a.state, fade);
                 prevChainTo = clip.ChainTo;
-                if (!string.IsNullOrEmpty(clip.CloseState)) closeClip = BambooMasterTimings.Get(clip.CloseState);
-                if (closeClip != null) { reachW = ReachWeight(1f); anim.Animator.SetFloat(StepReachParam, reachW); }
                 if (a.special == BambooMasterMoves.Hop) airStretch = HopScale();
             }
             afterRecoil = false;
@@ -401,7 +393,7 @@ namespace Nindo
             if (clip == null) { base.TickSpecial(a, dt); return; }
             if (a.special == BambooMasterMoves.Leap) TickLeap(a);
             if (a.special == BambooMasterMoves.Dash) TickDash(a);
-            TickReach(dt);
+            if (!reachPicked && stepClock >= tl.ReleaseTime) PickReach();
             Travel(a);
             TickLimbTrail(a);
             switch (a.special)
@@ -415,13 +407,14 @@ namespace Nindo
         /// <summary>
         /// El cuerpo avanza lo que avanza el clip (travel_m) en el reloj del paso: los pies apoyados quedan clavados. La
         /// grulla voladora y el paso del viento escalan el tramo entre el despegue y la caída para caer donde está Kaito;
-        /// el salto atrás, para no salir de la arena; los golpes con paso adelante mezclan su paso corto con el entero
-        /// (TickReach). Nunca atraviesa a Kaito (salvo el salto, que cae sobre él): lo poco que no entra se pierde.
+        /// el salto atrás, para no salirse de la arena; los golpes con paso adelante eligen en la suelta la variante cuyo
+        /// paso entra (PickReach). Nunca atraviesa a Kaito (salvo el salto, que cae sobre él): lo poco que no entra se
+        /// pierde.
         /// </summary>
         void Travel(AttackDef a)
         {
             if (clip.Travel == null || anim.Frozen) return;
-            float x = StepTravel(stepNorm);
+            float x = StretchedTravel(stepNorm, airStretch);
             float d = x - travelDone;
             travelDone = x;
             if (Mathf.Abs(d) < 1e-5f) return;
@@ -442,14 +435,6 @@ namespace Nindo
         /// <summary>Dónde frena delante de Kaito (de centro a centro).</summary>
         float StopShort => Radius + (target != null ? target.Radius : 0.35f) + 0.25f;
 
-        /// <summary>Lo que avanzó el cuerpo en 'n': el paso mezclado (corto/entero) o el tramo del aire estirado.</summary>
-        float StepTravel(float n)
-        {
-            if (closeClip == null) return StretchedTravel(n, airStretch);
-            float c = closeClip.TravelAt(n);
-            return c + reachW * (clip.TravelAt(n) - c);
-        }
-
         /// <summary>Lo que avanzó el cuerpo en 'n' con el tramo del despegue a la caída escalado por 'k' (el clip lleva ese
         /// tramo en el espacio del personaje: escalarlo no mueve un pie apoyado).</summary>
         float StretchedTravel(float n, float k)
@@ -460,31 +445,32 @@ namespace Nindo
         }
 
         /// <summary>
-        /// El largo del paso de un golpe que avanza (palmas, tajo, contragolpe): el blend tree mezcla el paso corto con el
-        /// entero por StepReach y el avance se mezcla igual, así que el pie de atrás (el mismo en los dos clips) queda
-        /// clavado aunque el peso cambie. Sigue a Kaito mientras el pie de adelante va en el aire y se fija cuando se apoya.
-        /// Antes el clip entero (~0.95 m) chocaba contra Kaito pegado y se perdía el 60-80 % del avance: el pie apoyado
-        /// patinaba hacia atrás lo mismo.
+        /// El largo del paso de un golpe que avanza (palmas, tajo, contragolpe, sus variantes _Mid y _Close): son el mismo
+        /// clip hasta la suelta, así que al soltarse pasa sin fundido a la más larga cuyo paso entra hasta Kaito (con 5 cm
+        /// de gracia). Antes el paso entero (~0.95 m) chocaba contra Kaito pegado, se perdía el 60-80 % del avance y el
+        /// pie apoyado patinaba lo mismo. Mezclarlas en un blend tree no sirve: la mezcla de giros hundía el pie de atrás.
         /// </summary>
-        void TickReach(float dt)
+        void PickReach()
         {
-            if (closeClip == null || reachFrozen) return;
-            if (stepNorm >= clip.Contact) { reachFrozen = true; return; }
-            reachW = Mathf.MoveTowards(reachW, ReachWeight(1f), dt * 3f);
-            anim.Animator.SetFloat(StepReachParam, reachW);
-        }
-
-        /// <summary>Cuánto del paso entero entra hasta Kaito (contando lo que ya avanzó), 0 = el corto.</summary>
-        float ReachWeight(float fallback)
-        {
-            if (target == null || closeClip == null) return fallback;
+            reachPicked = true;
+            var vs = clip.Variants;
+            if (vs == null || vs.Length == 0 || target == null) return;
             Vector3 dir = transform.forward.Flat().normalized;
             Vector3 to = (target.transform.position - transform.position).Flat();
             float along = Vector3.Dot(to, dir), lat = Mathf.Abs(Vector3.Dot(to, Vector3.Cross(Vector3.up, dir)));
-            if (along <= 0f || lat >= Radius + target.Radius) return fallback;
-            float room = along - StopShort + travelDone;
-            float near = closeClip.TravelAt(1f), far = clip.TravelAt(1f);
-            return Mathf.Clamp01((room - near) / Mathf.Max(0.01f, far - near));
+            // Kaito al costado o detrás: no hay contra qué frenar, va el paso entero
+            if (along <= 0f || lat >= Radius + target.Radius) return;
+            float room = along - StopShort + travelDone + 0.05f;
+            if (clip.TravelAt(1f) <= room) return;
+            MasterClip pick = null;
+            for (int i = 0; i < vs.Length; i++)
+            {
+                pick = BambooMasterTimings.Get(vs[i]);
+                if (pick != null && pick.TravelAt(1f) <= room) break;
+            }
+            if (pick == null || !anim.HasState(pick.State)) return;
+            clip = pick;
+            anim.Play(pick.State, 0f, stepNorm);
         }
 
         /// <summary>Golpe dorado: el alcance del miembro (o del bastón) desde donde está en el impacto, más el grosor (con
@@ -985,7 +971,8 @@ namespace Nindo
             pattern = counterPattern;
             SetState(EnemyState.Counter);
             stateDuration = Mathf.Clamp(anim.Length(config.animCounter, 0.5f), 0.2f, 0.6f);
-            anim.Play(config.animCounter, 0.02f);
+            // Counter arranca en la guardia: desde las palmas cruzadas de la postura se funde un poco más
+            anim.Play(config.animCounter, fromStance ? 0.1f : 0.02f);
             if (target != null) transform.rotation = Quaternion.LookRotation((target.transform.position - transform.position).Flat().normalized + transform.forward * 0.001f);
             Game.UI?.ShowGuardMark(this);
             Game.FX?.Shockwave(transform.position, 2f, BambooMasterLook.Jade);

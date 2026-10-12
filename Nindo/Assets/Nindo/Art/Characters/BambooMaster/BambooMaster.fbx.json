@@ -6,7 +6,7 @@
  "tris": {
   "body": 3962,
   "robe": 1024,
-  "thrown": 380,
+  "thrown": 440,
   "staff": 386
  },
  "facing": "frente +Z en Unity (Blender -Y): modelYaw 0",
@@ -34,14 +34,32 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       96
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       96
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.0,
-     "",
+     0.19,
+     "Head",
      0.0
     ],
-    "max_height_m": 2.59,
+    "max_height_m": 2.6,
     "min_z_m": -0.0
    }
   },
@@ -83,7 +101,25 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.29,
-    "loop_seam_deg": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       21
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       18,
+       36
+      ],
+      0.0
+     ]
+    },
+    "loop_seam_deg": 0.04,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.002
@@ -127,6 +163,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.56,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       8
+      ],
+      1.1
+     ],
+     "Foot_L": [
+      1.1,
+      [
+       11,
+       19
+      ],
+      1.1
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -171,6 +225,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       24
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.056,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -215,6 +287,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       24
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -259,6 +349,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       22
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       18,
+       35
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -288,14 +396,32 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       96
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       96
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.0,
-     "",
+     0.19,
+     "Head",
      0.0
     ],
-    "max_height_m": 2.59,
+    "max_height_m": 2.6,
     "min_z_m": -0.0
    }
   },
@@ -337,7 +463,25 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.29,
-    "loop_seam_deg": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       21
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       18,
+       36
+      ],
+      0.0
+     ]
+    },
+    "loop_seam_deg": 0.04,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.002
@@ -381,6 +525,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.56,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       8
+      ],
+      1.1
+     ],
+     "Foot_L": [
+      1.1,
+      [
+       11,
+       19
+      ],
+      1.1
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -425,6 +587,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       24
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.056,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -469,6 +649,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       24
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -513,6 +711,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       22
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       18,
+       35
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {},
     "max_height_m": 2.53,
@@ -542,27 +758,41 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       96
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       96
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.0,
-      72
+      3.7,
+      84
      ],
      "bastón / muslo L": [
-      0.7,
+      1.3,
       80
-     ],
-     "antebrazo L / tronco": [
-      4.6,
-      47
      ]
     },
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.19,
+     "Head",
      0.0
     ],
-    "max_height_m": 2.59,
+    "max_height_m": 2.6,
     "min_z_m": -0.0
    }
   },
@@ -604,19 +834,33 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.29,
-    "loop_seam_deg": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       21
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       18,
+       36
+      ],
+      0.0
+     ]
+    },
+    "loop_seam_deg": 0.04,
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.4,
-      28
+      2.4,
+      27
      ],
      "bastón / muslo L": [
-      0.6,
-      17
-     ],
-     "antebrazo L / tronco": [
-      5.6,
-      21
+      0.5,
+      20
      ]
     },
     "max_height_m": 2.53,
@@ -661,23 +905,29 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.56,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       8
+      ],
+      1.1
+     ],
+     "Foot_L": [
+      1.1,
+      [
+       11,
+       19
+      ],
+      1.1
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {
      "bastón / tronco": [
-      -3.0,
-      18
-     ],
-     "bastón / muslo R": [
-      -2.9,
-      18
-     ],
-     "bastón / muslo L": [
-      -0.6,
-      7
-     ],
-     "bastón / tibia R": [
-      -0.4,
-      18
+      5.4,
+      17
      ]
     },
     "max_height_m": 2.53,
@@ -722,19 +972,33 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       24
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.056,
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.2,
+      3.7,
       20
      ],
      "bastón / muslo L": [
-      0.9,
-      6
-     ],
-     "antebrazo L / tronco": [
-      5.4,
-      14
+      1.8,
+      1
      ]
     },
     "max_height_m": 2.53,
@@ -779,19 +1043,33 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       24
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.2,
+      3.7,
       20
      ],
      "bastón / muslo L": [
-      0.9,
-      6
-     ],
-     "antebrazo L / tronco": [
-      5.4,
-      14
+      1.8,
+      1
      ]
     },
     "max_height_m": 2.53,
@@ -836,19 +1114,33 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       22
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       18,
+       35
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.5,
-      30
+      3.3,
+      28
      ],
      "bastón / muslo L": [
-      1.2,
-      14
-     ],
-     "antebrazo L / tronco": [
-      4.5,
-      2
+      1.6,
+      21
      ]
     },
     "max_height_m": 2.53,
@@ -899,6 +1191,10 @@
     ],
     "chain_from": "READY",
     "chain_to": "READY",
+    "reach_variants": [
+     "Palm_Mid",
+     "Palm_Close"
+    ],
     "phase": 1
    },
    "normalized": {
@@ -938,17 +1234,17 @@
      "fn": "Strike"
     },
     {
-     "frame": 15,
-     "t": 0.4412,
+     "frame": 14,
+     "t": 0.4118,
      "fn": "Step"
     },
     {
-     "frame": 25,
-     "t": 0.7353,
+     "frame": 24,
+     "t": 0.7059,
      "fn": "Step"
     }
    ],
-   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.95 m; el de atrás alcanza en f25",
+   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.95 m; el de atrás alcanza en f24",
    "reach_m": 1.32,
    "strike_height_m": [
     1.2,
@@ -969,19 +1265,19 @@
     0.0,
     0.0,
     0.0,
-    0.25,
-    0.425,
-    0.6,
-    0.765,
-    0.82,
-    0.8638,
-    0.895,
-    0.9138,
-    0.92,
-    0.9231,
-    0.9306,
-    0.9394,
-    0.9469,
+    0.247,
+    0.4227,
+    0.5985,
+    0.7624,
+    0.817,
+    0.8586,
+    0.8882,
+    0.9061,
+    0.912,
+    0.916,
+    0.9254,
+    0.9366,
+    0.946,
     0.95,
     0.95,
     0.95,
@@ -997,9 +1293,27 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.61,
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 14.6,
+    "root_peak_mps_60hz": 14.7,
     "reach_m": 1.32,
     "strike_height_m": [
      1.2,
@@ -1009,26 +1323,416 @@
     "tip_outside_ratio": 0.11,
     "apex_tip_mps": [
      0.5,
-     2.0
+     0.9
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
+     0.0
+    ],
+    "reach_same_deg": {
+     "Palm_Mid": [
+      0.0,
+      "",
+      0
+     ],
+     "Palm_Close": [
+      0.0,
+      "",
+      0
+     ]
+    },
+    "max_height_m": 2.59,
+    "min_z_m": -0.013,
+    "tell_silhouette_change": 0.345
+   }
+  },
+  "Palm_Mid": {
+   "first": 939,
+   "last": 973,
+   "frames": 34,
+   "seconds": 1.1333,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     10
+    ],
+    "apex": 10,
+    "hold": [
+     10,
+     12
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     17
+    ],
+    "recover": [
+     17,
+     34
+    ],
+    "lunge": [
+     12,
+     26,
+     0.5035
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 1
+   },
+   "normalized": {
+    "apex": 0.2941,
+    "contact": 0.4412,
+    "tell": [
+     0.0,
+     0.2941
+    ],
+    "hold": [
+     0.2941,
+     0.3529
+    ],
+    "active": [
+     0.4412,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3529,
+     0.7647,
+     0.5035
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.2941,
+     "fn": "Apex"
+    },
+    {
+     "frame": 15,
+     "t": 0.4412,
+     "fn": "Strike"
+    },
+    {
+     "frame": 14,
+     "t": 0.4118,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.7059,
+     "fn": "Step"
+    }
+   ],
+   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.50 m; el de atrás alcanza en f24. Variante de paso corto de Palm (la elige el jefe en la suelta)",
+   "reach_m": 1.23,
+   "strike_height_m": [
+    1.24,
+    1.3
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.1309,
+    0.2241,
+    0.3172,
+    0.4041,
+    0.433,
+    0.455,
+    0.4708,
+    0.4802,
+    0.4834,
+    0.4855,
+    0.4904,
+    0.4964,
+    0.5014,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 7.8,
+    "reach_m": 1.23,
+    "strike_height_m": [
+     1.24,
+     1.3
+    ],
+    "tip_peak_mps": 60.0,
+    "tip_outside_ratio": 0.12,
+    "apex_tip_mps": [
+     0.5,
+     0.9
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.019,
-    "tell_silhouette_change": 0.342
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.345
+   }
+  },
+  "Palm_Close": {
+   "first": 983,
+   "last": 1017,
+   "frames": 34,
+   "seconds": 1.1333,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     10
+    ],
+    "apex": 10,
+    "hold": [
+     10,
+     12
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     17
+    ],
+    "recover": [
+     17,
+     34
+    ],
+    "lunge": [
+     12,
+     26,
+     0.1235
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 1
+   },
+   "normalized": {
+    "apex": 0.2941,
+    "contact": 0.4412,
+    "tell": [
+     0.0,
+     0.2941
+    ],
+    "hold": [
+     0.2941,
+     0.3529
+    ],
+    "active": [
+     0.4412,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3529,
+     0.7647,
+     0.1235
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.2941,
+     "fn": "Apex"
+    },
+    {
+     "frame": 15,
+     "t": 0.4412,
+     "fn": "Strike"
+    },
+    {
+     "frame": 14,
+     "t": 0.4118,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.7059,
+     "fn": "Step"
+    }
+   ],
+   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.12 m; el de atrás alcanza en f24. Variante de paso corto de Palm (la elige el jefe en la suelta)",
+   "reach_m": 1.15,
+   "strike_height_m": [
+    1.28,
+    1.33
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0321,
+    0.055,
+    0.0778,
+    0.0991,
+    0.1062,
+    0.1116,
+    0.1155,
+    0.1178,
+    0.1186,
+    0.1191,
+    0.1203,
+    0.1218,
+    0.123,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 1.03,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 1.9,
+    "reach_m": 1.15,
+    "strike_height_m": [
+     1.28,
+     1.33
+    ],
+    "tip_peak_mps": 49.7,
+    "tip_outside_ratio": 0.14,
+    "apex_tip_mps": [
+     0.5,
+     0.9
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Foot_L",
+     0.0
+    ],
+    "max_height_m": 2.59,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.345
    }
   },
   "ChopPalm": {
-   "first": 939,
-   "last": 975,
+   "first": 1027,
+   "last": 1063,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -1070,6 +1774,10 @@
     ],
     "chain_from": "READY",
     "chain_to": "READY",
+    "reach_variants": [
+     "ChopPalm_Mid",
+     "ChopPalm_Close"
+    ],
     "phase": 1
    },
    "normalized": {
@@ -1109,13 +1817,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 17,
-     "t": 0.4722,
+     "frame": 16,
+     "t": 0.4444,
      "fn": "Step"
     },
     {
-     "frame": 27,
-     "t": 0.75,
+     "frame": 26,
+     "t": 0.7222,
      "fn": "Step"
     }
    ],
@@ -1170,7 +1878,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.45,
+    "plant_drift_cm": 0.13,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       11
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 13.7,
     "reach_m": 1.27,
@@ -1179,29 +1905,423 @@
      1.38
     ],
     "tip_peak_mps": 64.5,
-    "tip_outside_ratio": 0.1,
+    "tip_outside_ratio": 0.16,
     "apex_tip_mps": [
      0.8,
-     2.4
+     1.1
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.04,
+     "Foot_L",
      0.0
     ],
-    "max_height_m": 2.98,
-    "min_z_m": -0.019,
-    "tell_silhouette_change": 0.299
+    "reach_same_deg": {
+     "ChopPalm_Mid": [
+      0.06,
+      "Foot_R",
+      12
+     ],
+     "ChopPalm_Close": [
+      0.06,
+      "Foot_R",
+      12
+     ]
+    },
+    "max_height_m": 2.95,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.302
+   }
+  },
+  "ChopPalm_Mid": {
+   "first": 1073,
+   "last": 1109,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     11
+    ],
+    "apex": 11,
+    "hold": [
+     11,
+     13
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     14,
+     28,
+     0.47700000000000004
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 1
+   },
+   "normalized": {
+    "apex": 0.3056,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.3056
+    ],
+    "hold": [
+     0.3056,
+     0.3611
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "lunge": [
+     0.3889,
+     0.7778,
+     0.47700000000000004
+    ]
+   },
+   "events": [
+    {
+     "frame": 11,
+     "t": 0.3056,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4444,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.7222,
+     "fn": "Step"
+    }
+   ],
+   "notes": "pi zhang: el brazo alzado detrás de la cabeza (aviso f11) baja cortando con el filo de la mano (f17) mientras el pie de adelante se clava a 0.9 m. Variante de paso corto de ChopPalm (la elige el jefe en la suelta)",
+   "reach_m": 1.17,
+   "strike_height_m": [
+    1.1,
+    1.41
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0668,
+    0.1336,
+    0.2147,
+    0.2957,
+    0.3816,
+    0.4102,
+    0.4311,
+    0.446,
+    0.4549,
+    0.4579,
+    0.4599,
+    0.4646,
+    0.4703,
+    0.475,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.13,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 7.3,
+    "reach_m": 1.17,
+    "strike_height_m": [
+     1.1,
+     1.41
+    ],
+    "tip_peak_mps": 58.4,
+    "tip_outside_ratio": 0.18,
+    "apex_tip_mps": [
+     0.8,
+     1.1
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.95,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.302
+   }
+  },
+  "ChopPalm_Close": {
+   "first": 1119,
+   "last": 1155,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     11
+    ],
+    "apex": 11,
+    "hold": [
+     11,
+     13
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     14,
+     28,
+     0.117
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 1
+   },
+   "normalized": {
+    "apex": 0.3056,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.3056
+    ],
+    "hold": [
+     0.3056,
+     0.3611
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "lunge": [
+     0.3889,
+     0.7778,
+     0.117
+    ]
+   },
+   "events": [
+    {
+     "frame": 11,
+     "t": 0.3056,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4444,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.7222,
+     "fn": "Step"
+    }
+   ],
+   "notes": "pi zhang: el brazo alzado detrás de la cabeza (aviso f11) baja cortando con el filo de la mano (f17) mientras el pie de adelante se clava a 0.9 m. Variante de paso corto de ChopPalm (la elige el jefe en la suelta)",
+   "reach_m": 1.09,
+   "strike_height_m": [
+    1.13,
+    1.43
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0164,
+    0.0328,
+    0.0527,
+    0.0725,
+    0.0936,
+    0.1006,
+    0.1057,
+    0.1094,
+    0.1116,
+    0.1123,
+    0.1128,
+    0.114,
+    0.1154,
+    0.1165,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.99,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 1.8,
+    "reach_m": 1.09,
+    "strike_height_m": [
+     1.13,
+     1.43
+    ],
+    "tip_peak_mps": 53.7,
+    "tip_outside_ratio": 0.19,
+    "apex_tip_mps": [
+     0.8,
+     1.1
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.95,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.302
    }
   },
   "CraneKick": {
-   "first": 985,
-   "last": 1027,
+   "first": 1165,
+   "last": 1207,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -1350,7 +2470,25 @@
      "hands": 0.0,
      "legs": 1.6
     },
-    "plant_drift_cm": 1.3,
+    "plant_drift_cm": 0.81,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.5,
+      [
+       0,
+       6
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.2,
+      [
+       0,
+       31
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.1,
     "reach_m": 1.32,
@@ -1365,23 +2503,23 @@
      0.8
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.04,
+     "Foot_L",
      0.0
     ],
     "max_height_m": 2.61,
-    "min_z_m": -0.014,
-    "tell_silhouette_change": 0.434
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.429
    }
   },
   "LeapKick": {
-   "first": 1037,
-   "last": 1093,
+   "first": 1217,
+   "last": 1273,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -1412,8 +2550,8 @@
      4.550000000000001
     ],
     "air": [
-     22,
-     32
+     21,
+     33
     ],
     "release_rate": 0.6,
     "root_max": 16.0,
@@ -1432,6 +2570,7 @@
     "spin": true,
     "chain_from": "READY",
     "chain_to": "READY",
+    "height_cap": 4.0,
     "phase": 1
    },
    "normalized": {
@@ -1454,8 +2593,8 @@
      1.0
     ],
     "air": [
-     0.3929,
-     0.5714
+     0.375,
+     0.5893
     ],
     "lunge": [
      0.3393,
@@ -1485,12 +2624,12 @@
      "fn": "Land"
     },
     {
-     "frame": 35,
-     "t": 0.625,
+     "frame": 36,
+     "t": 0.6429,
      "fn": "Step"
     }
    ],
-   "notes": "se agacha (aviso rojo f19), salta en f21 y cae sobre la marca en f33 a marker_m del transform inicial (el pie derecho). AttackDef.releaseRate = 0.6: el vuelo dura ~0.5 s; el juego puede estirar el avance de timing.air para caer donde está Kaito (onda de ring_m al caer)",
+   "notes": "se agacha (aviso rojo f19), salta en f21, arriba abre las alas con la rodilla montada y estira la patada hacia abajo; cae sobre la marca en f33 a marker_m del transform inicial (el pie derecho) y se queda clavado hasta f40. AttackDef.releaseRate = 0.6: el vuelo dura ~0.5 s; el juego escala el avance de timing.air (del despegue a la caída) para caer donde está Kaito (onda de ring_m al caer)",
    "reach_m": 0.31,
    "strike_height_m": [
     0.13,
@@ -1518,19 +2657,19 @@
     0.0,
     0.0,
     0.0,
-    0.075,
+    0.0,
     0.15,
-    0.7037,
+    0.7509,
     1.2574,
-    1.6823,
+    1.7037,
     2.1072,
-    2.4654,
+    2.4782,
     2.8236,
-    3.1391,
+    3.1479,
     3.4547,
-    3.74,
+    3.7465,
     4.0253,
-    4.2876,
+    4.2927,
     4.55,
     4.55,
     4.55,
@@ -1558,40 +2697,53 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 0.1,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.74,
-    "self_clearance_cm": {
-     "antebrazo R / tronco": [
-      5.0,
-      6
+    "plant_drift_cm": 0.37,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       0,
+       21
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.7,
+      [
+       0,
+       21
+      ],
+      0.4
      ]
     },
-    "root_peak_mps_60hz": 9.3,
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 8.8,
     "reach_m": 0.31,
     "strike_height_m": [
      0.13,
      0.13
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
-    "max_height_m": 3.48,
-    "min_z_m": -0.007,
-    "tell_silhouette_change": 0.268
+    "max_height_m": 3.88,
+    "min_z_m": -0.013,
+    "tell_silhouette_change": 0.269
    }
   },
   "Palm_P2": {
-   "first": 1103,
-   "last": 1137,
+   "first": 1283,
+   "last": 1317,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -1633,6 +2785,10 @@
     ],
     "chain_from": "READY",
     "chain_to": "READY",
+    "reach_variants": [
+     "Palm_Mid_P2",
+     "Palm_Close_P2"
+    ],
     "phase": 2
    },
    "normalized": {
@@ -1672,17 +2828,17 @@
      "fn": "Strike"
     },
     {
-     "frame": 15,
-     "t": 0.4412,
+     "frame": 14,
+     "t": 0.4118,
      "fn": "Step"
     },
     {
-     "frame": 25,
-     "t": 0.7353,
+     "frame": 24,
+     "t": 0.7059,
      "fn": "Step"
     }
    ],
-   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.95 m; el de atrás alcanza en f25",
+   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.95 m; el de atrás alcanza en f24",
    "reach_m": 1.32,
    "strike_height_m": [
     1.2,
@@ -1703,19 +2859,19 @@
     0.0,
     0.0,
     0.0,
-    0.25,
-    0.425,
-    0.6,
-    0.765,
-    0.82,
-    0.8638,
-    0.895,
-    0.9138,
-    0.92,
-    0.9231,
-    0.9306,
-    0.9394,
-    0.9469,
+    0.247,
+    0.4227,
+    0.5985,
+    0.7624,
+    0.817,
+    0.8586,
+    0.8882,
+    0.9061,
+    0.912,
+    0.916,
+    0.9254,
+    0.9366,
+    0.946,
     0.95,
     0.95,
     0.95,
@@ -1731,9 +2887,27 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.61,
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 14.6,
+    "root_peak_mps_60hz": 14.7,
     "reach_m": 1.32,
     "strike_height_m": [
      1.2,
@@ -1743,26 +2917,416 @@
     "tip_outside_ratio": 0.11,
     "apex_tip_mps": [
      0.5,
-     2.0
+     0.9
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
+     0.0
+    ],
+    "reach_same_deg": {
+     "Palm_Mid_P2": [
+      0.06,
+      "Hand_L",
+      9
+     ],
+     "Palm_Close_P2": [
+      0.06,
+      "Hand_L",
+      9
+     ]
+    },
+    "max_height_m": 2.59,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.255
+   }
+  },
+  "Palm_Mid_P2": {
+   "first": 1327,
+   "last": 1361,
+   "frames": 34,
+   "seconds": 1.1333,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "Palm_Mid",
+   "timing": {
+    "tell": [
+     0,
+     10
+    ],
+    "apex": 10,
+    "hold": [
+     10,
+     12
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     17
+    ],
+    "recover": [
+     17,
+     34
+    ],
+    "lunge": [
+     12,
+     26,
+     0.5035
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.2941,
+    "contact": 0.4412,
+    "tell": [
+     0.0,
+     0.2941
+    ],
+    "hold": [
+     0.2941,
+     0.3529
+    ],
+    "active": [
+     0.4412,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3529,
+     0.7647,
+     0.5035
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.2941,
+     "fn": "Apex"
+    },
+    {
+     "frame": 15,
+     "t": 0.4412,
+     "fn": "Strike"
+    },
+    {
+     "frame": 14,
+     "t": 0.4118,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.7059,
+     "fn": "Step"
+    }
+   ],
+   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.50 m; el de atrás alcanza en f24. Variante de paso corto de Palm (la elige el jefe en la suelta)",
+   "reach_m": 1.23,
+   "strike_height_m": [
+    1.24,
+    1.3
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.1309,
+    0.2241,
+    0.3172,
+    0.4041,
+    0.433,
+    0.455,
+    0.4708,
+    0.4802,
+    0.4834,
+    0.4855,
+    0.4904,
+    0.4964,
+    0.5014,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 7.8,
+    "reach_m": 1.23,
+    "strike_height_m": [
+     1.24,
+     1.3
+    ],
+    "tip_peak_mps": 60.0,
+    "tip_outside_ratio": 0.12,
+    "apex_tip_mps": [
+     0.5,
+     0.9
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.019,
-    "tell_silhouette_change": 0.258
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.255
+   }
+  },
+  "Palm_Close_P2": {
+   "first": 1371,
+   "last": 1405,
+   "frames": 34,
+   "seconds": 1.1333,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "Palm_Close",
+   "timing": {
+    "tell": [
+     0,
+     10
+    ],
+    "apex": 10,
+    "hold": [
+     10,
+     12
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     17
+    ],
+    "recover": [
+     17,
+     34
+    ],
+    "lunge": [
+     12,
+     26,
+     0.1235
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.2941,
+    "contact": 0.4412,
+    "tell": [
+     0.0,
+     0.2941
+    ],
+    "hold": [
+     0.2941,
+     0.3529
+    ],
+    "active": [
+     0.4412,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3529,
+     0.7647,
+     0.1235
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.2941,
+     "fn": "Apex"
+    },
+    {
+     "frame": 15,
+     "t": 0.4412,
+     "fn": "Strike"
+    },
+    {
+     "frame": 14,
+     "t": 0.4118,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.7059,
+     "fn": "Step"
+    }
+   ],
+   "notes": "tui zhang: se enrosca con la palma junto a la oreja (aviso f10), el pie de atrás empuja y la palma pega cuando el de adelante se clava (f15) a 0.12 m; el de atrás alcanza en f24. Variante de paso corto de Palm (la elige el jefe en la suelta)",
+   "reach_m": 1.15,
+   "strike_height_m": [
+    1.28,
+    1.33
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0321,
+    0.055,
+    0.0778,
+    0.0991,
+    0.1062,
+    0.1116,
+    0.1155,
+    0.1178,
+    0.1186,
+    0.1191,
+    0.1203,
+    0.1218,
+    0.123,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 1.03,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 1.9,
+    "reach_m": 1.15,
+    "strike_height_m": [
+     1.28,
+     1.33
+    ],
+    "tip_peak_mps": 49.7,
+    "tip_outside_ratio": 0.14,
+    "apex_tip_mps": [
+     0.5,
+     0.9
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Foot_L",
+     0.0
+    ],
+    "max_height_m": 2.59,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.255
    }
   },
   "ChopPalm_P2": {
-   "first": 1147,
-   "last": 1183,
+   "first": 1415,
+   "last": 1451,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -1804,6 +3368,10 @@
     ],
     "chain_from": "READY",
     "chain_to": "READY",
+    "reach_variants": [
+     "ChopPalm_Mid_P2",
+     "ChopPalm_Close_P2"
+    ],
     "phase": 2
    },
    "normalized": {
@@ -1843,13 +3411,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 17,
-     "t": 0.4722,
+     "frame": 16,
+     "t": 0.4444,
      "fn": "Step"
     },
     {
-     "frame": 27,
-     "t": 0.75,
+     "frame": 26,
+     "t": 0.7222,
      "fn": "Step"
     }
    ],
@@ -1904,7 +3472,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.45,
+    "plant_drift_cm": 0.13,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       11
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 13.7,
     "reach_m": 1.27,
@@ -1913,29 +3499,423 @@
      1.38
     ],
     "tip_peak_mps": 64.5,
-    "tip_outside_ratio": 0.1,
+    "tip_outside_ratio": 0.16,
     "apex_tip_mps": [
      0.8,
-     2.4
+     1.1
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.04,
+     "Foot_L",
      0.0
     ],
-    "max_height_m": 2.98,
-    "min_z_m": -0.019,
+    "reach_same_deg": {
+     "ChopPalm_Mid_P2": [
+      0.06,
+      "Foot_R",
+      12
+     ],
+     "ChopPalm_Close_P2": [
+      0.06,
+      "Foot_R",
+      12
+     ]
+    },
+    "max_height_m": 2.95,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.258
+   }
+  },
+  "ChopPalm_Mid_P2": {
+   "first": 1461,
+   "last": 1497,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "ChopPalm_Mid",
+   "timing": {
+    "tell": [
+     0,
+     11
+    ],
+    "apex": 11,
+    "hold": [
+     11,
+     13
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     14,
+     28,
+     0.47700000000000004
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.3056,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.3056
+    ],
+    "hold": [
+     0.3056,
+     0.3611
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "lunge": [
+     0.3889,
+     0.7778,
+     0.47700000000000004
+    ]
+   },
+   "events": [
+    {
+     "frame": 11,
+     "t": 0.3056,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4444,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.7222,
+     "fn": "Step"
+    }
+   ],
+   "notes": "pi zhang: el brazo alzado detrás de la cabeza (aviso f11) baja cortando con el filo de la mano (f17) mientras el pie de adelante se clava a 0.9 m. Variante de paso corto de ChopPalm (la elige el jefe en la suelta)",
+   "reach_m": 1.17,
+   "strike_height_m": [
+    1.1,
+    1.41
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0668,
+    0.1336,
+    0.2147,
+    0.2957,
+    0.3816,
+    0.4102,
+    0.4311,
+    0.446,
+    0.4549,
+    0.4579,
+    0.4599,
+    0.4646,
+    0.4703,
+    0.475,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.13,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 7.3,
+    "reach_m": 1.17,
+    "strike_height_m": [
+     1.1,
+     1.41
+    ],
+    "tip_peak_mps": 58.4,
+    "tip_outside_ratio": 0.18,
+    "apex_tip_mps": [
+     0.8,
+     1.1
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.95,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.258
+   }
+  },
+  "ChopPalm_Close_P2": {
+   "first": 1507,
+   "last": 1543,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "ChopPalm_Close",
+   "timing": {
+    "tell": [
+     0,
+     11
+    ],
+    "apex": 11,
+    "hold": [
+     11,
+     13
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     14,
+     28,
+     0.117
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.3056,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.3056
+    ],
+    "hold": [
+     0.3056,
+     0.3611
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "lunge": [
+     0.3889,
+     0.7778,
+     0.117
+    ]
+   },
+   "events": [
+    {
+     "frame": 11,
+     "t": 0.3056,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4444,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.7222,
+     "fn": "Step"
+    }
+   ],
+   "notes": "pi zhang: el brazo alzado detrás de la cabeza (aviso f11) baja cortando con el filo de la mano (f17) mientras el pie de adelante se clava a 0.9 m. Variante de paso corto de ChopPalm (la elige el jefe en la suelta)",
+   "reach_m": 1.09,
+   "strike_height_m": [
+    1.13,
+    1.43
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0164,
+    0.0328,
+    0.0527,
+    0.0725,
+    0.0936,
+    0.1006,
+    0.1057,
+    0.1094,
+    0.1116,
+    0.1123,
+    0.1128,
+    0.114,
+    0.1154,
+    0.1165,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.99,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 1.8,
+    "reach_m": 1.09,
+    "strike_height_m": [
+     1.13,
+     1.43
+    ],
+    "tip_peak_mps": 53.7,
+    "tip_outside_ratio": 0.19,
+    "apex_tip_mps": [
+     0.8,
+     1.1
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.95,
+    "min_z_m": -0.008,
     "tell_silhouette_change": 0.258
    }
   },
   "CraneKick_P2": {
-   "first": 1193,
-   "last": 1235,
+   "first": 1553,
+   "last": 1595,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -2084,7 +4064,25 @@
      "hands": 0.0,
      "legs": 1.6
     },
-    "plant_drift_cm": 1.3,
+    "plant_drift_cm": 0.81,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.5,
+      [
+       0,
+       6
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.2,
+      [
+       0,
+       31
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.1,
     "reach_m": 1.32,
@@ -2099,23 +4097,23 @@
      0.8
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.04,
+     "Foot_L",
      0.0
     ],
     "max_height_m": 2.61,
-    "min_z_m": -0.014,
-    "tell_silhouette_change": 0.373
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.374
    }
   },
   "LeapKick_P2": {
-   "first": 1245,
-   "last": 1301,
+   "first": 1605,
+   "last": 1661,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -2146,8 +4144,8 @@
      4.550000000000001
     ],
     "air": [
-     22,
-     32
+     21,
+     33
     ],
     "release_rate": 0.6,
     "root_max": 16.0,
@@ -2166,6 +4164,7 @@
     "spin": true,
     "chain_from": "READY",
     "chain_to": "READY",
+    "height_cap": 4.0,
     "phase": 2
    },
    "normalized": {
@@ -2188,8 +4187,8 @@
      1.0
     ],
     "air": [
-     0.3929,
-     0.5714
+     0.375,
+     0.5893
     ],
     "lunge": [
      0.3393,
@@ -2219,12 +4218,12 @@
      "fn": "Land"
     },
     {
-     "frame": 35,
-     "t": 0.625,
+     "frame": 36,
+     "t": 0.6429,
      "fn": "Step"
     }
    ],
-   "notes": "se agacha (aviso rojo f19), salta en f21 y cae sobre la marca en f33 a marker_m del transform inicial (el pie derecho). AttackDef.releaseRate = 0.6: el vuelo dura ~0.5 s; el juego puede estirar el avance de timing.air para caer donde está Kaito (onda de ring_m al caer)",
+   "notes": "se agacha (aviso rojo f19), salta en f21, arriba abre las alas con la rodilla montada y estira la patada hacia abajo; cae sobre la marca en f33 a marker_m del transform inicial (el pie derecho) y se queda clavado hasta f40. AttackDef.releaseRate = 0.6: el vuelo dura ~0.5 s; el juego escala el avance de timing.air (del despegue a la caída) para caer donde está Kaito (onda de ring_m al caer)",
    "reach_m": 0.31,
    "strike_height_m": [
     0.13,
@@ -2252,19 +4251,19 @@
     0.0,
     0.0,
     0.0,
-    0.075,
+    0.0,
     0.15,
-    0.7037,
+    0.7509,
     1.2574,
-    1.6823,
+    1.7037,
     2.1072,
-    2.4654,
+    2.4782,
     2.8236,
-    3.1391,
+    3.1479,
     3.4547,
-    3.74,
+    3.7465,
     4.0253,
-    4.2876,
+    4.2927,
     4.55,
     4.55,
     4.55,
@@ -2292,40 +4291,53 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 0.1,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.74,
-    "self_clearance_cm": {
-     "antebrazo R / tronco": [
-      5.0,
-      6
+    "plant_drift_cm": 0.37,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       0,
+       21
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.7,
+      [
+       0,
+       21
+      ],
+      0.4
      ]
     },
-    "root_peak_mps_60hz": 9.3,
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 8.8,
     "reach_m": 0.31,
     "strike_height_m": [
      0.13,
      0.13
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
-    "max_height_m": 3.48,
-    "min_z_m": -0.007,
+    "max_height_m": 3.88,
+    "min_z_m": -0.013,
     "tell_silhouette_change": 0.217
    }
   },
   "Guard": {
-   "first": 1311,
-   "last": 1331,
+   "first": 1671,
+   "last": 1691,
    "frames": 20,
    "seconds": 0.6667,
    "loop": false,
@@ -2347,6 +4359,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.3,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       20
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       20
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -2360,12 +4390,12 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.006,
-    "guard_silhouette_change": 0.189
+    "guard_silhouette_change": 0.186
    }
   },
   "GuardHit": {
-   "first": 1341,
-   "last": 1356,
+   "first": 1701,
+   "last": 1716,
    "frames": 15,
    "seconds": 0.5,
    "loop": false,
@@ -2392,6 +4422,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       15
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       14
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.04,
@@ -2408,8 +4456,8 @@
    }
   },
   "Counter": {
-   "first": 1366,
-   "last": 1382,
+   "first": 1726,
+   "last": 1742,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -2437,6 +4485,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.05,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       0,
+       16
+      ],
+      0.1
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.04,
@@ -2453,8 +4519,8 @@
    }
   },
   "CounterStrike": {
-   "first": 1392,
-   "last": 1418,
+   "first": 1752,
+   "last": 1778,
    "frames": 26,
    "seconds": 0.8667,
    "loop": false,
@@ -2496,6 +4562,10 @@
     ],
     "chain_from": "COIL",
     "chain_to": "READY",
+    "reach_variants": [
+     "CounterStrike_Mid",
+     "CounterStrike_Close"
+    ],
     "phase": 1
    },
    "normalized": {
@@ -2535,13 +4605,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 7,
-     "t": 0.2692,
+     "frame": 6,
+     "t": 0.2308,
      "fn": "Step"
     },
     {
-     "frame": 18,
-     "t": 0.6923,
+     "frame": 16,
+     "t": 0.6154,
      "fn": "Step"
     }
    ],
@@ -2586,7 +4656,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.81,
+    "plant_drift_cm": 0.1,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       24
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 8.9,
     "reach_m": 1.3,
@@ -2597,7 +4685,7 @@
     "tip_peak_mps": 61.1,
     "tip_outside_ratio": 0.16,
     "apex_tip_mps": [
-     1.2,
+     0.0,
      2.5
     ],
     "chain_chain_from_deg": [
@@ -2610,21 +4698,399 @@
      "",
      0.0
     ],
+    "reach_same_deg": {
+     "CounterStrike_Mid": [
+      0.04,
+      "Foot_R",
+      1
+     ],
+     "CounterStrike_Close": [
+      0.04,
+      "Foot_R",
+      1
+     ]
+    },
     "max_height_m": 2.6,
-    "min_z_m": -0.01,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.324
+   }
+  },
+  "CounterStrike_Mid": {
+   "first": 1788,
+   "last": 1814,
+   "frames": 26,
+   "seconds": 0.8667,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     3
+    ],
+    "apex": 3,
+    "hold": [
+     0,
+     3
+    ],
+    "contact": 7,
+    "active": [
+     7,
+     9
+    ],
+    "recover": [
+     9,
+     26
+    ],
+    "lunge": [
+     3,
+     19,
+     0.318
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "COIL",
+    "chain_to": "READY",
+    "phase": 1
+   },
+   "normalized": {
+    "apex": 0.1154,
+    "contact": 0.2692,
+    "tell": [
+     0.0,
+     0.1154
+    ],
+    "hold": [
+     0.0,
+     0.1154
+    ],
+    "active": [
+     0.2692,
+     0.3462
+    ],
+    "recover": [
+     0.3462,
+     1.0
+    ],
+    "lunge": [
+     0.1154,
+     0.7308,
+     0.318
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1154,
+     "fn": "Apex"
+    },
+    {
+     "frame": 7,
+     "t": 0.2692,
+     "fn": "Strike"
+    },
+    {
+     "frame": 6,
+     "t": 0.2308,
+     "fn": "Step"
+    },
+    {
+     "frame": 16,
+     "t": 0.6154,
+     "fn": "Step"
+    }
+   ],
+   "notes": "sale de COIL (el final de Counter): palma corta con medio paso (o la estocada del bastón), pega en f7. Variante de paso corto (la elige el jefe en la suelta)",
+   "reach_m": 1.2,
+   "strike_height_m": [
+    1.3,
+    1.33
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0398,
+    0.0795,
+    0.1351,
+    0.1908,
+    0.2504,
+    0.2703,
+    0.284,
+    0.2947,
+    0.3024,
+    0.3069,
+    0.3085,
+    0.3095,
+    0.3118,
+    0.3146,
+    0.317,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.1,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       25
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 4.7,
+    "reach_m": 1.2,
+    "strike_height_m": [
+     1.3,
+     1.33
+    ],
+    "tip_peak_mps": 53.9,
+    "tip_outside_ratio": 0.17,
+    "apex_tip_mps": [
+     0.0,
+     1.4
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.324
+   }
+  },
+  "CounterStrike_Close": {
+   "first": 1824,
+   "last": 1850,
+   "frames": 26,
+   "seconds": 0.8667,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     3
+    ],
+    "apex": 3,
+    "hold": [
+     0,
+     3
+    ],
+    "contact": 7,
+    "active": [
+     7,
+     9
+    ],
+    "recover": [
+     9,
+     26
+    ],
+    "lunge": [
+     3,
+     19,
+     0.078
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "COIL",
+    "chain_to": "READY",
+    "phase": 1
+   },
+   "normalized": {
+    "apex": 0.1154,
+    "contact": 0.2692,
+    "tell": [
+     0.0,
+     0.1154
+    ],
+    "hold": [
+     0.0,
+     0.1154
+    ],
+    "active": [
+     0.2692,
+     0.3462
+    ],
+    "recover": [
+     0.3462,
+     1.0
+    ],
+    "lunge": [
+     0.1154,
+     0.7308,
+     0.078
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1154,
+     "fn": "Apex"
+    },
+    {
+     "frame": 7,
+     "t": 0.2692,
+     "fn": "Strike"
+    },
+    {
+     "frame": 6,
+     "t": 0.2308,
+     "fn": "Step"
+    },
+    {
+     "frame": 16,
+     "t": 0.6154,
+     "fn": "Step"
+    }
+   ],
+   "notes": "sale de COIL (el final de Counter): palma corta con medio paso (o la estocada del bastón), pega en f7. Variante de paso corto (la elige el jefe en la suelta)",
+   "reach_m": 1.12,
+   "strike_height_m": [
+    1.32,
+    1.35
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0097,
+    0.0195,
+    0.0331,
+    0.0468,
+    0.0614,
+    0.0663,
+    0.0697,
+    0.0723,
+    0.0742,
+    0.0753,
+    0.0757,
+    0.0759,
+    0.0765,
+    0.0772,
+    0.0778,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.77,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       25
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 1.2,
+    "reach_m": 1.12,
+    "strike_height_m": [
+     1.32,
+     1.35
+    ],
+    "tip_peak_mps": 47.8,
+    "tip_outside_ratio": 0.18,
+    "apex_tip_mps": [
+     0.0,
+     0.5
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.008,
     "tell_silhouette_change": 0.324
    }
   },
   "Taunt": {
-   "first": 1428,
-   "last": 1482,
-   "frames": 54,
-   "seconds": 1.8,
+   "first": 1860,
+   "last": 1920,
+   "frames": 60,
+   "seconds": 2.0,
    "loop": false,
    "phase": 1,
    "variant_of": null,
    "timing": {
     "kind": "none",
+    "open": [
+     14,
+     46
+    ],
     "chain_from": "READY",
     "chain_to": "READY",
     "phase": 1
@@ -2632,23 +5098,51 @@
    "normalized": {},
    "events": [
     {
-     "frame": 15,
-     "t": 0.2778,
+     "frame": 10,
+     "t": 0.1667,
+     "fn": "Step"
+    },
+    {
+     "frame": 14,
+     "t": 0.2333,
+     "fn": "Open"
+    },
+    {
+     "frame": 33,
+     "t": 0.55,
      "fn": "Beckon"
     },
     {
-     "frame": 24,
-     "t": 0.4444,
-     "fn": "Beckon"
+     "frame": 54,
+     "t": 0.9,
+     "fn": "Step"
     }
    ],
-   "notes": "'vení': la palma arriba y los dedos llaman dos veces (f15, f24); re-entrada corta",
+   "notes": "abierto: recoge el pie de adelante, se para alto con los brazos abiertos (f14-46) y llama una vez con el antebrazo (f33); vuelve a la guardia (f60)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 1.2,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.0,
+    "plant_drift_cm": 0.44,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       52,
+       59
+      ],
+      0.7
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       58
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -2660,13 +5154,80 @@
      "Foot_L",
      0.0
     ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.002,
+    "guard_silhouette_change": 0.35,
+    "vs_guard_silhouette": 0.646,
+    "vs_stance_silhouette": 0.603
+   }
+  },
+  "Stance": {
+   "first": 1930,
+   "last": 1950,
+   "frames": 20,
+   "seconds": 0.6667,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "kind": "none",
+    "hold_last": true,
+    "chain_from": "READY",
+    "chain_to": "STANCE",
+    "phase": 1
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "postura del bambú: hundido en el gato, las dos palmas cruzadas adelante (el bastón parado en la fase 3); pose quieta desde f14: el juego deja el último cuadro (BambooMasterBoss.EnterStance)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.41,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.4,
+      [
+       0,
+       20
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       20
+      ],
+      0.0
+     ]
+    },
+    "self_clearance_cm": {
+     "antebrazo L / tronco": [
+      2.9,
+      5
+     ]
+    },
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
     "max_height_m": 2.59,
-    "min_z_m": -0.0
+    "min_z_m": -0.008,
+    "guard_silhouette_change": 0.164,
+    "vs_guard_silhouette": 0.463
    }
   },
   "Hit": {
-   "first": 1492,
-   "last": 1510,
+   "first": 1960,
+   "last": 1978,
    "frames": 18,
    "seconds": 0.6,
    "loop": false,
@@ -2719,6 +5280,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       6
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       5,
+       17
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 0.9,
     "chain_chain_from_deg": [
@@ -2736,8 +5315,8 @@
    }
   },
   "HitHeavy": {
-   "first": 1520,
-   "last": 1547,
+   "first": 1988,
+   "last": 2015,
    "frames": 27,
    "seconds": 0.9,
    "loop": false,
@@ -2799,6 +5378,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.18,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       0,
+       8
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.2,
+      [
+       0,
+       2
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.7,
     "chain_chain_from_deg": [
@@ -2816,8 +5413,8 @@
    }
   },
   "Parried": {
-   "first": 1557,
-   "last": 1587,
+   "first": 2025,
+   "last": 2055,
    "frames": 30,
    "seconds": 1.0,
    "loop": false,
@@ -2894,6 +5491,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.16,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.5,
+      [
+       0,
+       5
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.1,
+      [
+       5,
+       29
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.9,
     "chain_chain_to_deg": [
@@ -2906,8 +5521,8 @@
    }
   },
   "ParriedPerfect": {
-   "first": 1597,
-   "last": 1633,
+   "first": 2065,
+   "last": 2101,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -2990,6 +5605,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.14,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       6,
+       36
+      ],
+      0.1
+     ],
+     "Foot_L": [
+      0.4,
+      [
+       4,
+       8
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {
      "antebrazo L / tronco": [
       4.8,
@@ -3007,8 +5640,8 @@
    }
   },
   "Exhausted": {
-   "first": 1643,
-   "last": 1763,
+   "first": 2111,
+   "last": 2231,
    "frames": 120,
    "seconds": 4.0,
    "loop": false,
@@ -3058,7 +5691,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.87,
+    "plant_drift_cm": 1.8,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       120
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.7,
+      [
+       0,
+       6
+      ],
+      1.7
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -3071,12 +5722,12 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.028
+    "min_z_m": -0.015
    }
   },
   "ExhaustedHit": {
-   "first": 1773,
-   "last": 1789,
+   "first": 2241,
+   "last": 2257,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -3097,6 +5748,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -3108,13 +5777,13 @@
      "",
      0.0
     ],
-    "max_height_m": 1.99,
-    "min_z_m": -0.019
+    "max_height_m": 2.04,
+    "min_z_m": -0.015
    }
   },
   "ExhaustedRise": {
-   "first": 1799,
-   "last": 1821,
+   "first": 2267,
+   "last": 2289,
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
@@ -3134,7 +5803,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.62,
+    "plant_drift_cm": 1.8,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       22
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       22
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -3147,12 +5834,12 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.028
+    "min_z_m": -0.015
    }
   },
   "Guard_P2": {
-   "first": 1831,
-   "last": 1851,
+   "first": 2299,
+   "last": 2319,
    "frames": 20,
    "seconds": 0.6667,
    "loop": false,
@@ -3174,6 +5861,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.3,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       20
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       20
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -3187,12 +5892,12 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.006,
-    "guard_silhouette_change": 0.162
+    "guard_silhouette_change": 0.161
    }
   },
   "GuardHit_P2": {
-   "first": 1861,
-   "last": 1876,
+   "first": 2329,
+   "last": 2344,
    "frames": 15,
    "seconds": 0.5,
    "loop": false,
@@ -3219,6 +5924,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       15
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       14
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.04,
@@ -3235,8 +5958,8 @@
    }
   },
   "Counter_P2": {
-   "first": 1886,
-   "last": 1902,
+   "first": 2354,
+   "last": 2370,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -3264,6 +5987,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.05,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       0,
+       16
+      ],
+      0.1
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.04,
@@ -3280,8 +6021,8 @@
    }
   },
   "CounterStrike_P2": {
-   "first": 1912,
-   "last": 1938,
+   "first": 2380,
+   "last": 2406,
    "frames": 26,
    "seconds": 0.8667,
    "loop": false,
@@ -3323,6 +6064,10 @@
     ],
     "chain_from": "COIL",
     "chain_to": "READY",
+    "reach_variants": [
+     "CounterStrike_Mid_P2",
+     "CounterStrike_Close_P2"
+    ],
     "phase": 2
    },
    "normalized": {
@@ -3362,13 +6107,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 7,
-     "t": 0.2692,
+     "frame": 6,
+     "t": 0.2308,
      "fn": "Step"
     },
     {
-     "frame": 18,
-     "t": 0.6923,
+     "frame": 16,
+     "t": 0.6154,
      "fn": "Step"
     }
    ],
@@ -3413,7 +6158,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.81,
+    "plant_drift_cm": 0.1,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       24
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 8.9,
     "reach_m": 1.3,
@@ -3424,7 +6187,7 @@
     "tip_peak_mps": 61.1,
     "tip_outside_ratio": 0.16,
     "apex_tip_mps": [
-     1.2,
+     0.0,
      2.5
     ],
     "chain_chain_from_deg": [
@@ -3437,21 +6200,399 @@
      "",
      0.0
     ],
+    "reach_same_deg": {
+     "CounterStrike_Mid_P2": [
+      0.04,
+      "Foot_R",
+      1
+     ],
+     "CounterStrike_Close_P2": [
+      0.04,
+      "Foot_R",
+      1
+     ]
+    },
     "max_height_m": 2.6,
-    "min_z_m": -0.01,
-    "tell_silhouette_change": 0.219
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.22
+   }
+  },
+  "CounterStrike_Mid_P2": {
+   "first": 2416,
+   "last": 2442,
+   "frames": 26,
+   "seconds": 0.8667,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "CounterStrike_Mid",
+   "timing": {
+    "tell": [
+     0,
+     3
+    ],
+    "apex": 3,
+    "hold": [
+     0,
+     3
+    ],
+    "contact": 7,
+    "active": [
+     7,
+     9
+    ],
+    "recover": [
+     9,
+     26
+    ],
+    "lunge": [
+     3,
+     19,
+     0.318
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "COIL",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.1154,
+    "contact": 0.2692,
+    "tell": [
+     0.0,
+     0.1154
+    ],
+    "hold": [
+     0.0,
+     0.1154
+    ],
+    "active": [
+     0.2692,
+     0.3462
+    ],
+    "recover": [
+     0.3462,
+     1.0
+    ],
+    "lunge": [
+     0.1154,
+     0.7308,
+     0.318
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1154,
+     "fn": "Apex"
+    },
+    {
+     "frame": 7,
+     "t": 0.2692,
+     "fn": "Strike"
+    },
+    {
+     "frame": 6,
+     "t": 0.2308,
+     "fn": "Step"
+    },
+    {
+     "frame": 16,
+     "t": 0.6154,
+     "fn": "Step"
+    }
+   ],
+   "notes": "sale de COIL (el final de Counter): palma corta con medio paso (o la estocada del bastón), pega en f7. Variante de paso corto (la elige el jefe en la suelta)",
+   "reach_m": 1.2,
+   "strike_height_m": [
+    1.3,
+    1.33
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0398,
+    0.0795,
+    0.1351,
+    0.1908,
+    0.2504,
+    0.2703,
+    0.284,
+    0.2947,
+    0.3024,
+    0.3069,
+    0.3085,
+    0.3095,
+    0.3118,
+    0.3146,
+    0.317,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.1,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       25
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 4.7,
+    "reach_m": 1.2,
+    "strike_height_m": [
+     1.3,
+     1.33
+    ],
+    "tip_peak_mps": 53.9,
+    "tip_outside_ratio": 0.17,
+    "apex_tip_mps": [
+     0.0,
+     1.4
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.22
+   }
+  },
+  "CounterStrike_Close_P2": {
+   "first": 2452,
+   "last": 2478,
+   "frames": 26,
+   "seconds": 0.8667,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "CounterStrike_Close",
+   "timing": {
+    "tell": [
+     0,
+     3
+    ],
+    "apex": 3,
+    "hold": [
+     0,
+     3
+    ],
+    "contact": 7,
+    "active": [
+     7,
+     9
+    ],
+    "recover": [
+     9,
+     26
+    ],
+    "lunge": [
+     3,
+     19,
+     0.078
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "COIL",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.1154,
+    "contact": 0.2692,
+    "tell": [
+     0.0,
+     0.1154
+    ],
+    "hold": [
+     0.0,
+     0.1154
+    ],
+    "active": [
+     0.2692,
+     0.3462
+    ],
+    "recover": [
+     0.3462,
+     1.0
+    ],
+    "lunge": [
+     0.1154,
+     0.7308,
+     0.078
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1154,
+     "fn": "Apex"
+    },
+    {
+     "frame": 7,
+     "t": 0.2692,
+     "fn": "Strike"
+    },
+    {
+     "frame": 6,
+     "t": 0.2308,
+     "fn": "Step"
+    },
+    {
+     "frame": 16,
+     "t": 0.6154,
+     "fn": "Step"
+    }
+   ],
+   "notes": "sale de COIL (el final de Counter): palma corta con medio paso (o la estocada del bastón), pega en f7. Variante de paso corto (la elige el jefe en la suelta)",
+   "reach_m": 1.12,
+   "strike_height_m": [
+    1.32,
+    1.35
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0097,
+    0.0195,
+    0.0331,
+    0.0468,
+    0.0614,
+    0.0663,
+    0.0697,
+    0.0723,
+    0.0742,
+    0.0753,
+    0.0757,
+    0.0759,
+    0.0765,
+    0.0772,
+    0.0778,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.77,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       25
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 1.2,
+    "reach_m": 1.12,
+    "strike_height_m": [
+     1.32,
+     1.35
+    ],
+    "tip_peak_mps": 47.8,
+    "tip_outside_ratio": 0.18,
+    "apex_tip_mps": [
+     0.0,
+     0.5
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.22
    }
   },
   "Taunt_P2": {
-   "first": 1948,
-   "last": 2002,
-   "frames": 54,
-   "seconds": 1.8,
+   "first": 2488,
+   "last": 2548,
+   "frames": 60,
+   "seconds": 2.0,
    "loop": false,
    "phase": 2,
    "variant_of": "Taunt",
    "timing": {
     "kind": "none",
+    "open": [
+     14,
+     46
+    ],
     "chain_from": "READY",
     "chain_to": "READY",
     "phase": 2
@@ -3459,23 +6600,51 @@
    "normalized": {},
    "events": [
     {
-     "frame": 15,
-     "t": 0.2778,
+     "frame": 10,
+     "t": 0.1667,
+     "fn": "Step"
+    },
+    {
+     "frame": 14,
+     "t": 0.2333,
+     "fn": "Open"
+    },
+    {
+     "frame": 33,
+     "t": 0.55,
      "fn": "Beckon"
     },
     {
-     "frame": 24,
-     "t": 0.4444,
-     "fn": "Beckon"
+     "frame": 54,
+     "t": 0.9,
+     "fn": "Step"
     }
    ],
-   "notes": "'vení': la palma arriba y los dedos llaman dos veces (f15, f24); re-entrada corta",
+   "notes": "abierto: recoge el pie de adelante, se para alto con los brazos abiertos (f14-46) y llama una vez con el antebrazo (f33); vuelve a la guardia (f60)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 1.2,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.0,
+    "plant_drift_cm": 0.44,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       52,
+       59
+      ],
+      0.7
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       58
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -3487,13 +6656,75 @@
      "Foot_L",
      0.0
     ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.002,
+    "guard_silhouette_change": 0.328,
+    "vs_guard_silhouette": 0.66,
+    "vs_stance_silhouette": 0.609
+   }
+  },
+  "Stance_P2": {
+   "first": 2558,
+   "last": 2578,
+   "frames": 20,
+   "seconds": 0.6667,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "Stance",
+   "timing": {
+    "kind": "none",
+    "hold_last": true,
+    "chain_from": "READY",
+    "chain_to": "STANCE",
+    "phase": 2
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "postura del bambú: hundido en el gato, las dos palmas cruzadas adelante (el bastón parado en la fase 3); pose quieta desde f14: el juego deja el último cuadro (BambooMasterBoss.EnterStance)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.41,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.4,
+      [
+       0,
+       20
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       20
+      ],
+      0.0
+     ]
+    },
+    "self_clearance_cm": {},
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
     "max_height_m": 2.59,
-    "min_z_m": -0.0
+    "min_z_m": -0.008,
+    "guard_silhouette_change": 0.17,
+    "vs_guard_silhouette": 0.427
    }
   },
   "Hit_P2": {
-   "first": 2012,
-   "last": 2030,
+   "first": 2588,
+   "last": 2606,
    "frames": 18,
    "seconds": 0.6,
    "loop": false,
@@ -3546,6 +6777,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       6
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       5,
+       17
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 0.9,
     "chain_chain_from_deg": [
@@ -3563,8 +6812,8 @@
    }
   },
   "HitHeavy_P2": {
-   "first": 2040,
-   "last": 2067,
+   "first": 2616,
+   "last": 2643,
    "frames": 27,
    "seconds": 0.9,
    "loop": false,
@@ -3626,6 +6875,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.18,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       0,
+       8
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.2,
+      [
+       0,
+       2
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.7,
     "chain_chain_from_deg": [
@@ -3643,8 +6910,8 @@
    }
   },
   "Parried_P2": {
-   "first": 2077,
-   "last": 2107,
+   "first": 2653,
+   "last": 2683,
    "frames": 30,
    "seconds": 1.0,
    "loop": false,
@@ -3721,6 +6988,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.16,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.5,
+      [
+       0,
+       5
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.1,
+      [
+       5,
+       29
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.9,
     "chain_chain_to_deg": [
@@ -3733,8 +7018,8 @@
    }
   },
   "ParriedPerfect_P2": {
-   "first": 2117,
-   "last": 2153,
+   "first": 2693,
+   "last": 2729,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -3817,6 +7102,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.14,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       6,
+       36
+      ],
+      0.1
+     ],
+     "Foot_L": [
+      0.4,
+      [
+       4,
+       8
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 5.8,
     "chain_chain_to_deg": [
@@ -3829,8 +7132,8 @@
    }
   },
   "Exhausted_P2": {
-   "first": 2163,
-   "last": 2283,
+   "first": 2739,
+   "last": 2859,
    "frames": 120,
    "seconds": 4.0,
    "loop": false,
@@ -3880,7 +7183,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.87,
+    "plant_drift_cm": 1.8,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       120
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.7,
+      [
+       0,
+       6
+      ],
+      1.7
+     ]
+    },
     "self_clearance_cm": {
      "antebrazo L / tronco": [
       5.2,
@@ -3898,12 +7219,12 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.028
+    "min_z_m": -0.015
    }
   },
   "ExhaustedHit_P2": {
-   "first": 2293,
-   "last": 2309,
+   "first": 2869,
+   "last": 2885,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -3924,6 +7245,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -3935,13 +7274,13 @@
      "",
      0.0
     ],
-    "max_height_m": 1.99,
-    "min_z_m": -0.019
+    "max_height_m": 2.04,
+    "min_z_m": -0.015
    }
   },
   "ExhaustedRise_P2": {
-   "first": 2319,
-   "last": 2341,
+   "first": 2895,
+   "last": 2917,
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
@@ -3961,7 +7300,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.62,
+    "plant_drift_cm": 1.8,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       22
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       22
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -3974,12 +7331,12 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.028
+    "min_z_m": -0.015
    }
   },
   "Guard_P3": {
-   "first": 2351,
-   "last": 2371,
+   "first": 2927,
+   "last": 2947,
    "frames": 20,
    "seconds": 0.6667,
    "loop": false,
@@ -4001,18 +7358,32 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.3,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       20
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       20
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
+      3.9,
       0
      ],
      "bastón / muslo L": [
-      0.8,
+      2.3,
       0
-     ],
-     "antebrazo L / tronco": [
-      5.1,
-      1
      ]
     },
     "chain_chain_from_deg": [
@@ -4027,12 +7398,12 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.006,
-    "guard_silhouette_change": 0.306
+    "guard_silhouette_change": 0.3
    }
   },
   "GuardHit_P3": {
-   "first": 2381,
-   "last": 2396,
+   "first": 2957,
+   "last": 2972,
    "frames": 15,
    "seconds": 0.5,
    "loop": false,
@@ -4059,6 +7430,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       15
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       14
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -4075,8 +7464,8 @@
    }
   },
   "Counter_P3": {
-   "first": 2406,
-   "last": 2422,
+   "first": 2982,
+   "last": 2998,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -4100,20 +7489,29 @@
    "notes": "desvío circular (la hoja de Kaito sale hacia la izquierda del maestro en f2-3) y se enrosca: termina en COIL para el golpe del contraataque (CounterStrike)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 1.3,
      "legs": 0.0
     },
     "plant_drift_cm": 0.05,
-    "self_clearance_cm": {
-     "bastón / tronco": [
-      1.1,
-      16
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       0,
+       16
+      ],
+      0.1
      ],
-     "bastón / muslo L": [
-      3.6,
-      16
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
      ]
     },
+    "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
      "",
@@ -4129,8 +7527,8 @@
    }
   },
   "CounterStrike_P3": {
-   "first": 2432,
-   "last": 2458,
+   "first": 3008,
+   "last": 3034,
    "frames": 26,
    "seconds": 0.8667,
    "loop": false,
@@ -4172,6 +7570,10 @@
     ],
     "chain_from": "COIL",
     "chain_to": "READY",
+    "reach_variants": [
+     "CounterStrike_Mid_P3",
+     "CounterStrike_Close_P3"
+    ],
     "phase": 3
    },
    "normalized": {
@@ -4211,13 +7613,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 7,
-     "t": 0.2692,
+     "frame": 6,
+     "t": 0.2308,
      "fn": "Step"
     },
     {
-     "frame": 18,
-     "t": 0.6923,
+     "frame": 16,
+     "t": 0.6154,
      "fn": "Step"
     }
    ],
@@ -4262,18 +7664,36 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.81,
+    "plant_drift_cm": 0.1,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       16
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      26
-     ],
-     "bastón / muslo L": [
-      0.8,
+      3.9,
       18
      ],
+     "bastón / muslo L": [
+      2.3,
+      26
+     ],
      "antebrazo L / tronco": [
-      4.0,
+      5.7,
       11
      ]
     },
@@ -4283,15 +7703,221 @@
      1.15,
      1.17
     ],
-    "tip_peak_mps": 83.5,
+    "tip_peak_mps": 82.4,
     "tip_outside_ratio": 0.15,
     "apex_tip_mps": [
-     1.0,
+     0.1,
      2.8
     ],
     "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
      0.04,
-     "Forearm_L",
+     "Thumb_R_1",
+     0.0
+    ],
+    "reach_same_deg": {
+     "CounterStrike_Mid_P3": [
+      0.04,
+      "Foot_R",
+      1
+     ],
+     "CounterStrike_Close_P3": [
+      0.04,
+      "Foot_R",
+      1
+     ]
+    },
+    "max_height_m": 2.6,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.296
+   }
+  },
+  "CounterStrike_Mid_P3": {
+   "first": 3044,
+   "last": 3070,
+   "frames": 26,
+   "seconds": 0.8667,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "CounterStrike_Mid",
+   "timing": {
+    "tell": [
+     0,
+     3
+    ],
+    "apex": 3,
+    "hold": [
+     0,
+     3
+    ],
+    "contact": 7,
+    "active": [
+     7,
+     9
+    ],
+    "recover": [
+     9,
+     26
+    ],
+    "lunge": [
+     3,
+     19,
+     0.318
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintStaff",
+    "strike": [
+     "Staff",
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "chain_from": "COIL",
+    "chain_to": "READY",
+    "phase": 3
+   },
+   "normalized": {
+    "apex": 0.1154,
+    "contact": 0.2692,
+    "tell": [
+     0.0,
+     0.1154
+    ],
+    "hold": [
+     0.0,
+     0.1154
+    ],
+    "active": [
+     0.2692,
+     0.3462
+    ],
+    "recover": [
+     0.3462,
+     1.0
+    ],
+    "lunge": [
+     0.1154,
+     0.7308,
+     0.318
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1154,
+     "fn": "Apex"
+    },
+    {
+     "frame": 7,
+     "t": 0.2692,
+     "fn": "Strike"
+    },
+    {
+     "frame": 6,
+     "t": 0.2308,
+     "fn": "Step"
+    },
+    {
+     "frame": 16,
+     "t": 0.6154,
+     "fn": "Step"
+    }
+   ],
+   "notes": "sale de COIL (el final de Counter): palma corta con medio paso (o la estocada del bastón), pega en f7. Variante de paso corto (la elige el jefe en la suelta)",
+   "reach_m": 2.07,
+   "strike_height_m": [
+    1.17,
+    1.19
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0398,
+    0.0795,
+    0.1351,
+    0.1908,
+    0.2504,
+    0.2703,
+    0.284,
+    0.2947,
+    0.3024,
+    0.3069,
+    0.3085,
+    0.3095,
+    0.3118,
+    0.3146,
+    0.317,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318,
+    0.318
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.1,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       26
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      3.9,
+      18
+     ],
+     "bastón / muslo L": [
+      2.3,
+      26
+     ],
+     "antebrazo L / tronco": [
+      5.1,
+      12
+     ]
+    },
+    "root_peak_mps_60hz": 4.7,
+    "reach_m": 2.07,
+    "strike_height_m": [
+     1.17,
+     1.19
+    ],
+    "tip_peak_mps": 60.0,
+    "tip_outside_ratio": 0.14,
+    "apex_tip_mps": [
+     0.1,
+     1.7
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -4300,20 +7926,218 @@
      0.0
     ],
     "max_height_m": 2.6,
-    "min_z_m": -0.01,
-    "tell_silhouette_change": 0.317
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.296
+   }
+  },
+  "CounterStrike_Close_P3": {
+   "first": 3080,
+   "last": 3106,
+   "frames": 26,
+   "seconds": 0.8667,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "CounterStrike_Close",
+   "timing": {
+    "tell": [
+     0,
+     3
+    ],
+    "apex": 3,
+    "hold": [
+     0,
+     3
+    ],
+    "contact": 7,
+    "active": [
+     7,
+     9
+    ],
+    "recover": [
+     9,
+     26
+    ],
+    "lunge": [
+     3,
+     19,
+     0.078
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintStaff",
+    "strike": [
+     "Staff",
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "chain_from": "COIL",
+    "chain_to": "READY",
+    "phase": 3
+   },
+   "normalized": {
+    "apex": 0.1154,
+    "contact": 0.2692,
+    "tell": [
+     0.0,
+     0.1154
+    ],
+    "hold": [
+     0.0,
+     0.1154
+    ],
+    "active": [
+     0.2692,
+     0.3462
+    ],
+    "recover": [
+     0.3462,
+     1.0
+    ],
+    "lunge": [
+     0.1154,
+     0.7308,
+     0.078
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1154,
+     "fn": "Apex"
+    },
+    {
+     "frame": 7,
+     "t": 0.2692,
+     "fn": "Strike"
+    },
+    {
+     "frame": 6,
+     "t": 0.2308,
+     "fn": "Step"
+    },
+    {
+     "frame": 16,
+     "t": 0.6154,
+     "fn": "Step"
+    }
+   ],
+   "notes": "sale de COIL (el final de Counter): palma corta con medio paso (o la estocada del bastón), pega en f7. Variante de paso corto (la elige el jefe en la suelta)",
+   "reach_m": 1.7,
+   "strike_height_m": [
+    1.19,
+    1.21
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0097,
+    0.0195,
+    0.0331,
+    0.0468,
+    0.0614,
+    0.0663,
+    0.0697,
+    0.0723,
+    0.0742,
+    0.0753,
+    0.0757,
+    0.0759,
+    0.0765,
+    0.0772,
+    0.0778,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078,
+    0.078
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 2.6,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.77,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       6,
+       26
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       10
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      3.9,
+      18
+     ],
+     "bastón / muslo L": [
+      2.3,
+      26
+     ],
+     "antebrazo L / tronco": [
+      2.4,
+      13
+     ]
+    },
+    "root_peak_mps_60hz": 1.2,
+    "reach_m": 1.7,
+    "strike_height_m": [
+     1.19,
+     1.21
+    ],
+    "tip_peak_mps": 42.8,
+    "tip_outside_ratio": 0.13,
+    "apex_tip_mps": [
+     0.1,
+     0.8
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.296
    }
   },
   "Taunt_P3": {
-   "first": 2468,
-   "last": 2522,
-   "frames": 54,
-   "seconds": 1.8,
+   "first": 3116,
+   "last": 3176,
+   "frames": 60,
+   "seconds": 2.0,
    "loop": false,
    "phase": 3,
    "variant_of": "Taunt",
    "timing": {
     "kind": "none",
+    "open": [
+     14,
+     46
+    ],
     "chain_from": "READY",
     "chain_to": "READY",
     "phase": 3
@@ -4321,35 +8145,63 @@
    "normalized": {},
    "events": [
     {
-     "frame": 15,
-     "t": 0.2778,
+     "frame": 10,
+     "t": 0.1667,
+     "fn": "Step"
+    },
+    {
+     "frame": 14,
+     "t": 0.2333,
+     "fn": "Open"
+    },
+    {
+     "frame": 33,
+     "t": 0.55,
      "fn": "Beckon"
     },
     {
-     "frame": 24,
-     "t": 0.4444,
-     "fn": "Beckon"
+     "frame": 54,
+     "t": 0.9,
+     "fn": "Step"
     }
    ],
-   "notes": "'vení': la palma arriba y los dedos llaman dos veces (f15, f24); re-entrada corta",
+   "notes": "abierto: recoge el pie de adelante, se para alto con los brazos abiertos (f14-46) y llama una vez con el antebrazo (f33); vuelve a la guardia (f60)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 1.2,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.0,
+    "plant_drift_cm": 0.44,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       52,
+       59
+      ],
+      0.7
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       58
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      54
+      3.9,
+      0
      ],
      "bastón / muslo L": [
-      0.8,
-      0
+      2.3,
+      60
      ],
      "antebrazo L / tronco": [
-      5.5,
-      0
+      5.7,
+      54
      ]
     },
     "chain_chain_from_deg": [
@@ -4359,16 +8211,91 @@
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Hand_R",
+     "Thumb_R_1",
+     0.0
+    ],
+    "max_height_m": 2.6,
+    "min_z_m": -0.002,
+    "guard_silhouette_change": 0.428,
+    "vs_guard_silhouette": 0.701,
+    "vs_stance_silhouette": 0.692
+   }
+  },
+  "Stance_P3": {
+   "first": 3186,
+   "last": 3206,
+   "frames": 20,
+   "seconds": 0.6667,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "Stance",
+   "timing": {
+    "kind": "none",
+    "hold_last": true,
+    "chain_from": "READY",
+    "chain_to": "STANCE",
+    "phase": 3
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "postura del bambú: hundido en el gato, las dos palmas cruzadas adelante (el bastón parado en la fase 3); pose quieta desde f14: el juego deja el último cuadro (BambooMasterBoss.EnterStance)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.4,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.3,
+      [
+       0,
+       20
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       20
+      ],
+      0.0
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      2.5,
+      10
+     ],
+     "bastón / muslo L": [
+      1.6,
+      5
+     ],
+     "antebrazo L / tronco": [
+      1.4,
+      11
+     ]
+    },
+    "chain_chain_from_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.0
+    "min_z_m": -0.008,
+    "guard_silhouette_change": 0.179,
+    "vs_guard_silhouette": 0.482
    }
   },
   "Hit_P3": {
-   "first": 2532,
-   "last": 2550,
+   "first": 3216,
+   "last": 3234,
    "frames": 18,
    "seconds": 0.6,
    "loop": false,
@@ -4421,18 +8348,32 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       6
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       5,
+       17
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.0,
-      12
+      3.9,
+      0
      ],
      "bastón / muslo L": [
-      0.7,
-      8
-     ],
-     "antebrazo L / tronco": [
-      2.9,
-      2
+      2.2,
+      13
      ]
     },
     "root_peak_mps_60hz": 0.9,
@@ -4443,7 +8384,7 @@
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Hand_R",
+     "Thumb_R_1",
      0.0
     ],
     "max_height_m": 2.59,
@@ -4451,8 +8392,8 @@
    }
   },
   "HitHeavy_P3": {
-   "first": 2560,
-   "last": 2587,
+   "first": 3244,
+   "last": 3271,
    "frames": 27,
    "seconds": 0.9,
    "loop": false,
@@ -4510,22 +8451,36 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.7,
+     "hands": 2.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.18,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       0,
+       8
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.2,
+      [
+       0,
+       2
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.0,
-      21
+      3.9,
+      22
      ],
      "bastón / muslo L": [
-      -1.1,
+      1.1,
       1
-     ],
-     "antebrazo L / tronco": [
-      2.3,
-      9
      ]
     },
     "root_peak_mps_60hz": 2.7,
@@ -4536,7 +8491,7 @@
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Hand_R",
+     "Thumb_R_1",
      0.0
     ],
     "max_height_m": 2.59,
@@ -4544,8 +8499,8 @@
    }
   },
   "Parried_P3": {
-   "first": 2597,
-   "last": 2627,
+   "first": 3281,
+   "last": 3311,
    "frames": 30,
    "seconds": 1.0,
    "loop": false,
@@ -4622,24 +8577,42 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.16,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.5,
+      [
+       0,
+       5
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.1,
+      [
+       5,
+       29
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.4,
-      20
+      3.4,
+      19
      ],
      "bastón / muslo L": [
-      -0.5,
+      0.9,
       20
      ],
      "antebrazo L / tronco": [
-      1.0,
+      5.8,
       7
      ]
     },
     "root_peak_mps_60hz": 2.9,
     "chain_chain_to_deg": [
      0.04,
-     "Hand_R",
+     "Thumb_R_1",
      0.0
     ],
     "max_height_m": 2.59,
@@ -4647,8 +8620,8 @@
    }
   },
   "ParriedPerfect_P3": {
-   "first": 2637,
-   "last": 2673,
+   "first": 3321,
+   "last": 3357,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -4731,24 +8704,42 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.14,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       6,
+       36
+      ],
+      0.1
+     ],
+     "Foot_L": [
+      0.4,
+      [
+       4,
+       8
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.8,
+      3.1,
       25
      ],
      "bastón / muslo L": [
-      -1.3,
+      0.1,
       25
      ],
      "antebrazo L / tronco": [
-      0.9,
+      5.8,
       12
      ]
     },
     "root_peak_mps_60hz": 5.8,
     "chain_chain_to_deg": [
      0.04,
-     "Hand_R",
+     "Thumb_R_1",
      0.0
     ],
     "max_height_m": 2.59,
@@ -4756,8 +8747,8 @@
    }
   },
   "Exhausted_P3": {
-   "first": 2683,
-   "last": 2803,
+   "first": 3367,
+   "last": 3487,
    "frames": 120,
    "seconds": 4.0,
    "loop": false,
@@ -4807,18 +8798,36 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.87,
+    "plant_drift_cm": 1.8,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       120
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.7,
+      [
+       0,
+       6
+      ],
+      1.7
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      120
-     ],
-     "bastón / muslo L": [
-      0.8,
+      3.9,
       0
      ],
+     "bastón / muslo L": [
+      2.3,
+      120
+     ],
      "antebrazo L / tronco": [
-      -3.9,
+      0.5,
       9
      ]
     },
@@ -4833,12 +8842,12 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.028
+    "min_z_m": -0.015
    }
   },
   "ExhaustedHit_P3": {
-   "first": 2813,
-   "last": 2829,
+   "first": 3497,
+   "last": 3513,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -4859,6 +8868,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       16
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -4870,13 +8897,13 @@
      "",
      0.0
     ],
-    "max_height_m": 1.99,
-    "min_z_m": -0.019
+    "max_height_m": 2.04,
+    "min_z_m": -0.015
    }
   },
   "ExhaustedRise_P3": {
-   "first": 2839,
-   "last": 2861,
+   "first": 3523,
+   "last": 3545,
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
@@ -4896,18 +8923,36 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.62,
+    "plant_drift_cm": 1.8,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       22
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       12,
+       22
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      22
+      3.9,
+      21
      ],
      "bastón / muslo L": [
-      0.8,
-      20
+      2.3,
+      22
      ],
      "antebrazo L / tronco": [
-      -1.9,
+      1.2,
       7
      ]
     },
@@ -4922,12 +8967,12 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.028
+    "min_z_m": -0.015
    }
   },
   "Intro": {
-   "first": 2871,
-   "last": 2991,
+   "first": 3555,
+   "last": 3675,
    "frames": 120,
    "seconds": 4.0,
    "loop": false,
@@ -4974,6 +9019,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.33,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       89
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       96
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {
      "antebrazo L / tronco": [
       2.1,
@@ -4986,8 +9049,8 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.04,
+     "Foot_L",
      0.0
     ],
     "max_height_m": 2.65,
@@ -4995,8 +9058,8 @@
    }
   },
   "PhaseCoat": {
-   "first": 3001,
-   "last": 3111,
+   "first": 3685,
+   "last": 3795,
    "frames": 110,
    "seconds": 3.6667,
    "loop": false,
@@ -5004,7 +9067,7 @@
    "variant_of": null,
    "timing": {
     "kind": "none",
-    "robe_off": 38,
+    "robe_off": 41,
     "chain_from": "READY",
     "chain_to": "READY2",
     "next_phase": 2,
@@ -5025,49 +9088,72 @@
     {
      "frame": 38,
      "t": 0.3455,
+     "fn": "Shrug"
+    },
+    {
+     "frame": 41,
+     "t": 0.3727,
      "fn": "CoatOff"
     },
     {
-     "frame": 61,
-     "t": 0.5545,
+     "frame": 64,
+     "t": 0.5818,
      "fn": "CoatLand"
     },
     {
-     "frame": 68,
-     "t": 0.6182,
+     "frame": 72,
+     "t": 0.6545,
      "fn": "CoatRest"
     },
     {
-     "frame": 90,
-     "t": 0.8182,
+     "frame": 92,
+     "t": 0.8364,
      "fn": "Guard"
     }
    ],
-   "notes": "se saca el saco: ojos jade en f18, lo agarra (f30) y lo tira atrás de un tirón (f38: apagar Master_Robe y prender Master_RobeThrown); cae detrás a su izquierda (f61) y queda quieto en f68 (hornearlo ahí); termina en la guardia de la fase 2",
+   "notes": "se saca el saco: ojos jade en f18, lo agarra (f30), lo abre y se lo saca de los hombros con los brazos atrás (f38-41: en f41 apagar Master_Robe y prender Master_RobeThrown, ya detrás del cuerpo); sale de los brazos hacia atrás, cae detrás a su izquierda (f64) y queda arrugado en f72 (hornearlo ahí); termina en la guardia de la fase 2",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       110
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       106
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     5.43,
-     "UpperArm_L",
+     0.0,
+     "",
      0.0
     ],
-    "max_height_m": 3.2,
-    "min_z_m": -0.003
+    "max_height_m": 3.06,
+    "min_z_m": -0.0
    }
   },
   "TwinPalm": {
-   "first": 3121,
-   "last": 3159,
+   "first": 3805,
+   "last": 3843,
    "frames": 38,
    "seconds": 1.2667,
    "loop": false,
@@ -5112,6 +9198,10 @@
     ],
     "chain_from": "READY",
     "chain_to": "READY",
+    "reach_variants": [
+     "TwinPalm_Mid",
+     "TwinPalm_Close"
+    ],
     "phase": 2
    },
    "normalized": {
@@ -5151,13 +9241,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 17,
-     "t": 0.4474,
+     "frame": 16,
+     "t": 0.4211,
      "fn": "Step"
     },
     {
-     "frame": 27,
-     "t": 0.7105,
+     "frame": 26,
+     "t": 0.6842,
      "fn": "Step"
     }
    ],
@@ -5214,7 +9304,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.55,
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 15.7,
     "reach_m": 1.23,
@@ -5223,29 +9331,433 @@
      1.32
     ],
     "tip_peak_mps": 53.0,
-    "tip_outside_ratio": 0.1,
+    "tip_outside_ratio": 0.14,
     "apex_tip_mps": [
-     0.4,
-     1.6
+     0.5,
+     0.8
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
+     0.0
+    ],
+    "reach_same_deg": {
+     "TwinPalm_Mid": [
+      0.04,
+      "Foot_R",
+      2
+     ],
+     "TwinPalm_Close": [
+      0.04,
+      "Foot_R",
+      2
+     ]
+    },
+    "max_height_m": 2.59,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.278
+   }
+  },
+  "TwinPalm_Mid": {
+   "first": 3853,
+   "last": 3891,
+   "frames": 38,
+   "seconds": 1.2667,
+   "loop": false,
+   "phase": 2,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     12
+    ],
+    "apex": 12,
+    "hold": [
+     12,
+     14
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     38
+    ],
+    "lunge": [
+     14,
+     28,
+     0.5035
+    ],
+    "kind": "parry",
+    "glow": [
+     "Master_GlintHandR",
+     "Master_GlintHandL"
+    ],
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.3158,
+    "contact": 0.4474,
+    "tell": [
+     0.0,
+     0.3158
+    ],
+    "hold": [
+     0.3158,
+     0.3684
+    ],
+    "active": [
+     0.4474,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3684,
+     0.7368,
+     0.5035
+    ]
+   },
+   "events": [
+    {
+     "frame": 12,
+     "t": 0.3158,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4474,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4211,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.6842,
+     "fn": "Step"
+    }
+   ],
+   "notes": "dos palmas: recogidas a la cintura con el pecho lleno (aviso f12), paso y empuje doble en f17 (0.95 m). Variante de paso corto de TwinPalm (la elige el jefe en la suelta)",
+   "reach_m": 1.14,
+   "strike_height_m": [
+    1.31,
+    1.35
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.141,
+    0.2266,
+    0.3122,
+    0.4028,
+    0.433,
+    0.455,
+    0.4708,
+    0.4802,
+    0.4834,
+    0.4855,
+    0.4904,
+    0.4964,
+    0.5014,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       14
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 8.3,
+    "reach_m": 1.14,
+    "strike_height_m": [
+     1.31,
+     1.35
+    ],
+    "tip_peak_mps": 43.8,
+    "tip_outside_ratio": 0.17,
+    "apex_tip_mps": [
+     0.5,
+     0.8
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.019,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.278
+   }
+  },
+  "TwinPalm_Close": {
+   "first": 3901,
+   "last": 3939,
+   "frames": 38,
+   "seconds": 1.2667,
+   "loop": false,
+   "phase": 2,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     12
+    ],
+    "apex": 12,
+    "hold": [
+     12,
+     14
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     38
+    ],
+    "lunge": [
+     14,
+     28,
+     0.1235
+    ],
+    "kind": "parry",
+    "glow": [
+     "Master_GlintHandR",
+     "Master_GlintHandL"
+    ],
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.3158,
+    "contact": 0.4474,
+    "tell": [
+     0.0,
+     0.3158
+    ],
+    "hold": [
+     0.3158,
+     0.3684
+    ],
+    "active": [
+     0.4474,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3684,
+     0.7368,
+     0.1235
+    ]
+   },
+   "events": [
+    {
+     "frame": 12,
+     "t": 0.3158,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4474,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4211,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.6842,
+     "fn": "Step"
+    }
+   ],
+   "notes": "dos palmas: recogidas a la cintura con el pecho lleno (aviso f12), paso y empuje doble en f17 (0.95 m). Variante de paso corto de TwinPalm (la elige el jefe en la suelta)",
+   "reach_m": 1.05,
+   "strike_height_m": [
+    1.34,
+    1.37
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0346,
+    0.0556,
+    0.0766,
+    0.0988,
+    0.1062,
+    0.1116,
+    0.1155,
+    0.1178,
+    0.1186,
+    0.1191,
+    0.1203,
+    0.1218,
+    0.123,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 1.03,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       14
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 2.0,
+    "reach_m": 1.05,
+    "strike_height_m": [
+     1.34,
+     1.37
+    ],
+    "tip_peak_mps": 36.2,
+    "tip_outside_ratio": 0.2,
+    "apex_tip_mps": [
+     0.5,
+     0.8
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Foot_L",
+     0.0
+    ],
+    "max_height_m": 2.59,
+    "min_z_m": -0.008,
     "tell_silhouette_change": 0.278
    }
   },
   "SpinKick": {
-   "first": 3169,
-   "last": 3213,
+   "first": 3949,
+   "last": 3993,
    "frames": 44,
    "seconds": 1.4667,
    "loop": false,
@@ -5334,7 +9846,25 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.0,
+    "plant_drift_cm": 0.03,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       44
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       33,
+       44
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "reach_m": 1.89,
     "strike_height_m": [
@@ -5342,23 +9872,23 @@
      1.11
     ],
     "chain_chain_from_deg": [
-     5.43,
-     "UpperArm_L",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.04,
+     "Thigh_L",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.001,
-    "tell_silhouette_change": 0.67
+    "tell_silhouette_change": 0.656
    }
   },
   "Sweep": {
-   "first": 3223,
-   "last": 3271,
+   "first": 4003,
+   "last": 4051,
    "frames": 48,
    "seconds": 1.6,
    "loop": false,
@@ -5450,8 +9980,8 @@
    "notes": "barrida: se deja caer con la pierna derecha estirada y las manos en el piso (aviso f12), una vuelta entera en f16-30 a ras del piso (anillo de ring_m), se levanta a la guardia",
    "reach_m": 1.69,
    "strike_height_m": [
-    0.2,
-    0.21
+    0.26,
+    0.27
    ],
    "release_rate": 1.6,
    "lint": {
@@ -5459,31 +9989,49 @@
      "hands": 1.4,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.0,
+    "plant_drift_cm": 0.35,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       39,
+       48
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.1,
+      [
+       0,
+       48
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {},
     "reach_m": 1.69,
     "strike_height_m": [
-     0.2,
-     0.21
+     0.26,
+     0.27
     ],
     "chain_chain_from_deg": [
-     6.7,
-     "Thigh_L",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.022,
+    "min_z_m": -0.008,
     "tell_silhouette_change": 0.455
    }
   },
   "QiWave": {
-   "first": 3281,
-   "last": 3337,
+   "first": 4061,
+   "last": 4117,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -5587,6 +10135,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.16,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       0,
+       30
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       56
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {},
     "reach_m": 1.12,
     "strike_height_m": [
@@ -5594,23 +10160,23 @@
      1.0
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.65,
     "min_z_m": -0.004,
-    "tell_silhouette_change": 0.361
+    "tell_silhouette_change": 0.36
    }
   },
   "DashStrike": {
-   "first": 3347,
-   "last": 3383,
+   "first": 4127,
+   "last": 4163,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -5768,13 +10334,26 @@
      "hands": 0.1,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.77,
-    "self_clearance_cm": {
-     "antebrazo L / tronco": [
-      -1.1,
-      9
+    "plant_drift_cm": 1.46,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.2,
+      [
+       17,
+       36
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.4,
+      [
+       0,
+       8
+      ],
+      0.7
      ]
     },
+    "self_clearance_cm": {},
     "root_peak_mps_60hz": 19.2,
     "reach_m": 1.52,
     "strike_height_m": [
@@ -5782,23 +10361,298 @@
      1.3
     ],
     "chain_chain_from_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     2.63,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.021,
-    "tell_silhouette_change": 0.233
+    "min_z_m": -0.009,
+    "tell_silhouette_change": 0.244
+   }
+  },
+  "BackHop": {
+   "first": 4173,
+   "last": 4195,
+   "frames": 22,
+   "seconds": 0.7333,
+   "loop": false,
+   "phase": 2,
+   "variant_of": null,
+   "timing": {
+    "kind": "none",
+    "apex": 6,
+    "hold": [
+     6,
+     6
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     15
+    ],
+    "recover": [
+     15,
+     22
+    ],
+    "air": [
+     9,
+     15
+    ],
+    "release_rate": 1.0,
+    "root_max": 26.0,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.2727,
+    "contact": 0.6818,
+    "hold": [
+     0.2727,
+     0.2727
+    ],
+    "active": [
+     0.6818,
+     0.6818
+    ],
+    "recover": [
+     0.6818,
+     1.0
+    ],
+    "air": [
+     0.4091,
+     0.6818
+    ]
+   },
+   "events": [
+    {
+     "frame": 9,
+     "t": 0.4091,
+     "fn": "TakeOff"
+    },
+    {
+     "frame": 15,
+     "t": 0.6818,
+     "fn": "Land"
+    }
+   ],
+   "notes": "salto atrás de 2.6 m (sin golpe): se agacha (f6), despega en f9 y cae en f15 en su lugar de la guardia; el avance va todo en timing.air (el jefe lo acorta)",
+   "release_rate": 1.0,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.5494,
+    -1.0335,
+    -1.4711,
+    -1.8736,
+    -2.2482,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.58,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.5,
+      [
+       0,
+       9
+      ],
+      0.5
+     ],
+     "Foot_L": [
+      1.6,
+      [
+       0,
+       9
+      ],
+      0.6
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 20.2,
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.8,
+    "min_z_m": -0.007
+   }
+  },
+  "BackHop_P3": {
+   "first": 4205,
+   "last": 4227,
+   "frames": 22,
+   "seconds": 0.7333,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "BackHop",
+   "timing": {
+    "kind": "none",
+    "apex": 6,
+    "hold": [
+     6,
+     6
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     15
+    ],
+    "recover": [
+     15,
+     22
+    ],
+    "air": [
+     9,
+     15
+    ],
+    "release_rate": 1.0,
+    "root_max": 26.0,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 3
+   },
+   "normalized": {
+    "apex": 0.2727,
+    "contact": 0.6818,
+    "hold": [
+     0.2727,
+     0.2727
+    ],
+    "active": [
+     0.6818,
+     0.6818
+    ],
+    "recover": [
+     0.6818,
+     1.0
+    ],
+    "air": [
+     0.4091,
+     0.6818
+    ]
+   },
+   "events": [
+    {
+     "frame": 9,
+     "t": 0.4091,
+     "fn": "TakeOff"
+    },
+    {
+     "frame": 15,
+     "t": 0.6818,
+     "fn": "Land"
+    }
+   ],
+   "notes": "salto atrás de 2.6 m (sin golpe): se agacha (f6), despega en f9 y cae en f15 en su lugar de la guardia; el avance va todo en timing.air (el jefe lo acorta)",
+   "release_rate": 1.0,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.5494,
+    -1.0335,
+    -1.4711,
+    -1.8736,
+    -2.2482,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.58,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.5,
+      [
+       0,
+       9
+      ],
+      0.5
+     ],
+     "Foot_L": [
+      1.6,
+      [
+       0,
+       9
+      ],
+      0.6
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      0.8,
+      6
+     ],
+     "bastón / muslo L": [
+      -0.8,
+      6
+     ]
+    },
+    "root_peak_mps_60hz": 20.2,
+    "chain_chain_from_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "max_height_m": 2.8,
+    "min_z_m": -0.007
    }
   },
   "Palm_P3": {
-   "first": 3393,
-   "last": 3427,
+   "first": 4237,
+   "last": 4271,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -5840,6 +10694,10 @@
     ],
     "chain_from": "READY",
     "chain_to": "READY",
+    "reach_variants": [
+     "Palm_Mid_P3",
+     "Palm_Close_P3"
+    ],
     "phase": 3
    },
    "normalized": {
@@ -5879,13 +10737,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 15,
-     "t": 0.4412,
+     "frame": 14,
+     "t": 0.4118,
      "fn": "Step"
     },
     {
-     "frame": 25,
-     "t": 0.7353,
+     "frame": 24,
+     "t": 0.7059,
      "fn": "Step"
     }
    ],
@@ -5910,19 +10768,19 @@
     0.0,
     0.0,
     0.0,
-    0.25,
-    0.425,
-    0.6,
-    0.765,
-    0.82,
-    0.8638,
-    0.895,
-    0.9138,
-    0.92,
-    0.9231,
-    0.9306,
-    0.9394,
-    0.9469,
+    0.247,
+    0.4227,
+    0.5985,
+    0.7624,
+    0.817,
+    0.8586,
+    0.8882,
+    0.9061,
+    0.912,
+    0.916,
+    0.9254,
+    0.9366,
+    0.946,
     0.95,
     0.95,
     0.95,
@@ -5935,35 +10793,267 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.1,
+     "hands": 0.3,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.61,
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.0,
-      29
+      0.2,
+      14
      ],
      "bastón / muslo L": [
-      0.8,
-      0
+      1.4,
+      4
      ],
      "antebrazo L / tronco": [
       3.3,
       13
      ]
     },
-    "root_peak_mps_60hz": 14.6,
+    "root_peak_mps_60hz": 14.7,
     "reach_m": 2.4,
     "strike_height_m": [
      0.92,
      0.99
     ],
-    "tip_peak_mps": 74.0,
+    "tip_peak_mps": 74.1,
     "tip_outside_ratio": 0.12,
     "apex_tip_mps": [
      0.5,
-     1.7
+     0.8
+    ],
+    "chain_chain_from_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "reach_same_deg": {
+     "Palm_Mid_P3": [
+      0.06,
+      "Foot_L",
+      1
+     ],
+     "Palm_Close_P3": [
+      0.06,
+      "Foot_L",
+      1
+     ]
+    },
+    "max_height_m": 2.59,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.162
+   }
+  },
+  "Palm_Mid_P3": {
+   "first": 4281,
+   "last": 4315,
+   "frames": 34,
+   "seconds": 1.1333,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "Palm_Mid",
+   "timing": {
+    "tell": [
+     0,
+     10
+    ],
+    "apex": 10,
+    "hold": [
+     10,
+     12
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     17
+    ],
+    "recover": [
+     17,
+     34
+    ],
+    "lunge": [
+     12,
+     26,
+     0.5035
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintStaff",
+    "strike": [
+     "Staff",
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 3
+   },
+   "normalized": {
+    "apex": 0.2941,
+    "contact": 0.4412,
+    "tell": [
+     0.0,
+     0.2941
+    ],
+    "hold": [
+     0.2941,
+     0.3529
+    ],
+    "active": [
+     0.4412,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3529,
+     0.7647,
+     0.5035
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.2941,
+     "fn": "Apex"
+    },
+    {
+     "frame": 15,
+     "t": 0.4412,
+     "fn": "Strike"
+    },
+    {
+     "frame": 14,
+     "t": 0.4118,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.7059,
+     "fn": "Step"
+    }
+   ],
+   "notes": "tsuki del bastón: lo recoge por la izquierda hasta la cadera de atrás (aviso f10) y con el paso lo empuja; se desliza en la derecha y la punta pega a ~2.2 m en f15. Variante de paso corto (agarre largo)",
+   "reach_m": 1.87,
+   "strike_height_m": [
+    0.99,
+    1.04
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.1309,
+    0.2241,
+    0.3172,
+    0.4041,
+    0.433,
+    0.455,
+    0.4708,
+    0.4802,
+    0.4834,
+    0.4855,
+    0.4904,
+    0.4964,
+    0.5014,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035,
+    0.5035
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.3,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.07,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      0.5,
+      4
+     ],
+     "bastón / muslo L": [
+      1.4,
+      4
+     ],
+     "antebrazo L / tronco": [
+      4.9,
+      13
+     ]
+    },
+    "root_peak_mps_60hz": 7.8,
+    "reach_m": 1.87,
+    "strike_height_m": [
+     0.99,
+     1.04
+    ],
+    "tip_peak_mps": 45.2,
+    "tip_outside_ratio": 0.13,
+    "apex_tip_mps": [
+     0.5,
+     0.8
     ],
     "chain_chain_from_deg": [
      0.04,
@@ -5976,13 +11066,215 @@
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.019,
-    "tell_silhouette_change": 0.163
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.162
+   }
+  },
+  "Palm_Close_P3": {
+   "first": 4325,
+   "last": 4359,
+   "frames": 34,
+   "seconds": 1.1333,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "Palm_Close",
+   "timing": {
+    "tell": [
+     0,
+     10
+    ],
+    "apex": 10,
+    "hold": [
+     10,
+     12
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     17
+    ],
+    "recover": [
+     17,
+     34
+    ],
+    "lunge": [
+     12,
+     26,
+     0.1235
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintStaff",
+    "strike": [
+     "Staff",
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 3
+   },
+   "normalized": {
+    "apex": 0.2941,
+    "contact": 0.4412,
+    "tell": [
+     0.0,
+     0.2941
+    ],
+    "hold": [
+     0.2941,
+     0.3529
+    ],
+    "active": [
+     0.4412,
+     0.5
+    ],
+    "recover": [
+     0.5,
+     1.0
+    ],
+    "lunge": [
+     0.3529,
+     0.7647,
+     0.1235
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.2941,
+     "fn": "Apex"
+    },
+    {
+     "frame": 15,
+     "t": 0.4412,
+     "fn": "Strike"
+    },
+    {
+     "frame": 14,
+     "t": 0.4118,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.7059,
+     "fn": "Step"
+    }
+   ],
+   "notes": "tsuki del bastón: lo recoge por la izquierda hasta la cadera de atrás (aviso f10) y con el paso lo empuja; se desliza en la derecha y la punta pega a ~2.2 m en f15. Variante de paso corto (agarre largo)",
+   "reach_m": 1.43,
+   "strike_height_m": [
+    1.04,
+    1.08
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0321,
+    0.055,
+    0.0778,
+    0.0991,
+    0.1062,
+    0.1116,
+    0.1155,
+    0.1178,
+    0.1186,
+    0.1191,
+    0.1203,
+    0.1218,
+    0.123,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235,
+    0.1235
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.3,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 1.03,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       12
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.8,
+      [
+       0,
+       18
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      0.5,
+      4
+     ],
+     "bastón / muslo L": [
+      1.4,
+      4
+     ],
+     "antebrazo L / tronco": [
+      4.4,
+      24
+     ]
+    },
+    "root_peak_mps_60hz": 1.9,
+    "reach_m": 1.43,
+    "strike_height_m": [
+     1.04,
+     1.08
+    ],
+    "tip_peak_mps": 21.1,
+    "tip_outside_ratio": 0.29,
+    "apex_tip_mps": [
+     0.5,
+     0.8
+    ],
+    "chain_chain_from_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "max_height_m": 2.59,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.162
    }
   },
   "ChopPalm_P3": {
-   "first": 3437,
-   "last": 3473,
+   "first": 4369,
+   "last": 4405,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -6024,6 +11316,10 @@
     ],
     "chain_from": "READY",
     "chain_to": "READY",
+    "reach_variants": [
+     "ChopPalm_Mid_P3",
+     "ChopPalm_Close_P3"
+    ],
     "phase": 3,
     "staff_high": true
    },
@@ -6064,13 +11360,13 @@
      "fn": "Strike"
     },
     {
-     "frame": 17,
-     "t": 0.4722,
+     "frame": 16,
+     "t": 0.4444,
      "fn": "Step"
     },
     {
-     "frame": 27,
-     "t": 0.75,
+     "frame": 26,
+     "t": 0.7222,
      "fn": "Step"
     }
    ],
@@ -6122,26 +11418,40 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 0.4,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.45,
+    "plant_drift_cm": 0.13,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       11
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.2,
-      30
+      3.9,
+      28
      ],
      "bastón / muslo L": [
-      0.8,
-      0
+      2.3,
+      36
      ],
      "antebrazo L / tronco": [
-      3.0,
+      5.7,
       3
-     ],
-     "antebrazo L / cabeza": [
-      -1.4,
-      16
      ]
     },
     "root_peak_mps_60hz": 13.7,
@@ -6150,7 +11460,7 @@
      0.1,
      0.33
     ],
-    "tip_peak_mps": 153.8,
+    "tip_peak_mps": 154.1,
     "tip_outside_ratio": 0.23,
     "apex_tip_mps": [
      2.1,
@@ -6166,14 +11476,436 @@
      "Thumb_R_1",
      0.0
     ],
+    "reach_same_deg": {
+     "ChopPalm_Mid_P3": [
+      0.06,
+      "Forearm_L",
+      5
+     ],
+     "ChopPalm_Close_P3": [
+      0.06,
+      "Forearm_L",
+      5
+     ]
+    },
     "max_height_m": 2.71,
-    "min_z_m": -0.019,
-    "tell_silhouette_change": 0.331
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.323
+   }
+  },
+  "ChopPalm_Mid_P3": {
+   "first": 4415,
+   "last": 4451,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "ChopPalm_Mid",
+   "timing": {
+    "tell": [
+     0,
+     11
+    ],
+    "apex": 11,
+    "hold": [
+     11,
+     13
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     14,
+     28,
+     0.47700000000000004
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintStaff",
+    "strike": [
+     "Staff",
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 3,
+    "staff_high": true
+   },
+   "normalized": {
+    "apex": 0.3056,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.3056
+    ],
+    "hold": [
+     0.3056,
+     0.3611
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "lunge": [
+     0.3889,
+     0.7778,
+     0.47700000000000004
+    ]
+   },
+   "events": [
+    {
+     "frame": 11,
+     "t": 0.3056,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4444,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.7222,
+     "fn": "Step"
+    }
+   ],
+   "notes": "el bastón cae de arriba: alzado detrás de la cabeza (aviso f11, la punta a ~4 m), baja en arco y pega a la altura del hombro de Kaito a ~2.6 m en f17. Variante de paso corto (el bastón se desliza a un agarre corto)",
+   "reach_m": 2.13,
+   "strike_height_m": [
+    0.37,
+    0.54
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0668,
+    0.1336,
+    0.2147,
+    0.2957,
+    0.3816,
+    0.4102,
+    0.4311,
+    0.446,
+    0.4549,
+    0.4579,
+    0.4599,
+    0.4646,
+    0.4703,
+    0.475,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477,
+    0.477
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.13,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      0.9,
+      17
+     ],
+     "bastón / muslo L": [
+      2.3,
+      36
+     ],
+     "antebrazo L / tronco": [
+      5.7,
+      3
+     ]
+    },
+    "root_peak_mps_60hz": 7.3,
+    "reach_m": 2.13,
+    "strike_height_m": [
+     0.37,
+     0.54
+    ],
+    "tip_peak_mps": 127.3,
+    "tip_outside_ratio": 0.27,
+    "apex_tip_mps": [
+     2.1,
+     0.2
+    ],
+    "chain_chain_from_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "max_height_m": 2.71,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.323
+   }
+  },
+  "ChopPalm_Close_P3": {
+   "first": 4461,
+   "last": 4497,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "ChopPalm_Close",
+   "timing": {
+    "tell": [
+     0,
+     11
+    ],
+    "apex": 11,
+    "hold": [
+     11,
+     13
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     14,
+     28,
+     0.117
+    ],
+    "kind": "parry",
+    "glow": "Master_GlintStaff",
+    "strike": [
+     "Staff",
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 3,
+    "staff_high": true
+   },
+   "normalized": {
+    "apex": 0.3056,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.3056
+    ],
+    "hold": [
+     0.3056,
+     0.3611
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "lunge": [
+     0.3889,
+     0.7778,
+     0.117
+    ]
+   },
+   "events": [
+    {
+     "frame": 11,
+     "t": 0.3056,
+     "fn": "Apex"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 16,
+     "t": 0.4444,
+     "fn": "Step"
+    },
+    {
+     "frame": 26,
+     "t": 0.7222,
+     "fn": "Step"
+    }
+   ],
+   "notes": "el bastón cae de arriba: alzado detrás de la cabeza (aviso f11, la punta a ~4 m), baja en arco y pega a la altura del hombro de Kaito a ~2.6 m en f17. Variante de paso corto (el bastón se desliza a un agarre corto)",
+   "reach_m": 1.59,
+   "strike_height_m": [
+    0.65,
+    0.78
+   ],
+   "release_rate": 1.6,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0164,
+    0.0328,
+    0.0527,
+    0.0725,
+    0.0936,
+    0.1006,
+    0.1057,
+    0.1094,
+    0.1116,
+    0.1123,
+    0.1128,
+    0.114,
+    0.1154,
+    0.1165,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117,
+    0.117
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.99,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.1,
+      [
+       0,
+       13
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      1.0,
+      [
+       0,
+       20
+      ],
+      0.5
+     ]
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      3.9,
+      28
+     ],
+     "bastón / muslo L": [
+      2.3,
+      36
+     ],
+     "antebrazo L / tronco": [
+      4.8,
+      26
+     ]
+    },
+    "root_peak_mps_60hz": 1.8,
+    "reach_m": 1.59,
+    "strike_height_m": [
+     0.65,
+     0.78
+    ],
+    "tip_peak_mps": 105.2,
+    "tip_outside_ratio": 0.33,
+    "apex_tip_mps": [
+     2.1,
+     0.2
+    ],
+    "chain_chain_from_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Thumb_R_1",
+     0.0
+    ],
+    "max_height_m": 2.71,
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.323
    }
   },
   "CraneKick_P3": {
-   "first": 3483,
-   "last": 3525,
+   "first": 4507,
+   "last": 4549,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -6322,19 +12054,37 @@
      "hands": 0.0,
      "legs": 1.6
     },
-    "plant_drift_cm": 1.3,
+    "plant_drift_cm": 0.81,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.5,
+      [
+       0,
+       6
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.2,
+      [
+       0,
+       31
+      ],
+      0.5
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      42
-     ],
-     "bastón / muslo L": [
-      0.8,
+      3.9,
       0
      ],
-     "antebrazo L / tronco": [
-      2.8,
-      39
+     "bastón / muslo L": [
+      -0.5,
+      32
+     ],
+     "bastón / tibia L": [
+      2.0,
+      32
      ]
     },
     "root_peak_mps_60hz": 2.1,
@@ -6350,23 +12100,23 @@
      0.8
     ],
     "chain_chain_from_deg": [
-     4.55,
+     1.61,
      "UpperArm_R",
      0.0
     ],
     "chain_chain_to_deg": [
-     4.55,
+     1.61,
      "UpperArm_R",
      0.0
     ],
     "max_height_m": 2.61,
-    "min_z_m": -0.014,
-    "tell_silhouette_change": 0.444
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.446
    }
   },
   "LeapKick_P3": {
-   "first": 3535,
-   "last": 3591,
+   "first": 4559,
+   "last": 4615,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -6397,8 +12147,8 @@
      4.550000000000001
     ],
     "air": [
-     22,
-     32
+     21,
+     33
     ],
     "release_rate": 0.6,
     "root_max": 16.0,
@@ -6417,6 +12167,7 @@
     "spin": true,
     "chain_from": "READY",
     "chain_to": "READY",
+    "height_cap": 4.0,
     "phase": 3,
     "staff_high": true
    },
@@ -6440,8 +12191,8 @@
      1.0
     ],
     "air": [
-     0.3929,
-     0.5714
+     0.375,
+     0.5893
     ],
     "lunge": [
      0.3393,
@@ -6471,8 +12222,8 @@
      "fn": "Land"
     },
     {
-     "frame": 35,
-     "t": 0.625,
+     "frame": 36,
+     "t": 0.6429,
      "fn": "Step"
     }
    ],
@@ -6504,19 +12255,19 @@
     0.0,
     0.0,
     0.0,
-    0.075,
+    0.0,
     0.15,
-    0.7037,
+    0.7509,
     1.2574,
-    1.6823,
+    1.7037,
     2.1072,
-    2.4654,
+    2.4782,
     2.8236,
-    3.1391,
+    3.1479,
     3.4547,
-    3.74,
+    3.7465,
     4.0253,
-    4.2876,
+    4.2927,
     4.55,
     4.55,
     4.55,
@@ -6547,30 +12298,48 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.74,
+    "plant_drift_cm": 0.37,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.7,
+      [
+       0,
+       21
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.7,
+      [
+       0,
+       21
+      ],
+      0.4
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      56
+      3.9,
+      0
+     ],
+     "bastón / cabeza": [
+      -0.2,
+      31
      ],
      "bastón / muslo R": [
-      0.5,
+      1.8,
       17
      ],
      "bastón / muslo L": [
-      0.8,
-      0
+      2.3,
+      56
      ],
      "bastón / tibia R": [
-      3.0,
+      4.4,
       17
-     ],
-     "antebrazo L / tronco": [
-      5.5,
-      0
      ]
     },
-    "root_peak_mps_60hz": 9.3,
+    "root_peak_mps_60hz": 8.8,
     "reach_m": 0.31,
     "strike_height_m": [
      0.13,
@@ -6586,14 +12355,14 @@
      "Thumb_R_1",
      0.0
     ],
-    "max_height_m": 3.48,
-    "min_z_m": -0.007,
-    "tell_silhouette_change": 0.304
+    "max_height_m": 3.88,
+    "min_z_m": -0.013,
+    "tell_silhouette_change": 0.302
    }
   },
   "Sweep_P3": {
-   "first": 3601,
-   "last": 3649,
+   "first": 4625,
+   "last": 4673,
    "frames": 48,
    "seconds": 1.6,
    "loop": false,
@@ -6694,15 +12463,33 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.0,
+    "plant_drift_cm": 0.35,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       39,
+       48
+      ],
+      0.3
+     ],
+     "Foot_L": [
+      0.1,
+      [
+       0,
+       48
+      ],
+      0.1
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -2.8,
-      4
+      1.2,
+      5
      ],
      "bastón / muslo L": [
-      -0.1,
-      3
+      0.7,
+      6
      ],
      "antebrazo L / tronco": [
       1.8,
@@ -6715,23 +12502,23 @@
      0.11
     ],
     "chain_chain_from_deg": [
-     6.7,
-     "Thigh_L",
+     0.04,
+     "Thumb_R_1",
      0.0
     ],
     "chain_chain_to_deg": [
-     4.57,
-     "Hand_L",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.022,
-    "tell_silhouette_change": 0.458
+    "min_z_m": -0.008,
+    "tell_silhouette_change": 0.457
    }
   },
   "QiWave_P3": {
-   "first": 3659,
-   "last": 3715,
+   "first": 4683,
+   "last": 4739,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -6835,18 +12622,36 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.16,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.3,
+      [
+       0,
+       30
+      ],
+      0.2
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       56
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -1.1,
+      3.7,
       5
      ],
      "bastón / muslo L": [
-      0.2,
-      52
+      1.9,
+      53
      ],
      "antebrazo L / tronco": [
-      -1.5,
-      49
+      4.1,
+      50
      ]
     },
     "reach_m": 0.95,
@@ -6855,23 +12660,23 @@
      0.01
     ],
     "chain_chain_from_deg": [
-     4.57,
-     "Hand_L",
+     0.04,
+     "Thumb_R_1",
      0.0
     ],
     "chain_chain_to_deg": [
-     4.57,
-     "Hand_L",
+     0.04,
+     "Thumb_R_1",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.004,
-    "tell_silhouette_change": 0.379
+    "tell_silhouette_change": 0.373
    }
   },
   "DashStrike_P3": {
-   "first": 3725,
-   "last": 3761,
+   "first": 4749,
+   "last": 4785,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -7026,22 +12831,36 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.1,
+     "hands": 0.3,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.77,
+    "plant_drift_cm": 1.46,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.2,
+      [
+       17,
+       36
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.4,
+      [
+       0,
+       8
+      ],
+      0.7
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -3.3,
+      0.5,
       9
      ],
      "bastón / muslo L": [
-      0.7,
+      2.2,
       1
-     ],
-     "antebrazo L / tronco": [
-      2.6,
-      2
      ]
     },
     "root_peak_mps_60hz": 19.2,
@@ -7051,23 +12870,23 @@
      0.94
     ],
     "chain_chain_from_deg": [
-     4.57,
-     "Hand_L",
+     0.04,
+     "Thumb_R_1",
      0.0
     ],
     "chain_chain_to_deg": [
-     4.57,
-     "Hand_L",
+     0.04,
+     "Thumb_R_1",
      0.0
     ],
     "max_height_m": 2.59,
-    "min_z_m": -0.021,
-    "tell_silhouette_change": 0.216
+    "min_z_m": -0.009,
+    "tell_silhouette_change": 0.222
    }
   },
   "PhaseStaff": {
-   "first": 3771,
-   "last": 3861,
+   "first": 4795,
+   "last": 4885,
    "frames": 90,
    "seconds": 3.0,
    "loop": false,
@@ -7117,17 +12936,35 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       90
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       88
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      90
-     ],
-     "bastón / muslo L": [
-      0.8,
+      3.9,
       80
      ],
+     "bastón / muslo L": [
+      2.3,
+      90
+     ],
      "antebrazo L / tronco": [
-      2.2,
+      5.9,
       75
      ]
     },
@@ -7146,8 +12983,8 @@
    }
   },
   "Defeat": {
-   "first": 3871,
-   "last": 4021,
+   "first": 4895,
+   "last": 5045,
    "frames": 150,
    "seconds": 5.0,
    "loop": false,
@@ -7211,34 +13048,52 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 1.73,
+    "plant_drift_cm": 0.62,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.9,
+      [
+       60,
+       86
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.4,
+      [
+       0,
+       60
+      ],
+      0.7
+     ]
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      -0.9,
-      1
-     ],
-     "bastón / muslo L": [
-      0.8,
+      3.9,
       0
      ],
+     "bastón / muslo L": [
+      2.3,
+      1
+     ],
      "antebrazo L / tronco": [
-      0.0,
+      3.7,
       4
      ],
      "muslo R / muslo L": [
-      0.9,
+      -0.5,
       72
      ],
      "tibia R / tibia L": [
-      -4.3,
-      150
+      -3.4,
+      72
      ],
      "tibia R / muslo L": [
-      1.8,
+      0.9,
       72
      ],
      "tibia L / muslo R": [
-      2.5,
+      0.8,
       72
      ]
     },
@@ -7253,12 +13108,12 @@
      0.0
     ],
     "max_height_m": 2.61,
-    "min_z_m": -0.017
+    "min_z_m": -0.014
    }
   },
   "Meditate": {
-   "first": 4031,
-   "last": 4127,
+   "first": 5055,
+   "last": 5151,
    "frames": 96,
    "seconds": 3.2,
    "loop": true,
@@ -7285,15 +13140,29 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       0
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       0
+      ],
+      0.0
+     ]
+    },
     "loop_seam_deg": 0.0,
     "self_clearance_cm": {
      "tibia R / tibia L": [
-      -4.3,
-      96
-     ],
-     "tibia L / muslo R": [
-      5.5,
-      55
+      -2.7,
+      0
      ]
     },
     "chain_chain_from_deg": [
@@ -7306,8 +13175,8 @@
    }
   },
   "SeatedBow": {
-   "first": 4137,
-   "last": 4207,
+   "first": 5161,
+   "last": 5231,
    "frames": 70,
    "seconds": 2.3333,
    "loop": false,
@@ -7350,14 +13219,36 @@
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       0
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       0
+      ],
+      0.0
+     ]
+    },
     "self_clearance_cm": {
      "tibia R / tibia L": [
-      -5.3,
-      36
+      -4.1,
+      34
+     ],
+     "tibia R / muslo L": [
+      5.5,
+      37
      ],
      "tibia L / muslo R": [
-      4.8,
-      37
+      5.9,
+      36
      ]
     },
     "chain_chain_from_deg": [
@@ -7375,8 +13266,8 @@
    }
   },
   "PoseTest": {
-   "first": 4217,
-   "last": 4449,
+   "first": 5241,
+   "last": 5473,
    "frames": 232,
    "seconds": 7.7333,
    "loop": false,
@@ -7402,6 +13293,24 @@
      "legs": 0.0
     },
     "plant_drift_cm": 16.03,
+    "sole_slip_cm": {
+     "Foot_R": [
+      46.9,
+      [
+       0,
+       73
+      ],
+      3.1
+     ],
+     "Foot_L": [
+      147.8,
+      [
+       0,
+       232
+      ],
+      3.1
+     ]
+    },
     "self_clearance_cm": {
      "antebrazo L / tronco": [
       -8.1,
@@ -7422,9 +13331,20 @@
   }
  },
  "phase_variants": {
+  "BackHop": {
+   "3": "BackHop_P3"
+  },
   "ChopPalm": {
    "2": "ChopPalm_P2",
    "3": "ChopPalm_P3"
+  },
+  "ChopPalm_Close": {
+   "2": "ChopPalm_Close_P2",
+   "3": "ChopPalm_Close_P3"
+  },
+  "ChopPalm_Mid": {
+   "2": "ChopPalm_Mid_P2",
+   "3": "ChopPalm_Mid_P3"
   },
   "Counter": {
    "2": "Counter_P2",
@@ -7433,6 +13353,14 @@
   "CounterStrike": {
    "2": "CounterStrike_P2",
    "3": "CounterStrike_P3"
+  },
+  "CounterStrike_Close": {
+   "2": "CounterStrike_Close_P2",
+   "3": "CounterStrike_Close_P3"
+  },
+  "CounterStrike_Mid": {
+   "2": "CounterStrike_Mid_P2",
+   "3": "CounterStrike_Mid_P3"
   },
   "CraneKick": {
    "2": "CraneKick_P2",
@@ -7481,6 +13409,14 @@
    "2": "Palm_P2",
    "3": "Palm_P3"
   },
+  "Palm_Close": {
+   "2": "Palm_Close_P2",
+   "3": "Palm_Close_P3"
+  },
+  "Palm_Mid": {
+   "2": "Palm_Mid_P2",
+   "3": "Palm_Mid_P3"
+  },
   "Parried": {
    "2": "Parried_P2",
    "3": "Parried_P3"
@@ -7495,6 +13431,10 @@
   "Run": {
    "2": "Run_P2",
    "3": "Run_P3"
+  },
+  "Stance": {
+   "2": "Stance_P2",
+   "3": "Stance_P3"
   },
   "StrafeL": {
    "2": "StrafeL_P2",

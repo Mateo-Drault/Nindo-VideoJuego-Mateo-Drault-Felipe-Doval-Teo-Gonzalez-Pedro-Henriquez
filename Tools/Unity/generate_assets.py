@@ -933,9 +933,11 @@ def bamboo_master_info():
 def bamboo_master_assets(mats):
     """Materiales propios de Chikuō y el .meta de su FBX (clips cortados de la toma única 'Scene').
     Los slots Master_Glint* (palmas, zapatillas, bastón) y Master_Eyes nacen sin emisión: el jefe los enciende por nombre
-    con CharacterGlint.SetGlow (dorado = parry, rojo = dash; los ojos en jade en la fase 2). Sin compresión de animación
-    (los golpes cortos y los pies clavados no aguantan la reducción de claves) y sin 'Optimize Bones': las puntas de las
-    cadenas (Acc_*_end) y las esferas AccCol_* no tienen pesos y SpringChain las necesita si el jefe la usa."""
+    con CharacterGlint.SetGlow (dorado = parry, rojo = dash; los ojos en jade en la fase 2). Reducción de claves con
+    errores diez veces más finos que los de Unity (0.05° / 0.05 %: en una pierna de 1 m es ~1 mm, los pies clavados y
+    los golpes cortos no lo notan) y sin las curvas de escala constantes: con 106 clips de 88 huesos sin comprimir era
+    ~3 veces Kokuyo.fbx en memoria. Sin 'Optimize Bones': las puntas de las cadenas (Acc_*_end) y las esferas AccCol_* no
+    tienen pesos y SpringChain las necesita si el jefe la usa."""
     info = bamboo_master_info()
     if info is None:
         return
@@ -945,7 +947,9 @@ def bamboo_master_assets(mats):
     clips = [dict(name=n, take=info.get("take", "Scene"), id=stable_id("bamboo_master", n), first=r["first"], last=r["last"],
                   loop=r["loop"]) for n, r in info["clips"].items()]
     meta = model_meta(remap=remap, anim_type=2, import_anim=True, clips=clips, readable=False)
-    meta = meta.replace("animationCompression: 1", "animationCompression: 0").replace("optimizeBones: 1", "optimizeBones: 0")
+    meta = meta.replace("optimizeBones: 1", "optimizeBones: 0").replace("removeConstantScaleCurves: 0", "removeConstantScaleCurves: 1")
+    for k in ("animationRotationError", "animationPositionError", "animationScaleError"):
+        meta = meta.replace(f"{k}: 0.5", f"{k}: 0.05")
     write_meta(BAMBOO_FBX, meta, force=True)
     write_meta(BAMBOO_FBX + ".json", TEXT_META)
     ensure_folder_metas(P_BAMBOO)
@@ -1122,6 +1126,8 @@ CHAR_SWAPS = {
     "sumo": {"Pelo": (0.4, None, False), "Pollera": (0.15, None, True)},
     "goro": {"RojoOjosMiniJefe": (0.3, (4.0, 0.55, 0.3), False), "Glint": (0.4, None, False), "OroMiniJefe": (0.5, None, False),
              "ArmaduraMiniJefe": (0.1, None, True), "CueroMiniJefe": (0.15, None, True), "MartilloMiniJefe": (0.1, None, True)},
+    # Chikuō: el brillo de sus materiales propios (sin la fila, ToCharacterLit los dejaba todos en DefaultSmoothness)
+    "bamboo_master": {m: (v, None, False) for m, v in BAMBOO_SMOOTH.items()},
 }
 
 

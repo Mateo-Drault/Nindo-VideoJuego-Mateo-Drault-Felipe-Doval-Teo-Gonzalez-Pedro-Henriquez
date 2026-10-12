@@ -470,7 +470,42 @@ MonoBehaviour:
     controller: {fileID: 9100000, guid: 00038a893675a4c699be298472f4a7fd, type: 2}
     height: 2.67
     modelYaw: 0
-    materialSwaps: []
+    materialSwaps:
+    - material: Master_GlintHandR
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.1
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintHandL
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.1
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintFootR
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintFootL
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_Eyes
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.45
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintStaff
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.3
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_Skin
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.14
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
     stateNames:
     - Idle
     - Walk
@@ -491,18 +526,29 @@ MonoBehaviour:
     - StrafeR_P3
     - WalkBack_P3
     - Palm
+    - Palm_Mid
+    - Palm_Close
     - ChopPalm
+    - ChopPalm_Mid
+    - ChopPalm_Close
     - CraneKick
     - LeapKick
     - Palm_P2
+    - Palm_Mid_P2
+    - Palm_Close_P2
     - ChopPalm_P2
+    - ChopPalm_Mid_P2
+    - ChopPalm_Close_P2
     - CraneKick_P2
     - LeapKick_P2
     - Guard
     - GuardHit
     - Counter
     - CounterStrike
+    - CounterStrike_Mid
+    - CounterStrike_Close
     - Taunt
+    - Stance
     - Hit
     - HitHeavy
     - Parried
@@ -514,7 +560,10 @@ MonoBehaviour:
     - GuardHit_P2
     - Counter_P2
     - CounterStrike_P2
+    - CounterStrike_Mid_P2
+    - CounterStrike_Close_P2
     - Taunt_P2
+    - Stance_P2
     - Hit_P2
     - HitHeavy_P2
     - Parried_P2
@@ -526,7 +575,10 @@ MonoBehaviour:
     - GuardHit_P3
     - Counter_P3
     - CounterStrike_P3
+    - CounterStrike_Mid_P3
+    - CounterStrike_Close_P3
     - Taunt_P3
+    - Stance_P3
     - Hit_P3
     - HitHeavy_P3
     - Parried_P3
@@ -537,12 +589,20 @@ MonoBehaviour:
     - Intro
     - PhaseCoat
     - TwinPalm
+    - TwinPalm_Mid
+    - TwinPalm_Close
     - SpinKick
     - Sweep
     - QiWave
     - DashStrike
+    - BackHop
+    - BackHop_P3
     - Palm_P3
+    - Palm_Mid_P3
+    - Palm_Close_P3
     - ChopPalm_P3
+    - ChopPalm_Mid_P3
+    - ChopPalm_Close_P3
     - CraneKick_P3
     - LeapKick_P3
     - Sweep_P3
@@ -573,10 +633,18 @@ MonoBehaviour:
     - 0.8
     - 1.2
     - 1.1333
+    - 1.1333
+    - 1.1333
+    - 1.2
+    - 1.2
     - 1.2
     - 1.4
     - 1.8667
     - 1.1333
+    - 1.1333
+    - 1.1333
+    - 1.2
+    - 1.2
     - 1.2
     - 1.4
     - 1.8667
@@ -584,7 +652,10 @@ MonoBehaviour:
     - 0.5
     - 0.5333
     - 0.8667
-    - 1.8
+    - 0.8667
+    - 0.8667
+    - 2.0
+    - 0.6667
     - 0.6
     - 0.9
     - 1.0
@@ -596,7 +667,10 @@ MonoBehaviour:
     - 0.5
     - 0.5333
     - 0.8667
-    - 1.8
+    - 0.8667
+    - 0.8667
+    - 2.0
+    - 0.6667
     - 0.6
     - 0.9
     - 1.0
@@ -608,7 +682,10 @@ MonoBehaviour:
     - 0.5
     - 0.5333
     - 0.8667
-    - 1.8
+    - 0.8667
+    - 0.8667
+    - 2.0
+    - 0.6667
     - 0.6
     - 0.9
     - 1.0
@@ -619,11 +696,19 @@ MonoBehaviour:
     - 4.0
     - 3.6667
     - 1.2667
+    - 1.2667
+    - 1.2667
     - 1.4667
     - 1.6
     - 1.8667
     - 1.2
+    - 0.7333
+    - 0.7333
     - 1.1333
+    - 1.1333
+    - 1.1333
+    - 1.2
+    - 1.2
     - 1.2
     - 1.4
     - 1.8667

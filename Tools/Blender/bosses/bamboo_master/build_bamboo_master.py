@@ -66,7 +66,7 @@ ROUNDTRIP_BONES = ("Hips", "Head", "Hand_R", "Hand_L", "Index_R_2", "Thumb_L_2",
 TELL_CAM = dict(focus=(0.0, -1.6, 1.0), pitch=52.0, dist=24.0, fov=30.0)
 TELL_MIN = 0.15
 GUARD_MIN = 0.15
-SOLE_WARN_ONLY = True
+SOLE_WARN_ONLY = False
 GUARD_PAIR_MIN = 0.25   # postura / abierto / guardia entre sí (lo que no está en las dos, sobre la más grande)    # la palma estirada hacia Kaito medía 12 % (apunta a la cámara); la grulla con las alas abiertas, 16-31 %
 failures, warnings = [], []
 

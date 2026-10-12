@@ -134,8 +134,10 @@ namespace Nindo
             Game.Camera?.Punch(-3f, 0.4f);
             PushKaito(3.2f, 2f);
             yield return WaitEvent(c, "CoatLand");
-            // cae detrás, a su izquierda
-            Game.FX?.Dust(transform.position - transform.forward * 1.6f - transform.right * 0.9f, 1.2f);
+            // cae detrás, a su izquierda (donde lo deja PhaseCoat): un golpe de polvo y el roce de la tela
+            Vector3 land = transform.position - transform.forward * 2.5f - transform.right * 1.05f;
+            Game.FX?.Dust(land, 1.6f);
+            Game.Audio?.Play("fin_whoosh", land, 0.45f, 0.1f);
             yield return WaitEvent(c, "CoatRest");
             look.RestCoat(transform.parent);
             yield return WaitEvent(c, "Guard");

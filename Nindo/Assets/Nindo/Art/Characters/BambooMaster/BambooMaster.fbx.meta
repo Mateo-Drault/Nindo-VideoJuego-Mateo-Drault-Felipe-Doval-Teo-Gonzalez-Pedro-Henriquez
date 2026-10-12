@@ -59,7 +59,7 @@ ModelImporter:
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
-    removeConstantScaleCurves: 0
+    removeConstantScaleCurves: 1
     motionNodeName:
     rigImportErrors:
     rigImportWarnings:
@@ -69,10 +69,10 @@ ModelImporter:
     animationDoRetargetingWarnings: 0
     importAnimatedCustomProperties: 0
     importConstraints: 0
-    animationCompression: 0
-    animationRotationError: 0.5
-    animationPositionError: 0.5
-    animationScaleError: 0.5
+    animationCompression: 1
+    animationRotationError: 0.05
+    animationPositionError: 0.05
+    animationScaleError: 0.05
     animationWrapMode: 0
     extraExposedTransformPaths: []
     extraUserProperties: []
@@ -629,11 +629,127 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
+      name: Palm_Mid
+      takeName: Scene
+      internalID: 832853039360530969
+      firstFrame: 939
+      lastFrame: 973
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Palm_Close
+      takeName: Scene
+      internalID: 808798021801085586
+      firstFrame: 983
+      lastFrame: 1017
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
       name: ChopPalm
       takeName: Scene
       internalID: 542807037697430690
-      firstFrame: 939
-      lastFrame: 975
+      firstFrame: 1027
+      lastFrame: 1063
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: ChopPalm_Mid
+      takeName: Scene
+      internalID: 875540780409543151
+      firstFrame: 1073
+      lastFrame: 1109
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: ChopPalm_Close
+      takeName: Scene
+      internalID: 760296253837713792
+      firstFrame: 1119
+      lastFrame: 1155
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -661,8 +777,8 @@ ModelImporter:
       name: CraneKick
       takeName: Scene
       internalID: 1089241076805791334
-      firstFrame: 985
-      lastFrame: 1027
+      firstFrame: 1165
+      lastFrame: 1207
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -690,8 +806,8 @@ ModelImporter:
       name: LeapKick
       takeName: Scene
       internalID: 707882067292408270
-      firstFrame: 1037
-      lastFrame: 1093
+      firstFrame: 1217
+      lastFrame: 1273
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -719,8 +835,66 @@ ModelImporter:
       name: Palm_P2
       takeName: Scene
       internalID: 185802185145689327
-      firstFrame: 1103
-      lastFrame: 1137
+      firstFrame: 1283
+      lastFrame: 1317
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Palm_Mid_P2
+      takeName: Scene
+      internalID: 393212629120612004
+      firstFrame: 1327
+      lastFrame: 1361
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Palm_Close_P2
+      takeName: Scene
+      internalID: 172300265012813154
+      firstFrame: 1371
+      lastFrame: 1405
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -748,8 +922,66 @@ ModelImporter:
       name: ChopPalm_P2
       takeName: Scene
       internalID: 688513045936379947
-      firstFrame: 1147
-      lastFrame: 1183
+      firstFrame: 1415
+      lastFrame: 1451
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: ChopPalm_Mid_P2
+      takeName: Scene
+      internalID: 667280597374729678
+      firstFrame: 1461
+      lastFrame: 1497
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: ChopPalm_Close_P2
+      takeName: Scene
+      internalID: 424109571742539495
+      firstFrame: 1507
+      lastFrame: 1543
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -777,8 +1009,8 @@ ModelImporter:
       name: CraneKick_P2
       takeName: Scene
       internalID: 297371467639455339
-      firstFrame: 1193
-      lastFrame: 1235
+      firstFrame: 1553
+      lastFrame: 1595
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -806,8 +1038,8 @@ ModelImporter:
       name: LeapKick_P2
       takeName: Scene
       internalID: 375991981112201596
-      firstFrame: 1245
-      lastFrame: 1301
+      firstFrame: 1605
+      lastFrame: 1661
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -835,8 +1067,8 @@ ModelImporter:
       name: Guard
       takeName: Scene
       internalID: 370220975587403554
-      firstFrame: 1311
-      lastFrame: 1331
+      firstFrame: 1671
+      lastFrame: 1691
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -864,8 +1096,8 @@ ModelImporter:
       name: GuardHit
       takeName: Scene
       internalID: 216709610115976783
-      firstFrame: 1341
-      lastFrame: 1356
+      firstFrame: 1701
+      lastFrame: 1716
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -893,8 +1125,8 @@ ModelImporter:
       name: Counter
       takeName: Scene
       internalID: 973055642642622378
-      firstFrame: 1366
-      lastFrame: 1382
+      firstFrame: 1726
+      lastFrame: 1742
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -922,8 +1154,66 @@ ModelImporter:
       name: CounterStrike
       takeName: Scene
       internalID: 461954305435058128
-      firstFrame: 1392
-      lastFrame: 1418
+      firstFrame: 1752
+      lastFrame: 1778
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: CounterStrike_Mid
+      takeName: Scene
+      internalID: 185077002603634505
+      firstFrame: 1788
+      lastFrame: 1814
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: CounterStrike_Close
+      takeName: Scene
+      internalID: 192971295725113338
+      firstFrame: 1824
+      lastFrame: 1850
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -951,8 +1241,37 @@ ModelImporter:
       name: Taunt
       takeName: Scene
       internalID: 540742746524499048
-      firstFrame: 1428
-      lastFrame: 1482
+      firstFrame: 1860
+      lastFrame: 1920
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Stance
+      takeName: Scene
+      internalID: 605614036945426804
+      firstFrame: 1930
+      lastFrame: 1950
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -980,8 +1299,8 @@ ModelImporter:
       name: Hit
       takeName: Scene
       internalID: 928414661178970721
-      firstFrame: 1492
-      lastFrame: 1510
+      firstFrame: 1960
+      lastFrame: 1978
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1009,8 +1328,8 @@ ModelImporter:
       name: HitHeavy
       takeName: Scene
       internalID: 427628283238432918
-      firstFrame: 1520
-      lastFrame: 1547
+      firstFrame: 1988
+      lastFrame: 2015
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1038,8 +1357,8 @@ ModelImporter:
       name: Parried
       takeName: Scene
       internalID: 579008189676006322
-      firstFrame: 1557
-      lastFrame: 1587
+      firstFrame: 2025
+      lastFrame: 2055
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1067,8 +1386,8 @@ ModelImporter:
       name: ParriedPerfect
       takeName: Scene
       internalID: 1108673102064695940
-      firstFrame: 1597
-      lastFrame: 1633
+      firstFrame: 2065
+      lastFrame: 2101
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1096,8 +1415,8 @@ ModelImporter:
       name: Exhausted
       takeName: Scene
       internalID: 385512268234708469
-      firstFrame: 1643
-      lastFrame: 1763
+      firstFrame: 2111
+      lastFrame: 2231
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1125,8 +1444,8 @@ ModelImporter:
       name: ExhaustedHit
       takeName: Scene
       internalID: 319726224915780248
-      firstFrame: 1773
-      lastFrame: 1789
+      firstFrame: 2241
+      lastFrame: 2257
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1154,8 +1473,8 @@ ModelImporter:
       name: ExhaustedRise
       takeName: Scene
       internalID: 28475015313231176
-      firstFrame: 1799
-      lastFrame: 1821
+      firstFrame: 2267
+      lastFrame: 2289
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1183,8 +1502,8 @@ ModelImporter:
       name: Guard_P2
       takeName: Scene
       internalID: 554453208629957505
-      firstFrame: 1831
-      lastFrame: 1851
+      firstFrame: 2299
+      lastFrame: 2319
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1212,8 +1531,8 @@ ModelImporter:
       name: GuardHit_P2
       takeName: Scene
       internalID: 270195986459492178
-      firstFrame: 1861
-      lastFrame: 1876
+      firstFrame: 2329
+      lastFrame: 2344
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1241,8 +1560,8 @@ ModelImporter:
       name: Counter_P2
       takeName: Scene
       internalID: 220361243330826079
-      firstFrame: 1886
-      lastFrame: 1902
+      firstFrame: 2354
+      lastFrame: 2370
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1270,8 +1589,66 @@ ModelImporter:
       name: CounterStrike_P2
       takeName: Scene
       internalID: 1129483800341967653
-      firstFrame: 1912
-      lastFrame: 1938
+      firstFrame: 2380
+      lastFrame: 2406
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: CounterStrike_Mid_P2
+      takeName: Scene
+      internalID: 49455654434800142
+      firstFrame: 2416
+      lastFrame: 2442
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: CounterStrike_Close_P2
+      takeName: Scene
+      internalID: 391837148286604833
+      firstFrame: 2452
+      lastFrame: 2478
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1299,8 +1676,37 @@ ModelImporter:
       name: Taunt_P2
       takeName: Scene
       internalID: 956326275392142777
-      firstFrame: 1948
-      lastFrame: 2002
+      firstFrame: 2488
+      lastFrame: 2548
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Stance_P2
+      takeName: Scene
+      internalID: 245749473601082269
+      firstFrame: 2558
+      lastFrame: 2578
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1328,8 +1734,8 @@ ModelImporter:
       name: Hit_P2
       takeName: Scene
       internalID: 1107458121336392
-      firstFrame: 2012
-      lastFrame: 2030
+      firstFrame: 2588
+      lastFrame: 2606
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1357,8 +1763,8 @@ ModelImporter:
       name: HitHeavy_P2
       takeName: Scene
       internalID: 116736974662027635
-      firstFrame: 2040
-      lastFrame: 2067
+      firstFrame: 2616
+      lastFrame: 2643
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1386,8 +1792,8 @@ ModelImporter:
       name: Parried_P2
       takeName: Scene
       internalID: 331923348693649827
-      firstFrame: 2077
-      lastFrame: 2107
+      firstFrame: 2653
+      lastFrame: 2683
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1415,8 +1821,8 @@ ModelImporter:
       name: ParriedPerfect_P2
       takeName: Scene
       internalID: 3752465352810376
-      firstFrame: 2117
-      lastFrame: 2153
+      firstFrame: 2693
+      lastFrame: 2729
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1444,8 +1850,8 @@ ModelImporter:
       name: Exhausted_P2
       takeName: Scene
       internalID: 678791319601945590
-      firstFrame: 2163
-      lastFrame: 2283
+      firstFrame: 2739
+      lastFrame: 2859
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1473,8 +1879,8 @@ ModelImporter:
       name: ExhaustedHit_P2
       takeName: Scene
       internalID: 535331604064321234
-      firstFrame: 2293
-      lastFrame: 2309
+      firstFrame: 2869
+      lastFrame: 2885
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1502,8 +1908,8 @@ ModelImporter:
       name: ExhaustedRise_P2
       takeName: Scene
       internalID: 1064807425661987647
-      firstFrame: 2319
-      lastFrame: 2341
+      firstFrame: 2895
+      lastFrame: 2917
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1531,8 +1937,8 @@ ModelImporter:
       name: Guard_P3
       takeName: Scene
       internalID: 463755861748282664
-      firstFrame: 2351
-      lastFrame: 2371
+      firstFrame: 2927
+      lastFrame: 2947
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1560,8 +1966,8 @@ ModelImporter:
       name: GuardHit_P3
       takeName: Scene
       internalID: 502905326161433998
-      firstFrame: 2381
-      lastFrame: 2396
+      firstFrame: 2957
+      lastFrame: 2972
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1589,8 +1995,8 @@ ModelImporter:
       name: Counter_P3
       takeName: Scene
       internalID: 580499765899294579
-      firstFrame: 2406
-      lastFrame: 2422
+      firstFrame: 2982
+      lastFrame: 2998
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1618,8 +2024,66 @@ ModelImporter:
       name: CounterStrike_P3
       takeName: Scene
       internalID: 621221448974093141
-      firstFrame: 2432
-      lastFrame: 2458
+      firstFrame: 3008
+      lastFrame: 3034
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: CounterStrike_Mid_P3
+      takeName: Scene
+      internalID: 527095821225184290
+      firstFrame: 3044
+      lastFrame: 3070
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: CounterStrike_Close_P3
+      takeName: Scene
+      internalID: 209973787522981100
+      firstFrame: 3080
+      lastFrame: 3106
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1647,8 +2111,37 @@ ModelImporter:
       name: Taunt_P3
       takeName: Scene
       internalID: 655692666517470027
-      firstFrame: 2468
-      lastFrame: 2522
+      firstFrame: 3116
+      lastFrame: 3176
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Stance_P3
+      takeName: Scene
+      internalID: 1057528359591802136
+      firstFrame: 3186
+      lastFrame: 3206
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1676,8 +2169,8 @@ ModelImporter:
       name: Hit_P3
       takeName: Scene
       internalID: 1114612754793723138
-      firstFrame: 2532
-      lastFrame: 2550
+      firstFrame: 3216
+      lastFrame: 3234
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1705,8 +2198,8 @@ ModelImporter:
       name: HitHeavy_P3
       takeName: Scene
       internalID: 954469284797726598
-      firstFrame: 2560
-      lastFrame: 2587
+      firstFrame: 3244
+      lastFrame: 3271
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1734,8 +2227,8 @@ ModelImporter:
       name: Parried_P3
       takeName: Scene
       internalID: 365928913184551648
-      firstFrame: 2597
-      lastFrame: 2627
+      firstFrame: 3281
+      lastFrame: 3311
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1763,8 +2256,8 @@ ModelImporter:
       name: ParriedPerfect_P3
       takeName: Scene
       internalID: 417087416014598351
-      firstFrame: 2637
-      lastFrame: 2673
+      firstFrame: 3321
+      lastFrame: 3357
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1792,8 +2285,8 @@ ModelImporter:
       name: Exhausted_P3
       takeName: Scene
       internalID: 44012557245825458
-      firstFrame: 2683
-      lastFrame: 2803
+      firstFrame: 3367
+      lastFrame: 3487
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1821,8 +2314,8 @@ ModelImporter:
       name: ExhaustedHit_P3
       takeName: Scene
       internalID: 57918302233957865
-      firstFrame: 2813
-      lastFrame: 2829
+      firstFrame: 3497
+      lastFrame: 3513
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1850,8 +2343,8 @@ ModelImporter:
       name: ExhaustedRise_P3
       takeName: Scene
       internalID: 648510396940406895
-      firstFrame: 2839
-      lastFrame: 2861
+      firstFrame: 3523
+      lastFrame: 3545
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1879,8 +2372,8 @@ ModelImporter:
       name: Intro
       takeName: Scene
       internalID: 115162322557531733
-      firstFrame: 2871
-      lastFrame: 2991
+      firstFrame: 3555
+      lastFrame: 3675
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1908,8 +2401,8 @@ ModelImporter:
       name: PhaseCoat
       takeName: Scene
       internalID: 1114531930712093833
-      firstFrame: 3001
-      lastFrame: 3111
+      firstFrame: 3685
+      lastFrame: 3795
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1937,8 +2430,66 @@ ModelImporter:
       name: TwinPalm
       takeName: Scene
       internalID: 92224281083992853
-      firstFrame: 3121
-      lastFrame: 3159
+      firstFrame: 3805
+      lastFrame: 3843
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: TwinPalm_Mid
+      takeName: Scene
+      internalID: 12955861334211365
+      firstFrame: 3853
+      lastFrame: 3891
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: TwinPalm_Close
+      takeName: Scene
+      internalID: 225139118414881840
+      firstFrame: 3901
+      lastFrame: 3939
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1966,8 +2517,8 @@ ModelImporter:
       name: SpinKick
       takeName: Scene
       internalID: 817447544400086236
-      firstFrame: 3169
-      lastFrame: 3213
+      firstFrame: 3949
+      lastFrame: 3993
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1995,8 +2546,8 @@ ModelImporter:
       name: Sweep
       takeName: Scene
       internalID: 542887246994247870
-      firstFrame: 3223
-      lastFrame: 3271
+      firstFrame: 4003
+      lastFrame: 4051
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2024,8 +2575,8 @@ ModelImporter:
       name: QiWave
       takeName: Scene
       internalID: 93849536941567558
-      firstFrame: 3281
-      lastFrame: 3337
+      firstFrame: 4061
+      lastFrame: 4117
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2053,8 +2604,66 @@ ModelImporter:
       name: DashStrike
       takeName: Scene
       internalID: 300499073687971789
-      firstFrame: 3347
-      lastFrame: 3383
+      firstFrame: 4127
+      lastFrame: 4163
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: BackHop
+      takeName: Scene
+      internalID: 730658401449887685
+      firstFrame: 4173
+      lastFrame: 4195
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: BackHop_P3
+      takeName: Scene
+      internalID: 568233787351165229
+      firstFrame: 4205
+      lastFrame: 4227
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2082,8 +2691,66 @@ ModelImporter:
       name: Palm_P3
       takeName: Scene
       internalID: 575482496279216250
-      firstFrame: 3393
-      lastFrame: 3427
+      firstFrame: 4237
+      lastFrame: 4271
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Palm_Mid_P3
+      takeName: Scene
+      internalID: 178713532436365104
+      firstFrame: 4281
+      lastFrame: 4315
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Palm_Close_P3
+      takeName: Scene
+      internalID: 66669895568575749
+      firstFrame: 4325
+      lastFrame: 4359
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2111,8 +2778,66 @@ ModelImporter:
       name: ChopPalm_P3
       takeName: Scene
       internalID: 1113070331473817979
-      firstFrame: 3437
-      lastFrame: 3473
+      firstFrame: 4369
+      lastFrame: 4405
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: ChopPalm_Mid_P3
+      takeName: Scene
+      internalID: 541569048382341809
+      firstFrame: 4415
+      lastFrame: 4451
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: ChopPalm_Close_P3
+      takeName: Scene
+      internalID: 1015142084642514546
+      firstFrame: 4461
+      lastFrame: 4497
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2140,8 +2865,8 @@ ModelImporter:
       name: CraneKick_P3
       takeName: Scene
       internalID: 129389534930616068
-      firstFrame: 3483
-      lastFrame: 3525
+      firstFrame: 4507
+      lastFrame: 4549
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2169,8 +2894,8 @@ ModelImporter:
       name: LeapKick_P3
       takeName: Scene
       internalID: 288434484098941839
-      firstFrame: 3535
-      lastFrame: 3591
+      firstFrame: 4559
+      lastFrame: 4615
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2198,8 +2923,8 @@ ModelImporter:
       name: Sweep_P3
       takeName: Scene
       internalID: 468530316810804531
-      firstFrame: 3601
-      lastFrame: 3649
+      firstFrame: 4625
+      lastFrame: 4673
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2227,8 +2952,8 @@ ModelImporter:
       name: QiWave_P3
       takeName: Scene
       internalID: 1120026752599299913
-      firstFrame: 3659
-      lastFrame: 3715
+      firstFrame: 4683
+      lastFrame: 4739
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2256,8 +2981,8 @@ ModelImporter:
       name: DashStrike_P3
       takeName: Scene
       internalID: 1122551638095416342
-      firstFrame: 3725
-      lastFrame: 3761
+      firstFrame: 4749
+      lastFrame: 4785
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2285,8 +3010,8 @@ ModelImporter:
       name: PhaseStaff
       takeName: Scene
       internalID: 661162046196628820
-      firstFrame: 3771
-      lastFrame: 3861
+      firstFrame: 4795
+      lastFrame: 4885
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2314,8 +3039,8 @@ ModelImporter:
       name: Defeat
       takeName: Scene
       internalID: 196398897069576563
-      firstFrame: 3871
-      lastFrame: 4021
+      firstFrame: 4895
+      lastFrame: 5045
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2343,8 +3068,8 @@ ModelImporter:
       name: Meditate
       takeName: Scene
       internalID: 698091705080350216
-      firstFrame: 4031
-      lastFrame: 4127
+      firstFrame: 5055
+      lastFrame: 5151
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2372,8 +3097,8 @@ ModelImporter:
       name: SeatedBow
       takeName: Scene
       internalID: 1132645794787183636
-      firstFrame: 4137
-      lastFrame: 4207
+      firstFrame: 5161
+      lastFrame: 5231
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2401,8 +3126,8 @@ ModelImporter:
       name: PoseTest
       takeName: Scene
       internalID: 22000253238621857
-      firstFrame: 4217
-      lastFrame: 4449
+      firstFrame: 5241
+      lastFrame: 5473
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
