@@ -282,7 +282,8 @@ _GUARD_L = dict(pos=(0.36, -0.36, 1.42), fingers=(0.2, -0.3, 1.0), dorsum=(0.25,
 READY2 = hand(hand(BODY, "r", **_GUARD_R), "l", **_GUARD_L)
 READY1 = mod(READY2, back_l=1.0, **MR.hand_shape("l", "relaxed"))
 # fase 3: el bastón apuntando a Kaito por delante a su izquierda, la derecha adelante y la izquierda en la cadera de atrás
-STAFF_GUARD = dict(staff_on=1.0, staff_pos=(0.12, -0.18, 1.2), staff_dir=n(0.22, 0.95, 0.2), staff_up=(0.0, 0.0, 1.0),
+# (5 cm afuera del costado: más adentro el bastón quedaba medio metido en el chaleco en toda la fase 3)
+STAFF_GUARD = dict(staff_on=1.0, staff_pos=(0.17, -0.18, 1.2), staff_dir=n(0.22, 0.95, 0.2), staff_up=(0.0, 0.0, 1.0),
                    grip_r=-0.36, grip_l=0.4, grip_r_up=(0.0, 0.0, 1.0), grip_l_up=(0.0, 0.0, 1.0), grip_r_thumb=-1.0,
                    grip_l_thumb=-1.0, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4), grip_r_w=1.0, grip_l_w=1.0,
                    back_l=0.0, **MR.hand_shape("r", "grip"), **MR.hand_shape("l", "grip"))
@@ -394,7 +395,7 @@ class Gait(NA.ProcClip):
 
 
 def gait(name, ph, frames, speed, direction, stance, lift, bob, sway, yaw_amp, lean, width=0.19, hip_z=-0.14, yaw0=8.0,
-         heel_max=22.0, strike=8.0, flight=False, notes=""):
+         heel_max=22.0, strike=8.0, flight=False, notes="", staff_off=None):
     """direction: (x, y) hacia donde avanza (frente = (0, -1)); speed en m/s; width = medio ancho entre tobillos."""
     T = frames / FPS
     d = Vector((direction[0], direction[1], 0.0)).normalized()
@@ -436,11 +437,17 @@ def gait(name, ph, frames, speed, direction, stance, lift, bob, sway, yaw_amp, l
             drop = bob * (0.5 - 0.5 * c2)
         p = mod(BODY, hips=(sw * (0.0 if side else 1.0) + lv.x, 0.03 + lv.y, hip_z - drop),
                 hips_rot=(lean * (0.0 if side else 0.4), sw * 8.0 * (0.0 if side else 1.0), yaw0 + (0.0 if side else yw)),
-                spine=(3.0 + lean * 0.4, 0.0, 2.0 - yw * 0.5), chest=(2.0 + lean * 0.3, 0.0, 2.0 - yw * 0.6),
+                spine=(3.0 + lean * 0.4, 0.0, 2.0 - yw * 0.7), chest=(2.0 + lean * 0.3, 0.0, 2.0 - yw * 0.9),
                 neck=(-2.0 - lean * 0.4, 0.0, -yaw0 * 0.6 + yw * 0.4), head=(-5.0 - lean * 0.4, 0.0, -yaw0 * 0.6 + yw * 0.2),
                 knee_r=(-0.1, -1.0, 0.0), knee_l=(0.1, -1.0, 0.0), breath=0.3 + 0.2 * c2)
         p = feet(p, r=foot(ur, base_r, yaw_r), l=foot(ul, base_l, yaw_l))
-        return arms(p, ph, right=True)
+        # las manos de guardia acompañan el paso (un poco adelante y atrás contra la pierna, y el peso al apoyar): el tronco
+        # que contrarresta la cadera y las manos quietas se leían como un muñeco rígido
+        sw2 = math.sin(2.0 * math.pi * t)
+        hr = (0.0, 0.03 * sw2 * (0.0 if side else 1.0), -0.012 * c2)
+        hl = (0.0, -0.03 * sw2 * (0.0 if side else 1.0), -0.012 * c2)
+        so = tuple(Vector(staff_off or (0.0, 0.0, 0.0)) + Vector((0.0, -0.012 * c2, 0.02 * sw2 * (0.0 if side else 1.0))))
+        return arms(p, ph, right=True, r=hr, l=hl, staff=so)
     c = Gait(name + SUFFIX[ph], frames, fn, ph, name if ph > 1 else None, loop=True, root_vel=(d.x * speed, d.y * speed, 0.0),
              timing={"ground_speed_mps": speed, "stance": stance, "contacts": [0, frames // 2], "phase": ph},
              events=[{"frame": 0, "fn": "Step"}, {"frame": frames // 2, "fn": "Step"}], notes=notes,
@@ -502,6 +509,7 @@ def define_clips():
         for v in REACH_K:
             counter_strike(ph, v)
         taunt(ph)
+        stance(ph)
         hit(ph)
         hit_heavy(ph)
         parried(ph)
@@ -516,6 +524,8 @@ def define_clips():
     sweep()
     qi_wave()
     dash_strike()
+    for ph in (2, 3):
+        back_hop(ph)
     # fase 3 (el bastón), el cambio de fase 2 -> 3 y la derrota: master_clips_p3.py
     import master_clips_p3 as P3
     P3.define()
@@ -536,12 +546,15 @@ def step_back(p, s, k, dy, lift=0.04):
 
 
 def idle(ph):
-    """Guardia que respira (3.2 s, loop): una inspiración lenta, el peso se mece apenas de un pie al otro y la mano de
-    adelante flota con el pecho."""
+    """Guardia que respira (3.2 s, loop): inspira lento con el pecho y los hombros que suben, el peso se mece al pie de
+    atrás y vuelve, la cabeza acompaña y la mano de adelante flota con el pecho. Con 2-3 cm y 2° no se veía nada desde la
+    cámara del juego (dos cuadros a 1.5 s eran el mismo dibujo): ahora la cadera se mece ~7 cm y la cabeza ~5°."""
     a = arms(BODY, ph, right=True)
-    b = arms(mod(BODY, breath=1.0, hips=(0.032, 0.05, -0.085), hips_rot=(0.0, 0.6, 14.5), head=(-6.5, 0.0, -11.5)), ph, right=True,
-             r=(0.0, 0.012, 0.01), l=(0.0, 0.01, 0.008), staff=(0.0, 0.01, 0.0))
-    c = mod(a, hips=(0.01, 0.065, -0.078), hips_rot=(0.0, -0.4, 13.6), head=(-4.5, 0.0, -10.5))
+    b = arms(mod(BODY, breath=1.0, hips=(0.07, 0.04, -0.092), hips_rot=(0.0, 2.0, 16.0), spine=(1.5, 0.0, 4.5), chest=(-1.0, 0.0, 4.5),
+                 neck=(-3.0, 0.0, -11.0), head=(-9.0, 2.5, -14.0)), ph, right=True,
+             r=(0.0, 0.03, 0.025), l=(0.0, 0.025, 0.02), staff=(0.0, 0.025, 0.0))
+    c = arms(mod(BODY, breath=0.2, hips=(-0.01, 0.075, -0.072), hips_rot=(0.0, -1.5, 12.0), spine=(3.5, 0.0, 3.5),
+                 neck=(-1.0, 0.0, -9.0), head=(-2.5, -2.0, -8.5)), ph, right=True, r=(0.0, -0.01, -0.01), staff=(0.0, -0.01, 0.0))
     POSES[f"guardia {ph}"] = a
     return add("Idle", 96, [(0, a, "sine"), (44, b, "sine"), (72, c, "sine"), (96, a, "sine")], ph=ph, loop=True,
                lag={"head": 3.0, "neck": 1.5}, timing={"kind": "idle", "chain_from": "READY", "chain_to": "READY"},
@@ -552,7 +565,8 @@ def locomotion(ph):
     gait("Walk", ph, 36, 1.6, (0.0, -1.0), stance=0.6, lift=0.12, bob=0.035, sway=0.03, yaw_amp=6.0, lean=3.0,
          notes="camina a 1.6 m/s (walkSpeed): pasos de 0.96 m, rodillas flojas (se desliza, no rebota)")
     gait("Run", ph, 22, 4.0, (0.0, -1.0), stance=0.36, lift=0.3, bob=0.05, sway=0.02, yaw_amp=9.0, lean=12.0, hip_z=-0.12,
-         heel_max=30.0, strike=4.0, flight=True, notes="corre a 4.0 m/s (runSpeed): trancos de 1.47 m con vuelo, erguido")
+         heel_max=30.0, strike=4.0, flight=True, notes="corre a 4.0 m/s (runSpeed): trancos de 1.47 m con vuelo, erguido",
+         staff_off=(0.05, 0.1, 0.0))
     gait("StrafeL", ph, 24, 1.3, (1.0, 0.0), stance=0.56, lift=0.1, bob=0.03, sway=0.0, yaw_amp=0.0, lean=2.0, width=0.36,
          strike=0.0, heel_max=10.0, notes="rodea hacia su izquierda a 1.3 m/s sin cruzar los pies (paso y junta)")
     gait("StrafeR", ph, 24, 1.3, (-1.0, 0.0), stance=0.56, lift=0.1, bob=0.03, sway=0.0, yaw_amp=0.0, lean=2.0, width=0.36,
@@ -591,6 +605,26 @@ def ready(ph, travel=0.0):
 def framed(ph, keys, frames, travel=0.0, ease0="sine", ease1="sine"):
     """Las claves de un golpe entre la guardia exacta del cuadro 0 y la del último (corrida lo que avanzó)."""
     return [(0, ready(ph), ease0)] + list(keys) + [(frames, ready(ph, travel), ease1)]
+
+
+def blend_ends(keys, ph, frames, n=4):
+    """Claves de un giro procedural (una por cuadro): los primeros y los últimos 'n' cuadros se funden con la guardia
+    exacta con la que encadena (sus rodillas y manos de giro se apartaban 5-7° y el fundido de 0.08 s saltaba)."""
+    g0 = ready(ph)
+    out = []
+    for f, p_, e in keys:
+        w = min(1.0, f / n, (frames - f) / n)
+        if w >= 1.0:
+            out.append((f, p_, e))
+            continue
+        # la guardia con los giros (yaw) en la misma vuelta que el cuadro del giro: 374° y 14° son la misma pose
+        g = mod(g0)
+        for ch in ("hips_rot", "foot_r_rot", "foot_l_rot"):
+            a_, b_ = g.get(ch), p_.get(ch)
+            if a_ is not None and b_ is not None:
+                g[ch] = (a_[0], a_[1], a_[2] + 360.0 * round((b_[2] - a_[2]) / 360.0))
+        out.append((f, mix(g, p_, max(0.0, w)), e))
+    return out
 
 
 def front_step(c, T, drive_f=None):
@@ -1103,10 +1137,10 @@ def crane(ph):
     follow = feet(mod(at_travel(R0, 0.4), hips=(0.02, 0.02, -0.14)), r=flat(-0.2, RF0[0][1] - T, 2.0),
                   l=air(0.27, LY - 0.25, 0.16, pitch=-8.0, yaw=26.0))
     end = at_travel(R0, T)
-    keys = [(0, R0, "sine"), (6, shift, "inout"), (13, crane_, "inout", {"foot_r": "inout"}), (15, hold, "sine"),
+    keys = [(0, ready(ph), "sine"), (6, shift, "inout"), (13, crane_, "inout", {"foot_r": "inout"}), (15, hold, "sine"),
             (16, chamber, "in2"), (18, kick, "expo_in"), (20, over, "out"), (24, retract, "inout"),
             (28, land, "in2", {"foot_r": "in2"}), (34, follow, "inout", {"travel": "inout"}),
-            (37, feet(mod(at_travel(R0, T), hips=(0.02, 0.05, -0.1)), l=flat(LX, LY - T, LYAW)), "inout"), (42, end, "sine")]
+            (37, feet(mod(at_travel(R0, T), hips=(0.02, 0.05, -0.1)), l=flat(LX, LY - T, LYAW)), "inout"), (42, ready(ph, T), "sine")]
     # el de apoyo alcanza con el paso de seguimiento (bajaba todavía corriéndose: la suela se arrastraba 14 cm)
     back = [(24, flat(LX, LY, LYAW), "lin"), (28, ball(LX, LY, LYAW, heel=20.0), "inout")] + follow_step(28, T, 42)[1:]
     return add("CraneKick", 42, [(k[0], A(k[1])) + tuple(k[2:]) for k in keys], ph=ph, steps=foot_track("l", back, 42, LF0),
@@ -1119,17 +1153,27 @@ def crane(ph):
                      "pierna y la apoya adelante (f28); avanza 0.45 m después de apoyar")
 
 
+def smooth(a, b, x):
+    """0 antes de a, 1 después de b, suave entre medio."""
+    u = max(0.0, min(1.0, (x - a) / (b - a)))
+    return u * u * (3.0 - 2.0 * u)
+
+
 def leap(ph):
-    """Patada voladora, ROJA (imparable) con marca en el piso. AVISO: se agacha hondo con los brazos atrás (desde arriba la
-    silueta se achica y los brazos salen por atrás) y salta: el vuelo es parabólico EN EL RELOJ DEL JUEGO (la suelta se
-    toca con u², StepTimeline: el clip lleva el avance y la altura remapeados con la raíz) y cae con el pie derecho sobre
-    la marca. En timing.air los dos pies están en el aire: el juego puede estirar ese tramo del avance hasta donde está
-    Kaito (marker_m es la distancia de la marca autorada)."""
+    """Grulla voladora, ROJA (imparable) con marca en el piso. AVISO: se agacha hondo con los brazos atrás (desde arriba la
+    silueta se achica y los brazos salen por atrás) y salta: sube recogido, arriba abre las alas (los brazos bien
+    abiertos) con la rodilla derecha montada contra el pecho, y desde ahí estira la pierna hacia adelante y abajo (la
+    patada que cae: el talón primero) mientras las alas se van atrás y la otra pierna queda recogida atrás. Cae con el
+    pie derecho sobre la marca, se clava agachado (4 cuadros quieto con el polvo) y se levanta. El vuelo es parabólico EN
+    EL RELOJ DEL JUEGO (la suelta se toca con u², StepTimeline: el clip lleva el avance y la altura remapeados con la
+    raíz) y va en el espacio del personaje: del pie que empuja (timing.air[0]) al que cae (air[1]) el juego escala el
+    avance para caer donde está Kaito sin que los pies patinen (marker_m es la distancia de la marca autorada). Antes
+    subía 0.9 m con la pierna recogida y solo la estiraba al caer: se leía como un saltito con pisotón."""
     A = lambda p: arms(p, ph, left=p.get("_left_p2"))
     LX, LY, LYAW = land_xy(LF0)
     RX, RY, RYAW = land_xy(RF0)
     APEX, TAKE, LAND, N = 19, 21, 33, 56
-    PUSH, AIR_D, H = 0.15, 4.4, 0.95
+    PUSH, AIR_D, H = 0.15, 4.4, 1.35
     T_LAND = PUSH + AIR_D
     RR = 0.6
     crouch = feet(_wings(mod(R0, hips=(0.0, 0.07, -0.46), hips_rot=(14.0, 0.0, 10.0), spine=(20.0, 0.0, 2.0), chest=(8.0, 0.0, 0.0),
@@ -1140,54 +1184,78 @@ def leap(ph):
     pre = mix(R0, crouch, 0.5)
     pre["_left_p2"] = crouch["_left_p2"]
     hold = mod(crouch, hips=(0.0, 0.08, -0.48), head=(-19.0, 0.0, -6.0))
+    hold["_left_p2"] = dict(crouch["_left_p2"])
     push = feet(_wings(mod(crouch, hips=(0.0, -0.06, -0.2), hips_rot=(10.0, 0.0, 8.0), spine=(12.0, 0.0, 2.0), head=(-12.0, 0.0, -6.0),
-                           travel=PUSH), ph, (-0.6, 0.42, 1.55), (0.6, 0.42, 1.55), fingers_r=(-0.2, 0.6, -0.8), up_r=(-0.3, -0.3, 0.9)),
-                r=tiptoe(RX, RY, RYAW, heel=45.0, toe=12.0), l=tiptoe(LX, LY, LYAW, heel=50.0, toe=12.0))
+                           travel=PUSH), ph, (-0.62, 0.36, 1.62), (0.62, 0.36, 1.62), fingers_r=(-0.3, 0.5, -0.6), up_r=(-0.4, -0.2, 0.9)),
+                r=ball(RX, RY, RYAW, heel=45.0), l=ball(LX, LY, LYAW, heel=50.0))
+    # los pies empujan rodando sobre la bola con los dedos planos (de plano a punta, mezclado, la punta se corría 2.7 cm)
+    roll = feet(mix(hold, push, 0.45), r=ball(RX, RY, RYAW, heel=22.0), l=ball(LX, LY, LYAW, heel=24.0))
+    roll["travel"] = 0.0
+    roll["_left_p2"] = dict(push["_left_p2"])
 
     def flight(w):
         """Pose del vuelo a la fracción w del tiempo de vuelo (en el reloj del juego)."""
         trv = PUSH + AIR_D * w
         z = H * 4.0 * w * (1.0 - w)
-        ext = max(0.0, min(1.0, (w - 0.3) / 0.3))
-        down = max(0.0, (w - 0.7) / 0.3)
-        tuck = math.sin(math.pi * min(1.0, w / 0.8))
-        kick = down
-        # pie derecho: recogido (rodilla arriba) al subir, estirado adelante en el pico (la patada que se ve) y abajo para
-        # caer en la marca; el izquierdo recogido debajo del cuerpo
-        fr_c = Vector((-0.12, -0.32, 0.6)).lerp(Vector((-0.14, -0.88, 0.5)), ext).lerp(Vector((-0.2, -0.5, 0.22)), down)
-        fl_c = Vector((0.2, 0.38, 0.7)).lerp(Vector((0.22, 0.42, 0.42)), down)
-        p = _wings(mod(R0, hips=(0.0, -0.06, -0.12 + z - 0.18 * kick), hips_rot=(6.0 - 12.0 * kick, 0.0, 8.0),
-                       spine=(8.0 + 6.0 * kick, 0.0, 2.0), chest=(2.0, 0.0, 0.0), neck=(-6.0, 0.0, -6.0), head=(-10.0, 0.0, -6.0),
+        tuck = smooth(0.0, 0.3, w)                    # sube recogido
+        cham = smooth(0.2, 0.45, w) * (1.0 - smooth(0.6, 0.78, w))   # rodilla montada arriba
+        ext = smooth(0.55, 0.82, w)                   # la patada que se estira hacia adelante y abajo
+        land = smooth(0.84, 1.0, w)                   # baja a la marca
+        wing = smooth(0.15, 0.45, w)                  # las alas se abren
+        back = smooth(0.55, 0.85, w)                  # y se van atrás con la patada
+        # el pie derecho en el espacio del personaje: recogido, montado arriba, estirado adelante y abajo, y a la marca
+        fr = Vector((-0.12, -0.2, 0.62)).lerp(Vector((-0.1, -0.32, 1.02)), cham)
+        fr = fr.lerp(Vector((-0.17, -0.98, 0.5)), ext).lerp(Vector((RX, RY - 0.06, AZ + 0.1)), land)
+        fl = Vector((0.2, 0.3, 0.72)).lerp(Vector((0.24, 0.6, 0.62)), ext).lerp(Vector((0.25, 0.36, 0.42)), land)
+        hz = -0.12 + z - 0.2 * land
+        lean = -12.0 * ext + 14.0 * land              # se echa atrás para estirar la patada; al caer se vuelca adelante
+        p = _wings(mod(R0, hips=(0.0, -0.04 + 0.08 * ext, hz), hips_rot=(4.0 + lean * 0.6, 0.0, 8.0),
+                       spine=(10.0 * tuck * (1.0 - ext) + lean * 0.5, 0.0, 2.0), chest=(2.0 + lean * 0.3, 0.0, 0.0),
+                       neck=(-6.0 + 8.0 * ext, 0.0, -6.0), head=(-12.0 + 10.0 * ext + 8.0 * land, 0.0, -6.0),
                        knee_r=(0.0, -1.0, 0.5), knee_l=(0.2, -1.0, 0.3), travel=trv),
-                   ph, (-0.72, 0.3 - 0.3 * kick, 1.7 + z - 0.18 * kick + 0.06 * tuck), (0.72, 0.3 - 0.3 * kick, 1.7 + z - 0.18 * kick + 0.06 * tuck),
-                   fingers_r=(-0.4, 0.3, -0.8), up_r=(-0.4, 0.0, 0.9))
-        return feet(p, r=air(fr_c.x, fr_c.y - trv, fr_c.z + z, pitch=20.0 - 50.0 * ext + 30.0 * down, toe=-14.0 * ext),
-                    l=air(fl_c.x, fl_c.y - trv, fl_c.z + z, pitch=40.0 - 20.0 * kick, toe=-6.0))
+                   ph, (-0.62 - 0.25 * wing, 0.36 + 0.1 * back, 1.62 + z + 0.12 * wing - 0.18 * back - 0.14 * land),
+                   (0.62 + 0.25 * wing, 0.36 + 0.1 * back, 1.62 + z + 0.12 * wing - 0.18 * back - 0.14 * land),
+                   fingers_r=(-0.5 - 0.3 * wing, 0.4 + 0.3 * back, -0.6 + 0.4 * wing), up_r=(-0.4, -0.2, 0.9))
+        # el talón primero: la punta arriba en la patada, plana al caer
+        return feet(p, r=air(fr.x, fr.y - trv, fr.z + z, pitch=24.0 * (1.0 - ext) - 34.0 * ext * (1.0 - land) - 6.0 * land,
+                             toe=-10.0 * ext * (1.0 - land)),
+                    l=air(fl.x, fl.y - trv, fl.z + z, pitch=40.0 - 10.0 * ext, toe=-6.0))
     # cuadros del clip -> fracción del vuelo: en la suelta el clip avanza como u² del tiempo (StepTimeline)
     u0 = math.sqrt((TAKE - APEX) / (LAND - APEX))
     air_keys = []
-    for f in range(TAKE + 2, LAND, 2):
+    for f in range(TAKE + 1, LAND):
         u = math.sqrt((f - APEX) / (LAND - APEX))
         air_keys.append((f, flight((u - u0) / (1.0 - u0)), "lin"))
-    land = feet(_wings(mod(R0, hips=(-0.02, -0.12, -0.5), hips_rot=(16.0, 0.0, 12.0), spine=(22.0, 0.0, 4.0), chest=(8.0, 0.0, 2.0),
+    land = feet(_wings(mod(R0, hips=(-0.02, -0.12, -0.52), hips_rot=(16.0, 0.0, 12.0), spine=(22.0, 0.0, 4.0), chest=(8.0, 0.0, 2.0),
                            neck=(-10.0, 0.0, -8.0), head=(-14.0, 0.0, -8.0), knee_r=(-0.3, -1.0, 0.2), travel=T_LAND),
-                       ph, (-0.7, -0.35, 1.45), (0.7, -0.2, 1.5), fingers_r=(-0.3, -0.3, -0.9), up_r=(-0.5, 0.0, 0.8)),
-                r=flat(RX, RY - T_LAND, RYAW), l=air(LX, LY - T_LAND + 0.05, 0.34, pitch=10.0, yaw=LYAW))
-    absorb = feet(mod(land, hips=(-0.02, -0.06, -0.54), spine=(26.0, 0.0, 4.0)), l=flat(LX, LY - T_LAND, LYAW))
+                       ph, (-0.74, 0.12, 1.38), (0.74, 0.12, 1.38), fingers_r=(-0.6, 0.4, -0.6), up_r=(-0.5, 0.0, 0.8)),
+                r=flat(RX, RY - T_LAND, RYAW), l=air(LX, LY - T_LAND + 0.08, 0.3, pitch=10.0, yaw=LYAW))
+    absorb = feet(mod(land, hips=(-0.02, -0.06, -0.56), spine=(26.0, 0.0, 4.0)), l=flat(LX, LY - T_LAND, LYAW))
+    absorb["_left_p2"] = dict(land["_left_p2"])
+    # se queda clavado agachado con las alas abiertas (lo que se lee del golpe: el polvo y la pose quieta)
+    held = mod(absorb, hips=(-0.02, -0.055, -0.555), head=(-13.0, 0.0, -8.0))
+    held["_left_p2"] = dict(land["_left_p2"])
     rise = mod(at_travel(R0, T_LAND), hips=(0.02, 0.02, -0.22), spine=(8.0, 0.0, 4.0), hand_r=(-0.4, -0.3, 1.7))
-    keys = [(0, R0, "sine"), (8, pre, "inout"), (16, crouch, "inout"), (APEX, hold, "sine"), (TAKE, push, "in2", {"travel": "lin"})]
+    keys = [(8, pre, "inout"), (16, crouch, "inout"), (APEX, hold, "sine"), (20, roll, "in2"), (TAKE, push, "in2", {"travel": "lin"})]
     keys += air_keys
-    keys += [(LAND, land, "lin", {"foot_r": "lin"}), (37, absorb, "out"), (46, rise, "inout"), (N, at_travel(R0, T_LAND), "sine")]
-    return add("LeapKick", N, [(k[0], A(k[1])) + tuple(k[2:]) for k in keys], ph=ph,
+    keys += [(LAND, land, "lin", {"foot_r": "lin"}), (36, absorb, "out"), (40, held, "sine"), (49, rise, "inout")]
+    # el pie de atrás baja detrás después de la caída: encima de su lugar y recién ahí apoya
+    l_air = land["foot_l"], land["foot_l_rot"], land.get("toe_l", 0.0)
+    back = [(LAND, l_air, "lin"), (35, air(LX, LY - T_LAND, AZ + 0.04, pitch=-2.0, yaw=LYAW), "out"),
+            (36, flat(LX, LY - T_LAND, LYAW), "in2"), (N, flat(LX, LY - T_LAND, LYAW), "lin")]
+    steps = [st for st in foot_track("l", back, N, l_air) if st[0] >= LAND]
+    return add("LeapKick", N, framed(ph, [(k[0], A(k[1])) + tuple(k[2:]) for k in keys], N, T_LAND), ph=ph, steps=steps,
                timing={"tell": [0, APEX], "apex": APEX, "hold": [16, APEX], "contact": LAND, "active": [LAND, LAND + 3],
-                       "recover": [LAND + 3, N], "lunge": [APEX, LAND, T_LAND], "air": [TAKE + 1, LAND - 1], "release_rate": RR,
+                       "recover": [LAND + 3, N], "lunge": [APEX, LAND, T_LAND], "air": [TAKE, LAND], "release_rate": RR,
                        "root_max": 16.0, "kind": RED, "glow": "Master_GlintFootR", "strike": ("Foot_R", (0.0, 0.0, 0.0)),
-                       "marker_m": round(T_LAND - RY, 2), "ring_m": 1.8, "spin": True, "chain_from": "READY", "chain_to": "READY"},
+                       "marker_m": round(T_LAND - RY, 2), "ring_m": 1.8, "spin": True, "chain_from": "READY", "chain_to": "READY",
+                       "height_cap": 4.0},
                events=[{"frame": APEX, "fn": "Apex"}, {"frame": TAKE, "fn": "TakeOff"}, {"frame": LAND, "fn": "Strike"},
-                       {"frame": LAND, "fn": "Land"}, {"frame": LAND + 2, "fn": "Step"}],
-               notes=f"se agacha (aviso rojo f{APEX}), salta en f{TAKE} y cae sobre la marca en f{LAND} a marker_m del transform "
-                     f"inicial (el pie derecho). AttackDef.releaseRate = {RR}: el vuelo dura ~0.5 s; el juego puede estirar el "
-                     f"avance de timing.air para caer donde está Kaito (onda de ring_m al caer)")
+                       {"frame": LAND, "fn": "Land"}, {"frame": 36, "fn": "Step"}],
+               notes=f"se agacha (aviso rojo f{APEX}), salta en f{TAKE}, arriba abre las alas con la rodilla montada y estira la "
+                     f"patada hacia abajo; cae sobre la marca en f{LAND} a marker_m del transform inicial (el pie derecho) y se "
+                     f"queda clavado hasta f40. AttackDef.releaseRate = {RR}: el vuelo dura ~0.5 s; el juego escala el avance "
+                     f"de timing.air (del despegue a la caída) para caer donde está Kaito (onda de ring_m al caer)")
 
 
 RED_ = RED
@@ -1250,33 +1318,108 @@ def counter_strike(ph, var=None):
                      ("" if var is None else ". Variante de paso corto (la elige el jefe en la suelta)"))
 
 
-def taunt(ph):
-    """Provocación: la palma derecha hacia arriba y los dedos llaman dos veces ('vení'), la cabeza apenas ladeada. Sirve de
-    re-entrada corta después de un reintento. Fase 3: apoya el bastón vertical a su izquierda y llama con la derecha."""
-    g = arms(BODY, ph, right=True)
-    up = dict(pos=(-0.28, -0.58, 1.66), fingers=(0.1, -1.0, 0.25), dorsum=(0.0, 0.1, -1.0), elbow=(-0.7, 0.3, -0.6))
-    if ph == 3:
-        rest = staff_pose(BODY, (0.45, -0.32, 1.17), (0.0, 0.0, 1.0), upv=(0.0, -1.0, 0.0), gr=None, gl=0.62, lt=1.0,
-                          glu=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.4))
+# la postura del bambú: hundido en el gato (más bajo que la guardia, el peso todo atrás), el pecho apenas adelante y
+# las dos palmas cruzadas por las muñecas delante del pecho, abiertas hacia Kaito: una pared. Desde arriba es otra
+# silueta que la guardia (que es un brazo alto al costado de la cabeza): una X adelante del cuerpo
+S_BODY = feet(mod(BODY, hips=(0.03, 0.17, -0.3), hips_rot=(4.0, 0.0, 10.0), spine=(8.0, 0.0, 2.0), chest=(4.0, 0.0, 2.0),
+                  neck=(-6.0, 0.0, -8.0), head=(-10.0, 0.0, -8.0), knee_l=(0.6, -1.0, 0.0), knee_r=(-0.3, -1.0, 0.0)),
+              r=ball(*land_xy(FOOT_R0), heel=22.0))
+_S_R = dict(pos=(0.06, -0.6, 1.66), fingers=(0.25, -0.15, 1.0), dorsum=(0.2, 1.0, 0.1), elbow=(-0.9, 0.1, -0.4), shape="palm")
+_S_L = dict(pos=(-0.06, -0.62, 1.6), fingers=(-0.25, -0.15, 1.0), dorsum=(-0.2, 1.0, 0.1), elbow=(0.9, 0.1, -0.4), shape="palm")
 
-        def call(p, curl):
-            q = hand(mod(p, **{k: rest[k] for k in rest if k.startswith(("staff", "grip", "elbow_l"))}), "r", **up)
-            q.update({"fing_r": (curl, curl + 4, curl + 8, curl + 12), "tip_r": (curl * 1.1, curl * 1.1, curl * 1.2, curl * 1.2)})
+
+def stance_arms(p, ph, w=1.0):
+    """Las dos palmas cruzadas adelante (w = cuánto: 0 = la guardia común de las manos), o el bastón parado adelante con
+    la punta apoyada en el piso y las dos manos arriba (fase 3)."""
+    if ph == 3:
+        # parado adelante y un poco a su izquierda (las dos manos de ese lado: el antebrazo izquierdo no cruza el pecho)
+        top = Vector((0.16, -0.6, 1.76))
+        tip = Vector((0.2, -0.7, MR.STAFF_R + 0.01))
+        a = (top - tip).normalized()
+        return staff_hands(p, tuple(tip + a * (MR.STAFF_LEN * 0.5)), tuple(a), hr=(0.16, -0.62, 1.46), hl=(0.16, -0.6, 1.72),
+                           rt=-1.0, lt=1.0, gru=(-1.0, 0.0, 0.0), glu=(1.0, 0.0, 0.0), elbow_r=(-0.9, 0.2, -0.4),
+                           elbow_l=(0.9, 0.3, -0.3))
+    q = hand(p, "r", **_S_R)
+    q = hand(q, "l", **_S_L)
+    q["back_l"] = 0.0
+    return q
+
+
+def stance(ph):
+    """Postura del bambú (BambooMasterBoss.EnterStance): de la guardia baja al gato y cruza las dos palmas adelante (en la
+    fase 1 la izquierda sale de la espalda: lo único que la saca es esta postura); el juego deja el último cuadro. Pegarle
+    acá es lo que él espera: desvía y contragolpea; esperar lo abre (Taunt)."""
+    a = arms(BODY, ph, right=True)
+    mid_b = mix(BODY, S_BODY, 0.6)
+    if ph == 3:
+        # primero lo desliza hacia adelante entre las manos (la punta de atrás sale del cuerpo por su eje) y recién después
+        # lo para: girarlo desde la guardia lo pasaba por el pecho
+        mid = anchor(mod(mid_b, **STAFF_GUARD), "staff", staff=tuple(Vector(ANCHOR["staff"]["staff_cdir"]) * -0.45))
+        mid["grip_r"] = STAFF_GUARD["grip_r"] + 0.45
+        mid["grip_l"] = STAFF_GUARD["grip_l"] + 0.45
+    else:
+        mid = mix(a, stance_arms(mid_b, ph), 0.55)
+    s_ = stance_arms(S_BODY, ph)
+    CHAIN.setdefault("STANCE", {})[ph] = s_
+    POSES[f"postura del bambú {ph}"] = s_
+    return add("Stance", 20, [(0, a, "sine"), (8, mid, "out"), (14, mod(s_, breath=0.6), "inout"), (20, s_, "sine")], ph=ph,
+               lag={"head": 1.5, "neck": 0.8},
+               timing={"kind": "none", "hold_last": True, "chain_from": "READY", "chain_to": "STANCE"},
+               notes="postura del bambú: hundido en el gato, las dos palmas cruzadas adelante (el bastón parado en la fase 3); "
+                     "pose quieta desde f14: el juego deja el último cuadro (BambooMasterBoss.EnterStance)")
+
+
+def taunt(ph):
+    """Abierto (Taunt, Kaito esperó la postura): recoge el pie de adelante y se para alto, los brazos bajan y se abren a
+    los costados con las palmas hacia Kaito, el pecho arriba y el mentón alto ('pegame'); se queda así ~0.8 s y llama una
+    vez con todo el antebrazo derecho; vuelve a la guardia con el paso. Desde la cámara del juego es la silueta más
+    abierta de la pelea (antes era la guardia con los dedos curvándose). Fase 3: el bastón parado en la izquierda, al
+    costado. Sirve también de re-entrada corta en los reintentos."""
+    g = arms(BODY, ph, right=True)
+    RX, RY, RYAW = land_xy(FOOT_R0)
+    LX, LY, LYAW = land_xy(FOOT_L0)
+    tall = mod(BODY, hips=(0.02, 0.1, -0.02), hips_rot=(-2.0, 0.0, 8.0), spine=(-6.0, 0.0, 2.0), chest=(-8.0, 0.0, 2.0),
+               neck=(-6.0, 0.0, -6.0), head=(-12.0, 0.0, -8.0), breath=1.0, knee_r=(-0.1, -1.0, 0.0), knee_l=(0.1, -1.0, 0.0))
+    # los brazos abiertos y bajos, las palmas hacia adelante
+    open_r = dict(pos=(-0.62, -0.22, 1.18), fingers=(-0.35, -0.2, -1.0), dorsum=(0.0, 1.0, -0.2), elbow=(-0.6, 0.6, -0.4), shape="palm")
+    open_l = dict(pos=(0.62, -0.22, 1.18), fingers=(0.35, -0.2, -1.0), dorsum=(0.0, 1.0, -0.2), elbow=(0.6, 0.6, -0.4), shape="palm")
+    # la llamada: el antebrazo derecho estirado adelante con la palma arriba y después recogido hacia él
+    call_out = dict(pos=(-0.36, -0.72, 1.42), fingers=(0.1, -1.0, 0.1), dorsum=(0.0, 0.0, -1.0), elbow=(-0.8, 0.2, -0.5), shape="palm")
+    call_in = dict(pos=(-0.32, -0.38, 1.72), fingers=(0.1, -0.2, 1.0), dorsum=(0.0, 0.95, -0.3), elbow=(-0.85, 0.1, -0.5), shape="relaxed")
+    rest3 = staff_pose(BODY, (0.5, -0.12, 1.17), (0.0, 0.0, 1.0), upv=(0.0, -1.0, 0.0), gr=None, gl=0.32, lt=1.0, glu=(1.0, 0.0, 0.0),
+                       elbow_l=(0.85, 0.3, -0.4))
+
+    def pose(body, r, l=open_l):
+        q = hand(body, "r", **r)
+        if ph == 3:
+            q = mod(q, **{k: rest3[k] for k in rest3 if k.startswith(("staff", "grip", "elbow_l"))})
             q.update(MR.hand_shape("l", "grip"))
             return q
-    else:
-        def call(p, curl):
-            q = arms(hand(p, "r", **up), ph)
-            q.update({"fing_r": (curl, curl + 4, curl + 8, curl + 12), "tip_r": (curl * 1.1, curl * 1.1, curl * 1.2, curl * 1.2)})
-            return q
-    tilt = mod(BODY, head=(-6.0, 6.0, -10.0), neck=(-2.0, 2.0, -10.0), hips=(0.02, 0.07, -0.085))
-    keys = [(0, g, "sine"), (10, call(tilt, 2.0), "inout"), (15, call(tilt, 70.0), "inout"), (19, call(tilt, 6.0), "out"),
-            (24, call(tilt, 72.0), "inout"), (29, call(tilt, 4.0), "out"), (38, call(mod(BODY, head=(-4.0, 3.0, -11.0)), 4.0), "sine"),
-            (54, g, "inout")]
-    return add("Taunt", 54, keys, ph=ph, lag={"head": 2.0, "neck": 1.0},
-               timing={"kind": "none", "chain_from": "READY", "chain_to": "READY"},
-               events=[{"frame": 15, "fn": "Beckon"}, {"frame": 24, "fn": "Beckon"}],
-               notes="'vení': la palma arriba y los dedos llaman dos veces (f15, f24); re-entrada corta")
+        q = hand(q, "l", **l)
+        q["back_l"] = 0.0
+        return q
+    gather = pose(mix(BODY, tall, 0.4), dict(open_r, pos=(-0.5, -0.32, 1.4)), dict(open_l, pos=(0.5, -0.32, 1.4)))
+    wide = pose(tall, open_r)
+    wide2 = pose(mod(tall, breath=0.6, head=(-13.0, 2.0, -8.0)), dict(open_r, pos=(-0.64, -0.2, 1.16)), dict(open_l, pos=(0.64, -0.2, 1.16)))
+    out_ = pose(mod(tall, head=(-11.0, 3.0, -8.0)), call_out)
+    in_ = pose(mod(tall, head=(-12.0, 4.0, -8.0), spine=(-7.0, 0.0, 2.0)), call_in)
+    POSES[f"abierto {ph}"] = wide
+    back_r = ball(RX, RY, RYAW, heel=8.0)
+    keys = [(0, g, "sine"), (8, gather, "inout"), (14, wide, "inout"), (26, wide2, "sine"), (31, out_, "inout"), (37, in_, "inout"),
+            (43, wide2, "inout"), (50, mix(wide2, g, 0.5), "inout"), (60, g, "sine")]
+    # el pie de adelante se recoge junto al de atrás (parado alto, nada adelante) y vuelve a la guardia al final
+    tuck = (RX + 0.06, RY + 0.36, RYAW + 10.0)
+    front = [(4, back_r, "inout"), (6, air(RX + 0.03, RY + 0.16, AZ + 0.07, pitch=6.0, yaw=RYAW + 5.0), "out2"),
+             (8, air(tuck[0], tuck[1], AZ + 0.03, pitch=-2.0, yaw=tuck[2]), "out"), (10, flat(*tuck), "inout"), (45, flat(*tuck), "lin"),
+             (47, ball(*tuck, heel=16.0), "inout"), (49, air(RX + 0.03, RY + 0.18, AZ + 0.07, pitch=-4.0, yaw=RYAW + 5.0), "in2"),
+             (51, air(RX, RY, AZ + 0.03, pitch=-6.0, yaw=RYAW), "out"), (53, heel(RX, RY, RYAW, toe_up=6.0), "inout"),
+             (54, flat(RX, RY, RYAW), "lin"), (60, flat(RX, RY, RYAW), "lin")]
+    return add("Taunt", 60, keys, ph=ph, lag={"head": 2.0, "neck": 1.0}, steps=foot_track("r", front, 60, FOOT_R0),
+               timing={"kind": "none", "open": [14, 46], "chain_from": "READY", "chain_to": "READY"},
+               events=[{"frame": 10, "fn": "Step"}, {"frame": 14, "fn": "Open"}, {"frame": 33, "fn": "Beckon"},
+                       {"frame": 54, "fn": "Step"}],
+               notes="abierto: recoge el pie de adelante, se para alto con los brazos abiertos (f14-46) y llama una vez con el "
+                     "antebrazo (f33); vuelve a la guardia (f60)")
 
 
 # ============================================================================ agotado (postura quebrada)
@@ -1446,7 +1589,7 @@ def intro():
     keys = [(0, w0, "sine"), (18, w1, "sine"), (28, look, "inout"), (36, look2, "sine"), (44, side, "inout"), (52, sal, "inout"),
             (58, sal_a, "sine"), (68, bow, "inout"), (76, bow, "sine"), (86, up, "inout"), (89, lift_r, "in2"), (93, sep, "out2"),
             (96, plant_r, "in2"), (100, guard_in, "out2"), (104, feet(mod(R0, back_l=1.0, hips=(0.02, 0.06, -0.075)), l=FOOT_L0), "in2"),
-            (120, READY1, "sine")]
+            (120, ready(1), "sine")]
     CHAIN["WAIT"] = {1: WAIT_BODY}
     LX, LY, LYAW = land_xy(FOOT_L0)
     w_l = flat(0.15, 0.06, 10.0)
@@ -1483,6 +1626,16 @@ def phase_coat():
                      "r", (-0.62, 0.36, 1.62), (-0.3, 0.6, -0.7), (-0.6, -0.2, 0.7), elbow=(-0.6, 0.6, -0.3), shape="palm"),
                 "l", (0.62, 0.36, 1.62), (0.3, 0.6, -0.7), (0.6, -0.2, 0.7), elbow=(0.6, 0.6, -0.3), shape="palm")
     POSES["saco afuera"] = fling
+    # el saco sale de los hombros: los hombros atrás, el pecho afuera y los brazos que barren hacia abajo y atrás (las
+    # mangas se le deslizan por los brazos); recién con el saco detrás del cuerpo se cambia por la copia que vuela
+    shrug = hand(hand(mod(BODY, hips=(0.02, 0.0, -0.08), spine=(-8.0, 0.0, 2.0), chest=(-12.0, 0.0, 2.0), neck=(-2.0, 0.0, -8.0),
+                          head=(-6.0, 0.0, -10.0), clav_r=(0.0, 14.0, 0.0), clav_l=(0.0, -14.0, 0.0), breath=1.0),
+                      "r", (-0.4, 0.3, 1.24), (-0.1, 0.4, -1.0), (-0.9, 0.2, 0.2), elbow=(-0.5, 0.7, 0.1), shape="relaxed"),
+                 "l", (0.4, 0.3, 1.24), (0.1, 0.4, -1.0), (0.9, 0.2, 0.2), elbow=(0.5, 0.7, 0.1), shape="relaxed")
+    slip = hand(hand(mod(shrug, spine=(-9.0, 0.0, 2.0), chest=(-13.0, 0.0, 2.0)),
+                     "r", (-0.36, 0.42, 1.08), (-0.05, 0.5, -1.0), (-0.95, 0.1, 0.1), elbow=(-0.4, 0.8, 0.1), shape="palm"),
+                "l", (0.36, 0.42, 1.08), (0.05, 0.5, -1.0), (0.95, 0.1, 0.1), elbow=(0.4, 0.8, 0.1), shape="palm")
+    POSES["se saca el saco"] = slip
     roll = hand(hand(mod(BODY, hips=(0.02, 0.04, -0.1), spine=(4.0, 0.0, 3.0), chest=(2.0, 0.0, 3.0), head=(-4.0, 0.0, -10.0)),
                      "r", (-0.44, 0.0, 1.42), (0.0, 0.1, -1.0), (-1.0, 0.1, 0.0), elbow=(-0.8, 0.3, -0.3), shape="relaxed"),
                 "l", (0.44, 0.0, 1.42), (0.0, 0.1, -1.0), (1.0, 0.1, 0.0), elbow=(0.8, 0.3, -0.3), shape="relaxed")
@@ -1494,26 +1647,37 @@ def phase_coat():
                      "r", (-0.4, -0.5, 1.5), (0.1, -0.3, 1.0), (-0.3, 1.0, 0.2), elbow=(-0.7, 0.3, -0.7), shape="palm"),
                 "l", (0.42, -0.4, 1.36), (0.2, -0.3, 1.0), (0.3, 1.0, 0.2), elbow=(0.7, 0.3, -0.7), shape="palm")
     POSES["círculo tai chi"] = rise
-    # el saco tirado: libre en el mundo desde CoatOff; vuela hacia atrás a su izquierda dando vueltas y cae al piso boca abajo
-    path = [(38, (0.0, 0.3, 1.95), (35.0, 0.0, 0.0), (0.0, 10.0, 6.0)), (42, (0.12, 0.72, 2.45), (70.0, 10.0, 25.0), (12.0, 40.0, 18.0)),
-            (47, (0.42, 1.32, 2.5), (105.0, 20.0, 60.0), (30.0, 55.0, 20.0)), (52, (0.74, 1.86, 1.85), (120.0, 25.0, 90.0), (25.0, 40.0, 15.0)),
-            (57, (0.95, 2.26, 0.9), (105.0, 15.0, 110.0), (12.0, 30.0, 12.0)), (61, (1.05, 2.48, 0.12), (92.0, 6.0, 122.0), (8.0, 22.0, 8.0)),
-            (64, (1.08, 2.55, 0.16), (90.0, 3.0, 126.0), (14.0, 28.0, 10.0)), (68, (1.1, 2.58, 0.07), (90.0, 0.0, 128.0), (18.0, 32.0, 12.0))]
+    # el saco tirado: libre en el mundo desde CoatOff (encima de donde estaba el puesto, con las mangas por los brazos que
+    # van atrás); sale de los brazos hacia arriba y atrás, vuela a su izquierda ondeando el ruedo y cae arrugado (el ruedo
+    # doblado en zigzag, las mangas quebradas), no como una tabla
+    # robe_fold = (ruedo, mangas abiertas, mangas giradas, tramo 2, tramo 3, codo de las mangas, mangas atrás)
+    path = [(41, (0.0, 0.3, 1.92), (16.0, 0.0, 0.0), (8.0, -20.0, 0.0, 6.0, 4.0, 10.0, 34.0)),
+            (43, (0.02, 0.46, 2.14), (30.0, 2.0, 6.0), (14.0, 6.0, 8.0, 10.0, 8.0, 24.0, 20.0)),
+            (47, (0.14, 0.78, 2.5), (62.0, 10.0, 26.0), (22.0, 36.0, 18.0, 26.0, -18.0, 30.0, 0.0)),
+            (52, (0.44, 1.36, 2.48), (98.0, 20.0, 60.0), (34.0, 52.0, 20.0, -24.0, 30.0, 18.0, 0.0)),
+            (56, (0.74, 1.88, 1.86), (116.0, 25.0, 90.0), (20.0, 40.0, 15.0, 30.0, -20.0, 34.0, 0.0)),
+            (60, (0.95, 2.26, 0.92), (104.0, 15.0, 110.0), (10.0, 30.0, 12.0, -18.0, 26.0, 22.0, 0.0)),
+            (64, (1.05, 2.48, 0.14), (92.0, 6.0, 122.0), (8.0, 22.0, 8.0, 34.0, -30.0, 40.0, 0.0)),
+            (67, (1.08, 2.54, 0.15), (90.0, 3.0, 126.0), (14.0, 28.0, 10.0, 52.0, -46.0, 52.0, 0.0)),
+            (72, (1.1, 2.58, 0.08), (90.0, 0.0, 128.0), (18.0, 32.0, 12.0, 62.0, -58.0, 58.0, 0.0))]
     track = [(f, dict(robe_free=1.0, robe_pos=pos, robe_rot=rot, robe_fold=fold), "inout" if k else "hold")
              for k, (f, pos, rot, fold) in enumerate(path)]
     track = [(0, dict(robe_free=0.0, robe_pos=path[0][1], robe_rot=path[0][2], robe_fold=path[0][3]), "lin"),
-             (37, dict(robe_free=0.0, robe_pos=path[0][1], robe_rot=path[0][2], robe_fold=path[0][3]), "lin")] + track +             [(110, dict(robe_free=1.0, robe_pos=path[-1][1], robe_rot=path[-1][2], robe_fold=path[-1][3]), "lin")]
-    keys = [(0, g1, "sine"), (10, tall, "inout"), (18, mod(tall, breath=0.8), "sine"), (24, out_l, "inout"), (30, grab, "inout"),
-            (35, opn, "inout"), (38, fling, "expo_out"), (44, mod(fling, spine=(-4.0, 0.0, 2.0), breath=0.7), "out"),
-            (54, roll, "inout"), (64, rise, "inout"), (76, sink, "inout"), (90, mod(READY2, hips=(0.02, 0.065, -0.09)), "inout"),
-            (110, READY2, "sine")]
+             (40, dict(robe_free=0.0, robe_pos=path[0][1], robe_rot=path[0][2], robe_fold=path[0][3]), "lin")] + track + \
+            [(110, dict(robe_free=1.0, robe_pos=path[-1][1], robe_rot=path[-1][2], robe_fold=path[-1][3]), "lin")]
+    keys = [(0, ready(1), "sine"), (10, tall, "inout"), (18, mod(tall, breath=0.8), "sine"), (24, out_l, "inout"), (30, grab, "inout"),
+            (35, opn, "inout"), (38, shrug, "inout"), (41, slip, "out"), (44, fling, "expo_out"),
+            (48, mod(fling, spine=(-4.0, 0.0, 2.0), breath=0.7), "out"), (57, roll, "inout"), (66, rise, "inout"), (78, sink, "inout"),
+            (92, mod(READY2, hips=(0.02, 0.065, -0.09)), "inout"), (110, ready(2), "sine")]
     return add("PhaseCoat", 110, keys, ph=1, lag={"head": 2.0, "neck": 1.0}, steps=track,
-               timing={"kind": "none", "robe_off": 38, "chain_from": "READY", "chain_to": "READY2", "next_phase": 2},
-               events=[{"frame": 18, "fn": "EyesIgnite"}, {"frame": 30, "fn": "CoatGrab"}, {"frame": 38, "fn": "CoatOff"},
-                       {"frame": 61, "fn": "CoatLand"}, {"frame": 68, "fn": "CoatRest"}, {"frame": 90, "fn": "Guard"}],
-               notes="se saca el saco: ojos jade en f18, lo agarra (f30) y lo tira atrás de un tirón (f38: apagar Master_Robe y "
-                     "prender Master_RobeThrown); cae detrás a su izquierda (f61) y queda quieto en f68 (hornearlo ahí); "
-                     "termina en la guardia de la fase 2")
+               timing={"kind": "none", "robe_off": 41, "chain_from": "READY", "chain_to": "READY2", "next_phase": 2},
+               events=[{"frame": 18, "fn": "EyesIgnite"}, {"frame": 30, "fn": "CoatGrab"}, {"frame": 38, "fn": "Shrug"},
+                       {"frame": 41, "fn": "CoatOff"}, {"frame": 64, "fn": "CoatLand"}, {"frame": 72, "fn": "CoatRest"},
+                       {"frame": 92, "fn": "Guard"}],
+               notes="se saca el saco: ojos jade en f18, lo agarra (f30), lo abre y se lo saca de los hombros con los brazos "
+                     "atrás (f38-41: en f41 apagar Master_Robe y prender Master_RobeThrown, ya detrás del cuerpo); sale de los "
+                     "brazos hacia atrás, cae detrás a su izquierda (f64) y queda arrugado en f72 (hornearlo ahí); termina en "
+                     "la guardia de la fase 2")
 
 
 # ============================================================================ golpes propios de la fase 2 (sin saco)
@@ -1632,7 +1796,7 @@ def spin_kick():
         fr = on_ball(bx, by, RF0[1][2] + d, heel_r)
         p = feet(p, r=fr, l=fl)
         keys.append((f, arms(p, 2, left=p["_left_p2"]), "lin"))
-    keys[-1] = (N, arms(R0, 2), "lin")
+    keys = blend_ends(keys, 2, N)
     POSES["giro aviso 2"] = keys[APEX][1]
     return add("SpinKick", N, keys, ph=2, variant=False, lag={},
                timing={"tell": [0, APEX], "apex": APEX, "hold": [APEX, 16], "contact": CONTACT, "active": [CONTACT, 21],
@@ -1706,7 +1870,7 @@ def sweep():
         fl = on_ball(bx, by, LYAW + d, 40.0 * w)
         p = feet(p, r=fr, l=fl)
         keys.append((f, arms(p, 2, left=p.get("_left_p2")), "lin"))
-    keys[-1] = (N, arms(R0, 2), "lin")
+    keys = blend_ends(keys, 2, N)
     POSES["barrida aviso 2"] = keys[APEX][1]
     return add("Sweep", N, keys, ph=2, variant=False, lag={},
                timing={"tell": [0, APEX], "apex": APEX, "hold": [APEX, 14], "contact": CONTACT, "active": [CONTACT, END],
@@ -1755,9 +1919,9 @@ def qi_wave():
     k_over["_left_p2"] = dict(k_push["_left_p2"], pos=(0.2, -1.05, 0.95))
     k_rec = feet(mix(R0, k_push, 0.4), r=flat(RX, RY, RYAW))
     k_rec["_left_p2"] = None
-    keys = [(0, R0, "sine"), (8, k_sink, "inout"), (15, k_out, "inout"), (21, k_up, "inout"), (27, k_ball, "inout"), (APEX, k_hold, "sine"),
+    keys = [(0, ready(2), "sine"), (8, k_sink, "inout"), (15, k_out, "inout"), (21, k_up, "inout"), (27, k_ball, "inout"), (APEX, k_hold, "sine"),
             (33, k_stomp_up, "out2"), (CONTACT, k_push, "expo_in", {"foot_r": "in2"}), (39, k_over, "out"),
-            (46, feet(mod(R0, hips=(0.02, 0.04, -0.14)), r=flat(RX, RY, RYAW)), "inout"), (N, R0, "sine")]
+            (46, feet(mod(R0, hips=(0.02, 0.04, -0.14)), r=flat(RX, RY, RYAW)), "inout"), (N, ready(2), "sine")]
     return add("QiWave", N, [(k[0], arms(k[1], 2, left=k[1].get("_left_p2"))) + tuple(k[2:]) for k in keys], ph=2, variant=False,
                timing={"tell": [0, APEX], "apex": APEX, "hold": [APEX, 33], "contact": CONTACT, "active": [CONTACT, 39],
                        "recover": [39, N], "kind": RED, "glow": ["Master_GlintHandR", "Master_GlintHandL"], "strike": PALM_R,
@@ -1766,6 +1930,67 @@ def qi_wave():
                        {"frame": CONTACT, "fn": "QiRelease"}, {"frame": CONTACT, "fn": "Strike"}],
                notes="onda de qi: círculo de brazos y la bola de qi en el vientre (aviso f30, tiembla hasta f33), pisotón y "
                      "empuje de las dos palmas en f36 (QiRelease: el anillo rojo sale del transform)")
+
+
+def back_hop(ph):
+    """El salto atrás que toma distancia antes del paso del viento (fases 2 y 3, sin daño): se agacha un instante, empuja
+    con las dos bolas y vuela hacia atrás recogido con los brazos abiertos para equilibrar, cae con los dos pies en su
+    lugar de la guardia y amortigua. Todo el avance (HOP m hacia atrás) va entre el despegue y la caída en el espacio del
+    personaje (timing.air): el jefe lo acorta para no salirse de la arena sin que los pies patinen. El vuelo es parejo EN
+    EL RELOJ DEL JUEGO (la suelta se toca con u²)."""
+    N, APEX, TAKE, LAND = 22, 6, 9, 15
+    HOP = 2.6
+    RX, RY, RYAW = land_xy(RF0)
+    LX, LY, LYAW = land_xy(LF0)
+    A = lambda p: arms(p, ph, right=True, r=(0.02, 0.06, -0.04), l=(-0.02, 0.06, -0.04))
+    sink = feet(mod(BODY, hips=(0.02, 0.0, -0.3), hips_rot=(10.0, 0.0, 12.0), spine=(14.0, 0.0, 3.0), chest=(6.0, 0.0, 2.0),
+                    head=(-12.0, 0.0, -10.0)), r=flat(RX, RY, RYAW), l=flat(LX, LY, LYAW))
+    push = feet(mod(BODY, hips=(0.02, 0.1, -0.16), hips_rot=(2.0, 0.0, 12.0), spine=(4.0, 0.0, 3.0), head=(-8.0, 0.0, -10.0)),
+                r=ball(RX, RY, RYAW, heel=20.0), l=ball(LX, LY, LYAW, heel=22.0))
+
+    def flight(w):
+        trv = -HOP * w
+        z = 0.34 * 4.0 * w * (1.0 - w)
+        tuck = math.sin(math.pi * w)
+        p = mod(BODY, hips=(0.02, 0.1 - 0.06 * tuck, -0.1 + z - 0.06 * tuck), hips_rot=(-6.0 * tuck, 0.0, 12.0),
+                spine=(-4.0 * tuck, 0.0, 3.0), chest=(-4.0 * tuck, 0.0, 2.0), head=(-6.0 + 4.0 * tuck, 0.0, -10.0), travel=trv)
+        # los pies adelante del cuerpo (vuela hacia atrás), recogidos, y bajando a su lugar de la guardia
+        return feet(p, r=air(RX, RY - 0.14 * tuck, AZ + 0.16 * tuck + z, pitch=-10.0 * tuck, yaw=RYAW),
+                    l=air(LX, LY - 0.1 * tuck, AZ + 0.2 * tuck + z, pitch=-6.0 * tuck, yaw=LYAW))
+    u0 = math.sqrt((TAKE - APEX) / (LAND - APEX))
+    air_keys = []
+    for f in range(TAKE + 1, LAND):
+        u = math.sqrt((f - APEX) / (LAND - APEX))
+        air_keys.append((f, flight((u - u0) / (1.0 - u0)), "lin"))
+    # los pies vuelan en el espacio del personaje: en el mundo están corridos lo que avanzó (at_travel)
+    air_keys = [(f, at_travel_feet(p_, p_["travel"]), e) for f, p_, e in air_keys]
+    land = feet(mod(at_travel(BODY, -HOP), hips=(0.02, 0.04, -0.26), hips_rot=(8.0, 0.0, 12.0), spine=(12.0, 0.0, 3.0),
+                    head=(-12.0, 0.0, -10.0)), r=flat(RX, RY + HOP, RYAW), l=flat(LX, LY + HOP, LYAW))
+    land["travel"] = -HOP
+    absorb = mod(land, hips=(0.02, 0.05, -0.3), spine=(14.0, 0.0, 3.0))
+    keys = [(0, ready(ph), "sine"), (4, A(mix(BODY, sink, 0.6)), "inout"), (APEX, A(sink), "inout"), (8, A(push), "in2"),
+            (TAKE, A(feet(mod(push, hips=(0.02, 0.12, -0.08)), r=ball(RX, RY, RYAW, heel=34.0),
+                         l=ball(LX, LY, LYAW, heel=36.0))), "in2")]
+    keys += [(f, A(p_), e) for f, p_, e in air_keys]
+    keys += [(LAND, A(land), "lin"), (18, A(absorb), "out"), (N, ready(ph, -HOP), "inout")]
+    nm = "BackHop" if ph == 2 else "BackHop_P3"
+    return add(nm, N, keys, ph=ph, variant=False, base=None if ph == 2 else "BackHop", lag={"head": 1.5, "neck": 0.8},
+               timing={"kind": "none", "apex": APEX, "hold": [APEX, APEX], "contact": LAND, "active": [LAND, LAND],
+                       "recover": [LAND, N], "air": [TAKE, LAND], "release_rate": 1.0, "root_max": 26.0,
+                       "chain_from": "READY", "chain_to": "READY"},
+               events=[{"frame": TAKE, "fn": "TakeOff"}, {"frame": LAND, "fn": "Land"}],
+               notes=f"salto atrás de {HOP} m (sin golpe): se agacha (f{APEX}), despega en f{TAKE} y cae en f{LAND} en su lugar "
+                     "de la guardia; el avance va todo en timing.air (el jefe lo acorta)")
+
+
+def at_travel_feet(p, travel):
+    """Los pies de una pose autorada en el espacio del personaje, pasados al mundo del clip (el transform avanzó
+    'travel')."""
+    q = mod(p)
+    for k in ("foot_r", "foot_l"):
+        x, y, z = q[k]
+        q[k] = (x, y - travel, z)
+    return q
 
 
 def dash_strike():
@@ -1782,7 +2007,7 @@ def dash_strike():
                          neck=(-14.0, 0.0, -14.0), head=(-18.0, 0.0, -14.0), knee_r=(-0.3, -1.0, 0.0), knee_l=(0.5, -1.0, 0.0)),
                      "r", (-0.4, 0.2, 1.22), (0.0, -1.0, 0.1), (-0.3, 0.0, 1.0), elbow=(-0.5, 0.8, 0.0), shape="sword"),
                 r=ball(RX, RY, RYAW, heel=8.0))
-    set_["_left_p2"] = dict(pos=(0.34, -0.55, 1.52), fingers=(0.0, -0.4, 1.0), dorsum=(0.2, 1.0, 0.2), elbow=(0.7, 0.0, -0.7), shape="palm")
+    set_["_left_p2"] = dict(pos=(0.42, -0.55, 1.52), fingers=(0.0, -0.4, 1.0), dorsum=(0.2, 1.0, 0.2), elbow=(0.8, 0.0, -0.6), shape="palm")
     POSES["embestida aviso 2"] = arms(set_, 2, left=set_["_left_p2"])
     hold = mod(set_, hips=(0.0, 0.13, -0.355))
     hold["_left_p2"] = dict(set_["_left_p2"])
@@ -1817,9 +2042,9 @@ def dash_strike():
     slide = mod(stab, travel=D + 0.3, hips=(0.0, -0.18, -0.4))
     slide["_left_p2"] = dict(stab["_left_p2"])
     rec = feet(mod(at_travel(R0, T_END), hips=(0.02, 0.0, -0.2)), r=flat(-0.2, land_y, 2.0))
-    keys = [(0, R0, "sine"), (6, set_, "inout"), (APEX, hold, "sine"), (PUSH, push, "in2", {"travel": "lin"})] + air_keys + \
+    keys = [(0, ready(2), "sine"), (6, set_, "inout"), (APEX, hold, "sine"), (PUSH, push, "in2", {"travel": "lin"})] + air_keys + \
            [(CONTACT, stab, "lin", {"foot_r": "lin"}), (21, slide, "out", {"travel": "out2"}), (28, rec, "inout", {"travel": "inout"}),
-            (N, at_travel(R0, T_END), "sine")]
+            (N, ready(2, T_END), "sine")]
     # el de atrás baja después de la estocada: llega encima de su lugar y recién ahí apoya (antes se arrastraba 43 cm)
     l0 = (stab["foot_l"], stab["foot_l_rot"], stab.get("toe_l", 0.0))
     back = [(20, air(LX, LY - T_END + 0.1, AZ + 0.14, pitch=6.0, yaw=LYAW), "inout"),

@@ -42,6 +42,9 @@ def arm_track(p, sides="rl"):
         for k, v in p.items():
             if any(k.startswith(t.format(s=s)) for t in _SIDE_KEYS):
                 out[k] = v
+        # la mano que manda la pista no queda pegada al ancla de la guardia del clip base (la de la fase 2 torcía la
+        # izquierda 5.6° contra el agarre del bastón)
+        out.setdefault(f"hand_{s}_follow", 0.0)
     return copy.deepcopy(out)
 
 
@@ -130,7 +133,7 @@ def thrust_p3(var=None):
                        0.59 + 0.83 * k, **el), "out"),
              # al recoger, la izquierda vuelve por fuera de la cadera (por delante del vientre cruzaba el tronco)
              (21, line(B, (0.0, -0.7, 1.12), (0.3, -0.22, 1.22), 1.05, **er), "inout"),
-             (26, line(B, (0.04, -0.53, 1.13), (0.21, 0.18, 1.28), 0.8, **er), "inout"), (34, G3(), "sine")]
+             (26, line(B, (0.09, -0.53, 1.13), (0.26, 0.18, 1.28), 0.8, **er), "inout"), (34, G3(), "sine")]
     return p3_from("Palm" if var is None else "Palm_" + var, track, torso(over),
                    notes="tsuki del bastón: lo recoge por la izquierda hasta la cadera de atrás (aviso f10) y con el paso lo "
                          "empuja; se desliza en la derecha y la punta pega a ~2.2 m en f15" +
@@ -162,14 +165,14 @@ def smash_p3(var=None):
              (9, end_grip(B, (0.0, -0.02, 2.56), (0.06, -0.28, 2.34), **up), "inout"),
              (11, raised, "sine", {"stop": ("staff_pos",)}),
              (13, hold, "sine", {"stop": tuple(hold)}),
-             (15, end_grip(B, (-0.01, -0.42, 2.42), (0.04, -0.3, 2.06), end=0.15 + 0.5 * (1.0 - k), **vert, **up), "in2"),
+             (15, end_grip(B, (-0.01, -0.5, 2.42), (0.06, -0.4, 2.06), end=0.15 + 0.5 * (1.0 - k), **vert, **up), "in2"),
              # las manos terminan adelante y abajo, lejos del pecho que se dobla: el bastón cae en diagonal
              (17, end_grip(B, L3((0.12, -0.86, 1.3), (-0.06, -1.16, 1.04)), L3((0.24, -0.6, 1.5), (0.08, -0.82, 1.2)), end=end_c,
                            **lo), "expo_in"),
              (19, end_grip(B, L3((0.12, -0.88, 1.2), (-0.06, -1.18, 0.92)), L3((0.24, -0.63, 1.41), (0.08, -0.85, 1.1)), end=end_c,
                            **lo), "out"),
              (23, line(B, (0.0, -0.74, 1.12), (0.3, -0.3, 1.22), 1.0, **lo), "inout"),
-             (28, line(B, (0.04, -0.53, 1.13), (0.21, 0.18, 1.28), 0.8, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)),
+             (28, line(B, (0.09, -0.53, 1.13), (0.26, 0.18, 1.28), 0.8, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)),
               "inout"), (36, G3(), "sine")]
     return p3_from("ChopPalm" if var is None else "ChopPalm_" + var, track, torso(over), timing={"staff_high": True},
                    notes="el bastón cae de arriba: alzado detrás de la cabeza (aviso f11, la punta a ~4 m), baja en arco y "
@@ -278,7 +281,7 @@ def qi_p3():
     4 m), y con el pisotón lo clava en el piso delante de él: de ahí sale el anillo (QiRelease)."""
     B = MC.BODY
     vert = dict(gru=(0.0, -1.0, 0.0), glu=(0.0, -1.0, 0.0), elbow_r=(-0.8, 0.0, -0.6), elbow_l=(0.8, 0.0, -0.6))
-    g_r, g_l = (0.04, -0.53, 1.13), (0.21, 0.18, 1.28)
+    g_r, g_l = (0.09, -0.53, 1.13), (0.26, 0.18, 1.28)
     # delante a su izquierda (x 0.2): la izquierda llega desde la cadera de atrás sin cruzar el vientre
     high = end_grip(B, (0.28, -0.56, 2.26), (0.31, -0.55, 1.92), end=0.2, **vert)
     MC.POSES["bastón en alto aviso 3"] = high
@@ -291,8 +294,8 @@ def qi_p3():
              (33, end_grip(B, (0.28, -0.56, 2.34), (0.31, -0.55, 2.0), end=0.2, **vert), "out2"),
              (36, planted, "expo_in", {"stop": ("staff_pos",)}), (40, planted, "lin", {"stop": ("staff_pos",)}),
              # al sacarlo del piso la punta de atrás sale por fuera del muslo izquierdo
-             (45, line(B, (0.12, -0.66, 1.45), (0.3, -0.4, 1.22), 1.2, elbow_r=(-0.7, 0.1, -0.7), elbow_l=(0.8, 0.3, -0.5)), "inout"),
-             (50, line(B, (0.03, -0.55, 1.15), (0.2, 0.1, 1.27), 0.95, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), "inout"),
+             (45, line(B, (0.16, -0.66, 1.45), (0.35, -0.4, 1.22), 1.2, elbow_r=(-0.7, 0.1, -0.7), elbow_l=(0.8, 0.3, -0.5)), "inout"),
+             (50, line(B, (0.08, -0.55, 1.15), (0.26, 0.1, 1.27), 0.95, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), "inout"),
              (56, G3(), "sine")]
     # lo que pega es la punta de atrás (la de arriba del hueso: la que se clava)
     return p3_from("QiWave", track, glow=["Master_GlintStaff"], strike=("Staff", (0.0, MR.STAFF_LEN, 0.0)),
@@ -306,16 +309,16 @@ def dash_p3():
     el bastón adelante y lo clava con la estocada al frenar."""
     B = MC.BODY
     er, el = dict(elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), dict(elbow_r=(-0.6, 0.1, -0.8), elbow_l=(0.5, 0.3, -0.8))
-    coil = line(B, (0.06, -0.46, 1.02), (0.44, 0.28, 1.0), 0.42, **er)
-    track = [(0, G3(), "lin"), (6, coil, "inout"), (8, line(B, (0.06, -0.45, 1.01), (0.45, 0.29, 1.0), 0.41, **er), "sine"),
+    coil = line(B, (0.11, -0.46, 1.02), (0.5, 0.28, 1.0), 0.42, **er)
+    track = [(0, G3(), "lin"), (6, coil, "inout"), (8, line(B, (0.11, -0.45, 1.01), (0.5, 0.29, 1.0), 0.41, **er), "sine"),
              # en el vuelo lo lleva bajo, pegado a la cadera izquierda y por afuera: el tronco va inclinado encima
-             (10, line(B, (0.1, -0.7, 0.95), (0.45, -0.06, 0.95), 0.8, **er), "in2"),
-             (15, line(B, (0.04, -0.8, 0.98), (0.36, -0.22, 1.0), 1.0, **el), "inout"),
+             (10, line(B, (0.15, -0.7, 0.95), (0.5, -0.06, 0.95), 0.8, **er), "in2"),
+             (15, line(B, (0.08, -0.8, 0.98), (0.4, -0.22, 1.0), 1.0, **el), "inout"),
              # el cuerpo de la estocada se inclina y gira: las manos van bien adelante y abajo, lejos del pecho
              (17, line(B, (-0.1, -1.08, 1.0), (0.24, -0.78, 1.02), 1.42, **el), "expo_in"),
              (21, line(B, (-0.1, -1.1, 0.98), (0.24, -0.8, 1.0), 1.44, **el), "out"),
              (25, line(B, (0.0, -0.8, 1.08), (0.32, -0.32, 1.18), 1.15, **er), "inout"),
-             (30, line(B, (0.03, -0.56, 1.13), (0.22, 0.12, 1.27), 0.82, **er), "inout"), (36, G3(), "sine")]
+             (30, line(B, (0.08, -0.56, 1.13), (0.27, 0.12, 1.27), 0.82, **er), "inout"), (36, G3(), "sine")]
     return p3_from("DashStrike", track, glow="Master_GlintStaff",
                    notes="embestida con el bastón: tsuki recogido (aviso f8), sale en f9 y clava la punta al frenar (f17)")
 
@@ -349,7 +352,7 @@ def seated(breath=0.0, bow=0.0, hands="knees"):
                  spine=(3.0 + 10.0 * bow, 0.0, 0.0), chest=(1.0 + 6.0 * bow - 2.0 * breath, 0.0, 0.0),
                  neck=(-2.0 + 6.0 * bow, 0.0, 0.0), head=(6.0 + 10.0 * bow, 0.0, 0.0), breath=breath,
                  knee_r=(-1.0, -0.45, 0.25), knee_l=(1.0, -0.45, 0.25)),
-             r=((0.12, -0.38, 0.158), (0.0, -55.0, 95.0), 0.0), l=((-0.14, -0.2, 0.148), (0.0, 55.0, -95.0), 0.0))
+             r=((0.12, -0.43, 0.21), (0.0, -55.0, 95.0), 0.0), l=((-0.14, -0.2, 0.148), (0.0, 55.0, -95.0), 0.0))
     if hands == "knees":
         p = hand(p, "r", (-0.44, -0.42, 0.44 - 0.004 * breath), (0.2, -0.95, -0.1), (0.0, 0.0, -1.0), elbow=(-0.6, 0.6, -0.4),
                  shape="relaxed")

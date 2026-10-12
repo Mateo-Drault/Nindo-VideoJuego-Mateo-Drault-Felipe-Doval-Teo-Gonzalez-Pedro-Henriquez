@@ -422,10 +422,11 @@ def build_arm_r(kits):
     k = kits["Arm_R"] = Kit("part_Arm_R", "UpperArm_R", weights=w_arm)
     pts = [S - u * 0.06, S + u * 0.05, S + u * 0.16, S + u * 0.29, E - u * 0.05, E, E + l * 0.06, E + l * 0.16, E + l * 0.25,
            E + l * 0.33, W - l * 0.03, W + l * 0.012]
-    rads = [(0.062, 0.066), (0.075, 0.074), (0.068, 0.07), (0.06, 0.064), (0.053, 0.054), (0.051, 0.052), (0.056, 0.055),
-            (0.054, 0.052), (0.049, 0.047), (0.046, 0.044), (0.043, 0.04), (0.045, 0.042)]
-    # vendas desde la mitad del antebrazo (franjas): la última vuelta, en la muñeca, es del material que brilla
-    cols = [C["skin"]] * 7 + [C["wrap"], C["wrap2"], C["wrap"], ("white", SLOT_HAND_R)]
+    rads = [(0.062, 0.066), (0.078, 0.074), (0.074, 0.072), (0.062, 0.064), (0.052, 0.053), (0.052, 0.053), (0.064, 0.058),
+            (0.06, 0.054), (0.05, 0.047), (0.045, 0.043), (0.041, 0.038), (0.044, 0.041)]
+    # vendas desde la mitad del antebrazo, todas del material que brilla: el aviso enciende el antebrazo entero y no solo
+    # la vuelta de la muñeca (eran ~5 px desde la cámara del juego)
+    cols = [C["skin"]] * 7 + [("white", SLOT_HAND_R)] * 4
     k.tube(pts, rads, 8, C["skin"], ups=[(0, -1, 0)] * len(pts), phase=math.pi / 8, cap0=True, cap1=False, ring_colors=cols)
     build_hand_r(kits)
 
@@ -541,7 +542,7 @@ def build_leg_r(kits):
     pts = [on_leg(z, 0.0, -0.006 + 0.002 * i) for i, z in enumerate(zs)]
     rads = [0.088, 0.084, 0.08, 0.077, 0.074, 0.072, 0.072]
     k.tube(pts, rads, 8, C["wrap"], phase=math.pi / 8 + 0.2, cap0=False, cap1=False,
-           ring_colors=[C["wrap"], C["wrap2"], C["wrap"], C["wrap2"], C["wrap"], C["wrap2"]])
+           ring_colors=[C["wrap"]] * 6)
 
 
 def build_hips(kits):
@@ -620,21 +621,31 @@ def build_robe_thrown(kits):
     En reposo vive adentro de la espalda (el juego lo oculta) y solo se ve cuando vuela en el cambio de fase."""
     y0 = 0.06
 
+    hem = ["RobeT_Root", "RobeT_Hem", "RobeT_Hem_1", "RobeT_Hem_2"]
+    cuts = [bh(b).z for b in hem[1:]]                 # dónde empieza cada tramo del ruedo
+
     def w_body(co):
         z = co.z
-        if z > 1.68:
-            return {"RobeT_Root": 1.0}
-        if z < 1.56:
-            return {"RobeT_Hem": 1.0}
-        a = smooth01((1.68 - z) / 0.12)
-        return {"RobeT_Root": 1.0 - a, "RobeT_Hem": a}
+        for i, c in enumerate(cuts):
+            if z > c + 0.06:
+                return {hem[i]: 1.0}
+            if z > c - 0.06:
+                a = smooth01((c + 0.06 - z) / 0.12)
+                return {hem[i]: 1.0 - a, hem[i + 1]: a}
+        return {hem[-1]: 1.0}
     k = kits["RobeT_Body"] = Kit("thrown_Body", "RobeT_Root", weights=w_body)
     # (z, medio ancho, medio espesor): con volumen arriba (hombros y pecho) y finito en el ruedo
     # (el ruedo no pasa del ancho de los muslos: en reposo no asoma por las aberturas del saco puesto)
     rows = [(1.995, 0.1, 0.045), (1.955, 0.225, 0.055), (1.8, 0.222, 0.058), (1.6, 0.214, 0.054), (1.42, 0.222, 0.05),
-            (1.25, 0.245, 0.04), (1.05, 0.268, 0.03), (0.86, 0.288, 0.022)]
+            (1.34, 0.232, 0.046), (1.25, 0.245, 0.04), (1.15, 0.255, 0.036), (1.05, 0.268, 0.03), (0.96, 0.278, 0.026),
+            (0.86, 0.288, 0.022)]
     rings = [ring(z, w, d, d, n=10, cy=y0, power=3.2) for z, w, d in rows]
-    k.rings_loft(rings, C["ivory"], True, True, [C["ivory2"]] + [C["ivory"]] * 5 + [C["ivory2"]])
+    # pliegues: los anillos del ruedo se ondulan adelante y atrás (la tela vacía no queda plana)
+    for i, rg in enumerate(rings[4:], start=4):
+        for j, v in enumerate(rg):
+            v.y += 0.018 * math.sin(3.0 * math.pi * (v.x / 0.3) + i * 0.9)
+    k.rings_loft(rings, C["ivory"], True, True, [C["ivory2"]] + [C["ivory"]] * 4 + [C["ivory2"], C["ivory"], C["ivory"], C["ivory2"],
+                                                                                   C["ivory"]])
     k.up_shade(L.Part(k, list(k.bm.verts)), C["ivory2"], 0.6)
     # cuello mao
     k.tube([(0, y0, 1.985), (0, y0, 2.03)], [(0.092, 0.05), (0.086, 0.046)], 10, C["ivory"], phase=math.pi / 10, cap0=False,
@@ -650,6 +661,9 @@ def build_robe_thrown(kits):
 
         def w_arm(co, h=h, t=t, bn=bn):
             u = along_bone(co, h, t)
+            if u > 0.62:
+                a = smooth01((u - 0.48) / 0.28)
+                return {bn: 1.0 - a, bn + "_2": a}
             if u > 0.25:
                 return {bn: 1.0}
             a = smooth01((u + 0.15) / 0.4)

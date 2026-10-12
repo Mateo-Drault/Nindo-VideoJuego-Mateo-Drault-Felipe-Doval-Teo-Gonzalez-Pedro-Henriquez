@@ -14,6 +14,7 @@ Un solo comando, determinista:
     --report PATH       el detalle de las mediciones en JSON (con --renders va en DIR)
     --roundtrip PATH    con --export: dónde quedan algunos huesos cuadro a cuadro, para check_master_roundtrip.py
     --slipdump A,B      la altura de la suela y el pivote de cada pie cuadro a cuadro (iterar los apoyos)
+    --frames 1,5,9      con --sheets: esos cuadros en las hojas (en vez de las claves)
 Falla (código 1) si un chequeo no pasa: frente, apoyo en el piso, presupuesto de triángulos, altura de la silueta, nada
 bajo el piso, alcance de manos y pies, deriva de los pies apoyados, costura de los loops, cuerpo contra sí mismo,
 avance que se teletransporta con el reloj del juego, punta rápida fuera del golpe, aviso que no cambia la silueta,
@@ -58,13 +59,15 @@ GAP = 10                 # cuadros vacíos entre clips en la toma única
 BUDGET = {"body": 4800, "robe": 2400, "thrown": 500, "staff": 450}
 ROUNDTRIP = opt("--roundtrip")
 SLIPDUMP = opt("--slipdump")
+SHEET_FRAMES = opt("--frames")
 ROUNDTRIP_BONES = ("Hips", "Head", "Hand_R", "Hand_L", "Index_R_2", "Thumb_L_2", "Foot_R", "Toe_L", "Staff", "Acc_TieSashA_2",
                    "Robe_038_2", "Brow_R_2")
 # la cámara del juego (Kaito de espaldas mirando al jefe): lo que se lee desde arriba es la forma, no el detalle
 TELL_CAM = dict(focus=(0.0, -1.6, 1.0), pitch=52.0, dist=24.0, fov=30.0)
 TELL_MIN = 0.15
 GUARD_MIN = 0.15
-SOLE_WARN_ONLY = True    # la palma estirada hacia Kaito medía 12 % (apunta a la cámara); la grulla con las alas abiertas, 16-31 %
+SOLE_WARN_ONLY = True
+GUARD_PAIR_MIN = 0.25   # postura / abierto / guardia entre sí (lo que no está en las dos, sobre la más grande)    # la palma estirada hacia Kaito medía 12 % (apunta a la cámara); la grulla con las alas abiertas, 16-31 %
 failures, warnings = [], []
 
 
@@ -136,7 +139,12 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
             legs = k.startswith(("muslo", "tibia")) and k.count("/") == 1 and "bastón" not in k
             if legs and f in skip:
                 continue
-            if c < -0.015:
+            # el bastón y los antebrazos contra el tronco y la cabeza: las cápsulas ya van por dentro de la malla, así que
+            # cualquier cruce es un bastón metido en el chaleco (con -1 cm medio bastón quedaba adentro en toda la fase 3)
+            rigid = k.startswith(("bastón", "antebrazo")) and k.endswith(("tronco", "cabeza"))
+            if rigid and c < -0.005:
+                check(False, f"{clip.name}: {k} se meten {-c * 100:.1f} cm en f{f}")
+            elif c < -0.015:
                 check(c >= -0.04, f"{clip.name}: {k} se meten {-c * 100:.1f} cm en f{f}", warn=c >= -0.04)
     # golpes con el reloj del juego
     tr = [c.get("travel") or 0.0 for c in ctrls]
@@ -303,7 +311,8 @@ def main():
             lows.append(min((v[0], i, k) for k, v in r.items() if k in vis))
         top = max(range(len(his)), key=lambda i: his[i])
         reports[clip.name]["max_height_m"] = round(his[top], 2)
-        check(his[top] <= HEIGHT_CAP, f"{clip.name}: silueta {his[top]:.2f} m en f{top} (tope {HEIGHT_CAP})")
+        cap = clip.timing.get("height_cap", HEIGHT_CAP)     # la grulla voladora sube 1.35 m: lo dice su clip
+        check(his[top] <= cap, f"{clip.name}: silueta {his[top]:.2f} m en f{top} (tope {cap})")
         lo = min(lows)
         bad = [i for z, i, _ in lows if z < -0.03]
         reports[clip.name]["min_z_m"] = round(lo[0], 3)
@@ -416,7 +425,7 @@ def lint_variants(clips, ctrlsd, reports):
         o = by[b]
         # el miembro que pega y su brillo pueden cambiar (la palma de la fase 1 es el bastón de la 3); los tiempos no
         # (el anillo y el bastón alto también: la barrida con el bastón llega más lejos que la de la pierna sola)
-        own = ("phase", "glow", "notes", "strike", "tip_ratio_max", "ring_m", "staff_high", "reach_variants")
+        own = ("phase", "glow", "notes", "strike", "tip_ratio_max", "ring_m", "staff_high", "reach_variants", "height_cap")
         tc = {k: v for k, v in c.timing.items() if k not in own}
         to = {k: v for k, v in o.timing.items() if k not in own}
         same = c.frames == o.frames and c.loop == o.loop and tc == to and \
@@ -479,11 +488,14 @@ def lint_tells(scn, arm, meshes, baked, ranges, rootsd, reports):
                                   f"{change * 100:.0f} % (mín. {TELL_MIN * 100:.0f} %)")
     # la guardia también es un aviso (pegarle es el error que enseña paciencia): desde arriba tiene que dejar de ser la
     # silueta de la espera, no una palma escondida delante de la cara
+    guards = {}
     for clip, frames in baked:
         ph = getattr(clip, "phase", 1)
-        if clip.name.split("_")[0] != "Guard" or ph not in idles:
+        if clip.name.split("_")[0] not in ("Guard", "Stance", "Taunt") or ph not in idles:
             continue
-        f = clip.frames
+        kind = clip.name.split("_")[0]
+        # la guardia y la postura se miran en su último cuadro (el que deja el juego); abierto, en el medio de la pausa
+        f = clip.frames if kind != "Taunt" else sum(clip.timing["open"]) // 2
         scn.frame_set(ranges[clip.name][0] + f)
         arm.location = (0, 0, 0)
         bpy.context.view_layer.update()
@@ -491,8 +503,20 @@ def lint_tells(scn, arm, meshes, baked, ranges, rootsd, reports):
         idle, area = idles[ph]
         change = float((m & ~idle).sum()) / area
         reports[clip.name]["guard_silhouette_change"] = round(change, 3)
-        check(change >= GUARD_MIN, f"{clip.name}: la guardia cambia la silueta de la espera desde la cámara del juego "
+        check(change >= GUARD_MIN, f"{clip.name}: cambia la silueta de la espera desde la cámara del juego "
                                    f"{change * 100:.0f} % (mín. {GUARD_MIN * 100:.0f} %)")
+        guards.setdefault(ph, {})[kind] = (m, max(1, int(m.sum())))
+    # la postura del bambú (no le pegues) y abierto (pegale) tienen que leerse distintas de la guardia y entre sí
+    for ph, g in guards.items():
+        for a_, b_ in (("Stance", "Guard"), ("Taunt", "Guard"), ("Taunt", "Stance")):
+            if a_ not in g or b_ not in g:
+                continue
+            (ma, aa), (mb, ab) = g[a_], g[b_]
+            ch = float((ma ^ mb).sum()) / max(aa, ab)
+            nm = a_ + {1: "", 2: "_P2", 3: "_P3"}[ph]
+            reports[nm][f"vs_{b_.lower()}_silhouette"] = round(ch, 3)
+            check(ch >= GUARD_PAIR_MIN, f"{nm}: se distingue de {b_} desde la cámara del juego {ch * 100:.0f} % "
+                                        f"(mín. {GUARD_PAIR_MIN * 100:.0f} %)", warn=True)
     arm.location = (0, 0, 0)
 
 
@@ -542,6 +566,8 @@ def phase_variants(clips):
 
 
 def sheet_frames(clip):
+    if SHEET_FRAMES:
+        return [int(x) for x in SHEET_FRAMES.split(",") if int(x) <= clip.frames]
     fs = sorted({k.frame for k in clip.keys})
     t = clip.timing
     for k in ("apex", "contact"):

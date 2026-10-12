@@ -91,7 +91,7 @@ BACK_ELBOW_R = Vector((-1.0, 0.55, -0.15)).normalized()
 WHISKER_R = [Vector((-0.048, -0.204, 2.258)), Vector((-0.07, -0.2, 2.12)), Vector((-0.076, -0.196, 1.96)),
              Vector((-0.07, -0.19, 1.80))]
 # cejas: el mechón nace sobre el ojo (pegado al arco de la ceja, en la cabeza) y el hueso arranca en la punta de afuera
-BROW_R = [Vector((-0.104, -0.15, 2.405)), Vector((-0.235, -0.075, 2.432)), Vector((-0.385, 0.075, 2.398))]
+BROW_R = [Vector((-0.104, -0.15, 2.405)), Vector((-0.228, -0.07, 2.41)), Vector((-0.345, 0.06, 2.322))]
 SASH_A = [SASH_KNOT + Vector((0.0, -0.025, -0.04)), SASH_KNOT + Vector((0.005, -0.05, -0.27)),
           SASH_KNOT + Vector((0.012, -0.08, -0.5)), SASH_KNOT + Vector((0.02, -0.11, -0.74))]
 SASH_B = [SASH_KNOT + Vector((0.07, -0.015, -0.05)), SASH_KNOT + Vector((0.11, -0.035, -0.25)),
@@ -200,10 +200,15 @@ def bones():
         # el saco tirado (cambio de fase): en reposo queda adentro de la espalda (oculto en el juego fuera de ese
         # clip); cuello -> ruedo y las dos mangas abiertas: un saco aplanado que vuela y cae al piso
         BoneDef("RobeT_Root", (0, 0.06, 1.98), (0, 0.06, 1.62), "Root", True, (0, -1, 0)),
-        BoneDef("RobeT_Hem", (0, 0.06, 1.62), (0, 0.06, 1.12), "RobeT_Root", True, (0, -1, 0)),
-        # las mangas en reposo siguen a las del saco puesto (pose A): quedan adentro de las mangas anchas
-        BoneDef("RobeT_ArmR", ROBE_T_SHOULDER, ROBE_T_SHOULDER + _u * 0.42, "RobeT_Root", True, (0, -1, 0)),
-        BoneDef("RobeT_ArmL", mx(ROBE_T_SHOULDER), mx(ROBE_T_SHOULDER + _u * 0.42), "RobeT_Root", True, (0, -1, 0)),
+        # el ruedo en tres tramos (de la cintura a la rodilla): dobla como tela en el vuelo y queda arrugado en el piso
+        BoneDef("RobeT_Hem", (0, 0.06, 1.62), (0, 0.06, 1.3), "RobeT_Root", True, (0, -1, 0)),
+        BoneDef("RobeT_Hem_1", (0, 0.06, 1.3), (0, 0.06, 1.08), "RobeT_Hem", True, (0, -1, 0)),
+        BoneDef("RobeT_Hem_2", (0, 0.06, 1.08), (0, 0.06, 0.86), "RobeT_Hem_1", True, (0, -1, 0)),
+        # las mangas en reposo siguen a las del saco puesto (pose A): quedan adentro de las mangas anchas; dos tramos
+        BoneDef("RobeT_ArmR", ROBE_T_SHOULDER, ROBE_T_SHOULDER + _u * 0.24, "RobeT_Root", True, (0, -1, 0)),
+        BoneDef("RobeT_ArmR_2", ROBE_T_SHOULDER + _u * 0.24, ROBE_T_SHOULDER + _u * 0.42, "RobeT_ArmR", True, (0, -1, 0)),
+        BoneDef("RobeT_ArmL", mx(ROBE_T_SHOULDER), mx(ROBE_T_SHOULDER + _u * 0.24), "RobeT_Root", True, (0, -1, 0)),
+        BoneDef("RobeT_ArmL_2", mx(ROBE_T_SHOULDER + _u * 0.24), mx(ROBE_T_SHOULDER + _u * 0.42), "RobeT_ArmL", True, (0, -1, 0)),
         # bastón: Y = a lo largo (de la punta de abajo a la de arriba), libre en el mundo
         BoneDef("Staff", STAFF_REST - Vector((0, 0, STAFF_LEN * 0.5)), STAFF_REST + Vector((0, 0, STAFF_LEN * 0.5)), "Root", True,
                 (0, -1, 0)),
@@ -216,7 +221,7 @@ def bones():
 # huesos que resuelve el IK o la cadena principal: los 'extra' no pueden tocar a sus padres
 IK_BONES = {"UpperArm_R", "Forearm_R", "Hand_R", "UpperArm_L", "Forearm_L", "Hand_L",
             "Thigh_R", "Shin_R", "Foot_R", "Thigh_L", "Shin_L", "Foot_L", "Staff"}
-ROBE_T = ("RobeT_Root", "RobeT_Hem", "RobeT_ArmR", "RobeT_ArmL")
+ROBE_T = ("RobeT_Root", "RobeT_Hem", "RobeT_Hem_1", "RobeT_Hem_2", "RobeT_ArmR", "RobeT_ArmR_2", "RobeT_ArmL", "RobeT_ArmL_2")
 FINGER_BONES = [f"{n}_{S}_{i}" for S in "RL" for n, *_ in FINGERS for i in (1, 2)] + [f"Thumb_{S}_{i}" for S in "RL" for i in (1, 2)]
 
 # formas de la mano: curva de la falange 1 y de la 2 por dedo (índice, medio, anular, meñique; grados hacia la palma),
@@ -415,10 +420,16 @@ class Solver:
         if (c.get("robe_free", 0.0) or 0.0) >= 0.5:
             Mr = compose(V(c["robe_pos"]) + sh, euler_q(c["robe_rot"]).to_matrix() @ rot3(R.rest["RobeT_Root"]))
             pose.place("RobeT_Root", Mr)
-            fold = c.get("robe_fold", (0.0, 0.0, 0.0))
+            # robe_fold: (ruedo, mangas abiertas, mangas giradas[, tramo 2 del ruedo, tramo 3, codo de las mangas, mangas
+            # hacia atrás]): con los tramos el ruedo ondea en el vuelo y queda arrugado en el piso
+            fold = tuple(c.get("robe_fold", (0.0, 0.0, 0.0))) + (0.0,) * 4
             pose.delta("RobeT_Hem", (fold[0], 0.0, 0.0))
-            pose.delta("RobeT_ArmR", (0.0, fold[1], -fold[2]))
-            pose.delta("RobeT_ArmL", (0.0, -fold[1], fold[2]))
+            pose.delta("RobeT_Hem_1", (fold[3], 0.0, 0.0))
+            pose.delta("RobeT_Hem_2", (fold[4], 0.0, 0.0))
+            pose.delta("RobeT_ArmR", (fold[6], fold[1], -fold[2]))
+            pose.delta("RobeT_ArmL", (fold[6], -fold[1], fold[2]))
+            pose.delta("RobeT_ArmR_2", (fold[5], 0.0, 0.0))
+            pose.delta("RobeT_ArmL_2", (fold[5], 0.0, 0.0))
         # ---- giros extra de huesos secundarios (cejas, faldones, mangas...)
         for bn, r in sorted(c["extra"].items(), key=lambda kv: R.names.index(kv[0])):
             assert bn not in IK_BONES and bn not in FINGER_BONES, bn
