@@ -199,11 +199,24 @@ def main():
                 top = max(p.z for p in rp)
                 xs, ys = [p.x for p in rp], [p.y for p in rp]
                 lo_x, hi_x, lo_y, hi_y = min(xs), max(xs), min(ys), max(ys)
-                cp = [p for p in mesh_points(ch.meshes, dg()) if lo_x + 0.05 < p.x < hi_x - 0.05 and lo_y + 0.05 < p.y < hi_y - 0.05]
-                low = min((p.z for p in cp), default=9.0)
-                rows.append((f, round((low - top) * 100.0, 1)))
+                cp = []
+                for o in ch.meshes:
+                    oe = o.evaluated_get(dg())
+                    me = oe.to_mesh()
+                    for v in me.vertices:
+                        p = oe.matrix_world @ v.co
+                        if lo_x + 0.05 < p.x < hi_x - 0.05 and lo_y + 0.05 < p.y < hi_y - 0.05:
+                            cp.append((p.z, o, v.index))
+                    oe.to_mesh_clear()
+                low, lo_o, lo_i = min(cp, key=lambda r: r[0], default=(9.0, None, 0))
+                # qué se mete en la roca (el hueso que más pesa en el vértice más bajo)
+                part = ""
+                if lo_o is not None and low < top - 0.02:
+                    gs = lo_o.data.vertices[lo_i].groups
+                    part = lo_o.vertex_groups[max(gs, key=lambda g: g.weight).group].name if len(gs) else lo_o.name
+                rows.append((f, round((low - top) * 100.0, 1), part))
             rep["seat_gap_cm"] = rows
-            print(f"  {clip.name}: cola - cara de la roca (cm): " + " ".join(f"f{f}:{g}" for f, g in rows))
+            print(f"  {clip.name}: cola - cara de la roca (cm): " + " ".join(f"f{f}:{g}{'(' + w + ')' if w else ''}" for f, g, w in rows))
         if clip.name == "IdleSparA" and partner is not None:
             rows = []
             for f in range(clip.frames + 1):
@@ -241,7 +254,9 @@ def main():
         # ---- hojas
         rows = []
         for view, dist, fov in (("juego 1:1 (1080p)", 24.0, GAME_FOV), ("3/4 de cerca", 9.0, 30.0), ("perfil", 0.0, 0.0)):
-            rv.face(YAW if view.startswith("3/4") else 90.0 if view == "perfil" else 0.0)
+            # la pareja, en el juego, practica sobre la horizontal de la pantalla (EnemyAmbient.PairSpot): de perfil
+            spar_side = clip.name == "IdleSparA" and view.startswith("juego")
+            rv.face(YAW if view.startswith("3/4") else 90.0 if view == "perfil" or spar_side else 0.0)
             if partner is not None:
                 partner.place(rv, AMB.SPAR_GAP)
             tiles = []

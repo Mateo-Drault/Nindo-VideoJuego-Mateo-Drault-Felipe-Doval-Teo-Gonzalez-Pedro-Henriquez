@@ -1462,7 +1462,7 @@
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
-     "legs": 0.0
+     "legs": 1.4
     },
     "hip_drop_cm": 0.0,
     "wrists": {
@@ -1484,11 +1484,11 @@
       "twist": 17.2,
       "fore": 85.1,
       "swivel": 12.0,
-      "clamp": 0.9,
+      "clamp": 0.0,
       "asked_over": 0.0,
       "pron": [
        -67.1,
-       6.9
+       4.0
       ]
      }
     },

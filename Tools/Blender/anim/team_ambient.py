@@ -86,11 +86,13 @@ def ambient_alert(N):
     LEAN = dict(STARTLE, hips=(0.011, SEAT_BACK - 0.10, z0 + 0.135 - 0.638 + 0.01), hips_rot=(14.0, 0.0, 0.0), spine=(16.0, 0.0, 0.0),
                 chest=(4.0, 0.0, 0.0), head=(-22.0, 0.0, 0.0),
                 grip=(-0.26, SEAT_BACK - 0.42, z0 + 0.36), blade=(0.75, -0.15, 0.65), edge=(0.0, -1.0, 0.0),
-                hand_l=(0.36, SEAT_BACK - 0.10, z0 + 0.06), hand_l_dir=(0.3, -0.7, -0.65), hand_l_palm=(0.0, 0.0, -1.0),
-                elbow_l=(1.0, 0.6, 0.1), fist_l=0.0, knee_r=(-0.4, -1.0, 0.0), knee_l=(0.4, -1.0, 0.0))
+                # se apoya en los nudillos sobre la roca (la palma plana no entra en la muñeca con el brazo vertical: la
+                # mano se enderezaba y los dedos se metían 11 cm en la roca)
+                hand_l=(0.36, SEAT_BACK - 0.10, z0 + 0.145), hand_l_dir=(0.1, -0.25, -0.96), hand_l_palm=(0.0, 1.0, 0.0),
+                elbow_l=(1.0, 0.6, 0.1), fist_l=0.85, knee_r=(-0.4, -1.0, 0.0), knee_l=(0.4, -1.0, 0.0))
     PUSH = dict(LEAN, hips=(0.011, SEAT_BACK - 0.28, z0 + 0.135 - 0.638 + 0.10), hips_rot=(18.0, 0.0, 0.0), spine=(12.0, 0.0, 0.0),
                 head=(-20.0, 0.0, 0.0), grip=(-0.22, SEAT_BACK - 0.58, z0 + 0.55), blade=(0.3, -0.25, 0.92), edge=(0.0, -1.0, 0.0),
-                hand_l=(0.36, SEAT_BACK - 0.14, z0 + 0.10))
+                hand_l=(0.36, SEAT_BACK - 0.14, z0 + 0.15))
     AIR = N.P(hips=(0.0, 0.18, 0.02), hips_rot=(6.0, 0.0, 6.0), spine=(4.0, 0.0, 0.0), chest=(-4.0, 0.0, -4.0), head=(-12.0, 0.0, 0.0),
                       knee_r=(-0.3, -1.0, 0.2), knee_l=(0.4, -1.0, 0.2),
                       grip=(-0.12, -0.18, 1.05), blade=(0.0, -0.18, 1.0), edge=(0.0, -1.0, 0.0), elbow_r=(-0.9, 0.2, -0.3),
@@ -107,15 +109,16 @@ def ambient_alert(N):
             Key(11, LEAN, "inout"), Key(14, PUSH, "in"), Key(17, AIR, "out"), Key(20, LAND, "in2"), Key(24, SINK, "out"),
             Key(30, DRAW, "inout"), Key(36, dict(I0, hips=(0.0, 0.034, -0.085)), "sine"), Key(n, I0, "sine")]
     fr, fl = _seat_feet(0)
-    # descruza: los pies bajan por delante de la roca y caen en la guardia (el de atrás primero, el de adelante clavado)
+    # descruza: los pies salen al borde de la roca a la altura de su cara (f10), bajan por delante de ella (f13: con los pies
+    # todavía sobre la roca las canillas la atravesaban 13 cm) y caen en la guardia
     feet = {"r": [fr, T.FootKey(6, fr.x, fr.y, fr.yaw, 0.0, fr.z, fr.roll),
-                  T.FootKey(12, -0.10, ROCK_FRONT - 0.10, 20.0, 20.0, z0 - 0.12, 0.0, "inout", 0.0),
-                  T.FootKey(14, -0.11, ROCK_FRONT - 0.02, 14.0, 24.0, z0 - 0.10, 0.0, "inout", 0.0),
+                  T.FootKey(10, -0.10, ROCK_FRONT - 0.06, 20.0, 10.0, z0 + 0.01, 0.0, "inout", 0.0),
+                  T.FootKey(13, -0.11, ROCK_FRONT - 0.13, 14.0, 24.0, z0 - 0.07, 0.0, "inout", 0.0),
                   T.FootKey(16, -0.12, -0.08, 8.0, 30.0, 0.16, 0.0, "out", 0.0),
                   N.FR(20, ease="in", lift=0.0), N.FR(n)],
             "l": [fl, T.FootKey(6, fl.x, fl.y, fl.yaw, 0.0, fl.z, fl.roll),
-                  T.FootKey(12, 0.12, ROCK_FRONT - 0.04, 30.0, 20.0, z0 - 0.10, 0.0, "inout", 0.0),
-                  T.FootKey(14, 0.13, ROCK_FRONT + 0.02, 32.0, 24.0, z0 - 0.08, 0.0, "inout", 0.0),
+                  T.FootKey(10, 0.12, ROCK_FRONT - 0.05, 30.0, 10.0, z0 + 0.01, 0.0, "inout", 0.0),
+                  T.FootKey(13, 0.13, ROCK_FRONT - 0.11, 32.0, 24.0, z0 - 0.06, 0.0, "inout", 0.0),
                   T.FootKey(16, 0.16, 0.12, 36.0, 30.0, 0.18, 0.0, "out", 0.0),
                   N.FL(20, pitch=10.0, ease="in", lift=0.0), N.FL(23), N.FL(n)]}
     return T.TeamClip("AmbientAlert", n, keys, feet=feet, tremble=0.0,
@@ -286,8 +289,9 @@ def _sleep_pose(S, br=0.0):
     'br' 0..1 respira: la panza sube, los hombros suben y la cabeza se levanta un poco."""
     # la cabeza caída adelante y de costado (los ojos no se cierran: el sueño se lee en la postura), la espalda echada
     # atrás para que la panza quede arriba, y las manos encima de la panza con los dedos hacia el ombligo
-    return S.P(hips=(0.0, SLEEP_BACK, -0.38 + 0.014 * br), hips_rot=(-18.0 - 3.0 * br, 0.0, 0.0), spine=(4.0 - 2.0 * br, 0.0, 0.0),
-               head=(44.0 - 10.0 * br, 26.0 - 4.0 * br, 10.0), clav_r=(0.0, 0.0, 3.0 * br), clav_l=(0.0, 0.0, -3.0 * br), breath=br,
+    # (la respiración tiene que moverse 3-4 px en la cámara del juego: el pecho sube 2.5 cm y la cabeza 14°)
+    return S.P(hips=(0.0, SLEEP_BACK, -0.37 + 0.025 * br), hips_rot=(-18.0 - 6.0 * br, 0.0, 0.0), spine=(4.0 - 5.0 * br, 0.0, 0.0),
+               head=(44.0 - 14.0 * br, 26.0 - 6.0 * br, 10.0), clav_r=(0.0, 0.0, 6.0 * br), clav_l=(0.0, 0.0, -6.0 * br), breath=br,
                knee_r=(-0.5, -0.4, 1.0), knee_l=(0.5, -0.4, 1.0),
                # (la panza sentada sobresale hasta y -0.16 entre 0.60 y 0.85 m: ahí van las manos, sobre lo más alto de ella)
                hand_r=(-0.20, -0.25 - 0.015 * br, 0.90 + 0.02 * br), hand_r_dir=(0.7, -0.1, -0.7), hand_r_palm=(0.0, 0.9, 0.35),
@@ -321,7 +325,7 @@ def sumo_alert(S):
     n = 72
     I0 = S.idle().keys[0].ctrl
     Z = _sleep_pose(S, 0.0)
-    SNORT = dict(Z, hips=(0.0, SLEEP_BACK, -0.38), head=(-6.0, 0.0, 0.0), spine=(2.0, 0.0, 0.0), clav_r=(0.0, 0.0, 6.0), clav_l=(0.0, 0.0, -6.0))
+    SNORT = dict(Z, hips=(0.0, SLEEP_BACK, -0.36), head=(-6.0, 0.0, 0.0), spine=(2.0, 0.0, 0.0), clav_r=(0.0, 0.0, 6.0), clav_l=(0.0, 0.0, -6.0))
     LOOK_L = dict(SNORT, head=(4.0, 0.0, 50.0), spine=(4.0, 0.0, 12.0))
     LOOK_R = dict(SNORT, head=(2.0, 0.0, -46.0), spine=(4.0, 0.0, -12.0))
     SEE = dict(Z, hips=(0.0, SLEEP_BACK + 0.02, -0.34), hips_rot=(-20.0, 0.0, 0.0), spine=(-6.0, 0.0, 0.0), head=(-14.0, 0.0, 0.0),
