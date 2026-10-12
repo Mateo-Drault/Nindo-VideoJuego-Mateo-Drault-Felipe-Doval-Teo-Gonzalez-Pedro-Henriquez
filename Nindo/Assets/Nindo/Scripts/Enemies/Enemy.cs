@@ -559,7 +559,6 @@ namespace Nindo
 
         protected void BeginStep()
         {
-            OnStepStarting();
             var a = pattern.steps[step];
             EndTell(TellOutcome.Struck);   // (el paso anterior ya pegó; por las dudas no queda un anillo colgado)
             clipLen = anim.Length(a.state, 0.8f);
@@ -617,10 +616,6 @@ namespace Nindo
         }
 
         protected virtual void OnStepStarted(AttackDef a) { }
-
-        /// <summary>Antes de armar el paso (pattern.steps[step] todavía se puede cambiar: Chikuō elige ahí la variante del
-        /// golpe que entra en la distancia que hay).</summary>
-        protected virtual void OnStepStarting() { }
 
         /// <summary>Lo que tarda el golpe en llegar a Kaito después de soltarse (embestidas, ondas): el aviso arranca
         /// antes por eso y la agenda de golpes lo reserva para cuando de verdad llega.</summary>
