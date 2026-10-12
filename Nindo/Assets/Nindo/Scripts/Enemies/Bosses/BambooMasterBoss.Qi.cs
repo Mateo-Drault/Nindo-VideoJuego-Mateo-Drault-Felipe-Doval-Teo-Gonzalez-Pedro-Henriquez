@@ -12,7 +12,7 @@ namespace Nindo
     /// </summary>
     public partial class BambooMasterBoss
     {
-        bool qiLive, qiHit, qiOwnedByStep, qiGathered;
+        bool qiLive, qiHit, qiOwnedByStep, qiGathered, qiPending;
         Vector3 qiCenter;
         float qiR, qiMax, qiPrev;   // qiPrev: distancia de Kaito al centro el frame anterior (para el cruce)
         AttackDef qiAttack;
@@ -36,6 +36,7 @@ namespace Nindo
         /// disco cuenta hasta el borde: puede volver a entrar); después, infinito si Kaito quedó afuera o ya pegó.</summary>
         float QiEta(AttackDef a)
         {
+            if (qiPending) return 0f;   // el frente ya lo tocó: pega en el próximo cuadro (ver ResolveQiHit)
             if (target == null || stepHit) return float.PositiveInfinity;
             if (!specialFired)
             {
@@ -101,7 +102,7 @@ namespace Nindo
                 if ((prev <= 0f || qiPrev > prev) && d <= qiR)
                 {
                     qiHit = true;
-                    if (qiOwnedByStep && InTell) HitPlayer(qiAttack, qiCenter);
+                    qiPending = qiOwnedByStep && InTell;
                 }
                 qiPrev = d;
             }
@@ -109,9 +110,24 @@ namespace Nindo
             if (qiR >= qiMax - 1e-3f) ClearQiWave(false);
         }
 
+        /// <summary>
+        /// El golpe de la onda sale un cuadro después de que el frente cruza a Kaito. El que hace dash HACIA el centro (sin
+        /// stick el dash sale hacia adelante) cruzaba el frente en el primer cuadro del dash, antes de los i-frames (0.02 s):
+        /// el bot "bueno" se comía el 28 % de las ondas contra el ~16 % de cualquier otro golpe. Un cuadro después ya está
+        /// en los i-frames si apretó a tiempo, y al que no hizo nada le pega igual (16 ms no se ven). Corre antes que
+        /// Enemy.Update para que el aviso siga vivo hasta el golpe.
+        /// </summary>
+        void ResolveQiHit()
+        {
+            if (!qiPending) return;
+            qiPending = false;
+            if (target != null && target.IsAlive && IsAlive && qiOwnedByStep && InTell) HitPlayer(qiAttack, qiCenter);
+        }
+
         void ClearQiWave(bool destroy)
         {
             qiLive = false;
+            qiPending = false;
             if (qiRing == null) return;
             if (destroy) { Destroy(qiRing.gameObject); qiRing = null; }
             else qiRing.Hide();

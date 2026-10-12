@@ -1,355 +1,1134 @@
-"""Simulación offline de la pelea de Chikuō (BambooMasterBoss) contra el bot de AutoPilot.
+"""Simulación offline de la pelea de Chikuō (BambooMasterBoss) contra el bot de AutoPilot, cuadro a cuadro.
 
-Sin Unity: lee los tiempos de los clips del sidecar (BambooMaster.fbx.json) y repite las cuentas de
-BambooMasterMoves.M (windup = anticipación natural + pausa del apex por fase), StepTimeline.Build (cuándo pega cada
-golpe) y las reglas del juego que deciden la pelea:
-  * el bot oye el "¡ya!" (hyōshigi) 0.38 s antes de un dorado y 0.42 s antes de un rojo y aprieta su tiempo de
-    reacción después (AutoPilot.Skill: bueno N(0.28, 0.06), promedio N(0.32, 0.08); no lo ve, se confunde de botón);
-  * parry: ventana de 0.24 s (perfecto los primeros 0.11), guardia imperfecta 0.15 s más (35 % del daño); dash:
-    i-frames de 0.02 a 0.24 s; contra una zona (marca del salto, barrida, carril) un dash temprano igual lo saca;
-  * un combo con un parry termina en agotado (4 s o 5 golpes); la postura llena (4) lo quiebra en el acto; la
-    postura del bambú: el bot no le pega a una guardia, así que espera y Chikuō baja la guardia (3 golpes abierto);
-  * entre combos Kaito le pega lo que deja la pausa (2 golpes antes de que se cubra);
-  * pisos de vida por fase (66 %, 33 %), las escenas de cambio de fase (+15 de vida para Kaito) y los reintentos
-    (llegar al bastón hace que el próximo intento arranque en la fase 2).
-Dice la duración de la pelea (la que gana y la total con los intentos perdidos), las muertes y el reparto por fase,
-y una tabla de lectura de cada golpe (cuánto antes se ve el anillo y cuán seguido el bot lo resuelve).
+Sin Unity. Porta las reglas que deciden la pelea, con los números del código (si se cambian allá, se cambian acá):
+  * Enemy.cs: estados (Chase, Strafe, Attack, Recoil, Guard, Counter, Exhausted, Stagger), contraataque de Kaito
+    en el Recoil, postura (parry 1, perfecto 1.5, guardia imperfecta 0.34), agotado (x exhaustedDamageMul, tope
+    de golpes), StepTimeline.Build / MinWindup / NormAt (cuándo pega cada paso) y el "¡ya!" (TickLead).
+  * BambooMasterBoss / Moves: los tiempos de cada clip (sidecar BambooMaster.fbx.json), pausas del apex por fase,
+    pisos de vida (66 % / 33 %) y escenas de cambio de fase, los rebotes fuera de sus huecos (el 2.º dentro de
+    BounceWindow se contragolpea), postura del bambú (desvío + contragolpe, cuya parada perfecta lo arrodilla;
+    esperarla lo deja abierto), de rodillas solo con la postura llena, la onda de qi (frente a QiSpeed m/s), la
+    grulla voladora (cae sobre Kaito), la barrida (disco), el paso del viento (carril, x4 hasta que sale en la
+    fase) y el reintento desde la fase más alta a la que llegó Kaito.
+  * PlayerController: combo de Kaito (clips de 0.43 / 0.37 / 0.70 s, golpe en f4 / f3 / f7), parry 0.24 s
+    (perfecto 0.11), guardia imperfecta 0.15 s, encadenar parries 0.18 s, contraataque x1.5 por 0.7 s, dash
+    6.5 m con i-frames 0.02-0.24 y 15 de Espíritu (sin Espíritu: paso sin i-frames), aturdido 0.65 s, 0.7 s
+    invulnerable después de un golpe, Furia (x1.45 por 9 s), Espíritu y Furia que suman golpes y parries.
+  * AutoPilot (bot): aprieta parry/dash un tiempo de reacción después del "¡ya!" (bueno N(0.28, 0.06), promedio
+    N(0.32, 0.08); a veces no lo ve o se confunde), se acerca hasta 2.2 m, ataca cada 0.32 s a menos de 2.6 m si
+    no hay un anillo encima (salvo de apurado) y nunca contra una guardia.
+Geometría en 1D (distancia entre los dos): el bot siempre va hacia el jefe y su dash sale hacia él (sin dirección
+de stick sale hacia adelante), como en el juego.
 
-Uso: python Tools/Dev/sim_bamboo_master.py [--runs 400] [--seed 1]
+Dice cuánto dura la pelea (el intento ganador y el total con las muertes), en qué fase se muere, de dónde sale el
+daño a Chikuō y una tabla de lectura de cada golpe (windup, anillo, "¡ya!" y qué tan seguido lo resuelve el bot).
+
+Uso: python Tools/Dev/sim_bamboo_master.py [--runs 200] [--seed 1] [--skill bueno|promedio|experto|all] [--table] [--fair]
 """
 import argparse, json, math, os, random
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 SIDE = os.path.join(REPO, "Nindo", "Assets", "Nindo", "Art", "Characters", "BambooMaster", "BambooMaster.fbx.json")
+CLIPS = json.load(open(SIDE, encoding="utf-8"))["clips"]
+DT = 1.0 / 60.0
 
-# --------------------------------------------------------------------------- números del juego (C#)
-PARRY_HOLD = [0.30, 0.22, 0.16]          # BambooMasterMoves.ParryHold
-DODGE_HOLD = [0.14, 0.10, 0.08]          # BambooMasterMoves.DodgeHold
-CHAINED = 0.6                            # ChainedHold
-GATES = [1.0, 0.66, 0.33, 0.0]           # BambooMasterBoss.Gates
-STANCE_CHANCE = [0.35, 0.30, 0.25]
-STANCE_TIME = (1.4, 2.0)
-COOLDOWN = [(0.8, 1.4), (0.6, 1.1), (0.5, 0.9)]
-HEALTH = 1400.0
-MAX_IMB = 4
-EXHAUSTED_TIME = 4.0
-KNEEL_CAP, TAUNT_CAP = 5, 3
-TAUNT_TIME = 1.8
-GUARD_TIME = 0.7
-PARRIED_RECOIL = 0.4                     # x1.5 el perfecto
-TRANSITION = [3.67, 3.0]                 # PhaseCoat, PhaseStaff
-TRANSITION_HEAL = 15.0
-EXH_MUL = 1.3
-# Kaito (PlayerConfig)
-K_HP = 100.0
-K_COMBO = [10.0, 11.0, 18.0]
-K_TAP = 0.32                             # el bot ataca cada 0.32 s
-K_FINAL = 0.57                           # el corte final hasta poder volver a empezar
-RIPOSTE = 1.5
-RAGE_HIT, RAGE_PARRY, RAGE_PERFECT, RAGE_LOSS, RAGE_TIME, RAGE_MUL = 4, 14, 20, 40, 9.0, 1.45
-PARRY_WIN, PERFECT_WIN, IMPERFECT, IMPERFECT_DMG = 0.24, 0.11, 0.15, 0.35
-IFRAME = (0.02, 0.24)
-TICK = {"gold": 0.38, "red": 0.42}
-DEATH_AND_RETRY = 3.6 + 2.6 + 4.0        # muerte -> reaparición, caminar a la arena, re-presentación
+# --------------------------------------------------------------------------- Chikuō (BambooMasterBoss / Moves)
+P = dict(
+    health=1400.0,
+    gates=[1.0, 0.66, 0.33, 0.0],
+    parry_hold=[0.30, 0.22, 0.16], dodge_hold=[0.14, 0.10, 0.08], chained=0.6, phase_mul=0.9,
+    cooldown=[(2.6, 3.6), (2.0, 3.0), (1.6, 2.4)],      # BambooMasterMoves.Cooldown
+    stance_chance=[0.45, 0.40, 0.35], stance_time=(1.8, 2.6),
+    kneel_cap=3, taunt_cap=2, exh_mul=1.15, exh_time=4.0, taunt_time=1.8,
+    max_imb=8.0, guard_time=0.7, stagger=0.35, bounce_window=0.55,
+    recoil=0.4,                          # Parried.Seconds * 0.4 (x1.5 el perfecto)
+    run=4.0, walk=1.6, pref=3.6, radius=0.5,
+    qi_speed=[9.0, 9.0, 10.0], qi_radius=[9.0, 9.0, 10.5], leap_min=2.0, leap_max=7.4, leap_minr=1.0,
+    transition=[3.67, 3.0], heal=30.0, spirit_gift=30.0,
+    counter_clip=0.5333, guardhit_extra=0.5,
+    dmg_mul=[1.0, 1.0, 1.0],
+    retry_max=2,                         # fase más alta desde la que puede arrancar un reintento (0..2; OnPlayerDied)             # para probar: multiplica el daño de los golpes de cada fase
+)
+K_R = 0.35                               # radio de Kaito (CharacterController)
+CONTACT = P["radius"] + K_R + 0.25       # Travel() frena acá contra Kaito
+
+# --------------------------------------------------------------------------- Kaito (PlayerConfig)
+K = dict(hp=100.0, spirit0=40.0, run=6.2,
+         combo=[dict(dmg=10, len=0.4333, hit=0.308, win=0.538, cut_end=0.538, range=2.3, kb=0.35, stop=0.06, kind="light"),
+                dict(dmg=11, len=0.3667, hit=0.273, win=0.545, cut_end=0.545, range=2.3, kb=0.4, stop=0.06, kind="light"),
+                dict(dmg=18, len=0.6667 / 0.95, hit=0.35, win=0.95, cut_end=0.5, range=2.6, kb=1.6, stop=0.11, kind="heavy")],
+         restart=0.85, grace=0.25, parry_win=0.24, perfect=0.11, parry_recover=0.28, imperfect=0.15, imperfect_dmg=0.35,
+         chain_parry=0.18, riposte_win=0.7, riposte_mul=1.5, riposte_start=0.154,
+         dash_cost=15.0, dash_len=0.26, dash_recover=0.08, iframe=(0.02, 0.24), dash_dist=6.5, tired_cd=0.8,
+         hurt_heavy=0.65, invuln=0.7, blocked=0.5,
+         rage_hit=4, rage_parry=14, rage_perfect=20, rage_loss=40, rage_time=9.0, rage_mul=1.45, rage_ext=0.6,
+         sp_hit=3, sp_parry=12, sp_perfect=18)
+TICK = {False: 0.38, True: 0.42}         # TellStyle.TickParryable / TickUnblockable
+MAXLEAD = {False: 0.85, True: 1.0}
 SKILLS = {
-    "experto": dict(rt=(0.25, 0.04), miss=0.0, wrong=0.0),
-    "bueno": dict(rt=(0.28, 0.06), miss=0.10, wrong=0.05),
-    "promedio": dict(rt=(0.32, 0.08), miss=0.25, wrong=0.10),
+    "experto": dict(rt=(0.25, 0.04), miss=0.0, wrong=0.0, greedy=0.0),
+    "bueno": dict(rt=(0.28, 0.06), miss=0.10, wrong=0.05, greedy=0.1),
+    "promedio": dict(rt=(0.32, 0.08), miss=0.25, wrong=0.10, greedy=0.25),
 }
+DEATH_AND_RETRY = 3.6 + 3.0              # muerte → reaparición y caminar del santuario a la arena
+REINTRO = 2.0
 
 
-def load():
-    return json.load(open(SIDE, encoding="utf-8"))["clips"]
+def suffix(ph):
+    return "" if ph == 0 else "_P2" if ph == 1 else "_P3"
 
 
-CLIPS = load()
+def clip(base, ph):
+    return CLIPS.get(base + suffix(ph)) or CLIPS[base]
 
 
-def suffix(phase):
-    return "" if phase == 0 else "_P2" if phase == 1 else "_P3"
-
-
+# --------------------------------------------------------------------------- golpes (BambooMasterMoves.M)
 class Step:
-    def __init__(self, base, phase, dmg, chained=False, special="strike"):
-        c = CLIPS.get(base + suffix(phase)) or CLIPS[base]
+    def __init__(self, base, ph, dmg, chained=False, special="strike", counter=False, name=None):
+        c = clip(base, ph)
         nm, t = c["normalized"], c["timing"]
-        self.name = base + suffix(phase)
+        self.name = name or (base + suffix(ph))
+        self.state = base + suffix(ph)
         self.red = t.get("kind") == "dodge"
-        self.dmg = dmg
-        self.special = special
-        S, ap, co = c["seconds"], nm["apex"], nm["contact"]
-        rr = c.get("release_rate", 1.6)
-        hold = (DODGE_HOLD if self.red else PARRY_HOLD)[phase] * (CHAINED if chained else 1.0)
-        natural = ap * S / 0.85 + (co - ap) * S / rr
-        # MinWindup: el windup explícito (con la compensación del 0.9 de las fases 2 y 3) y los mínimos del tipo
-        self.T = max(natural + hold, 0.70 if self.red else 0.38)
-        self.after = (1 - co) * S          # resto del clip después del golpe (velocidad 1)
-        self.ring = min(self.T, 1.0 if self.red else 0.85)
-        self.area = special in ("leap", "sweep", "dash")
+        self.dmg, self.special, self.counter = dmg * P["dmg_mul"][ph], special, counter
+        self.S = c["seconds"]
+        self.apex, self.contact = nm["apex"], nm["contact"]
+        self.active_end = nm["active"][1]
+        self.rr = c.get("release_rate", 1.6)
+        self.reach = c.get("reach_m", 1.3)
+        self.ring = t.get("ring_m", 0.0)
+        self.marker = t.get("marker_m", 0.0)
+        tr = c.get("travel_m")
+        self.travel = tr
+        self.frames = c["frames"]
+        hold = (P["dodge_hold"] if self.red else P["parry_hold"])[ph] * (P["chained"] if chained else 1.0)
+        natural = self.apex * self.S / 0.85 + (self.contact - self.apex) * self.S / self.rr
+        self.windup = natural + hold
+        if ph >= 1:
+            self.windup /= P["phase_mul"]
+        self.ph = ph
+        self.range = self.reach + self.travel_at(self.contact)
+        if special == "qi":
+            self.ring = P["qi_radius"][ph]
+        self.bias = 0.16 if self.red else 0.10
+
+    def travel_at(self, n):
+        if not self.travel:
+            return 0.0
+        x = min(max(n, 0.0), 1.0) * self.frames
+        i = min(int(x), len(self.travel) - 1)
+        j = min(i + 1, len(self.travel) - 1)
+        return self.travel[i] + (self.travel[j] - self.travel[i]) * (x - i)
 
 
-def patterns(phase):
-    P = []
-    def add(name, w, cd, steps, ranged=False):
-        P.append(dict(name=name, w=w, cd=cd, steps=steps, ranged=ranged, last=-99.0))
-    if phase == 0:
-        add("Palma", 1.3, 0, [Step("Palm", 0, 14)])
-        add("Palma y Sable", 1.6, 0, [Step("Palm", 0, 14), Step("ChopPalm", 0, 16, True)])
-        add("Pico de Grulla", 1.0, 2, [Step("CraneKick", 0, 16)])
-        add("Sable y Grulla", 1.2, 4, [Step("ChopPalm", 0, 16), Step("CraneKick", 0, 16, True)])
-        add("Tres de una Mano", 0.8, 8, [Step("Palm", 0, 14), Step("ChopPalm", 0, 16, True), Step("CraneKick", 0, 16, True)])
-        add("Grulla Voladora", 1.0, 6, [Step("LeapKick", 0, 22, special="leap")], True)
-    elif phase == 1:
-        add("Palmas Gemelas", 1.2, 0, [Step("TwinPalm", 1, 20)])
-        add("Palma y Viento", 1.4, 3, [Step("Palm", 1, 16), Step("SpinKick", 1, 20, True)])
-        add("Sable y Gemelas", 1.2, 3, [Step("ChopPalm", 1, 18), Step("TwinPalm", 1, 20, True)])
-        add("Grulla y Barrida", 1.0, 6, [Step("CraneKick", 1, 18), Step("Sweep", 1, 20, True, "sweep")])
-        add("Barrida", 0.6, 6, [Step("Sweep", 1, 20, special="sweep")])
-        add("Cuatro Vientos", 0.7, 9, [Step("Palm", 1, 16), Step("ChopPalm", 1, 18, True), Step("TwinPalm", 1, 20, True), Step("SpinKick", 1, 20, True)])
-        add("Onda de Qi", 0.9, 9, [Step("QiWave", 1, 22, special="qi")], True)
-        add("Paso del Viento", 1.1, 6, [Step("DashStrike", 1, 24, special="dash")], True)
-        add("Grulla Voladora", 0.8, 7, [Step("LeapKick", 1, 24, special="leap")], True)
+def min_windup(a, counter, ph):
+    b = a.windup
+    if counter:
+        b = max(b, 0.5)
+    if ph >= 1:
+        b *= 0.9
+    return max(b, 0.70 if a.red else 0.38)
+
+
+class Timeline:
+    """StepTimeline.Build + NormAt."""
+    def __init__(self, a, windup):
+        L = a.S
+        self.L = L
+        self.act = max(a.contact, 0.02)
+        self.act_end = max(self.act, a.active_end)
+        self.apex = min(max(a.apex, 0.0), self.act - 0.02)
+        self.tA = self.apex * L / 0.85
+        self.tR = (self.act - self.apex) * L / a.rr
+        extra = max(0.0, windup - (self.tA + self.tR))
+        self.hold = min(extra, 0.45)
+        self.tA += extra - self.hold
+        self.T = self.tA + self.hold + self.tR
+        self.creep = min(0.01, (self.act - self.apex) * 0.25)
+        self.sustain = 0.0
+
+    @property
+    def release(self):
+        return self.tA + self.hold
+
+    def norm(self, t):
+        if t <= 0:
+            return 0.0
+        if t < self.tA:
+            return self.apex * math.sin(t / self.tA * math.pi * 0.5)
+        t -= self.tA
+        if t < self.hold:
+            return self.apex + self.creep * t / max(self.hold, 1e-6)
+        t -= self.hold
+        fr = self.apex + self.creep
+        if t < self.tR:
+            u = t / self.tR
+            return fr + (self.act - fr) * u * u
+        t -= self.tR
+        if self.sustain > 0:
+            return self.act + (self.act_end - self.act) * t / self.sustain if t < self.sustain else self.act_end + (t - self.sustain) / self.L
+        r0 = max(1.0, 2.0 * (self.act - fr) / self.tR * self.L)
+        return self.act + (t + (r0 - 1.0) * 0.06 * (1.0 - math.exp(-t / 0.06))) / self.L
+
+
+def patterns(ph):
+    S = Step
+    out = []
+
+    def add(name, w, minr, cd, steps, maxr=None):
+        a = steps[0]
+        if maxr is None:
+            maxr = a.range + 0.1 if a.special == "strike" else a.ring + 0.2 if a.special == "sweep" else a.range
+        out.append(dict(name=name, w=w, minr=minr, maxr=maxr, cd=cd, steps=steps, last=-99.0))
+
+    if ph == 0:
+        palm, chopC = S("Palm", 0, 5), S("ChopPalm", 0, 5, True)
+        add("Palma", 1.3, 0, 0, [palm])
+        add("Palma y Sable", 1.6, 0, 0, [palm, chopC])
+        add("Pico de Grulla", 1.0, 0, 2, [S("CraneKick", 0, 5)])
+        add("Sable y Grulla", 1.2, 0, 4, [S("ChopPalm", 0, 5), S("CraneKick", 0, 5, True)])
+        add("Tres de una Mano", 0.8, 0, 8, [palm, chopC, S("CraneKick", 0, 5, True)])
+        add("Grulla Voladora", 1.0, P["leap_minr"], 6, [S("LeapKick", 0, 7, special="leap")], P["leap_max"] - 0.4)
+    elif ph == 1:
+        palm, chop = S("Palm", 1, 7), S("ChopPalm", 1, 8)
+        twin, twinC = S("TwinPalm", 1, 8), S("TwinPalm", 1, 8, True)
+        spinC = S("SpinKick", 1, 8, True)
+        add("Palmas Gemelas", 1.2, 0, 0, [twin])
+        add("Palma y Viento", 1.4, 0, 3, [palm, spinC])
+        add("Sable y Gemelas", 1.2, 0, 3, [chop, twinC])
+        add("Grulla y Barrida", 1.0, 0, 6, [S("CraneKick", 1, 8), S("Sweep", 1, 9, True, "sweep")])
+        add("Barrida", 0.6, 0, 6, [S("Sweep", 1, 9, special="sweep")])
+        add("Cuatro Vientos", 0.7, 0, 9, [palm, S("ChopPalm", 1, 8, True), twinC, spinC])
+        add("Onda de Qi", 0.9, 0, 9, [S("QiWave", 1, 9, special="qi")], 7.0)
+        add("Paso del Viento", 1.1, 4.2, 6, [S("DashStrike", 1, 11, special="dash")], 7.6)
+        add("Grulla Voladora", 0.8, P["leap_minr"], 7, [S("LeapKick", 1, 11, special="leap")], P["leap_max"] - 0.4)
     else:
-        add("Estocada", 1.2, 0, [Step("Palm", 2, 18)])
-        add("Estocada y Bambú", 1.4, 0, [Step("Palm", 2, 18), Step("ChopPalm", 2, 20, True)])
-        add("El Bambú Vuelve", 1.1, 6, [Step("Palm", 2, 18), Step("ChopPalm", 2, 20, True), Step("Sweep", 2, 24, True, "sweep")])
-        add("Grulla y Estocada", 1.0, 3, [Step("CraneKick", 2, 20), Step("Palm", 2, 18, True)])
-        add("Barrida del Bastón", 0.6, 6, [Step("Sweep", 2, 24, special="sweep")])
-        add("La Última Lección", 0.6, 12, [Step("Palm", 2, 18), Step("ChopPalm", 2, 20, True), Step("Palm", 2, 18, True), Step("QiWave", 2, 24, True, "qi")])
-        add("Raíz del Bambú", 0.8, 8, [Step("QiWave", 2, 24, special="qi")], True)
-        add("Viento y Bambú", 1.0, 6, [Step("DashStrike", 2, 26, special="dash"), Step("ChopPalm", 2, 20, True)], True)
-        add("Grulla y Estocada (salto)", 0.8, 7, [Step("LeapKick", 2, 26, special="leap"), Step("Palm", 2, 18, True)], True)
-    return P
+        thrust, thrustC = S("Palm", 2, 9), S("Palm", 2, 9, True)
+        smashC = S("ChopPalm", 2, 10, True)
+        add("Estocada", 1.2, 0, 0, [thrust])
+        add("Estocada y Bambú", 1.4, 0, 0, [thrust, smashC])
+        add("El Bambú Vuelve", 1.1, 0, 6, [thrust, smashC, S("Sweep", 2, 12, True, "sweep")])
+        add("Grulla y Estocada", 1.0, 0, 3, [S("CraneKick", 2, 10), thrustC])
+        add("Barrida del Bastón", 0.6, 0, 6, [S("Sweep", 2, 12, special="sweep")])
+        add("La Última Lección", 0.6, 0, 12, [thrust, smashC, thrustC, S("QiWave", 2, 12, True, "qi")])
+        add("Raíz del Bambú", 0.8, 0, 8, [S("QiWave", 2, 12, special="qi")], 7.0)
+        add("Viento y Bambú", 1.0, 4.2, 6, [S("DashStrike", 2, 13, special="dash"), smashC], 7.6)
+        add("Grulla y Estocada (salto)", 0.8, P["leap_minr"], 7, [S("LeapKick", 2, 13, special="leap"), thrustC], P["leap_max"] - 0.4)
+    return out
 
 
-def counter_step(phase):
-    return Step("CounterStrike", phase, 14 + 2 * phase)
 
 
-# --------------------------------------------------------------------------- defensa del bot
-def defend(step, skill, rng):
-    """'parry', 'perfect', 'imperfect', 'dodge' o 'hit'."""
-    if rng.random() < skill["miss"]:
-        return "hit"
-    m, sd = skill["rt"]
-    rt = min(0.55, max(0.15, rng.gauss(m, sd)))
-    kind = "red" if step.red else "gold"
-    press = -TICK[kind] + rt + 1 / 60.0      # respecto del golpe (0)
-    dash = step.red != (rng.random() < skill["wrong"])
-    if dash:
-        if IFRAME[0] <= -press <= IFRAME[1]:
-            return "dodge"
-        # contra una zona, el dash temprano igual lo saca (6.5 m); la onda de qi lo alcanza igual
-        if step.red and step.area and -press > IFRAME[1] and rng.random() < 0.7:
-            return "dodge"
-        return "hit"
-    if step.red:
-        return "hit"                         # parry a un rojo
-    if 0 <= -press <= PARRY_WIN:
-        return "perfect" if -press <= PERFECT_WIN else "parry"
-    if PARRY_WIN < -press <= PARRY_WIN + IMPERFECT:
-        return "imperfect"
-    return "hit"
+def counter_step(ph):
+    return Step("CounterStrike", ph, (5, 7, 9)[ph], counter=True)
 
 
-# --------------------------------------------------------------------------- una pelea
+def gauss(rng, m, s):
+    return rng.gauss(m, s)
+
+
+# --------------------------------------------------------------------------- la pelea
 class Fight:
-    def __init__(self, skill, rng):
-        self.s, self.rng = skill, rng
+    def __init__(self, skill, rng, start_phase=0, stats=None):
+        self.sk, self.rng = skill, rng
         self.t = 0.0
+        self.st = stats if stats is not None else {}
+        # jefe
+        self.ph = start_phase
+        self.hp = P["health"] * P["gates"][start_phase]
+        self.imb = 0.0
+        self.bs = "chase"
+        self.bt = 0.0              # tiempo en el estado
+        self.bdur = 0.0
+        self.next_attack = 0.6
+        self.pats = patterns(self.ph)
+        self.pat, self.step = None, 0
+        self.counter_pat = dict(name="Contragolpe", steps=[counter_step(self.ph)], maxr=99, minr=0, w=1, cd=0, last=-99)
+        self.stance = self.taunt = False
+        self.stance_until = 0.0
+        self.stance_last = False
+        self.force_stance = start_phase == 0
+        self.saved_imb = 0.0
+        self.bounces_n, self.last_bounce = 0, -99.0
+        self.exh_hits = 0
+        self.frozen_until = 0.0
+        self.knock = 0.0
+        self.trans_until = -1.0
+        self.fight_start = 0.0
+        self.phase_start = 0.0
+        self.counter_attack = False
+        self.stance_counter = False
+        self.commit, self.commit_until = None, 0.0
+        # paso
+        self.a = None
+        self.clock = 0.0
+        self.tl = None
+        self.tell_start = 0.0
+        self.tell_on = False
+        self.ticked = False
+        self.hit_done = False
+        self.travel_done = 0.0
+        self.leap_target = None
+        self.qi_r = None
+        self.qi_pending = False
+        # Kaito
+        self.k_hp = K["hp"]
+        self.sp = K["spirit0"]
+        self.rage, self.rage_until, self.nodmg = 0.0, -1.0, 0.0
+        self.ks = "loco"
+        self.kt = 0.0
+        self.k_combo = 0
+        self.k_norm = 0.0
+        self.k_hit_done = False
+        self.k_buf = {}            # acción -> tiempo de la pulsación
+        self.riposte_until = -1.0
+        self.invuln_until = -1.0
+        self.dash_tired = False
+        self.tired_ready = -9.0
+        self.parry_mul = 1.0
+        self.last_whiff = -9.0
+        self.parry_threat = False
+        self.k_frozen_until = 0.0
+        self.hurt_dur = 0.0
+        # distancia y bot
+        self.d = 11.0
+        self.pending = []          # (tiempo, acción)
+        self.next_bot = 0.0
 
-    def run(self):
-        rng = self.rng
-        total, attempts, retry_phase = 0.0, 0, 0
-        phase_time = [0.0, 0.0, 0.0]
-        while attempts < 12:
-            attempts += 1
-            won, dt, reached, per_phase = self.attempt(retry_phase)
-            total += dt
-            for i in range(3):
-                phase_time[i] += per_phase[i]
-            if won:
-                return dict(win_time=dt, total=total, deaths=attempts - 1, phase_time=phase_time)
-            total += DEATH_AND_RETRY
-            if reached >= 2:
-                retry_phase = 1
-        return dict(win_time=None, total=total, deaths=attempts, phase_time=phase_time)
+    # ------------------------------------------------------------------ utilidades
+    def stat(self, k, v=1):
+        self.st[k] = self.st.get(k, 0) + v
 
-    def attempt(self, start_phase):
-        rng = self.rng
-        t = 0.0
-        hp = HEALTH * GATES[start_phase]
-        k_hp = K_HP
-        rage, rage_until = 0.0, -1.0
-        phase = start_phase
-        pats = patterns(phase)
-        per_phase = [0.0, 0.0, 0.0]
-        stance_last = False
-        first_stance = start_phase == 0
-        near = True
-        imb = 0.0
+    def rage_on(self):
+        return self.t < self.rage_until
 
-        def k_damage(base, mult=1.0):
-            nonlocal rage, rage_until
-            r = RAGE_MUL if t < rage_until else 1.0
-            return base * mult * r
+    def add_rage(self, v):
+        if self.rage_on():
+            self.rage_until = min(self.t + K["rage_time"], self.rage_until + K["rage_ext"] * (1 if v > 0 else -1))
+            return
+        streak = 1.0 + 0.6 * min(1.0, self.nodmg / 20.0)
+        self.rage = min(100.0, self.rage + v * streak)
+        if self.rage >= 100.0 - 1e-6:
+            self.rage, self.rage_until = 0.0, self.t + K["rage_time"]
+            self.stat("furia")
 
-        def add_rage(x):
-            nonlocal rage, rage_until
-            if t < rage_until:
-                rage_until += 0.6 if x == RAGE_HIT else 0
+    def floor_hp(self):
+        return P["health"] * P["gates"][self.ph + 1] if self.ph < 2 else -1e9
+
+    def in_tell(self):
+        return self.bs == "attack" and self.tell_on and self.clock >= self.tell_start
+
+    def strike_reach(self):
+        a = self.a
+        if a is None:
+            return 0.0
+        return a.range
+
+    def strike_eta(self):
+        """Segundos hasta que el paso pega (infinito si ya pegó o no pega)."""
+        a = self.a
+        if self.bs != "attack" or a is None or self.hit_done:
+            return math.inf
+        if a.special == "qi":
+            front_from = self.d if self.qi_r is None else self.d
+            if self.qi_r is None:
+                return max(0.0, self.tl.T - self.clock) + max(0.0, min(self.d, a.ring) - CONTACT_QI) / P["qi_speed"][self.ph]
+            if self.d > a.ring:
+                return math.inf
+            return max(0.0, self.d - max(self.qi_r, CONTACT_QI)) / P["qi_speed"][self.ph]
+        return self.tl.T - self.clock if self.clock < self.tl.T else math.inf
+
+    def can_reach(self):
+        """Enemy.StrikeCanReach(Kaito, radio + 0.5): ¿el bot lo considera suyo?"""
+        a = self.a
+        pad = K_R + 0.5
+        if a.special == "strike":
+            return self.d <= a.range + pad
+        if a.special == "leap":
+            land = min(max(self.d, P["leap_min"]), P["leap_max"])
+            return abs(self.d - land) <= a.ring + pad
+        if a.special in ("sweep",):
+            return self.d <= a.ring + pad
+        if a.special == "qi":
+            return self.d <= a.ring + pad
+        if a.special == "dash":
+            return self.d <= a.range + pad + 2.0
+        return True
+
+    # ------------------------------------------------------------------ jefe
+    def set_bs(self, s):
+        if self.bs == "attack" and s != "attack":
+            self.tell_on = False
+        self.bs, self.bt = s, 0.0
+
+    def pick(self, dist):
+        ok = [p for p in self.pats if dist >= p["minr"] and self.t - p["last"] >= p["cd"]]
+        if not ok:
+            return None
+        if self.ph == 0:
+            leap = next((p for p in self.pats if p["steps"][0].special == "leap"), None)
+            if leap is not None:
+                leap["w"] = 4.0 if self.t - self.fight_start > 14 and leap["last"] < self.fight_start else 1.0
+        else:
+            # TeachDash: el paso del viento pesa x4 hasta que sale una vez en la fase
+            dash = next((p for p in self.pats if p["steps"][0].special == "dash"), None)
+            if dash is not None:
+                dash.setdefault("w0", dash["w"])
+                dash["w"] = dash["w0"] if dash["last"] >= self.phase_start else dash["w0"] * 4.0
+        tot = sum(p["w"] for p in ok)
+        r = self.rng.random() * tot
+        for p in ok:
+            r -= p["w"]
+            if r <= 0:
+                return p
+        return ok[-1]
+
+    def start_attack(self, counter):
+        if self.pat is not None:
+            self.stat("uso_" + self.pat["name"])
+        if self.pat is None:
+            self.pat = self.pick(0.0)
+            if self.pat is None:
+                self.set_bs("chase")
                 return
-            rage = min(100.0, rage + x)
-            if rage >= 100.0:
-                rage, rage_until = 0.0, t + RAGE_TIME
+        self.pat["last"] = self.t
+        self.step = 0
+        self.counter_attack = counter
+        self.set_bs("attack")
+        self.begin_step()
 
-        def floor():
-            return HEALTH * GATES[phase + 1]
+    def begin_step(self):
+        a = self.pat["steps"][self.step]
+        self.a = a
+        self.clock = 0.0
+        self.hit_done = False
+        self.ticked = False
+        self.travel_done = 0.0
+        self.leap_target = None
+        self.qi_r = None
+        self.qi_pending = False
+        w = min_windup(a, self.counter_attack and self.step == 0, self.ph)
+        self.tl = Timeline(a, w)
+        travel = 0.0
+        if a.special == "qi":
+            travel = min(max(self.d - CONTACT_QI, 0.0), a.ring) / P["qi_speed"][self.ph]
+            self.tl.sustain = max(0.1, (a.ring - CONTACT_QI) / P["qi_speed"][self.ph])
+        self.tell_start = max(0.0, self.tl.T + travel - MAXLEAD[a.red])
+        self.tell_on = True
+        self.stat("pasos")
 
-        def hit_boss(dmg):
-            nonlocal hp
-            hp = max(floor(), hp - dmg) if phase < 2 else hp - dmg
+    def boss_receive(self, dmg, kind, riposte, stop):
+        """Enemy.ReceiveHit + BambooMasterBoss.ReceiveHit. Devuelve 'hit', 'blocked', 'guarded', 'ignored'."""
+        if self.bs == "dead":
+            return "ignored"
+        if self.t < self.trans_until:
+            return "blocked"
+        guardable = kind in ("light", "heavy")
+        if self.stance and self.bs == "guard" and guardable:
+            return self.deflect("desvios")
+        if guardable and self.bounces():
+            return self.bounce()
+        if self.ph < 2:
+            mul = P["exh_mul"] if self.bs == "exhausted" else 1.0
+            dmg = min(dmg, max(0.0, self.hp - self.floor_hp()) / mul)
+        src = self.bs
+        if src == "attack":
+            src = "attack_" + ("rojo" if self.a.red else "dorado") + ("_tras" if self.clock >= self.tl.T else "_antes")
+        if self.bs == "exhausted":
+            dmg *= P["exh_mul"]
+            self.exh_hits += 1
+            self.bdur = max(self.bdur, self.bt + 0.6)
+        self.hp -= dmg
+        self.stat("dano_" + src, dmg)
+        self.frozen_until = max(self.frozen_until, self.t + stop)
+        if self.hp <= 0:
+            self.bs = "dead"
+            return "hit"
+        if self.bs == "exhausted":
+            cap = P["taunt_cap"] if self.taunt else P["kneel_cap"]
+            if self.exh_hits >= cap:
+                self.end_exhaustion()
+        elif self.bs == "attack":
+            pass                                         # hyperArmor
+        elif self.bs != "counter":
+            self.set_bs("stagger")
+            self.bdur = P["stagger"] * (1.6 if kind == "heavy" else 1.0)
+            # se rehace antes de volver a atacar
+            self.next_attack = max(self.next_attack, self.t + self.bdur + self.rng.uniform(*P["cooldown"][self.ph]))
+        # cambio de fase (OnDamaged)
+        if self.ph < 2 and self.hp <= self.floor_hp() + 0.5 and self.t >= self.trans_until:
+            self.start_transition()
+        return "hit"
 
-        def kaito_window(hits, mult, riposte):
-            """Kaito le pega 'hits' golpes del combo (reiniciándolo); devuelve el tiempo que tardó."""
-            nonlocal t
-            dur = 0.0
-            for i in range(hits):
-                base = K_COMBO[i % 3]
-                m = mult * (RIPOSTE if (riposte and i == 0) else 1.0)
-                hit_boss(k_damage(base, m))
-                add_rage(RAGE_HIT)
-                dur += K_FINAL if i % 3 == 2 else K_TAP
-                if hp <= floor() + 0.01 and phase < 2 or hp <= 0:
-                    break
-            return dur
+    def bounces(self):
+        """BambooMasterBoss.Bounces: fuera de sus huecos los cortes rebotan."""
+        if self.bs == "attack":
+            return not self.a.red or self.strike_eta() != math.inf
+        return self.bs in ("counter", "guard", "chase", "strafe", "alert", "stagger")
 
-        while True:
-            ph_start = t
-            if hp <= 0:
-                per_phase[phase] += 0
-                return True, t, phase, per_phase
-            if k_hp <= 0:
-                return False, t, phase, per_phase
-            # cambio de fase
-            if phase < 2 and hp <= floor() + 0.01:
-                t += TRANSITION[phase]
-                per_phase[phase] += TRANSITION[phase]
-                phase += 1
-                pats = patterns(phase)
-                k_hp = min(K_HP, k_hp + TRANSITION_HEAL)
-                imb = 0.0
-                continue
-            # elige patrón (lejos: los de distancia pesan; cerca: los de cerca)
-            avail = [p for p in pats if t - p["last"] >= p["cd"] and (p["ranged"] == (not near) or not near and not p["ranged"] and rng.random() < 0.3)]
-            if not avail:
-                avail = [p for p in pats if t - p["last"] >= p["cd"] and not p["ranged"]] or pats
-            tot = sum(p["w"] for p in avail)
-            r = rng.random() * tot
-            pat = avail[-1]
-            for p in avail:
-                r -= p["w"]
-                if r <= 0:
-                    pat = p
-                    break
-            pat["last"] = t
-            if not near:
-                near = True
-            parried_any = False
-            broken = False
-            for st in pat["steps"]:
-                out = defend(st, self.s, rng)
-                t += st.T
-                if out in ("parry", "perfect"):
-                    parried_any = True
-                    imb += 1.5 if out == "perfect" else 1.0
-                    add_rage(RAGE_PERFECT if out == "perfect" else RAGE_PARRY)
-                    t += PARRIED_RECOIL * (1.5 if out == "perfect" else 1.0)
-                    if imb >= MAX_IMB:
-                        broken = True
-                        break
+    def bounce(self):
+        self.stat("rebotes_jefe")
+        if self.bs not in ("attack", "counter"):
+            if self.t - self.last_bounce > P["bounce_window"]:
+                self.bounces_n = 0
+            self.bounces_n += 1
+            if self.bounces_n >= 2:
+                self.bounces_n, self.last_bounce = 0, -99.0
+                return self.deflect("contra_guardia")
+            if self.bs != "guard":
+                self.enter_guard()
+            self.bdur = max(self.bdur, self.bt + P["guardhit_extra"])
+        self.last_bounce = self.t
+        return "blocked"
+
+    def deflect(self, why):
+        # solo el contragolpe de la postura del bambú se quiebra con la parada perfecta (BambooMasterBoss.stanceCounter)
+        self.stance_counter = why == "desvios"
+        self.stance = False
+        self.pat = self.counter_pat
+        self.set_bs("counter")
+        self.bdur = P["counter_clip"]
+        self.next_attack = self.t
+        self.stat(why)
+        return "guarded"
+
+    def start_transition(self):
+        knelt = self.bs == "exhausted" and not self.taunt
+        self.stance = self.taunt = False
+        self.imb = 0.0
+        dur = P["transition"][self.ph] + (0.66 if knelt else 0.0)
+        self.trans_until = self.t + dur
+        self.set_bs("alert")
+        self.bdur = dur
+        self.trans_next = self.ph + 1
+        self.stat("transiciones")
+
+    def finish_transition(self):
+        self.ph = self.trans_next
+        self.phase_start = self.t
+        self.pats = patterns(self.ph)
+        self.counter_pat = dict(name="Contragolpe", steps=[counter_step(self.ph)], maxr=99, minr=0, w=1, cd=0, last=-99)
+        self.k_hp = min(K["hp"], self.k_hp + P["heal"])
+        self.sp = min(100.0, self.sp + P["spirit_gift"])
+        self.set_bs("chase")
+        self.next_attack = self.t + 0.5
+
+    def add_imb(self, v):
+        if self.bs == "exhausted":
+            return
+        self.imb = min(P["max_imb"], self.imb + v)
+        if self.imb >= P["max_imb"] - 0.01:
+            self.become_exhausted(False)
+            self.stat("quiebres")
+
+    def enter_guard(self):
+        self.set_bs("guard")
+        self.bdur = P["guard_time"] * self.rng.uniform(0.7, 1.2)
+
+    def enter_stance(self):
+        self.enter_guard()
+        self.stance = True
+        hold = self.rng.uniform(*P["stance_time"])
+        self.stance_until = self.t + hold
+        self.bdur = hold + 5.0
+        self.stat("posturas")
+
+    def become_exhausted(self, taunt):
+        self.stance = False
+        self.taunt = taunt
+        self.exh_hits = 0
+        if taunt:
+            self.saved_imb = self.imb
+        self.set_bs("exhausted")
+        self.bdur = P["taunt_time"] if taunt else P["exh_time"]
+        self.stat("abierto_espera" if taunt else "rodillas")
+
+    def end_exhaustion(self):
+        self.imb = 0.0
+        if self.taunt:
+            self.imb = self.saved_imb
+        self.taunt = False
+        self.enter_guard()
+
+    def combo_end(self):
+        self.pat = None
+        self.next_attack = self.t + self.rng.uniform(*P["cooldown"][self.ph])
+        want = self.force_stance or (not self.stance_last and self.rng.random() < P["stance_chance"][self.ph])
+        self.force_stance = False
+        self.stance_last = want
+        if want:
+            self.enter_stance()
+        else:
+            self.enter_guard()
+
+    def on_parried(self, perfect):
+        self.imb = min(P["max_imb"], self.imb + (1.5 if perfect else 1.0))
+        self.tell_on = False
+        counter = self.pat is self.counter_pat
+        self.set_bs("recoil")
+        self.bdur = P["recoil"] * (1.5 if perfect else 1.0)
+        self.knock += 0.8 if perfect else 0.4
+        if self.imb >= P["max_imb"] - 0.01:
+            self.become_exhausted(False)
+            self.stat("quiebres")
+        elif counter and perfect and self.stance_counter:
+            self.imb = P["max_imb"]
+            self.become_exhausted(False)
+            self.stat("quiebres_contra")
+
+    def boss_tick(self):
+        dt = DT
+        frozen = self.t < self.frozen_until
+        self.bt += dt
+        s = self.bs
+        if s == "dead":
+            return
+        if s == "alert":
+            if self.t >= self.trans_until:
+                self.finish_transition()
+            return
+        if s in ("chase", "strafe"):
+            if self.t >= self.next_attack:
+                # Enemy: elige un patrón nuevo cada vez (el de un combo cortado no sigue); desde Strafe se compromete
+                # con uno y se acerca hasta tenerlo en rango (2.5 s como mucho)
+                if self.commit is None or self.t > self.commit_until:
+                    self.commit = self.pick(self.d + (0.6 if s == "strafe" else 0.0))
+                    self.commit_until = self.t + 2.5
+                p = self.commit
+                if p is not None:
+                    if self.d <= p["maxr"]:
+                        self.pat, self.commit = p, None
+                        self.start_attack(False)
+                        return
+                    self.move_boss(+P["run"] * dt)        # se acerca a su alcance
+                    return
+            if self.d > P["pref"] + 1.2:
+                self.move_boss(+P["run"] * dt)
+            elif self.d < P["pref"]:
+                self.move_boss(-P["walk"] * 0.5 * dt)    # rodea abriéndose hacia su distancia
+            self.bs = "strafe" if self.d <= P["pref"] + 1.2 else "chase"
+            return
+        if s == "attack":
+            self.attack_tick(frozen)
+            return
+        if s == "recoil":
+            if self.bt >= self.bdur:
+                self.continue_combo()
+            return
+        if s == "counter":
+            if self.bt >= self.bdur:
+                self.start_attack(True)
+            return
+        if s == "guard":
+            if self.stance and self.t >= self.stance_until:
+                self.stance = False
+                self.become_exhausted(True)
+                return
+            if self.bt >= self.bdur:
+                self.stance = False
+                self.set_bs("chase")
+            return
+        if s == "exhausted":
+            if self.bt >= self.bdur:
+                self.end_exhaustion()
+            return
+        if s == "stagger":
+            if self.bt >= self.bdur:
+                self.set_bs("chase")
+            return
+
+    def continue_combo(self):
+        if self.imb >= P["max_imb"]:
+            self.become_exhausted(False)
+            return
+        self.step += 1
+        if self.pat is not None and self.step < len(self.pat["steps"]):
+            self.set_bs("attack")
+            self.begin_step()
+        else:
+            self.combo_end()
+
+    def move_boss(self, toward):
+        self.d = max(CONTACT, self.d - toward)
+
+    def attack_tick(self, frozen):
+        a, tl = self.a, self.tl
+        if not frozen:
+            self.clock += DT
+        n = tl.norm(self.clock)
+        # avance del clip (frena contra Kaito; la grulla cae sobre él)
+        if a.special == "leap":
+            if self.leap_target is None and self.clock >= tl.release:
+                self.leap_target = min(max(self.d, P["leap_min"]), min(P["leap_max"], 13.0))
+                self.leap_from = self.d
+        elif a.travel:
+            x = a.travel_at(n)
+            dx = x - self.travel_done
+            self.travel_done = x
+            if dx > 0:
+                self.d = max(CONTACT, self.d - dx)
+        eta = self.strike_eta()
+        # "¡ya!": el bot oye y aprieta
+        if self.tell_on and not self.ticked and eta <= TICK[a.red] + 0.5 * DT:
+            self.ticked = True
+            self.bot_cue(a)
+        # golpe
+        if a.special == "qi":
+            if self.qi_r is None and self.clock >= tl.T:
+                self.qi_r = 0.0
+                self.qi_prev = self.d
+            if self.qi_r is not None and not self.hit_done:
+                if self.qi_pending:
+                    self.qi_pending = False
+                    self.hit_done = True
+                    self.tell_on = False
+                    if self.d <= self.qi_r:
+                        self.kaito_receive(a)
                 else:
-                    t += st.after
-                    if out == "imperfect":
-                        k_hp -= st.dmg * IMPERFECT_DMG
-                        imb += 0.34
-                        rage = max(0.0, rage - RAGE_LOSS * IMPERFECT_DMG)
-                    elif out == "hit":
-                        k_hp -= st.dmg
-                        rage = max(0.0, rage - RAGE_LOSS)
-                        if st.red or st.dmg >= 20:
-                            near = rng.random() > 0.6
-                    elif out == "dodge":
-                        near = rng.random() > 0.5
-                if k_hp <= 0:
-                    per_phase[phase] += t - ph_start
-                    return False, t, phase, per_phase
-            if broken or imb >= 1.0 - 1e-3:
-                # agotado: de rodillas hasta 5 golpes o 4 s (el bot llega si quedó lejos)
-                walk = 0.0 if near else 0.9
-                dur = kaito_window(KNEEL_CAP, EXH_MUL, True)
-                t += max(walk + dur, min(EXHAUSTED_TIME, walk + dur + 0.3))
-                imb = 0.0
-                near = True
+                    prev = self.qi_r
+                    self.qi_r = CONTACT_QI if prev <= 0 else min(a.ring, self.qi_r + P["qi_speed"][self.ph] * DT)
+                    if (prev <= 0 or self.qi_prev > prev) and self.d <= self.qi_r:
+                        if QI_ONE_FRAME_LATE:
+                            self.qi_pending = True
+                        else:
+                            self.hit_done = True
+                            self.tell_on = False
+                            self.kaito_receive(a)
+                    elif self.d > a.ring:
+                        self.hit_done = True
+                        self.tell_on = False
+                    self.qi_prev = self.d
+        elif not self.hit_done and self.clock >= tl.T:
+            self.hit_done = True
+            self.tell_on = False
+            ok = False
+            if a.special == "strike":
+                ok = self.d <= a.reach + 0.3 + K_R
+            elif a.special == "leap":
+                ok = abs(self.d - self.leap_target) <= a.ring + K_R
+                self.d = max(CONTACT, abs(self.d - self.leap_target))
+            elif a.special == "sweep":
+                ok = self.d - K_R <= a.ring
+            elif a.special == "dash":
+                ok = self.d - K_R <= a.reach + 0.3
+            if ok:
+                self.kaito_receive(a)
             else:
-                want = first_stance or (not stance_last and rng.random() < STANCE_CHANCE[phase])
-                first_stance = False
-                stance_last = want
-                if want:
-                    # el bot no le pega a una guardia: espera, Chikuō baja la guardia y lo llama
-                    t += rng.uniform(*STANCE_TIME)
-                    dur = kaito_window(TAUNT_CAP, EXH_MUL, False)
-                    t += max(dur, TAUNT_TIME * 0.7)
-                else:
-                    t += GUARD_TIME * rng.uniform(0.7, 1.2)
-            # la pausa entre combos: si está cerca, dos golpes antes de que se cubra
-            gap = rng.uniform(*COOLDOWN[phase])
-            if near and gap > 0.5:
-                kaito_window(2, 1.0, False)
-            t += gap + (0.0 if near else 0.6)
-            per_phase[phase] += t - ph_start
+                self.stat("fuera_de_alcance")
+        if self.bs != "attack":
+            return
+        if n >= 1.0:
+            self.step += 1
+            if self.step < len(self.pat["steps"]):
+                self.begin_step()
+            else:
+                self.combo_end()
+
+    # ------------------------------------------------------------------ Kaito
+    def kaito_receive(self, a):
+        """PlayerController.ReceiveHit."""
+        ks, kt = self.ks, self.kt
+        if ks == "dash" and not self.dash_tired and K["iframe"][0] <= kt <= K["iframe"][1]:
+            self.stat("esquivas")
+            return
+        if self.t < self.invuln_until:
+            return
+        parryable = not a.red
+        if ks == "parry" and parryable and kt <= K["parry_win"] * self.parry_mul:
+            perfect = kt <= K["perfect"] * self.parry_mul
+            self.parry_success(perfect)
+            return
+        if ks == "parry_ok" and parryable and kt < K["chain_parry"]:
+            self.parry_success(False)
+            return
+        if ks == "parry_rec" and parryable and kt < K["imperfect"]:
+            d = a.dmg * K["imperfect_dmg"]
+            self.k_hp -= d
+            self.stat("dano_kaito", d)
+            self.stat("imperfectas")
+            if not self.rage_on():
+                self.rage = max(0.0, self.rage - K["rage_loss"] * K["imperfect_dmg"])
+            self.nodmg = 0.0
+            self.add_imb(0.34)
+            return
+        self.k_hp -= a.dmg
+        self.stat("dano_kaito", a.dmg)
+        self.stat("golpes_a_kaito")
+        self.stat("golpe_" + a.name)
+        self.nodmg = 0.0
+        if not self.rage_on():
+            self.rage = max(0.0, self.rage - K["rage_loss"])
+        self.invuln_until = self.t + K["invuln"]
+        self.frozen_until = max(self.frozen_until, self.t + 0.1)
+        if self.k_hp <= 0:
+            return
+        self.set_ks("hurt")
+        self.hurt_dur = K["hurt_heavy"]
+        self.d += 2.4 + 1.2 * 0.6                   # empujón (knockback del golpe + 1.2, con fricción)
+
+    def parry_success(self, perfect):
+        self.stat("parries_perfectos" if perfect else "parries")
+        self.set_ks("parry_ok")
+        self.riposte_until = self.t + K["riposte_win"]
+        self.sp = min(100.0, self.sp + (K["sp_perfect"] if perfect else K["sp_parry"]))
+        self.add_rage(K["rage_perfect"] if perfect else K["rage_parry"])
+        self.d += 0.25 if perfect else 0.55
+        self.on_parried(perfect)
+
+    def set_ks(self, s):
+        self.ks, self.kt = s, 0.0
+
+    def tap(self, act):
+        self.k_buf[act] = self.t
+
+    def buffered(self, act, window):
+        t = self.k_buf.get(act)
+        return t is not None and self.t - t <= window
+
+    def consume(self, act):
+        self.k_buf.pop(act, None)
+
+    def start_parry(self):
+        self.parry_mul = 0.75 if self.t - self.last_whiff < 0.35 else 1.0
+        self.parry_threat = self.boss_threat()
+        self.set_ks("parry")
+
+    def boss_threat(self):
+        return self.strike_eta() < 0.6 and self.d < 6.0
+
+    def try_dash(self):
+        tired = self.sp + 0.01 < K["dash_cost"]
+        if tired:
+            if self.t < self.tired_ready:
+                return False
+            self.tired_ready = self.t + K["tired_cd"]
+            self.stat("dash_sin_espiritu")
+        else:
+            self.sp -= K["dash_cost"]
+        self.dash_tired = tired
+        self.set_ks("dash")
+        self.stat("dashes")
+        return True
+
+    def start_attack_k(self, i, start=0.0):
+        self.k_combo = i
+        self.k_norm = start
+        self.k_hit_done = False
+        self.set_ks("attack")
+
+    def kaito_tick(self):
+        dt = DT
+        self.kt += dt
+        self.nodmg += dt
+        s = self.ks
+        if s == "loco":
+            if self.buffered("parry", 0.2):
+                self.consume("parry"); self.start_parry(); return
+            if self.buffered("dash", 0.2):
+                self.consume("dash")
+                if self.try_dash():
+                    return
+            if self.buffered("attack", 0.3):
+                self.consume("attack"); self.start_attack_k(0); return
+            return
+        if s == "attack":
+            c = K["combo"][self.k_combo]
+            frozen = self.t < self.k_frozen_until
+            speed = K["rage_spd"] if self.rage_on() else 1.0
+            if not frozen:
+                self.k_norm += dt * speed / c["len"]
+            # avance del corte: se acerca hasta pegarse (el imán)
+            if self.k_norm < c["hit"] + 0.1:
+                self.d = max(1.2, self.d - 1.0 * dt / (c["len"] * 0.25))
+            if not self.k_hit_done and self.k_norm >= c["hit"]:
+                self.k_hit_done = True
+                if self.d <= c["range"] + P["radius"] + 0.05:
+                    self.kaito_hits(c)
+            cutting = c["hit"] <= self.k_norm <= c["cut_end"]
+            if not cutting:
+                if self.buffered("parry", 0.2 + (0.15 if self.k_norm > c["cut_end"] else 0.0)):
+                    self.consume("parry"); self.start_parry(); return
+                if self.buffered("dash", 0.35):
+                    self.consume("dash")
+                    if self.try_dash():
+                        return
+            if self.k_norm >= c["win"] and self.k_combo < 2 and self.buffered("attack", 0.3):
+                self.consume("attack"); self.start_attack_k(self.k_combo + 1); return
+            if self.k_combo == 2 and self.k_norm >= K["restart"] and self.buffered("attack", 0.3):
+                self.consume("attack"); self.start_attack_k(0); return
+            if self.k_norm >= 1.0 + K["grace"] / c["len"]:
+                self.set_ks("loco")
+            return
+        if s == "parry":
+            if self.kt > K["parry_win"] * self.parry_mul:
+                if not self.parry_threat:
+                    self.last_whiff = self.t
+                self.set_ks("parry_rec")
+                self.stat("parry_al_aire")
+            return
+        if s == "parry_rec":
+            if self.kt >= K["parry_recover"]:
+                self.set_ks("loco")
+            return
+        if s == "parry_ok":
+            if self.kt > 0.06:
+                if self.buffered("attack", 0.25):
+                    self.consume("attack"); self.start_attack_k(0, K["riposte_start"]); return
+                if self.buffered("parry", 0.2):
+                    self.consume("parry"); self.start_parry(); return
+                if self.buffered("dash", 0.2):
+                    self.consume("dash")
+                    if self.try_dash():
+                        return
+            if self.kt >= 0.38:
+                self.set_ks("loco")
+            return
+        if s == "dash":
+            if self.kt < K["dash_len"]:
+                dist = 3.0 if self.dash_tired else K["dash_dist"]
+                v = dist / K["dash_len"] * (1.6 - 1.2 * self.kt / K["dash_len"])
+                # hacia el jefe: pasa por al lado y sigue (sin chocar de frente)
+                # hacia el jefe (sin stick sale hacia adelante): el CharacterController frena contra su cápsula
+                self.d = max(0.9, self.d - v * DT)
+            else:
+                if self.buffered("attack", 0.25):
+                    self.consume("attack"); self.start_attack_k(0); return
+                if self.buffered("parry", 0.2):
+                    self.consume("parry"); self.start_parry(); return
+                if self.kt >= K["dash_len"] + K["dash_recover"]:
+                    self.set_ks("loco")
+            return
+        if s == "hurt":
+            if self.kt >= self.hurt_dur:
+                self.set_ks("loco")
+                return
+            if self.kt > self.hurt_dur * 0.6 and self.buffered("dash", 0.2):
+                self.consume("dash"); self.try_dash()
+            return
+        if s == "blocked":
+            if self.kt > 0.28 and self.buffered("parry", 0.2):
+                self.consume("parry"); self.start_parry(); return
+            if self.kt > 0.32 and self.buffered("dash", 0.2):
+                self.consume("dash")
+                if self.try_dash():
+                    return
+            if self.kt >= K["blocked"]:
+                self.set_ks("loco")
+
+    def kaito_hits(self, c):
+        riposte = self.t < self.riposte_until
+        dmg = c["dmg"] * (K["rage_mul"] if self.rage_on() else 1.0) * (K["riposte_mul"] if riposte else 1.0)
+        r = self.boss_receive(dmg, c["kind"], riposte, c["stop"])
+        if r == "hit":
+            self.k_frozen_until = self.t + c["stop"]
+            self.sp = min(100.0, self.sp + K["sp_hit"])
+            self.add_rage(K["rage_hit"])
+            if riposte:
+                self.riposte_until = -1
+                self.stat("contraataques")
+            self.d += c["kb"] * 0.3 * 0.5
+        elif r == "blocked":
+            self.stat("rebotes")
+            self.d += 0.3
+        elif r == "guarded":
+            self.set_ks("blocked")
+            self.d += 0.9
+
+    # ------------------------------------------------------------------ bot
+    def bot_cue(self, a):
+        if not self.can_reach():
+            return
+        rng, sk = self.rng, self.sk
+        if rng.random() < sk["miss"]:
+            self.stat("bot_no_vio")
+            return
+        rt = min(0.55, max(0.15, gauss(rng, *sk["rt"]))) + 1.0 / 60.0
+        dash = a.red != (rng.random() < sk["wrong"])
+        self.pending.append((self.t + rt, "dash" if dash else "parry"))
+
+    def bot_tick(self):
+        for i, (when, act) in enumerate(self.pending):
+            if self.t >= when:
+                self.pending.pop(i)
+                self.tap(act)
+                self.next_bot = self.t + 0.25
+                return
+        # se acerca
+        if self.d > 2.2 and self.ks in ("loco",):
+            self.d = max(2.2, self.d - K["run"] * DT)
+        if self.t < self.next_bot:
+            return
+        threatened = self.in_tell() and self.d < max(7.0, self.strike_reach() + 2.0)
+        greedy = self.rng.random() < self.sk["greedy"] * DT * 4.0
+        if self.d < 2.6 and (not threatened or greedy) and not self.pending and self.bs != "guard" and self.bs != "dead":
+            self.tap("attack")
+            self.next_bot = self.t + 0.32
+            self.stat("bot_ataques")
+
+    # ------------------------------------------------------------------ bucle
+    def run(self, limit=900.0):
+        self.fight_start = self.t
+        while self.t < limit:
+            self.bot_tick()
+            self.kaito_tick()
+            if self.bs != "dead":
+                self.boss_tick()
+            if self.knock > 0:
+                k = self.knock * min(1.0, DT * 10)
+                self.knock -= k
+                self.d += k
+            if self.rage_on():
+                pass
+            self.t += DT
+            if self.bs == "dead":
+                return True, self.t, self.ph
+            if self.k_hp <= 0:
+                return False, self.t, self.ph
+        return False, self.t, self.ph
+
+
+CONTACT_QI = P["radius"] + 0.6
+QI_ONE_FRAME_LATE = True               # BambooMasterBoss.ResolveQiHit (False = el cruce pega en el mismo cuadro)
+K["rage_spd"] = 1.12
+
+
+def campaign(skill, rng, stats):
+    """Intentos hasta ganar: muerte → reaparece y vuelve; llegar al bastón hace arrancar el próximo en la fase 2."""
+    total, deaths, retry = 0.0, 0, 0
+    reached = []
+    while deaths < 15:
+        f = Fight(skill, rng, retry, stats)
+        won, t, ph = f.run()
+        total += t + (REINTRO if deaths else 0.0)
+        if won:
+            return dict(win_time=t, total=total, deaths=deaths, died_in=reached)
+        reached.append(ph)
+        deaths += 1
+        total += DEATH_AND_RETRY
+        # reintento: arranca en la fase más alta a la que llegó (BambooMasterBoss.OnPlayerDied); retry_max limita
+        retry = max(retry, min(ph, P["retry_max"]))
+    return dict(win_time=None, total=total, deaths=deaths, died_in=reached)
 
 
 def reading_table():
-    print("golpe              fase  windup  anillo  'ya!'  bot bueno  bot promedio")
-    rng = random.Random(3)
+    print("golpe               fase  windup  anillo  '¡ya!'   apex quieto")
     seen = set()
     for ph in range(3):
         for p in patterns(ph) + [dict(steps=[counter_step(ph)])]:
-            for st in p["steps"]:
-                if st.name in seen:
+            for i, st in enumerate(p["steps"]):
+                key = (st.name, i > 0)
+                if key in seen:
                     continue
-                seen.add(st.name)
-                res = {}
-                for sk in ("bueno", "promedio"):
-                    n, ok = 4000, 0
-                    for _ in range(n):
-                        o = defend(st, SKILLS[sk], rng)
-                        ok += o in ("parry", "perfect", "dodge")
-                    res[sk] = ok / n
-                print("%-18s %d     %.2f s  %.2f s  %.2f s   %3.0f %%      %3.0f %%" % (
-                    st.name, ph + 1, st.T, st.ring, TICK["red" if st.red else "gold"], 100 * res["bueno"], 100 * res["promedio"]))
+                seen.add(key)
+                tl = Timeline(st, min_windup(st, st.counter, ph))
+                print("%-19s  %d %s  %.2f s  %.2f s  %.2f s   %.2f s" % (st.name, ph + 1, "c" if i > 0 else " ", tl.T,
+                      min(tl.T, MAXLEAD[st.red]), TICK[st.red], tl.hold))
+
+
+def fairness():
+    """Lo que se puede medir sin jugar: el "¡ya!" contra la reacción del bot, cuánto hay que correr para salir de cada
+    rojo y si cada golpe arranca dentro del cuadro de la cámara de pelea con un jefe."""
+    from statistics import NormalDist
+    print("\n-- reacción: el bot aprieta rt + 1/60 s después del '¡ya!' (la latencia de audio se suma a los dos lados)")
+    for sk in ("bueno", "promedio"):
+        m, sd = SKILLS[sk]["rt"]
+        nd = NormalDist(m, sd)
+        late_gold = 1.0 - nd.cdf(TICK[False] - 1.0 / 60.0)            # parry: tiene que apretar antes del contacto
+        # dash: los i-frames (0.02-0.24 s después de apretar) tienen que cubrir el contacto
+        lo, hi = TICK[True] - K["iframe"][1] - 1.0 / 60.0, TICK[True] - K["iframe"][0] - 1.0 / 60.0
+        bad_red = nd.cdf(lo) + 1.0 - nd.cdf(hi)
+        print("   %-8s tarde al dorado %4.1f %%, fuera de los i-frames del rojo %4.1f %% (más 'no lo vio' %.0f %%)" % (
+            sk, 100 * late_gold, 100 * bad_red, 100 * SKILLS[sk]["miss"]))
+    print("\n-- escape de los rojos corriendo (Kaito a %.1f m/s, sin contar la aceleración)" % K["run"])
+    for ph in range(3):
+        for base, special in (("LeapKick", "leap"), ("Sweep", "sweep"), ("DashStrike", "dash"), ("QiWave", "qi")):
+            if ph == 0 and base != "LeapKick":
+                continue
+            st = Step(base, ph, 0, special=special)
+            tl = Timeline(st, min_windup(st, False, ph))
+            if special == "leap":
+                # la marca queda fija en la suelta, sobre Kaito: hay que salir del anillo entre la suelta y la caída
+                t, need = tl.tR, st.ring + K_R
+                what = "suelta→caída %.2f s, salir %.2f m del centro" % (t, need)
+            elif special == "sweep":
+                t, need = tl.T, st.ring + K_R - CONTACT
+                what = "aviso→vuelta %.2f s, salir %.2f m (pegado a él)" % (t, need)
+            elif special == "dash":
+                t, need = tl.tR, 2.0 * (P["radius"] + 0.6) / 2.0 + K_R * 0.5
+                what = "carril fijo→contacto %.2f s, correrse %.2f m de costado" % (t, need)
+            else:
+                v, r = P["qi_speed"][ph], P["qi_radius"][ph]
+                t = tl.T + (r - CONTACT_QI) / v
+                need = r + K_R - CONTACT
+                what = "suelta en %.2f s + frente a %.0f m/s: salir del disco (%.1f m) desde el cuerpo a pie: %.2f s" % (
+                    tl.T, v, r, need / K["run"])
+                print("   fase %d %-11s %s -> o el dash cuando llega el frente" % (ph + 1, base, what))
+                continue
+            print("   fase %d %-11s %s -> %.2f s de carrera (%s)" % (ph + 1, base, what, need / K["run"], "ok" if need / K["run"] < t - 0.15 else "JUSTO"))
+    print("\n-- cuadro de la cámara de pelea con jefe (CameraDirector: 19 + 0.35 d m + %.1f del perfil, 45°, FOV 30, 16:9)" % 1.6)
+    import math as _m
+    for d in (2.0, 4.0, 6.0, 7.6, 10.0):
+        dist = min(26.0, 19.0 + 0.35 * d) + 1.6
+        lean = min(0.45, 6.0 / d)
+        pitch = _m.radians(45.0)
+        fv = _m.radians(15.0)
+        worst = []
+        for sign in (1.0, -1.0):                     # el jefe "arriba" de la pantalla (lejos) o "abajo" (cerca)
+            # plano vertical de la cámara: y = profundidad en el piso desde Kaito hacia arriba de la pantalla
+            focus_y, focus_h = sign * d * lean, 1.0 * lean
+            cam_y, cam_h = focus_y - _m.cos(pitch) * dist, focus_h + _m.sin(pitch) * dist
+            def ang(y, h):
+                a = _m.atan2(cam_h - h, y - cam_y)   # bajada desde la horizontal
+                return a - pitch                     # >0: debajo del centro
+            pts = [(0.0, 0.0), (0.0, 1.5), (sign * d, 0.0), (sign * d, 2.67)]
+            worst.append(max(abs(ang(y, h)) for y, h in pts) / fv)
+        print("   jefe a %4.1f m: lo más alejado del centro usa el %3.0f %% de media pantalla (jefe arriba) / %3.0f %% (abajo)" % (
+            d, 100 * worst[0], 100 * worst[1]))
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--runs", type=int, default=400)
+    ap.add_argument("--runs", type=int, default=200)
     ap.add_argument("--seed", type=int, default=1)
+    ap.add_argument("--skill", default="all")
+    ap.add_argument("--table", action="store_true")
+    ap.add_argument("--fair", action="store_true", help="reacción, escapes de los rojos y cuadro de la cámara")
     a = ap.parse_args()
-    reading_table()
-    for sk in ("experto", "bueno", "promedio"):
+    if a.table:
+        reading_table()
+    if a.fair:
+        fairness()
+        if a.skill == "all" and a.runs == 200:
+            return
+    skills = list(SKILLS) if a.skill == "all" else [a.skill]
+    for sk in skills:
         rng = random.Random(a.seed)
-        rs = [Fight(SKILLS[sk], rng).run() for _ in range(a.runs)]
-        wins = [r for r in rs if r["win_time"] is not None]
-        wt = sorted(r["win_time"] for r in wins)
-        tt = sorted(r["total"] for r in rs)
+        stats = {}
+        rs = [campaign(SKILLS[sk], rng, stats) for _ in range(a.runs)]
+        wins = sorted(r["win_time"] for r in rs if r["win_time"] is not None)
+        tot = sorted(r["total"] for r in rs)
         deaths = [r["deaths"] for r in rs]
-        pt = [sum(r["phase_time"][i] for r in rs) / len(rs) for i in range(3)]
-        med = lambda xs: xs[len(xs) // 2] if xs else float("nan")
-        print("\n%s: gana %d/%d | intento ganador %.0f s (p10 %.0f, p90 %.0f) | total con intentos %.0f s | muertes media %.2f (%.0f %% sin morir)" % (
-            sk, len(wins), len(rs), med(wt), wt[len(wt) // 10] if wt else 0, wt[9 * len(wt) // 10] if wt else 0, med(tt),
-            sum(deaths) / len(deaths), 100 * sum(1 for d in deaths if d == 0) / len(deaths)))
-        print("   tiempo medio por fase (todos los intentos): %.0f / %.0f / %.0f s" % tuple(pt))
+        died = [0, 0, 0]
+        for r in rs:
+            for ph in r["died_in"]:
+                died[ph] += 1
+        q = lambda xs, f: xs[min(len(xs) - 1, int(f * len(xs)))] if xs else float("nan")
+        print("\n%s: gana %d/%d | intento ganador %.0f s (p10 %.0f, p90 %.0f) | total con muertes %.0f s (p90 %.0f)"
+              " | muertes media %.2f, sin morir %.0f %% | murió en fase 1/2/3: %d/%d/%d" % (
+                  sk, len(wins), len(rs), q(wins, 0.5), q(wins, 0.1), q(wins, 0.9), q(tot, 0.5), q(tot, 0.9),
+                  sum(deaths) / len(deaths), 100.0 * sum(1 for d in deaths if d == 0) / len(deaths), *died))
+        n = float(a.runs)
+        dmg = {k[5:]: v / n for k, v in stats.items() if k.startswith("dano_") and k != "dano_kaito"}
+        tot_d = sum(dmg.values()) or 1
+        print("   daño a Chikuō por estado: " + ", ".join("%s %.0f%%" % (k, 100 * v / tot_d) for k, v in sorted(dmg.items(), key=lambda x: -x[1])))
+        keys = ["pasos", "parries", "parries_perfectos", "imperfectas", "esquivas", "golpes_a_kaito", "contraataques",
+                "rodillas", "quiebres", "quiebres_contra", "posturas", "abierto_espera", "desvios", "contra_guardia",
+                "rebotes", "dash_sin_espiritu", "furia", "bot_no_vio", "fuera_de_alcance"]
+        print("   por pelea: " + ", ".join("%s %.1f" % (k, stats.get(k, 0) / n) for k in keys))
+        uses = sorted(((k[4:], v / n) for k, v in stats.items() if k.startswith("uso_")), key=lambda x: -x[1])
+        print("   patrones: " + ", ".join("%s %.1f" % kv for kv in uses))
+        hits = sorted(((k[6:], v / n) for k, v in stats.items() if k.startswith("golpe_")), key=lambda x: -x[1])
+        print("   golpes que más le pegan: " + ", ".join("%s %.1f" % kv for kv in hits[:8]))
 
 
 if __name__ == "__main__":

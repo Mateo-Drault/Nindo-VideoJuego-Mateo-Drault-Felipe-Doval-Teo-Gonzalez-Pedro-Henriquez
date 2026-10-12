@@ -272,10 +272,12 @@ namespace Nindo
             }
         }
 
-        /// <summary>Lo que dice Chikuō al recibir a Kaito otra vez después de vencerlo (una frase distinta por intento).</summary>
-        public static string ChikuoRetry(int attempt, bool coatOff)
+        /// <summary>Lo que dice Chikuō al recibir a Kaito otra vez después de vencerlo (una frase distinta por intento; si la
+        /// lección sigue en la fase 2 o 3, retoma donde quedó).</summary>
+        public static string ChikuoRetry(int attempt, int phase)
         {
-            if (coatOff) return "Ya no tengo saco que sacarme. Vení.";
+            if (phase >= 2) return "Seguimos donde quedamos. Levantá la guardia.";
+            if (phase == 1) return "Ya no tengo saco que sacarme. Vení.";
             switch (attempt)
             {
                 case 1: return "Otra vez. Respirá primero.";
@@ -292,6 +294,7 @@ namespace Nindo
             {
                 case "kage_shadow": return "La sombra no se corta con la katana: clavala con {Ability1} o {Ability2}";
                 case "bamboo_stance": return "Manos de jade: no le pegues. Esperá a que baje la guardia o pará su contragolpe";
+                case "bamboo_guard": return "Su guardia no se rompe a golpes: pará los dorados con {Parry} y pegale cuando queda abierto";
                 default: return "";
             }
         }

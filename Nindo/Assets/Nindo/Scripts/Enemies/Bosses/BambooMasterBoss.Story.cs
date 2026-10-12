@@ -11,12 +11,13 @@ namespace Nindo
     /// </summary>
     public partial class BambooMasterBoss
     {
-        /// <summary>Al cambiar de fase Kaito recupera un poco (no hay esbirros que curen).</summary>
-        const float TransitionHeal = 15f, TransitionSpirit = 25f;
+        /// <summary>Al cambiar de fase Kaito recupera un poco (no hay esbirros que curen): el maestro le deja respirar. Con
+        /// 15 el bot "bueno" llegaba a la fase 3 con ~30 de vida y la mitad de sus muertes eran ahí.</summary>
+        const float TransitionHeal = 30f, TransitionSpirit = 30f;
         /// <summary>Re-presentación: el Intro desde un poco antes del saludo hasta la guardia (~2 s).</summary>
         const float ReintroFromFrame = 44f;
 
-        // reintentos: cuántas veces cayó Kaito y desde qué fase se vuelve a empezar (el bastón → sin el saco)
+        // reintentos: cuántas veces cayó Kaito y desde qué fase se vuelve a empezar (la más alta a la que llegó)
         int attempts, retryPhase;
 
         // ================================================================== presentación
@@ -75,7 +76,7 @@ namespace Nindo
             float dur = Mathf.Max(0.8f, (to - from) * clipR.Seconds);
             anim.Play(clipR.State, 0.15f, from, 1f);
             int shot = Game.Camera.PlayBossIntroShot(transform, 2.6f, dur, 0f, 0.7f);
-            Bark(StoryText.ChikuoRetry(attempts, coatOff));
+            Bark(StoryText.ChikuoRetry(attempts, retryPhase));
             yield return new WaitForSeconds(dur);
             Game.Camera.CancelShot(shot);
         }

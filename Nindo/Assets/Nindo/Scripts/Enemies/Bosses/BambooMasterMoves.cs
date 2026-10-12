@@ -30,8 +30,11 @@ namespace Nindo
         /// <summary>Onda de qi por fase: velocidad del frente (m/s) y radio final (m). Más rápida que Kaito corriendo
         /// (6.2): de lejos se la ve venir, de cerca se la cruza con el dash cuando llega.</summary>
         public static readonly float[] QiSpeed = { 9f, 9f, 10f }, QiRadius = { 9f, 9f, 10.5f };
-        /// <summary>El salto cae entre estos metros del lugar donde despega (estira o acorta el tramo en el aire).</summary>
-        public const float LeapMin = 2.6f, LeapMax = 7.4f;
+        /// <summary>El salto cae entre estos metros del lugar donde despega (estira o acorta el tramo en el aire). Cae sobre
+        /// Kaito: de cerca es un salto casi en el lugar que pisa desde arriba (el que se le pega al cuerpo igual lo ve).</summary>
+        public const float LeapMin = 2.0f, LeapMax = 7.4f;
+        /// <summary>Desde esta distancia elige el salto: el que se le pega no puede quedar sin ver nunca el rojo de la fase 1.</summary>
+        const float LeapMinRange = 1.0f;
 
         /// <summary>Sufijo de los clips de cada fase (los _P2 y _P3 tienen los mismos cuadros que el de la fase 1).</summary>
         public static string Suffix(int phase) => phase <= 0 ? "" : phase == 1 ? "_P2" : "_P3";
@@ -58,7 +61,7 @@ namespace Nindo
                 name = name, state = c.State, damage = dmg, kind = red ? AttackKind.Unblockable : AttackKind.Heavy, arc = arc, knockback = kb,
                 range = c.Reach + c.TravelToContact, activeStart = c.Contact, activeEnd = c.ActiveEnd, apex = c.Apex, releaseRate = c.ReleaseRate,
                 windup = windup, lunge = 0f, tracking = special == Strike || special == Leap || special == Dash, hitStop = red ? 0.12f : 0.1f,
-                shake = red ? 0.45f : 0.35f, imbalance = 1f, sfx = phase >= 2 || dmg >= 20f ? "enemy_swing_heavy" : "enemy_swing", special = special,
+                shake = red ? 0.45f : 0.35f, imbalance = 1f, sfx = phase >= 2 || red ? "enemy_swing_heavy" : "enemy_swing", special = special,
                 // radio de la zona roja: el anillo de la barrida y de la caída del salto (del clip), el final de la onda
                 specialParam = special == Qi ? QiRadius[Mathf.Clamp(phase, 0, 2)] : c.RingM,
             };
@@ -77,6 +80,10 @@ namespace Nindo
         /// (el único rojo: se aprende a mirar la marca). Fase 2, las dos manos: palmas dobles, patada giratoria, mezclas
         /// dorado-rojo, la barrida, la onda de qi y la embestida. Fase 3, el bastón: todo llega más lejos y las cadenas
         /// terminan en rojo ("el bambú que vuelve"). Mezcla: ~70 % dorados, ~30 % rojos, como el resto de los jefes.
+        /// Daño: el jefe de 1400 de vida se pelea ~4-5 min y el bot "bueno" no resuelve ~17 % de los golpes (el
+        /// "promedio", ~45 %; Tools/Dev/sim_bamboo_master.py): con golpes de 10-20 llegaba a la fase 3 sin vida. Pega poco
+        /// y seguido, como un maestro que prueba: con una mano casi no lastima (5-7, es la lección), con las dos 7-11 y
+        /// con el bastón 9-13. Lo que más sube con las fases es el ritmo y el alcance.
         /// </summary>
         public static AttackPattern[] Phase(int phase)
         {
@@ -84,13 +91,13 @@ namespace Nindo
             {
                 case 0:
                 {
-                    var palm = M("Palm", 0, "Palma", 14, 70f, 1.4f, false);
-                    var chop = M("ChopPalm", 0, "Mano de Sable", 16, 90f, 1.6f, false);
-                    var chopC = M("ChopPalm", 0, "Mano de Sable", 16, 90f, 1.6f, true);
-                    var crane = M("CraneKick", 0, "Pico de Grulla", 16, 80f, 1.8f, false);
-                    var craneC = M("CraneKick", 0, "Pico de Grulla", 16, 80f, 1.8f, true);
-                    var leap = M("LeapKick", 0, "Grulla Voladora", 22, 360f, 2.6f, false, Leap);
-                    var leapP = P("Grulla Voladora", 1.0f, 3.6f, 6f, leap);
+                    var palm = M("Palm", 0, "Palma", 5, 70f, 1.4f, false);
+                    var chop = M("ChopPalm", 0, "Mano de Sable", 5, 90f, 1.6f, false);
+                    var chopC = M("ChopPalm", 0, "Mano de Sable", 5, 90f, 1.6f, true);
+                    var crane = M("CraneKick", 0, "Pico de Grulla", 5, 80f, 1.8f, false);
+                    var craneC = M("CraneKick", 0, "Pico de Grulla", 5, 80f, 1.8f, true);
+                    var leap = M("LeapKick", 0, "Grulla Voladora", 7, 360f, 2.6f, false, Leap);
+                    var leapP = P("Grulla Voladora", 1.0f, LeapMinRange, 6f, leap);
                     leapP.maxRange = LeapMax - 0.4f;
                     return new[]
                     {
@@ -104,19 +111,19 @@ namespace Nindo
                 }
                 case 1:
                 {
-                    var palm = M("Palm", 1, "Palma", 16, 70f, 1.4f, false);
-                    var chopC = M("ChopPalm", 1, "Mano de Sable", 18, 90f, 1.6f, true);
-                    var chop = M("ChopPalm", 1, "Mano de Sable", 18, 90f, 1.6f, false);
-                    var crane = M("CraneKick", 1, "Pico de Grulla", 18, 80f, 1.8f, false);
-                    var twin = M("TwinPalm", 1, "Palmas Gemelas", 20, 90f, 2.2f, false);
-                    var twinC = M("TwinPalm", 1, "Palmas Gemelas", 20, 90f, 2.2f, true);
-                    var spinC = M("SpinKick", 1, "Viento que Gira", 20, 200f, 2.0f, true);
-                    var sweep = M("Sweep", 1, "Barrida del Bambú", 20, 360f, 2.0f, false, Sweep);
-                    var sweepC = M("Sweep", 1, "Barrida del Bambú", 20, 360f, 2.0f, true, Sweep);
-                    var qi = M("QiWave", 1, "Onda de Qi", 22, 360f, 2.8f, false, Qi);
-                    var dash = M("DashStrike", 1, "Paso del Viento", 24, 60f, 2.4f, false, Dash);
-                    var leap = M("LeapKick", 1, "Grulla Voladora", 24, 360f, 2.6f, false, Leap);
-                    var leapP = P("Grulla Voladora", 0.8f, 3.6f, 7f, leap);
+                    var palm = M("Palm", 1, "Palma", 7, 70f, 1.4f, false);
+                    var chopC = M("ChopPalm", 1, "Mano de Sable", 8, 90f, 1.6f, true);
+                    var chop = M("ChopPalm", 1, "Mano de Sable", 8, 90f, 1.6f, false);
+                    var crane = M("CraneKick", 1, "Pico de Grulla", 8, 80f, 1.8f, false);
+                    var twin = M("TwinPalm", 1, "Palmas Gemelas", 8, 90f, 2.2f, false);
+                    var twinC = M("TwinPalm", 1, "Palmas Gemelas", 8, 90f, 2.2f, true);
+                    var spinC = M("SpinKick", 1, "Viento que Gira", 8, 200f, 2.0f, true);
+                    var sweep = M("Sweep", 1, "Barrida del Bambú", 9, 360f, 2.0f, false, Sweep);
+                    var sweepC = M("Sweep", 1, "Barrida del Bambú", 9, 360f, 2.0f, true, Sweep);
+                    var qi = M("QiWave", 1, "Onda de Qi", 9, 360f, 2.8f, false, Qi);
+                    var dash = M("DashStrike", 1, "Paso del Viento", 11, 60f, 2.4f, false, Dash);
+                    var leap = M("LeapKick", 1, "Grulla Voladora", 11, 360f, 2.6f, false, Leap);
+                    var leapP = P("Grulla Voladora", 0.8f, LeapMinRange, 7f, leap);
                     leapP.maxRange = LeapMax - 0.4f;
                     var dashP = P("Paso del Viento", 1.1f, 4.2f, 6f, dash);
                     dashP.maxRange = 7.6f;
@@ -135,17 +142,17 @@ namespace Nindo
                 }
                 default:
                 {
-                    var thrust = M("Palm", 2, "Estocada del Bastón", 18, 50f, 1.6f, false);
-                    var thrustC = M("Palm", 2, "Estocada del Bastón", 18, 50f, 1.6f, true);
-                    var smashC = M("ChopPalm", 2, "Bambú que Cae", 20, 70f, 2.0f, true);
-                    var crane = M("CraneKick", 2, "Pico de Grulla", 20, 80f, 1.8f, false);
-                    var sweep = M("Sweep", 2, "Barrida del Bastón", 24, 360f, 2.2f, false, Sweep);
-                    var sweepC = M("Sweep", 2, "Barrida del Bastón", 24, 360f, 2.2f, true, Sweep);
-                    var qi = M("QiWave", 2, "Raíz del Bambú", 24, 360f, 3.0f, false, Qi);
-                    var qiC = M("QiWave", 2, "Raíz del Bambú", 24, 360f, 3.0f, true, Qi);
-                    var dash = M("DashStrike", 2, "Paso del Viento", 26, 50f, 2.4f, false, Dash);
-                    var leap = M("LeapKick", 2, "Grulla Voladora", 26, 360f, 2.6f, false, Leap);
-                    var leapP = P("Grulla y Estocada", 0.8f, 3.6f, 7f, leap, thrustC);
+                    var thrust = M("Palm", 2, "Estocada del Bastón", 9, 50f, 1.6f, false);
+                    var thrustC = M("Palm", 2, "Estocada del Bastón", 9, 50f, 1.6f, true);
+                    var smashC = M("ChopPalm", 2, "Bambú que Cae", 10, 70f, 2.0f, true);
+                    var crane = M("CraneKick", 2, "Pico de Grulla", 10, 80f, 1.8f, false);
+                    var sweep = M("Sweep", 2, "Barrida del Bastón", 12, 360f, 2.2f, false, Sweep);
+                    var sweepC = M("Sweep", 2, "Barrida del Bastón", 12, 360f, 2.2f, true, Sweep);
+                    var qi = M("QiWave", 2, "Raíz del Bambú", 12, 360f, 3.0f, false, Qi);
+                    var qiC = M("QiWave", 2, "Raíz del Bambú", 12, 360f, 3.0f, true, Qi);
+                    var dash = M("DashStrike", 2, "Paso del Viento", 13, 50f, 2.4f, false, Dash);
+                    var leap = M("LeapKick", 2, "Grulla Voladora", 13, 360f, 2.6f, false, Leap);
+                    var leapP = P("Grulla y Estocada", 0.8f, LeapMinRange, 7f, leap, thrustC);
                     leapP.maxRange = LeapMax - 0.4f;
                     var dashP = P("Viento y Bambú", 1.0f, 4.2f, 6f, dash, smashC);
                     dashP.maxRange = 7.6f;
@@ -168,16 +175,23 @@ namespace Nindo
         /// <summary>El contragolpe de la postura del bambú (y de la guardia común): sale de COIL, el final de Counter.</summary>
         public static AttackPattern Counter(int phase)
         {
-            var c = M("CounterStrike", phase, phase >= 2 ? "Contragolpe del Bastón" : "Contragolpe", 14 + 2 * Mathf.Clamp(phase, 0, 2),
-                      phase >= 2 ? 60f : 80f, 1.4f, false);
+            int ph = Mathf.Clamp(phase, 0, 2);
+            var c = M("CounterStrike", ph, ph >= 2 ? "Contragolpe del Bastón" : "Contragolpe", ph == 0 ? 5 : ph == 1 ? 7 : 9,
+                      ph >= 2 ? 60f : 80f, 1.4f, false);
             return new AttackPattern { name = "Contragolpe", steps = new[] { c }, weight = 1f, maxRange = 99f };
         }
 
         // ------------------------------------------------------------------ config
+        /// <summary>Pausa entre combos por fase (s): rodea y mira antes de volver a atacar; se acorta con cada fase.</summary>
+        public static readonly Vector2[] Cooldown = { new Vector2(2.6f, 3.6f), new Vector2(2.0f, 3.0f), new Vector2(1.6f, 2.4f) };
+
         /// <summary>
-        /// Chikuō, el Maestro del Bambú. 1400 de vida (el doble del jefe de antes, como el resto de los jefes): la mitad
-        /// del tiempo se lo gana esperando. No se lo ejecuta: termina sentado a meditar (BambooMasterBoss).
-        /// Locomoción a 1.6 / 4.0 m/s, las velocidades a las que están autorados Walk y Run (los pies no patinan).
+        /// Chikuō, el Maestro del Bambú. 1400 de vida (el doble del jefe de antes, como el resto de los jefes). No se lo
+        /// ejecuta: termina sentado a meditar (BambooMasterBoss). Postura de 8 (parry 1, perfecto 1.5, unos seis parries):
+        /// solo de rodillas con la barra llena, y de rodillas aguanta tres cortes a x1.15. Con 5 y x1.3 se arrodillaba
+        /// cada 15 s y la pelea duraba la mitad. Los golpes fuera de sus huecos rebotan (BambooMasterBoss.ReceiveHit), así que poiseHits
+        /// no se usa. Locomoción a 1.6 / 4.0 m/s, las velocidades a las que están autorados Walk y Run (los pies no
+        /// patinan).
         /// </summary>
         public static EnemyConfig Config()
         {
@@ -185,13 +199,13 @@ namespace Nindo
             {
                 id = "ozeki", displayName = "Chikuō", maxHealth = 1400, runSpeed = 4.0f, walkSpeed = 1.6f, turnSpeed = 7f,
                 radius = 0.5f, height = 2.4f, scale = 1f, tintStrength = 0f,
-                maxImbalance = 4, exhaustedTime = BambooMasterTimings.Exhausted.Seconds, exhaustedDamageMul = 1.3f, guardTime = 0.7f,
-                poiseHits = 2, hyperArmor = true, knockbackResist = 0.7f, staggerTime = 0.35f,
+                maxImbalance = 8, exhaustedTime = BambooMasterTimings.Exhausted.Seconds, exhaustedDamageMul = 1.15f, guardTime = 0.7f,
+                poiseHits = 0, hyperArmor = true, knockbackResist = 0.7f, staggerTime = 0.35f,
                 // el retroceso del parry dura lo que tarda el clip en volver a la guardia (resume de Parried, 0.4 s; el
                 // perfecto, x1.5 = 0.6 s = resume de ParriedPerfect)
                 parriedRecoil = BambooMasterTimings.Parried.Seconds * 0.4f,
                 preferredDistance = 3.6f, detectRadius = 30f, loseRadius = 80f,
-                finisherHealth = 0f, attackCooldown = new Vector2(0.8f, 1.4f), cinematicFinisher = false,
+                finisherHealth = 0f, attackCooldown = Cooldown[0], cinematicFinisher = false,
                 animLocomotion = "Locomotion", animGuard = "Guard", animCounter = "Counter", animExhausted = "Exhausted", animHit = "Hit",
                 animSpotted = "Guard", animDeath = "Defeat", animParried = "Parried", deathClipFalls = true,
                 patterns = Phase(0),

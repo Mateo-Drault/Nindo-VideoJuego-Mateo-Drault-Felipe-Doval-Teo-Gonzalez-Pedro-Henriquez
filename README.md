@@ -6,7 +6,7 @@ Felipe Doval, Teo González, Mateo Drault y Pedro Henríquez.
 > Una noche, el clan Kurokage secuestra al abuelo de Kaito. La bandana del abuelo se le ata
 > sola a la frente y la guadaña se convierte en katana: Kaito hereda todo lo que su abuelo
 > sabía. Para abrir las puertas del Dojo Kurokage tiene que vencer a los tres guardianes
-> —Goro en la Montaña Kodoyama, Mizuchi en el Lago Kohan y Ozeki en el Bosque de Bambú—,
+> —Goro en la Montaña Kodoyama, Mizuchi en el Lago Kohan y Chikuō en el Bosque de Bambú—,
 > recuperar sus tres sellos y enfrentar a Kokuyō, el Señor del Clan Kurokage.
 
 ![Mapa de Nindō](Docs/img/mapa.jpg)
@@ -115,11 +115,15 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
 * **Sumos**: sus clips casi no se mueven desde arriba, así que cada golpe lleva una pose
   procedural atada al aviso (`Enemies/SumoPoser`): la mano atrás antes de la bofetada, la
   pierna arriba en el shiko, agachado con los puños en el piso antes de embestir.
-* **Ōzeki** (jefe del bambú, `Enemies/Bosses/OzekiBoss`): bofetadas doradas en ritmo, agarre
-  rojo (los brazos abiertos), shiko rojo cuya onda se abre por el piso hasta 8 m (dash cuando
-  llega o salir del disco) y tachiai rojo; las matas de bambú joven del claro frenan la
-  embestida y lo dejan abierto. A la mitad se le enciende la tsuna, tira sal (no pega: es un
-  respiro para castigarlo) y alarga los combos.
+* **Chikuō, el Maestro del Bambú** (jefe del bambú, `Enemies/Bosses/BambooMasterBoss`; el
+  arquetipo y el bossId siguen siendo `ozeki`): un viejo maestro de kung fu que enseña paciencia.
+  Fuera de sus huecos los cortes rebotan y el combo que insiste se contragolpea; se le pega en el
+  contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
+  (esperó la postura del bambú, las manos en jade) y en la vuelta de un rojo que no pegó. Fase 1
+  con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca),
+  fase 2 sin el saco (palmas gemelas, patada giratoria, barrida, onda de qi, paso del viento con
+  imágenes residuales), fase 3 con el bastón. Vencido se sienta a meditar, saluda y deja el sello.
+  Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair]`.
 * **Cámara de combate**: baja a 45° y fijada nunca queda a menos de 19 m ni gira (los controles
   no cambian de dirección); con Kaito casi centrado se ven ~5 m detrás de él. Lo que tapa a
   Kaito, al fijado, al jefe o a quien está por pegar se disuelve con una trama (hueco en cono,
@@ -128,7 +132,7 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
   (dorado = parry, rojo doble = dash). El sonido se oye desde Kaito; avisos y parry no cambian
   de tono con la cámara lenta.
 * **Reintentos**: pasar a menos de 6 m de un santuario ya lo deja como punto de reaparición
-  (rezar además cura y guarda). Hay santuarios a la entrada de las arenas de Mizuchi y Ōzeki,
+  (rezar además cura y guarda). Hay santuarios a la entrada de las arenas de Mizuchi y Chikuō,
   morir devuelve al juego en ~3,6 s y la presentación completa de cada jefe sale solo la
   primera vez.
 
@@ -175,7 +179,7 @@ Nindo/Assets/Nindo/
     Player/       PlayerController (+ .Combat), PlayerConfig
     Enemies/      Enemy, Boss, arquetipos (ninja, sumo, goro, mizuchi, ozeki, kage…), variantes de zona,
                   poses del sumo (SumoPoser)
-      Bosses/     jefes con pelea propia: MizuchiBoss (el Gran Koi: KoiBody, perlas, saltos, ola, pilares), OzekiBoss (yokozuna), KokuyoBoss (jefe final: actos, sombra adelantada, Kage, eclipse)
+      Bosses/     jefes con pelea propia: MizuchiBoss (el Gran Koi: KoiBody, perlas, saltos, ola, pilares), BambooMasterBoss (Chikuō: postura del bambú, onda de qi, fases con saco y bastón), KokuyoBoss (jefe final: actos, sombra adelantada, Kage, eclipse)
     Camera/       CameraDirector (tomas mezclables, fijado, perfiles de jefe, golpe de FOV, oído sobre
                   Kaito), CameraOcclusion (disolución de lo que tapa, shader Nindo/Occluder Fade)
     FX/           partículas, hit-stop, post-proceso en runtime (URP Volume)

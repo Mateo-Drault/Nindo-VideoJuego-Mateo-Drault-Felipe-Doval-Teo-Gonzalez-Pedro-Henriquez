@@ -62,12 +62,13 @@ namespace Nindo
             ResetAll();
         }
 
-        /// <summary>Como al aparecer: con el saco, sin bastón, nada encendido (y el saco horneado del intento anterior se va).</summary>
-        public void ResetAll()
+        /// <summary>Como al aparecer: con el saco, sin bastón, nada encendido. El saco horneado del intento anterior se va,
+        /// salvo que el reintento arranque sin él ('keepCoat'): sigue tirado en el claro donde cayó.</summary>
+        public void ResetAll(bool keepCoat = false)
         {
             SetPhaseLook(0);
-            if (bakedCoat != null) { Object.Destroy(bakedCoat); bakedCoat = null; }
-            if (bakedMesh != null) { Object.Destroy(bakedMesh); bakedMesh = null; }
+            if (!keepCoat && bakedCoat != null) { Object.Destroy(bakedCoat); bakedCoat = null; }
+            if (!keepCoat && bakedMesh != null) { Object.Destroy(bakedMesh); bakedMesh = null; }
             ClearTell();
             SetStance(false);
             eyes = 0f;

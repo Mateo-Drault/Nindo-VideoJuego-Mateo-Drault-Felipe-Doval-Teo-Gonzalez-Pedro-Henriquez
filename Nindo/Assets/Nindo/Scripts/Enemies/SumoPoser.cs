@@ -283,9 +283,8 @@ namespace Nindo
                 if (a != curAttack || enemy.TellId != curTell || clock < lastClock) { snapshot = output; curAttack = a; curTell = enemy.TellId; }
                 lastClock = clock;
                 var tl = enemy.Timeline;
-                // el pie del shiko se enciende para el pisotón (después el golpe es la onda, que viaja sola)
                 glowMove = m; danger = a.kind == AttackKind.Unblockable;
-                glowEta = a.special == "shiko" ? (clock < tl.T ? tl.T - clock : float.PositiveInfinity) : enemy.StrikeEta;
+                glowEta = enemy.StrikeEta;
                 if (clipOwned.Contains(a.name)) return SumoPose.Lerp(output, default, 1f - Mathf.Exp(-dt / 0.09f));
                 var p = Evaluate(m, clock, tl.ReleaseTime, tl.T, tl.sustain, snapshot);
                 // sobre un estado con clip nuevo (los golpes con nombre propio reusan Attack1..Special) el cuerpo ya viene
