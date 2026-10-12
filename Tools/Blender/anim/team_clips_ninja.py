@@ -160,12 +160,12 @@ def attack1():
     SMEAR = dict(HOLD, hips=(0.0, 0.02, -0.10), hips_rot=(6.0, 0.0, 2.0), chest=(4.0, 2.0, -6.0), head=(-8.0, -2.0, 12.0),
                  grip=(-0.38, -0.22, 0.86), blade=(-0.96, -0.26, 0.04), edge=(0.26, -0.96, 0.0))
     CONTACT = dict(SMEAR, hips=(0.0, -0.02, -0.09), hips_rot=(6.0, 0.0, 16.0), spine=(10.0, 0.0, 6.0), chest=(6.0, -2.0, 10.0),
-                   head=(-10.0, 0.0, -12.0), grip=(-0.14, -0.44, 0.86), blade=(0.06, -1.0, 0.02), edge=(0.96, 0.06, 0.0),
+                   head=(-10.0, 0.0, -12.0), grip=(-0.14, -0.36, 0.86), blade=(0.04, -0.99, 0.10), edge=(0.96, 0.06, 0.0),
                    elbow_r=(-0.8, 0.3, -0.4), hand_l=(0.28, -0.05, 0.92), hand_l_dir=(0.6, 0.6, 0.2), hand_l_palm=(0, 0, -1))
     FOLLOW = dict(CONTACT, hips=(0.0, -0.04, -0.12), hips_rot=(6.0, 0.0, 30.0), chest=(6.0, -3.0, 18.0), head=(-10.0, 0.0, -26.0),
-                  grip=(0.12, -0.32, 0.84), blade=(0.92, -0.32, -0.12), edge=(0.32, 0.92, 0.0))
+                  grip=(0.12, -0.24, 0.84), blade=(0.90, -0.44, 0.01), edge=(0.32, 0.92, 0.0))
     PUNISH = dict(FOLLOW, hips=(0.0, -0.04, -0.16), hips_rot=(8.0, 0.0, 34.0), chest=(10.0, -4.0, 14.0), head=(-12.0, 0.0, -30.0),
-                  grip=(0.22, -0.10, 0.74), blade=(0.7, 0.62, -0.3), edge=(-0.62, 0.7, 0.0),
+                  grip=(0.18, -0.16, 0.78), blade=(0.80, 0.45, -0.39), edge=(-0.45, 0.8, 0.0),
                   hand_l=(0.30, 0.18, 0.86), hand_l_dir=(0.3, 0.6, -0.6), hand_l_palm=(1, 0, 0), fist_l=0.3)
     keys = [
         Key(0, P()),
@@ -193,14 +193,17 @@ def attack2():
     n, apex, contact = 22, 7, 10
     lunge, windup = 0.8, 0.42
     tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    # el puño adelante y bajo, frente a la cadera izquierda: con la mano en la cadera (0.16, 0.02, 0.56) la hoja quedaba
+    # paralela al antebrazo, la muñeca no llegaba y team_limbs la enderezaba hasta 41° (la punta subía en el aviso). Acá
+    # entra sin tocar la hoja y la punta queda a 4 cm del piso
     TELL = P(hips=(-0.02, 0.06, -0.15), hips_rot=(8.0, 0.0, 40.0), spine=(14.0, -4.0, 14.0), chest=(8.0, -4.0, 16.0),
              head=(-14.0, 4.0, -40.0),
-             grip=(0.16, 0.02, 0.56), blade=(0.55, 0.75, -0.38), edge=(0.1, -0.4, -0.9), elbow_r=(-0.3, -0.4, -0.9),
+             grip=(0.02, -0.14, 0.44), blade=(0.55, 0.75, -0.38), edge=(0.1, -0.4, -0.9), elbow_r=(-0.3, -0.4, -0.9),
              hand_l=(0.30, 0.10, 0.80), hand_l_dir=(0.5, 0.4, -0.6), hand_l_palm=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.4, -0.4),
              fist_l=0.4)
-    HOLD = dict(TELL, grip=(0.17, 0.035, 0.55), blade=(0.53, 0.77, -0.39), hips=(-0.02, 0.062, -0.154))
+    HOLD = dict(TELL, grip=(0.03, -0.125, 0.43), blade=(0.53, 0.77, -0.39), hips=(-0.02, 0.062, -0.154))
     SMEAR = dict(HOLD, hips=(0.0, 0.0, -0.11), hips_rot=(6.0, 0.0, 22.0), chest=(4.0, -2.0, 4.0), head=(-12.0, 2.0, -20.0),
-                 grip=(0.08, -0.30, 0.66), blade=(0.55, -0.55, -0.62), edge=(-0.2, -0.6, 0.75))
+                 grip=(0.00, -0.22, 0.66), blade=(0.55, -0.55, -0.62), edge=(-0.2, -0.6, 0.75))
     CONTACT = dict(SMEAR, hips=(0.0, -0.03, -0.08), hips_rot=(4.0, 0.0, 6.0), spine=(6.0, 2.0, -6.0), chest=(0.0, 2.0, -10.0),
                    head=(-8.0, 0.0, -2.0), grip=(-0.12, -0.42, 0.90), blade=(-0.35, -0.78, 0.5), edge=(-0.55, 0.0, 0.83),
                    elbow_r=(-0.8, 0.2, -0.5), hand_l=(0.25, -0.02, 0.84), hand_l_dir=(0.5, 0.3, -0.7))
@@ -244,10 +247,10 @@ def attack3():
              grip_l=1.0, elbow_l=(0.8, -0.2, -0.4), fist_l=1.0)
     HOLD = dict(TELL, hips=(0.0, 0.11, -0.17), grip=(-0.25, 0.06, 1.14), blade=(-0.66, 0.52, 0.54), chest=(-12.0, 0.0, -10.0))
     LAUNCH = dict(HOLD, hips=(0.0, 0.0, -0.02), hips_rot=(6.0, 0.0, 10.0), spine=(4.0, 0.0, 0.0), chest=(-4.0, 0.0, -4.0),
-                  head=(-6.0, 0.0, -4.0), grip=(-0.12, -0.12, 1.42), blade=(0.06, -0.10, 1.0), edge=(0.0, -1.0, 0.1),
+                  head=(-6.0, 0.0, -4.0), grip=(-0.20, -0.20, 1.34), blade=(0.10, 0.07, 0.99), edge=(0.0, -1.0, 0.1),
                   knee_r=(-0.2, -1.0, 0.2))
     CONTACT = dict(LAUNCH, hips=(0.0, -0.06, -0.04), hips_rot=(14.0, 0.0, 10.0), spine=(14.0, 0.0, 0.0), chest=(10.0, 0.0, -4.0),
-                   head=(-16.0, 0.0, -4.0), grip=(-0.08, -0.46, 1.02), blade=(0.02, -0.96, 0.25), edge=(0.0, 0.25, -0.96),
+                   head=(-16.0, 0.0, -4.0), grip=(-0.08, -0.46, 0.94), blade=(0.02, -0.96, 0.25), edge=(0.0, 0.25, -0.96),
                    elbow_r=(-0.8, 0.3, -0.4), elbow_l=(0.8, 0.3, -0.4))
     # el seguimiento frena la punta justo sobre el piso (antes la hoja se hundía 30 cm durante todo el castigo)
     FOLLOW = dict(CONTACT, hips=(0.0, -0.08, -0.12), hips_rot=(20.0, 0.0, 12.0), spine=(18.0, 0.0, 0.0), head=(-22.0, 0.0, -4.0),
@@ -299,8 +302,8 @@ def thrust():
                    head=(-30.0, 0.0, 4.0),
                    grip=(-0.12, -0.62, 0.66), blade=(0.04, -1.0, 0.02), edge=(0.0, 0.0, -1.0), elbow_r=(-0.8, 0.0, -0.6),
                    hand_l=(0.28, 0.22, 0.80), hand_l_dir=(0.5, 0.8, -0.2), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(0.8, 0.5, -0.2))
-    LAND = dict(CONTACT, hips=(0.0, -0.08, -0.22), hips_rot=(16.0, 0.0, 30.0), grip=(-0.12, -0.64, 0.62))
-    PUNISH = dict(LAND, grip=(-0.12, -0.58, 0.60), hips=(0.0, -0.07, -0.23))
+    LAND = dict(CONTACT, hips=(0.0, -0.08, -0.22), hips_rot=(16.0, 0.0, 30.0), grip=(-0.12, -0.56, 0.62))
+    PUNISH = dict(LAND, grip=(-0.12, -0.52, 0.60), hips=(0.0, -0.07, -0.23))
     keys = [
         Key(0, P()),
         Key(9, LOW, "inout"),
@@ -363,9 +366,9 @@ def counter():
     n = 12
     G = guard_pose()
     SWEEP = dict(G, hips=(0.0, 0.0, -0.11), hips_rot=(4.0, 0.0, -10.0), chest=(-4.0, 0.0, -18.0), head=(-4.0, 0.0, 14.0),
-                 grip=(-0.36, -0.20, 1.18), blade=(-0.45, -0.55, 0.70), edge=(-0.85, 0.2, 0.45),
+                 grip=(-0.28, -0.28, 1.18), blade=(-0.51, -0.40, 0.76), edge=(-0.85, 0.2, 0.45),
                  hand_l=(0.22, -0.10, 0.92), hand_l_dir=(0.3, -0.4, 0.8), hand_l_palm=(-0.6, -0.8, 0.0))
-    keys = [Key(0, G), Key(3, SWEEP, "snap"), Key(6, dict(SWEEP, grip=(-0.34, -0.16, 1.14)), "out"), Key(n, P(), "sine")]
+    keys = [Key(0, G), Key(3, SWEEP, "snap"), Key(6, dict(SWEEP, grip=(-0.26, -0.24, 1.14)), "out"), Key(n, P(), "sine")]
     feet = {"r": [FR(0), FR(1, pitch=-8.0), FR(3, ease="in"), FR(n)], "l": [FL(0)]}
     return T.TeamClip("Counter", n, keys, feet=feet, notes="desvío con la hoja hacia afuera y un pisotón; termina en guardia")
 
@@ -397,7 +400,7 @@ def hit_heavy():
     back = HEAVY_BACK
     FLUNG = P(hips=(0.0, 0.10, -0.04), hips_rot=(-18.0, 0.0, 30.0), spine=(-14.0, 0.0, 6.0), chest=(-18.0, 0.0, 10.0),
               head=(22.0, 0.0, 10.0),
-              grip=(-0.44, 0.04, 1.10), blade=(-0.45, 0.40, 0.80), elbow_r=(-0.9, 0.2, 0.1), clav_r=(0, 0, 8),
+              grip=(-0.44, 0.04, 1.02), blade=(-0.45, 0.40, 0.80), elbow_r=(-0.9, 0.2, 0.1), clav_r=(0, 0, 8),
               hand_l=(0.36, 0.14, 1.00), hand_l_dir=(0.8, 0.2, 0.5), hand_l_palm=(0.0, -1.0, 0.0), elbow_l=(0.9, 0.3, 0.1), fist_l=0.0)
     CATCH = dict(FLUNG, hips=(0.0, 0.10, -0.16), hips_rot=(-2.0, 0.0, 24.0), spine=(2.0, 0.0, 2.0), chest=(-4.0, 0.0, 4.0),
                  head=(6.0, 0.0, 4.0), grip=(-0.36, -0.08, 0.92), blade=(-0.30, -0.45, 0.84), clav_r=(0, 0, 0),
@@ -427,7 +430,7 @@ def V3(p, dx, dy, dz):
 
 PARRY_KNOCK = P(hips=(0.0, 0.10, -0.07), hips_rot=(-12.0, 0.0, 34.0), spine=(-12.0, 0.0, 10.0), chest=(-16.0, -6.0, 16.0),
                 head=(16.0, 0.0, 14.0),
-                grip=(-0.42, 0.10, 1.20), blade=(-0.55, 0.62, 0.55), edge=(-0.6, -0.4, 0.4), elbow_r=(-0.9, 0.2, 0.3), clav_r=(0, 0, 10),
+                grip=(-0.42, 0.02, 1.20), blade=(-0.49, 0.68, 0.55), edge=(-0.6, -0.4, 0.4), elbow_r=(-0.9, 0.2, 0.3), clav_r=(0, 0, 10),
                 hand_l=(0.38, 0.16, 0.98), hand_l_dir=(0.9, 0.2, 0.4), hand_l_palm=(0.0, -1.0, 0.0), elbow_l=(0.7, 0.5, 0.2), fist_l=0.0)
 
 
@@ -449,7 +452,7 @@ def parried_perfect():
     Despedido con los dos pies en el aire, el brazo de la espada atrás por encima de la cabeza, aterriza sobre el de
     atrás, trastabilla un paso y en f14 (el corte) está en guardia."""
     KNOCK = dict(PARRY_KNOCK, hips=(0.0, 0.12, -0.04), hips_rot=(-18.0, 0.0, 40.0), spine=(-16.0, 0.0, 12.0),
-                 chest=(-20.0, -8.0, 18.0), head=(22.0, 0.0, 16.0), grip=(-0.46, 0.20, 1.26), blade=(-0.50, 0.75, 0.42),
+                 chest=(-20.0, -8.0, 18.0), head=(22.0, 0.0, 16.0), grip=(-0.46, 0.12, 1.26), blade=(-0.44, 0.83, 0.35),
                  clav_r=(0, 0, 14), hand_l=(0.30, 0.14, 0.92))
     STUMBLE = dict(KNOCK, hips=(0.0, 0.10, -0.13), hips_rot=(-4.0, 3.0, 26.0), spine=(-4.0, 0.0, 4.0), chest=(-8.0, -3.0, 10.0),
                    head=(8.0, 0.0, 8.0), grip=(-0.38, 0.0, 1.08), blade=(-0.40, 0.30, 0.86), hand_l=(0.34, 0.04, 0.94), clav_r=(0, 0, 4))
@@ -490,7 +493,8 @@ def exhausted_hit():
     back = HIT_BACK
     E = exhausted_pose()
     PEAK = dict(E, hips=(0.0, 0.10, -0.15), hips_rot=(4.0, 0.0, 16.0), spine=(4.0, 0.0, 6.0), chest=(-4.0, 0.0, 4.0),
-                head=(24.0, 0.0, 10.0), grip=(-0.34, -0.10, 0.44), hand_l=(0.26, -0.02, 0.56), hand_l_dir=(0.6, -0.2, 0.4))
+                head=(24.0, 0.0, 10.0), grip=(-0.34, -0.10, 0.44), blade=(-0.19, -0.94, -0.29), hand_l=(0.26, -0.02, 0.56),
+                hand_l_dir=(0.6, -0.2, 0.4))
     keys = [Key(0, E), Key(2, PEAK, "snap"), Key(5, dict(PEAK, hips=(0.0, 0.09, -0.16)), "out"), Key(n, E, "sine")]
     r, l = EXH_FEET["r"][0], EXH_FEET["l"][0]
     feet = {"l": [l, T.FootKey(5, l.x, l.y + back, l.yaw, 0.0, 0.0, 0.0, "out", 0.05)],
@@ -525,12 +529,15 @@ def death():
            hand_l_palm=(0.0, -1.0, 0.0), elbow_r=(-0.9, 0.2, 0.0), elbow_l=(0.9, 0.2, 0.0), fist_l=0.0)
     KNEES = P(hips=(0.0, 0.10, -0.335), hips_rot=(-4.0, 0.0, 6.0), spine=(-2.0, 0.0, 0.0), chest=(-6.0, 0.0, 0.0), head=(16.0, 0.0, 0.0),
               knee_r=(0.0, -1.0, -0.2), knee_l=(0.0, -1.0, -0.2),
-              grip=(-0.30, -0.06, 0.42), blade=(-0.45, -0.80, -0.40), edge=(-0.9, 0.45, 0.0), elbow_r=(-0.8, 0.4, 0.0),
+              grip=(-0.22, 0.02, 0.50), blade=(-0.45, -0.80, -0.40), edge=(-0.9, 0.45, 0.0), elbow_r=(-0.8, 0.4, 0.0),
               hand_l=(0.26, -0.04, 0.44), hand_l_dir=(0.1, -0.2, -1.0), hand_l_palm=(-1.0, 0.0, 0.0), elbow_l=(0.8, 0.4, 0.0))
     DOWN = dict(KNEES, hips=(0.0, 0.0, -0.345), hips_rot=(70.0, 0.0, 6.0), spine=(14.0, 0.0, 4.0), chest=(6.0, 0.0, 0.0),
                 head=(-30.0, 0.0, 30.0),
                 grip=(-0.36, -0.55, 0.12), blade=(-0.6, -0.8, 0.0), edge=(0.0, 0.0, -1.0), elbow_r=(-0.6, 0.0, 0.8),
-                hand_l=(0.34, -0.45, 0.10), hand_l_dir=(0.4, -0.8, 0.0), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(0.6, 0.0, 0.8))
+                # la mano libre floja, de nudillos en el piso: con los hombros a 0.4 m el antebrazo baja casi vertical y la
+                # palma plana en el piso (como estaba pedida) no entra en la muñeca; enderezada, los dedos se clavaban 11 cm
+                hand_l=(0.36, -0.40, 0.14), hand_l_dir=(0.0, 0.7, -0.7), hand_l_palm=(0.0, 0.7, 0.7), elbow_l=(0.6, 0.0, 0.8),
+                fist_l=0.7)
     keys = [Key(0, P()), Key(3, D0, "snap"), Key(8, dict(D0, hips=(0.0, 0.14, -0.14)), "out"),
             Key(16, KNEES, "in"), Key(19, dict(KNEES, hips=(0.0, 0.08, -0.355), head=(24.0, 0.0, 6.0)), "out"),
             Key(28, DOWN, "in"), Key(30, dict(DOWN, hips=(0.0, -0.01, -0.355)), "out"), Key(n, DOWN, "sine")]

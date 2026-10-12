@@ -135,10 +135,33 @@ def motion(root):
     return out
 
 
+def parents(root):
+    """{nodo Model: nodo Model padre (None en la raíz del archivo)}: la ruta con la que Unity liga cada curva."""
+    names = {}
+    for e in root.elems:
+        if e.id == b"Objects":
+            names = {o.props[0]: obj_name(o) for o in e.elems if o.id == b"Model" and o.props}
+    out = {n: None for n in names.values()}
+    for e in root.elems:
+        if e.id == b"Connections":
+            for c in e.elems:
+                if c.props and c.props[0] == b"OO" and c.props[1] in names and c.props[2] in names:
+                    out[names[c.props[1]]] = names[c.props[2]]
+    return out
+
+
+def path_of(par, n):
+    """Ruta 'Armature/Root/.../n' de un nodo según parents()."""
+    out = [n]
+    while par.get(out[-1]) is not None:
+        out.append(par[out[-1]])
+    return "/".join(reversed(out))
+
+
 def summary(path):
     root, ver = parse(path)
     out = {"version": ver, "models": {}, "local": {}, "bind": {}, "stacks": {}, "videos": 0, "video_bytes": 0, "fps": None,
-           "motion": motion(root)}
+           "motion": motion(root), "parents": parents(root)}
     for e in root.elems:
         if e.id == b"GlobalSettings":
             g = props70(e)
@@ -212,9 +235,18 @@ def _rot_angle(a, b):
     return math.degrees(math.acos(max(-1.0, min(1.0, (tr - 1) / 2))))
 
 
-def compare(src, dst, rot_tol=0.01, pos_tol=0.005, dropped_takes=()):
-    """dropped_takes: tomas que el script descartó a propósito (acciones sueltas de armas que nada usa)."""
+def compare(src, dst, rot_tol=0.01, pos_tol=0.005, dropped_takes=(), reparented=None):
+    """dropped_takes: tomas que el script descartó a propósito (acciones sueltas de armas que nada usa).
+    reparented: {hueso: padre nuevo} del esqueleto de juego (charlib.game_limbs): esos nodos tienen que colgar del padre
+    nuevo; su transform local y las curvas de las tomas de ellos y de sus padres viejos (los controles, que quedan
+    quietos) cambian a propósito: la pose re-horneada la valida charlib.compare_poses en espacio de la armadura."""
     A, B = summary(src), summary(dst)
+    reparented = dict(reparented or {})
+    skip = set(reparented) | {A["parents"].get(n) for n in reparented}
+    for n, p in reparented.items():
+        if B["parents"].get(n) != p:
+            print(f"  padre de {n}: {B['parents'].get(n)} (se esperaba {p})")
+            return False
     ok = True
     missing = [n for n in A["models"] if n not in B["models"]]
     extra = [n for n in B["models"] if n not in A["models"]]
@@ -235,7 +267,7 @@ def compare(src, dst, rot_tol=0.01, pos_tol=0.005, dropped_takes=()):
     print(f"bind pose: {len(A['bind'])} nodos, peor {worst[0]:.5f}° / {worst[1]:.6f} ({worst[2]})")
     worst = (0.0, 0.0, "")
     for n, (ra, ta, sa) in A["local"].items():
-        if n not in B["local"]: continue
+        if n not in B["local"] or n in skip: continue
         rb, tb, sb = B["local"][n]
         ang, dt = _rot3_angle(ra, rb), math.dist(ta, tb)
         ds = max(abs(x - y) for x, y in zip(sa, sb))
@@ -253,7 +285,8 @@ def compare(src, dst, rot_tol=0.01, pos_tol=0.005, dropped_takes=()):
         fa, fb = (round(a0 * A["fps"], 2), round(a1 * A["fps"], 2)), (round(b0 * B["fps"], 2), round(b1 * B["fps"], 2))
         if fa != fb: ok = False; print(f"  toma {s}: frames {fa} -> {fb}")
         # mismas curvas móviles en los mismos nodos: lo que no se movía puede quedar horneado constante
-        ma, mb = A["motion"].get(s, set()), B["motion"].get(s, set())
+        ma = {m for m in A["motion"].get(s, set()) if m[0] not in skip}
+        mb = {m for m in B["motion"].get(s, set()) if m[0] not in skip}
         if ma != mb:
             ok = False
             print(f"  toma {s}: curvas que se mueven {len(ma)} -> {len(mb)}; quietas en el nuevo "

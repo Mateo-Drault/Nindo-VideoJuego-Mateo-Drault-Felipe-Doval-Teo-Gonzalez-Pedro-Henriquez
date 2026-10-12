@@ -107,9 +107,15 @@ if C.count(body, "Abuelo_Ojos") == 0:
                    [0.07, 0.065, 0.055], "Abuelo_Faja", thick=0.02, up=(0, -1, 0))
     print("moño", C.attach(body, geo, ("nearest_each", None), near_mat="Abuelo_Faja"), "tris")
 
+# ------------------------------------------------------------------ esqueleto de juego
+# el abuelo y el ninja del secuestro ('.001') colgaban manos y pies de AntebrazoTarget/TibiaTarget en la raíz (sin pesos):
+# pasan a hijos del antebrazo y la tibia. La toma de escena (el 'Kidnap' del equipo) se re-hornea con la misma pose
+GRANDPA_LIMBS = [(f"{b}.{s}{x}", f"{p}.{s}{x}") for b, p in (("Mano", "Antebrazo"), ("Pie", "Tibia")) for s in "LR" for x in ("", ".001")]
+print("esqueleto de juego", C.game_limbs(arm, GRANDPA_LIMBS))
+
 # la exportación original quedó parada en el último frame (la pose por defecto del FBX es el final del
 # secuestro): se exporta desde el mismo frame para no cambiarla
 scn.frame_set(f1)
 # bind_tol: Blender reconstruye el giro de los huesos de los pies (casi paralelos a -Y) con 0.07° de error;
 # las poses animadas dan exactamente igual (compare_poses) y a esa escala es menos de 0.001 u en el pie
-C.finish(arm, src, REL, o, export_kw=GRANDPA, anim_offset=0.0, poses=poses, bind_tol=0.1)
+C.finish(arm, src, REL, o, export_kw=GRANDPA, anim_offset=0.0, poses=poses, bind_tol=0.1, reparented=dict(GRANDPA_LIMBS))

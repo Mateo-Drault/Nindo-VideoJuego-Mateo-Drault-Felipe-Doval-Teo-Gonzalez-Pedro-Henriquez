@@ -144,9 +144,12 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
     where = "; ".join(f"{k} f{p['frames'][0]}-f{p['frames'][1]} {p['drift_cm']}" for k, v in pl.items() for p in v if p["drift_cm"] > 1.0)
     check(worst <= max(2.0, allow), f"{clip.name}: pies apoyados quietos (deriva máx. {worst:.1f} cm{'; ' + where if where else ''})")
     if clip.loop:
-        seam, step = NA.loop_seam_deg(ch.rig, frames)
-        rep["loop_seam_deg"] = seam
-        check(seam <= 0.5, f"{clip.name}: costura del loop {seam:.2f}°")
+        # la costura real (el último cuadro resuelto contra el primero, team_rig.bake): la de loop_seam_deg mira el cuadro
+        # ya copiado y daba 0 siempre
+        seam = getattr(clip, "seam_deg", 0.0)
+        rep["loop_seam_deg"] = round(seam, 3)
+        check(seam <= 1.0, f"{clip.name}: costura del loop {seam:.2f}°")
+    wrist_checks(ch, clip, frames, rep)
     w = ch.weapon_info
     if "contact" in t:
         a = t["contact"]
@@ -204,6 +207,77 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         rep["game_hold_s"] = round(tl.hold, 3)
         rep["contact_tip_m"] = [round(x, 2) for x in tip[a]]
     return rep
+
+
+def wrist_checks(ch, clip, frames, rep):
+    """Muñecas (ítem 3 de la revisión de Felipe), medidas sobre lo que se exporta y sobre lo que eligió team_limbs:
+      * ninguna matriz espejada (determinante < 0: pasada a cuaternión, la mano salía doblada 180°);
+      * la muñeca de cada mano dentro de su límite (exceso <= 1; la que sostiene un mango fijo, la menos mala: aviso
+        hasta 1.35, falla después) y el giro que queda en ella hasta team_limbs.WRIST_TWIST;
+      * lo que se enderezó la mano del arma (y el arma con ella) en los cuadros que se leen (aviso, apex, golpe): <= 12°;
+      * saltos: el codo y la pronación que elige team_limbs no cambian de golpe más de lo que gira la mano pedida en ese
+        cuadro (un antebrazo que da media vuelta solo se ve como un tic)."""
+    import team_limbs as TL
+    R = ch.rig
+    neg = sum(1 for W in frames for M in W.values() if M.to_3x3().determinant() < 0.0)
+    check(neg == 0, f"{clip.name}: sin matrices espejadas ({neg})")
+    sv = getattr(clip, "limb_rows", None) or {}
+    out = {}
+    t = clip.timing
+    look = set()
+    if "contact" in t:
+        look = {t["apex"], t["contact"]} | set(range(t.get("hold", [t["apex"]] * 2)[0], t["apex"] + 1))
+    for k, rows in sv.items():
+        if not rows:
+            continue
+        side = "derecha" if k == "r" else "izquierda"
+        held = [r for r in rows if r["held"]]
+        free = [r for r in rows if not r["held"]]
+        ex = max(r["excess"] for r in rows)
+        tw = max(abs(r["twist"]) for r in rows)
+        out[k] = dict(excess=round(ex, 2), twist=round(tw, 1), fore=round(max(abs(r["fore"]) for r in rows), 1),
+                      swivel=round(max(abs(r["swivel"]) for r in rows), 1), clamp=round(max(r["clamp"] for r in rows), 1))
+        if free:
+            e1 = max(r["excess"] for r in free)
+            check(e1 <= 1.0, f"{clip.name}: muñeca {side} libre en su límite (x{e1:.2f})")
+        if held:
+            e2 = max(r["excess"] for r in held)
+            f2 = max(range(len(rows)), key=lambda i: rows[i]["excess"] if rows[i]["held"] else -1)
+            check(e2 <= 1.05, f"{clip.name}: muñeca {side} en el mango (x{e2:.2f} en f{f2})", warn=e2 <= 1.35)
+        # pronación y supinación de una persona (con el codo doblado: con el brazo derecho el hombro hace lo mismo)
+        pr = [r["pron"] for r in rows if r["pron_w"] > 0.5]
+        if pr:
+            lo, hi = min(pr), max(pr)
+            out[k]["pron"] = [round(lo, 1), round(hi, 1)]
+            check(TL.PRON_MIN - 3.0 <= lo and hi <= TL.PRON_MAX + 3.0,
+                  f"{clip.name}: antebrazo {side} dentro de la pronación y la supinación ({lo:.0f}° a {hi:.0f}°)")
+        tl = TL.WRIST_TWIST * 1.3 + 1.0
+        check(tw <= tl, f"{clip.name}: giro que queda en la muñeca {side} ({tw:.0f}°)", warn=tw <= tl + 15.0)
+        if look and held:
+            dv = max((rows[f]["clamp"] for f in look if f < len(rows) and rows[f]["held"]), default=0.0)
+            out[k]["clamp_tell"] = round(dv, 1)
+            check(dv <= 12.0, f"{clip.name}: el arma de la mano {side} donde la pidió el clip en el aviso y el golpe "
+                              f"(se corrió {dv:.0f}°)", warn=dv <= 25.0)
+    rep["wrists"] = out
+    # saltos que pone el solver (no el clip): el codo, la pronación o el agarre que cambian de golpe de un cuadro al otro
+    # mientras la mano pedida casi no se mueve (fuera de la ventana del golpe, donde un tajo de 2 cuadros es legítimo)
+    act = set(range(t["apex"], t.get("active", [t["contact"], t["contact"] + 2])[1] + 2)) if "contact" in t else set()
+    worst, where = 0.0, ""
+    for k, rows in sv.items():
+        for i in range(1, len(rows)):
+            if i in act:
+                continue
+            a, b = rows[i - 1], rows[i]
+            asked = math.degrees(a["req"].rotation_difference(b["req"]).angle)
+            asked = min(asked, 360.0 - asked)
+            jump = TL.change_deg((0.0, a["roll"], a["diag"], a["swivel"], a["fore"]), (0.0, b["roll"], b["diag"], b["swivel"], b["fore"]),
+                                 a["hand"], b["hand"])
+            j = max(0.0, jump - asked)
+            if j > worst:
+                worst, where = j, f"{'derecha' if k == 'r' else 'izquierda'} f{i}"
+    rep["solver_jump_deg"] = round(worst, 1)
+    check(worst <= 35.0, f"{clip.name}: codo y antebrazo sin saltos de un cuadro al otro ({worst:.0f}° más que la mano, {where})",
+          warn=worst <= 55.0)
 
 
 def prerelease_glide(frames, apex, contact, lunge, speed):
@@ -432,6 +506,15 @@ def verify_fbx(ch, path, last):
                                                           f"posición {d_pos:.2e}, escala {d_scl:.2e})")
     check(abs(a.get("unit", 1) - m.get("unit", 1)) < 1e-6, f"FBX: unidades {a.get('unit')} = {m.get('unit')}")
     check(list(a["stacks"]) == ["Scene"], f"FBX: una toma 'Scene' ({list(a['stacks'])})")
+    # Unity liga cada curva por ruta: cada nodo tiene que colgar del mismo padre que en el modelo (el esqueleto de juego
+    # cambió padres de manos y pies) y la ruta empezar en 'Armature/...'; el nodo raíz no se anima (si no, con un solo
+    # nodo raíz Unity lo aplana y el clip escala el modelo entero: el bug de los enemigos invisibles)
+    bad = [n for n in a["models"] if a["parents"].get(n) != m["parents"].get(n)]
+    check(not bad, f"FBX: mismos padres que el modelo ({bad[:4]})")
+    paths = [FC.path_of(a["parents"], n) for n in a["models"]]
+    check(all(p == arm or p.startswith(arm + "/") for p in paths), f"FBX: rutas bajo '{arm}/' ({[p for p in paths if not p.startswith(arm)][:3]})")
+    root_moves = sorted({prop for n, prop, ax in a["motion"].get("Scene", set()) if n == arm})
+    check(not root_moves, f"FBX: el nodo '{arm}' no se anima ({root_moves})")
     lo, hi = a["stacks"].get("Scene", (0, 0))
     check(abs(hi * T.FPS - last) < 0.51, f"FBX: la toma llega al cuadro {last} ({hi * T.FPS:.1f})")
     return a
@@ -478,6 +561,7 @@ def main():
     baked, reports, rootsd, rootsa = [], {}, {}, {}
     for clip in clips:
         frames, ctrls, roots, drops, misses = T.bake(ch, clip, solver)
+        clip.limb_rows = {k: list(v) for k, v in solver.limbs.rows.items()}
         print(f"[{clip.name}] {clip.frames} cuadros ({clip.frames / T.FPS:.2f} s){' loop' if clip.loop else ''}")
         reports[clip.name] = lint(ch, clip, frames, ctrls, roots, drops, misses, hits)
         rootsd[clip.name] = [(c.get("travel") or 0.0) + clip.root_vel.length * (f / T.FPS) for f, c in enumerate(ctrls)]

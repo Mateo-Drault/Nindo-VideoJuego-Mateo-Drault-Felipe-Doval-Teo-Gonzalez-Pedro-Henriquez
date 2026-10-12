@@ -21,6 +21,31 @@
     },
     "hip_drop_cm": 0.0,
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.49,
+      "twist": 6.4,
+      "fore": 32.6,
+      "swivel": 1.0,
+      "clamp": 0.0,
+      "pron": [
+       -41.2,
+       -38.1
+      ]
+     },
+     "l": {
+      "excess": 0.45,
+      "twist": 6.7,
+      "fore": 33.1,
+      "swivel": 1.0,
+      "clamp": 0.0,
+      "pron": [
+       -41.7,
+       -38.7
+      ]
+     }
+    },
+    "solver_jump_deg": 1.1,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -43,8 +68,33 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "hip_drop_cm": 0.8,
+    "hip_drop_cm": 1.9,
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.44,
+      "twist": 6.7,
+      "fore": 33.1,
+      "swivel": 1.0,
+      "clamp": 0.0,
+      "pron": [
+       -41.7,
+       -40.5
+      ]
+     },
+     "l": {
+      "excess": 0.41,
+      "twist": 6.9,
+      "fore": 33.5,
+      "swivel": 2.0,
+      "clamp": 0.0,
+      "pron": [
+       -42.1,
+       -41.1
+      ]
+     }
+    },
+    "solver_jump_deg": 1.0,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -70,6 +120,31 @@
     },
     "hip_drop_cm": 0.0,
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.76,
+      "twist": 7.6,
+      "fore": 44.5,
+      "swivel": 22.0,
+      "clamp": 0.0,
+      "pron": [
+       -53.1,
+       -43.8
+      ]
+     },
+     "l": {
+      "excess": 0.77,
+      "twist": 7.1,
+      "fore": 41.7,
+      "swivel": 20.0,
+      "clamp": 0.0,
+      "pron": [
+       -50.3,
+       -42.4
+      ]
+     }
+    },
+    "solver_jump_deg": 7.2,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -113,6 +188,31 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 14.8,
+      "fore": 72.1,
+      "swivel": 12.0,
+      "clamp": 0.0,
+      "pron": [
+       -43.9,
+       63.5
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 14.8,
+      "fore": 72.1,
+      "swivel": 13.0,
+      "clamp": 8.0,
+      "pron": [
+       -43.9,
+       63.6
+      ]
+     }
+    },
+    "solver_jump_deg": 8.8,
     "floor_skate_cm": {
      "r": [],
      "l": []

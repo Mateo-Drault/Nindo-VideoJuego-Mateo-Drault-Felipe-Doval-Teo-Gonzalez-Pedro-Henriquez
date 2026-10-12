@@ -10,6 +10,8 @@ Cambios (audit_models MODEL-01/02/12):
     oscuro y menos saturado que el gi (valor 0.30 contra 0.51 en el render de noche)
   - ojos claros en la ranura de la capucha: a 100 px de alto es lo único que dice hacia dónde mira
   - katana reconstruida (272 tris en vez de 3324) con el filo en el slot 'Glint' (aviso de parry)
+  - la hoja de acero claro con el lomo oscuro y 30 % más ancha (fase C, ítem 6): desde la cámara del juego la de antes
+    era una raya de 3 px gris azulada que se perdía contra el traje y el piso de noche
 Los detalles de zona (hachimaki, obi, abrigos) son kits aparte: no se tocan acá.
 """
 import bpy, os, sys
@@ -21,7 +23,8 @@ REL = "Models/Ninja/Ninja 1.fbx"
 COLORS = {
     "GrisOscuro": "#2e2b2c",      # carbón neutro, apenas cálido: la luna y el rim fríos ya lo azulan de noche
     "Piel": "#e9b88a",
-    "Metal": dict(hexc="#b9c2cf", rough=0.45),
+    # acero claro: es lo único claro del ninja y la hoja es lo que dice hacia dónde va el golpe
+    "Metal": dict(hexc="#d3dae3", rough=0.45),
     "Plateado": dict(hexc="#7d828c", rough=0.5),    # tsuba y virolas de hierro
     "Negro": "#2b2124",                              # ito del mango: casi negro, apenas rojizo
     "Blanco": "#d8d4c8",
@@ -67,12 +70,14 @@ AXIS = Vector((0.994, 0.05, -0.093)).normalized()
 CENTER = Vector((0.1, -1.34, 1.888))
 POMMEL_T, GUARD_T, TIP_T = -0.643, -0.07, 1.321
 C.material("Glint", "#eef3f8", rough=0.35)
+# el lomo (mune) en acero pavonado: la raya oscura junto a la clara se lee sobre cualquier fondo
+C.material("Lomo", "#3b3f47", rough=0.4)
 side = AXIS.cross(Vector((0, 0, 1))).normalized()     # la original se curva hacia -side: el filo es +side
 up = side.cross(AXIS).normalized()
 geo = C.Geo()
 C.katana(geo, CENTER + AXIS * GUARD_T, AXIS, side, up,
-         handle_len=GUARD_T - POMMEL_T - 0.035, blade_len=TIP_T - GUARD_T, width=0.08, thick=0.022, sori=0.085,
-         m={"steel": "Metal", "glint": "Glint", "wrap": "Negro", "skin": "Plateado", "metal": "Plateado"},
+         handle_len=GUARD_T - POMMEL_T - 0.035, blade_len=TIP_T - GUARD_T, width=0.104, thick=0.026, sori=0.085,
+         m={"steel": "Metal", "glint": "Glint", "wrap": "Negro", "skin": "Plateado", "metal": "Plateado", "spine": "Lomo"},
          handle_r=0.048, guard_r=0.085, wrap_bands=8)
 print("katana", C.replace_mesh(kat, geo), "tris")
 

@@ -51,6 +51,15 @@ def flat_face(haft, hint):
     return (sg * f[0] / m, sg * f[1] / m, 0.0)
 
 
+def mix(a, b, u):
+    """Pose a medio camino entre dos (canal por canal; un canal que falta en una vale lo de la otra)."""
+    out = {}
+    for k in set(a) | set(b):
+        x, y = a.get(k, b.get(k)), b.get(k, a.get(k))
+        out[k] = x + (y - x) * u if isinstance(x, (int, float)) else tuple(p + (q - p) * u for p, q in zip(x, y))
+    return out
+
+
 def P2(**kw):
     """Pose de golpe: las dos manos en el mango (en la guardia lo lleva con una sola)."""
     kw.setdefault("grip_l", 1.0)
@@ -245,9 +254,16 @@ def heavy():
     LAND = P2(hips=(0.0, -0.14, -0.50), hips_rot=(28.0, 0.0, 0.0), spine=(16.0, 0.0, 0.0), head=(-28.0, 0.0, 0.0),
              knee_r=(-0.8, -0.8, 0.0), knee_l=(0.8, -0.8, 0.0),
              grip=(-0.38, -0.92, 1.36), haft=(0.26, -0.92, -0.28), face=(0.0, -0.28, -0.96), slide_l=0.45, elbow_r=(-1.0, 0.3, -0.3), elbow_l=(1.0, 0.3, -0.3))
-    keys = [Key(0, P()), Key(12, CROUCH, "inout"), Key(22, DEEP, "sine"), Key(26, TAKEOFF, "out"), Key(apex, TOP, "out"),
+    # al subir el martillo por encima del hombro la derecha (que en la guardia ya está en supinación) cambia el agarre:
+    # afloja a mitad de la subida y vuelve a cerrar antes del aviso
+    keys = [Key(0, P(grip_r=1.0, fist_r=1.0)), Key(6, dict(mix(P(), CROUCH, 0.5), grip_r=0.3, fist_r=0.75), "in"),
+            Key(12, dict(CROUCH, grip_r=1.0, fist_r=1.0), "out"), Key(22, DEEP, "sine"), Key(26, TAKEOFF, "out"), Key(apex, TOP, "out"),
             Key(36, FALL, "in"), Key(contact, LAND, "expo_in"), Key(43, dict(LAND, hips=(0.0, -0.13, -0.46)), "out"),
-            Key(50, LAND, "sine"), Key(n, P(), "sine")]
+            Key(50, dict(LAND, grip_r=1.0), "sine"),
+            # de vuelta a la guardia el antebrazo pasa de supinación a pronación: a mitad de camino la derecha afloja el
+            # mango y cambia el agarre (sin eso no hay muñeca que una los dos y el brazo daba media vuelta en un cuadro)
+            Key(52, dict(mix(LAND, P(), 0.2), grip_r=0.1, fist_r=0.7), "sine"), Key(56, dict(mix(LAND, P(), 0.75), grip_r=0.1, fist_r=0.7), "sine"),
+            Key(n, P(grip_r=1.0, fist_r=1.0), "sine")]
     feet = {"r": [FR(0), FR(22), FR(26, pitch=24.0), FR(apex, 0.25, z=0.40, ease="out"), FR(contact, lunge, ease="in"), FR(n - 6, lunge)],
             "l": [FL(0), FL(22), FL(26, pitch=24.0), FL(apex, 0.25, z=0.40, ease="out"), FL(contact, lunge, ease="in"), FL(n - 6, lunge)]}
     return T.TeamClip("Heavy", n, keys, travel=tr, feet=feet, notes="golpe sísmico: salta y pega al aterrizar",
@@ -413,18 +429,30 @@ def death():
     rodillas y queda arrodillado con la cabeza gacha; después se desploma hacia adelante sobre el martillo."""
     n = 60
     slide = [-0.8 * math.sin(min(1.0, (f / T.FPS) * 1.8) * math.pi * 0.5) for f in range(n + 1)]
+    # El martillo queda clavado de cabeza en el piso, casi vertical, y la derecha lo toma arriba como un bastón (el
+    # meñique hacia la cabeza: 'grip_flip'), con la mano corrida por el mango hacia la cabeza ('slide_r'): así el
+    # antebrazo cruza el mango y la muñeca queda neutra. Inclinado hacia afuera y adelante (como estaba antes) no había
+    # muñeca que lo sostuviera con ningún agarre. El agarre cambia en el empujón (la mano se afloja: 'grip_r')
     REC = P(hips=(0.0, 0.14, -0.10), hips_rot=(-12.0, 0.0, 8.0), spine=(-14.0, 0.0, 0.0), head=(18.0, 0.0, 6.0),
-            grip=(-0.62, -0.30, 1.56), haft=(-0.45, -0.55, -0.70), face=flat_face((-0.45, -0.55, -0.70), (1.0, 0.0, 0.0)))
+            grip=(-0.70, -0.45, 1.55), haft=(-0.25, -0.30, -0.92), face=flat_face((-0.25, -0.30, -0.92), (1.0, 0.0, 0.0)),
+            grip_flip=1.0, slide_r=-0.29)
     KNEEL = P(hips=(0.0, 0.16, -0.58), hips_rot=(-2.0, 0.0, 8.0), spine=(10.0, 0.0, 0.0), head=(24.0, 0.0, 0.0),
               knee_r=(-0.3, -1.0, -0.3), knee_l=(0.3, -1.0, -0.3),
-              grip=(-0.72, -0.40, 1.46), haft=(-0.45, -0.60, -0.66), face=flat_face((-0.45, -0.60, -0.66), (1.0, 0.0, 0.0)), grip_l=0.0,
+              grip=(-0.76, -0.52, 1.40), haft=(0.05, -0.10, -0.99), face=flat_face((0.05, -0.10, -0.99), (1.0, 0.0, 0.0)), grip_l=0.0,
+              grip_flip=1.0, slide_r=-0.54,
               hand_l=(0.50, -0.30, 0.95), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(-1.0, 0.0, 0.0), fist_l=0.2)
     BOW = dict(KNEEL, spine=(26.0, 0.0, 0.0), head=(30.0, 0.0, 0.0), hips=(0.0, 0.16, -0.55))
+    # al desplomarse suelta el martillo, que cae acostado por debajo de él (la cabeza no se hunde: 'TIP' a mitad)
     DOWN = dict(BOW, hips=(0.0, -0.10, -0.48), hips_rot=(62.0, 0.0, 10.0), spine=(18.0, 0.0, 0.0), head=(-20.0, 0.0, 20.0),
-                grip=(-0.80, -0.70, 0.62), haft=(-0.55, -0.83, 0.0), face=flat_face((-0.55, -0.83, 0.0), (1.0, 0.0, 0.0)), hand_l=(0.55, -0.80, 0.40), hand_l_dir=(0.0, -0.8, -0.3))
-    keys = [Key(0, P()), Key(4, REC, "snap"), Key(12, dict(REC, hips=(0.0, 0.16, -0.18)), "out"), Key(24, KNEEL, "in2"),
+                grip=(-0.80, -0.70, 0.62), haft=(-0.55, -0.83, 0.0), face=flat_face((-0.55, -0.83, 0.0), (1.0, 0.0, 0.0)),
+                hand_l=(0.55, -0.80, 0.40), hand_l_dir=(0.0, -0.8, -0.3), grip_r=0.15, fist_r=0.5)
+    TIP = dict(DOWN, grip=(-0.80, -0.66, 1.22), haft=(-0.35, -0.64, -0.69), face=flat_face((-0.35, -0.64, -0.69), (1.0, 0.0, 0.0)), grip_r=0.4)
+    keys = [Key(0, P(grip_flip=0.0, grip_r=1.0, fist_r=1.0, slide_r=0.0)), Key(4, dict(REC, grip_r=0.3, fist_r=0.75), "snap"),
+            Key(12, dict(REC, hips=(0.0, 0.16, -0.18), grip_r=1.0, fist_r=1.0), "out"), Key(24, KNEEL, "in2"),
             Key(27, dict(KNEEL, hips=(0.0, 0.16, -0.55)), "out"), Key(32, KNEEL, "sine"), Key(44, BOW, "sine"),
-            Key(50, dict(BOW, hips=(0.0, 0.04, -0.46), hips_rot=(30.0, 0.0, 9.0), spine=(22.0, 0.0, 0.0)), "in"), Key(54, DOWN, "out"), Key(57, dict(DOWN, hips=(0.0, -0.10, -0.45)), "out"), Key(n, DOWN, "sine")]
+            Key(50, dict(BOW, hips=(0.0, 0.04, -0.46), hips_rot=(30.0, 0.0, 9.0), spine=(22.0, 0.0, 0.0), grip_r=1.0, fist_r=1.0), "in"),
+            Key(52, dict(TIP, hips=(0.0, -0.04, -0.47), hips_rot=(48.0, 0.0, 10.0)), "lin"), Key(54, DOWN, "out"),
+            Key(57, dict(DOWN, hips=(0.0, -0.10, -0.45)), "out"), Key(n, DOWN, "sine")]
     # el empujón lo lleva 0.8 m atrás: los pies retroceden con él y quedan de punta para las rodillas apoyadas
     feet = {"r": [FR(0), FR(3), FR(11, -0.70, ease="out"), FR(16, -0.70), FR(24, -1.60, yaw=0.0, pitch=60.0)],
             "l": [FL(0), FL(5, pitch=10.0), FL(14, -0.75, ease="out"), FL(18, -0.75), FL(25, -1.30, yaw=0.0, pitch=60.0)]}

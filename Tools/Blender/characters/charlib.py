@@ -458,6 +458,115 @@ def replace_mesh(obj, geo):
     return sum(len(p.vertices) - 2 for p in me.polygons)
 
 
+# ======================================================================= esqueleto de juego
+def game_limbs(arm, reparent, merge=None):
+    """Esqueleto de juego (fase C, como Kaito en B3): las manos y los pies del equipo colgaban de huesos de IK en la raíz
+    (TargetBrazo, TargetPie, AntebrazoTarget...) y Unity, que mezcla cada hueso por separado, despegaba muñecas y
+    tobillos en cada cruce de clips y en todo el blend de locomoción.
+      reparent: [(hueso, padre nuevo)]: mismo nombre, cabeza, cola y roll (la pose de bind no cambia), solo el padre;
+      merge: {grupo de vértices: grupo destino} (los pesos de un control pasan al hueso que ya lo seguía rígido: la
+               malla se deforma igual que con el rig viejo).
+    Las tomas del FBX (el 'Intro' de Gorō, el 'Kidnap' del abuelo) se re-hornean con la MISMA pose en espacio de la
+    armadura en cada cuadro: compare_poses lo valida contra el original. Los controles quedan en el FBX, sin pesos y
+    quietos (los kits de zona traen el esqueleto completo y CharacterKits.Attach no viste el kit si falta un nombre).
+    Idempotente. Devuelve {'reparented': [...], 'weights_moved': {...}, 'rebaked': n acciones}."""
+    from mathutils import Matrix
+    acts = [a for a in bpy.data.actions if any(fc.data_path.startswith("pose.bones") for fc in a.fcurves)]
+    eb_parent = {b.name: (b.parent.name if b.parent else None) for b in arm.data.bones}
+    todo = [(c, p) for c, p in reparent if c in eb_parent and eb_parent[c] != p]
+    moved = {}
+    for o in meshes():
+        vg = o.vertex_groups
+        for src, dst in (merge or {}).items():
+            if src not in vg:
+                continue
+            si = vg[src].index
+            rows = [(v.index, g.weight) for v in o.data.vertices for g in v.groups if g.group == si and g.weight > 0.0]
+            if not rows:
+                continue
+            if dst not in vg:
+                vg.new(name=dst)
+            for i, w in rows:
+                vg[dst].add([i], w, 'ADD')
+            vg[src].remove([i for i, _ in rows])
+            moved[f"{o.name}:{src}->{dst}"] = len(rows)
+    if not todo:
+        return {"reparented": [], "weights_moved": moved, "rebaked": 0}
+    # poses de cada toma en espacio de la armadura, ANTES de cambiar padres
+    keep = arm.animation_data.action if arm.animation_data else None
+    rest(arm, False)
+    scn = bpy.context.scene
+    baked = {}
+    for a in acts:
+        use_action(arm, a)
+        f0, f1 = (int(round(x)) for x in a.frame_range)
+        rows = []
+        for f in range(f0, f1 + 1):
+            scn.frame_set(f)
+            rows.append((f, {pb.name: pb.matrix.copy() for pb in arm.pose.bones}))
+        baked[a] = rows
+    use_action(arm, None)
+    # padres nuevos (mismo reposo de cada hueso)
+    bpy.context.view_layer.objects.active = arm
+    for o in bpy.context.selected_objects:
+        o.select_set(False)
+    arm.select_set(True)
+    bpy.ops.object.mode_set(mode='EDIT')
+    eb = arm.data.edit_bones
+    for c, p in todo:
+        eb[c].use_connect = False
+        eb[c].parent = eb[p]
+    bpy.ops.object.mode_set(mode='OBJECT')
+    # re-horneado: base local = (pose del padre @ reposo relativo)^-1 @ pose pedida, de padres a hijos
+    bones = arm.data.bones
+    order = []
+
+    def walk(b):
+        order.append(b.name)
+        for ch in b.children:
+            walk(ch)
+    for b in bones:
+        if b.parent is None:
+            walk(b)
+    relm = {n: (bones[n].parent.matrix_local.inverted() @ bones[n].matrix_local) if bones[n].parent else bones[n].matrix_local.copy()
+            for n in order}
+    for a, rows in baked.items():
+        for fc in [fc for fc in a.fcurves if fc.data_path.startswith("pose.bones")]:
+            a.fcurves.remove(fc)
+        data = {n: [[] for _ in range(10)] for n in order}
+        times = []
+        for f, M in rows:
+            times.append(f)
+            for n in order:
+                p = bones[n].parent
+                base = (M[p.name] @ relm[n]).inverted() @ M[n] if p else relm[n].inverted() @ M[n]
+                l, q, s = base.decompose()
+                for i, v in enumerate((l.x, l.y, l.z, q.w, q.x, q.y, q.z, s.x, s.y, s.z)):
+                    data[n][i].append(v)
+        for n in order:
+            pb = arm.pose.bones[n]
+            pb.rotation_mode = 'QUATERNION'
+            # mismo hemisferio cuadro a cuadro: sin vueltas raras al interpolar
+            qs = list(zip(*data[n][3:7]))
+            for i in range(1, len(qs)):
+                if sum(x * y for x, y in zip(qs[i], qs[i - 1])) < 0.0:
+                    qs[i] = tuple(-x for x in qs[i])
+            for i in range(4):
+                data[n][3 + i] = [q[i] for q in qs]
+            for path, idxs in (("location", (0, 1, 2)), ("rotation_quaternion", (3, 4, 5, 6)), ("scale", (7, 8, 9))):
+                for ai, di in enumerate(idxs):
+                    fc = a.fcurves.new(f'pose.bones["{n}"].{path}', index=ai, action_group=n)
+                    fc.keyframe_points.add(len(times))
+                    co = [0.0] * (2 * len(times))
+                    co[0::2] = times
+                    co[1::2] = data[n][di]
+                    fc.keyframe_points.foreach_set("co", co)
+                    fc.keyframe_points.foreach_set("interpolation", [1] * len(times))   # LINEAR
+                    fc.update()
+    use_action(arm, keep)
+    return {"reparented": [c for c, _ in todo], "weights_moved": moved, "rebaked": len(baked)}
+
+
 # ======================================================================= animación
 def take_actions(arm):
     """Renombra las acciones para que la exportación reproduzca las tomas originales ('Armature|Idle'):
@@ -569,10 +678,11 @@ def report_mesh(obj):
     return tris
 
 
-def finish(arm, src, rel, opts, export_kw=None, anim_offset=1.0, poses=None, bind_tol=0.01, pose=None):
+def finish(arm, src, rel, opts, export_kw=None, anim_offset=1.0, poses=None, bind_tol=0.01, pose=None, reparented=None):
     """Común a todos: pesos, normales, imágenes fuera, tomas; exporta, valida contra 'src' y (con --write)
     escribe en el lugar del repo (Assets/<rel>), aunque el origen haya sido otro archivo (--src).
-    pose: la de default_pose(src), para exportar con la misma pose por defecto que el original."""
+    pose: la de default_pose(src), para exportar con la misma pose por defecto que el original.
+    reparented: {hueso: padre nuevo} del esqueleto de juego (game_limbs), para fbxcheck.compare."""
     dst_name = os.path.basename(rel)
     rest(arm, True)
     for o in meshes():
@@ -596,7 +706,7 @@ def finish(arm, src, rel, opts, export_kw=None, anim_offset=1.0, poses=None, bin
     tmp = os.path.join(opts["out"], dst_name)
     export(tmp, **(export_kw or {}))
     print("exportado", tmp, f"{os.path.getsize(tmp) / 1e6:.2f} MB")
-    ok = fbxcheck.compare(src, tmp, rot_tol=bind_tol, dropped_takes=dropped)
+    ok = fbxcheck.compare(src, tmp, rot_tol=bind_tol, dropped_takes=dropped, reparented=reparented)
     # una pieza nueva que asoma (el chonmage del sumo) agranda la unión y el juego achica todo el cuerpo:
     # se avisa para corregir 'height' en NindoContent y generate_assets.py chars()
     h0, h1 = union_height(src), union_height(tmp)
@@ -647,7 +757,10 @@ def katana(geo, origin, axis, edge, flat, handle_len, blade_len, width, thick, s
     geo.prism(P(-0.005, 0, 0), P(0.022, 0, 0), gr, gr, m["metal"], seg=8, up=F, sy=0.82)
     # habaki: collar de la base de la hoja
     geo.prism(P(0.022, width * 0.05, 0), P(0.075, width * 0.05, 0), width * 0.62, width * 0.58, m["metal"], seg=6, up=F, sy=0.55)
-    # hoja: sección de 5 vértices (filo, dos aristas del shinogi, dos del lomo)
+    # hoja: sección de 5 vértices (filo, dos aristas del shinogi, dos del lomo). Con m['spine'] (el ninja) son 7 y el
+    # lomo (mune) va en acero oscuro: una raya fina junto a las caras claras que dice para dónde corta. Solo el lomo:
+    # con sus hombros también oscuros, la hoja vista de canto desde la cámara del juego (la guardia) salía más oscura
+    spine = m.get("spine")
     blade = []
     for k in range(blade_rings):
         s = k / (blade_rings - 1)
@@ -655,14 +768,23 @@ def katana(geo, origin, axis, edge, flat, handle_len, blade_len, width, thick, s
         c = -sori * (s ** 2)                             # el centro se va hacia el lomo
         w = width * (1.0 - 0.28 * s)
         th = thick * (1.0 - 0.45 * s)
-        blade.append([P(t, c + w * 0.5, 0), P(t, c + w * 0.08, th * 0.5), P(t, c - w * 0.5, th * 0.45),
-                      P(t, c - w * 0.5, -th * 0.45), P(t, c + w * 0.08, -th * 0.5)])
-    face_mat = lambda a, j: m["glint"] if j in (0, 4) else m["steel"]
+        if spine:
+            blade.append([P(t, c + w * 0.5, 0), P(t, c + w * 0.08, th * 0.5), P(t, c - w * 0.34, th * 0.42),
+                          P(t, c - w * 0.5, th * 0.22), P(t, c - w * 0.5, -th * 0.22), P(t, c - w * 0.34, -th * 0.42),
+                          P(t, c + w * 0.08, -th * 0.5)])
+        else:
+            blade.append([P(t, c + w * 0.5, 0), P(t, c + w * 0.08, th * 0.5), P(t, c - w * 0.5, th * 0.45),
+                          P(t, c - w * 0.5, -th * 0.45), P(t, c + w * 0.08, -th * 0.5)])
+    nsec = len(blade[0])
+    if spine:
+        face_mat = lambda a, j: m["glint"] if j in (0, 6) else (spine if j == 3 else m["steel"])
+    else:
+        face_mat = lambda a, j: m["glint"] if j in (0, 4) else m["steel"]
     ids = geo.loft(blade, m["steel"], cap0=True, cap1=False, mats=face_mat)
     # kissaki: la punta sube hacia el lomo
     tip = geo.add_verts([P(blade_len, -sori - width * 0.30, 0)])[0]
     last = ids[-1]
-    for j in range(5):
-        k = (j + 1) % 5
+    for j in range(nsec):
+        k = (j + 1) % nsec
         geo.face((last[j], last[k], tip), face_mat(0, j))
     return geo

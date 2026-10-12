@@ -253,8 +253,10 @@ def special():
     n, apex, contact, end = 60, 14, 18, 42
     CROUCH = P(hips=(0.0, 0.14, -0.40), hips_rot=(36.0, 0.0, 0.0), spine=(10.0, 0.0, 0.0), head=(-44.0, 0.0, 0.0),
                knee_r=(-1.0, -0.5, 0.0), knee_l=(1.0, -0.5, 0.0),
-               hand_r=(-0.30, -0.58, 0.24), hand_r_dir=(0.0, -0.3, -0.95), hand_r_palm=(0.0, 1.0, 0.0), elbow_r=(-1.0, 0.0, 0.0),
-               hand_l=(0.30, -0.58, 0.24), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(0.0, 1.0, 0.0), elbow_l=(1.0, 0.0, 0.0),
+               # la muñeca a 0.38 m: con la mano entera (antes la exportaba doblada sobre el antebrazo) los nudillos del puño
+               # quedan apoyados en el piso; a 0.24 m el puño se hundía 14 cm
+               hand_r=(-0.30, -0.58, 0.38), hand_r_dir=(0.0, -0.3, -0.95), hand_r_palm=(0.0, 1.0, 0.0), elbow_r=(-1.0, 0.0, 0.0),
+               hand_l=(0.30, -0.58, 0.38), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(0.0, 1.0, 0.0), elbow_l=(1.0, 0.0, 0.0),
                fist_r=1.0, fist_l=1.0)
     HOLD = dict(CROUCH, hips=(0.0, 0.15, -0.42))
     LAUNCH = P(hips=(0.0, -0.10, -0.24), hips_rot=(32.0, 0.0, 0.0), spine=(14.0, 0.0, 0.0), head=(-40.0, 0.0, 0.0),
