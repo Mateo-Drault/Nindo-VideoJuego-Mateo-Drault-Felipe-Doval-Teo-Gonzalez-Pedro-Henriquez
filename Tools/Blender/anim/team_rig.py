@@ -1032,6 +1032,14 @@ def gait2(ch, frames, speed, duty, feet, lift=0.08, toe_off=30.0, heel=-14.0, ph
 
 
 # =============================================================================== horneado
+def drop_kid(ch, pose):
+    """El segundo esqueleto (clip.partner) se resuelve de cero: el solve del primero lo deja en kid_pose y la IK de sus
+    brazos y piernas arrancaba de esos hombros y caderas aunque su cadera se moviera (el ninja estiraba los brazos y las
+    piernas hasta su pose fija)."""
+    for b in ch.kid_pose:
+        pose.W.pop(b, None)
+
+
 def bake(ch, clip, solver):
     """Resuelve todos los cuadros: (poses W, controles, desplazamiento del transform del juego en la armadura,
     caída automática de cadera por cuadro, faltas de alcance)."""
@@ -1053,6 +1061,8 @@ def bake(ch, clip, solver):
     for f in range(clip.frames if clip.loop else clip.frames + 1):
         pose = NA.Pose(ch.rig)
         for sv, cl in sols:
+            if sv is ps:
+                drop_kid(ch, pose)
             sv.solve(pose, cl.controls(f))
     for sv, _ in sols:
         sv.limbs.plan_path(clip.loop)
@@ -1062,6 +1072,7 @@ def bake(ch, clip, solver):
         pose = NA.Pose(ch.rig)
         m = solver.solve(pose, c)
         if ps:
+            drop_kid(ch, pose)
             dc = duo.controls(f)
             duo.misses.append(dict(ps.solve(pose, dc)))
             duo.ctrls.append(dc)

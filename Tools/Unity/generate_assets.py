@@ -836,6 +836,9 @@ def team_anims(cid):
     return p, json.load(open(p + ".json", encoding="utf-8"))
 
 
+TEAM_LOCO_STATES = {("grandpa", "Walk")}
+
+
 def team_states(cid, states, loco, thresholds=None):
     """(estados, locomoción, umbrales) del controller con los clips nuevos: cada clip reemplaza al estado del mismo
     nombre y los que no tienen clip nuevo siguen con el del equipo. La locomoción sale del sidecar si la trae."""
@@ -848,8 +851,9 @@ def team_states(cid, states, loco, thresholds=None):
     lo = info.get("locomotion")
     if lo and all(n in new for n in lo["states"]):
         loco, thresholds = [new[n] for n in lo["states"]], tuple(lo["thresholds"])
-        # caminar y correr solo viven en el blend tree; 'Idle' además es un estado (la guardia del sumo y de Gorō)
-        new = {n: v for n, v in new.items() if n not in lo["states"] or n == "Idle"}
+        # caminar y correr solo viven en el blend tree; 'Idle' además es un estado (la guardia del sumo y de Gorō), y
+        # 'Walk' del abuelo también (el final lo pide por nombre mientras NPC.SlideTo lo lleva a la velocidad del clip)
+        new = {n: v for n, v in new.items() if n not in lo["states"] or n == "Idle" or (cid, n) in TEAM_LOCO_STATES}
     out.update(new)
     return out, loco, thresholds
 

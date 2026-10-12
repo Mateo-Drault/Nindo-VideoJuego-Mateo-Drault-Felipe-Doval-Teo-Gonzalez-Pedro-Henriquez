@@ -112,15 +112,204 @@
    },
    "root_velocity_mps": 0.8
   },
-  "Bound": {
+  "Kidnap": {
    "first": 120,
-   "last": 210,
-   "frames": 90,
-   "seconds": 3.0,
-   "loop": true,
-   "timing": {},
+   "last": 177,
+   "frames": 57,
+   "seconds": 1.9,
+   "loop": false,
+   "timing": {
+    "sheet": [
+     0,
+     6,
+     10,
+     14,
+     17,
+     21,
+     27,
+     31,
+     39,
+     47,
+     57
+    ],
+    "slide_ok": 60.0,
+    "events": {
+     "grab": 17,
+     "impact": 27,
+     "grip": 32,
+     "drag_start": 47
+    }
+   },
    "normalized": {},
-   "notes": "atado al poste: manos atrás, cabeza gacha, forcejea cada tanto",
+   "notes": "el ninja pasa por la izquierda, le agarra la muñeca y lo tira al piso; se agarran de las muñecas y arranca el arrastre",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.85,
+      "twist": 25.5,
+      "fore": 76.4,
+      "swivel": 21.0,
+      "clamp": 16.2,
+      "asked_over": 0.0,
+      "pron": [
+       -85.0,
+       51.0
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 19.0,
+      "fore": 76.4,
+      "swivel": 42.0,
+      "clamp": 3.4,
+      "asked_over": 0.0,
+      "pron": [
+       -85.0,
+       48.0
+      ]
+     }
+    },
+    "solver_jump_deg": 14.0,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 68.9,
+    "partner": {
+     "reach_miss_cm": {
+      "hands": 0.0,
+      "legs": 0.0
+     },
+     "hip_drop_cm": 2.0,
+     "plants": {
+      "r": [
+       {
+        "frames": [
+         17,
+         20
+        ],
+        "drift_cm": 0.0
+       },
+       {
+        "frames": [
+         26,
+         48
+        ],
+        "drift_cm": 0.0
+       }
+      ],
+      "l": [
+       {
+        "frames": [
+         0,
+         3
+        ],
+        "drift_cm": 0.0
+       },
+       {
+        "frames": [
+         20,
+         34
+        ],
+        "drift_cm": 0.0
+       },
+       {
+        "frames": [
+         40,
+         57
+        ],
+        "drift_cm": 0.0
+       }
+      ]
+     },
+     "wrists": {
+      "r": {
+       "excess": 0.85,
+       "twist": 18.3,
+       "fore": 96.8,
+       "swivel": 42.8,
+       "clamp": 1.1,
+       "asked_over": 0.0,
+       "pron": [
+        26.0,
+        79.9
+       ]
+      },
+      "l": {
+       "excess": 0.85,
+       "twist": 20.7,
+       "fore": 68.1,
+       "swivel": 37.0,
+       "clamp": 0.4,
+       "asked_over": 37.5,
+       "pron": [
+        -85.0,
+        14.5
+       ]
+      }
+     },
+     "solver_jump_deg": 20.9,
+     "local_pop_deg": 0.0,
+     "local_max_deg": 65.6
+    },
+    "floor_skate_cm": {
+     "r": [
+      [
+       27,
+       57,
+       13.83,
+       2.53
+      ]
+     ],
+     "l": [
+      [
+       21,
+       22,
+       1.16,
+       1.16
+      ],
+      [
+       26,
+       57,
+       29.99,
+       15.8
+      ]
+     ]
+    },
+    "lowest_body_cm": -2.5,
+    "lowest_weapon_cm": null
+   }
+  },
+  "Dragged": {
+   "first": 187,
+   "last": 267,
+   "frames": 80,
+   "seconds": 2.6667,
+   "loop": true,
+   "timing": {
+    "sheet": [
+     0,
+     8,
+     16,
+     24,
+     32,
+     40,
+     48,
+     56,
+     64,
+     72
+    ],
+    "slide_ok": 80.0,
+    "events": {
+     "yank": 30,
+     "reach": 50,
+     "rest": 70
+    }
+   },
+   "normalized": {},
+   "notes": "arrastrado del brazo: el ninja camina tirando, el abuelo patalea con los talones",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -130,70 +319,319 @@
     "loop_seam_deg": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.78,
-      "twist": 6.4,
-      "fore": 36.1,
-      "swivel": 12.0,
+      "excess": 0.45,
+      "twist": 10.0,
+      "fore": 59.6,
+      "swivel": 3.0,
       "clamp": 0.0,
       "asked_over": 0.0,
       "pron": [
-       -44.7,
-       -41.2
+       -27.6,
+       51.0
       ]
      },
      "l": {
-      "excess": 0.78,
-      "twist": 6.1,
-      "fore": 35.2,
-      "swivel": 12.0,
+      "excess": 0.71,
+      "twist": 8.0,
+      "fore": 37.2,
+      "swivel": 8.0,
       "clamp": 0.0,
       "asked_over": 0.0,
       "pron": [
-       -43.8,
-       -40.7
+       22.8,
+       28.6
       ]
      }
     },
-    "solver_jump_deg": 1.1,
+    "solver_jump_deg": 2.1,
     "local_pop_deg": 0.0,
-    "local_max_deg": 4.2,
+    "local_max_deg": 16.3,
+    "partner": {
+     "reach_miss_cm": {
+      "hands": 0.0,
+      "legs": 0.0
+     },
+     "hip_drop_cm": 0.0,
+     "plants": {
+      "r": [
+       {
+        "frames": [
+         1,
+         10
+        ],
+        "drift_cm": 0.01
+       },
+       {
+        "frames": [
+         21,
+         30
+        ],
+        "drift_cm": 0.01
+       },
+       {
+        "frames": [
+         41,
+         50
+        ],
+        "drift_cm": 0.01
+       },
+       {
+        "frames": [
+         61,
+         70
+        ],
+        "drift_cm": 0.01
+       }
+      ],
+      "l": [
+       {
+        "frames": [
+         11,
+         20
+        ],
+        "drift_cm": 0.01
+       },
+       {
+        "frames": [
+         31,
+         40
+        ],
+        "drift_cm": 0.01
+       },
+       {
+        "frames": [
+         51,
+         60
+        ],
+        "drift_cm": 0.01
+       },
+       {
+        "frames": [
+         71,
+         80
+        ],
+        "drift_cm": 0.01
+       }
+      ]
+     },
+     "loop_seam_deg": 0.0,
+     "wrists": {
+      "r": {
+       "excess": 0.59,
+       "twist": 16.4,
+       "fore": 87.8,
+       "swivel": 18.0,
+       "clamp": 0.0,
+       "asked_over": 0.0,
+       "pron": [
+        40.1,
+        70.9
+       ]
+      },
+      "l": {
+       "excess": 0.63,
+       "twist": 11.3,
+       "fore": 64.7,
+       "swivel": 40.0,
+       "clamp": 0.0,
+       "asked_over": 19.7,
+       "pron": [
+        -81.6,
+        -61.7
+       ]
+      }
+     },
+     "solver_jump_deg": 9.7,
+     "local_pop_deg": 0.0,
+     "local_max_deg": 21.2
+    },
+    "floor_skate_cm": {
+     "r": [
+      [
+       0,
+       12,
+       21.53,
+       2.8
+      ],
+      [
+       21,
+       32,
+       19.47,
+       3.21
+      ],
+      [
+       41,
+       52,
+       19.78,
+       3.26
+      ],
+      [
+       60,
+       72,
+       25.15,
+       2.74
+      ]
+     ],
+     "l": [
+      [
+       0,
+       2,
+       4.89,
+       2.67
+      ],
+      [
+       10,
+       21,
+       13.89,
+       2.4
+      ],
+      [
+       31,
+       41,
+       17.72,
+       2.63
+      ],
+      [
+       50,
+       62,
+       22.12,
+       2.99
+      ],
+      [
+       70,
+       80,
+       19.88,
+       2.53
+      ]
+     ]
+    },
+    "lowest_body_cm": -2.3,
+    "lowest_weapon_cm": null
+   },
+   "root_velocity_mps": 0.8
+  },
+  "Bound": {
+   "first": 277,
+   "last": 367,
+   "frames": 90,
+   "seconds": 3.0,
+   "loop": true,
+   "timing": {
+    "sheet": [
+     0,
+     15,
+     30,
+     48,
+     54,
+     57,
+     60,
+     66,
+     75
+    ],
+    "events": {
+     "struggle": [
+      48,
+      66
+     ]
+    }
+   },
+   "normalized": {},
+   "notes": "de rodillas en seiza ante el poste, las muñecas cruzadas atrás; respira y forcejea una vez por vuelta",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "loop_seam_deg": 0.056,
+    "wrists": {
+     "r": {
+      "excess": 0.56,
+      "twist": 7.3,
+      "fore": 39.0,
+      "swivel": 11.4,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -47.6,
+       -38.3
+      ]
+     },
+     "l": {
+      "excess": 0.53,
+      "twist": 7.1,
+      "fore": 37.7,
+      "swivel": 8.4,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -46.3,
+       -42.3
+      ]
+     }
+    },
+    "solver_jump_deg": 1.5,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 10.7,
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
-    "lowest_body_cm": -1.4,
+    "lowest_body_cm": -2.6,
     "lowest_weapon_cm": null
    }
   },
   "Freed": {
-   "first": 220,
-   "last": 310,
-   "frames": 90,
-   "seconds": 3.0,
+   "first": 377,
+   "last": 485,
+   "frames": 108,
+   "seconds": 3.6,
    "loop": false,
    "timing": {
     "sheet": [
      0,
-     5,
-     12,
-     28,
-     40,
-     54,
-     66,
-     78,
-     90
+     6,
+     13,
+     19,
+     30,
+     42,
+     55,
+     61,
+     70,
+     76,
+     86,
+     92,
+     98,
+     108
     ],
     "chain": [
      [
-      90,
+      108,
       "Idle",
       0,
       0.02
      ]
-    ]
+    ],
+    "events": {
+     "arms_free": 6,
+     "rub": [
+      19,
+      50
+     ],
+     "look": 55,
+     "tuck": [
+      66,
+      74
+     ],
+     "push": [
+      76,
+      86
+     ],
+     "stand": 98
+    }
    },
    "normalized": {},
-   "notes": "libre: pasitos mientras se da vuelta, se frota las muñecas y le hace una reverencia",
+   "notes": "libre: se frota las muñecas, mira a Kaito, mete los dedos de los pies y se para apoyado en las rodillas",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -202,38 +640,38 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.75,
-      "twist": 14.8,
-      "fore": 71.0,
-      "swivel": 10.0,
-      "clamp": 0.0,
+      "excess": 0.85,
+      "twist": 13.0,
+      "fore": 56.0,
+      "swivel": 42.0,
+      "clamp": 17.1,
       "asked_over": 0.0,
       "pron": [
-       -42.1,
-       62.4
+       -64.6,
+       31.1
       ]
      },
      "l": {
       "excess": 0.85,
-      "twist": 14.8,
-      "fore": 71.0,
-      "swivel": 11.0,
-      "clamp": 7.6,
+      "twist": 13.0,
+      "fore": 56.0,
+      "swivel": 42.0,
+      "clamp": 17.1,
       "asked_over": 0.0,
       "pron": [
-       -42.1,
-       62.4
+       -64.6,
+       31.1
       ]
      }
     },
-    "solver_jump_deg": 7.5,
+    "solver_jump_deg": 15.5,
     "local_pop_deg": 0.0,
-    "local_max_deg": 21.2,
+    "local_max_deg": 42.8,
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
-    "lowest_body_cm": -1.4,
+    "lowest_body_cm": -2.6,
     "lowest_weapon_cm": null
    }
   }

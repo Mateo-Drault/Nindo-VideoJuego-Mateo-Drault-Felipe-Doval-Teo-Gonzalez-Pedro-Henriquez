@@ -6,7 +6,7 @@ namespace Nindo
 {
     /// <summary>
     /// Las "cuerdas de sombra" con que Kokuyō ata al abuelo al poste (prop binding_post). Tres vueltas que abrazan
-    /// el poste y al abuelo (muslos, cintura y pecho) más una cruz sobre el pecho y dos cabos colgando del nudo,
+    /// el poste y al abuelo arrodillado (muñecas, codos y pecho: NPC.BoundRopeLoops) más una cruz sobre el pecho y dos cabos colgando del nudo,
     /// en tubos facetados con Nindo/ShadowRope: violeta oscuro con hebras que brillan y pulsos que corren.
     /// Una luz violeta tenue lo baña (se lee desde la arena: "ahí está el abuelo"). Dissolve las deshace con un
     /// borde encendido y motas que suben cuando Kokuyō cae; Restore las vuelve a atar (reintentos).
@@ -67,10 +67,12 @@ namespace Nindo
             float along = dist * 0.5f + 0.27f;
 
             var v = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
-            var loops = new[] { 0.38f, 0.6f, 0.8f };
+            // a las alturas de la pose de Bound (de rodillas), no a fracciones del alto del abuelo parado: con los bounds
+            // de la pose de bind la vuelta de arriba le pasaba por la cara
+            var loops = NPC.BoundRopeLoops;
             for (int k = 0; k < loops.Length; k++)
             {
-                float y = c.y + height * loops[k];
+                float y = c.y + loops[k];
                 float across = halfW * (k == 2 ? 1.05f : k == 1 ? 1.12f : 0.95f) + 0.05f;
                 var pts = new List<Vector3>();
                 const int N = 26;
@@ -87,13 +89,15 @@ namespace Nindo
             }
             // cruz sobre el pecho (de la vuelta de arriba a la del medio) y dos cabos colgando del nudo
             Vector3 chestL = mid + axis * along * 0.97f + side * halfW * 0.85f, chestR = mid + axis * along * 0.97f - side * halfW * 0.85f;
-            float y2 = c.y + height * 0.8f - 0.05f, y1 = c.y + height * 0.6f - 0.05f;
+            float y2 = c.y + loops[2] - 0.05f, y1 = c.y + loops[1] - 0.05f;
             Tube(v, uv, t, Line(new Vector3(chestL.x, y2, chestL.z), new Vector3(chestR.x, y1, chestR.z), axis * 0.05f), 0.024f, 5, false);
             Tube(v, uv, t, Line(new Vector3(chestR.x, y2, chestR.z), new Vector3(chestL.x, y1, chestL.z), axis * 0.06f), 0.024f, 5, false);
             Vector3 knot = mid + axis * along + side * halfW * 0.5f;
             knot.y = y1 - 0.04f;
-            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.05f + side * 0.04f + Vector3.down * 0.18f, knot + axis * 0.04f + side * 0.09f + Vector3.down * 0.42f }, 0.022f, 5, false);
-            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.06f - side * 0.02f + Vector3.down * 0.2f, knot + axis * 0.03f + side * 0.01f + Vector3.down * 0.5f }, 0.022f, 5, false);
+            // los cabos cuelgan hasta poco antes del piso (el abuelo de rodillas tiene el nudo a medio metro)
+            float hang = Mathf.Clamp01((knot.y - c.y - 0.04f) / 0.5f);
+            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.05f + side * 0.04f + Vector3.down * (0.18f * hang), knot + axis * 0.04f + side * 0.09f + Vector3.down * (0.42f * hang) }, 0.022f, 5, false);
+            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.06f - side * 0.02f + Vector3.down * (0.2f * hang), knot + axis * 0.03f + side * 0.01f + Vector3.down * (0.5f * hang) }, 0.022f, 5, false);
 
             ropeMesh = new Mesh { name = "CuerdasDeSombra" };
             ropeMesh.SetVertices(v); ropeMesh.SetUVs(0, uv); ropeMesh.SetTriangles(t, 0);
