@@ -734,9 +734,12 @@ def floor_checks(clip, low_body, low_weapon, low_where):
     # una toma del equipo re-resuelta (TakeClip) se corrige igual que un clip nuevo (team_rig.take_floor_fix: el pie
     # gira sobre el tobillo, el martillo alrededor del puño), así que también falla; 'take_raw' en solve_take la deja tal
     # cual para comparar (la presentación de Gorō: el pie derecho -8.2 cm y el martillo -22.4 cm)
-    check(low_body[wb] >= -3.0, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm)")
-    if low_body[wb] < -3.0:
-        print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.0f}({low_where[i]})" for i, v in enumerate(low_body) if v < -3.0))
+    # 'floor_cm' en el timing: un tope propio para lo que se apoya entero (el abuelo sentado o de rodillas: con -3 cm la
+    # túnica y las canillas se veían hundidas)
+    lim = t.get("floor_cm", -3.0)
+    check(low_body[wb] >= lim, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm, tope {lim:.1f})")
+    if low_body[wb] < lim:
+        print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.1f}({low_where[i]})" for i, v in enumerate(low_body) if v < lim))
     if min(low_weapon) < 800.0:          # sin arma queda en 900 (centinela)
         bad = [(i, v) for i, v in enumerate(low_weapon) if v < (-6.0 if i in bite else -1.0)]
         ww = min(range(len(low_weapon)), key=lambda i: low_weapon[i])

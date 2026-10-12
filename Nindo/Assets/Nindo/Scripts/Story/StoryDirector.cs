@@ -123,7 +123,7 @@ namespace Nindo
             Vector3 kidPos = PointPos("kidnap_a", P.transform.position + new Vector3(6, 0, 8));
             Vector3 exit = PointPos("kidnap_exit", kidPos + new Vector3(0, 0, 25));
             var grandpa = NPC.Spawn("kidnap", kidPos, Quaternion.LookRotation((exit - kidPos).Flat().normalized + Vector3.forward * 0.001f), null);
-            grandpa.Hold(NPC.KidnapState);
+            grandpa.AwaitKidnap();
             Enemy kidnapper = null;
 
             // texto de apertura sobre negro
@@ -147,9 +147,15 @@ namespace Nindo
             // de costado al arrastre y del lado del ninja (offset local: el transform mira a 'exit'): se ven los dos brazos
             // tirantes y las muñecas agarradas. Desde atrás, el abuelo sentado tapaba al ninja y no se leía el tirón
             int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(4.6f, 2.4f, -3.4f), 0.7f, 32f, 0f, 0.9f, 0.9f, true);
-            // el ninja le agarra la muñeca, lo tira al piso (el golpe y el polvo, de NPC) y se lo lleva hacia el bosque
+            // el ninja le agarra la muñeca, lo tira al piso (el golpe y el polvo, de NPC) y se lo lleva hacia el bosque. Arranca
+            // kidnapLead después del corte: el contraplano de Kaito (StoryDirector.Prologue) se sostiene ~1.4 s encima de
+            // este plano y se mezcla en 0.8 s, así la carrera se ve desde Kaito y el agarre (0.57 s) y la caída (0.9 s) ya en
+            // este plano; arrancando en el corte, el secuestro entero pasaba en el contraplano a 17 m. Mientras, se miran
+            // (KidnapWait: el ninja agazapado, el abuelo respira)
+            const float kidnapLead = 1.2f;
+            yield return new WaitForSecondsRealtime(kidnapLead);
             grandpa.Kidnap(exit);
-            yield return new WaitForSecondsRealtime(2.4f);
+            yield return new WaitForSecondsRealtime(2.4f - kidnapLead + 0.8f);
             yield return Say("intro_wake");
             Game.Camera.CancelShot(shot2);
 
@@ -219,9 +225,12 @@ namespace Nindo
             Game.Camera.CancelShot(shot);
             yield return Say("intro_bandana");
             // el secuestrador se lleva al abuelo entre el humo
-            if (grandpa != null) { Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.6f); Destroy(grandpa.gameObject); }
+            // (si ya llegó a kidnap_exit, NPC.Arrive lo esfumó: no hay una segunda nube ni otro sonido)
+            bool vanish = grandpa != null && grandpa.gameObject.activeSelf;
+            if (vanish) Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.6f);
+            if (grandpa != null) Destroy(grandpa.gameObject);
             if (kidnapper != null) Destroy(kidnapper.gameObject);
-            Game.Audio?.Play("teleport", P.transform.position, 0.8f);
+            if (vanish) Game.Audio?.Play("teleport", P.transform.position, 0.8f);
             P.AddSpirit(60f);
         }
 
@@ -455,7 +464,8 @@ namespace Nindo
             yield return new WaitForSecondsRealtime(1.5f);
             yield return Say("forest_reveal");
             yield return new WaitForSecondsRealtime(1.2f);
-            Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.5f);
+            // (si llegó a 'b' antes, NPC.Arrive ya lo esfumó)
+            if (grandpa.gameObject.activeSelf) Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.5f);
             Destroy(grandpa.gameObject);
             Game.Camera.CancelShot(shot);
             Game.Save.SetFlag(Flags.ForestSeen);
