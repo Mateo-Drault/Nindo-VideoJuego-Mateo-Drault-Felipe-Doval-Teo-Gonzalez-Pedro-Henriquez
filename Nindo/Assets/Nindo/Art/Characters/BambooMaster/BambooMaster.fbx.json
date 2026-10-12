@@ -10381,8 +10381,141 @@
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
-   "phase": 2,
+   "phase": 1,
    "variant_of": null,
+   "timing": {
+    "kind": "none",
+    "apex": 6,
+    "hold": [
+     6,
+     6
+    ],
+    "contact": 15,
+    "active": [
+     15,
+     15
+    ],
+    "recover": [
+     15,
+     22
+    ],
+    "air": [
+     9,
+     15
+    ],
+    "release_rate": 1.0,
+    "root_max": 26.0,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 1
+   },
+   "normalized": {
+    "apex": 0.2727,
+    "contact": 0.6818,
+    "hold": [
+     0.2727,
+     0.2727
+    ],
+    "active": [
+     0.6818,
+     0.6818
+    ],
+    "recover": [
+     0.6818,
+     1.0
+    ],
+    "air": [
+     0.4091,
+     0.6818
+    ]
+   },
+   "events": [
+    {
+     "frame": 9,
+     "t": 0.4091,
+     "fn": "TakeOff"
+    },
+    {
+     "frame": 15,
+     "t": 0.6818,
+     "fn": "Land"
+    }
+   ],
+   "notes": "salto atrás de 2.6 m (sin golpe): se agacha (f6), despega en f9 y cae en f15 en su lugar de la guardia; el avance va todo en timing.air (el jefe lo acorta)",
+   "release_rate": 1.0,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.5494,
+    -1.0335,
+    -1.4711,
+    -1.8736,
+    -2.2482,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6,
+    -2.6
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.58,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.5,
+      [
+       0,
+       9
+      ],
+      0.5
+     ],
+     "Foot_L": [
+      1.6,
+      [
+       0,
+       9
+      ],
+      0.6
+     ]
+    },
+    "self_clearance_cm": {},
+    "root_peak_mps_60hz": 20.2,
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.8,
+    "min_z_m": -0.007
+   }
+  },
+  "BackHop_P2": {
+   "first": 4205,
+   "last": 4227,
+   "frames": 22,
+   "seconds": 0.7333,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "BackHop",
    "timing": {
     "kind": "none",
     "apex": 6,
@@ -10509,8 +10642,8 @@
    }
   },
   "BackHop_P3": {
-   "first": 4205,
-   "last": 4227,
+   "first": 4237,
+   "last": 4259,
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
@@ -10651,8 +10784,8 @@
    }
   },
   "Palm_P3": {
-   "first": 4237,
-   "last": 4271,
+   "first": 4269,
+   "last": 4303,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -10869,8 +11002,8 @@
    }
   },
   "Palm_Mid_P3": {
-   "first": 4281,
-   "last": 4315,
+   "first": 4313,
+   "last": 4347,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -11071,8 +11204,8 @@
    }
   },
   "Palm_Close_P3": {
-   "first": 4325,
-   "last": 4359,
+   "first": 4357,
+   "last": 4391,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -11273,8 +11406,8 @@
    }
   },
   "ChopPalm_P3": {
-   "first": 4369,
-   "last": 4405,
+   "first": 4401,
+   "last": 4437,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -11494,8 +11627,8 @@
    }
   },
   "ChopPalm_Mid_P3": {
-   "first": 4415,
-   "last": 4451,
+   "first": 4447,
+   "last": 4483,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -11699,8 +11832,8 @@
    }
   },
   "ChopPalm_Close_P3": {
-   "first": 4461,
-   "last": 4497,
+   "first": 4493,
+   "last": 4529,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -11904,8 +12037,8 @@
    }
   },
   "CraneKick_P3": {
-   "first": 4507,
-   "last": 4549,
+   "first": 4539,
+   "last": 4581,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -12115,8 +12248,8 @@
    }
   },
   "LeapKick_P3": {
-   "first": 4559,
-   "last": 4615,
+   "first": 4591,
+   "last": 4647,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -12361,8 +12494,8 @@
    }
   },
   "Sweep_P3": {
-   "first": 4625,
-   "last": 4673,
+   "first": 4657,
+   "last": 4705,
    "frames": 48,
    "seconds": 1.6,
    "loop": false,
@@ -12517,8 +12650,8 @@
    }
   },
   "QiWave_P3": {
-   "first": 4683,
-   "last": 4739,
+   "first": 4715,
+   "last": 4771,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -12675,8 +12808,8 @@
    }
   },
   "DashStrike_P3": {
-   "first": 4749,
-   "last": 4785,
+   "first": 4781,
+   "last": 4817,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -12885,8 +13018,8 @@
    }
   },
   "PhaseStaff": {
-   "first": 4795,
-   "last": 4885,
+   "first": 4827,
+   "last": 4917,
    "frames": 90,
    "seconds": 3.0,
    "loop": false,
@@ -12983,8 +13116,8 @@
    }
   },
   "Defeat": {
-   "first": 4895,
-   "last": 5045,
+   "first": 4927,
+   "last": 5077,
    "frames": 150,
    "seconds": 5.0,
    "loop": false,
@@ -13112,8 +13245,8 @@
    }
   },
   "Meditate": {
-   "first": 5055,
-   "last": 5151,
+   "first": 5087,
+   "last": 5183,
    "frames": 96,
    "seconds": 3.2,
    "loop": true,
@@ -13175,8 +13308,8 @@
    }
   },
   "SeatedBow": {
-   "first": 5161,
-   "last": 5231,
+   "first": 5193,
+   "last": 5263,
    "frames": 70,
    "seconds": 2.3333,
    "loop": false,
@@ -13266,8 +13399,8 @@
    }
   },
   "PoseTest": {
-   "first": 5241,
-   "last": 5473,
+   "first": 5273,
+   "last": 5505,
    "frames": 232,
    "seconds": 7.7333,
    "loop": false,
@@ -13332,6 +13465,7 @@
  },
  "phase_variants": {
   "BackHop": {
+   "2": "BackHop_P2",
    "3": "BackHop_P3"
   },
   "ChopPalm": {

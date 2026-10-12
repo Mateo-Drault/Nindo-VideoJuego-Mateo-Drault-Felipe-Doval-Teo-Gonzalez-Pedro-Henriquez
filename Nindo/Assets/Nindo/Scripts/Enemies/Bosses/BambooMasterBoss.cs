@@ -55,9 +55,10 @@ namespace Nindo
         int phaseIdx;
         string suffix = "";
         Coroutine transition;
-        // los patrones del paso del viento son dos (desde lejos y con el salto atrás antes): TeachDash pesa los dos
-        AttackPattern counterPattern, teachLeap, teachDashA, teachDashB;
-        float teachDashWeight, phaseStart;
+        // el paso del viento y la grulla voladora son dos patrones cada uno (desde lejos y con el salto atrás antes):
+        // TeachDash y TeachLeap pesan los dos
+        AttackPattern counterPattern, teachLeapA, teachLeapB, teachDashA, teachDashB;
+        float teachDashWeight, teachLeapWeightA, teachLeapWeightB, phaseStart;
         string baseSubtitle;
 
         // paso en curso
@@ -72,8 +73,9 @@ namespace Nindo
         Vector3 leapStart, leapDir;
         float leapTarget;
         bool leapFixed;
-        // embestida: carril fijo desde la suelta
+        // embestida: carril fijo desde la suelta (del aviso 'laneTell')
         bool laneFixed;
+        int laneTell;
         Vector3 laneO, laneD;
 
         // postura del bambú y la pausa en que llama a Kaito
@@ -127,8 +129,13 @@ namespace Nindo
         {
             if (b != this) return;
             fightStart = Time.time;
-            teachLeap = null;
-            foreach (var p in config.patterns) if (p.steps[0].special == BambooMasterMoves.Leap) teachLeap = p;
+            teachLeapA = teachLeapB = null;
+            foreach (var p in config.patterns)
+            {
+                if (!Has(p, BambooMasterMoves.Leap)) continue;
+                if (teachLeapA == null) { teachLeapA = p; teachLeapWeightA = p.weight; }
+                else { teachLeapB = p; teachLeapWeightB = p.weight; }
+            }
             // el maestro retoma la lección donde quedó: el reintento arranca en la fase más alta a la que llegó Kaito, con
             // su vida al umbral (ver OnPlayerDied)
             if (retryPhase >= 1)
@@ -212,7 +219,7 @@ namespace Nindo
             teachDashA = teachDashB = null;
             foreach (var p in config.patterns)
             {
-                if (!HasDash(p)) continue;
+                if (!Has(p, BambooMasterMoves.Dash)) continue;
                 if (teachDashA == null) teachDashA = p; else teachDashB = p;
                 teachDashWeight = p.weight;
             }
@@ -237,9 +244,9 @@ namespace Nindo
             stanceName = "Stance" + suffix;
         }
 
-        static bool HasDash(AttackPattern p)
+        static bool Has(AttackPattern p, string special)
         {
-            foreach (var s in p.steps) if (s.special == BambooMasterMoves.Dash) return true;
+            foreach (var s in p.steps) if (s.special == special) return true;
             return false;
         }
 
@@ -337,12 +344,16 @@ namespace Nindo
             }
         }
 
-        /// <summary>La grulla voladora sale sí o sí en los primeros ~20 s (el rojo de la fase 1 se aprende temprano).</summary>
+        /// <summary>La grulla voladora sale sí o sí en los primeros ~20 s (el rojo de la fase 1 se aprende temprano): desde
+        /// los 14 s, hasta que sale, las dos (la directa y la del salto atrás) pesan veinte veces más. Con cuatro, en ~1 de
+        /// cada 100 peleas del bot "bueno" la fase 1 terminaba sin ninguna (Tools/Dev/sim_bamboo_master.py).</summary>
         void TeachLeap()
         {
-            if (teachLeap == null) return;
-            bool used = teachLeap.lastUsed >= fightStart;
-            teachLeap.weight = Time.time - fightStart > 14f && !used ? 4f : 1f;
+            if (teachLeapA == null) return;
+            bool used = teachLeapA.lastUsed >= fightStart || teachLeapB != null && teachLeapB.lastUsed >= fightStart;
+            float mul = Time.time - fightStart > 14f && !used ? 20f : 1f;
+            teachLeapA.weight = teachLeapWeightA * mul;
+            if (teachLeapB != null) teachLeapB.weight = teachLeapWeightB * mul;
         }
 
         /// <summary>
@@ -359,10 +370,19 @@ namespace Nindo
             if (teachDashB != null) teachDashB.weight = w;
         }
 
+        /// <summary>Los dos patrones de un especial (el directo y el del salto atrás: BambooMasterMoves.Twins) comparten la
+        /// pausa entre usos: si no, uno podía salir apenas terminado el otro.</summary>
+        void ShareCooldown(AttackPattern used)
+        {
+            foreach (var p in config.patterns)
+                if (p != used && p.name == used.name) p.lastUsed = used.lastUsed;
+        }
+
         // ================================================================== golpes
         protected override void OnStepStarted(AttackDef a)
         {
             base.OnStepStarted(a);
+            if (step == 0 && pattern != null && pattern != counterPattern) ShareCooldown(pattern);
             clip = BambooMasterTimings.Get(a.state);
             travelDone = 0f;
             airStretch = 1f;
@@ -424,10 +444,13 @@ namespace Nindo
             float room = d;
             if (target != null && a.special != BambooMasterMoves.Leap)
             {
-                // solo frena contra lo que tiene adelante: con Kaito al costado la embestida sigue entera
+                // solo frena contra lo que tiene adelante: con Kaito al costado la embestida sigue entera. Al que la esquiva
+                // con el dash la embestida lo atraviesa, como la carrera de cualquier enemigo: frenar contra el que se le
+                // metía adelante dejaba el cuerpo flotando en el vuelo y el pie del frenado patinando
                 Vector3 to = (target.transform.position - transform.position).Flat();
                 float along = Vector3.Dot(to, dir), lat = Mathf.Abs(Vector3.Dot(to, Vector3.Cross(Vector3.up, dir)));
-                if (along > 0f && lat < Radius + target.Radius) room = along - StopShort;
+                bool dodgedThrough = a.special == BambooMasterMoves.Dash && target.State == PlayerState.Dash;
+                if (along > 0f && lat < Radius + target.Radius && !dodgedThrough) room = along - StopShort;
             }
             if (room > 0f) MoveBy(dir * Mathf.Min(d, room));
         }
@@ -510,13 +533,15 @@ namespace Nindo
         // ------------------------------------------------------------------ salto atrás
         /// <summary>
         /// Cuánto del salto atrás autorado hace (todo el avance va en el aire: escalarlo no patina): hasta quedar a
-        /// DashFrom de Kaito, sin salirse de la arena; como poco un cuarto (un saltito que igual arma el paso del viento).
+        /// DashFrom de Kaito (LeapFrom si lo que sigue es la grulla voladora), sin salirse de la arena; como poco un cuarto
+        /// (un saltito que igual arma el especial).
         /// </summary>
         float HopScale()
         {
             float full = -clip.TravelAt(1f);
             if (full < 0.1f) return 1f;
-            float want = BambooMasterMoves.DashFrom - DistToTarget;
+            bool leapNext = pattern != null && step + 1 < pattern.steps.Length && pattern.steps[step + 1].special == BambooMasterMoves.Leap;
+            float want = (leapNext ? BambooMasterMoves.LeapFrom : BambooMasterMoves.DashFrom) - DistToTarget;
             float room = ArenaRoom(transform.position, -transform.forward.Flat().normalized) - 1f;
             return Mathf.Clamp(Mathf.Min(want, room) / full, 0.25f, 1f);
         }
@@ -600,35 +625,41 @@ namespace Nindo
 
         // ------------------------------------------------------------------ paso del viento
         /// <summary>
-        /// Embestida: en la suelta el carril queda fijo y salen las imágenes residuales (DashStart → DashEnd del clip, en
-        /// jade pálido: la estela de alguien rápido, no un aviso). Pega en el contacto si Kaito sigue en el carril y al
-        /// alcance de la mano (o del bastón).
+        /// Embestida: en la suelta el carril queda fijo hacia donde mira (el que dibujó el aviso: no gira) y salen las
+        /// imágenes residuales (DashStart → DashEnd del clip, en jade pálido: la estela de alguien rápido, no un aviso).
+        /// Siempre de frente: frena con la mano sobre Kaito y pega en el contacto, cuando lo dice el aviso.
         /// </summary>
         void TickDash(AttackDef a)
         {
             if (!laneFixed && stepClock >= tl.ReleaseTime)
             {
                 laneFixed = true;
+                laneTell = TellId;
                 laneO = transform.position;
                 laneD = transform.forward.Flat().normalized;
                 // en la suelta cuenta lo que Kaito sigue corriendo hasta el contacto
-                airStretch = PlanDash(laneO, ref laneD, Mathf.Max(0f, tl.T - stepClock));
-                transform.rotation = Quaternion.LookRotation(laneD);
+                airStretch = PlanDash(laneO, laneD, Mathf.Max(0f, tl.T - stepClock));
+                CompressFlight(airStretch);
             }
+            // el vuelo corto espera agachado un poco más (CompressFlight): Enemy lo seguiría girando hacia Kaito hasta la
+            // suelta nueva, y el carril ya está dibujado
+            if (LaneLive) transform.rotation = Quaternion.LookRotation(laneD);
             float start = clip.Event("DashStart"), end = clip.Event("DashEnd");
             if (!dashFx && start >= 0f && stepNorm >= start)
             {
                 dashFx = true;
                 // lo que tarda la suelta en ir de DashStart a DashEnd (el clip va a releaseRate en ese tramo)
-                float dur = Mathf.Max(0.15f, tl.tR * (Mathf.Max(end, start) - start) / Mathf.Max(0.01f, clip.Contact - clip.Apex));
-                Game.FX?.AfterImages(model, dur, 0.04f, GhostJade);
+                float dur = Mathf.Max(0.08f, tl.tR * (Mathf.Max(end, start) - start) / Mathf.Max(0.01f, clip.Contact - clip.Apex));
+                Game.FX?.AfterImages(model, dur, Mathf.Min(0.04f, dur / 3f), GhostJade);
                 Game.FX?.DashBurst(transform.position, laneD);
                 Game.Audio?.Play("dash", transform.position, 1f, 0.05f);
             }
             if (stepHit || target == null || stepNorm < a.activeStart || stepNorm > a.activeEnd) return;
             Vector3 tp = target.transform.position;
             if (!InLane(tp, target.Radius * 0.5f)) return;
-            if (Vector3.Dot((tp - transform.position).Flat(), laneD) - target.Radius > clip.Reach + 0.3f) return;
+            float along = Vector3.Dot((tp - transform.position).Flat(), laneD) - target.Radius;
+            // la mano apunta adelante: ni el que quedó lejos ni el que se metió en el carril por detrás
+            if (along > clip.Reach + 0.3f || along < -target.Radius) return;
             stepHit = true;
             HitPlayer(a, transform.position);
         }
@@ -641,59 +672,62 @@ namespace Nindo
             get
             {
                 if (clip == null) return 8f;
-                float k = LaneLive ? airStretch : PreviewLane(out _);
+                float k = LaneLive ? airStretch : PreviewStretch();
                 return StretchedTravel(1f, k) + clip.Reach;
             }
         }
 
-        /// <summary>Por debajo de este factor el vuelo de la embestida deja de leerse como tal (un saltito con fantasmas).</summary>
-        const float DashMinStretch = 0.5f, DashMaxStretch = 1.4f;
-        /// <summary>Cuando le pasa al costado: hasta cuánto más allá de Kaito sigue (m) y lo más que gira el carril.</summary>
-        const float DashPassBeyond = 1f, DashPassMaxTurn = 35f;
+        /// <summary>El carril fijo o, antes de la suelta, hacia donde mira (el que va a tomar).</summary>
+        Vector3 LaneDir => LaneLive ? laneD : transform.forward.Flat().normalized;
+
+        /// <summary>Lo más largo que estira el vuelo, y el vuelo más corto (fracción de la suelta autorada) cuando Kaito
+        /// está cerca: más corto que ~0.1 s es un salto de cuadro sin imágenes residuales.</summary>
+        const float DashMaxStretch = 1.4f, DashMinFlight = 0.25f;
+        /// <summary>Lo más corto que se escala el vuelo (0.57 m de los 5.7 autorados): de ahí para abajo frena contra él.</summary>
+        const float DashMinStretch = 0.1f;
 
         /// <summary>
         /// El paso del viento está autorado con 6.5 m: se escala el vuelo entero (StretchSpan) para que la mano frene sobre
-        /// donde va a estar Kaito en el contacto ('lead' s después: sigue corriendo durante el vuelo). Si Kaito quedó tan
-        /// cerca que el vuelo tendría que bajar de DashMinStretch, el carril gira lo justo (hasta DashPassMaxTurn) para
-        /// pasarle al costado sin atravesarlo y el golpe pega igual en el contacto, ya pasado: el corte del viento llega
-        /// después. Antes frenaba contra él en pleno vuelo: el que corría hacia el jefe durante el aviso le comía 2-3 m de
-        /// cada embestida y el cuerpo quedaba flotando quieto con los fantasmas (Tools/Dev/sim_bamboo_master.py).
+        /// donde va a estar Kaito en el contacto ('lead' s después: si viene corriendo sigue durante el vuelo, pero nunca más
+        /// acá del cuerpo del jefe). El carril es el que dibujó el aviso. Antes un vuelo corto se hacía en cámara lenta (o
+        /// frenaba contra él en el aire: el cuerpo flotaba quieto con los fantasmas), y después el carril giraba hasta 35°
+        /// para pasarle al costado: con Kaito corriendo hacia él la cuenta lo ponía detrás del jefe, el carril daba la vuelta
+        /// (~140°) y la embestida se iba lejos (Tools/Dev/sim_bamboo_master.py).
         /// </summary>
-        float PlanDash(Vector3 from, ref Vector3 dir, float lead)
+        float PlanDash(Vector3 from, Vector3 dir, float lead)
         {
             StretchSpan(clip, out float a0, out float a1);
             float span = clip.TravelAt(a1) - clip.TravelAt(a0);
             if (target == null || span < 0.1f) return 1f;
             float before = clip.TravelAt(a0), after = clip.TravelAt(1f) - clip.TravelAt(a1);
-            Vector3 to = (target.transform.position - from).Flat();
-            // a lo sumo a la carrera de Kaito (en su dash va a 25 m/s y la cuenta se iría lejos)
-            if (lead > 0f) to += Vector3.ClampMagnitude(target.Velocity.Flat(), target.config.runSpeed) * lead;
-            float k = (Vector3.Dot(to, dir) - StopShort - before - after) / span;
-            if (k >= DashMinStretch) return Mathf.Min(k, DashMaxStretch);
-            float dist = to.magnitude;
-            if (dist > 0.05f)
-            {
-                float side = Vector3.Dot(to, Vector3.Cross(Vector3.up, dir)) >= 0f ? 1f : -1f;
-                float clear = Radius + target.Radius + 0.1f;
-                float turn = Mathf.Min(DashPassMaxTurn, Mathf.Asin(Mathf.Clamp01(clear / dist)) * Mathf.Rad2Deg);
-                // Kaito a la derecha del carril: el carril se abre a la izquierda de él (y al revés)
-                dir = Quaternion.AngleAxis(-side * turn, Vector3.up) * (to / dist);
-            }
-            return Mathf.Clamp((dist + DashPassBeyond - before - after) / span, DashMinStretch, DashMaxStretch);
+            float along = Vector3.Dot((target.transform.position - from).Flat(), dir);
+            // lo que se acerca corriendo, a lo sumo a la carrera (en su dash va a 25 m/s y la cuenta se iría lejos)
+            float closing = Mathf.Clamp(-Vector3.Dot(target.Velocity.Flat(), dir), 0f, target.config.runSpeed);
+            along = Mathf.Max(along - closing * lead, StopShort);
+            return Mathf.Clamp((along - StopShort - before - after) / span, DashMinStretch, DashMaxStretch);
         }
 
-        /// <summary>El carril que va a tomar si se suelta ahora (antes de la suelta el aviso ya lo dibuja donde va).</summary>
-        float PreviewLane(out Vector3 dir)
+        /// <summary>
+        /// Un vuelo más corto que el autorado se hace a la misma velocidad, en menos tiempo: la suelta se acorta y lo que
+        /// sobra se suma a la pausa agachado antes de salir, así el golpe sigue cayendo en tl.T (el aviso, el "¡ya!" y la
+        /// agenda de golpes no cambian). Escalar solo la distancia lo volvía un vuelo en cámara lenta con fantasmas (a 0.5,
+        /// 7 m/s: casi lo que corre Kaito). Enemy ya cambia la línea de tiempo en plena suelta para la carrera ('charge').
+        /// </summary>
+        void CompressFlight(float k)
         {
-            dir = transform.forward.Flat().normalized;
-            return clip != null ? PlanDash(transform.position, ref dir, 0f) : 1f;
+            float c = Mathf.Clamp(k, DashMinFlight, 1f);
+            if (c >= 0.999f) return;
+            float cut = tl.tR * (1f - c);
+            tl.tR -= cut;
+            tl.hold += cut;
         }
+
+        /// <summary>El vuelo que va a tomar si se suelta ahora (antes de la suelta el aviso ya lo dibuja donde va).</summary>
+        float PreviewStretch() => clip != null ? PlanDash(transform.position, LaneDir, Mathf.Max(0f, tl.T - stepClock)) : 1f;
 
         bool InLane(Vector3 p, float pad)
         {
-            Vector3 fwd = laneD;
-            if (!LaneLive) PreviewLane(out fwd);
-            var area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = fwd, size = LaneLength, width = LaneWidth };
+            var area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = LaneDir, size = LaneLength, width = LaneWidth };
             return area.Contains(p, pad);
         }
 
@@ -707,8 +741,8 @@ namespace Nindo
         }
 
         /// <summary>El carril de este paso ya quedó fijo (BeginStep pide la ETA antes de OnStepStarted: el del paso
-        /// anterior todavía figura como fijo).</summary>
-        bool LaneLive => laneFixed && stepClock >= tl.ReleaseTime;
+        /// anterior todavía figura como fijo; y después de la suelta CompressFlight corre ReleaseTime).</summary>
+        bool LaneLive => laneFixed && laneTell == TellId;
 
         // ------------------------------------------------------------------ aviso
         protected override float ComputeStrikeEta(AttackDef a)
@@ -744,12 +778,8 @@ namespace Nindo
                     area = new TellArea { origin = qiLive && qiOwnedByStep ? qiCenter : transform.position, size = a.specialParam };
                     return true;
                 case BambooMasterMoves.Dash:
-                {
-                    Vector3 fwd = laneD;
-                    if (!LaneLive) PreviewLane(out fwd);
-                    area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = fwd, size = LaneLength, width = LaneWidth };
+                    area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = LaneDir, size = LaneLength, width = LaneWidth };
                     return true;
-                }
             }
             return base.HitAreaFor(a, out area);
         }

@@ -121,9 +121,10 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
   contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
   (esperó la postura del bambú: hundido con las palmas cruzadas y un aro de jade en el piso), en la
   vuelta de un rojo que no pegó y al final del último golpe de un combo. Fase 1
-  con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca),
-  fase 2 sin el saco (palmas gemelas, patada giratoria, barrida, onda de qi, paso del viento con
-  imágenes residuales), fase 3 con el bastón. Vencido se sienta a meditar, saluda y deja el sello.
+  con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca y,
+  con Kaito pegado, primero salta hacia atrás), fase 2 sin el saco (palmas gemelas, patada
+  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: de cerca el vuelo es
+  más corto y sale después, siempre pega cuando lo dice el aviso), fase 3 con el bastón. Vencido se sienta a meditar, saluda y deja el sello.
   Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair]`.
 * **Cámara de combate**: baja a 45° y fijada nunca queda a menos de 19 m ni gira (los controles
   no cambian de dirección); con Kaito casi centrado se ven ~5 m detrás de él. Lo que tapa a

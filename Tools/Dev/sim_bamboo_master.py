@@ -8,9 +8,10 @@ Sin Unity. Porta las reglas que deciden la pelea, con los números del código (
     pisos de vida (66 % / 33 %) y escenas de cambio de fase, los rebotes fuera de sus huecos (el 2.º dentro de
     BounceWindow se contragolpea), postura del bambú (desvío + contragolpe, cuya parada perfecta lo arrodilla;
     esperarla lo deja abierto), de rodillas solo con la postura llena, la onda de qi (frente a QiSpeed m/s), la
-    grulla voladora (cae sobre Kaito), la barrida (disco), el paso del viento (desde lejos o con el salto atrás antes,
-    x4 hasta que sale en la fase, el vuelo entero escalado entre 0.5 y 1.4 para frenar sobre donde va a estar Kaito y,
-    si queda demasiado cerca, le pasa al costado: PlanDash), las variantes de paso de los golpes que
+    grulla voladora (cae sobre Kaito; de cerca primero el salto atrás hasta LeapFrom, x20 desde los 14 s hasta que sale),
+    la barrida (disco), el paso del viento (desde lejos o con el salto atrás antes, x4 hasta que sale en la fase, el
+    vuelo entero escalado entre 0.1 y 1.4 para frenar sobre donde va a estar Kaito, el corto en menos tiempo y con más
+    pausa agachado: PlanDash y CompressFlight; al que lo esquiva con el dash lo atraviesa), las variantes de paso de los golpes que
     avanzan (en la suelta, la más larga que entra: PickReach), el contraataque de Kaito (2 cortes después de un parry, 3
     después de uno perfecto), el hueco del final del último golpe de un combo, las habilidades (rebotan fuera de los
     huecos y suman postura) y el reintento desde la fase más alta a la que llegó Kaito.
@@ -52,7 +53,7 @@ P = dict(
     recoil=0.4,                          # Parried.Seconds * 0.4 (x1.5 el perfecto)
     run=4.0, walk=1.6, pref=3.6, radius=0.5,
     qi_speed=[9.0, 9.0, 10.0], qi_radius=[9.0, 9.0, 10.5], leap_min=2.6, leap_max=7.4, leap_minr=2.5,
-    dash_from=5.6, dash_minr=5.0, hop_min=0.25, dash_k=(0.5, 1.4), pass_beyond=1.0, pass_clear=0.95,
+    dash_from=5.6, dash_minr=5.0, hop_min=0.25, dash_k=(0.1, 1.4), dash_flight=0.25, leap_from=4.8, leap_near=0.5,
     riposte_grace=0.3, riposte_cuts=(2, 3), hole_delay=0.1, ability_posture=2.0,
     transition=[3.67, 3.0], heal=30.0, spirit_gift=30.0,
     counter_clip=0.5333, guardhit_extra=0.5,
@@ -216,10 +217,20 @@ def patterns(ph):
             maxr = a.range + 0.1 if a.special == "strike" else a.ring + 0.2 if a.special == "sweep" else a.range
         out.append(dict(name=name, w=w, minr=minr, maxr=maxr, cd=cd, steps=steps, last=-99.0))
 
+    def twins(name, wfar, wnear, cd, minr, maxr, steps):
+        # BambooMasterMoves.Twins: el directo desde minr y el que se arrima y salta hacia atrás primero (mismo nombre:
+        # comparten la pausa entre usos, BambooMasterBoss.ShareCooldown)
+        add(name, wfar, minr, cd, steps, maxr)
+        add(name, wnear, 0, cd, [S("BackHop", ph, 0, special="hop")] + steps, minr + 0.4)
+        out[-1]["near"] = True
+
     def dash(name, w, cd, steps):
         # BambooMasterMoves.DashPatterns: desde lejos directo, de cerca con el salto atrás antes (el peso repartido)
-        add(name, w * 0.5, P["dash_minr"], cd, steps, 7.6)
-        add(name + " (salto)", w * 0.5, 0, cd, [S("BackHop", ph, 0, special="hop")] + steps, P["dash_minr"] + 0.4)
+        twins(name, w * 0.5, w * 0.5, cd, P["dash_minr"], 7.6, steps)
+
+    def leap(name, w, cd, steps):
+        # BambooMasterMoves.LeapPatterns
+        twins(name, w, w * P["leap_near"], cd, P["leap_minr"], P["leap_max"] - 0.4, steps)
 
     D = DMG
     if ph == 0:
@@ -229,7 +240,7 @@ def patterns(ph):
         add("Pico de Grulla", 1.0, 0, 2, [S("CraneKick", 0, D[0]["palm"])])
         add("Sable y Grulla", 1.2, 0, 4, [S("ChopPalm", 0, D[0]["palm"]), S("CraneKick", 0, D[0]["palm"], True)])
         add("Tres de una Mano", 0.8, 0, 8, [palm, chopC, S("CraneKick", 0, D[0]["palm"], True)])
-        add("Grulla Voladora", 1.0, P["leap_minr"], 6, [S("LeapKick", 0, D[0]["leap"], special="leap")], P["leap_max"] - 0.4)
+        leap("Grulla Voladora", 1.0, 6, [S("LeapKick", 0, D[0]["leap"], special="leap")])
     elif ph == 1:
         d = D[1]
         palm, chop = S("Palm", 1, d["palm"]), S("ChopPalm", 1, d["gold"])
@@ -243,7 +254,7 @@ def patterns(ph):
         add("Cuatro Vientos", 0.7, 0, 9, [palm, S("ChopPalm", 1, d["gold"], True), twinC, spinC])
         add("Onda de Qi", 0.9, 0, 9, [S("QiWave", 1, d["red"], special="qi")], 7.0)
         dash("Paso del Viento", 1.1, 6, [S("DashStrike", 1, d["leap"], special="dash")])
-        add("Grulla Voladora", 0.8, P["leap_minr"], 7, [S("LeapKick", 1, d["leap"], special="leap")], P["leap_max"] - 0.4)
+        leap("Grulla Voladora", 0.8, 7, [S("LeapKick", 1, d["leap"], special="leap")])
     else:
         d = D[2]
         thrust, thrustC = S("Palm", 2, d["palm"]), S("Palm", 2, d["palm"], True)
@@ -256,7 +267,7 @@ def patterns(ph):
         add("La Última Lección", 0.6, 0, 12, [thrust, smashC, thrustC, S("QiWave", 2, d["red"], True, "qi")])
         add("Raíz del Bambú", 0.8, 0, 8, [S("QiWave", 2, d["red"], special="qi")], 7.0)
         dash("Viento y Bambú", 1.0, 6, [S("DashStrike", 2, d["leap"], special="dash"), smashC])
-        add("Grulla y Estocada (salto)", 0.8, P["leap_minr"], 7, [S("LeapKick", 2, d["leap"], special="leap"), thrustC], P["leap_max"] - 0.4)
+        leap("Grulla Voladora y Estocada", 0.8, 7, [S("LeapKick", 2, d["leap"], special="leap"), thrustC])
     return out
 
 
@@ -307,6 +318,7 @@ class Fight:
         self.phase_start = 0.0
         self.counter_attack = False
         self.stance_counter = False
+        self.leaps_f1 = 0
         self.commit, self.commit_until = None, 0.0
         # paso
         self.a = None
@@ -321,7 +333,7 @@ class Fight:
         self.qi_r = None
         self.qi_pending = False
         self.k_stretch = 1.0
-        self.passing, self.pass_x = False, 0.0
+        self.flight, self.behind = 1.0, False
         self.v_travel, self.v_reach, self.picked = None, None, False
         self.riposte_until_b, self.riposte_left, self.last_perfect = -1.0, 0, False
         # Kaito
@@ -391,6 +403,25 @@ class Fight:
             return max(0.0, self.d - max(self.qi_r, CONTACT_QI)) / P["qi_speed"][self.ph]
         return self.tl.T - self.clock if self.clock < self.tl.T else math.inf
 
+    # ------------------------------------------------------------------ paso del viento (BambooMasterBoss)
+    def closing(self):
+        """Lo que se acerca Kaito (PlayerController.Velocity contra el carril, a lo sumo a la carrera)."""
+        if self.ks == "loco" and self.d > 2.2:
+            return K["run"]
+        if self.ks == "dash" and self.kt < K["dash_len"]:
+            return K["run"]
+        if self.ks == "attack" and self.d > 1.2 and self.k_norm < K["combo"][self.k_combo]["hit"] + 0.1:
+            return K["run"]
+        return 0.0
+
+    def plan_dash(self, lead):
+        """PlanDash: el factor del vuelo para frenar con la mano sobre donde va a estar Kaito en el contacto."""
+        a = self.a
+        span = a.travel_at(a.air[1]) - a.travel_at(a.air[0])
+        before, after = a.travel_at(a.air[0]), a.travel[-1] - a.travel_at(a.air[1])
+        along = max(self.d - self.closing() * lead, CONTACT)
+        return min(P["dash_k"][1], max(P["dash_k"][0], (along - CONTACT - before - after) / span))
+
     def can_reach(self):
         """Enemy.StrikeCanReach(Kaito, radio + 0.5): ¿el bot lo considera suyo?"""
         a = self.a
@@ -419,15 +450,19 @@ class Fight:
         if not ok:
             return None
         if self.ph == 0:
-            leap = next((p for p in self.pats if p["steps"][0].special == "leap"), None)
-            if leap is not None:
-                leap["w"] = 4.0 if self.t - self.fight_start > 14 and leap["last"] < self.fight_start else 1.0
+            # TeachLeap: desde los 14 s, hasta que sale, las dos grullas pesan x20
+            leaps = [p for p in self.pats if any(st.special == "leap" for st in p["steps"])]
+            used = any(p["last"] >= self.fight_start for p in leaps)
+            for p in leaps:
+                p.setdefault("w0", p["w"])
+                p["w"] = p["w0"] * (20.0 if self.t - self.fight_start > 14 and not used else 1.0)
         else:
-            # TeachDash: el paso del viento pesa x4 hasta que sale una vez en la fase
-            dash = next((p for p in self.pats if p["steps"][0].special == "dash"), None)
-            if dash is not None:
-                dash.setdefault("w0", dash["w"])
-                dash["w"] = dash["w0"] if dash["last"] >= self.phase_start else dash["w0"] * 4.0
+            # TeachDash: el paso del viento (los dos) pesa x4 hasta que sale una vez en la fase
+            dashes = [p for p in self.pats if any(st.special == "dash" for st in p["steps"])]
+            used = any(p["last"] >= self.phase_start for p in dashes)
+            for p in dashes:
+                p.setdefault("w0", p["w"])
+                p["w"] = p["w0"] if used else p["w0"] * 4.0
         tot = sum(p["w"] for p in ok)
         r = self.rng.random() * tot
         for p in ok:
@@ -445,6 +480,14 @@ class Fight:
                 self.set_bs("chase")
                 return
         self.pat["last"] = self.t
+        if not counter:
+            for p in self.pats:
+                if p is not self.pat and p["name"] == self.pat["name"]:
+                    p["last"] = self.t
+            if self.ph == 0 and any(st.special == "leap" for st in self.pat["steps"]):
+                self.leaps_f1 += 1
+            if self.pat.get("near"):
+                self.stat("con_salto_atras_" + self.pat["steps"][1].special + "_f%d" % (self.ph + 1))
         self.step = 0
         self.counter_attack = counter
         self.set_bs("attack")
@@ -461,12 +504,15 @@ class Fight:
         self.qi_r = None
         self.qi_pending = False
         self.k_stretch = 1.0
-        self.passing, self.pass_x = False, 0.0
+        self.flight, self.behind = 1.0, False
         self.v_travel, self.v_reach, self.picked = None, None, False
+        self.cue_at = None
         if a.special == "hop":
             # BambooMasterBoss.HopScale: hasta DashFrom de Kaito, como poco un cuarto del salto
             full = -a.travel[-1]
-            self.k_stretch = min(1.0, max(P["hop_min"], (P["dash_from"] - self.d) / full))
+            nxt = self.pat["steps"][self.step + 1].special if self.step + 1 < len(self.pat["steps"]) else ""
+            want = P["leap_from"] if nxt == "leap" else P["dash_from"]
+            self.k_stretch = min(1.0, max(P["hop_min"], (want - self.d) / full))
         w = min_windup(a, self.counter_attack and self.step == 0, self.ph)
         self.tl = Timeline(a, w)
         travel = 0.0
@@ -580,6 +626,8 @@ class Fight:
         return "guarded"
 
     def start_transition(self):
+        if self.ph == 0:
+            self.stat("grulla_f1_%d" % min(2, self.leaps_f1))
         knelt = self.bs == "exhausted" and not self.taunt
         self.stance = self.taunt = False
         self.imb = 0.0
@@ -753,21 +801,21 @@ class Fight:
             if not self.picked and self.clock >= tl.release:
                 self.picked = True
                 if a.special == "dash":
-                    # PlanDash: el vuelo entero escalado para frenar con la mano sobre donde va a estar Kaito al contacto
-                    # (el bot corre hacia el jefe); si para eso el vuelo baja de dash_k[0], le pasa al costado
-                    span = a.travel_at(a.air[1]) - a.travel_at(a.air[0])
-                    before, after = a.travel_at(a.air[0]), a.travel[-1] - a.travel_at(a.air[1])
-                    v = K["run"] if self.ks == "loco" and self.d > 2.2 else 0.0
-                    ahead = max(0.0, self.d - v * tl.tR)
-                    k = (ahead - CONTACT - before - after) / span
-                    if k >= P["dash_k"][0]:
-                        self.k_stretch = min(P["dash_k"][1], k)
-                        self.stat("embestida_de_frente")
-                    else:
-                        self.passing = True
-                        self.pass_x = self.d
-                        self.k_stretch = min(P["dash_k"][1], max(P["dash_k"][0], (ahead + P["pass_beyond"] - before - after) / span))
-                        self.stat("embestida_al_costado")
+                    # PlanDash: el vuelo entero escalado para frenar con la mano sobre donde va a estar Kaito al contacto;
+                    # si para eso el vuelo baja de dash_k[0], le pasa por encima (pega al alcanzarlo, nunca antes de lo que
+                    # dijo en la suelta)
+                    self.k_stretch = self.plan_dash(max(0.0, tl.T - self.clock))
+                    # CompressFlight: el vuelo corto a la misma velocidad y en menos tiempo, la pausa agachado se alarga
+                    # lo mismo y el golpe sigue en tl.T
+                    c = min(1.0, max(P["dash_flight"], self.k_stretch))
+                    cut = tl.tR * (1.0 - c)
+                    tl.tR -= cut
+                    tl.hold += cut
+                    self.flight = c
+                    self.stat("embestida")
+                    self.stat("embestida_d", self.d)
+                    self.stat("embestida_k", self.k_stretch)
+                    self.stat("embestida_corta" if c < 1.0 else "embestida_entera")
                 elif a.variants:
                     # PickReach: la variante más larga cuyo paso entra (5 cm de gracia)
                     room = self.d - CONTACT + self.travel_done + 0.05
@@ -784,10 +832,11 @@ class Fight:
             x = a.stretched(n, self.k_stretch, self.v_travel)
             dx = x - self.travel_done
             self.travel_done = x
-            if self.passing:
-                # le pasa al costado (a pass_clear de su centro): no frena contra él
-                self.pass_x -= dx
-                self.d = math.hypot(self.pass_x, P["pass_clear"])
+            if dx > 0 and a.special == "dash" and self.ks == "dash":
+                # Travel: al que la esquiva con el dash la embestida lo atraviesa (queda detrás del jefe)
+                if dx > self.d:
+                    self.behind = True
+                self.d = max(0.05, abs(self.d - dx))
             elif dx > 0:
                 room = self.d - CONTACT
                 if dx > room:
@@ -800,6 +849,7 @@ class Fight:
         # "¡ya!": el bot oye y aprieta
         if self.tell_on and not self.ticked and eta <= TICK[a.red] + 0.5 * DT:
             self.ticked = True
+            self.cue_at = self.t
             self.bot_cue(a)
         # golpe
         if a.special == "qi":
@@ -842,8 +892,12 @@ class Fight:
             elif a.special == "sweep":
                 ok = self.d - K_R <= a.ring
             elif a.special == "dash":
-                # al costado pega igual en el contacto (Kaito sigue en el carril), ya pasado
-                ok = self.passing or self.d - K_R <= a.reach + 0.3
+                ok = not self.behind and self.d - K_R <= a.reach + 0.3
+                if self.cue_at is not None:
+                    err = self.t - (self.cue_at + TICK[True])
+                    self.stat("cue_err_n")
+                    self.stat("cue_err_sum", err)
+                    self.stat("cue_err_abs_gt_0.03", abs(err) > 0.03)
             if ok:
                 self.kaito_receive(a)
             elif a.special != "hop":
@@ -1287,8 +1341,17 @@ def main():
                 "rodillas", "quiebres", "quiebres_contra", "posturas", "abierto_espera", "desvios", "contra_guardia",
                 "rebotes", "dash_sin_espiritu", "furia", "bot_no_vio", "fuera_de_alcance", "habilidades",
                 "habilidades_que_entran", "habilidad_a_la_guardia", "variante_entera", "variante_media", "variante_corta",
-                "embestida_de_frente", "embestida_al_costado", "avance_perdido"]
+                "embestida", "embestida_corta",
+                "con_salto_atras_leap_f1", "con_salto_atras_leap_f2", "con_salto_atras_leap_f3",
+                "con_salto_atras_dash_f2", "con_salto_atras_dash_f3", "avance_perdido"]
         print("   por pelea: " + ", ".join("%s %.1f" % (k, stats.get(k, 0) / n) for k in keys))
+        if stats.get("embestida"):
+            print("   embestida: Kaito a %.2f m en la suelta, vuelo x%.2f (medias)" % (stats["embestida_d"] / stats["embestida"], stats["embestida_k"] / stats["embestida"]))
+        if stats.get("cue_err_n"):
+            print("   embestida: el golpe llega %.3f s después del '¡ya!' + %.2f (media), %.0f %% a más de 0.03 s" % (
+                stats["cue_err_sum"] / stats["cue_err_n"], TICK[True], 100.0 * stats.get("cue_err_abs_gt_0.03", 0) / stats["cue_err_n"]))
+        leaps = [stats.get("grulla_f1_%d" % i, 0) for i in range(3)]
+        print("   grulla voladora en la fase 1 por pelea: " + ", ".join("%s %.0f %%" % (lbl, 100.0 * v / n) for lbl, v in zip(("ninguna", "una", "dos o más"), leaps)))
         uses = sorted(((k[4:], v / n) for k, v in stats.items() if k.startswith("uso_")), key=lambda x: -x[1])
         print("   patrones: " + ", ".join("%s %.1f" % kv for kv in uses))
         hits = sorted(((k[6:], v / n) for k, v in stats.items() if k.startswith("golpe_")), key=lambda x: -x[1])

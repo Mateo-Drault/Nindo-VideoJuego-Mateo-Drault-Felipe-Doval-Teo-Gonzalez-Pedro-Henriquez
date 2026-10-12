@@ -524,7 +524,7 @@ def define_clips():
     sweep()
     qi_wave()
     dash_strike()
-    for ph in (2, 3):
+    for ph in (1, 2, 3):
         back_hop(ph)
     # fase 3 (el bastón), el cambio de fase 2 -> 3 y la derrota: master_clips_p3.py
     import master_clips_p3 as P3
@@ -1933,9 +1933,9 @@ def qi_wave():
 
 
 def back_hop(ph):
-    """El salto atrás que toma distancia antes del paso del viento (fases 2 y 3, sin daño): se agacha un instante, empuja
-    con las dos bolas y vuela hacia atrás recogido con los brazos abiertos para equilibrar, cae con los dos pies en su
-    lugar de la guardia y amortigua. Todo el avance (HOP m hacia atrás) va entre el despegue y la caída en el espacio del
+    """El salto atrás que toma distancia antes del paso del viento (fases 2 y 3) y de la grulla voladora (las tres; en la
+    fase 1 con la izquierda en la espalda), sin daño: se agacha un instante, empuja con las dos bolas y vuela hacia atrás
+    recogido, cae con los dos pies en su lugar de la guardia y amortigua. Todo el avance (HOP m hacia atrás) va entre el despegue y la caída en el espacio del
     personaje (timing.air): el jefe lo acorta para no salirse de la arena sin que los pies patinen. El vuelo es parejo EN
     EL RELOJ DEL JUEGO (la suelta se toca con u²)."""
     N, APEX, TAKE, LAND = 22, 6, 9, 15
@@ -1973,8 +1973,8 @@ def back_hop(ph):
                          l=ball(LX, LY, LYAW, heel=36.0))), "in2")]
     keys += [(f, A(p_), e) for f, p_, e in air_keys]
     keys += [(LAND, A(land), "lin"), (18, A(absorb), "out"), (N, ready(ph, -HOP), "inout")]
-    nm = "BackHop" if ph == 2 else "BackHop_P3"
-    return add(nm, N, keys, ph=ph, variant=False, base=None if ph == 2 else "BackHop", lag={"head": 1.5, "neck": 0.8},
+    # BackHop (fase 1), BackHop_P2 y BackHop_P3, como el resto de los clips con variante de fase
+    return add("BackHop", N, keys, ph=ph, lag={"head": 1.5, "neck": 0.8},
                timing={"kind": "none", "apex": APEX, "hold": [APEX, APEX], "contact": LAND, "active": [LAND, LAND],
                        "recover": [LAND, N], "air": [TAKE, LAND], "release_rate": 1.0, "root_max": 26.0,
                        "chain_from": "READY", "chain_to": "READY"},

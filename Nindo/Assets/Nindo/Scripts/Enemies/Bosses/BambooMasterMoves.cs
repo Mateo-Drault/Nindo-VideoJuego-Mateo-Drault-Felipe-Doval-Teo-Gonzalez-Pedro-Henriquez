@@ -35,8 +35,16 @@ namespace Nindo
         /// la caída). Desde 2.6 m el vuelo es por lo menos la mitad del autorado (con 2.0 se volvía un saltito en el
         /// lugar); el que se le pega al cuerpo ve las palmas, y el salto le llega cuando toma distancia.</summary>
         public const float LeapMin = 2.6f, LeapMax = 7.4f;
-        /// <summary>Desde esta distancia elige el salto.</summary>
+        /// <summary>Desde esta distancia sale el salto directo; más cerca primero salta hacia atrás (BackHop) hasta
+        /// LeapFrom. Con solo el directo y Kaito pegado (el 95 % de las veces que elegía en la fase 1) la grulla voladora,
+        /// el único rojo de la fase, casi no salía: ~0.1 por pelea contra el bot "bueno" (Tools/Dev/sim_bamboo_master.py).
+        /// Saltarle desde cerca (antes desde 1 m) pasaba el cuerpo por encima de Kaito.</summary>
         const float LeapMinRange = 2.5f;
+        /// <summary>Hasta dónde lo aleja el salto atrás antes de la grulla voladora (m hasta Kaito; la caída autorada está
+        /// a 4.79 m).</summary>
+        public const float LeapFrom = 4.8f;
+        /// <summary>Peso de la grulla con el salto atrás antes, relativo a la directa.</summary>
+        const float LeapNearShare = 0.5f;
         /// <summary>
         /// El paso del viento sale desde acá (m hasta Kaito): con el vuelo entero escalado de la suelta a la caída (el
         /// cuerpo en el aire es el mismo a cualquier largo: el clip lo lleva en el espacio del personaje) desde ~5 m el
@@ -85,9 +93,9 @@ namespace Nindo
             };
 
         /// <summary>
-        /// El salto hacia atrás antes del paso del viento (sin daño ni aviso): todo el avance va en el aire, del despegue a
-        /// la caída, así el jefe lo acorta sin que los pies patinen (BambooMasterBoss.HopScale). null si el FBX no tiene el
-        /// clip: el paso del viento sale solo desde lejos.
+        /// El salto hacia atrás antes del paso del viento o de la grulla voladora (sin daño ni aviso): todo el avance va en
+        /// el aire, del despegue a la caída, así el jefe lo acorta sin que los pies patinen (BambooMasterBoss.HopScale). En
+        /// la fase 1 con la izquierda en la espalda. null si el FBX no tiene el clip: el especial sale solo desde lejos.
         /// </summary>
         static AttackDef H(int phase)
         {
@@ -107,13 +115,31 @@ namespace Nindo
         {
             var hop = H(phase);
             float w = hop != null ? weight * 0.5f : weight;
-            var far = follow != null ? P(name, w, DashMinRange, cd, dash, follow) : P(name, w, DashMinRange, cd, dash);
-            far.maxRange = 7.6f;
+            Twins(list, name, w, w, cd, DashMinRange, 7.6f, hop, dash, follow);
+        }
+
+        /// <summary>La grulla voladora desde lejos y la que primero salta hacia atrás para tomar distancia (sin clip del
+        /// salto atrás, solo la de lejos). La de cerca pesa 'nearShare' de la otra: es la que de verdad sale contra el
+        /// que pelea pegado.</summary>
+        static void LeapPatterns(List<AttackPattern> list, int phase, string name, float weight, float nearShare, float cd, AttackDef leap, AttackDef follow)
+        {
+            Twins(list, name, weight, weight * nearShare, cd, LeapMinRange, LeapMax - 0.4f, H(phase), leap, follow);
+        }
+
+        /// <summary>
+        /// Un especial que necesita lugar, en dos patrones con el mismo nombre (comparten la pausa entre usos: ver
+        /// BambooMasterBoss.OnStepStarted): el directo desde 'minRange' y, si hay clip del salto atrás, el que se arrima
+        /// hasta donde el salto le deja lugar y salta primero.
+        /// </summary>
+        static void Twins(List<AttackPattern> list, string name, float wFar, float wNear, float cd, float minRange, float maxRange,
+                          AttackDef hop, AttackDef move, AttackDef follow)
+        {
+            var far = follow != null ? P(name, wFar, minRange, cd, move, follow) : P(name, wFar, minRange, cd, move);
+            far.maxRange = maxRange;
             list.Add(far);
             if (hop == null) return;
-            var back = follow != null ? P(name, w, 0f, cd, hop, dash, follow) : P(name, w, 0f, cd, hop, dash);
-            // de lejos sale el otro: este se arrima hasta donde el salto le deja lugar
-            back.maxRange = DashMinRange + 0.4f;
+            var back = follow != null ? P(name, wNear, 0f, cd, hop, move, follow) : P(name, wNear, 0f, cd, hop, move);
+            back.maxRange = minRange + 0.4f;
             list.Add(back);
         }
 
@@ -140,14 +166,12 @@ namespace Nindo
                     var crane = M("CraneKick", 0, "Pico de Grulla", 4, 80f, 1.8f, false);
                     var craneC = M("CraneKick", 0, "Pico de Grulla", 4, 80f, 1.8f, true);
                     var leap = M("LeapKick", 0, "Grulla Voladora", 5, 360f, 2.6f, false, Leap);
-                    var leapP = P("Grulla Voladora", 1.0f, LeapMinRange, 6f, leap);
-                    leapP.maxRange = LeapMax - 0.4f;
                     list.Add(P("Palma", 1.3f, 0f, 0f, palm));
                     list.Add(P("Palma y Sable", 1.6f, 0f, 0f, palm, chopC));
                     list.Add(P("Pico de Grulla", 1.0f, 0f, 2f, crane));
                     list.Add(P("Sable y Grulla", 1.2f, 0f, 4f, chop, craneC));
                     list.Add(P("Tres de una Mano", 0.8f, 0f, 8f, palm, chopC, craneC));
-                    list.Add(leapP);
+                    LeapPatterns(list, 0, "Grulla Voladora", 1.0f, LeapNearShare, 6f, leap, null);
                     break;
                 }
                 case 1:
@@ -164,8 +188,6 @@ namespace Nindo
                     var qi = M("QiWave", 1, "Onda de Qi", 6, 360f, 2.8f, false, Qi);
                     var dash = M("DashStrike", 1, "Paso del Viento", 6, 60f, 2.4f, false, Dash);
                     var leap = M("LeapKick", 1, "Grulla Voladora", 6, 360f, 2.6f, false, Leap);
-                    var leapP = P("Grulla Voladora", 0.8f, LeapMinRange, 7f, leap);
-                    leapP.maxRange = LeapMax - 0.4f;
                     var qiP = P("Onda de Qi", 0.9f, 0f, 9f, qi);
                     qiP.maxRange = 7f;
                     list.Add(P("Palmas Gemelas", 1.2f, 0f, 0f, twin));
@@ -176,7 +198,7 @@ namespace Nindo
                     list.Add(P("Cuatro Vientos", 0.7f, 0f, 9f, palm, chopC, twinC, spinC));
                     list.Add(qiP);
                     DashPatterns(list, 1, "Paso del Viento", 1.1f, 6f, dash, null);
-                    list.Add(leapP);
+                    LeapPatterns(list, 1, "Grulla Voladora", 0.8f, LeapNearShare, 7f, leap, null);
                     break;
                 }
                 default:
@@ -191,8 +213,6 @@ namespace Nindo
                     var qiC = M("QiWave", 2, "Raíz del Bambú", 6, 360f, 3.0f, true, Qi);
                     var dash = M("DashStrike", 2, "Paso del Viento", 7, 50f, 2.4f, false, Dash);
                     var leap = M("LeapKick", 2, "Grulla Voladora", 7, 360f, 2.6f, false, Leap);
-                    var leapP = P("Grulla y Estocada", 0.8f, LeapMinRange, 7f, leap, thrustC);
-                    leapP.maxRange = LeapMax - 0.4f;
                     var qiP = P("Raíz del Bambú", 0.8f, 0f, 8f, qi);
                     qiP.maxRange = 7f;
                     list.Add(P("Estocada", 1.2f, 0f, 0f, thrust));
@@ -203,7 +223,9 @@ namespace Nindo
                     list.Add(P("La Última Lección", 0.6f, 0f, 12f, thrust, smashC, thrustC, qiC));
                     list.Add(qiP);
                     DashPatterns(list, 2, "Viento y Bambú", 1.0f, 6f, dash, smashC);
-                    list.Add(leapP);
+                    // (antes se llamaba "Grulla y Estocada", como el pico de grulla con la estocada: los dos patrones con el
+                    // mismo nombre compartían la pausa entre usos)
+                    LeapPatterns(list, 2, "Grulla Voladora y Estocada", 0.8f, LeapNearShare, 7f, leap, thrustC);
                     break;
                 }
             }

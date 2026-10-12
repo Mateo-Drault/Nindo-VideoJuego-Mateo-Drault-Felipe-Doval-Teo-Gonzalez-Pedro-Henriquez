@@ -596,6 +596,7 @@ MonoBehaviour:
     - QiWave
     - DashStrike
     - BackHop
+    - BackHop_P2
     - BackHop_P3
     - Palm_P3
     - Palm_Mid_P3
@@ -702,6 +703,7 @@ MonoBehaviour:
     - 1.6
     - 1.8667
     - 1.2
+    - 0.7333
     - 0.7333
     - 0.7333
     - 1.1333
