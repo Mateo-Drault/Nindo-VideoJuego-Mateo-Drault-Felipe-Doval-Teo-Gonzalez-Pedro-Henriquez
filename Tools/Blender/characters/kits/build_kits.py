@@ -1120,11 +1120,15 @@ def ozeki(k):
 # ============================================================================ KAITO (mira a +X)
 @kit("kaito_bandana", "kaito")
 def kaito_bandana(k):
-    """Las dos colas de la bandana amarilla (el nudo ya está en el modelo, x -0.86 z 2.46)."""
+    """Las dos colas de la bandana amarilla: el ÚNICO juego de colas de Kaito (build_kaito.py le saca al nudo del
+    cuerpo las aletas rígidas que tenía: con estas se veían dos juegos). Nacen de la mitad de abajo del nudo (x -0.57
+    z 2.40, detrás de la nuca: la de arriba asoma y se lee el nudo), salen hacia atrás y abajo abriéndose apenas y
+    cuelgan por detrás del pelo y la nuca, que debajo de la cinta se meten hacia adelante (en reposo no las tocan;
+    corriendo las mueve SpringChain con las esferas de la cabeza y la espalda)."""
     g = k.geo
     for name, s in (("TailA", 1), ("TailB", -1)):
-        pts = [V(-0.80, s * 0.035, 2.44), V(-0.92, s * 0.075, 2.31), V(-1.02, s * 0.12, 2.14),
-               V(-1.09, s * 0.16, 1.95), V(-1.13, s * 0.19, 1.76)]
+        pts = [V(-0.57, s * 0.035, 2.40), V(-0.66, s * 0.07, 2.30), V(-0.74, s * 0.105, 2.15),
+               V(-0.79, s * 0.135, 1.98), V(-0.82, s * 0.155, 1.80)]
         k.chain(name, "cabeza", pts)
         rows = []
         for i in range(len(pts) - 1):
@@ -1132,8 +1136,8 @@ def kaito_bandana(k):
                 rows.append(pts[i].lerp(pts[i + 1], t))
         rows.append(pts[-1])
         n = len(rows)
-        widths = [0.15 - 0.05 * (i / (n - 1)) for i in range(n)]
-        widths[-1] = 0.04
+        widths = [0.13 - 0.06 * (i / (n - 1)) for i in range(n)]
+        widths[-1] = 0.045
         # mismo material que la bandana del cuerpo: CharacterKits le pone el material vivo de ese slot (color,
         # emisión del Espíritu y rim iguales a la bandana)
         g.ribbon(rows, widths, 0.024, "mat:AmarilloBandana#ffc21a", up=(-1, 0, 0.3)).chain(name)

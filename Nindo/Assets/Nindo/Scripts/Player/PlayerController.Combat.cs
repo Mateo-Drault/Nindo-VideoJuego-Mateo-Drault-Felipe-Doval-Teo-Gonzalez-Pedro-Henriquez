@@ -26,6 +26,7 @@ namespace Nindo
             var defs = config.combo;
             if (defs == null || defs.Length == 0) return;
             Vector3 run = State == PlayerState.Locomotion ? velocity : Vector3.zero;
+            bool fromDash = State == PlayerState.Dash;
             comboIndex = Mathf.Clamp(index, 0, defs.Length - 1);
             currentAttack = defs[comboIndex];
             attackLen = anim.Length(currentAttack.state, 0.45f) / Mathf.Max(0.05f, currentAttack.speed);
@@ -44,8 +45,10 @@ namespace Nindo
             carry = transform.forward * Mathf.Max(0f, Vector3.Dot(run, transform.forward)) * config.attackMomentum;
             lungeVelocity = Vector3.zero;
             velocity = carry;
-            // el contraataque funde un poco más largo: puede salir desde el desvío (0.06 s), no solo desde la carga
-            anim.Play(currentAttack.state, startNorm > 0f ? 0.08f : comboIndex == 0 ? 0.05f : 0.03f, startNorm);
+            // el contraataque funde un poco más largo (sale cuando el desvío llega a la carga: RiposteReady) y el corte
+            // buffereado desde el dash más todavía: la caída del dash todavía frena (talón adelante, cadera atrás) y con
+            // 0.05 s las rodillas y el brazo libre saltaban
+            anim.Play(currentAttack.state, startNorm > 0f ? RiposteFade : fromDash ? 0.1f : comboIndex == 0 ? 0.05f : 0.03f, startNorm);
             Game.UI?.HideInteractPrompt();
         }
 
@@ -343,6 +346,7 @@ namespace Nindo
         {
             Game.FX?.Crescent?.Success();
             SetState(PlayerState.ParrySuccess);
+            ripostePending = false;
             // el golpe siempre llega de frente (FaceInstant de abajo): los desvíos se alternan izquierda/derecha para
             // que una cadena de parrys no repita el mismo gesto, y el perfecto tiene su floreo; sin esos clips, el de siempre
             string parryClip = perfect ? "PerfectParry" : (parryLeft = !parryLeft) ? "ParrySuccessL" : "ParrySuccessR";
@@ -385,13 +389,15 @@ namespace Nindo
             velocity = Vector3.MoveTowards(velocity, Vector3.zero, 40f * dt);
             if (input != null && stateTime > 0.06f)
             {
-                // contraataque inmediato o nuevo parry
-                if (input.Buffered(Act.Attack, 0.25f)) { input.Consume(Act.Attack); StartAttack(0, config.riposteStartNorm); return; }
-                if (input.Buffered(Act.Parry, config.defenseBuffer)) { input.Consume(Act.Parry); StartParry(); return; }
-                if (input.Buffered(Act.Dash, config.defenseBuffer)) { input.Consume(Act.Dash); if (TryDash()) return; }
-                if (input.Buffered(Act.Finisher, 0.12f) && TryFinisher()) { input.Consume(Act.Finisher); return; }
+                // contraataque (queda pedido hasta que el desvío llega a la carga del Corte 1) o nuevo parry
+                if (input.Buffered(Act.Attack, 0.25f)) { input.Consume(Act.Attack); ripostePending = true; }
+                if (input.Buffered(Act.Parry, config.defenseBuffer)) { input.Consume(Act.Parry); ripostePending = false; StartParry(); return; }
+                if (input.Buffered(Act.Dash, config.defenseBuffer)) { input.Consume(Act.Dash); if (TryDash()) { ripostePending = false; return; } }
+                if (input.Buffered(Act.Finisher, 0.12f) && TryFinisher()) { input.Consume(Act.Finisher); ripostePending = false; return; }
             }
-            if (stateTime >= 0.38f) SetState(PlayerState.Locomotion);
+            if (ripostePending && RiposteReady()) { ripostePending = false; StartAttack(0, config.riposteStartNorm); return; }
+            // con la réplica pedida espera a la carga (el hit-stop del perfecto la corre más allá de los 0.38 s)
+            if (stateTime >= (ripostePending ? 0.6f : 0.38f)) { ripostePending = false; SetState(PlayerState.Locomotion); }
         }
 
         // =============================================================== DASH MÁGICO

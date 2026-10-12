@@ -7,10 +7,10 @@
  "chains": {
   "Attack1->Attack2": [
    0.0,
-   "tronco",
+   "Puntapulgar.R",
    0.0,
    0.0,
-   "Antebrazo.R"
+   "Mando.L"
   ],
   "Attack2->Attack3": [
    0.0,
@@ -20,8 +20,8 @@
    "Antebrazo.L"
   ],
   "Attack3->Attack1": [
-   0.1,
-   "Puntadedo1.L",
+   0.0,
+   "Puntapulgar.R",
    0.0,
    0.0,
    "Tibia.L"
@@ -61,11 +61,32 @@
    0.1,
    "Antebrazo.R"
   ],
+  "ParrySuccessR@7->Attack1@2": [
+   10.2,
+   "Brazo.L",
+   0.0,
+   3.2,
+   "cabeza"
+  ],
+  "ParrySuccessL@7->Attack1@2": [
+   11.1,
+   "Brazo.R",
+   0.0,
+   3.3,
+   "cabeza"
+  ],
+  "PerfectParry@13->Attack1@2": [
+   7.9,
+   "Mando.R",
+   0.6,
+   2.3,
+   "Mando.R"
+  ],
   "Dash@11->Attack1": [
-   38.4,
-   "Antebrazo.L",
+   26.5,
+   "Tibia.L",
    3.6,
-   8.7,
+   5.1,
    "cabeza"
   ],
   "Dash->Idle": [
@@ -144,6 +165,34 @@
    0.0,
    0.1,
    "Mando.L"
+  ],
+  "HitBack->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
+  ],
+  "HitLeft->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
+  ],
+  "HitRight->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
+  ],
+  "RunStop->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
   ]
  },
  "clips": {
@@ -169,7 +218,33 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
-    "loop_seam_deg": 0.056,
+    "loop_seam_deg": 0.04,
+    "wrist_R": {
+     "over_comfort_max": 4.2,
+     "at": 24,
+     "frames_over": 0,
+     "pose": [
+      -4.4,
+      -24.4,
+      64.2
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 0,
+     "frames_over": 0,
+     "pose": [
+      -5.6,
+      -22.8,
+      7.3
+     ]
+    },
+    "shoulder_R": 18.5,
+    "shoulder_L": 5.2,
+    "blade_fix_deg_soft": 0.0,
+    "step_0": 0.0,
+    "step_2": 0.0,
+    "step_3": 0.0,
     "min_z_cm": -0.0
    }
   },
@@ -243,7 +318,7 @@
    "notes": "paso a 1.2 m/s: 18 cuadros, talón -> punta",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.5,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.07,
@@ -266,9 +341,35 @@
      ]
     },
     "skate_cm": 0.3,
-    "loop_seam_deg": 0.056,
+    "loop_seam_deg": 0.04,
     "stance_drift_cm": 0.02,
     "ground_speed_mps": 1.2,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 3,
+     "frames_over": 37,
+     "pose": [
+      -13.7,
+      -17.5,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 11,
+     "frames_over": 0,
+     "pose": [
+      11.7,
+      -25.0,
+      -20.4
+     ]
+    },
+    "shoulder_R": 34.3,
+    "shoulder_L": 59.0,
+    "blade_fix_deg_soft": 2.3,
+    "step_0": 0.0,
+    "step_2": 0.0,
+    "step_3": 0.0,
     "min_z_cm": -0.1
    }
   },
@@ -313,7 +414,7 @@
    "notes": "trote a 3.4 m/s: 14 cuadros",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.9,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.01,
@@ -342,9 +443,35 @@
      ]
     },
     "skate_cm": 1.36,
-    "loop_seam_deg": 0.056,
+    "loop_seam_deg": 0.0,
     "stance_drift_cm": 0.01,
     "ground_speed_mps": 3.4,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 27,
+     "frames_over": 14,
+     "pose": [
+      -15.3,
+      -17.5,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 13,
+     "frames_over": 0,
+     "pose": [
+      30.2,
+      -25.0,
+      15.8
+     ]
+    },
+    "shoulder_R": 32.4,
+    "shoulder_L": 64.5,
+    "blade_fix_deg_soft": 1.0,
+    "step_0": 4.9,
+    "step_2": 0.0,
+    "step_3": 0.0,
     "min_z_cm": 0.1
    }
   },
@@ -381,7 +508,7 @@
    "notes": "carrera a 6.2 m/s (PlayerConfig.runSpeed): 12 cuadros, apoyo de 2 cuadros por pie sobre la bola",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.4,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.0,
@@ -413,6 +540,32 @@
     "loop_seam_deg": 0.04,
     "stance_drift_cm": 0.8,
     "ground_speed_mps": 6.2,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 1,
+     "frames_over": 22,
+     "pose": [
+      -41.6,
+      -4.2,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 16,
+     "frames_over": 0,
+     "pose": [
+      39.9,
+      -25.0,
+      25.1
+     ]
+    },
+    "shoulder_R": 32.5,
+    "shoulder_L": 79.5,
+    "blade_fix_deg_soft": 9.6,
+    "step_0": 0.0,
+    "step_2": 9.8,
+    "step_3": 0.0,
     "min_z_cm": 0.1
    }
   },
@@ -488,9 +641,36 @@
     },
     "tip_peak": [
      4,
-     49.4
+     45.8
     ],
-    "reach_m": 1.2,
+    "reach_m": 1.22,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 2,
+     "frames_over": 6,
+     "pose": [
+      43.9,
+      4.1,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 4,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      -25.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 43.2,
+    "shoulder_L": 32.7,
+    "blade_fix_deg": 0.0,
+    "blade_fix_deg_soft": 6.1,
+    "step_0": 3.7,
+    "step_2": 7.4,
+    "step_3": 12.6,
     "min_z_cm": -0.0
    }
   },
@@ -551,7 +731,7 @@
    "notes": "revés ascendente con un salto; el pie izquierdo pasa adelante en el aire y apoya al terminar el avance",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.2,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.03,
@@ -566,9 +746,36 @@
     },
     "tip_peak": [
      2,
-     53.3
+     53.0
     ],
-    "reach_m": 1.18,
+    "reach_m": 1.15,
+    "wrist_R": {
+     "over_comfort_max": 14.6,
+     "at": 5,
+     "frames_over": 8,
+     "pose": [
+      41.2,
+      -23.8,
+      74.6
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 3,
+     "frames_over": 0,
+     "pose": [
+      28.8,
+      -0.6,
+      -60.0
+     ]
+    },
+    "shoulder_R": 53.3,
+    "shoulder_L": 96.7,
+    "blade_fix_deg": 0.0,
+    "blade_fix_deg_soft": 3.8,
+    "step_0": 2.2,
+    "step_2": 7.4,
+    "step_3": 37.5,
     "min_z_cm": -0.1
    }
   },
@@ -630,7 +837,7 @@
    "notes": "salto con las dos manos, la hoja pasa por arriba y cruza en diagonal; cae con la hoja baja y queda quieto 3 cuadros",
    "lint": {
     "reach_miss_cm": {
-     "hands": 2.6,
+     "hands": 0.3,
      "legs": 0.0
     },
     "plant_drift_cm": 0.15,
@@ -659,9 +866,36 @@
     },
     "tip_peak": [
      7,
-     54.6
+     55.9
     ],
-    "reach_m": 1.19,
+    "reach_m": 1.22,
+    "wrist_R": {
+     "over_comfort_max": 18.2,
+     "at": 8,
+     "frames_over": 13,
+     "pose": [
+      58.2,
+      -38.0,
+      -0.5
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 24.4,
+     "at": 7,
+     "frames_over": 8,
+     "pose": [
+      -6.5,
+      -7.1,
+      -84.4
+     ]
+    },
+    "shoulder_R": 51.9,
+    "shoulder_L": 75.8,
+    "blade_fix_deg": 1.5,
+    "blade_fix_deg_soft": 49.7,
+    "step_0": 28.9,
+    "step_2": 56.0,
+    "step_3": 15.1,
     "min_z_cm": -0.1
    }
   },
@@ -697,6 +931,32 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 0,
+     "frames_over": 11,
+     "pose": [
+      4.2,
+      -18.0,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 10,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      -25.0,
+      18.0
+     ]
+    },
+    "shoulder_R": 37.9,
+    "shoulder_L": 66.0,
+    "blade_fix_deg_soft": 0.7,
+    "step_0": 2.5,
+    "step_2": 5.6,
+    "step_3": 4.1,
     "min_z_cm": -0.0
    }
   },
@@ -741,6 +1001,32 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 7.1,
+     "at": 3,
+     "frames_over": 1,
+     "pose": [
+      20.2,
+      -32.1,
+      -49.5
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 11,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      6.7,
+      60.0
+     ]
+    },
+    "shoulder_R": 27.8,
+    "shoulder_L": 50.5,
+    "blade_fix_deg_soft": 0.0,
+    "step_0": 7.5,
+    "step_2": 0.0,
+    "step_3": 0.0,
     "min_z_cm": -0.0
    }
   },
@@ -779,6 +1065,32 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 7,
+     "frames_over": 11,
+     "pose": [
+      39.1,
+      -4.9,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 1,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      10.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 39.9,
+    "shoulder_L": 41.6,
+    "blade_fix_deg_soft": 9.1,
+    "step_0": 2.5,
+    "step_2": 7.1,
+    "step_3": 0.0,
     "min_z_cm": -0.0
    }
   },
@@ -817,6 +1129,32 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 1,
+     "frames_over": 10,
+     "pose": [
+      -41.5,
+      -28.8,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 3,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      -25.0,
+      41.9
+     ]
+    },
+    "shoulder_R": 17.7,
+    "shoulder_L": 41.6,
+    "blade_fix_deg_soft": 12.1,
+    "step_0": 5.0,
+    "step_2": 9.3,
+    "step_3": 4.5,
     "min_z_cm": -0.0
    }
   },
@@ -855,6 +1193,32 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 5,
+     "frames_over": 14,
+     "pose": [
+      9.2,
+      -28.9,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 0,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      10.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 48.0,
+    "shoulder_L": 54.7,
+    "blade_fix_deg_soft": 17.9,
+    "step_0": 14.8,
+    "step_2": 34.9,
+    "step_3": 2.4,
     "min_z_cm": -0.0
    }
   },
@@ -883,6 +1247,32 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 5,
+     "frames_over": 5,
+     "pose": [
+      7.2,
+      -24.0,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 3,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      10.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 48.8,
+    "shoulder_L": 75.1,
+    "blade_fix_deg_soft": 20.0,
+    "step_0": 4.8,
+    "step_2": 7.3,
+    "step_3": 18.1,
     "min_z_cm": -0.0
    }
   },
@@ -902,7 +1292,7 @@
    "notes": "golpe liviano: la cabeza y el pecho se van atrás de golpe, los brazos se abren; recupera la guardia en 0.37 s",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.3,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.22,
@@ -911,12 +1301,200 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 1,
+     "frames_over": 4,
+     "pose": [
+      22.7,
+      -27.1,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 2,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      -15.3,
+      60.0
+     ]
+    },
+    "shoulder_R": 44.7,
+    "shoulder_L": 16.0,
+    "blade_fix_deg_soft": 2.1,
+    "step_0": 2.5,
+    "step_2": 8.7,
+    "step_3": 1.8,
+    "min_z_cm": -0.0
+   }
+  },
+  "HitBack": {
+   "first": 438,
+   "last": 449,
+   "frames": 11,
+   "loop": false,
+   "seconds": 0.3667,
+   "time_scale": 1.0,
+   "timing": {
+    "impact": 1,
+    "slide_ok": true
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "golpe de atrás: el cuerpo se va adelante y la cabeza atrás, los brazos se abren; guardia en 0.37 s",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.25,
+    "skate": {
+     "Pie.R": [],
+     "Pie.L": []
+    },
+    "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 3,
+     "frames_over": 3,
+     "pose": [
+      44.2,
+      18.5,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 4,
+     "frames_over": 0,
+     "pose": [
+      22.3,
+      10.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 82.2,
+    "shoulder_L": 85.3,
+    "blade_fix_deg_soft": 22.8,
+    "step_0": 30.1,
+    "step_2": 24.9,
+    "step_3": 19.1,
+    "min_z_cm": -0.0
+   }
+  },
+  "HitLeft": {
+   "first": 459,
+   "last": 470,
+   "frames": 11,
+   "loop": false,
+   "seconds": 0.3667,
+   "time_scale": 1.0,
+   "timing": {
+    "impact": 1,
+    "slide_ok": true
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "golpe desde su izquierda: se dobla y gira a su derecha, la cabeza latiguea a la derecha; guardia en 0.37 s",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 1.7,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.24,
+    "skate": {
+     "Pie.R": [],
+     "Pie.L": []
+    },
+    "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 2,
+     "frames_over": 4,
+     "pose": [
+      18.0,
+      -34.4,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 3,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      10.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 34.6,
+    "shoulder_L": 17.2,
+    "blade_fix_deg_soft": 3.7,
+    "step_0": 7.4,
+    "step_2": 11.2,
+    "step_3": 5.9,
+    "min_z_cm": -0.0
+   }
+  },
+  "HitRight": {
+   "first": 480,
+   "last": 491,
+   "frames": 11,
+   "loop": false,
+   "seconds": 0.3667,
+   "time_scale": 1.0,
+   "timing": {
+    "impact": 1,
+    "slide_ok": true
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "golpe desde su derecha: se dobla y gira a su izquierda, la katana se va arriba; guardia en 0.37 s",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.24,
+    "skate": {
+     "Pie.R": [],
+     "Pie.L": []
+    },
+    "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 3.9,
+     "at": 9,
+     "frames_over": 0,
+     "pose": [
+      0.5,
+      -14.9,
+      63.9
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 2,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      -25.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 21.5,
+    "shoulder_L": 14.6,
+    "blade_fix_deg_soft": 0.0,
+    "step_0": 1.6,
+    "step_2": 0.0,
+    "step_3": 2.9,
     "min_z_cm": -0.0
    }
   },
   "HitHeavy": {
-   "first": 438,
-   "last": 458,
+   "first": 501,
+   "last": 521,
    "frames": 20,
    "loop": false,
    "seconds": 0.6667,
@@ -939,49 +1517,95 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 4,
+     "frames_over": 16,
+     "pose": [
+      -50.0,
+      -35.0,
+      39.7
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 1,
+     "frames_over": 0,
+     "pose": [
+      40.0,
+      -25.0,
+      60.0
+     ]
+    },
+    "shoulder_R": 75.2,
+    "shoulder_L": 81.1,
+    "blade_fix_deg_soft": 23.3,
+    "step_0": 21.9,
+    "step_2": 66.2,
+    "step_3": 15.6,
     "min_z_cm": -0.0
    }
   },
   "Death": {
-   "first": 468,
-   "last": 510,
-   "frames": 42,
+   "first": 531,
+   "last": 579,
+   "frames": 48,
    "loop": false,
-   "seconds": 1.4,
+   "seconds": 1.6,
    "time_scale": 1.0,
    "timing": {
     "impact": 2,
-    "knee": 18,
-    "ground": 31,
+    "knee": 17,
+    "release": 29,
+    "ground": 35,
     "slide_ok": true
    },
    "normalized": {},
    "events": [],
-   "notes": "se va atrás, se tambalea, cae sobre una rodilla y después de costado; queda tendido (la cámara lenta de Die lo estira)",
+   "notes": "el golpe lo echa atrás, un paso, cae de golpe sobre una rodilla con el puño en el piso, respira; se le cae la katana y se desploma de costado con rebote (1.6 s; la cámara lenta de Die lo estira)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 3.6,
+     "hands": 1.6,
      "legs": 0.0
     },
     "plant_drift_cm": 0.25,
     "skate": {
-     "Pie.R": [
-      [
-       32.0,
-       42.0,
-       0.58,
-       0.58
-      ]
-     ],
+     "Pie.R": [],
      "Pie.L": []
     },
-    "skate_cm": 0.58,
-    "min_z_cm": -0.1
+    "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 1,
+     "frames_over": 45,
+     "pose": [
+      2.4,
+      -35.0,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 21.4,
+     "at": 35,
+     "frames_over": 1,
+     "pose": [
+      61.4,
+      -37.2,
+      -10.8
+     ]
+    },
+    "shoulder_R": 56.5,
+    "shoulder_L": 78.8,
+    "blade_fix_deg_soft": 9.5,
+    "step_0": 24.6,
+    "step_2": 9.8,
+    "step_3": 6.3,
+    "min_z_cm": -1.6
    }
   },
   "Finisher": {
-   "first": 520,
-   "last": 600,
+   "first": 589,
+   "last": 669,
    "frames": 80,
    "loop": false,
    "seconds": 2.6667,
@@ -1037,12 +1661,39 @@
     },
     "skate_cm": 2.4,
     "strike_n": 0.675,
+    "wrist_R": {
+     "over_comfort_max": 15.9,
+     "at": 55,
+     "frames_over": 30,
+     "pose": [
+      -19.4,
+      -30.7,
+      75.9
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 22,
+     "frames_over": 0,
+     "pose": [
+      38.4,
+      -25.0,
+      25.5
+     ]
+    },
+    "shoulder_R": 61.3,
+    "shoulder_L": 100.8,
+    "blade_fix_deg": 0.0,
+    "blade_fix_deg_soft": 23.3,
+    "step_0": 37.7,
+    "step_2": 60.6,
+    "step_3": 26.9,
     "min_z_cm": -1.5
    }
   },
   "WindSlash": {
-   "first": 610,
-   "last": 641,
+   "first": 679,
+   "last": 710,
    "frames": 31,
    "loop": false,
    "seconds": 1.0333,
@@ -1079,12 +1730,38 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 15,
+     "frames_over": 26,
+     "pose": [
+      -23.0,
+      -30.4,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 11,
+     "frames_over": 0,
+     "pose": [
+      38.5,
+      -25.0,
+      17.8
+     ]
+    },
+    "shoulder_R": 62.0,
+    "shoulder_L": 96.3,
+    "blade_fix_deg_soft": 16.0,
+    "step_0": 16.2,
+    "step_2": 41.2,
+    "step_3": 29.8,
     "min_z_cm": -0.9
    }
   },
   "Whirlwind": {
-   "first": 651,
-   "last": 681,
+   "first": 720,
+   "last": 750,
    "frames": 30,
    "loop": false,
    "seconds": 1.0,
@@ -1116,7 +1793,7 @@
    "notes": "enrosque en puntas, trompo en el aire con la hoja afuera a su derecha (el código gira el modelo 720°), cae agachado en la guardia",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.1,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.1,
@@ -1132,12 +1809,104 @@
      ]
     },
     "skate_cm": 1.76,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 4,
+     "frames_over": 15,
+     "pose": [
+      -22.9,
+      -35.0,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 2,
+     "frames_over": 0,
+     "pose": [
+      -31.2,
+      10.0,
+      10.7
+     ]
+    },
+    "shoulder_R": 62.3,
+    "shoulder_L": 89.8,
+    "blade_fix_deg_soft": 25.3,
+    "step_0": 7.8,
+    "step_2": 10.8,
+    "step_3": 34.9,
+    "min_z_cm": -0.0
+   }
+  },
+  "RunStop": {
+   "first": 760,
+   "last": 776,
+   "frames": 16,
+   "loop": false,
+   "seconds": 0.5333,
+   "time_scale": 1.0,
+   "timing": {
+    "plant": 2,
+    "settle": 9,
+    "travel_fixed": true
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 2,
+     "t": 0.125,
+     "fn": "FootR"
+    },
+    {
+     "frame": 9,
+     "t": 0.5625,
+     "fn": "FootL"
+    }
+   ],
+   "notes": "frenada desde la carrera: clava el talón derecho, el impulso lo pasa por encima y se rearma en la guardia (0.53 s)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.08,
+    "skate": {
+     "Pie.R": [],
+     "Pie.L": []
+    },
+    "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 2,
+     "frames_over": 5,
+     "pose": [
+      -28.0,
+      -35.0,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 0,
+     "frames_over": 0,
+     "pose": [
+      -2.4,
+      10.0,
+      10.9
+     ]
+    },
+    "shoulder_R": 19.2,
+    "shoulder_L": 71.8,
+    "blade_fix_deg_soft": 20.7,
+    "step_0": 26.7,
+    "step_2": 4.8,
+    "step_3": 17.8,
     "min_z_cm": -0.0
    }
   },
   "Pray": {
-   "first": 691,
-   "last": 731,
+   "first": 786,
+   "last": 826,
    "frames": 40,
    "loop": false,
    "seconds": 1.3333,
@@ -1160,12 +1929,38 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 18,
+     "frames_over": 22,
+     "pose": [
+      32.0,
+      -35.0,
+      39.7
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 10.5,
+     "at": 10,
+     "frames_over": 17,
+     "pose": [
+      50.5,
+      -5.9,
+      -29.1
+     ]
+    },
+    "shoulder_R": 44.0,
+    "shoulder_L": 22.3,
+    "blade_fix_deg_soft": 1.8,
+    "step_0": 6.5,
+    "step_2": 4.2,
+    "step_3": 2.3,
     "min_z_cm": -0.0
    }
   },
   "Interact": {
-   "first": 741,
-   "last": 761,
+   "first": 836,
+   "last": 856,
    "frames": 20,
    "loop": false,
    "seconds": 0.6667,
@@ -1187,6 +1982,32 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
+    "wrist_R": {
+     "over_comfort_max": 3.9,
+     "at": 0,
+     "frames_over": 0,
+     "pose": [
+      2.1,
+      -17.9,
+      63.9
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 16,
+     "frames_over": 0,
+     "pose": [
+      4.7,
+      10.0,
+      -15.1
+     ]
+    },
+    "shoulder_R": 54.0,
+    "shoulder_L": 34.2,
+    "blade_fix_deg_soft": 0.0,
+    "step_0": 15.0,
+    "step_2": 8.7,
+    "step_3": 0.0,
     "min_z_cm": -0.0
    }
   }

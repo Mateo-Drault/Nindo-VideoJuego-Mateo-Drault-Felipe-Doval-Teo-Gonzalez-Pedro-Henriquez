@@ -97,6 +97,9 @@ namespace Nindo
             Animator.SetFloat(SpeedParam, normalizedSpeed, 0.08f, dt);
         }
 
+        /// <summary>El Speed que está usando el blend tree de locomoción (con su amortiguación), 0 si no tiene.</summary>
+        public float LocomotionParam => Valid && hasSpeedParam ? Animator.GetFloat(SpeedParam) : 0f;
+
         /// <summary>Multiplicador de velocidad global (curvas de timing, furia, etc.).</summary>
         public void SetSpeed(float mul) { speedMul = mul; }
 

@@ -439,11 +439,98 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
+      name: HitBack
+      takeName: Scene
+      internalID: 578795798454614592
+      firstFrame: 438
+      lastFrame: 449
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: HitLeft
+      takeName: Scene
+      internalID: 683380251113558870
+      firstFrame: 459
+      lastFrame: 470
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: HitRight
+      takeName: Scene
+      internalID: 83150177743617164
+      firstFrame: 480
+      lastFrame: 491
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
       name: HitHeavy
       takeName: Scene
       internalID: 1133350280148602516
-      firstFrame: 438
-      lastFrame: 458
+      firstFrame: 501
+      lastFrame: 521
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -471,8 +558,8 @@ ModelImporter:
       name: Death
       takeName: Scene
       internalID: 507535662141767446
-      firstFrame: 468
-      lastFrame: 510
+      firstFrame: 531
+      lastFrame: 579
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -500,8 +587,8 @@ ModelImporter:
       name: Finisher
       takeName: Scene
       internalID: 1091725488457226934
-      firstFrame: 520
-      lastFrame: 600
+      firstFrame: 589
+      lastFrame: 669
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -529,8 +616,8 @@ ModelImporter:
       name: WindSlash
       takeName: Scene
       internalID: 847884437577968533
-      firstFrame: 610
-      lastFrame: 641
+      firstFrame: 679
+      lastFrame: 710
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -558,8 +645,37 @@ ModelImporter:
       name: Whirlwind
       takeName: Scene
       internalID: 460827034909205887
-      firstFrame: 651
-      lastFrame: 681
+      firstFrame: 720
+      lastFrame: 750
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: RunStop
+      takeName: Scene
+      internalID: 1096071129074712459
+      firstFrame: 760
+      lastFrame: 776
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -587,8 +703,8 @@ ModelImporter:
       name: Pray
       takeName: Scene
       internalID: 884414543542850232
-      firstFrame: 691
-      lastFrame: 731
+      firstFrame: 786
+      lastFrame: 826
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -616,8 +732,8 @@ ModelImporter:
       name: Interact
       takeName: Scene
       internalID: 311008360635144052
-      firstFrame: 741
-      lastFrame: 761
+      firstFrame: 836
+      lastFrame: 856
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

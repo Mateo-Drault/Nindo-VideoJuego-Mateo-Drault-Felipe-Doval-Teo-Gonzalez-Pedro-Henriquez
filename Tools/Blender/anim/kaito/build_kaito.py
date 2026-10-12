@@ -28,6 +28,7 @@ for p in (HERE, os.path.join(ROOT, "Tools", "Blender", "anim"), os.path.join(ROO
 sys.dont_write_bytecode = True
 
 import bpy
+import numpy as np
 from mathutils import Vector, Matrix
 import nindo_anim as NA
 import charlib as C
@@ -219,7 +220,8 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
     check(not bad, f"{clip.name}: ninguna suela patina rozando el piso (peor {bad[:3]})")
     # el imán del ataque corta el avance contra un enemigo pegado: un pie clavado en el mundo mientras el clip
     # descuenta el avance patina hacia atrás. Mientras el juego mueve el cuerpo, los pies van en el aire
-    if not clip.loop and any((roots[i + 1] - roots[i]).length > 1e-6 for i in range(n)):
+    # (timing 'travel_fixed': el avance no lo corta nada, p. ej. el frenado de RunStop)
+    if not clip.loop and not t.get("travel_fixed") and any((roots[i + 1] - roots[i]).length > 1e-6 for i in range(n)):
         sk0 = skate_report(rig, frames, roots, 1, False, skid)
         rep["skate_no_lunge"] = sk0
         bad0 = [(fb, r) for fb, v in sk0.items() for r in v if r[2] > SKATE_RUN_CM or r[3] > SKATE_STEP_CM]
@@ -279,6 +281,63 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
         s = t["strike"]
         rep["strike_n"] = round(s / n, 4)
     return rep
+
+
+# =============================================================================== muñecas
+BLADE_FIX_OK, BLADE_FIX_MAX = 12.0, 25.0    # grados que la hoja se puede correr de la autorada por el tope de la muñeca
+# ...en los cuadros que no cortan (kaito_rig.cutting) la hoja autorada solo dice más o menos dónde va: ahí manda la
+# muñeca (SOFT_LIMIT) y se tolera más. El peor es la carga del Corte final (f1: la hoja interpolada de arriba-atrás a
+# afuera pide dar vuelta el codo; la muñeca la corre 50° en un cuadro de 33 ms a mitad de la carga)
+BLADE_FIX_SOFT_OK, BLADE_FIX_SOFT_MAX = 20.0, 55.0
+STEP_JUMP_DEG = 35.0                        # giro de la hoja o del codo entre dos cuadros del juego que ya se ve como tirón
+SHOULDER_FAIL = 120.0                       # giro del húmero (respecto del brazo en cruz) que ya no pasa nunca
+
+
+def wrist_report(clip, wrists, states, fixes, ease):
+    """Muñecas del clip horneado: cuánto pasan de lo cómodo (WRIST_COMFORT), la hoja corrida por el tope y los
+    tirones del giro de la hoja y del codo entre cuadros."""
+    out = {}
+    ts = clip.timing.get("time_scale", 1.0)
+    for k, S in ((0, "R"), (1, "L")):
+        ex = []
+        for w in wrists:
+            e = 0.0
+            for v, key in zip(w[k], ("flex", "rad", "twist")):
+                lo, hi = KR.WRIST_COMFORT[S][key]
+                e = max(e, lo - v, v - hi)
+            ex.append(e)
+        f = max(range(len(ex)), key=lambda i: ex[i])
+        out["wrist_" + S] = {"over_comfort_max": round(max(0.0, ex[f]), 1), "at": f,
+                             "frames_over": sum(1 for e in ex if e > 5.0), "pose": [round(v, 1) for v in wrists[f][k]]}
+        check(ex[f] <= 15.0, f"{clip.name}: muñeca {S} cómoda (pasa {max(0.0, ex[f]):.0f}° en f{f}: flex/rad/giro "
+                             f"{tuple(round(v) for v in wrists[f][k])}; {out['wrist_' + S]['frames_over']} cuadros > 5°)",
+              warn=ex[f] <= 25.0)
+    for k, S in ((2, "R"), (3, "L")):
+        sh = [abs(w[k]) for w in wrists]
+        f = max(range(len(sh)), key=lambda i: sh[i])
+        out["shoulder_" + S] = round(sh[f], 1)
+        # (el giro se mide respecto del brazo en cruz: con el brazo atrás o adelante, 70-90° de rotación interna es
+        # natural; recién pasando SHOULDER_FAIL la manga del gi se retuerce)
+        check(sh[f] <= KR.SHOULDER_COMFORT[1] + 15.0, f"{clip.name}: hombro {S} sin retorcer ({sh[f]:.0f}° en f{f})",
+              warn=sh[f] <= SHOULDER_FAIL)
+    for cut, ok, mx, nm in ((True, BLADE_FIX_OK, BLADE_FIX_MAX, "cortando"), (False, BLADE_FIX_SOFT_OK, BLADE_FIX_SOFT_MAX, "entre cortes")):
+        fs = [f for f in range(len(fixes)) if KR.cutting(clip, f) == cut]
+        if not fs:
+            continue
+        fx = max(fs, key=lambda i: fixes[i])
+        out["blade_fix_deg" + ("" if cut else "_soft")] = round(fixes[fx], 1)
+        check(fixes[fx] <= ok, f"{clip.name}: la hoja autorada entra en la mano {nm} (se corrió {fixes[fx]:.0f}° en f{fx})",
+              warn=fixes[fx] <= mx)
+    # tirones: el cambio por cuadro del juego que el gesto autorado no tapa (KR.step_ease: en un golpe que sacude la
+    # mano, un giro grande no se ve)
+    for j, nm, e in ((0, "giro de la hoja", ease[0]), (2, "codo derecho", ease[0]), (3, "codo izquierdo", ease[1])):
+        d = [abs(KR._wrap(b[j] - a[j])) * ts * math.sqrt(e[f + 1]) for f, (a, b) in enumerate(zip(states, states[1:]))]
+        i = max(range(len(d)), key=lambda q: d[q]) if d else 0
+        out["step_" + str(j)] = round(d[i], 1) if d else 0.0
+        check(not d or d[i] <= STEP_JUMP_DEG, f"{clip.name}: {nm} sin tirones ({d[i] if d else 0:.0f}° por cuadro en f{i}-f{i + 1})",
+              warn=True)
+    out["arm_states"] = [[round(v, 1) for v in s] for s in states]
+    return out
 
 
 def chain_report(rig, baked):
@@ -365,6 +424,7 @@ def main():
         bpy.data.actions.remove(a)
     C.rest(arm, True)
     print("esqueleto de juego:", KR.game_skeleton(arm, body))
+    print("nudo de la bandana (caras sacadas, escala):", KR.bandana_knot(body))
     C.limit_weights(body)
     C.flat_normals(body)
     C.flat_normals(kat)
@@ -382,12 +442,19 @@ def main():
         clips = [c for c in clips if c.name in names]
     baked, reports, rootsd = [], {}, {}
     for clip in clips:
-        misses = []
+        states = KR.arm_path(rig, solver, clip)
+        misses, wrists, fixes = [], [], []
+        it = iter(states)
+
+        fr_ = iter(range(clip.frames + 1))
 
         def solve(pose, c):
-            misses.append(dict(solver.solve(pose, c)))
+            misses.append(dict(solver.solve(pose, c, next(it), KR.frame_limits(clip, next(fr_)))))
+            wrists.append((solver.wrist["R"], solver.wrist["L"], solver.shoulder["R"], solver.shoulder["L"]))
+            fixes.append(solver.blade_fix)
         frames, ctrls, roots = NA.bake_clip(rig, clip, solve, ())
         reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses)
+        reports[clip.name].update(wrist_report(clip, wrists, states, fixes, solver.path_ease))
         baked.append((clip, frames))
         rootsd[clip.name] = roots
     reports["_chains"] = chain_report(rig, baked)
@@ -544,7 +611,7 @@ def write_sidecar(baked, ranges, reports, fbx_summary):
             "timing": t, "normalized": norm,
             "events": [{"frame": e["frame"], "t": round(e["frame"] / n, 4), "fn": e["fn"]} for e in clip.events],
             "notes": clip.notes,
-            "lint": {k: v for k, v in rep.items() if k not in ("plants", "tip_speed_mps", "summary")},
+            "lint": {k: v for k, v in rep.items() if k not in ("plants", "tip_speed_mps", "summary", "arm_states")},
         }
     info = {"fps": NA.FPS, "take": "Scene", "units_per_meter": round(KR.U_PER_M, 4),
             "facing": "frente +Y de la armadura (Blender +X): modelYaw 90 en NindoContent, como siempre",
