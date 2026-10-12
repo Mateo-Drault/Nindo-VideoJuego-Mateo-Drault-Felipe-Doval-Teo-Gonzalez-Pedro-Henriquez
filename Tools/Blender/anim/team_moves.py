@@ -518,6 +518,14 @@ def ninja_hop_back(ch, N):
     RISE = dict(G, hips=(0.0, 0.02, -0.12), hips_rot=(8.0, 0.0, 17.0), spine=(8.0, 0.0, -6.0), head=(-12.0, 0.0, -4.0))
     keys = [Key(0, G), Key(apex, CROUCH, "inout"), Key(to, PUSH, "in"), Key(13, TUCKED, "out"), Key(21, REACH, "inout"),
             Key(land, LAND, "in2"), Key(29, dict(LAND, hips=(0.0, -0.02, -0.24)), "out"), Key(31, RISE, "inout"), Key(n, G, "sine")]
+    # la mano libre cerrada al costado de la cadera, con el puño hacia adentro y a la altura de la cadera en cada pose (quieta
+    # en el marco de autoría mientras el cuerpo se hundía y se estiraba, el antebrazo daba vuelta en el empujón)
+    # hasta el final: la vuelta a la mano de la guardia la hace el cruce a la locomoción (girándola en un cuadro, el
+    # antebrazo daba vuelta)
+    side = {"hand_l_dir": (0.1, -0.5, -0.85), "hand_l_palm": (-1.0, 0.0, 0.0), "fist_l": 0.6}
+    for k in keys[1:]:
+        hz = k.ctrl["hips"][2]
+        k.ctrl = dict(k.ctrl, hand_l=(0.22, -0.05, 0.84 + hz), **side)
     span = float(land - to)
     tuck = lambda f: 0.20 * max(0.0, math.sin(math.pi * (f - to) / span)) ** 1.5
     # para atrás: lo que avanzó el transform va hacia +Y (dy negativo en FR/FL); los pies quedan adelante el primer cuadro

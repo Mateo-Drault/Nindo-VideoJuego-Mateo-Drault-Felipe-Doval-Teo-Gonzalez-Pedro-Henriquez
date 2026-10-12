@@ -222,7 +222,7 @@
       "twist": 25.5,
       "fore": 62.6,
       "swivel": 31.0,
-      "clamp": 22.7,
+      "clamp": 21.2,
       "asked_over": 0.0,
       "pron": [
        -64.3,
@@ -242,10 +242,10 @@
       ]
      }
     },
-    "solver_jump_deg": 31.7,
+    "solver_jump_deg": 30.5,
     "local_pop_deg": 0.0,
-    "local_max_deg": 85.3,
-    "hold_tip_mps": 2.48,
+    "local_max_deg": 85.0,
+    "hold_tip_mps": 2.37,
     "peak_frame": 16,
     "variant_skate_cm": {
      "Sumo": 0.0,
@@ -377,7 +377,7 @@
       "twist": 12.2,
       "fore": 62.6,
       "swivel": 31.0,
-      "clamp": 19.0,
+      "clamp": 18.5,
       "asked_over": 0.0,
       "pron": [
        -64.3,
@@ -387,7 +387,7 @@
     },
     "solver_jump_deg": 10.7,
     "local_pop_deg": 0.0,
-    "local_max_deg": 86.1,
+    "local_max_deg": 86.2,
     "hold_tip_mps": 1.8,
     "peak_frame": 12,
     "variant_skate_cm": {

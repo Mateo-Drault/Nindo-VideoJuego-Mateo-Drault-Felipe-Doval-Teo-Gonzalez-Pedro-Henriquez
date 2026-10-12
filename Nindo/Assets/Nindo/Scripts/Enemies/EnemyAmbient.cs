@@ -46,9 +46,9 @@ namespace Nindo
         /// <summary>Hasta dónde se reparte la reacción de los del mismo encuentro (no se sobresaltan todos en el mismo
         /// cuadro) y cuánto más tarda el sumo dormido.</summary>
         const float WakeSpread = 0.3f, SleepExtra = 0.35f;
-        /// <summary>Un golpe en pleno sobresalto lo apura a este ritmo: el sumo dormido queda parado en 1.3 s, el ninja en
-        /// 0.8 (con el ritmo normal el combo entero de Kaito y más le entraba sin respuesta).</summary>
-        const float HurrySpeed = 1.8f;
+        /// <summary>Un golpe en pleno sobresalto lo apura a este ritmo: el sumo dormido queda en guardia a los 0.9 s (le entra
+        /// el combo de Kaito, 3 cortes), el ninja a los 0.5 (2 cortes). Con el ritmo normal le entraban 5-6 sin respuesta.</summary>
+        const float HurrySpeed = 2.2f;
         /// <summary>Lo nota a Kaito a esta distancia (m): lo bastante adentro de la pantalla (el piso visible delante de Kaito
         /// llega a ~10 m con la cámara del juego) para que lo que hace se vea un rato; dormido, más cerca.</summary>
         const float NoticeAwake = 7f, NoticeAsleep = 5f;

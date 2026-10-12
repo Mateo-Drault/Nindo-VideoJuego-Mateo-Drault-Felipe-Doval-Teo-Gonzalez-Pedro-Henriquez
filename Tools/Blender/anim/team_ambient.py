@@ -107,7 +107,8 @@ def ambient_alert(N):
     DRAW = N.P(hips=(0.0, 0.03, -0.12), hips_rot=(6.0, 0.0, 20.0), spine=(8.0, 0.0, -6.0), chest=(4.0, 0.0, -9.0), head=(-10.0, 0.0, -4.0),
                grip=(-0.17, -0.32, 0.80), blade=(0.26, -0.90, 0.30), edge=N.LOOP_EDGE)
     keys = [Key(0, M), Key(3, STARTLE, "snap"), Key(6, dict(STARTLE, hips=(0.011, SEAT_BACK + 0.01, z0 + 0.135 - 0.638 + 0.03), head=(-14.0, 0.0, 0.0)), "out"),
-            Key(11, LEAN, "inout"), Key(14, PUSH, "in"), Key(17, AIR, "out"), Key(20, LAND, "in2"), Key(24, SINK, "out"),
+            Key(11, LEAN, "inout"), Key(14, PUSH, "in"), Key(15, _mid(PUSH, AIR, 0.5), "out"), Key(17, AIR, "out"), Key(20, LAND, "in2"),
+            Key(24, SINK, "out"),
             Key(30, DRAW, "inout"), Key(36, dict(I0, hips=(0.0, 0.034, -0.085)), "sine"), Key(n, I0, "sine")]
     fr, fl = _seat_feet(0)
     # descruza: los pies salen al borde de la roca a la altura de su cara (f10), bajan por delante de ella (f13: con los pies
@@ -186,8 +187,10 @@ def _spar_halves(N):
     # 130° en 3 cuadros y la izquierda se soltaba del mango
     LIFT = dict(RAISE, hips=(0.0, 0.05, -0.09), hips_rot=(2.0, 0.0, 14.0), spine=(2.0, 0.0, -4.0), chest=(-4.0, 0.0, -6.0), head=(-4.0, 0.0, -4.0),
                 grip=(-0.14, -0.26, 1.10), blade=_n((-0.05, -0.45, 0.89)), edge=_n((0.0, -0.89, -0.45)))
-    attack = [Key(0, READY), Key(4, PRESS, "inout"), Key(8, LIFT, "inout"), Key(c - 4, RAISE, "out"), Key(c - 2, SWING, "in"), Key(c, HIT, "lin"),
-              Key(c + 3, BOUNCE, "out"), Key(c + 10, BACK, "inout"), Key(c + 17, READY, "inout"), Key(SPAR_HALF, READY, "sine")]
+    attack = [Key(0, READY), Key(4, PRESS, "inout"), Key(8, LIFT, "inout"), Key(c - 4, RAISE, "out"), Key(c - 3, _mid(RAISE, SWING), "inout"),
+              Key(c - 2, SWING, "in"), Key(c, HIT, "lin"),
+              Key(c + 3, BOUNCE, "out"), Key(c + 6, _mid(BOUNCE, BACK, 0.45), "inout"), Key(c + 10, BACK, "inout"), Key(c + 17, READY, "inout"),
+              Key(SPAR_HALF, READY, "sine")]
     # el paso adelante llega quieto: un cuadro antes del choque ya está sobre su lugar a 2 cm y en el choque se apoya
     # (con 'in' llegaba todavía yendo y resbalaba 16 cm con el pie en el piso)
     fa = {"r": [N.FR(0), N.FR(c - 4), N.FR(c - 1, s_in - 0.01, z=0.025, ease="inout", lift=0.07), N.FR(c, s_in, pitch=-6.0, ease="out", lift=0.0),

@@ -293,8 +293,6 @@ def replay_skate(clip, pts, roots_auth, tdir, n, apex, contact, windup, lunge, f
         start = max(0.0, end - max(end - (tr0.tA + tr0.hold), lunge / 12.0))
         lin = (start, end)
     d = np.array((tdir[0], tdir[1], 0.0), dtype=np.float64)
-    if os.environ.get("NINDO_REPLAY_DUMP"):
-        np.savez(os.path.join(os.environ["NINDO_REPLAY_DUMP"], clip.name + ".npz"), **{k: np.array([pts[f][k] for f in range(n + 1)]) for k in pts[0]})
     worst, per, at = 0.0, 0.0, ""
     for k in pts[0]:
         P = np.array([pts[f][k] - np.array(roots_auth[f]) for f in range(n + 1)])
@@ -309,7 +307,7 @@ def replay_skate(clip, pts, roots_auth, tdir, n, apex, contact, windup, lunge, f
                 trv = TM.knot_curve(knots, f)
             else:
                 trv = lunge * min(1.0, max(0.0, (t - lin[0]) / max(1e-4, lin[1] - lin[0])))
-            Wp = (_hermite(P, i, s) if not os.environ.get("NINDO_REPLAY_LINEAR") else P[i] + (P[min(n, i + 1)] - P[i]) * s) + d * trv
+            Wp = _hermite(P, i, s) + d * trv
             if prev is not None:
                 on = (prev[:, 2] < floor_tol) & (Wp[:, 2] < floor_tol)
                 if on.any():
@@ -499,7 +497,8 @@ def pop_checks(ch, clip, frames, ctrls, rep):
     rep["local_pop_deg"] = round(bad[0], 1)
     rep["local_max_deg"] = round(top, 1)
     check(bad[0] == 0.0, f"{clip.name}: antebrazo y mano sin tics en lo exportado ({bad[1] or f'el cuadro más rápido gira {top:.0f}°'})")
-    check(soft[0] <= 30.0, f"{clip.name}: brazo sin tics en lo exportado ({soft[1] or 'ok'})", warn=True)
+    check(soft[0] <= 30.0, f"{clip.name}: brazo sin tics en lo exportado ({soft[1] or 'ok'})",
+          warn=not (clip.loop and "ambient" in clip.timing))
 
 
 _PALM = {}

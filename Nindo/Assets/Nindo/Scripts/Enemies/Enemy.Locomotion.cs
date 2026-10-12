@@ -5,10 +5,10 @@ namespace Nindo
     /// <summary>
     /// Cómo se mueve el cuerpo del enemigo, aparte de la IA de Enemy.cs:
     ///  * locomoción direccional: rodeando a Kaito (TickStrafe) el enemigo lo mira y se mueve de costado o para atrás. Con
-    ///    un controller que trae el blend tree 2D (VelX/VelZ: Walk, WalkBack, StrafeL, StrafeR y Run alrededor de un LocoIdle
-    ///    quieto, todos del mismo largo) se le pasa la velocidad en su marco y Unity mezcla el paso con la dirección y el
-    ///    largo reales: los pies no patinan a ninguna velocidad ni en diagonal (ver DriveDirectional). Quieto un rato pasa
-    ///    al Idle que respira. Sin esos parámetros queda el blend tree 1D de siempre (Speed);
+    ///    un controller que trae el blend tree 2D (VelX/VelZ: Walk, WalkBack, StrafeL y StrafeR alrededor de un LocoIdle
+    ///    quieto, todos del largo de Walk, y Run en el 1D de afuera) se le pasa la velocidad en su marco y Unity mezcla el
+    ///    paso con la dirección y el largo reales: los pies no patinan a ninguna velocidad ni en diagonal (ver
+    ///    DriveDirectional). Quieto un rato pasa al Idle que respira. Sin esos parámetros queda el blend tree 1D de siempre;
     ///  * de vuelta a su lugar sin pelea (perdió a Kaito): mira adonde camina, al llegar gira a como estaba y retoma lo que
     ///    hacía antes (EnemyAmbient: meditar, practicar, dormir...);
     ///  * los clips de variante: un golpe de zona con clip propio (Whirl, Leap, Morote, HopBack...) vuelve al de siempre con
@@ -37,9 +37,8 @@ namespace Nindo
         // arranque seco el clip (que Unity interpola con curvas suaves entre cuadros) y el transform se separaban justo
         // donde el pie despega o queda clavado
         const float LungeAccel = 0.2f, LungeBrake = 0.2f;
-        // un salto con Kaito cerca cae este tanto más allá de donde lo toca la cápsula (m) y nunca más corto que esta
-        // parte de su embestida
-        const float AirOverlap = 0.2f, AirMinShare = 0.35f;
+        // un salto con Kaito cerca cae donde lo frenaría el imán, nunca más corto que esta parte de su embestida
+        const float AirMinShare = 0.35f;
 
         float stillFor;
         int idleMode = -1;          // 1 = el blend tree es direccional y existe el estado Idle (se mira una vez)
@@ -123,28 +122,24 @@ namespace Nindo
         }
 
         /// <summary>
-        /// La velocidad en el marco del enemigo, en m/s del clip, para el blend tree 2D. Unity mezcla dos muestras vecinas del
-        /// anillo (adelante y de costado, por ejemplo) con pesos lineales en el ángulo, y la mezcla de dos ciclos camina el
-        /// promedio de sus velocidades: a 45° pide la mitad de cada uno y el pie avanza 0.71 de lo que se mueve el cuerpo, en
-        /// otra dirección (a 30° se desviaba 3.4°). Se le pasa el ángulo que da la dirección justa (el peso de costado es
-        /// |x| / (|x| + |z|)) y el ritmo que compensa el largo ((|x| + |z|) / |v|, hasta 1.41). Hacia el centro (LocoIdle,
-        /// quieto) los pesos son lineales en el radio: el paso se acorta con la velocidad y la cadencia no cambia.
-        /// Corriendo (más que caminar, siempre hacia adelante) se le pasa la velocidad tal cual.
+        /// La velocidad en el marco del enemigo, en m/s del clip, para el blend tree 2D Simple Directional: Unity mezcla en el
+        /// triángulo de dos ciclos vecinos del anillo y el centro quieto con pesos baricéntricos, así que el paso mezclado camina
+        /// justo la velocidad que se le pasa (a cualquier velocidad y en diagonal) mientras caiga dentro del triángulo. Más allá
+        /// de la cuerda entre los dos vecinos (en diagonal a velocidad de caminar: hasta 0.71 del anillo) se le pasa el punto
+        /// de la cuerda y el ritmo sube lo que falta (hasta 1.41). Corriendo (más que caminar, siempre hacia adelante) el 2D
+        /// queda en el anillo y el 1D de afuera (Speed) mezcla con Run como siempre.
         /// </summary>
         void DriveDirectional(Vector3 vel, float dt)
         {
             Vector3 l = transform.InverseTransformDirection(vel) / ClipScale;
             var p = new Vector2(l.x, l.z);
-            float r = p.magnitude, rate = 1f;
+            float r = p.magnitude, rate = 1f, walk = config.walkSpeed / ClipScale;
             if (r > 1e-3f)
             {
-                float ax = Mathf.Abs(l.x), az = Mathf.Abs(l.z);
-                float th = ax / (ax + az) * Mathf.PI * 0.5f;
-                var fix = new Vector2(Mathf.Sign(l.x) * Mathf.Sin(th), Mathf.Sign(l.z) * Mathf.Cos(th)) * r;
-                float walk = config.walkSpeed / ClipScale;
-                float run = Mathf.Clamp01((r - walk) / (0.5f * walk));
-                p = Vector2.Lerp(fix, p, run);
-                rate = Mathf.Lerp((ax + az) / r, 1f, run);
+                // la cuerda entre los dos vecinos en esta dirección está a walk / (|cos| + |sin|) del centro
+                float chord = walk * r / (Mathf.Abs(p.x) + Mathf.Abs(p.y));
+                if (r > walk) p *= walk / r;
+                else if (r > chord) { rate = r / chord; p *= chord / r; }
             }
             anim.SetDirectional(p, dt);
             anim.SetStateSpeed(rate);
@@ -259,7 +254,7 @@ namespace Nindo
                 // en el aire: cae más corto si Kaito está cerca (cortado a mitad, el salto chocaba contra una pared invisible
                 // y caía derecho); el clip es el mismo, la escala del recorrido cambia
                 if (a.lungeAir && !hop)
-                    lungeLen = Mathf.Clamp(DistToTarget - Radius - target.Radius - 0.3f + AirOverlap, a.lunge * AirMinShare, a.lunge);
+                    lungeLen = Mathf.Clamp(DistToTarget - Radius - target.Radius - 0.3f, a.lunge * AirMinShare, a.lunge);
             }
             float want = LungeAt(stepClock) - lungeTravel;
             if (want <= 0f) return lungeLen - lungeTravel;

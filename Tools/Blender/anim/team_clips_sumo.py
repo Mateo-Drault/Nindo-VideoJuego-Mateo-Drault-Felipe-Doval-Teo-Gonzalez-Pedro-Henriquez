@@ -184,13 +184,13 @@ def harite_r(n, apex, contact, lunge, windup, name, state):
     arrimando el pie izquierdo."""
     tr, _ = team_moves.clip_lunge_travel(n, apex, contact, lunge, windup, LUNGE_FROM[state])
     TELL = P(hips=(0.06, 0.10, -0.17), hips_rot=(-2.0, 0.0, -28.0), spine=(0.0, 3.0, -14.0), head=(-8.0, 0.0, 30.0),
-             hand_r=(-0.88, 0.24, 2.00), hand_r_dir=(-0.20, 0.10, 1.0), hand_r_palm=(0.0, -1.0, 0.15), elbow_r=(-0.8, 0.8, -0.3),
+             hand_r=(-0.88, 0.24, 2.00), hand_r_dir=(-0.20, 0.10, 1.0), hand_r_palm=(0.0, -1.0, 0.15), elbow_r=(-0.8, 0.75, -0.4),
              hand_l=(0.30, -0.62, 1.48), hand_l_dir=(0.0, -0.5, 0.85), hand_l_palm=(-0.2, -1.0, -0.3), elbow_l=(1.0, -0.1, -0.5),
              fist_r=0.0, fist_l=0.1)
     HOLD = dict(TELL, hips=(0.065, 0.11, -0.18), hand_r=(-0.89, 0.26, 2.01), hips_rot=(-2.0, 0.0, -30.0))
     # la cadera ya giró y avanzó; la mano todavía atrás del hombro (el brazo llega último: látigo)
     SMEAR = dict(HOLD, hips=(0.0, -0.04, -0.18), hips_rot=(8.0, 0.0, 2.0), spine=(8.0, 0.0, 0.0), head=(-12.0, 0.0, 8.0),
-                 hand_r=(-0.64, -0.20, 1.84), hand_r_dir=(0.0, -0.3, 0.95), hand_r_palm=(0.0, -1.0, -0.3), elbow_r=(-0.8, 0.7, -0.45),
+                 hand_r=(-0.64, -0.20, 1.84), hand_r_dir=(0.0, -0.3, 0.95), hand_r_palm=(0.0, -1.0, -0.3), elbow_r=(-0.85, 0.55, -0.5),
                  hand_l=(0.42, -0.46, 1.44), hand_l_dir=(0.05, -0.45, 0.40), hand_l_palm=(-0.6, -0.7, -0.3))
     CONTACT = dict(SMEAR, hips=(-0.02, -0.17, -0.19), hips_rot=(14.0, 0.0, 28.0), spine=(14.0, -2.0, 30.0), head=(-18.0, 0.0, -30.0),
                    hand_r=HARITE_REACH, hand_r_dir=(0.0, -0.42, 0.91), hand_r_palm=(0.0, -0.91, -0.42), elbow_r=(-0.9, 0.3, -0.6),

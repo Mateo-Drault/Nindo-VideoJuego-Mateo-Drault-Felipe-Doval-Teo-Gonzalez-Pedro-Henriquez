@@ -1720,12 +1720,12 @@
       "twist": 15.8,
       "fore": 67.5,
       "swivel": 50.0,
-      "clamp": 12.6,
+      "clamp": 13.0,
       "swing": 26.4,
       "pinned": 0.0,
       "pron": [
        -59.7,
-       12.1
+       13.9
       ]
      },
      "l": {
@@ -1737,13 +1737,13 @@
       "asked_over": 0.0,
       "pron": [
        -67.1,
-       4.0
+       3.8
       ]
      }
     },
-    "solver_jump_deg": 28.0,
+    "solver_jump_deg": 29.0,
     "local_pop_deg": 0.0,
-    "local_max_deg": 87.8,
+    "local_max_deg": 64.7,
     "grip_gap_cm": {
      "r": {
       "ref": 6.0,
@@ -1800,49 +1800,49 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "hip_drop_cm": 2.8,
+    "hip_drop_cm": 2.9,
     "loop_seam_deg": 0.056,
     "wrists": {
      "r": {
       "excess": 0.75,
       "twist": 22.5,
       "fore": 82.2,
-      "swivel": 55.6,
-      "clamp": 14.4,
-      "swing": 47.4,
+      "swivel": 68.6,
+      "clamp": 13.8,
+      "swing": 47.0,
       "pinned": 0.08,
       "pron": [
-       5.3,
+       5.1,
        90.0
       ]
      },
      "l": {
       "excess": 1.26,
-      "twist": 21.1,
-      "fore": 76.5,
-      "swivel": 40.8,
+      "twist": 19.5,
+      "fore": 76.7,
+      "swivel": 57.0,
       "clamp": 0.0,
       "swing": 47.7,
       "pinned": 0.0,
       "pron": [
-       -15.5,
-       84.3
+       -33.4,
+       84.5
       ]
      }
     },
-    "solver_jump_deg": 37.2,
+    "solver_jump_deg": 38.2,
     "local_pop_deg": 0.0,
-    "local_max_deg": 86.0,
+    "local_max_deg": 77.0,
     "grip_gap_cm": {
      "r": {
       "ref": 6.0,
       "min": 4.8,
-      "max": 7.8
+      "max": 7.5
      },
      "l": {
       "ref": 8.2,
-      "min": 7.0,
-      "max": 9.0
+      "min": 6.3,
+      "max": 8.4
      }
     },
     "blade_face": {
@@ -1854,13 +1854,13 @@
       [
        15,
        21,
-       0.57,
-       0.24
+       0.51,
+       0.21
       ]
      ],
      "l": []
     },
-    "lowest_body_cm": -1.3,
+    "lowest_body_cm": -1.4,
     "lowest_weapon_cm": 73.2
    }
   },
@@ -1905,49 +1905,49 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "hip_drop_cm": 2.8,
+    "hip_drop_cm": 2.9,
     "loop_seam_deg": 0.056,
     "wrists": {
      "r": {
       "excess": 0.75,
       "twist": 22.5,
       "fore": 82.2,
-      "swivel": 55.6,
-      "clamp": 14.4,
-      "swing": 47.4,
+      "swivel": 68.6,
+      "clamp": 13.8,
+      "swing": 47.0,
       "pinned": 0.08,
       "pron": [
-       5.3,
+       5.1,
        90.0
       ]
      },
      "l": {
       "excess": 1.26,
-      "twist": 21.1,
-      "fore": 76.5,
-      "swivel": 40.8,
+      "twist": 19.5,
+      "fore": 76.7,
+      "swivel": 57.0,
       "clamp": 0.0,
       "swing": 47.7,
       "pinned": 0.0,
       "pron": [
-       -15.5,
-       84.3
+       -33.4,
+       84.5
       ]
      }
     },
-    "solver_jump_deg": 37.2,
+    "solver_jump_deg": 38.2,
     "local_pop_deg": 0.0,
-    "local_max_deg": 86.0,
+    "local_max_deg": 77.0,
     "grip_gap_cm": {
      "r": {
       "ref": 6.0,
       "min": 4.8,
-      "max": 7.8
+      "max": 7.5
      },
      "l": {
       "ref": 8.2,
-      "min": 7.0,
-      "max": 9.0
+      "min": 6.3,
+      "max": 8.4
      }
     },
     "blade_face": {
@@ -1959,13 +1959,13 @@
       [
        63,
        69,
-       0.57,
-       0.24
+       0.51,
+       0.21
       ]
      ],
      "l": []
     },
-    "lowest_body_cm": -1.3,
+    "lowest_body_cm": -1.4,
     "lowest_weapon_cm": 73.2
    }
   },
@@ -2818,21 +2818,21 @@
       ]
      },
      "l": {
-      "excess": 0.59,
-      "twist": 25.5,
-      "fore": 92.8,
-      "swivel": 12.0,
-      "clamp": 7.4,
-      "asked_over": 7.0,
+      "excess": 0.64,
+      "twist": 14.9,
+      "fore": 70.1,
+      "swivel": 34.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -85.0,
-       -39.8
+       -62.3,
+       52.0
       ]
      }
     },
-    "solver_jump_deg": 16.5,
+    "solver_jump_deg": 18.2,
     "local_pop_deg": 0.0,
-    "local_max_deg": 93.3,
+    "local_max_deg": 65.9,
     "grip_gap_cm": {
      "r": {
       "ref": 6.0,
