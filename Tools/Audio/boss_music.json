@@ -8,7 +8,9 @@
    },
    "2": {
     "clip": "boss_goro_2",
-    "intro": "boss_goro_2_in"
+    "intro": "boss_goro_2_in",
+    "intro_compases_antes_del_final": 6,
+    "intro_muestra": 277311
    }
   },
   "boss_lake": {
@@ -51,6 +53,9 @@
    },
    "3": {
     "clip": "boss_final_3"
+   },
+   "4": {
+    "clip": "boss_final_4"
    }
   },
   "ending": {
@@ -268,6 +273,18 @@
    "sr": 44100,
    "bpm": 105.0,
    "compas_s": 2.285714,
+   "entradas": {
+    "subida": {
+     "compas": 55,
+     "muestra": 0,
+     "s": 0.0
+    },
+    "cumbre": {
+     "compas": 63,
+     "muestra": 806400,
+     "s": 18.2857
+    }
+   },
    "LUFS": -13.04
   },
   "ending": {
@@ -278,6 +295,67 @@
    "bpm": 80.0,
    "compas_s": 3.0,
    "LUFS": -16.0
+  },
+  "boss_goro_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 156348,
+   "segundos": 3.5453,
+   "sr": 44100,
+   "bpm": 137.738,
+   "compas_s": 1.742437,
+   "golpe_s": 0.008,
+   "LUFS": -17.14
+  },
+  "boss_lake_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 134943,
+   "segundos": 3.0599,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "golpe_s": 0.516,
+   "LUFS": -17.17
+  },
+  "boss_final_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 228360,
+   "segundos": 5.1782,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "golpe_s": 0.008,
+   "LUFS": -19.93
+  },
+  "boss_final_4": {
+   "tipo": "loop",
+   "muestras": 806400,
+   "segundos": 18.2857,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "LUFS": -12.81
+  }
+ },
+ "finales": {
+  "boss_goro": {
+   "clip": "boss_goro_out",
+   "fundido_s": 0.0,
+   "vuelve_exploracion": true
+  },
+  "boss_lake": {
+   "clip": "boss_lake_out",
+   "fundido_s": 0.0,
+   "vuelve_exploracion": true
+  },
+  "boss_bamboo": {
+   "clip": null,
+   "fundido_s": 3.5,
+   "vuelve_exploracion": true
+  },
+  "boss_final": {
+   "clip": "boss_final_out",
+   "fundido_s": 0.0,
+   "vuelve_exploracion": false
   }
  }
 }

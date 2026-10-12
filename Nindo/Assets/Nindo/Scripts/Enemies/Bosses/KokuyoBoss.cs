@@ -158,6 +158,8 @@ namespace Nindo
             {
                 Health = Mathf.Min(Health, Gates[1] * config.maxHealth);
                 retryTearPending = true;
+                // en el mismo frame que PlayBossMusic: la música arranca directo en el acto 2, sin la intro del 1
+                Game.Audio?.SetBossMusicPhase(2);
             }
         }
 
@@ -805,6 +807,8 @@ namespace Nindo
             float snap = (snapN - from) * c.Seconds;
             yield return new WaitForSeconds(snap);
             Game.Audio?.Play("boss_roar", transform.position, 1f);
+            // el acto 2 entra en el próximo compás después del tirón (la sombra suelta)
+            Game.Audio?.SetBossMusicPhase(2);
             look.SnapCrest(transform.position);
             fx?.ShadowTear(false);
             Game.FX?.SmokePuff(transform.position + Vector3.up, 2.2f);
@@ -837,14 +841,15 @@ namespace Nindo
             Game.Audio?.Play("slam", transform.position, 0.8f);
             yield return new WaitForSeconds(Mathf.Max(0f, fade - plant));
             if (kage != null) { kage.Dismiss(); kage = null; }
-            Game.Audio?.StopMusic(0.4f);   // viento y silencio: lo que queda es el aviso
+            Game.Audio?.SilenceBossMusic(0.4f);   // viento y silencio: lo que queda es el aviso
             fx?.Eclipse();
             look.SetEclipse(true);
             // un vistazo al cielo mientras no puede atacar (la cámara de juego nunca ve la luna)
             if (fx != null && fx.Moon != null) fx.Moon.PlaySkyShot(0.9f, 0.5f, 0.6f);
             RewardKaito();
             yield return new WaitForSeconds(1.6f);
-            Game.Audio?.PlayMusic(musicKey, 0.3f);
+            // desde el silencio entra en el acto: la segunda subida del tema
+            Game.Audio?.SetBossMusicPhase(3);
             yield return new WaitForSeconds(Mathf.Max(0.2f, 3.0f - fade - 1.6f));
             Act = 3;
             config.patterns = KokuyoMoves.Act(3);
@@ -861,6 +866,8 @@ namespace Nindo
             float roar = c.Event("Roar") * c.Seconds;
             yield return new WaitForSeconds(roar);
             Game.Audio?.Play("boss_roar", transform.position, 1f);
+            // el Último Desfile: la meseta de la cumbre del tema, en el próximo compás
+            Game.Audio?.SetBossMusicPhase(4);
             Game.Camera?.Shake(0.7f);
             Game.FX?.Shockwave(transform.position, 6f, new Color(1f, 0.4f, 0.3f));
             PushKaito(5f, 3f);

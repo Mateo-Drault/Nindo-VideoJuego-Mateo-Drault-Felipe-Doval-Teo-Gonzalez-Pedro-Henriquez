@@ -382,7 +382,7 @@ namespace Nindo
             {
                 case "goro":
                     b.bossId = "goro"; b.title = "Gorō"; b.subtitle = "El Martillo de Kodoyama";
-                    b.introAnim = "Intro"; b.phaseAnim = "Spotted"; b.musicKey = "boss"; b.phaseThresholds = new[] { 0.5f };
+                    b.introAnim = "Intro"; b.phaseAnim = "Spotted"; b.musicKey = "boss_goro"; b.phaseThresholds = new[] { 0.5f };
                     break;
                 case "mizuchi":
                     b.bossId = "mizuchi"; b.title = "Mizuchi"; b.subtitle = "El Gran Koi del Lago Kohan";

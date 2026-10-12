@@ -6,8 +6,11 @@
     3. blender -b --factory-startup --python Tools/Audio/aud_convert.py -- encode <out>/enc 192000
     4. python Tools/Audio/build_boss_music.py trim --out <out>       (largo exacto en el último granule)
        python Tools/Audio/build_boss_music.py verify --out <out>     (largo, alineación y costuras después del códec)
-    5. python Tools/Audio/build_boss_music.py install --out <out>    (Music/<clave>.ogg + .meta, Tools/Audio/boss_music.json)
+    5. python Tools/Audio/build_boss_music.py install --out <out>    (Music/<clave>.ogg + .meta, Tools/Audio/boss_music.json
+       y Nindo/Assets/Nindo/Scripts/Audio/MusicPlan.cs, la tabla que lee MusicDirector)
     6. python Tools/Audio/build_boss_music.py preview --out <out>    (opcional: cómo suena cada pelea con sus fases)
+build acepta jefes (goro lake bamboo final ending); trim, verify e install, claves o prefijos (boss_final_4) para
+rehacer una toma sola sin tocar el resto. 'plan' vuelve a escribir boss_music.json y MusicPlan.cs sin tocar el audio.
 
 Los temas no se recomponen: se cortan en tiempos de compás (grilla de tempo medida), los loops se cierran donde lo que
 suena después del salto es lo mismo que sonaría en el tema (auto-similitud por compás y correlación de la onda), y cada
@@ -254,6 +257,29 @@ def entries(T, sr, s0, bars, names):
     return {names[k]: {"compas": k, "muestra": at(T(k), sr) - s0, "s": round(at(T(k), sr) / sr - s0 / sr, 4)} for k in bars}
 
 
+RAMP_IN = 0.006            # fundido de entrada de las tomas que arrancan solas (más corto que los 8 ms antes del tiempo)
+
+
+def outro(x, sr, T, bar, k, g, key, name, pickup_beats=0, up=False, note=""):
+    """El final escrito del tema (el último golpe y su cola) para cuando cae el jefe: arranca en un tiempo (el director
+    lo pone en el próximo tiempo de lo que suena) y, si hay anacrusa, el golpe cae 'pickup_beats' tiempos después. La
+    cola se corta donde baja a -60 dB del pico del tema y se funde 0.3 s. Si el golpe pasa de -1 dBFS con la ganancia
+    del jefe, solo esta toma baja lo justo (el resto del jefe queda igual)."""
+    s = at(T(k) - pickup_beats * bar / 4, sr)
+    env = np.convolve(np.abs(mono(x)), np.ones(4096) / 4096, mode="same")
+    last = len(env) - int(np.argmax(env[::-1] > env.max() * 10 ** (-60 / 20)))
+    y = x[s:last].copy()
+    if up:
+        y = resample_poly(y, DOWN, UP, axis=0).astype(np.float32)
+        bar = bar * DOWN / UP
+    Fi, Fo = int(RAMP_IN * sr), int(0.3 * sr)
+    y[:Fi] *= fade(Fi, "in"); y[-Fo:] *= fade(Fo, "out")
+    gg = min(g, 10 ** ((-1.0 - peak_db(y)) / 20))
+    save(key, y * gg, sr, {"fuente": name, "bpm": round(240.0 / bar, 3), "compas_s": round(bar, 6), "tipo": "outro (una vez)",
+                           "golpe_s": round(pickup_beats * bar / 4 + 0.008, 3), "compas_fuente": k,
+                           "ganancia_relativa_dB": round(20 * np.log10(gg / g), 2), "nota": note})
+
+
 # ============================================================================ Gorō: Boss_Koto (G_P, CC0)
 def goro(target=-14.0):
     """Fase 1 (barra falsa): koto solo -> tambores, y un loop largo con el respiro del tema (cuerpo, corte y vuelta de
@@ -288,6 +314,9 @@ def goro(target=-14.0):
         "tambores_s": round((drums - i0 / sr) * DOWN / UP, 3)})
     save("boss_goro_2", body2 * g2, sr, loop_meta(body2, g2, sr, bar2, {
         "fuente": name, "bpm": round(bpm2, 3), "compases": "c9-c36 (28) medio tono arriba, +1 dB", "correlacion_vuelta": round(c2, 4)}))
+    # medio tono arriba, como la fase 2: Gorō solo cae en la 2 (la barra falsa termina en ella) y un cierre medio tono
+    # abajo de lo que venía sonando suena a que se desinfla
+    outro(x, sr, T, bar, 51, g2, "boss_goro_out", name, up=True, note="c51 medio tono arriba: el último golpe de koto y tambores, y su cola")
 
 
 # ============================================================================ Mizuchi: Amenoshita (PeriTune, CC BY 4.0)
@@ -312,6 +341,8 @@ def lake(target=-14.0):
         "fuente": name, "bpm": bpm, "compases": "c47-c54 y c7-c46 (48)", "correlacion_empalme": round(c3, 4),
         "nota": "fase 3: arranca en la cumbre (c47); al terminar c54 salta a c7 (el tema A) sin apertura ni corte",
         "empalme": seam_metrics(np.concatenate([y3, y3]) * g, sr, [j / sr], bar)}))
+    outro(x, sr, T, bar, 125, g, "boss_lake_out", name, pickup_beats=1,
+          note="el último tiempo de c124 (la subida de los tambores) y el golpe final de c125 con su cola")
 
 
 def rotated_section(x, sr, T, ka, kb, kstart, F=0.025):
@@ -367,7 +398,17 @@ def final(target=-14.0):
         "entradas": entries(T, sr, s2, (21, 27, 35, 39, 55), {21: "comienzo", 27: "cumbre", 35: "golpe", 39: "vuelta", 55: "subida"})}))
     save("boss_final_3", act3 * g, sr, loop_meta(act3, g, sr, bar, {
         "fuente": name, "bpm": bpm, "compases": "c55-c70 (16)", "correlacion_vuelta": round(c3, 4),
-        "nota": "acto 3: la segunda subida (c55) hasta la cumbre (c63-c70); al terminar c70 vuelve a c55"}))
+        "nota": "acto 3: la segunda subida (c55) hasta la cumbre (c63-c70); al terminar c70 vuelve a c55",
+        "entradas": entries(T, sr, s3, (55, 63), {55: "subida", 63: "cumbre"})}))
+    # la última resistencia (10 %): la meseta de la cumbre. El acto 3 vuelve de la cumbre a la subida en cada vuelta
+    # (-14 -> -18 dB por compás) y en el Último Desfile eso se oía como un bajón. c69 sigue en c61 casi igual (correlación
+    # 0.52, el flujo de la costura en la mediana de los tiempos fuertes, sin salto de nivel)
+    act4, s4, c4 = section_loop(x, sr, T, 61, 69)
+    assert peak_db(act4 * g) <= -1.0
+    save("boss_final_4", act4 * g, sr, loop_meta(act4, g, sr, bar, {
+        "fuente": name, "bpm": bpm, "compases": "c61-c68 (8)", "correlacion_vuelta": round(c4, 4),
+        "nota": "última resistencia: la cumbre de la segunda subida en loop"}))
+    outro(x, sr, T, bar, 74, g, "boss_final_out", name, note="c74: el último golpe del taiko y la cola grave")
 
 
 # ============================================================================ final: Sakuya4 (PeriTune, CC BY 4.0)
@@ -386,29 +427,45 @@ def ending(target=-16.0):
 
 # ============================================================================ plan para AudioManager
 PHASES = {
-    "boss_goro": {1: ("boss_goro", "boss_goro_intro", None), 2: ("boss_goro_2", "boss_goro_2_in", None)},
+    # fase 2 de Gorō: la transición desde su c3 (koto y percusión liviana, 6 compases antes del final): los tambores caen
+    # 6.8 s después del cambio. Entera eran 13 s de koto solo con el jefe ya enfurecido
+    "boss_goro": {1: ("boss_goro", "boss_goro_intro", None), 2: ("boss_goro_2", "boss_goro_2_in", None, 6)},
     "boss_lake": {1: ("boss_lake", "boss_lake_intro", None), 2: ("boss_lake", None, "desarrollo"), 3: ("boss_lake_3", None, None)},
     "boss_bamboo": {1: ("boss_bamboo", "boss_bamboo_intro", None), 2: ("boss_bamboo", None, "c_taiko"), 3: ("boss_bamboo", None, "b")},
-    "boss_final": {1: ("boss_final", "boss_final_intro", None), 2: ("boss_final_2", None, None), 3: ("boss_final_3", None, None)},
+    # 4: la última resistencia (10 %), la meseta de la cumbre
+    "boss_final": {1: ("boss_final", "boss_final_intro", None), 2: ("boss_final_2", None, None), 3: ("boss_final_3", None, None),
+                   4: ("boss_final_4", None, None)},
 }
+# al caer el jefe: (toma final o None, fundido en s si no hay toma, vuelve la música de la zona al terminar). Wuxia
+# termina en un fundido largo, no en un golpe: el bambú se funde. Kokuyō no devuelve la exploración: después viene
+# la campana, la luna y el final
+OUTROS = {"boss_goro": ("boss_goro_out", 0.0, True), "boss_lake": ("boss_lake_out", 0.0, True),
+          "boss_bamboo": (None, 3.5, True), "boss_final": ("boss_final_out", 0.0, False)}
 
 
 def write_plan(report):
     plan = {"_nota": ("Generado por Tools/Audio/build_boss_music.py. Por fase: clip en loop, intro o transición que se toca "
                       "una vez antes (PlayScheduled del loop a las 'muestras' de la intro) y, si la fase es otro punto del "
                       "mismo clip, la muestra de entrada. Los cambios de fase conviene hacerlos en el próximo límite de "
-                      "compás del clip que suena (compas_s desde el comienzo del clip)."), "jefes": {}, "clips": {}}
+                      "compás del clip que suena (compas_s desde el comienzo del clip)."), "jefes": {}, "clips": {}, "finales": {}}
     for key, v in report.items():
-        plan["clips"][key] = {k: v[k] for k in ("tipo", "muestras", "segundos", "sr", "bpm", "compas_s", "tambores_s", "entradas", "LUFS")
+        plan["clips"][key] = {k: v[k] for k in ("tipo", "muestras", "segundos", "sr", "bpm", "compas_s", "tambores_s", "golpe_s", "entradas", "LUFS")
                               if k in v}
+    for boss, (clip, fade_s, resume) in OUTROS.items():
+        plan["finales"][boss] = {"clip": clip if clip in report else None, "fundido_s": fade_s, "vuelve_exploracion": resume}
     for boss, phases in PHASES.items():
         out = {}
-        for ph, (clip, intro, entry) in phases.items():
+        for ph, (clip, intro, entry, *rest) in phases.items():
             if clip not in report:
                 continue
             d = {"clip": clip}
             if intro:
                 d["intro"] = intro
+            if rest and intro in report:
+                # la intro entra 'rest[0]' compases antes de su final (su grilla se cuenta desde el final)
+                ri = report[intro]
+                d["intro_compases_antes_del_final"] = rest[0]
+                d["intro_muestra"] = int(round(ri["muestras"] - rest[0] * ri["compas_s"] * ri["sr"]))
             if entry:
                 d["entrada"] = entry
                 d["entrada_muestra"] = report[clip]["entradas"][entry]["muestra"]
@@ -416,6 +473,40 @@ def write_plan(report):
         plan["jefes"][boss] = out
     plan["jefes"]["ending"] = {"1": {"clip": "ending"}}
     return plan
+
+
+PLAN_CS = os.path.join(REPO, "Nindo", "Assets", "Nindo", "Scripts", "Audio", "MusicPlan.cs")
+
+
+def clip_kind(tipo):
+    return "Outro" if tipo.startswith("outro") else "Once" if "una vez" in tipo else "Loop"
+
+
+def write_plan_cs(plan):
+    """La misma tabla para el juego (MusicDirector): sin JSON en tiempo de ejecución ni asset aparte que mantener."""
+    L = ["// Generado por Tools/Audio/build_boss_music.py (install o plan) desde Tools/Audio/boss_music.json: no editar a mano.",
+         "// Largos en muestras a la frecuencia del clip; compás en segundos; las entradas son muestras dentro del clip.",
+         "namespace Nindo", "{", "    public static partial class MusicPlan", "    {", "        static readonly Clip[] clips =", "        {"]
+    for k, c in sorted(plan["clips"].items()):
+        L.append('            new Clip("%s", %d, %d, %s, ClipKind.%s),' % (k, c["muestras"], c["sr"], repr(float(c["compas_s"])), clip_kind(c["tipo"])))
+    L += ["        };", "", "        static readonly Track[] tracks =", "        {"]
+    for boss, phases in plan["jefes"].items():
+        ph = []
+        for n in sorted(phases, key=int):
+            p = phases[n]
+            intro = '"%s"' % p["intro"] if p.get("intro") else "null"
+            ph.append('new Phase("%s", %s, %d, %d)' % (p["clip"], intro, p.get("entrada_muestra", 0), p.get("intro_muestra", 0)))
+        fin = plan["finales"].get(boss, {"clip": None, "fundido_s": 2.0, "vuelve_exploracion": True})
+        outro = '"%s"' % fin["clip"] if fin["clip"] else "null"
+        L.append('            new Track("%s", new[] { %s }, %s, %sf, %s),' % (
+            boss, ", ".join(ph), outro, repr(float(fin["fundido_s"])), "true" if fin["vuelve_exploracion"] else "false"))
+    L += ["        };", "    }", "}", ""]
+    with open(PLAN_CS, "w", encoding="utf-8", newline="\n") as f:
+        f.write("\n".join(L))
+    sys.path.insert(0, os.path.join(REPO, "Tools", "Unity"))
+    from unity_yaml import write_meta, MONO_META
+    write_meta(PLAN_CS, MONO_META)
+    print("plan C#", PLAN_CS)
 
 
 # ============================================================================ comandos
@@ -466,12 +557,18 @@ def ogg_pages(b):
     return out
 
 
-def cmd_trim():
+def wanted(rep, names):
+    """Claves del informe que tocan: todas, o las que empiezan con alguno de los nombres (p. ej. 'boss_goro_out')."""
+    return [k for k in rep if not names or any(k.startswith(n) for n in names)]
+
+
+def cmd_trim(names=()):
     """enc/<clave>.ogg -> <clave>.ogg con el largo exacto en el granule de la última página. El recorte del final solo
     vale dentro de la última página: si la continuación arranca en una página anterior (el muxer corta páginas de ~1 s
     donde le toca), esas páginas se funden con la última en una sola (cabe: hasta 255 segmentos)."""
     rep = json.load(open(os.path.join(OUT, "build_report.json"), encoding="utf-8"))
-    for key, v in rep.items():
+    for key in wanted(rep, names):
+        v = rep[key]
         b = open(os.path.join(OUT, "enc", key + ".ogg"), "rb").read()
         pages = ogg_pages(b)
         n = v["muestras"]
@@ -500,12 +597,13 @@ def load_wav(path):
     return np.asarray(y, dtype=np.float32), sr
 
 
-def cmd_verify():
+def cmd_verify(names=()):
     """Después del Vorbis: el último granule de cada .ogg es el largo exacto (lo que respeta Unity al importar), la
     decodificación arranca alineada con el original (sin retardo) y la costura del loop sigue limpia."""
     rep = json.load(open(os.path.join(OUT, "build_report.json"), encoding="utf-8"))
     ok = True
-    for key, v in rep.items():
+    for key in wanted(rep, names):
+        v = rep[key]
         ogg = os.path.join(OUT, key + ".ogg")
         b = open(ogg, "rb").read()
         i = b.rfind(b"OggS")
@@ -527,17 +625,52 @@ def cmd_verify():
     print("TODO OK" if ok else "HAY PROBLEMAS")
 
 
-def cmd_install():
+# Comprimido en memoria (Vorbis), precargado en segundo plano: MusicDirector encadena intro, vueltas y cambios de fase
+# con PlayScheduled, que es exacto a la muestra con el clip ya cargado; con Streaming el arranque depende de que el
+# stream llegue a abrirse a tiempo. Son ~20 MB comprimidos en total.
+MUSIC_META = """AudioImporter:
+  externalObjects: {}
+  serializedVersion: 7
+  defaultSettings:
+    serializedVersion: 2
+    loadType: 1
+    sampleRateSetting: 0
+    sampleRateOverride: 44100
+    compressionFormat: 1
+    quality: 0.7
+    conversionMode: 0
+    preloadAudioData: 1
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 0
+  loadInBackground: 1
+  ambisonic: 0
+  3D: 1
+  userData:
+  assetBundleName:
+  assetBundleVariant:
+"""
+
+
+def cmd_install(names=()):
     sys.path.insert(0, os.path.join(REPO, "Tools", "Unity"))
-    from unity_yaml import write_meta, audio_meta
+    from unity_yaml import write_meta
     rep = json.load(open(os.path.join(OUT, "build_report.json"), encoding="utf-8"))
-    for key in rep:
+    for key in wanted(rep, names):
         dst = os.path.join(MUSIC_DIR, key + ".ogg")
         shutil.copyfile(os.path.join(OUT, key + ".ogg"), dst)
-        g = write_meta(dst, audio_meta(stream=True))
+        g = write_meta(dst, MUSIC_META, force=True)
         print("instalado", key, g, os.path.getsize(dst))
-    json.dump(write_plan(rep), open(PLAN, "w", encoding="utf-8", newline="\n"), ensure_ascii=False, indent=1)
+    cmd_plan()
+
+
+def cmd_plan():
+    """boss_music.json y MusicPlan.cs desde el informe del build (sin tocar el audio)."""
+    rep = json.load(open(os.path.join(OUT, "build_report.json"), encoding="utf-8"))
+    plan = write_plan(rep)
+    json.dump(plan, open(PLAN, "w", encoding="utf-8", newline="\n"), ensure_ascii=False, indent=1)
     print("plan", PLAN)
+    write_plan_cs(plan)
 
 
 def cmd_preview():
@@ -600,29 +733,46 @@ def cmd_preview():
 
 def credits_md():
     """Filas de CREDITS.md para la música de jefes y el final (las usa también build_audio.write_credits)."""
-    keys = {"goro_bosskoto": "`boss_goro`, `boss_goro_intro`, `boss_goro_2_in`, `boss_goro_2`",
-            "lake_amenoshita": "`boss_lake`, `boss_lake_intro`, `boss_lake_3`",
+    keys = {"goro_bosskoto": "`boss_goro`, `boss_goro_intro`, `boss_goro_2_in`, `boss_goro_2`, `boss_goro_out`",
+            "lake_amenoshita": "`boss_lake`, `boss_lake_intro`, `boss_lake_3`, `boss_lake_out`",
             "bamboo_wuxia": "`boss_bamboo`, `boss_bamboo_intro`",
-            "final_tad_revenge": "`boss_final`, `boss_final_intro`, `boss_final_2`, `boss_final_3`",
+            "final_tad_revenge": "`boss_final`, `boss_final_intro`, `boss_final_2`, `boss_final_3`, `boss_final_4`, `boss_final_out`",
             "end_sakuya4": "`ending`"}
     rows = ["## Música de jefes y del final (por fases, `Tools/Audio/build_boss_music.py`)", "",
             "| Claves | Tema | Autor | Licencia | Cambios |", "|---|---|---|---|---|"]
-    change = {"goro_bosskoto": "cortado en compases: intro, loop largo con el corte; fase 2 medio tono arriba (re-muestreo 89/84) y +1 dB",
-              "lake_amenoshita": "anacrusa como intro, el ciclo de 63 compases en loop y un loop sin apertura ni corte (c7-c54) para la fase 3; sonoridad normalizada",
+    change = {"goro_bosskoto": "cortado en compases: intro, loop largo con el corte; fase 2 medio tono arriba (re-muestreo 89/84) y +1 dB; el golpe final (c51) medio tono arriba como cierre",
+              "lake_amenoshita": "anacrusa como intro, el ciclo de 63 compases en loop y un loop sin apertura ni corte (c7-c54) para la fase 3; el último tiempo de c124 y el golpe final como cierre; sonoridad normalizada",
               "bamboo_wuxia": "crescendo inicial como intro y el ciclo de 81 compases en loop; sonoridad normalizada",
-              "final_tad_revenge": "cortado en compases: intro y tres loops (c5-c20, c21-c56, c55-c70); sonoridad normalizada",
+              "final_tad_revenge": "cortado en compases: intro, cuatro loops (c5-c20, c21-c56, c55-c70, c61-c68) y el golpe final (c74) como cierre; sonoridad normalizada",
               "end_sakuya4": "silencios recortados, fundido de 1 s al final, sonoridad normalizada"}
     for k, (url, page, author, title, lic, lic_url) in SOURCES.items():
         rows.append(f"| {keys[k]} | [{title}]({page}) | {author} | [{lic}]({lic_url}) | {change[k]} |")
     rows += ["", "Los temas de PeriTune publicados hasta febrero de 2026 siguen bajo CC BY 4.0 (https://peritune.com/about/);",
-             "el crédito pedido es \"PeriTune\". TAD pide crédito por CC BY 4.0 en su página de OpenGameArt.", ""]
+             "el crédito pedido es \"PeriTune\". TAD pide crédito por CC BY 4.0 en su página de OpenGameArt.", "",
+             "### Agregar un tema por fases", "",
+             "1. La fuente en `SOURCES` de `build_boss_music.py` (url, página, autor, título, licencia) y su fila en la tabla",
+             "   con lo que se le cambió. Sin licencia que permita cortarla y redistribuirla, no entra.",
+             "2. Medir la grilla: BPM y el primer tiempo fuerte (`grid(bpm, primer_compas)`); los ataques del tema tienen que",
+             "   caer a ±3 ms de ella. Todo corte se hace en compases de esa grilla, 8 ms antes del tiempo fuerte.",
+             "3. Una función por tema que guarde (`save`) la intro (una vez, termina donde arranca el loop), cada loop",
+             "   (`section_loop`: vuelve donde suena lo mismo que seguiría; `full_cycle` si el tema se repite entero), las",
+             "   secciones de entrada dentro de un loop (`entries`: muestra del compás) y el cierre (`outro`: el golpe",
+             "   final del tema y su cola). Una sola ganancia por jefe, picos a -1 dBFS como mucho.",
+             "4. La fila en `PHASES` (por fase: loop, intro o transición, sección de entrada y, si la transición entra más",
+             "   adelante, cuántos compases antes de su final) y en `OUTROS` (cierre, fundido si no hay, si vuelve la zona).",
+             "5. Los pasos del encabezado del script: build, Vorbis con Blender, trim, verify (largo exacto, sin retardo y",
+             "   costura limpia), install (los .ogg, `Tools/Audio/boss_music.json` y `Scripts/Audio/MusicPlan.cs`) y las",
+             "   claves nuevas en la lista `music` de `NindoContent`.",
+             "6. En el juego: `musicKey` del jefe y `Game.Audio.SetBossMusicPhase(n)` en cada fase. Un cambio entra en el",
+             "   próximo compás; antes de un silencio de la pelea, `SilenceBossMusic` y la fase siguiente entra apenas se",
+             "   la pide. Al caer el jefe, `Boss.Die` llama a `EndBossMusic` (el cierre en el próximo tiempo).", ""]
     return rows
 
 
 def main():
     global SRC, OUT
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["build", "trim", "verify", "install", "preview"])
+    ap.add_argument("cmd", choices=["build", "trim", "verify", "install", "plan", "preview"])
     ap.add_argument("names", nargs="*")
     ap.add_argument("--src")
     ap.add_argument("--out", required=True)
@@ -632,11 +782,13 @@ def main():
     if a.cmd == "build":
         cmd_build(a.names or ["goro", "lake", "bamboo", "final", "ending"])
     elif a.cmd == "trim":
-        cmd_trim()
+        cmd_trim(a.names)
     elif a.cmd == "verify":
-        cmd_verify()
+        cmd_verify(a.names)
     elif a.cmd == "install":
-        cmd_install()
+        cmd_install(a.names)
+    elif a.cmd == "plan":
+        cmd_plan()
     else:
         cmd_preview()
 

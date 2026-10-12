@@ -367,7 +367,7 @@ namespace Nindo
             Game.Time?.SlowMotion(0.15f, 2.2f, 0.02f, 0.8f);
             Game.Camera?.PlayBossDeathShot(transform);
             Game.Audio?.Play("boss_defeat", transform.position, 1f);
-            Game.Audio?.StopMusic(2f);
+            Game.Audio?.EndBossMusic();   // el golpe final del tema en el próximo tiempo; después vuelve la zona
             Game.Save.SetFlag(Flags.Boss(bossId));
             base.Die(info, finisher);
             GameEvents.RaiseBossDefeated(this);

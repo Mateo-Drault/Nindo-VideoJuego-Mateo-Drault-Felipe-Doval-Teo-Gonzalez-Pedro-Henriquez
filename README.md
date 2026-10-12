@@ -179,7 +179,9 @@ Nindo/Assets/Nindo/
     Camera/       CameraDirector (tomas mezclables, fijado, perfiles de jefe, golpe de FOV, oído sobre
                   Kaito), CameraOcclusion (disolución de lo que tapa, shader Nindo/Occluder Fade)
     FX/           partículas, hit-stop, post-proceso en runtime (URP Volume)
-    Audio/        AudioManager: música por zona/combate/jefe, ambientes, efectos con pool
+    Audio/        AudioManager: música por zona/combate/jefe, ambientes, efectos con pool;
+                  MusicDirector: música de jefe por fases y el final, encadenada a la muestra
+                  (MusicPlan.cs: su tabla, la genera build_boss_music.py)
     UI/           HUD, menús, diálogos (todo creado por código)
     World/        WorldBuilder (arma el mapa desde los FBX), áreas, interactuables
     Story/        StoryDirector (cinemáticas, objetivos), StoryText (TODOS los textos), NPC
@@ -204,6 +206,13 @@ Tools/            pipelines en Python (Blender, audio, generación de assets de 
   `PROPS`. Se exporta solo, con collider y tags (luz, oclusor…) en el manifest.
 * *Cambiar el mapa*: `Tools/Blender/world/world_plan.py` (áreas, caminos, edificios,
   santuarios, encuentros, jefes) y volver a correr el generador.
+* *Un tema de jefe por fases*: en `Tools/Audio/build_boss_music.py`, la fuente en `SOURCES`, una función
+  que corte intro, loops y cierre en compases de la grilla medida (`grid`, `section_loop`, `full_cycle`,
+  `outro`; ver las de cada jefe), la fila en `PHASES` (por fase: loop, intro o transición, sección de
+  entrada) y en `OUTROS`, y correr los pasos del encabezado: `install` copia los .ogg, escribe
+  `boss_music.json` y `Scripts/Audio/MusicPlan.cs`. Las claves nuevas van a `NindoContent` (lista
+  `music`). En el jefe: `musicKey`, y `Game.Audio.SetBossMusicPhase(n)` en cada cambio
+  (`Boss.PhaseChange` ya lo hace); `SilenceBossMusic` antes de un silencio de la pelea.
 
 ## Pipelines (Tools/)
 
@@ -220,7 +229,7 @@ python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.cont
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
 # música de jefes por fases y del final: pasos (fuentes, Vorbis, recorte, verificación) en su encabezado
-python3 Tools/Audio/build_boss_music.py build|trim|verify|install|preview --out CARPETA
+python3 Tools/Audio/build_boss_music.py build|trim|verify|install|plan|preview [claves] --out CARPETA
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)
 python3 Tools/UI/build_ui_art.py [--preview carpeta]
 # metas, materiales, controllers, NindoContent, escenas  (correr después de cualquiera de los anteriores)

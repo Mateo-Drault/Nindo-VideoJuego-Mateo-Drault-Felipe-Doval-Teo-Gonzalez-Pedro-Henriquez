@@ -12,6 +12,7 @@ namespace Nindo
     /// Mezcla por niveles (ver Tier): los avisos de golpe y el parry son información, no adorno: no se
     /// les cambia el pitch, casi no se atenúan con la distancia y no se cortan por falta de voces.
     /// El oído está sobre Kaito (CameraDirector mueve el AudioListener), no en la cámara a 24 m.
+    /// La música de jefe por fases y el final los toca MusicDirector (ver "música de jefe").
     /// Persiste entre escenas (menú ↔ juego).
     /// </summary>
     public class AudioManager : MonoBehaviour
@@ -29,6 +30,7 @@ namespace Nindo
         string exploreMusic = "explore";
         Coroutine fade;
         float musicDuck = 1f;
+        MusicDirector director;
         readonly Dictionary<string, float> lastPlayed = new Dictionary<string, float>();
 
         /// <summary>
@@ -68,6 +70,8 @@ namespace Nindo
                 music[i].loop = true; music[i].playOnAwake = false; music[i].spatialBlend = 0f; music[i].volume = 0f;
                 music[i].priority = 0;
             }
+            director = gameObject.AddComponent<MusicDirector>();
+            director.Init(this);
             ambience = gameObject.AddComponent<AudioSource>();
             ambience.loop = true; ambience.playOnAwake = false; ambience.spatialBlend = 0f; ambience.volume = 0f;
             // con el oído sobre Kaito: a menos de 6 m suena entero (la pelea entera), se apaga del todo a 35 m.
@@ -110,7 +114,8 @@ namespace Nindo
             // música: al morir el combate "termina" y cortaba el jingle; StoryDirector.DeathRoutine
             // llama a ResumeExplore al reaparecer
             if (Game.Player != null && !Game.Player.IsAlive) return;
-            if (StingerPlaying) return;
+            // el cierre de un jefe (y el tema del final) no lo corta el fin del combate: al terminar vuelve la zona
+            if (StingerPlaying || director.Busy) return;
             PlayMusic(inCombat ? "combat" : exploreMusic, inCombat ? 1.2f : 3f);
         }
 
@@ -121,7 +126,7 @@ namespace Nindo
         public void SetExploreMusic(string key, string ambienceKey)
         {
             exploreMusic = string.IsNullOrEmpty(key) ? "explore" : key;
-            if (Game.Combat == null || !Game.Combat.InCombat) PlayMusic(exploreMusic, 3f);
+            if (!director.Busy && (Game.Combat == null || !Game.Combat.InCombat)) PlayMusic(exploreMusic, 3f);
             if (!string.IsNullOrEmpty(ambienceKey)) PlayAmbience(ambienceKey);
         }
 
@@ -129,8 +134,10 @@ namespace Nindo
         public void PlayMusic(string key, float fadeTime = 2f, bool loop = true)
         {
             if (key == currentMusic) return;
+            if (director.Handles(key)) { PlayDirected(key, fadeTime, 0f); return; }
             var entry = FindMusic(key);
             if (entry == null) return;
+            director.Stop(fadeTime);
             currentMusic = key;
             var clip = entry.clips[Random.Range(0, entry.clips.Length)];
             int next = 1 - musicActive;
@@ -172,20 +179,45 @@ namespace Nindo
         // ------------------------------------------------------------------ música de jefe
         // Contrato para los jefes: "boss_goro", "boss_lake", "boss_bamboo", "boss_final" (y "ending" en el final).
         // La fase empieza en 1 al arrancar la pelea; los cambios de fase la suben (Boss.PhaseChange) y cada jefe
-        // puede pedir una en especial (la fase 2 de Gorō). Por ahora cada fase es el mismo tema: las variantes por
-        // fase (secciones, capas, frase de transición) las agrega el sistema de música.
+        // puede pedir una en especial. Cada fase es otra sección del tema (MusicPlan): el cambio entra en el próximo
+        // compás de lo que suena. PlayBossMusic + SetBossMusicPhase(n) en el mismo frame arranca directo en la fase n
+        // (un reintento que empieza más adelante). Al caer el jefe, EndBossMusic toca el cierre del tema.
         public int BossMusicPhase { get; private set; }
+
+        /// <summary>Estado de la música por fases (para probar con RunCommand: Debug.Log(Game.Audio.MusicState)).</summary>
+        public string MusicState => director.Describe();
 
         public void PlayBossMusic(string key, float fadeTime = 1.2f)
         {
             BossMusicPhase = 1;
-            PlayMusic(key, fadeTime);
+            if (director.Handles(key)) PlayDirected(key, fadeTime, 0f);
+            else PlayMusic(key, fadeTime);
         }
 
         public void SetBossMusicPhase(int phase)
         {
-            if (phase <= BossMusicPhase) return;
-            BossMusicPhase = phase;
+            if (phase > BossMusicPhase) BossMusicPhase = phase;
+            // la misma fase también le llega al director: después de SilenceBossMusic es la que vuelve a sonar
+            director.SetPhase(phase);
+        }
+
+        /// <summary>
+        /// Silencio dentro de la pelea (barra falsa de Gorō, eclipse de Kokuyō): lo que suena se apaga en 'fadeTime' y la
+        /// próxima SetBossMusicPhase entra apenas se la pide (con su transición, si la fase tiene), sin esperar compás.
+        /// </summary>
+        public void SilenceBossMusic(float fadeTime = 0.5f)
+        {
+            if (!director.Silence(fadeTime)) StopMusic(fadeTime);
+        }
+
+        /// <summary>
+        /// El jefe cayó: en el próximo tiempo entra el golpe final del tema (o el loop se funde si el tema no tiene) y, al
+        /// apagarse, vuelve la música de la zona (Kokuyō no: después viene el final).
+        /// </summary>
+        public void EndBossMusic()
+        {
+            BossMusicPhase = 0;
+            if (!director.End()) StopMusic(2f);
         }
 
         public void StopBossMusic(float fadeTime = 2f)
@@ -194,11 +226,59 @@ namespace Nindo
             StopMusic(fadeTime);
         }
 
+        /// <summary>
+        /// El tema del final al reencontrarse (Sakuya4: koto y piano solos que salen del silencio). Para "silencio y
+        /// después el tema": StopMusic(1.5f) cuando empieza la escena y PlayEnding() en el abrazo; con 'delay' (s reales)
+        /// la primera nota cae exacta ese tiempo después (agendada en el reloj del audio, no en el de la escena).
+        /// </summary>
+        public void PlayEnding(float delay = 0f)
+        {
+            if (director.Handles("ending")) PlayDirected("ending", 1.5f, delay);
+            else PlayMusic("ending", 3f);
+        }
+
         public void StopMusic(float fadeTime = 2f)
         {
             currentMusic = "";
+            director.Stop(fadeTime);
+            FadeOutLegacy(fadeTime);
+        }
+
+        /// <summary>Tema por fases: lo de la zona se apaga mientras arranca (la intro de cada jefe sale casi del silencio).</summary>
+        void PlayDirected(string key, float fadeTime, float delay)
+        {
+            currentMusic = key;
+            FadeOutLegacy(fadeTime);
+            director.Play(key, delay);
+        }
+
+        void FadeOutLegacy(float fadeTime)
+        {
             if (fade != null) StopCoroutine(fade);
-            fade = StartCoroutine(Crossfade(musicActive, -1, fadeTime, 0f));
+            fade = StartCoroutine(FadeOutBoth(fadeTime));
+        }
+
+        // las dos fuentes: un crossfade cortado a la mitad deja la de salida sonando a medio volumen para siempre
+        IEnumerator FadeOutBoth(float time)
+        {
+            float a0 = music[0].volume, a1 = music[1].volume;
+            for (float t = 0f; t < time; t += Time.unscaledDeltaTime)
+            {
+                float k = 1f - t / time;
+                music[0].volume = a0 * k; music[1].volume = a1 * k;
+                yield return null;
+            }
+            music[0].Stop(); music[1].Stop();
+            fade = null;
+        }
+
+        /// <summary>MusicDirector terminó un tema (el cierre de un jefe): vuelve la música de la zona o la de combate.</summary>
+        internal void OnDirectedMusicEnded(bool resume)
+        {
+            currentMusic = "";
+            if (!resume || (Game.Player != null && !Game.Player.IsAlive)) return;
+            bool fighting = Game.Combat != null && Game.Combat.InCombat;
+            PlayMusic(fighting ? "combat" : exploreMusic, 3f);
         }
 
         IEnumerator Crossfade(int from, int to, float time, float targetVol)
@@ -210,7 +290,8 @@ namespace Nindo
                 t += Time.unscaledDeltaTime;
                 float k = Mathf.Clamp01(t / time);
                 music[from].volume = Mathf.Lerp(fromStart, 0f, k);
-                if (to >= 0) { music[to].volume = Mathf.Lerp(0f, MusicVolume * targetVol, k); musicTargets[to] = targetVol; }
+                music[to].volume = Mathf.Lerp(0f, MusicVolume * targetVol, k);
+                musicTargets[to] = targetVol;
                 yield return null;
             }
             music[from].Stop();
@@ -218,7 +299,7 @@ namespace Nindo
         }
 
         readonly float[] musicTargets = { 1f, 1f };
-        float MusicVolume => Settings.MasterVolume * Settings.MusicVolume * musicDuck;
+        internal float MusicVolume => Settings.MasterVolume * Settings.MusicVolume * musicDuck;
 
         public void PlayAmbience(string key)
         {
