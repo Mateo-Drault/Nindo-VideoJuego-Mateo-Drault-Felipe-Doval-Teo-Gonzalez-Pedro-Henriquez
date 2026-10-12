@@ -16,11 +16,13 @@ zonas, los santuarios y los jefes los pone la UI encima, solo lo descubierto.
 Salida (Nindo/Assets/Nindo/Resources/UI):
   WorldMap.jpg       la lámina (516 x 428 m a 6 px/m = 3096 x 2568), sin borde: el borde rasgado de arriba y abajo
                      lo corta el shader Nindo/UI Map (los costados van contra las varillas del pergamino)
-  WorldMapMist.png   niebla de lo no explorado, repetible y en datos (lineal): R fibra del papel, G nubes de tinta,
-                     B líneas de las nubes kasumi, A ruido suave para deformar el borde
+  WorldMapMist.png   niebla de lo no explorado, en datos (lineal), del tamaño de la lámina a 4 px/m y sin costura:
+                     R fibra del papel, G nubes de tinta, B líneas de las nubes kasumi (cada banda en un solo lugar),
+                     A ruido suave para deformar el borde
   WorldMap.json      geometría de la lámina y de la grilla de niebla (C# la lee: una sola fuente), dónde va el nombre
-                     de cada zona, las celdas que se pueden descubrir caminando (para el %) y, para las partidas
-                     viejas sin niebla guardada, qué revela cada flag de la historia
+                     de cada zona, las celdas que se pueden descubrir caminando (para el %), el agua abierta, de
+                     qué lado de las puertas cae cada celda y, para las partidas viejas sin niebla guardada, qué
+                     revela cada flag de la historia
   MapKaito.png       Kaito: punta de flecha dorada con las dos colas de la bandana
   MapShrine.png      santuario (torii): blanco con contorno de tinta, se tiñe
   MapPortal.png      portal de vuelta al dojo (espiral), se tiñe
@@ -29,7 +31,7 @@ Salida (Nindo/Assets/Nindo/Resources/UI):
 
 Uso:
   blender -b --factory-startup --python Tools/UI/world_map_data.py -- <scratch>/map_props.json   (una vez por cambio del mundo)
-  python Tools/UI/build_world_map.py --props <scratch>/map_props.json [--preview CARPETA [--ppm 3]] [--no-assets]
+  python Tools/UI/build_world_map.py --props <scratch>/map_props.json [--preview CARPETA [--ppm 3]] [--no-assets] [--reuse-sheet]
 Con --preview deja la lámina, la niebla en tres estados de exploración y la maqueta de la pantalla del mapa en 16:9,
 21:9 y 4:3 (la niebla se compone con la MISMA cuenta que el shader: Nindo/UI Map).
 """
@@ -45,7 +47,7 @@ import time
 from multiprocessing import Pool
 
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 from scipy import ndimage
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -67,9 +69,25 @@ IX0, IX1, IZ0, IZ1 = X0 - MARGIN, X1 + MARGIN, Z0 - MARGIN, Z1 + MARGIN
 SHEET_W, SHEET_H = IX1 - IX0, IZ1 - IZ0     # 516 x 428 m
 CELL = 4.0                                  # celda de la niebla (m): 129 x 107 celdas, 1726 bytes en la partida
 GW, GH = int(SHEET_W / CELL), int(SHEET_H / CELL)
-REVEAL_R = 20.0                             # radio que descubre Kaito al caminar (la pantalla de juego ve ~12 m)
-REACH_D = 10.0                              # celdas "descubribles" (el 100 %): su centro a <= 10 m de lo transitable
-MIST_TILE = (96.0, 163.0, 262.0)            # metros que cubre la textura de niebla en cada capa (nubes, nubes, kasumi)
+# radio que descubre Kaito al caminar: la cámara de juego (52°, 24 m, FOV 30, 16:9) ve ±11.4 m de costado y de -6.7
+# a +10.3 m de fondo, así que 16 m es hasta la esquina de la pantalla. Con 20 el mapa mostraba el doble de lo que se
+# vio (desde la explanada de la muralla, el patio de adentro con el portón cerrado)
+REVEAL_R = 16.0
+# celdas "descubribles" (el 100 %): alguna parte a <= 8 m de lo transitable. Con el radio de 16 queda margen para
+# no tener que pegarse a cada borde: recorriendo caminos y claros (la vista previa) se llega al 100 %
+REACH_D = 8.0
+# el agua abierta no la tapa nada: desde la orilla se ve el lago entero, se descubre hasta WATER_R (y cuenta para el
+# 100 % la que queda a menos de WATER_REACH de lo transitable). Si no, el lago Kohan era un tubo alrededor de la pasarela
+WATER_R, WATER_REACH = 34.0, 24.0
+# las puertas que cierran lo que hay detrás (world_plan.DOORS): con la puerta cerrada no se descubre del otro lado.
+# Tres lados: el sur de la muralla, el norte y el patio del dojo (detrás del portón, sobre la meseta)
+DOJO_GATE_Z, DOJO_X = 112.6, (-80.0, 50.0)
+GATE_FLAGS = ["wall_gate_open", "dojo_open"]
+# la niebla (WorldMapMist) cubre la lámina entera una sola vez, a 4 texeles por metro: las bandas kasumi son únicas
+# (repetida cada 262 m, cada banda salía dos veces por renglón y la niebla parecía un empapelado). Las nubes y la
+# fibra se leen de la misma textura a otras escalas (MIST_K veces por lámina), que no se alinean entre sí
+MIST_PPM = 4.0
+MIST_K = (2.69, 1.58)
 assert GW * CELL == SHEET_W and GH * CELL == SHEET_H
 
 # ------------------------------------------------------------------------------------------- resolución
@@ -121,6 +139,15 @@ LABELS = {
 def label(v):
     """(x, z, alineación, chico, giro) de una entrada de LABELS (el giro es opcional)."""
     return tuple(v) + (0.0,) * (5 - len(v))
+
+
+# el nombre va al costado de su zona, muchas veces sobre la niebla: aparece cuando ya se vio el corazón de la zona
+# (un área transitable de world_plan.AREAS), no apenas se pisa su borde. Al entrar a los campos su nombre flotaba
+# 42 m adentro de la niebla, sin nada debajo
+LABEL_ANCHOR = {
+    "hogar": "hogar", "campos": "campos_e", "bosque": "bosque_claro", "muralla": "muralla_s", "jardin": "jardin_c",
+    "dojo": "dojo_patio", "montana": "mont_arena", "lago": "lago_orilla", "lago_cascada": "lago_jefe", "bambu": "bambu_claro",
+}
 
 # partidas de antes del mapa (sin niebla guardada): lo que cada flag prueba que Kaito ya recorrió. Caminos de
 # world_plan.PATHS (nombre, desde, hasta: índices de sus puntos) y áreas de world_plan.AREAS; con cualquiera de los
@@ -946,64 +973,109 @@ def render(props, cache_dir):
 
 
 # ------------------------------------------------------------------------------------------- niebla (textura de datos)
-def wrap_noise(S, sigma, seed):
-    n = ndimage.gaussian_filter(np.random.RandomState(seed).rand(S, S).astype(np.float32), sigma, mode="wrap")
+def wrap_noise(shape, sigma, seed):
+    """Ruido suave que se repite sin costura (filas, columnas): la textura se lee también a otras escalas, con wrap."""
+    n = ndimage.gaussian_filter(np.random.RandomState(seed).rand(*shape).astype(np.float32), sigma, mode="wrap")
     return (n - n.min()) / (n.max() - n.min() + 1e-9)
 
 
-def mist(S=1024, seed=7):
-    """Niebla de lo no explorado, repetible (todo con wrap): R fibra del papel (anisótropa), G nubes de tinta (bultos
-    grandes y suaves: con octavas chicas parecía mármol), B líneas de las nubes kasumi, A ruido suave para deformar el
-    borde. Las kasumi son bandas largas de puntas redondeadas, en capas (la de adelante tapa las líneas de la de
-    atrás) y con una segunda línea por dentro, como en los biombos; no nubecitas festoneadas, que repetidas por la
-    lámina parecían un empapelado."""
+def mist_size():
+    """La niebla cubre la lámina una vez (MIST_PPM texeles por metro; múltiplos de 4 para la compresión por bloques)."""
+    return int(round(SHEET_W * MIST_PPM / 4)) * 4, int(round(SHEET_H * MIST_PPM / 4)) * 4
+
+
+def kasumi_layout(seed):
+    """Bandas kasumi repartidas por la lámina (metros, x al este, y hacia abajo = al sur): una por lugar con un
+    muestreo de disco de Poisson estirado a lo ancho (las bandas son horizontales), largo 0.6-1.4 veces el base, giro
+    de ±6°, la punta con el rulo a uno u otro lado y, a veces, una banda de atrás corrida y más corta. Quedan huecos:
+    no hay renglones."""
     rng = random.Random(seed)
-    fib = ndimage.gaussian_filter(np.random.RandomState(seed + 1).rand(S, S).astype(np.float32), (0.7, 4.5), mode="wrap")
+    L0, H0 = 128.0, 15.0
+    pts = []
+    for _ in range(4000):
+        x, y = rng.uniform(0, SHEET_W), rng.uniform(0, SHEET_H)
+        ok = True
+        for px, py in pts:
+            dx = (x - px + SHEET_W / 2) % SHEET_W - SHEET_W / 2      # la textura se repite: distancias con wrap
+            dy = (y - py + SHEET_H / 2) % SHEET_H - SHEET_H / 2
+            if math.hypot(dx / 1.9, dy) < 64.0:
+                ok = False
+                break
+        if ok:
+            pts.append((x, y))
+    rng.shuffle(pts)
+    pts = pts[:max(1, int(len(pts) * 0.82))]                     # algunos lugares sin banda: aire entre las nubes
+    bands = []
+    for x, y in pts:
+        L, H = L0 * rng.uniform(0.6, 1.4), H0 * rng.uniform(0.85, 1.15)
+        tilt = rng.uniform(-6.0, 6.0)
+        if rng.random() < 0.6:
+            bands.append((x + rng.choice((-1, 1)) * rng.uniform(0.14, 0.24) * L, y - H * rng.uniform(0.6, 0.8), L * rng.uniform(0.5, 0.7), H * 0.82, rng.choice((-1, 1)), tilt))
+        bands.append((x, y, L, H, rng.choice((-1, 1)), tilt))
+    return bands
+
+
+def mist(seed=7):
+    """Niebla de lo no explorado (datos, lineal), del tamaño de la lámina y sin costura en los bordes: R fibra del papel
+    (anisótropa), G nubes de tinta (bultos grandes y suaves), B líneas de las nubes kasumi, A ruido suave para
+    deformar el borde. El shader lee R, G y A a las escalas MIST_K (nubes de ~10 y ~17 m) y B a la escala de la lámina:
+    cada banda kasumi está en un solo lugar. Las kasumi son bandas largas de puntas redondeadas, en capas (la de
+    adelante tapa las líneas de la de atrás) y con una segunda línea por dentro, como en los biombos."""
+    MW, MH = mist_size()
+    shape = (MH, MW)
+    fib = ndimage.gaussian_filter(np.random.RandomState(seed + 1).rand(*shape).astype(np.float32), (0.7, 4.5), mode="wrap")
     fib = (fib - fib.min()) / (fib.max() - fib.min())
     r = np.clip(0.5 + (fib - 0.5) * 1.6, 0, 1)
-    g = wrap_noise(S, 110, seed + 2) * 0.55 + wrap_noise(S, 52, seed + 3) * 0.3 + wrap_noise(S, 22, seed + 4) * 0.15
+    del fib
+    g = wrap_noise(shape, 110, seed + 2) * 0.55 + wrap_noise(shape, 52, seed + 3) * 0.3 + wrap_noise(shape, 22, seed + 4) * 0.15
     g = ss(0.18, 0.86, (g - g.min()) / (g.max() - g.min()))
     K = 2
-    s = S * K
-    lw = int(4.5 * K)                                           # 9 texeles de línea (se ve a la escala del mapa)
-    art = Image.new("L", (s, s), 0)
-    d = ImageDraw.Draw(art)
+    sw, sh = MW * K, MH * K
+    kpm = MIST_PPM * K                                           # texeles por metro del dibujo
+    lw = int(round(1.15 * kpm))                                  # trazo de 1.15 m: se lee a la escala del mapa
+    art = Image.new("L", (sw, sh), 0)
 
-    def band(cx, cy, L, H, curl):
-        """Banda de puntas redondeadas: borra lo de atrás, contorno, una segunda línea por dentro y, en una
-        punta, el rulo. Se dibuja nueve veces (la textura se repite)."""
-        for ox in (-s, 0, s):
-            for oy in (-s, 0, s):
-                x0, y0, x1, y1 = cx - L / 2 + ox, cy - H / 2 + oy, cx + L / 2 + ox, cy + H / 2 + oy
-                d.rounded_rectangle((x0, y0, x1, y1), radius=H / 2, fill=0)
-                d.rounded_rectangle((x0, y0, x1, y1), radius=H / 2, outline=255, width=lw)
-                ix = L * 0.14
-                d.rounded_rectangle((x0 + ix * (1 if curl > 0 else 0.4), y0 + H * 0.3, x1 - ix * (0.4 if curl > 0 else 1), y1 - H * 0.3),
-                                    radius=H * 0.2, outline=170, width=max(2, int(lw * 0.7)))
-                ex = x1 - H * 0.5 if curl > 0 else x0 + H * 0.5
-                cr = H * 0.27
-                a0, a1 = (200, 470) if curl > 0 else (-110, 160)
-                d.arc((ex - cr, cy + oy - cr, ex + cr, cy + oy + cr), a0, a1, fill=220, width=max(2, int(lw * 0.7)))
-    rows = []
-    for i in range(3):
-        cy = (i + rng.uniform(0.3, 0.7)) * s / 3
-        cx = rng.uniform(0, s)
-        L, H = rng.uniform(0.40, 0.58) * s, rng.uniform(0.05, 0.065) * s
-        # la de atrás, corrida y más corta (las kasumi se pintan en capas), después la de adelante
-        rows.append((cx + rng.choice((-1, 1)) * rng.uniform(0.14, 0.24) * L, cy - H * rng.uniform(0.6, 0.8), L * rng.uniform(0.5, 0.7), H * 0.82, rng.choice((-1, 1))))
-        rows.append((cx, cy, L, H, rng.choice((-1, 1))))
-    for row in rows:
-        band(*row)
+    def band(x, y, L, H, curl, tilt):
+        """Banda de puntas redondeadas en su propia imagen (girada): borra lo de atrás, contorno, una segunda línea
+        por dentro y, en una punta, el rulo. Se pega nueve veces (la textura se repite)."""
+        L, H = L * kpm, H * kpm
+        pad = int(H * 0.6) + lw * 2
+        w, h = int(L) + 2 * pad, int(H) + 2 * pad
+        shape_i, lines = Image.new("L", (w, h), 0), Image.new("L", (w, h), 0)
+        ds, dl = ImageDraw.Draw(shape_i), ImageDraw.Draw(lines)
+        x0, y0, x1, y1 = pad, pad, pad + L, pad + H
+        ds.rounded_rectangle((x0, y0, x1, y1), radius=H / 2, fill=255)
+        dl.rounded_rectangle((x0, y0, x1, y1), radius=H / 2, outline=255, width=lw)
+        ix = L * 0.14
+        dl.rounded_rectangle((x0 + ix * (1 if curl > 0 else 0.4), y0 + H * 0.3, x1 - ix * (0.4 if curl > 0 else 1), y1 - H * 0.3),
+                             radius=H * 0.2, outline=170, width=max(2, int(lw * 0.7)))
+        ex = x1 - H * 0.5 if curl > 0 else x0 + H * 0.5
+        cr, cy = H * 0.27, (y0 + y1) / 2
+        a0, a1 = (200, 470) if curl > 0 else (-110, 160)
+        dl.arc((ex - cr, cy - cr, ex + cr, cy + cr), a0, a1, fill=220, width=max(2, int(lw * 0.7)))
+        shape_i = shape_i.rotate(tilt, resample=Image.BILINEAR, expand=True)
+        lines = lines.rotate(tilt, resample=Image.BICUBIC, expand=True)
+        mask = ImageChops.lighter(shape_i, lines)
+        cx, cy = x * kpm, y * kpm
+        for ox in (-sw, 0, sw):
+            for oy in (-sh, 0, sh):
+                px, py = int(round(cx + ox - lines.size[0] / 2)), int(round(cy + oy - lines.size[1] / 2))
+                if px < sw and py < sh and px + lines.size[0] > 0 and py + lines.size[1] > 0:
+                    art.paste(lines, (px, py), mask)
+    for b in kasumi_layout(seed):
+        band(*b)
     # el pulso del pincel: las bandas no son rectas (el trazo sube y baja apenas) y la tinta afloja en algunos tramos
     # sin cortarse (cortadas en guiones parecían una falla de la textura)
-    yy, xx = np.mgrid[0:s, 0:s].astype(np.float32)
-    wob = (wrap_noise(s, 60 * K, seed + 9) - 0.5) * 0.045 * s
-    lines = ndimage.map_coordinates(np.asarray(art, np.float32) / 255, [(yy + wob) % s, xx], order=1, mode="grid-wrap")
-    lines = lines * (0.65 + 0.35 * wrap_noise(s, 16 * K, seed + 6))
+    yy, xx = np.mgrid[0:sh, 0:sw].astype(np.float32)
+    wob = (wrap_noise((sh, sw), 15 * kpm, seed + 9) - 0.5) * 0.045 * 262.0 * kpm
+    lines = ndimage.map_coordinates(np.asarray(art, np.float32) / 255, [(yy + wob) % sh, xx], order=1, mode="grid-wrap")
+    del yy, xx, wob, art
+    lines = lines * (0.65 + 0.35 * wrap_noise((sh, sw), 4 * kpm, seed + 6))
     lines = ndimage.gaussian_filter(lines, 0.8 * K, mode="wrap")
-    b = np.asarray(Image.fromarray((np.clip(lines, 0, 1) * 255).astype(np.uint8), "L").resize((S, S), Image.LANCZOS), np.float32) / 255
+    b = np.asarray(Image.fromarray((np.clip(lines, 0, 1) * 255).astype(np.uint8), "L").resize((MW, MH), Image.LANCZOS), np.float32) / 255
+    del lines
     b = np.clip(b * 1.3, 0, 1)
-    a = wrap_noise(S, 40, seed + 7) * 0.7 + wrap_noise(S, 12, seed + 8) * 0.3
+    a = wrap_noise(shape, 40, seed + 7) * 0.7 + wrap_noise(shape, 12, seed + 8) * 0.3
     a = (a - a.min()) / (a.max() - a.min())
     arr = np.stack([r, g, b, a], -1)
     return Image.fromarray((np.clip(arr, 0, 1) * 255).astype(np.uint8), "RGBA")
@@ -1017,12 +1089,33 @@ def bits_b64(mask):
     return base64.b64encode(by.tobytes()).decode()
 
 
-def reach_mask(g):
-    """Celdas de niebla que se descubren caminando: alguna parte de la celda a <= REACH_D de lo transitable."""
-    wd = g["wd"][::-1]                                          # fila 0 al sur
+def cell_blocks(a, how):
+    """Campo de 1 m (fila 0 al norte) -> una cifra por celda de niebla (fila 0 al sur): min o media de sus 4 x 4 m."""
     c = int(CELL)
-    blk = wd[:GH * c, :GW * c].reshape(GH, c, GW, c).min(axis=(1, 3))
-    return blk <= REACH_D
+    blk = a[::-1][:GH * c, :GW * c].reshape(GH, c, GW, c)
+    return blk.min(axis=(1, 3)) if how == "min" else blk.mean(axis=(1, 3))
+
+
+def water_mask(g):
+    """Celdas de agua abierta (el lago): MapFog las descubre hasta WATER_R."""
+    return cell_blocks(g["lake"], "mean") > 0.5
+
+
+def reach_mask(g):
+    """Celdas de niebla que se descubren caminando: alguna parte de la celda a <= REACH_D de lo transitable, o agua
+    abierta a menos de WATER_REACH."""
+    wd = cell_blocks(g["wd"], "min")
+    return (wd <= REACH_D) | (water_mask(g) & (wd <= WATER_REACH))
+
+
+def side_masks():
+    """Del otro lado de una puerta cerrada no se descubre nada (MapFog: el lado de Kaito contra el de cada celda, por
+    el centro de la celda): 'north' = al norte de la muralla (z > WALL_Z), 'dojo' = la meseta detrás del portón."""
+    cz = IZ0 + (np.arange(GH) + 0.5)[:, None] * CELL + np.zeros((1, GW))
+    cx = IX0 + (np.arange(GW) + 0.5)[None, :] * CELL + np.zeros((GH, 1))
+    north = cz > W.WALL_Z
+    dojo = (cz > DOJO_GATE_Z) & (cx > DOJO_X[0]) & (cx <= DOJO_X[1])
+    return north & ~dojo, dojo
 
 
 def legacy_discs():
@@ -1047,19 +1140,35 @@ def legacy_discs():
     return out
 
 
+def label_entry(k, v):
+    x, z, align, small, rot = label(v)
+    e = dict(id=k, x=x, z=z, align=align, small=small, rot=rot)
+    an = LABEL_ANCHOR.get(k)
+    if an is not None:
+        a = next(a for a in W.AREAS if a[0] == an)
+        e["at"] = [a[1], a[2]]
+    return e
+
+
 def map_json(g):
     reach = reach_mask(g)
+    north, dojo = side_masks()
     return {
-        "version": 1,
+        "version": 2,
         "image": [IW, IH],
         "bounds": [IX0, IX1, IZ0, IZ1],
         "cell": CELL,
         "grid": [GW, GH],
         "reveal": REVEAL_R,
-        "mistTile": list(MIST_TILE),
+        "revealWater": WATER_R,
+        "mistK": list(MIST_K),
         "reachCount": int(reach.sum()),
         "reach": bits_b64(reach),
-        "labels": [dict(zip(("id", "x", "z", "align", "small", "rot"), (k,) + label(v))) for k, v in LABELS.items()],
+        "water": bits_b64(water_mask(g)),
+        "north": bits_b64(north),
+        "dojo": bits_b64(dojo),
+        "gates": GATE_FLAGS,
+        "labels": [label_entry(k, v) for k, v in LABELS.items()],
         "legacy": legacy_discs(),
     }
 
@@ -1154,14 +1263,15 @@ def icons():
 
 
 # ------------------------------------------------------------------------------------------- salida
-def write_assets(img, g, preview_only):
+def write_assets(img, g, preview_only, reuse_sheet=False):
     data = map_json(g)
     if preview_only:
         icons()            # las marcas son chicas y siempre iguales: la maqueta las usa
         return data
     os.makedirs(OUT, exist_ok=True)
     p = os.path.join(OUT, "WorldMap.jpg")
-    img.save(p, quality=92, subsampling=0, optimize=True)
+    if not reuse_sheet:
+        img.save(p, quality=92, subsampling=0, optimize=True)
     # sin redondear a potencia de 2 (3096 x 2568 ya son múltiplos de 4: compresión por bloques) y con mips: a la
     # escala de la pantalla se ve a ~0.4x. Alta calidad (BC7): con DXT1 los sellos de 2 px se ensuciaban
     # trilineal: al acercar con la rueda el mip cambia sin saltos
@@ -1169,8 +1279,9 @@ def write_assets(img, g, preview_only):
                .replace("textureCompression: 1", "textureCompression: 2").replace("filterMode: 1", "filterMode: 2"), force=True)
     p = os.path.join(OUT, "WorldMapMist.png")
     mist().save(p, optimize=True)
-    write_meta(p, texture_meta(mips=True, srgb=False, max_size=1024, compress=True, wrap_clamp=False, alpha_transparency=False)
-               .replace("textureCompression: 1", "textureCompression: 2").replace("filterMode: 1", "filterMode: 2"), force=True)
+    # sin redondear a potencia de 2 (2064 x 1712, múltiplos de 4) y repetible: el shader la lee también a otras escalas
+    write_meta(p, texture_meta(mips=True, srgb=False, max_size=4096, compress=True, wrap_clamp=False, alpha_transparency=False)
+               .replace("nPOTScale: 1", "nPOTScale: 0").replace("textureCompression: 1", "textureCompression: 2").replace("filterMode: 1", "filterMode: 2"), force=True)
     p = os.path.join(OUT, "WorldMap.json")
     with open(p, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, separators=(",", ":"))
@@ -1187,13 +1298,19 @@ def main():
     ap.add_argument("--ppm", type=float, default=6.0, help="píxeles por metro (6 = la del juego; menos para probar)")
     ap.add_argument("--preview", default=None, help="carpeta para las vistas previas")
     ap.add_argument("--no-assets", action="store_true", help="no escribir en Assets (solo la vista previa)")
+    ap.add_argument("--reuse-sheet", action="store_true", help="no volver a pintar la lámina: usa la WorldMap.jpg que ya está "
+                    "(para rehacer los datos, la niebla y las vistas previas sin los minutos del pintado)")
     a = ap.parse_args()
     configure(a.ppm)
     data = json.load(open(a.props))
     SIZES.update(data["sizes"])
     cache = a.cache or os.path.dirname(os.path.abspath(a.props))
-    img, g = render(data["placed"], cache)
-    meta = write_assets(img, g, a.no_assets or a.ppm != 6.0)
+    if a.reuse_sheet:
+        img, g = Image.open(os.path.join(OUT, "WorldMap.jpg")).convert("RGB"), world_grid(cache)
+        assert img.size == (IW, IH), "la lámina guardada es de otra resolución: sin --reuse-sheet"
+    else:
+        img, g = render(data["placed"], cache)
+    meta = write_assets(img, g, a.no_assets or a.ppm != 6.0, a.reuse_sheet)
     if a.preview:
         import world_map_preview as PV
         PV.run(img, meta, mist(), a.preview, PPM)

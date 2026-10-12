@@ -3,7 +3,7 @@
 //  * dónde hay niebla lo dice _FogTex (Alpha8, una celda de 4 m por texel, 255 = sin explorar, ya desenfocada por
 //    MapFog): su borde se deforma ±3 m con ruido y la fibra del papel, así no se ve la grilla;
 //  * la niebla son nubes de tinta (dos capas que se mueven despacio en sentidos opuestos, con el lomo que da a la luna
-//    del noroeste más claro) y, encima, las líneas de las nubes kasumi de los biombos;
+//    del noroeste más claro) y, encima, las líneas de las nubes kasumi de los biombos, cada una en su lugar;
 //  * donde la tinta de la niebla se seca contra lo explorado se junta el pigmento (la línea de marea de la aguada);
 //  * al abrir el mapa lo descubierto desde la última vez se despeja a manchas (_FogPrev -> _FogTex con _Reveal);
 //  * el borde rasgado del papel arriba y abajo (los costados van contra las varillas del pergamino).
@@ -19,7 +19,7 @@ Shader "Nindo/UI Map"
         _FogPrev ("Niebla al cerrar (Alpha8)", 2D) = "black" {}
         _MistTex ("Niebla: R fibra, G nubes, B kasumi, A deformación", 2D) = "gray" {}
         _SheetM ("Lámina en metros (x, z)", Vector) = (516, 428, 0, 0)
-        _MistTile ("Metros por repetición (nubes, nubes, kasumi)", Vector) = (96, 163, 262, 0)
+        _MistK ("Repeticiones por lámina (nubes finas, nubes gruesas)", Vector) = (2.69, 1.58, 0, 0)
         _FogLight ("Niebla clara", Color) = (0.34, 0.36, 0.43, 1)
         _FogDark ("Niebla oscura", Color) = (0.19, 0.2, 0.26, 1)
         _Kasumi ("Líneas kasumi (a = fuerza)", Color) = (0.8, 0.77, 0.68, 0.45)
@@ -90,7 +90,7 @@ Shader "Nindo/UI Map"
             fixed4 _TextureSampleAdd;
             float4 _ClipRect;
             float _UIMaskSoftnessX, _UIMaskSoftnessY;
-            float4 _SheetM, _MistTile;
+            float4 _SheetM, _MistK;
             fixed4 _FogLight, _FogDark, _Kasumi, _Tide;
             float _Reveal, _T;
 
@@ -114,13 +114,16 @@ Shader "Nindo/UI Map"
             fixed4 frag(v2f i) : SV_Target
             {
                 float2 uv = i.uv;
-                float2 pm = uv * _SheetM.xy;                       // metros desde la esquina suroeste de la lámina
                 half3 sheet = (tex2D(_MainTex, uv) + _TextureSampleAdd).rgb;
 
-                half4 m1 = tex2D(_MistTex, pm / _MistTile.x + float2(_T * 0.006, 0));
-                half4 m1l = tex2D(_MistTex, pm / _MistTile.x + float2(_T * 0.006 - 0.012, 0.012));   // hacia la luna
-                half4 m2 = tex2D(_MistTex, pm / _MistTile.y + float2(-_T * 0.0035, 0.37));
-                half4 m3 = tex2D(_MistTex, pm / _MistTile.z + float2(_T * 0.0022, 0.61));
+                // _MistTex cubre la lámina una vez: las kasumi (B) se leen así, cada banda en su lugar; la fibra, las
+                // nubes y la deformación, a las escalas _MistK (no se alinean entre sí: no se ve que se repiten).
+                // Todo se corre despacio a 0.58 m/s, las nubes gruesas al revés
+                float2 drift = float2(_T * 0.58 / _SheetM.x, 0);
+                half4 m1 = tex2D(_MistTex, uv * _MistK.x + drift * _MistK.x);
+                half4 m1l = tex2D(_MistTex, uv * _MistK.x + drift * _MistK.x + float2(-1.15, 1.15) * _MistK.x / _SheetM.xy);   // hacia la luna
+                half4 m2 = tex2D(_MistTex, uv * _MistK.y - drift * _MistK.y + float2(0, 0.37));
+                half4 m3 = tex2D(_MistTex, uv + drift);
 
                 // dónde hay niebla: la grilla deformada y con el borde que se abre a manchas al descubrir
                 float2 fuv = uv + (float2(m1.a, m2.a) - 0.5) * (6.0 / _SheetM.xy);

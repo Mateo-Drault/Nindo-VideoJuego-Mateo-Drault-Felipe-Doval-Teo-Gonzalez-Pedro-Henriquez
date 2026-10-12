@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using UnityEngine;
 
 namespace Nindo
@@ -6,8 +7,9 @@ namespace Nindo
     /// <summary>
     /// Geometría y datos del mapa del mundo (Resources/UI/WorldMap.json, lo escribe Tools/UI/build_world_map.py junto
     /// con la lámina): dónde cae la lámina en el mundo, la grilla de la niebla, dónde van los nombres de las zonas, qué
-    /// celdas se pueden descubrir caminando y qué revela cada flag en una partida de antes del mapa. Una sola fuente:
-    /// si se rehace la lámina con otro tamaño o celda, el juego lo toma de acá.
+    /// celdas se pueden descubrir caminando, cuáles son agua abierta, de qué lado de las puertas cae cada una y qué
+    /// revela cada flag en una partida de antes del mapa. Una sola fuente: si se rehace la lámina con otro tamaño o
+    /// celda, el juego lo toma de acá.
     /// </summary>
     [Serializable]
     public class WorldMapData
@@ -18,15 +20,19 @@ namespace Nindo
         public float cell;              // lado de la celda de niebla (m)
         public int[] grid;              // columnas, filas
         public float reveal;            // radio que descubre Kaito (m)
-        public float[] mistTile;
+        public float revealWater;       // hasta dónde se ve el agua abierta (m): nada la tapa
+        public float[] mistK;           // cuántas veces por lámina se leen las nubes finas y las gruesas
         public int reachCount;
         public string reach;            // bits de las celdas descubribles (mismo formato que la niebla)
+        public string water, north, dojo;   // bits: agua abierta; al norte de la muralla; detrás del portón del dojo
+        public string[] gates;          // los flags que abren la muralla y el portón del dojo
         public Label[] labels;
         public Legacy[] legacy;
 
-        /// <summary>Nombre de zona: dónde, alineación (-1 termina en x, 0 centrado, 1 empieza), chico y giro (grados,
-        /// antihorario: la cresta de la montaña se rotula a lo largo).</summary>
-        [Serializable] public class Label { public string id; public float x, z, rot; public int align, small; }
+        /// <summary>Nombre de zona: dónde, alineación (-1 termina en x, 0 centrado, 1 empieza), chico, giro (grados,
+        /// antihorario: la cresta de la montaña se rotula a lo largo) y el corazón de la zona (x, z): el nombre sale
+        /// cuando eso ya se vio.</summary>
+        [Serializable] public class Label { public string id; public float x, z, rot; public int align, small; public float[] at; }
         [Serializable] public class Legacy { public string[] flags; public float[] d; }
 
         public float X0 => bounds[0];
@@ -41,21 +47,23 @@ namespace Nindo
     }
 
     /// <summary>
-    /// Niebla del mapa: qué celdas (de 4 m) ya vio Kaito. Caminando descubre un radio de 20 m a su alrededor (la cámara de
-    /// juego muestra unos 12), cada 2 m de recorrido. Se guarda en la partida como bits en base64 (1726 bytes: ~2.3 KB de
-    /// texto en el JSON) con el prefijo de su versión. Una partida de antes del mapa no trae niebla: arranca descubierta
-    /// alrededor de su santuario y de lo que sus flags prueban que ya recorrió (WorldMap.json "legacy"), así continuar
-    /// a mitad del juego no abre un mapa entero en blanco.
+    /// Niebla del mapa: qué celdas (de 4 m) ya vio Kaito. Caminando descubre un radio de 16 m a su alrededor (hasta la
+    /// esquina de la pantalla de juego) y el agua abierta hasta 34 m, cada 2 m de recorrido; con una puerta cerrada no
+    /// descubre lo que hay del otro lado (la muralla, el portón del dojo). Se guarda en la partida como bits en base64
+    /// (1726 bytes: ~2.3 KB de texto en el JSON) con un prefijo que dice de qué grilla son ("2:129x107@-258,-218:"):
+    /// si se rehace la lámina con otro encuadre, esos bits ya no caen en su lugar y se toman como una partida de antes
+    /// del mapa. Esa no trae niebla: arranca descubierta alrededor de su santuario y de lo que sus flags prueban que
+    /// ya recorrió (WorldMap.json "legacy"), así continuar a mitad del juego no abre un mapa entero en blanco.
     /// La lee la UI del mapa (UIMap.cs); SaveSystem.Save llama a Store antes de escribir.
     /// </summary>
     public static class MapFog
     {
-        const string Prefix = "1:";
         const float Step = 2f;          // cada cuánto recorrido se vuelve a descubrir (m)
 
         static WorldMapData data;
         static bool dataLoaded;
-        static byte[] bits, reach;
+        static string prefix;           // versión y grilla de los bits guardados
+        static byte[] bits, reach, water, north, dojo;
         static SaveData owner;          // la partida de la que son estos bits (cambia con Nueva partida / Continuar)
         static bool dirty, hasLast;
         static Vector3 last;
@@ -67,7 +75,7 @@ namespace Nindo
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetStatics()
         {
-            data = null; dataLoaded = false; bits = reach = null; owner = null; dirty = hasLast = false;
+            data = null; dataLoaded = false; prefix = null; bits = reach = water = north = dojo = null; owner = null; dirty = hasLast = false;
             blurA = blurB = null; Version = 0;
         }
 
@@ -83,7 +91,15 @@ namespace Nindo
                     catch (Exception e) { Debug.LogWarning("[Nindo] WorldMap.json inválido: " + e.Message); data = null; }
                     if (data != null && (data.bounds == null || data.bounds.Length < 4 || data.grid == null || data.grid.Length < 2 || data.cell <= 0f)) data = null;
                     if (data == null) Debug.LogWarning("[Nindo] Sin Resources/UI/WorldMap.json: el mapa no se puede abrir (Tools/UI/build_world_map.py).");
-                    else reach = Decode(data.reach, ByteCount);
+                    else
+                    {
+                        reach = Decode(data.reach, ByteCount);
+                        water = Decode(data.water, ByteCount);
+                        north = Decode(data.north, ByteCount);
+                        dojo = Decode(data.dojo, ByteCount);
+                        var inv = CultureInfo.InvariantCulture;
+                        prefix = "2:" + data.GW + "x" + data.GH + "@" + data.X0.ToString(inv) + "," + data.Z0.ToString(inv) + ":";
+                    }
                 }
                 return data;
             }
@@ -102,7 +118,8 @@ namespace Nindo
             Reveal(pos, data.reveal);
         }
 
-        /// <summary>Descubre las celdas cuyo centro queda a menos de 'radius' de 'pos'.</summary>
+        /// <summary>Descubre las celdas cuyo centro queda a menos de 'radius' de 'pos' (el agua abierta, hasta
+        /// revealWater) del mismo lado de las puertas cerradas.</summary>
         public static void Reveal(Vector3 pos, float radius)
         {
             if (!Ensure()) return;
@@ -112,25 +129,57 @@ namespace Nindo
         static bool RevealDisc(float x, float z, float r)
         {
             float c = data.cell;
-            int gx0 = Mathf.Max(0, Mathf.FloorToInt((x - r - data.X0) / c)), gx1 = Mathf.Min(data.GW - 1, Mathf.FloorToInt((x + r - data.X0) / c));
-            int gy0 = Mathf.Max(0, Mathf.FloorToInt((z - r - data.Z0) / c)), gy1 = Mathf.Min(data.GH - 1, Mathf.FloorToInt((z + r - data.Z0) / c));
+            float rw = water != null ? Mathf.Max(r, data.revealWater) : r;
+            int gx0 = Mathf.Max(0, Mathf.FloorToInt((x - rw - data.X0) / c)), gx1 = Mathf.Min(data.GW - 1, Mathf.FloorToInt((x + rw - data.X0) / c));
+            int gy0 = Mathf.Max(0, Mathf.FloorToInt((z - rw - data.Z0) / c)), gy1 = Mathf.Min(data.GH - 1, Mathf.FloorToInt((z + rw - data.Z0) / c));
+            // de qué lado está Kaito y qué puertas están abiertas (una vez por llamada: cada 2 m de recorrido)
+            int side = SideAt(x, z);
+            bool wallOpen = GateOpen(0), dojoOpen = GateOpen(1);
             bool any = false;
-            float r2 = r * r;
+            float r2 = r * r, rw2 = rw * rw;
             for (int gy = gy0; gy <= gy1; gy++)
             {
                 float dz = data.Z0 + (gy + 0.5f) * c - z;
                 for (int gx = gx0; gx <= gx1; gx++)
                 {
                     float dx = data.X0 + (gx + 0.5f) * c - x;
-                    if (dx * dx + dz * dz > r2) continue;
+                    float d2 = dx * dx + dz * dz;
+                    if (d2 > rw2) continue;
                     int i = gy * data.GW + gx;
                     int b = 1 << (i & 7);
                     if ((bits[i >> 3] & b) != 0) continue;
+                    if (d2 > r2 && (water == null || (water[i >> 3] & b) == 0)) continue;
+                    int s = Side(i);
+                    if (s != side && !Passable(side, s, wallOpen, dojoOpen)) continue;
                     bits[i >> 3] |= (byte)b;
                     any = true;
                 }
             }
             return any;
+        }
+
+        /// <summary>0 al sur de la muralla, 1 al norte, 2 detrás del portón del dojo (sin los datos, todo es un lado).</summary>
+        static int Side(int i)
+        {
+            int b = 1 << (i & 7);
+            if (dojo != null && (dojo[i >> 3] & b) != 0) return 2;
+            return north != null && (north[i >> 3] & b) != 0 ? 1 : 0;
+        }
+
+        static int SideAt(float x, float z)
+        {
+            int gx = Mathf.Clamp(Mathf.FloorToInt((x - data.X0) / data.cell), 0, data.GW - 1);
+            int gy = Mathf.Clamp(Mathf.FloorToInt((z - data.Z0) / data.cell), 0, data.GH - 1);
+            return Side(gy * data.GW + gx);
+        }
+
+        static bool GateOpen(int g) => data.gates == null || data.gates.Length <= g || owner.HasFlag(data.gates[g]);
+
+        /// <summary>¿Se ve de un lado al otro? Sur y norte, por la muralla; norte y dojo, por su portón.</summary>
+        static bool Passable(int a, int b, bool wallOpen, bool dojoOpen)
+        {
+            if (a > b) { int t = a; a = b; b = t; }
+            return a == 0 ? wallOpen && (b == 1 || dojoOpen) : dojoOpen;
         }
 
         /// <summary>¿Ya vio Kaito este lugar?</summary>
@@ -159,13 +208,38 @@ namespace Nindo
             }
         }
 
+        /// <summary>
+        /// El rectángulo del mundo (x, z) que ya se descubrió: el mapa se abre encuadrándolo mientras el jugador no
+        /// eligió su propio zoom (al principio, una mancha sola en la lámina entera parecía un mapa vacío). Recorre
+        /// los bits: solo al abrir el mapa.
+        /// </summary>
+        public static bool ExploredBounds(out Rect world)
+        {
+            world = default;
+            if (!Ensure()) return false;
+            int x0 = int.MaxValue, x1 = -1, y0 = int.MaxValue, y1 = -1;
+            for (int i = 0, n = CellCount; i < n; i++)
+            {
+                if ((bits[i >> 3] & (1 << (i & 7))) == 0) continue;
+                int gx = i % data.GW, gy = i / data.GW;
+                if (gx < x0) x0 = gx;
+                if (gx > x1) x1 = gx;
+                if (gy < y0) y0 = gy;
+                if (gy > y1) y1 = gy;
+            }
+            if (x1 < 0) return false;
+            float c = data.cell;
+            world = new Rect(data.X0 + x0 * c, data.Z0 + y0 * c, (x1 - x0 + 1) * c, (y1 - y0 + 1) * c);
+            return true;
+        }
+
         /// <summary>Antes de escribir la partida: los bits van a SaveData.mapFog (solo si cambiaron o si la partida
         /// todavía no los tenía). Si estos bits son de otra partida, no se toca.</summary>
         public static void Store(SaveData d)
         {
             if (d == null || d != owner || bits == null) return;
             if (!dirty && !string.IsNullOrEmpty(d.mapFog)) return;
-            d.mapFog = Prefix + Convert.ToBase64String(bits);
+            d.mapFog = prefix + Convert.ToBase64String(bits);
             dirty = false;
         }
 
@@ -217,12 +291,12 @@ namespace Nindo
             Version++;
             int nb = ByteCount;
             string s = d.mapFog;
-            if (!string.IsNullOrEmpty(s) && s.StartsWith(Prefix, StringComparison.Ordinal))
+            if (!string.IsNullOrEmpty(s) && s.StartsWith(prefix, StringComparison.Ordinal))
             {
-                bits = Decode(s.Substring(Prefix.Length), nb);
+                bits = Decode(s.Substring(prefix.Length), nb);
                 if (bits != null) { dirty = false; return; }
             }
-            // partida de antes del mapa (o una niebla de otro tamaño): lo que prueban sus flags y su santuario
+            // partida de antes del mapa (o una niebla de otra grilla): lo que prueban sus flags y su santuario
             bits = new byte[nb];
             if (data.legacy != null)
                 foreach (var l in data.legacy)

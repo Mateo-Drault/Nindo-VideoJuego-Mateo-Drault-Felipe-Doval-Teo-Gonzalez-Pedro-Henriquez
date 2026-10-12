@@ -77,7 +77,7 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
 | Corte del Viento (habilidad 1) | 1 / U | RT |
 | Torbellino (habilidad 2) | 2 / I | LT |
 | Pausa | Esc / P | Start |
-| Mapa del mundo (pausa el juego; la rueda o los gatillos acercan, fijar objetivo centra en Kaito) | M | Vista / panel táctil |
+| Mapa del mundo (pausa el juego; la rueda, + / - o los gatillos acercan, fijar objetivo centra en Kaito) | M | Vista / panel táctil |
 
 ## Sistema de combate (se mantuvo el formato original, pulido)
 

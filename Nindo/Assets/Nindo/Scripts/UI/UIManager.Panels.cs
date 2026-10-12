@@ -587,11 +587,12 @@ namespace Nindo
             (string label, Act act)[] rows =
             {
                 ("Moverse", Act.Submit), ("Atacar", Act.Attack), ("Parry", Act.Parry), ("Esquivar (dash)", Act.Dash), ("Fijar objetivo", Act.Lock),
-                ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact),
+                ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact), ("Mapa", Act.Map),
             };
             for (int i = 0; i < rows.Length; i++)
             {
-                float y = -136f - i * 56f;
+                // nueve renglones de 50 en la misma tarjeta (el último termina en -558: abajo queda lugar para una nota)
+                float y = -136f - i * 50f;
                 UIFactory.Text("Row", pauseCard, rows[i].label, 28, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(100f, y + 20f), new Vector2(300, 40), TextAlignmentOptions.Left);
                 if (i == 0) { moveKey = UIFactory.KeyCap(pauseCard, "WASD", 44f, new Vector2(0f, 1f), new Vector2(420f, y)); continue; }
                 controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(420f, y)), rows[i].act, false));
