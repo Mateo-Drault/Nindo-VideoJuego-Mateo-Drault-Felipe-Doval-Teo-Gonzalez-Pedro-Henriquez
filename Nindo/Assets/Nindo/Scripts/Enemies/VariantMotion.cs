@@ -27,10 +27,6 @@ namespace Nindo
         /// <summary>Bambú: agazapado y nervioso, la cabeza salta de un lado a otro buscando a Kaito.</summary>
         public static readonly MotionFlavor Bamboo = new MotionFlavor
         { idleSpeed = 1.18f, lean = 9f, headPitch = -6f, breathe = 1f, breatheHz = 0.6f, scan = 24f, scanEvery = 1.5f };
-
-        /// <summary>Ōzeki: el campeón saca pecho y respira lento; nada de apuro.</summary>
-        public static readonly MotionFlavor Champion = new MotionFlavor
-        { idleSpeed = 0.85f, lean = -5f, hunch = -4f, headPitch = 3f, breathe = 2f, breatheHz = 0.24f };
     }
 
     /// <summary>
@@ -236,7 +232,7 @@ namespace Nindo
                     break;
                 case "Shiko D":
                 case "Shiko I":
-                    // el shiko de la montaña levanta nieve (el del Ōzeki ya tiene su onda)
+                    // el shiko de la montaña levanta nieve
                     if (struck && flavor == MotionFlavor.Mountain) Game.FX?.SmokePuff(enemy.transform.position + enemy.transform.forward * 1.3f, 2.2f);
                     break;
             }

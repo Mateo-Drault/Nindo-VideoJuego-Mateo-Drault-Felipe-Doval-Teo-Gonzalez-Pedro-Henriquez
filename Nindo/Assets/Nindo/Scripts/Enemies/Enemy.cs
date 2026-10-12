@@ -988,7 +988,7 @@ namespace Nindo
         }
 
         /// <summary>¿Este agotamiento se muestra como postura quebrada (clip mareado, chispas, sonido)? Una pausa que el
-        /// jefe se da solo (el ritual de la sal del Ōzeki) queda abierta sin mentir que Kaito le quebró la guardia.</summary>
+        /// jefe se da solo (Chikuō bajando la guardia para llamar a Kaito) queda abierta sin mentir que Kaito le quebró la guardia.</summary>
         protected virtual bool ExhaustedFeedback => true;
 
         void TickExhausted(float dt)
@@ -1109,7 +1109,7 @@ namespace Nindo
             {
                 if (exhaustedHits >= ExhaustedHitCap) EndExhaustion();
                 // el sacudón propio de la postura quebrada (si el controller lo tiene): Hit lo paraba en guardia. Una pausa
-                // que no es postura quebrada (la sal del Ōzeki) no se agacha
+                // que no es postura quebrada (Chikuō llamando a Kaito) no se agacha
                 else anim.Play(ExhaustedFeedback && anim.HasState(ExhaustedHitState) ? ExhaustedHitState : config.animHit, 0.03f);
             }
             else if (State == EnemyState.Attack && (config.hyperArmor && info.kind != AttackKind.Ability || armored && info.kind == AttackKind.Light && !info.riposte))

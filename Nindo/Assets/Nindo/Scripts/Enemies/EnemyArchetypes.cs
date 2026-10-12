@@ -246,59 +246,9 @@ namespace Nindo
             return t;
         }
 
-        /// <summary>
-        /// Ōzeki, el Gran Campeón del Bambú (Enemies/Bosses/OzekiBoss.cs): un yokozuna que se lee por colores.
-        /// Dorado: harite y tsuppari (bofetadas en ritmo, de a una mano). Rojo: agarre (los brazos abiertos), shiko
-        /// (la pierna arriba: onda por el piso hasta 8 m) y tachiai (agachado con los puños abajo: embestida que el
-        /// bambú del claro frena). Fase 2 (50 %): más rápido, la tsuna encendida, la sal como respiro y combos largos.
-        /// Los nombres de los golpes eligen la pose de SumoPoser (la carga y el golpe que se ven desde arriba).
-        /// </summary>
-        public static EnemyConfig Ozeki()
-        {
-            var c = Sumo();
-            // 760: con 560 el bot de pruebas lo terminaba en 22 s (las pausas de la sal y el agarre esquivado regalan
-            // golpes libres) y la fase 2 casi no llegaba a verse; Kokuyō, con 900 y sus actos, dura ~2 min
-            c.id = "ozeki"; c.displayName = "Ōzeki"; c.maxHealth = 760; c.scale = 1.35f; c.maxImbalance = 4;
-            c.detectRadius = 30; c.loseRadius = 80; c.finisherHealth = 0.12f; c.exhaustedTime = 4f; c.guardTime = 0.8f;
-            c.runSpeed = 3.8f; c.walkSpeed = 1.8f; c.turnSpeed = 6.5f; c.preferredDistance = 4.4f;
-            c.attackCooldown = new Vector2(0.6f, 1.3f);
-            // sin tinte: lo viste su kit (tsuna, delantal violeta, abanico dorado)
-            c.tint = Color.white; c.tintStrength = 0f;
-            var hD = Hit("Attack1", 16, 0.667f, 0.815f, range: 3.0f, arc: 120, kind: AttackKind.Heavy, lunge: 0.9f, telegraph: 0.05f, kb: 2f, apex: SumoApex1);
-            hD.name = "Harite D";
-            var hI = Hit("Attack2", 16, 0.593f, 0.741f, range: 3.0f, arc: 120, kind: AttackKind.Heavy, lunge: 0.9f, kb: 2f, apex: SumoApex2);
-            hI.name = "Harite I";
-            // la última del tsuppari furioso se demora un tercio de segundo: el que aprieta por ritmo se adelanta
-            var hLate = hD.Clone(); hLate.telegraph = 0.32f;
-            // agarre: imparable de cerca (solo dash, o salir de adelante cuando abre los brazos)
-            var grab = Hit("Attack2", 26, 0.593f, 0.741f, range: 3.0f, arc: 100, kind: AttackKind.Unblockable, lunge: 1.5f, telegraph: 0.1f, kb: 3.5f, apex: SumoApex2);
-            grab.special = "grab"; grab.name = "Agarre";
-            // shiko: la pierna sube ~1.1 s (el clip del pisotón) y la onda se abre a 7 m/s hasta 8 m
-            var shikoD = Hit("Attack3", 22, 0.643f, 0.738f, range: 3.0f, arc: 360, kind: AttackKind.Unblockable, lunge: 0f, telegraph: 0.05f, kb: 2.6f, apex: SumoApex3);
-            shikoD.special = "shiko"; shikoD.specialParam = 8f; shikoD.tracking = false; shikoD.name = "Shiko D";
-            var shikoI = shikoD.Clone(); shikoI.name = "Shiko I";
-            // tachiai: 0.5 s agachándose y 0.45 s quieto con los puños en el piso; después 13 m/s por un carril fijo.
-            // Desde 6-10.5 m: más cerca no hay tiempo de salir corriendo del carril; más lejos arranca fuera de cuadro
-            var tachiai = Hit("Special", 28, 0.3f, 0.7f, range: 2.6f, arc: 90, kind: AttackKind.Unblockable, lunge: 0f, telegraph: 0.2f, kb: 4f, apex: SumoApexSpecial);
-            tachiai.special = "tachiai"; tachiai.specialParam = 13f; tachiai.tracking = true; tachiai.name = "Tachiai";
-            // la sal (fase 2): no pega; al terminar queda abierto (OzekiBoss.ComboEnd)
-            var salt = Hit("Spotted", 0, 0.55f, 0.6f, lunge: 0f, telegraph: 0.75f);
-            salt.special = "salt"; salt.tracking = false; salt.name = "Shio";
-            c.patterns = new[]
-            {
-                new AttackPattern { name = "Harite", steps = new[] { hD, hI }, weight = 2f, maxRange = 4.2f },
-                new AttackPattern { name = "Tsuppari", steps = new[] { hD, hI, hD }, weight = 1.4f, maxRange = 4.2f, cooldown = 3f },
-                new AttackPattern { name = "Harite y agarre", steps = new[] { hD, grab }, weight = 1.1f, maxRange = 4.2f, cooldown = 6f },
-                new AttackPattern { name = "Agarre", steps = new[] { grab }, weight = 0.7f, maxRange = 3.8f, cooldown = 7f },
-                new AttackPattern { name = "Shiko", steps = new[] { shikoD }, weight = 1f, maxRange = 6.5f, cooldown = 7f },
-                new AttackPattern { name = "Tachiai", steps = new[] { tachiai }, weight = 1.6f, minRange = 6f, maxRange = 10.5f, cooldown = 4f },
-                new AttackPattern { name = "Tsuppari furioso", steps = new[] { hD, hI, hD, hI, hLate }, weight = 1.3f, maxRange = 4.2f, cooldown = 6f, minPhase = 1 },
-                new AttackPattern { name = "Shiko doble", steps = new[] { shikoD, shikoI }, weight = 1f, maxRange = 6.5f, cooldown = 9f, minPhase = 1 },
-                new AttackPattern { name = "Doble tachiai", steps = new[] { tachiai, tachiai }, weight = 1.1f, minRange = 6f, maxRange = 10.5f, cooldown = 8f, minPhase = 1 },
-                new AttackPattern { name = "Shio", steps = new[] { salt }, weight = 0.5f, maxRange = 20f, cooldown = 18f, minPhase = 1 },
-            };
-            return c;
-        }
+        /// <summary>Chikuō, el Maestro del Bambú (Enemies/Bosses/BambooMasterBoss.cs). Sus golpes salen de los tiempos de
+        /// sus clips y van en BambooMasterMoves; el id "ozeki" queda por las partidas, las banderas y el sello.</summary>
+        public static EnemyConfig Ozeki() => BambooMasterMoves.Config();
 
         // ------------------------------------------------------------------ movimientos de las variantes de zona
         // EnemyVariants los suma según la región donde aparece el enemigo. Todo dentro de la gramática del aviso:

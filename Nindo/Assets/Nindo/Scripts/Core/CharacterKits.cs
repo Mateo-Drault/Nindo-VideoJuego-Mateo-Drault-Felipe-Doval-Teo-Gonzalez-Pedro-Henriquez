@@ -6,7 +6,7 @@ namespace Nindo
     /// <summary>
     /// Kits de accesorios sobre los personajes del equipo (Tools/Blender/characters/kits/build_kits.py): el
     /// hachimaki y la capa de paja de los ninjas de cada zona, la red y el sombrero del lago, la armadura de
-    /// cañas del bambú, la tsuna del Ōzeki, las colas de la bandana de Kaito...
+    /// cañas del bambú, las colas de la bandana de Kaito...
     ///
     /// Cada kit es un FBX con el MISMO esqueleto que el personaje y una malla con skin ('Acc_Kit'). Al vestir:
     ///  1. los huesos nuevos del kit ('Acc_*' de las cadenas, 'AccCol_*' de las colisiones) se cuelgan de los

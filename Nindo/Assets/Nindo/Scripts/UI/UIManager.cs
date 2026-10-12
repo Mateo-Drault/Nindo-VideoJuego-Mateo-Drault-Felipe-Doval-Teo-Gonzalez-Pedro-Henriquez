@@ -159,6 +159,17 @@ namespace Nindo
             bossSub.color = UIFactory.Crimson;
         }
 
+        /// <summary>El jefe cambia de título en plena pelea (Chikuō al sacarse el saco o tomar el bastón): la barra destella
+        /// y el subtítulo pasa al nuevo (Boss.subtitle) sin el "¡Enfurecido!", que no le va a un maestro tranquilo.</summary>
+        public void BossRetitled(Boss b)
+        {
+            if (b == null || b != boss) return;
+            bossFlash = 1f;
+            bossEnrage = 0f;
+            bossSub.text = b.subtitle;
+            bossSub.color = UIFactory.Gold;
+        }
+
         static readonly Color PipEmpty = new Color(0.27f, 0.26f, 0.29f, 1f);
 
         void UpdateBossBar(float dt)
