@@ -98,6 +98,16 @@ def lifted(side, x, y, clear=0.06, pitch=0.0, yaw=0.0):
     return air(x, y, clear - low, pitch, yaw)
 
 
+def swung(side, x, y, z, rot, clear=0.04):
+    """Pie en el aire con cualquier giro (cabeceo, vuelta, giro: el pie que da la vuelta por el costado al arrodillarse):
+    el tobillo en (x, y, z) o más alto, lo justo para que ninguna esquina de la suela quede a menos de 'clear' (u) del
+    piso. Rozando, el lint lo ve patinar (la suela se arrastra mientras el pie viaja)."""
+    R = KR.foot_rot(*rot)
+    A = KR.ankle_rest(side)
+    low = min((R @ (P - A)).z for P in KR.sole_corners(side))
+    return (x, y, max(z, clear - low)), tuple(rot)
+
+
 def ankle_of(planted):
     """Tobillo (x, y, z) de un pie apoyado (para levantarlo desde donde está)."""
     return tuple(planted[0])
@@ -124,6 +134,13 @@ def at_travel(p, travel):
             q["_print_" + s_] = (side, px, py - travel, piv)
     q["travel"] = travel
     return q
+
+
+def perp(b, hint):
+    """Filo perpendicular a la hoja 'b', lo más parecido a 'hint' (el filo autorado solo desempata en kaito_rig)."""
+    B, H = Vector(b).normalized(), Vector(hint)
+    e = H - B * H.dot(B)
+    return tuple(round(x, 3) for x in e.normalized())
 
 
 def lunge_travel(frames, f0, f1, meters):
@@ -253,8 +270,9 @@ READY = feet({
     "fingers_l": 0.55, "grip_l": 0.0,
     "knee_r": (-0.25, -1.0, 0.0), "knee_l": (0.55, -1.0, 0.0),
     # escalares explícitos en la pose base: una clave sin el canal tomaría el valor de su vecina
-    "lift": 0.0, "breath": 0.0, "tremble": 0.0, "arm_space": 0.0,
+    "lift": 0.0, "breath": 0.0, "tremble": 0.0, "arm_space": 0.0, "arm_space_l": 0.0,
     "kat_free": 0.0, "fingers_r": -1.0, "wrist_l_open": 0.0, "wrist_r_open": 0.0, "turn": 0.0, "shift": (0.0, 0.0, 0.0),
+    "hand_l_relax": 0.0, "knee_guide_r": 0.0, "knee_guide_l": 0.0,
 }, r=flat("R", *R_FOOT), l=flat("L", *L_FOOT))
 
 
@@ -525,7 +543,7 @@ add("Attack3", A3_N, [
 _dash = feet(mod(READY, hips=(0.0, -0.04, -0.2), hips_rot=(24.0, 0.0, 0.0), spine=(8.0, 0.0, 0.0), head=(-22.0, 0.0, 0.0),
                  arm_space=1.0, grip=(-0.5, -0.15, 1.0), blade=(-0.5, -0.8, -0.3), edge=(0.2, -0.3, -0.93), elbow_r=(-0.6, 0.6, 0.3),
                  hand_l=(0.42, 0.3, 1.12), hand_l_dir=(0.15, 0.9, -0.3), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.6, 0.6, 0.3),
-                 fingers_l=0.1, knee_r=(-0.1, -1.0, 0.2)),
+                 fingers_l=0.1, knee_r=(-0.1, -1.0, 0.2), hand_l_relax=1.0),
              r=air(-0.2, -0.26, 0.44, -6.0, -4.0), l=air(0.22, 0.44, 0.52, 34.0, 8.0))
 _dash_launch = feet(mod(_dash, hips=(0.0, -0.02, -0.18), hips_rot=(16.0, 0.0, 0.0)),
                     r=air(-0.2, -0.18, 0.38, -4.0, -4.0), l=air(0.22, 0.34, 0.46, 30.0, 8.0))
@@ -754,24 +772,46 @@ _d_fall = feet(mod(READY, hips=(0.04, 0.62 + _D_DY, -0.26), hips_rot=(78.0, 14.0
                    hand_l=(0.55, -0.7 + _D_DY, 0.16), hand_l_dir=(0.2, -0.9, -0.4), hand_l_up=(0.95, 0.0, 0.3), elbow_l=(0.8, 0.2, 0.3),
                    elbow_r=(-0.8, 0.4, 0.2), fingers_l=0.3, wrist_l_open=0.3, wrist_r_open=0.3, knee_r=(-0.1, -0.6, -0.8),
                    knee_l=(0.1, -0.6, -0.8)),
-               r=air(-0.22, 1.07 + _D_DY, 0.15, 150.0, -6.0), l=air(0.22, 1.09 + _D_DY, 0.15, 152.0, 6.0))
+               r=((-0.22, 1.07 + _D_DY, 0.15), (30.0, 180.0, -186.0)), l=air(0.22, 1.09 + _D_DY, 0.15, 152.0, 6.0))
 _d_bounce = feet(mod(_d_fall, hips=(0.04, 0.62 + _D_DY, -0.27), hips_rot=(82.0, 16.0, 4.0), head=(-32.0, 8.0, 60.0),
                      kat_pos=(-0.63, -0.21, 0.1), kat_blade=(-0.95, -0.22, 0.2), kat_edge=(-0.22, 0.95, 0.2)),
-                 r=air(-0.22, 1.07 + _D_DY, 0.14, 156.0, -6.0), l=air(0.22, 1.09 + _D_DY, 0.14, 158.0, 6.0))
+                 r=((-0.22, 1.07 + _D_DY, 0.14), (24.0, 180.0, -186.0)), l=air(0.22, 1.09 + _D_DY, 0.14, 158.0, 6.0))
 # tendido: se asienta (la cadera baja, la cabeza termina de girar de costado)
 _d_rest = feet(mod(_d_fall, hips=(0.05, 0.62 + _D_DY, -0.31), hips_rot=(86.0, 16.0, 4.0), spine=(4.0, 4.0, 0.0), head=(-36.0, 8.0, 68.0),
                    hand_r=(-0.62, -0.28 + _D_DY, 0.14), hand_l=(0.55, -0.72 + _D_DY, 0.14), fingers_l=0.55, fingers_r=0.55),
-               r=air(-0.22, 1.07 + _D_DY, 0.13, 160.0, -6.0), l=air(0.22, 1.09 + _D_DY, 0.13, 162.0, 6.0))
-_ar, _al = ankle_of(flat("R", -0.24, -0.3, 4.0)), ankle_of(_D_KNEE_L)
+               r=((-0.22, 1.07 + _D_DY, 0.13), (20.0, 180.0, -186.0)), l=air(0.22, 1.09 + _D_DY, 0.13, 162.0, 6.0))
+
+
+def _d_knees(kr, kl):
+    """Las rodillas guiadas mientras cae (ver knee_guide en kaito_rig): las piernas se estiran atrás entre f31 y f41. La
+    derecha (adelante) se abre hacia afuera y el pie da la vuelta por el costado hasta quedar con el empeine en el piso
+    (como al arrodillarse en PrayIncense: el pie del tendido escrito con la vuelta de 180°); la izquierda se corre de
+    rodillas por el piso. Antes las dos se estiraban de un cuadro al otro (f34-35: las rodillas 19-29 cm y los pies 34-65 cm)."""
+    return dict(knee_at_r=kr, knee_at_l=kl, knee_guide_r=1.0, knee_guide_l=1.0)
+
+
+# (las piernas a ritmo parejo mientras el cuerpo cae acelerando: con la curva del cuerpo se juntaba todo en un cuadro)
+_D_LEGS_LIN = {ch: "lin" for ch in ("foot_r", "foot_l", "foot_r_rot", "foot_l_rot", "knee_at_r", "knee_at_l")}
+
+
 add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "snap"),
                   (5, feet(inter(_d_snap, _d_stag, 0.5), r=lifted("R", -0.23, -0.24, 0.07, -6.0, 5.0), l=toe("L", *L_FOOT, 20.0)), "out"),
                   (8, _d_stag, "inout"),
                   (13, feet(inter(_d_stag, _d_knee, 0.4), l=lifted("L", 0.29, 0.4, 0.07, 62.0, 22.0)), "inout"),
                   (17, _d_knee, "in2"), (19, _d_knee_up, "out"), (24, _d_knee_b, "sine"), (28, _d_let, "sine"),
-                  (31, _d_sink, "in"),
-                  (33, feet(inter(_d_sink, _d_fall, 0.45), r=lifted("R", _ar[0], _ar[1] + 0.02, 0.08, -6.0, 4.0),
-                            l=lifted("L", _al[0], _al[1], 0.08, 60.0, 22.0)), "in"),
-                  (35, _d_fall, "in2"), (38, _d_bounce, "out"), (41, mod(_d_rest, hips=(0.05, 0.62 + _D_DY, -0.29)), "sine"),
+                  (31, mod(_d_sink, **_d_knees((-0.17, -0.23, 0.48), (0.44, -0.1, 0.24))), "in"),
+                  (33, feet(mod(inter(_d_sink, _d_fall, 0.45), **_d_knees((-0.3, -0.2, 0.44), (0.44, -0.06, 0.22))),
+                            r=swung("R", -0.41, -0.14, 0.2, (18.0, 35.0, -40.0)), l=swung("L", 0.42, 0.1, 0.47, (78.0, 0.0, 20.0))),
+                  "in", _D_LEGS_LIN),
+                  (35, feet(mod(_d_fall, **_d_knees((-0.34, -0.06, 0.3), (0.34, 0.08, 0.18))),
+                            r=swung("R", -0.45, 0.11, 0.2, (15.0, 90.0, -115.0)), l=swung("L", 0.3, 0.34, 0.36, (110.0, 0.0, 12.0))),
+                  "in2", _D_LEGS_LIN),
+                  (37, feet(mod(inter(_d_fall, _d_bounce, 0.7), **_d_knees((-0.27, 0.14, 0.22), (0.25, 0.2, 0.15))),
+                            r=swung("R", -0.38, 0.34, 0.17, (18.0, 145.0, -155.0)), l=swung("L", 0.24, 0.46, 0.23, (140.0, 0.0, 7.0))),
+                  "out", _D_LEGS_LIN),
+                  (39, feet(mod(_d_bounce, **_d_knees((-0.18, 0.23, 0.23), (0.23, 0.24, 0.14))),
+                            r=((-0.25, 0.5, 0.15), (19.0, 175.0, -180.0)), l=((0.22, 0.53, 0.16), (155.0, 0.0, 6.0))), "sine"),
+                  (41, mod(_d_rest, hips=(0.05, 0.62 + _D_DY, -0.29)), "sine"),
                   (48, _d_rest, "sine")],
     timing={"impact": 2, "knee": 17, "release": 29, "ground": 35, "slide_ok": True},
     notes="el golpe lo echa atrás, un paso, cae de golpe sobre una rodilla con el puño en el piso, respira; se le cae "
@@ -793,13 +833,6 @@ add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "snap"),
 # muñeca de más). Desde f86 (FinisherHoldEndFrame) es un gesto que el stick o
 # un ataque cortan: chiburi, el pie derecho vuelve con un paso y en f98 está en la guardia. El pie izquierdo no se
 # mueve de su huella de la guardia en todo el clip (gira sobre la punta)
-def perp(b, hint):
-    """Filo perpendicular a la hoja 'b', lo más parecido a 'hint' (el filo autorado solo desempata en kaito_rig)."""
-    B, H = Vector(b).normalized(), Vector(hint)
-    e = H - B * H.dot(B)
-    return tuple(round(x, 3) for x in e.normalized())
-
-
 IAI = feet(mod(READY, hips=(0.0, 0.1, -0.3), hips_rot=(12.0, 0.0, -28.0), spine=(10.0, 0.0, -8.0), head=(-14.0, 0.0, 30.0),
                clav_r=(0.0, 4.0, 0.0), grip=(-0.4, 0.1, 1.04), blade=(-0.46, 0.87, -0.16), edge=perp((-0.46, 0.87, -0.16), (0.0, 0.35, -0.94)),
                elbow_r=(-0.2, 0.5, 0.8), hand_l=(0.22, -0.48, 1.3), hand_l_dir=(-0.1, -0.5, 0.86), hand_l_up=(0.0, 1.0, 0.3),
@@ -823,24 +856,28 @@ _iai_cmp = mod(IAI, hips=(0.0, 0.11, -0.36), hips_rot=(20.0, 0.0, -30.0), spine=
                tremble=1.6, grip=(-0.41, 0.08, 1.0), blade=(-0.5, 0.85, -0.17), edge=perp((-0.5, 0.85, -0.17), (0.59, 0.51, -0.63)),
                hand_l=(0.2, -0.52, 1.24))
 # llega: la hoja recién pasó y sigue arriba y afuera a su derecha (el final del arco); el brazo izquierdo todavía
-# abierto atrás por el envión
+# abierto atrás por el envión, con la mano floja (sigue al antebrazo: el puño se arma recién en la cadera, f58-f64; con
+# la mano autorada abierta atrás y el puño adelante en la cadera, la muñeca daba 80° en un cuadro dentro del zanshin)
 AFTER_CUT = feet(mod(READY, hips=(0.0, -0.25, -0.32), hips_rot=(16.0, 0.0, -32.0), spine=(12.0, 0.0, -18.0), head=(-8.0, 0.0, 14.0),
                      clav_r=(0.0, 12.0, 0.0), grip=(-1.02, 0.0, 1.14), blade=(-0.88, -0.4, -0.25),
                      edge=perp((-0.88, -0.4, -0.25), (0.2, 1.0, 0.4)), elbow_r=(-0.7, 0.6, 0.3), hand_l=(0.36, 0.05, 1.08),
-                     hand_l_dir=(0.6, 0.75, -0.2), hand_l_up=(0.0, 0.0, 1.0), elbow_l=(0.6, 0.6, -0.3), fingers_l=0.05),
+                     hand_l_dir=(0.6, 0.75, -0.2), hand_l_up=(0.0, 0.0, 1.0), elbow_l=(0.6, 0.6, -0.3), fingers_l=0.05,
+                     hand_l_relax=1.0),
                  r=flat("R", -0.28, -0.64, 4.0), l=toe("L", *L_FOOT, 30.0))
 # el envión: la cadera baja un poco más y la hoja sigue hacia atrás y abajo
 _zan_over = mod(AFTER_CUT, hips=(0.0, -0.27, -0.36), hips_rot=(18.0, 0.0, -28.0), spine=(13.0, 0.0, -15.0), head=(-11.0, 0.0, 16.0),
                 grip=(-1.06, 0.08, 1.08), blade=(-0.86, -0.35, -0.38), edge=perp((-0.86, -0.35, -0.38), (0.2, 1.0, 0.4)),
                 elbow_r=(-0.7, 0.6, 0.3),
                 hand_l=(0.34, 0.04, 0.82), hand_l_dir=(0.05, -0.9, -0.3), hand_l_up=(0.3, 0.0, -0.95), elbow_l=(0.6, 0.8, -0.2),
-                fingers_l=0.8)
+                fingers_l=0.3, hand_l_relax=1.0)
 # asentado: el brazo derecho estirado a su costado, la hoja baja y atrás (desde arriba, una raya larga que sale de la
-# silueta por la derecha y hacia atrás), el puño izquierdo cerrado en la cadera, el pecho abierto y la vista adelante
+# silueta por la derecha y hacia atrás), el puño izquierdo cerrado en la cadera, el pecho abierto y la vista adelante. El
+# puño flojo (sigue al antebrazo): el puño autorado no entra en lo cómodo con el codo del zanshin y el recorte lo
+# pasaba de un tope de doblez al otro (80° en un cuadro, dos veces en la pose quieta)
 ZANSHIN = mod(_zan_over, hips=(0.0, -0.26, -0.35), hips_rot=(16.0, 0.0, -26.0), spine=(11.0, 0.0, -14.0), head=(-10.0, 0.0, 16.0),
               clav_r=(0.0, 10.0, 0.0), grip=(-1.0, 0.16, 1.04), blade=(-0.86, -0.12, -0.5),
               edge=perp((-0.86, -0.12, -0.5), (0.3, 1.0, 0.3)), elbow_r=(-0.7, 0.6, 0.3), hand_l=(0.33, 0.02, 0.77), hand_l_dir=(0.0, -1.0, 0.05),
-              hand_l_up=(0.15, 0.0, -1.0), elbow_l=(0.6, 0.8, -0.2), fingers_l=1.0)
+              hand_l_up=(0.15, 0.0, -1.0), elbow_l=(0.6, 0.8, -0.2), fingers_l=1.0, hand_l_relax=1.0)
 _zan_in = mod(ZANSHIN, breath=1.0, hips=(0.0, -0.26, -0.345), head=(-11.0, 0.0, 15.0))
 # exhala y mira por encima del hombro derecho hacia el que cortó (la hoja no se mueve)
 _zan_look = mod(ZANSHIN, breath=0.2, hips=(0.0, -0.26, -0.355), spine=(10.0, 0.0, -17.0), head=(-6.0, -4.0, -28.0))
@@ -884,7 +921,7 @@ add("WindSlash", 58, [
     (51, mod(_chi_snap, grip=(-0.75, -0.26, 0.9)), "lin"), (54, _step_out, "inout"), (57, READY, "in2"), (58, READY, "sine")],
     lag=mod(LEAD, hips=0.0, hips_rot=0.0),
     timing={"phases": {"prep": [0, 9.6], "travel": [9.6, 14.4], "slashes": 16.2, "hold": [15, 45], "end": 58},
-            "hold": [15, 45], "airborne": [10, 14]},
+            "hold": [15, 45], "airborne": [10, 14], "burst": [10]},
     notes="prepara (iai) 0.32 s, viaja 0.16 s en el aire en la pose del dash, llega de espaldas en zanshin y queda 1 s "
           "mientras aparecen los cortes; chiburi, un paso y guardia")
 
@@ -933,69 +970,183 @@ add("Whirlwind", 66, [
 
 # =========================================================================== frenada
 # PlayerController la toca al soltar el stick corriendo (más de 4.5 m/s): el juego frena a 40 m/s² (acceleration), de 6.2
-# m/s a 0 en 0.155 s y 0.48 m (STOP_TR, el avance que el clip descuenta de los pies). Arranca en el vuelo de la carrera
-# (el pie derecho adelante, el izquierdo recién despegado atrás), el derecho clava el talón en f2 con el cuerpo
-# echado atrás y la cadera que baja, el impulso lo pasa por encima del pie (f5-f7: el pecho se va adelante, la katana
-# sigue de largo) y se rearma: el pie izquierdo viene en el aire a su huella de la guardia (f9) y en f16 es la guardia
-# del Idle. Ningún pie apoyado patina con el frenado del juego (el pie derecho queda clavado en el mundo desde f2)
+# m/s a 0 en 0.155 s y 0.48 m (stop_travel, el avance que el clip descuenta de los pies). El primer cuadro de cada frenada
+# ES un cuadro de la carrera y los que siguen hasta que apoya CONTINÚAN la carrera (Run va a 60 fps: el cuadro j de la
+# frenada es Run en la fase + 2j), con el cuerpo que recién empieza a echarse atrás: el fundido de 0.1 s mezcla dos poses
+# que se mueven igual. Antes la pose de frenada entraba entera en el segundo cuadro (el tronco 39°, la cabeza 36° y el
+# brazo izquierdo 128° de un cuadro al otro).
+# Cuatro frenadas, una cada 6 cuadros del ciclo de Run (0.1 s): el código espera en la carrera hasta la fase de la
+# siguiente (PlayerController.TryRunStop) y arranca ahí, así el fundido nunca mezcla piernas de fases distintas (con
+# dos, a medio camino quedaban 45-124° entre las piernas). Fases 8 y 20: el pie que frena está adelante en el aire y apoya
+# en f2 (donde la carrera lo apoyaría); fases 2 y 14 ('Reach'): el otro pie recién apoyó, el que frena viene por debajo
+# del cuerpo, se estira y apoya en f3. Después: el talón clavado con el cuerpo echado atrás y la cadera que baja (un
+# cuadro después de apoyar), el impulso lo pasa por encima del pie (el pecho se va adelante, la katana sigue de largo) y
+# se rearma en la guardia del Idle. Ningún pie apoyado patina con el frenado del juego
+def stop_travel(n):
+    return [U * min(0.155, f / 30.0) * (6.2 - 20.0 * min(0.155, f / 30.0)) for f in range(n + 1)]
+
+
 STOP_N = 16
-STOP_TR = [U * min(0.155, f / 30.0) * (6.2 - 20.0 * min(0.155, f / 30.0)) for f in range(STOP_N + 1)]
+STOP_TR = stop_travel(STOP_N + 1)
 _S_R = (R_FOOT[0], R_FOOT[1] - STOP_TR[STOP_N])   # huellas en el mundo del clip: al final, las de la guardia
 _S_L = (L_FOOT[0], L_FOOT[1] - STOP_TR[STOP_N])
-# el primer cuadro de cada frenada ES un cuadro de la carrera (RUN_STOP_PHASE: el pie que frena todavía en el aire, a dos
-# cuadros de apoyar): el código elige la que sigue la fase en que va la carrera (PlayerController.TryRunStop). Con una
-# pose aparte y una sola frenada, la mitad de las veces las piernas se cruzaban en el fundido de 0.1 s
-RUN_STOP_PHASE = {"R": 8, "L": 20}           # cuadros del ciclo horneado de Run (24): fases 1/3 y 5/6
+_SL_PLANT = (0.3, -0.95)                          # el talón izquierdo clava un poco adelante de su huella de la guardia
+RUN_STOP_PHASE = {"RunStop": 8, "RunStopL": 20, "RunStopReach": 2, "RunStopLReach": 14}   # cuadros del ciclo de Run (24)
 
 
 def run_frame(f):
     """La pose de la carrera en el cuadro f de su ciclo horneado (los pies en el aire, como los pone el ciclo)."""
-    c = RUN.controls(f)
+    c = RUN.controls(f % RUN.n)
     body = {k: v for k, v in c.items() if not k.startswith("foot_")}
     return feet(mod(READY, **body), r=(c["foot_r"], c["foot_r_rot"]), l=(c["foot_l"], c["foot_l_rot"]))
 
 
-_st_run = run_frame(RUN_STOP_PHASE["R"])
-_st_plant = feet(mod(READY, hips=(0.0, 0.06, -0.2), hips_rot=(-14.0, 0.0, 6.0), spine=(-8.0, 0.0, -4.0), head=(2.0, 0.0, -2.0),
-                     grip=(-0.62, -0.18, 1.02), blade=(-0.7, -0.66, -0.05), edge=(0.2, -0.1, -0.97), hand_l=(0.4, -0.1, 1.2),
-                     hand_l_dir=(0.3, -0.5, -0.8), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.6, 0.6, -0.4), fingers_l=0.7),
-                 r=plant("R", _S_R[0], _S_R[1], -18.0, 6.0, "heel"), l=lifted("L", 0.22, 0.3 - STOP_TR[2], 0.06, 30.0, 30.0))
-_st_over = feet(mod(READY, hips=(0.0, 0.0, -0.2), hips_rot=(18.0, 0.0, 10.0), spine=(18.0, 0.0, -8.0), head=(-20.0, 0.0, -4.0),
-                    grip=(-0.6, -0.38, 0.92), blade=(-0.48, -0.86, -0.15), edge=(0.2, -0.1, -0.97), hand_l=(0.42, -0.3, 1.1),
-                    hand_l_dir=(-0.2, -0.75, -0.5), hand_l_up=(0.8, 0.0, 0.6), fingers_l=0.6),
-                r=flat("R", *_S_R, 6.0), l=lifted("L", 0.27, 0.3 - STOP_TR[6], 0.07, 14.0, 34.0))
-_st_land = feet(mod(READY, hips=(0.0, 0.03, -0.12), hips_rot=(5.0, 0.0, 13.0), spine=(9.0, 0.0, -9.0), head=(-9.0, 0.0, -4.0)),
-                r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2]))
-add("RunStop", STOP_N, [
-    (0, _st_run, "lin"), (2, _st_plant, "out", {"foot_r": "lin", "foot_l": "lin"}), (6, _st_over, "sine"),
-    (8, feet(inter(_st_over, _st_land, 0.6), r=flat("R", *_S_R, 6.0), l=hover("L", _S_L[0], _S_L[1], L_FOOT[2], 0.05)), "sine"),
-    (9, _st_land, "in2"), (12, feet(mod(READY, hips=(0.0, 0.02, -0.08)), r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "sine"),
-    (STOP_N, feet(READY, r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "sine")],
-    travel=STOP_TR,
-    timing={"plant": 2, "settle": 9, "travel_fixed": True, "run_phase": RUN_STOP_PHASE["R"] / RUN.n},
-    events=[{"frame": 2, "fn": "FootR"}, {"frame": 9, "fn": "FootL"}],
-    notes="frenada desde la carrera: clava el talón derecho, el impulso lo pasa por encima y se rearma en la guardia (0.53 s)")
-# la misma frenada sobre el pie izquierdo (la carrera venía con el izquierdo adelante): clava el talón izquierdo un poco más
-# adelante de su huella de la guardia, el impulso lo pasa por encima, el derecho pasa adelante en el aire a su huella (f9)
-# y el izquierdo se acomoda atrás con un pasito (f13): termina en la misma guardia
-_SL_PLANT = (0.3, -0.95)
-_stl_plant = feet(mod(_st_plant, hips_rot=(-14.0, 0.0, -4.0), spine=(-8.0, 0.0, 2.0), hand_l=(0.42, -0.2, 1.22)),
-                  r=lifted("R", -0.22, 0.32 - STOP_TR[2], 0.06, 30.0, -6.0), l=plant("L", *_SL_PLANT, -18.0, 30.0, "heel"))
-_stl_over = feet(mod(_st_over, hips_rot=(18.0, 0.0, 6.0)),
-                 r=lifted("R", -0.24, -0.1 - STOP_TR[6], 0.08, 10.0, 4.0), l=flat("L", *_SL_PLANT, 30.0))
-_stl_land = feet(mod(_st_land, hips=(0.0, -0.02, -0.12)), r=flat("R", *_S_R, 6.0), l=flat("L", *_SL_PLANT, 30.0))
-add("RunStopL", STOP_N, [
-    (0, run_frame(RUN_STOP_PHASE["L"]), "lin"), (2, _stl_plant, "out", {"foot_r": "lin", "foot_l": "lin"}), (6, _stl_over, "sine"),
-    (8, feet(inter(_stl_over, _stl_land, 0.6), r=hover("R", _S_R[0], _S_R[1], 6.0, 0.05), l=flat("L", *_SL_PLANT, 30.0)), "sine"),
-    (9, _stl_land, "in2"),
-    (11, feet(mod(READY, hips=(0.0, 0.03, -0.1)), r=flat("R", *_S_R, 6.0), l=lifted("L", 0.3, (_SL_PLANT[1] + _S_L[1]) * 0.5, 0.05, 6.0, 32.0)),
-     "inout"),
-    (13, feet(mod(READY, hips=(0.0, 0.02, -0.09)), r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "in2"),
-    (STOP_N, feet(READY, r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "sine")],
-    travel=STOP_TR,
-    timing={"plant": 2, "settle": 13, "travel_fixed": True, "run_phase": RUN_STOP_PHASE["L"] / RUN.n},
-    events=[{"frame": 2, "fn": "FootL"}, {"frame": 9, "fn": "FootR"}, {"frame": 13, "fn": "FootL"}],
-    notes="frenada sobre el pie izquierdo: clava el talón izquierdo, el derecho pasa adelante y el izquierdo se acomoda (0.53 s)")
+def run_lead(ph, j, tr, pose=None, u=0.0):
+    """Cuadro j de una frenada que arranca en la fase ph: la carrera que sigue (Run en ph + 2j, los pies corridos al
+    mundo del clip con lo que ya frenó) con la pose 'pose' entrando en u (los pies salen de la carrera)."""
+    run = at_travel(run_frame(ph + 2 * j), tr[j])
+    if pose is None or u <= 0.0:
+        return run
+    q = feet(inter(run, pose, u), r=(run["foot_r"], run["foot_r_rot"]), l=(run["foot_l"], run["foot_l_rot"]))
+    # el brazo izquierdo, el de la carrera hasta que apoya (la frenada lo lleva en el espacio del pecho: mezclar los dos
+    # espacios lo estiraba y lo doblaba de un cuadro al otro)
+    q.update({k: run[k] for k in _ARM_KEYS})
+    return q
+
+
+def toe_print(side, ank, rot):
+    """(x, y) de la huella de un pie que apoya la punta con el tobillo y el giro dados (la inversa de KR.foot_on)."""
+    toe, _, _ = KR.sole_points(side)
+    A = KR.ankle_rest(side)
+    pitch, roll, yaw = rot
+    Pw = Vector(ank) - KR.foot_rot(pitch, roll, yaw) @ (A - toe)
+    base = Pw - KR.foot_rot(0.0, 0.0, yaw) @ (toe - A)
+    return base.x, base.y
+
+
+_RUN_STANCE = {"r": set(RUN.feet["r"].stance_frames(RUN.n, 0.5)), "l": set(RUN.feet["l"].stance_frames(RUN.n, 0.0))}
+
+
+# el talón clavado con el cuerpo echado atrás (la carga máxima, un cuadro después de apoyar)
+# El brazo izquierdo sigue el vaivén de la carrera (en la carrera va contra la pierna izquierda): frenando sobre el pie
+# derecho viene adelante y sigue subiendo por el envión; sobre el izquierdo viene atrás y pasa adelante con el pecho. La
+# mano va floja (hand_l_relax: sigue al antebrazo) y en el espacio del pecho (arm_space_l: acompaña al tronco que se echa
+# atrás y adelante) hasta que vuelve a la guardia. Con una mano autorada aparte (adelante, la palma abierta) y fija en el
+# transform la muñeca pasaba de un tope al otro y el codo daba vuelta en un cuadro
+_ARM_FWD = dict(hand_l=(0.31, -0.16, 1.32), hand_l_dir=(0.0, -0.68, -0.8), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.5, 0.9, -0.3),
+                fingers_l=0.85, hand_l_relax=1.0, arm_space_l=1.0)
+_ARM_BACK = dict(hand_l=(0.36, 0.2, 1.1), hand_l_dir=(0.0, 0.2, -0.95), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.5, 0.9, -0.3),
+                 fingers_l=0.85, hand_l_relax=1.0, arm_space_l=1.0)
+# a medio camino: las frenadas 'Reach' apoyan con el brazo todavía al costado (viniendo de atrás sobre el pie derecho, yendo
+# atrás sobre el izquierdo)
+_ARM_MID = dict(hand_l=(0.34, 0.02, 1.18), hand_l_dir=(0.0, -0.3, -0.95), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.5, 0.9, -0.3),
+                fingers_l=0.85, hand_l_relax=0.6, arm_space_l=1.0)
+_ARM_MID_L = dict(_ARM_MID, hand_l=(0.35, 0.1, 1.14), hand_l_dir=(0.0, -0.1, -0.97), hand_l_relax=0.5)
+_ARM_OVER = dict(hand_l=(0.34, -0.22, 1.2), hand_l_dir=(-0.1, -0.72, -0.68), hand_l_up=(0.95, 0.0, 0.3), elbow_l=(0.5, 0.9, -0.3),
+                 fingers_l=0.7, hand_l_relax=0.8, arm_space_l=1.0)
+_ARM_KEYS = tuple(_ARM_FWD)
+# (la katana como en la carrera, apenas levantada: con la punta más arriba la muñeca pedía girar la hoja 35° en el apoyo)
+_st_plant = mod(READY, hips=(0.0, 0.06, -0.2), hips_rot=(-14.0, 0.0, 6.0), spine=(-8.0, 0.0, -4.0), head=(2.0, 0.0, -2.0),
+                grip=(-0.6, -0.2, 0.98), blade=(-0.74, -0.62, -0.18), edge=(0.2, -0.1, -0.97), **_ARM_FWD)
+_st_over = mod(READY, hips=(0.0, 0.0, -0.2), hips_rot=(18.0, 0.0, 10.0), spine=(18.0, 0.0, -8.0), head=(-20.0, 0.0, -4.0),
+               grip=(-0.6, -0.38, 0.92), blade=(-0.48, -0.86, -0.15), edge=(0.2, -0.1, -0.97), **_ARM_OVER)
+_st_land = mod(READY, hips=(0.0, 0.03, -0.12), hips_rot=(5.0, 0.0, 13.0), spine=(9.0, 0.0, -9.0), head=(-9.0, 0.0, -4.0))
+# sobre el pie izquierdo: el mismo cuerpo con la cadera girada al revés y el brazo izquierdo que viene de atrás
+# (la katana atrás, como la lleva la carrera cuando apoya el izquierdo)
+_stl_plant = mod(_st_plant, hips_rot=(-14.0, 0.0, -4.0), spine=(-8.0, 0.0, 2.0), grip=(-0.61, -0.02, 0.97), blade=(-0.77, -0.52, -0.2),
+                 **_ARM_BACK)
+_stl_over = mod(_st_over, hips_rot=(18.0, 0.0, 6.0), **_ARM_OVER)
+_stl_land = mod(_st_land, hips=(0.0, -0.02, -0.12))
+# cuánto de la pose de frenada entra en cada cuadro antes de apoyar (el resto es la carrera que sigue), por cuadro de apoyo
+_ST_LEAD_U = {2: (0.0, 0.1), 3: (0.0, 0.05, 0.1)}
+
+
+def run_stop(name, side, plant_f):
+    """Frenada sobre el pie 'side' que apoya en plant_f (ver arriba). R: el izquierdo pasa en el aire a su huella de la
+    guardia; L: el derecho pasa adelante a la suya y el izquierdo se acomoda atrás con un pasito. Termina en la guardia."""
+    ph, P = RUN_STOP_PHASE[name], plant_f
+    n = STOP_N + P - 2
+    tr = STOP_TR[:n + 1]
+    body_plant, body_over, body_land = (_st_plant, _st_over, _st_land) if side == "R" else (_stl_plant, _stl_over, _stl_land)
+    # el pie que en la carrera está apoyado (en 'Reach', el que no frena) se queda clavado en su huella de la punta mientras
+    # el juego frena: con los pies de la carrera corrido por el avance del clip resbalaba 2 cm
+    prints = {}
+    keys = []
+    for j in range(P):
+        q = run_lead(ph, j, tr, body_plant, _ST_LEAD_U[P][j])
+        # la mano se afloja de a poco (la de la carrera es la autorada, recortada a lo cómodo: de una a la otra hay 40-50°)
+        q["hand_l_relax"] = 0.3 * j / P
+        for s_ in ("r", "l"):
+            if (ph + 2 * j) % RUN.n in _RUN_STANCE[s_]:
+                ank, rot = q["foot_" + s_], q["foot_" + s_ + "_rot"]
+                S = s_.upper()
+                xy = prints.setdefault(s_, toe_print(S, ank, rot))
+                q = feet(q, **{s_: plant(S, xy[0], xy[1], max(0.0, rot[0]), rot[2], "toe")})
+        keys.append((j, q, "lin"))
+    # al apoyar el cuerpo todavía trae la mitad de la carrera: se echa atrás en 3 cuadros (de golpe, con el brazo casi recto
+    # de la carrera, el húmero izquierdo giraba 60° en un cuadro)
+    hit = inter(run_lead(ph, P, tr), body_plant, 0.4)
+    # ...pero el brazo izquierdo ya en el pecho: mezclado a medias entre el espacio del transform y el del pecho, la mano
+    # caía en un punto que no era ninguno de los dos y el brazo se estiraba de golpe
+    hit.update({k: body_plant[k] for k in _ARM_KEYS})
+    # (un cuadro después de apoyar, el brazo de la 'Reach' a mitad de camino entre el costado y adelante)
+    after = body_plant
+    if P == 3:
+        mid, arm = (_ARM_MID, _ARM_FWD) if side == "R" else (_ARM_MID_L, _ARM_BACK)
+        hit.update(mid)
+        after = mod(body_plant, **{k: v for k, v in inter(mid, arm, 0.5).items() if k in _ARM_KEYS})
+    hit["hand_l_relax"] = min(hit["hand_l_relax"], 0.6)
+    # el pie que no frena sigue el vuelo de la carrera (alto atrás) y recién después baja hacia su huella: bajándolo al
+    # piso en el cuadro del apoyo la pierna giraba 60-78° de golpe
+    run_p = run_lead(ph, P, tr)
+    free = "l" if side == "R" else "r"
+    trail = (run_p["foot_" + free], run_p["foot_" + free + "_rot"])
+
+    def toward(target, u):
+        (a, ra), (b, rb) = trail, target
+        return tuple(x + (y - x) * u for x, y in zip(a, b)), tuple(x + (y - x) * u for x, y in zip(ra, rb))
+    if side == "R":
+        l_over = lifted("L", 0.27, 0.3 - tr[P + 4], 0.07, 14.0, 34.0)
+        keys += [
+            (P, feet(hit, r=plant("R", *_S_R, -18.0, 6.0, "heel"), l=trail), "out", {"foot_r": "lin", "foot_l": "lin"}),
+            (P + 1, feet(after, r=plant("R", *_S_R, -13.0, 6.0, "heel"), l=toward(l_over, 0.4)), "out"),
+            (P + 4, feet(body_over, r=flat("R", *_S_R, 6.0), l=l_over), "sine"),
+            (P + 6, feet(inter(body_over, body_land, 0.6), r=flat("R", *_S_R, 6.0), l=hover("L", _S_L[0], _S_L[1], L_FOOT[2], 0.05)),
+             "sine"),
+            (P + 7, feet(body_land, r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "in2"),
+            (P + 10, feet(mod(READY, hips=(0.0, 0.02, -0.08)), r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "sine"),
+            (n, feet(READY, r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "sine")]
+        timing = {"plant": P, "settle": P + 7}
+        events = [{"frame": P, "fn": "FootR"}, {"frame": P + 7, "fn": "FootL"}]
+        note = "clava el talón derecho, el impulso lo pasa por encima y se rearma en la guardia"
+    else:
+        keys += [
+            (P, feet(hit, r=trail, l=plant("L", *_SL_PLANT, -18.0, 30.0, "heel")), "out", {"foot_r": "lin", "foot_l": "lin"}),
+            (P + 1, feet(after, r=toward(lifted("R", -0.24, -0.1 - tr[P + 4], 0.08, 10.0, 4.0), 0.4),
+                         l=plant("L", *_SL_PLANT, -13.0, 30.0, "heel")), "out"),
+            (P + 4, feet(body_over, r=lifted("R", -0.24, -0.1 - tr[P + 4], 0.08, 10.0, 4.0), l=flat("L", *_SL_PLANT, 30.0)), "sine"),
+            (P + 6, feet(inter(body_over, body_land, 0.6), r=hover("R", _S_R[0], _S_R[1], 6.0, 0.05), l=flat("L", *_SL_PLANT, 30.0)), "sine"),
+            (P + 7, feet(body_land, r=flat("R", *_S_R, 6.0), l=flat("L", *_SL_PLANT, 30.0)), "in2"),
+            (P + 9, feet(mod(READY, hips=(0.0, 0.03, -0.1)), r=flat("R", *_S_R, 6.0),
+                         l=lifted("L", 0.3, (_SL_PLANT[1] + _S_L[1]) * 0.5, 0.05, 6.0, 32.0)), "inout"),
+            (P + 11, feet(mod(READY, hips=(0.0, 0.02, -0.09)), r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "in2"),
+            (n, feet(READY, r=flat("R", *_S_R, 6.0), l=flat("L", *_S_L, L_FOOT[2])), "sine")]
+        timing = {"plant": P, "settle": P + 11}
+        events = [{"frame": P, "fn": "FootL"}, {"frame": P + 7, "fn": "FootR"}, {"frame": P + 11, "fn": "FootL"}]
+        note = "clava el talón izquierdo, el derecho pasa adelante y el izquierdo se acomoda"
+    # mientras sigue la carrera, los brazos de Run (kaito_rig.follow_states)
+    timing.update({"travel_fixed": True, "run_phase": ph / RUN.n, "lead": P,
+                   "arm_follow": ["Run", [[j, (ph + 2 * j) % RUN.n] for j in range(P)]]})
+    # sin el adelanto de la cadera ni el atraso de la mano libre: con ellos los cuadros que siguen la carrera ya traían algo
+    # del apoyo (la mano en un punto entre el espacio del transform y el del pecho, la cadera más baja)
+    add(name, n, keys, travel=tr, timing=timing, events=events, lag=mod(LEAD, hips=0.0, hips_rot=0.0, hand_l=0.0),
+        notes=f"frenada desde la fase {ph}/{RUN.n} de la carrera: {note} ({n / 30.0:.2f} s)")
+
+
+run_stop("RunStop", "R", 2)
+run_stop("RunStopL", "L", 2)
+run_stop("RunStopReach", "R", 3)
+run_stop("RunStopLReach", "L", 3)
 
 
 # =========================================================================== gestos de exploración
@@ -1062,7 +1213,10 @@ PI_KAT = (-0.66, -0.3, 0.125)
 PI_KAT_BLADE = (-0.5, -0.866, 0.0)
 PI_KAT_EDGE = perp(PI_KAT_BLADE, (-1.0, 0.0, 0.0))
 _PI_L = KNEE_L
-_PI_R = air(-0.22, 0.36, 0.18, 160.0, -6.0)
+# (el mismo giro que air(..., 160, -6) escrito como 20° de cabeceo, 180 de vuelta y -186 de giro: al arrodillarse el pie
+# derecho va de plano adelante a este dando la vuelta hacia afuera, no por la punta abajo. El pie de Kaito es más largo
+# que su tibia: con la punta abajo el tobillo subía por encima de la cadera y la rodilla saltaba de arriba a abajo)
+_PI_R = ((-0.22, 0.36, 0.18), (20.0, 180.0, -186.0))
 _pi_k1 = feet(mod(READY, hips=(0.0, 0.1, -0.34), hips_rot=(4.0, 0.0, 0.0), spine=(5.0, 0.0, 0.0), head=(8.0, 0.0, 0.0),
                   grip=(-0.5, -0.3, 0.7), blade=(-0.25, -0.93, -0.27), edge=perp((-0.25, -0.93, -0.27), (-1.0, 0.0, 0.0)),
                   elbow_r=(-0.8, 0.4, -0.4), hand_l=(0.36, -0.3, 0.74), hand_l_dir=(0.0, -1.0, -0.2), hand_l_up=(0.2, 0.0, 1.0),
@@ -1072,11 +1226,16 @@ _pi_k1 = feet(mod(READY, hips=(0.0, 0.1, -0.34), hips_rot=(4.0, 0.0, 0.0), spine
               r=flat("R", *R_FOOT), l=_PI_L)
 # se inclina hacia su derecha y apoya la katana (la mano izquierda en el muslo sostiene el peso)
 _pi_lean = mod(_pi_k1, hips=(-0.04, 0.12, -0.36), hips_rot=(30.0, -10.0, -12.0), spine=(22.0, -8.0, -8.0), head=(6.0, 6.0, 6.0),
-               grip=(-0.66, -0.32, 0.22), blade=(-0.45, -0.88, -0.15), edge=perp((-0.45, -0.88, -0.15), (-1.0, 0.0, 0.0)),
+               grip=(-0.66, -0.31, 0.26), blade=(-0.48, -0.87, -0.06), edge=perp((-0.48, -0.87, -0.06), (-1.0, 0.0, 0.0)),
                elbow_r=(-0.8, 0.5, 0.2), hand_l=(0.3, -0.36, 0.66))
-_pi_set = mod(_pi_lean, grip=PI_KAT, blade=PI_KAT_BLADE, edge=PI_KAT_EDGE, hips=(-0.05, 0.12, -0.37))
-_pi_let = mod(_pi_set, kat_free=1.0, fingers_r=0.15, hand_r=(-0.64, -0.36, 0.25), hand_r_dir=(0.05, -0.99, -0.1),
-              hand_r_up=(-0.3, 0.0, 0.95))
+# La katana se da vuelta a su pose del piso (plana) EN EL AIRE, 7 cm arriba del piso (la mano no llega a ponerla plana:
+# en la mano queda 60° de canto), y recién después baja derecha y la mano la suelta. Girándola en el piso, la hoja curva
+# se balanceaba sobre su lomo y la punta saltaba hacia la cámara un cuadro. Al retomarla, lo mismo al revés
+PI_KAT_UP = (PI_KAT[0], PI_KAT[1], PI_KAT[2] + 0.13)
+_PI_HAND = dict(hand_r_dir=(0.05, -0.99, -0.1), hand_r_up=(-0.3, 0.0, 0.95))
+_pi_roll = mod(_pi_lean, kat_free=1.0, kat_pos=PI_KAT_UP, fingers_r=0.6, hand_r=(-0.64, -0.36, 0.38), **_PI_HAND)
+_pi_set = mod(_pi_roll, kat_pos=PI_KAT, hand_r=(-0.64, -0.36, 0.25), hips=(-0.05, 0.12, -0.37))
+_pi_let = mod(_pi_set, fingers_r=0.15)
 # se endereza: la mano derecha al muslo
 _pi_up = mod(_pi_k1, kat_free=1.0, fingers_r=0.3, hand_r=(-0.34, -0.3, 0.72), hand_r_dir=(0.0, -1.0, -0.2), hand_r_up=(-0.2, 0.0, 1.0))
 # kiza: las dos rodillas al piso, sentado sobre los talones, la espalda derecha, las manos en los muslos
@@ -1120,44 +1279,68 @@ _pi_bow2 = mod(_pi_bow, breath=0.2, head=(27.0, 0.0, 0.0), hips=(0.0, 0.2, -0.39
 _pi_lift = mod(_pi_palms, head=(4.0, 0.0, 0.0))
 # vuelve a tomar la katana: se inclina, la mano derecha va al puño, la toma y la levanta
 _pi_grab = feet(mod(_pi_lean, hips=(-0.05, 0.2, -0.37), kat_free=1.0, fingers_r=0.2, hand_r=(-0.64, -0.36, 0.25),
-                   hand_r_dir=(0.05, -0.8, -0.6), hand_r_up=(-0.3, -0.55, 0.78), hand_l=(0.3, -0.24, 0.6), grip=PI_KAT,
-                   blade=PI_KAT_BLADE, edge=PI_KAT_EDGE, knee_r=(-0.15, -1.0, -0.3), knee_l=(0.15, -1.0, -0.3)),
+                   hand_l=(0.3, -0.24, 0.6), grip=PI_KAT_UP, blade=PI_KAT_BLADE, edge=PI_KAT_EDGE, knee_r=(-0.15, -1.0, -0.3),
+                   knee_l=(0.15, -1.0, -0.3), **_PI_HAND),
                 r=_PI_R, l=_PI_L)
-_pi_hold = mod(_pi_grab, kat_free=0.0, fingers_r=0.3, grip=PI_KAT, blade=PI_KAT_BLADE, edge=PI_KAT_EDGE)
+_pi_grip = mod(_pi_grab, fingers_r=0.6)
+_pi_raise = mod(_pi_grip, kat_pos=PI_KAT_UP, hand_r=(-0.64, -0.36, 0.38))
+_pi_hold = mod(_pi_grab, kat_free=0.0, fingers_r=0.3)
 _pi_lift_k = feet(mod(_pi_k1, hips=(0.0, 0.2, -0.35), hips_rot=(10.0, 0.0, -4.0), spine=(8.0, 0.0, -2.0), head=(4.0, 0.0, 0.0),
                       grip=(-0.56, -0.2, 0.6), blade=(-0.3, -0.93, -0.2), edge=perp((-0.3, -0.93, -0.2), (-1.0, 0.0, 0.0)),
                       hand_l=(0.3, -0.24, 0.62)),
                   r=lifted("R", -0.24, 0.2, 0.12, 30.0, 0.0), l=_PI_L)
 _pi_k2 = feet(mod(_pi_k1, hips=(0.0, 0.1, -0.34), hand_l=(0.36, -0.3, 0.74)), r=flat("R", *R_FOOT), l=_PI_L)
-add("PrayIncense", 186, [
+# la rodilla derecha baja al piso (y vuelve a subir): levanta el talón, la rodilla sale hacia afuera (a su derecha) y baja
+# por el costado mientras el pie da la vuelta por atrás hasta quedar con el empeine en el piso. Lento (13 cuadros). La
+# rodilla va guiada (knee_at): el muslo y la tibia giran por afuera, de la rodilla arriba al kiza (u, rodilla, tobillo y
+# giro del pie; la rodilla a un muslo de la cadera y el tobillo a una tibia de la rodilla). Con un polo fijo, al pasar el tobillo por la altura de la cadera la rodilla saltaba de arriba a abajo en un cuadro
+_PI_KNEE = [(0.2, (-0.24, -0.15, 0.56), None),
+            (0.35, (-0.32, -0.11, 0.49), swung("R", -0.4, -0.07, 0.23, (16.0, 40.0, -60.0))),
+            (0.5, (-0.37, -0.08, 0.4), swung("R", -0.49, 0.05, 0.2, (15.0, 90.0, -125.0))),
+            (0.7, (-0.38, -0.01, 0.27), swung("R", -0.49, 0.22, 0.19, (18.0, 140.0, -152.0))),
+            (0.85, (-0.35, 0.04, 0.17), swung("R", -0.4, 0.31, 0.19, (19.0, 170.0, -172.0)))]
+
+
+def pi_knee_keys(frames, half, kiza, first):
+    """Claves de la rodilla derecha entre la pose de rodilla arriba 'half' y la de kiza (u de _PI_KNEE), en 'frames';
+    'first' = el pie de la clave junto a la rodilla arriba (al bajar levanta el talón; al subir llega en el aire arriba de
+    su huella: apoyando en punta y bajando el talón la suela se corría 3 cm)."""
+    out = []
+    for f, (u, knee, foot) in zip(frames, _PI_KNEE):
+        p_ = mod(inter(half, kiza, u), knee_at_r=knee, knee_guide_r=1.0)
+        out.append((f, feet(p_, r=foot or first), "inout"))
+    return sorted(out, key=lambda k: k[0])
+
+
+add("PrayIncense", 188, [
     (0, READY, "sine"),
     (6, feet(inter(READY, _pi_k1, 0.45), l=lifted("L", 0.26, 0.4, 0.07, 62.0, 8.0)), "inout"),
     (10, feet(inter(READY, _pi_k1, 0.75), l=knee_up(0.23, 0.37, 7.0)), "inout"), (13, _pi_k1, "in2"),
-    (22, _pi_lean, "inout"), (27, _pi_set, "sine"), (30, _pi_let, "sine"), (38, _pi_up, "inout"),
-    (44, feet(inter(_pi_up, KIZA, 0.5), r=lifted("R", -0.24, 0.16, 0.07, 40.0, -4.0)), "inout"),
-    (47, feet(inter(_pi_up, KIZA, 0.75), r=knee_up(-0.23, 0.34, -5.0)), "inout"),
-    (50, KIZA, "in2"), (58, _kiza_b, "sine"),
+    (22, _pi_lean, "inout"), (25, _pi_roll, "inout"), (28, _pi_set, "inout"), (31, _pi_let, "sine"), (38, _pi_up, "inout"),
+] + pi_knee_keys((41, 44, 46, 48, 50), _pi_up, KIZA, toe("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 10.0)) + [
+    (54, KIZA, "in2"), (58, _kiza_b, "sine"),
     (66, _pi_reach, "inout"), (70, _pi_take, "sine"),
     (80, _pi_flame, "inout"), (88, _pi_flame2, "sine"), (92, _pi_fan_a, "inout"), (95, _pi_fan_b, "inout"),
     (98, _pi_fan_a, "inout"), (101, _pi_fan_b, "inout"),
     (110, _pi_carry, "inout"), (116, _pi_place, "inout"), (120, _pi_after, "sine"),
-    (128, _pi_palms, "inout"), (138, _pi_bow, "sine"), (148, _pi_bow2, "sine"), (154, _pi_lift, "sine"),
-    (160, _pi_grab, "inout"), (163, _pi_hold, "sine"), (166, feet(inter(_pi_hold, _pi_lift_k, 0.45), r=knee_up(-0.23, 0.32, -3.0)), "inout"),
-    (170, _pi_lift_k, "inout"), (174, _pi_k2, "in2"),
-    (177, feet(inter(_pi_k2, READY, 0.3), l=knee_up(0.24, 0.36, 12.0)), "inout"),
-    (181, feet(inter(_pi_k2, READY, 0.65), l=lifted("L", 0.28, 0.3, 0.07, 30.0, 26.0)), "inout"),
-    (186, READY, "in2")],
+    (128, _pi_palms, "inout"), (138, _pi_bow, "sine"), (146, _pi_bow2, "sine"), (151, _pi_lift, "sine"),
+    (157, _pi_grab, "inout"), (159, _pi_grip, "sine"), (162, _pi_raise, "inout"), (165, _pi_hold, "inout"),
+] + pi_knee_keys((175, 172, 170, 168, 166), _pi_lift_k, _pi_hold, hover("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 0.06)) + [
+    (178, _pi_k2, "in2"),
+    (180, feet(inter(_pi_k2, READY, 0.3), l=knee_up(0.24, 0.36, 12.0)), "inout"),
+    (184, feet(inter(_pi_k2, READY, 0.65), l=lifted("L", 0.28, 0.3, 0.07, 30.0, 26.0)), "inout"),
+    (188, READY, "sine")],
     # al pararse la punta del pie izquierdo roza el piso mientras el empeine se da vuelta (la rodilla ya subió): a propósito
-    timing={"skid": [[177, 181]], "hand_r_m": {"incense_take": [0.29, 0.34, 0.25], "incense_light": [0.04, 0.53, 0.33],
+    timing={"skid": [[180, 184]], "hand_r_m": {"incense_take": [0.29, 0.34, 0.25], "incense_light": [0.04, 0.53, 0.33],
                                                   "incense_place": [0.02, 0.27, 0.47], "katana_down": [0.31, 0.13, 0.14]},
             # dónde queda la katana en el piso (m, como hand_r_m): el centro del puño y la punta; el santuario no la tiene
             # que tapar
             "katana_floor_m": {"grip": [0.35, 0.07, 0.16], "tip": [0.79, 0.07, 0.92]},
-            "katana_down": 27, "kiza": 50, "incense_take": 70, "incense_light": 88, "incense_place": 116, "palms": 128,
-            "katana_up": 163, "rise": 165, "story": True},
-    events=[{"frame": 27, "fn": "katana_down"}, {"frame": 70, "fn": "incense_take"}, {"frame": 88, "fn": "incense_light"},
-            {"frame": 116, "fn": "incense_place"}, {"frame": 128, "fn": "palms"}, {"frame": 163, "fn": "katana_up"},
-            {"frame": 165, "fn": "rise"}],
+            "katana_down": 28, "kiza": 54, "incense_take": 70, "incense_light": 88, "incense_place": 116, "palms": 128,
+            "katana_up": 159, "rise": 166, "story": True},
+    events=[{"frame": 28, "fn": "katana_down"}, {"frame": 70, "fn": "incense_take"}, {"frame": 88, "fn": "incense_light"},
+            {"frame": 116, "fn": "incense_place"}, {"frame": 128, "fn": "palms"}, {"frame": 159, "fn": "katana_up"},
+            {"frame": 166, "fn": "rise"}],
     notes="rezo con sahumerio: deja la katana, kiza, toma el sahumerio, lo prende, lo apaga con la mano, lo clava, palmas "
           "juntas y reverencia por el abuelo, retoma la katana y se para (6 s)")
 
@@ -1165,7 +1348,7 @@ add("PrayIncense", 186, [
 # Paso atrás con el pie izquierdo y rodilla al piso; al bajar se inclina a su derecha y apoya la katana en el piso como en
 # el rezo largo (PI_KAT: el puño junto al pie, la hoja adelante y abierta), se endereza y junta las palmas delante del
 # pecho (gassho: con la katana en la mano rezaba con una sola), reverencia; vuelve a tomar la katana y se para con otro
-# paso. 2.2 s
+# paso. 2.3 s
 _pq_palms = mod(_pi_up, hips=(0.0, 0.1, -0.345), hips_rot=(4.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(10.0, 0.0, 0.0),
                 hand_r=(-0.05, -0.6, 1.03), hand_r_dir=(0.0, -0.15, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0,
                 hand_l=(0.05, -0.6, 1.03), hand_l_dir=(0.0, -0.15, 1.0), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.5),
@@ -1174,22 +1357,22 @@ _pq_bow = mod(_pq_palms, breath=1.0, hips=(0.0, 0.1, -0.35), hips_rot=(10.0, 0.0
 _pq_bow2 = mod(_pq_bow, breath=0.3, hips=(0.0, 0.1, -0.355), head=(27.0, 0.0, 0.0))
 _pq_lift = mod(_pq_palms, head=(6.0, 0.0, 0.0))
 # vuelve a la katana (inclinado como al dejarla) y la levanta
+# (la katana se da vuelta en el aire antes de apoyarla y después de levantarla, como en el rezo largo)
 _pq_grab = mod(_pi_let, fingers_r=0.2)
-_pq_hold = mod(_pi_set, kat_free=0.0, fingers_r=0.3)
-add("PrayQuick", 66, [
+add("PrayQuick", 70, [
     (0, READY, "sine"), (5, feet(inter(READY, _pi_k1, 0.45), l=lifted("L", 0.27, 0.4, 0.07, 62.0, 12.0)), "inout"),
     (8, feet(inter(READY, _pi_k1, 0.75), l=knee_up(0.24, 0.37, 10.0)), "inout"), (11, _pi_k1, "in2"),
-    (15, _pi_lean, "inout"), (17, _pi_set, "sine"), (19, _pi_let, "sine"), (24, _pq_palms, "inout"),
-    (31, _pq_bow, "sine"), (38, _pq_bow2, "sine"), (42, _pq_lift, "sine"),
-    (47, _pq_grab, "inout"), (49, _pq_hold, "sine"), (53, _pi_k2, "inout"),
-    (56, feet(inter(_pi_k2, READY, 0.3), l=knee_up(0.24, 0.36, 12.0)), "inout"),
-    (59, feet(inter(_pi_k2, READY, 0.65), l=lifted("L", 0.28, 0.3, 0.07, 30.0, 26.0)), "inout"),
-    (63, READY, "in2"), (66, READY, "sine")],
-    timing={"kneel": 11, "katana_down": 17, "palms": 24, "katana_up": 49, "rise": 53, "story": True,
+    (15, _pi_lean, "inout"), (18, _pi_roll, "inout"), (21, _pi_set, "inout"), (23, _pi_let, "sine"), (28, _pq_palms, "inout"),
+    (34, _pq_bow, "sine"), (39, _pq_bow2, "sine"), (43, _pq_lift, "sine"),
+    (47, _pq_grab, "inout"), (49, _pi_set, "sine"), (51, _pi_roll, "inout"), (54, _pi_lean, "inout"), (57, _pi_k2, "inout"),
+    (60, feet(inter(_pi_k2, READY, 0.3), l=knee_up(0.24, 0.36, 12.0)), "inout"),
+    (63, feet(inter(_pi_k2, READY, 0.65), l=lifted("L", 0.28, 0.3, 0.07, 30.0, 26.0)), "inout"),
+    (67, READY, "sine"), (70, READY, "sine")],
+    timing={"kneel": 11, "katana_down": 21, "palms": 28, "katana_up": 49, "rise": 57, "story": True,
             "katana_floor_m": {"grip": [0.35, 0.07, 0.16], "tip": [0.79, 0.07, 0.92]}},
-    events=[{"frame": 11, "fn": "kneel"}, {"frame": 17, "fn": "katana_down"}, {"frame": 24, "fn": "palms"},
-            {"frame": 49, "fn": "katana_up"}, {"frame": 53, "fn": "rise"}],
-    notes="rezo corto: rodilla al piso, deja la katana a su derecha, palmas juntas y reverencia, la retoma y se para (2.2 s)")
+    events=[{"frame": 11, "fn": "kneel"}, {"frame": 21, "fn": "katana_down"}, {"frame": 28, "fn": "palms"},
+            {"frame": 49, "fn": "katana_up"}, {"frame": 57, "fn": "rise"}],
+    notes="rezo corto: rodilla al piso, deja la katana a su derecha, palmas juntas y reverencia, la retoma y se para (2.3 s)")
 
 # ------------------------------------------------------------------ el poder de la bandana (abre la muralla)
 # Se planta, la mano izquierda sube a la sien y toca la bandana (glow: el código la hace brillar), baja la cabeza y junta
@@ -1297,7 +1480,7 @@ PRONE = feet(mod(READY, hips=(0.0, 0.62, -0.31), hips_rot=(86.0, 0.0, 4.0), spin
                  hand_r=(-0.62, -0.28, 0.14), hand_r_dir=(-0.2, -0.95, 0.0), hand_r_up=(0.0, 0.0, 1.0), fingers_r=0.35,
                  hand_l=(0.55, -0.72, 0.14), hand_l_dir=(0.3, -0.9, 0.0), hand_l_up=(0.0, 0.0, 1.0), elbow_l=(0.8, 0.2, 0.3),
                  elbow_r=(-0.8, 0.4, 0.2), fingers_l=0.4, wrist_l_open=0.75, wrist_r_open=0.75, **_wk, **_WK_LEGS),
-             r=air(-0.22, 1.07, 0.13, 160.0, -6.0), l=air(0.22, 1.09, 0.13, 162.0, 6.0))
+             r=((-0.22, 1.07, 0.13), (20.0, 180.0, -186.0)), l=((0.22, 1.09, 0.13), (18.0, -180.0, 186.0)))
 _wk_breath = mod(PRONE, breath=1.0, hips=(0.0, 0.62, -0.30))
 _wk_twitch = mod(PRONE, fingers_l=0.85, hand_l=(0.55, -0.7, 0.14))
 # levanta la cabeza (sigue de costado) y trae las manos debajo de los hombros
@@ -1309,11 +1492,14 @@ _wk_sag = mod(_wk_push1, hips=(0.0, 0.62, -0.25), hips_rot=(80.0, 0.0, 2.0), hea
 _wk_push2 = mod(_wk_hands, hips=(0.0, 0.62, -0.22), hips_rot=(70.0, 0.0, 0.0), spine=(-6.0, 0.0, 0.0), head=(10.0, 0.0, -14.0))
 _wk_shake = mod(_wk_push2, head=(12.0, 0.0, 14.0))
 # cuatro patas: las rodillas debajo de la cadera, los dedos de los pies doblados
-_WK_KR, _WK_KL = air(-0.21, 0.9, 0.13, 160.0, -4.0), air(0.21, 0.9, 0.13, 160.0, 4.0)
+# (los pies con el empeine en el piso escritos con la vuelta de 180°, como el kiza de PrayIncense: para pasar a una
+# rodilla cada pie da la vuelta por el costado, con la punta abajo el tobillo subía hasta la cadera y la rodilla saltaba)
+_WK_KR, _WK_KL = ((-0.21, 0.9, 0.13), (20.0, 180.0, -184.0)), ((0.21, 0.9, 0.13), (20.0, -180.0, 184.0))
 _wk_fours = feet(mod(_wk_push2, hips=(0.0, 0.62, -0.26), hips_rot=(76.0, 0.0, 0.0), hand_r=(-0.5, -0.32, 0.18), hand_l=(0.5, -0.32, 0.18), spine=(-4.0, 0.0, 0.0), head=(-6.0, 0.0, -6.0),
                      knee_r=(-0.1, -0.7, -0.7), knee_l=(0.1, -0.7, -0.7)),
                  r=_WK_KR, l=_WK_KL)
-_wk_knees = feet(inter(_wk_push2, _wk_fours, 0.5), r=air(-0.21, 1.02, 0.2, 160.0, -5.0), l=air(0.21, 1.02, 0.2, 160.0, 5.0))
+_wk_knees = feet(inter(_wk_push2, _wk_fours, 0.5), r=((-0.21, 1.02, 0.2), (20.0, 180.0, -185.0)),
+                 l=((0.21, 1.02, 0.2), (20.0, -180.0, 185.0)))
 # una rodilla: el pie derecho adelante, el torso se levanta, la mano izquierda a la cabeza
 _WK_RF = (-0.24, 0.28, 4.0)
 _wk_one = feet(mod(_wk_fours, hips=(0.0, 0.46, -0.32), hips_rot=(14.0, 0.0, 4.0), spine=(10.0, 0.0, 0.0), head=(18.0, 0.0, 10.0),
@@ -1349,9 +1535,21 @@ add("WakeUp", 108, [
     (28, _wk_hands, "inout"), (36, _wk_push1, "out"), (40, _wk_sag, "sine"), (47, _wk_push2, "inout"), (51, _wk_shake, "sine"),
     (55, _wk_push2, "sine"),
     (59, _wk_knees, "inout"), (63, _wk_fours, "in2"),
-    (65, feet(inter(_wk_fours, _wk_step_r, 0.5), r=knee_up(-0.22, 0.8, -4.0)), "inout"), (67, _wk_step_r, "inout"), (71, _wk_one, "in2"), (76, _wk_daze, "sine"),
+    (65, feet(mod(inter(_wk_fours, _wk_step_r, 0.5), knee_at_r=(-0.33, 0.55, 0.18), knee_guide_r=1.0),
+              r=swung("R", -0.41, 0.8, 0.2, (18.0, 140.0, -150.0))), "inout"),
+    (68, feet(mod(_wk_step_r, knee_at_r=(-0.39, 0.42, 0.25), knee_guide_r=1.0), r=swung("R", -0.5, 0.62, 0.2, (15.0, 90.0, -115.0), 0.08)), "inout"),
+    (70, feet(mod(inter(_wk_step_r, _wk_one, 0.25), knee_at_r=(-0.33, 0.3, 0.31), knee_guide_r=1.0),
+              r=swung("R", -0.44, 0.48, 0.25, (12.0, 52.0, -68.0), 0.08)), "inout"),
+    (72, feet(mod(inter(_wk_step_r, _wk_one, 0.5), knee_at_r=(-0.28, 0.2, 0.38), knee_guide_r=1.0),
+              r=swung("R", -0.32, 0.34, 0.23, (8.0, 16.0, -22.0), 0.08)), "inout"),
+    (74, mod(_wk_one, knee_at_r=(-0.21, 0.12, 0.44), knee_guide_r=1.0), "sine"), (77, _wk_daze, "sine"),
     (80, _wk_see, "snap"), (84, _wk_see2, "sine"),
-    (86, feet(inter(_wk_see2, _wk_rise, 0.4), l=knee_up(0.22, 0.78, 6.0)), "inout"), (89, _wk_rise, "out"), (93, _wk_up, "in2"), (96, _wk_step, "inout"), (99, _wk_reach, "in2"),
+    (86, feet(mod(inter(_wk_see2, _wk_rise, 0.4), knee_at_l=(0.33, 0.46, 0.25), knee_guide_l=1.0),
+              l=swung("L", 0.41, 0.7, 0.2, (18.0, -140.0, 150.0))), "inout"),
+    (89, feet(mod(_wk_rise, knee_at_l=(0.39, 0.27, 0.33), knee_guide_l=1.0), l=swung("L", 0.47, 0.47, 0.24, (15.0, -80.0, 100.0))), "out"),
+    (91, feet(mod(inter(_wk_rise, _wk_up, 0.5), knee_at_l=(0.37, 0.12, 0.38), knee_guide_l=1.0),
+              l=swung("L", 0.38, 0.3, 0.26, (10.0, -25.0, 40.0))), "inout"),
+    (93, _wk_up, "in2"), (96, _wk_step, "inout"), (99, _wk_reach, "in2"),
     (104, _wk_ready, "sine"), (108, mod(READY, fingers_r=1.0), "sine")],
     lag=mod(LEAD, hand_l=0.0),
     timing={"push": 36, "fours": 63, "see": 80, "stand": 93, "story": True},
@@ -1381,7 +1579,6 @@ CHAINS = [
     ("Finisher", FINISHER_SKIP_FROM, "Finisher", FINISHER_HOLD_END, 20.0), ("Finisher", -1, "Idle", 0, 1.0), ("WindSlash", -1, "Idle", 0, 1.0),
     ("Whirlwind", -1, "Idle", 0, 1.0), ("Pray", -1, "Idle", 0, 1.0), ("Interact", -1, "Idle", 0, 1.0),
     ("HitBack", -1, "Idle", 0, 1.0), ("HitLeft", -1, "Idle", 0, 1.0), ("HitRight", -1, "Idle", 0, 1.0),
-    ("RunStop", -1, "Idle", 0, 1.0), ("RunStopL", -1, "Idle", 0, 1.0), ("Run", RUN_STOP_PHASE["R"], "RunStop", 0, 2.0),
-    ("Run", RUN_STOP_PHASE["L"], "RunStopL", 0, 2.0), ("PrayQuick", -1, "Idle", 0, 1.0), ("PrayIncense", -1, "Idle", 0, 1.0),
+    ("PrayQuick", -1, "Idle", 0, 1.0), ("PrayIncense", -1, "Idle", 0, 1.0),
     ("BandanaPower", -1, "Idle", 0, 1.0), ("WakeUp", -1, "Idle", 0, 1.0),
-]
+] + [(st, -1, "Idle", 0, 1.0) for st in RUN_STOP_PHASE] + [("Run", ph, st, 0, 2.0) for st, ph in RUN_STOP_PHASE.items()]

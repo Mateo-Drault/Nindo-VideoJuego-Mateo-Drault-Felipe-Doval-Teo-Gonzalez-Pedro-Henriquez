@@ -729,11 +729,69 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
+      name: RunStopReach
+      takeName: Scene
+      internalID: 588275508816302664
+      firstFrame: 901
+      lastFrame: 918
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: RunStopLReach
+      takeName: Scene
+      internalID: 262942111869422105
+      firstFrame: 928
+      lastFrame: 945
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
       name: Pray
       takeName: Scene
       internalID: 884414543542850232
-      firstFrame: 901
-      lastFrame: 941
+      firstFrame: 955
+      lastFrame: 995
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -761,8 +819,8 @@ ModelImporter:
       name: Interact
       takeName: Scene
       internalID: 311008360635144052
-      firstFrame: 951
-      lastFrame: 971
+      firstFrame: 1005
+      lastFrame: 1025
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -790,8 +848,8 @@ ModelImporter:
       name: PrayIncense
       takeName: Scene
       internalID: 1092860424606854458
-      firstFrame: 981
-      lastFrame: 1167
+      firstFrame: 1035
+      lastFrame: 1223
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -819,8 +877,8 @@ ModelImporter:
       name: PrayQuick
       takeName: Scene
       internalID: 212874392332563096
-      firstFrame: 1177
-      lastFrame: 1243
+      firstFrame: 1233
+      lastFrame: 1303
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -848,8 +906,8 @@ ModelImporter:
       name: BandanaPower
       takeName: Scene
       internalID: 263761408209152178
-      firstFrame: 1253
-      lastFrame: 1328
+      firstFrame: 1313
+      lastFrame: 1388
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -877,8 +935,8 @@ ModelImporter:
       name: EndingTurn
       takeName: Scene
       internalID: 726516880040410626
-      firstFrame: 1338
-      lastFrame: 1422
+      firstFrame: 1398
+      lastFrame: 1482
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -906,8 +964,8 @@ ModelImporter:
       name: WakeUp
       takeName: Scene
       internalID: 269392185252430833
-      firstFrame: 1432
-      lastFrame: 1540
+      firstFrame: 1492
+      lastFrame: 1600
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

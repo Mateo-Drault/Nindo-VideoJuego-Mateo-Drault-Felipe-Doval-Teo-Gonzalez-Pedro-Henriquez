@@ -190,7 +190,8 @@ namespace Nindo
             }
             gestureUntil = 0f;
             Vector3 wish = InputToWorld(MoveInput) * config.runSpeed;
-            velocity = Vector3.MoveTowards(velocity, wish, config.acceleration * dt);
+            // (soltó corriendo y espera la fase de su frenada: sigue a la velocidad que traía, ver TryRunStop)
+            if (!RunStopWaiting) velocity = Vector3.MoveTowards(velocity, wish, config.acceleration * dt);
             float speed01 = velocity.magnitude / config.runSpeed;
 
             if (wish.sqrMagnitude > 0.01f)

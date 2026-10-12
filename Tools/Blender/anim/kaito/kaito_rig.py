@@ -316,96 +316,82 @@ def game_skeleton(arm, body):
 # ------------------------------------------------------------------ bandana
 # El nudo de la bandana del cuerpo (slot AmarilloBandana, atrás de la cabeza) traía dos aletas rígidas pegadas a la
 # cabeza: con las colas del kit (Kit_kaito_bandana.fbx, con física) se veían dos juegos de colas. Quedan solo las del
-# kit, que nacen del nudo; el nudo se agranda a un tamaño que se lea en la cabezota chibi (las colas miden 8 cm de
-# ancho en la raíz). Coordenadas del FBX importado en reposo (Kaito mira a +X, la nuca hacia -X)
-KNOT_FIN_X = -0.62                     # caras de la bandana más atrás que esto: las aletas
-KNOT_FRONT_X = -0.54                   # vértices más atrás que esto: el nudo (los de la cinta quedan quietos)
-KNOT_SIZE = (0.09, 0.17, 0.15)         # largo (atrás), ancho y alto del nudo, unidades del archivo
+# kit, que nacen del nudo. El nudo era el aro de la cinta agrandado (un rombo hueco): de costado salía de la cabeza como
+# un cuerno amarillo y por el agujero se veía la nuca. Ahora es un moño bajo y redondo: un nudo central octogonal y dos
+# lazos cortos a los costados, que no sobresale más de KNOT_DEPTH de la cinta. Coordenadas del FBX importado en reposo
+# (Kaito mira a +X, la nuca hacia -X), unidades del archivo (1 u = 0.53 m)
+KNOT_FRONT_X = -0.54                   # caras de la bandana más atrás que esto: el nudo (los de la cinta quedan quietos)
+KNOT_CENTER = (0.0, 2.43)              # (y, z) del centro del nudo, sobre la cinta de atrás
+KNOT_DEPTH = 0.065                     # cuánto sobresale de la cinta (3.4 cm)
+KNOT_R = (0.045, 0.04)                 # radio (ancho, alto) del nudo central
+# lazos: (ancho hasta la punta, alto en la raíz y en la punta, cuánto sube la punta, espesor)
+KNOT_LOOP = (0.115, 0.035, 0.065, 0.012, 0.04)
 
 
 def bandana_knot(body, slot="AmarilloBandana"):
-    """Saca las aletas del nudo y lo lleva a KNOT_SIZE (idempotente: con el nudo ya hecho no cambia nada).
-    Devuelve (caras sacadas, escala aplicada)."""
+    """Rehace el nudo (idempotente: borra las caras del slot detrás de la cinta, sea el aro viejo o un moño anterior, y
+    arma el moño de siempre). Devuelve (caras borradas, caras del moño)."""
     import bmesh
     mi = {i for i, s in enumerate(body.material_slots) if s.material and s.material.name.startswith(slot)}
     M = body.matrix_world
-    Mi = M.inverted()
     bm = bmesh.new()
     bm.from_mesh(body.data)
-    core_c = None
-    knot0 = [M @ v.co for f in bm.faces if f.material_index in mi for v in f.verts if (M @ v.co).x < KNOT_FRONT_X]
-    if knot0:
-        core_c = Vector((KNOT_FRONT_X - KNOT_CORE_DEPTH, (min(p.y for p in knot0) + max(p.y for p in knot0)) * 0.5,
-                         (min(p.z for p in knot0) + max(p.z for p in knot0)) * 0.5))
-    # (el bloque del nudo, si ya está, no es una aleta)
-    fins = [f for f in bm.faces if f.material_index in mi and (M @ f.calc_center_median()).x < KNOT_FIN_X
-            and not (core_c is not None and in_core(M, f, core_c))]
-    bmesh.ops.delete(bm, geom=fins, context='FACES')
+    old = [f for f in bm.faces if f.material_index in mi and (M @ f.calc_center_median()).x < KNOT_FRONT_X]
+    bmesh.ops.delete(bm, geom=old, context='FACES')
     loose = [v for v in bm.verts if not v.link_faces]
     bmesh.ops.delete(bm, geom=loose, context='VERTS')
-    knot = {v for f in bm.faces if f.material_index in mi for v in f.verts if (M @ v.co).x < KNOT_FRONT_X}
-    scale = (1.0, 1.0, 1.0)
-    if knot:
-        pts = [M @ v.co for v in knot]
-        lo = Vector((min(p.x for p in pts), min(p.y for p in pts), min(p.z for p in pts)))
-        hi = Vector((max(p.x for p in pts), max(p.y for p in pts), max(p.z for p in pts)))
-        # el frente del nudo queda contra la cinta; crece hacia atrás, a los costados y en alto sobre su centro
-        size = Vector((KNOT_FRONT_X - lo.x, hi.y - lo.y, hi.z - lo.z))
-        scale = tuple(max(1.0, want / max(1e-6, have)) for want, have in zip(KNOT_SIZE, size))
-        cy, cz = (lo.y + hi.y) * 0.5, (lo.z + hi.z) * 0.5
-        for v in knot:
-            p = M @ v.co
-            p = Vector((KNOT_FRONT_X + (p.x - KNOT_FRONT_X) * scale[0], cy + (p.y - cy) * scale[1], cz + (p.z - cz) * scale[2]))
-            v.co = Mi @ p
-        knot_core(body, bm, mi, Vector((KNOT_FRONT_X - KNOT_CORE_DEPTH, cy, cz)), M)
+    made = knot_bow(body, bm, min(mi), M) if mi else 0
     bm.to_mesh(body.data)
     bm.free()
     body.data.update()
-    return len(fins), tuple(round(s, 3) for s in scale)
+    return len(old), made
 
 
-# El nudo es un aro hueco (la cinta dando la vuelta): de atrás se leía como un rombo de alambre y, tapada la bandana
-# (prólogo: el slot pasa al material del pelo), por el agujero se veía la nuca. Adentro va un bloque del mismo material
-# (12 triángulos, en la cabeza): el nudo tiene volumen y no deja ver nada. Medidas en unidades del archivo
-KNOT_CORE = (0.075, 0.1, 0.09)
-KNOT_CORE_DEPTH = 0.035                # centro del bloque detrás del frente del nudo (su cara de atrás no es una aleta)
-
-
-def in_core(M, f, center, k=1.05):
-    """¿La cara f está toda dentro del bloque del nudo centrado en 'center'?"""
-    hx, hy, hz = (s * 0.5 * k for s in KNOT_CORE)
-    for v in f.verts:
-        d = M @ v.co - center
-        if abs(d.x) > hx or abs(d.y) > hy or abs(d.z) > hz:
-            return False
-    return True
-
-
-def knot_core(body, bm, mats, center, M):
-    """Agrega el bloque del nudo (idempotente: si ya hay caras del slot dentro de ese bloque, no hace nada)."""
+def knot_bow(body, bm, mat, M):
+    """Moño del nudo (caras planas, todo a la cabeza): un prisma octogonal que se angosta hacia atrás y dos lazos."""
+    import bmesh
     Mi = M.inverted()
-    hx, hy, hz = (s * 0.5 for s in KNOT_CORE)
-    for f in bm.faces:
-        if f.material_index in mats and in_core(M, f, center):
-            return
     vg = body.vertex_groups.get("cabeza")
     dl = bm.verts.layers.deform.verify()
-    vs = []
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            for sz in (-1, 1):
-                v = bm.verts.new(Mi @ (center + Vector((sx * hx, sy * hy, sz * hz))))
-                if vg is not None:
-                    v[dl][vg.index] = 1.0
-                vs.append(v)
-    import bmesh
-    mat = min(mats)
+    x0 = KNOT_FRONT_X - 0.002
+    cy, cz = KNOT_CENTER
+
+    def vert(x, y, z):
+        v = bm.verts.new(Mi @ Vector((x, y, z)))
+        if vg is not None:
+            v[dl][vg.index] = 1.0
+        return v
+
     faces = []
-    for q in ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)):
-        f = bm.faces.new([vs[i] for i in q])
+
+    def face(vs):
+        f = bm.faces.new(vs)
         f.material_index = mat
         faces.append(f)
+
+    def prism(front, back):
+        """Une dos anillos de igual largo (adelante contra la cinta, atrás) con sus tapas."""
+        n = len(front)
+        for k in range(n):
+            face([front[k], front[(k + 1) % n], back[(k + 1) % n], back[k]])
+        face(front[::-1])
+        face(back)
+
+    ry, rz = KNOT_R
+    ring = [(math.cos(math.radians(22.5 + 45.0 * k)), math.sin(math.radians(22.5 + 45.0 * k))) for k in range(8)]
+    prism([vert(x0, cy + ry * c, cz + rz * s_) for c, s_ in ring],
+          [vert(x0 - KNOT_DEPTH, cy + 0.8 * ry * c, cz + 0.8 * rz * s_) for c, s_ in ring])
+    w, h0, h1, rise, th = KNOT_LOOP
+    for sy in (-1.0, 1.0):
+        # de la raíz (debajo del nudo central) a la punta, un poco más alta y más abierta: el lazo de un moño
+        y0, y1 = cy + sy * ry * 0.6, cy + sy * w
+        quad = [(y0, cz - h0 * 0.5), (y1, cz + rise - h1 * 0.5), (y1, cz + rise + h1 * 0.5), (y0, cz + h0 * 0.5)]
+        if sy < 0:
+            quad = quad[::-1]
+        xf, xb = x0 - 0.008, x0 - 0.008 - th
+        prism([vert(xf, y, z) for y, z in quad], [vert(xb, y, z) for y, z in quad])
     bmesh.ops.recalc_face_normals(bm, faces=faces)
+    return len(faces)
 
 
 def c_rig(arm):
@@ -471,6 +457,10 @@ NEUTRAL = {
     "foot_r": tuple(ankle_rest("R")), "foot_r_rot": (0.0, 0.0, 0.0), "knee_r": (-0.15, -1.0, 0.0),
     "foot_l": tuple(ankle_rest("L")), "foot_l_rot": (0.0, 0.0, 0.0), "knee_l": (0.15, -1.0, 0.0),
     "travel": 0.0, "lift": 0.0, "breath": 0.0, "tremble": 0.0, "arm_space": 0.0,
+    # solo el brazo izquierdo en el espacio del pecho (el que vale es el mayor de los dos): la katana sigue en el del
+    # transform y la mano libre acompaña al tronco. En la frenada el pecho se echa atrás y adelante 30° y con la mano
+    # fija en el transform el brazo pasaba de estirado a doblado del todo (99 % -> 15 % del largo) y el codo daba vuelta
+    "arm_space_l": 0.0,
     # la katana suelta (Death: se le cae de la mano): 0 = en la mano, 1 = en su propia pose (puño, hoja y filo en el
     # mundo del clip, sin arm_space)
     "kat_free": 0.0, "kat_pos": tuple(GRIP_REST), "kat_blade": tuple(BLADE_REST), "kat_edge": tuple(EDGE_REST),
@@ -488,6 +478,17 @@ NEUTRAL = {
     "wrist_l_open": 0.0,
     # ...y la derecha suelta (kat_free): las palmas en el piso (empujarse para levantarse) piden la muñeca al tope
     "wrist_r_open": 0.0,
+    # la mano izquierda suelta FLOJA (0..1): en 1 sigue al antebrazo con la muñeca recta, como la mano de un brazo que
+    # se balancea; la orientación autorada deja de contar. Una mano autorada que no entra en lo cómodo queda en una
+    # esquina del recorte, y un cambio chico de la autorada la pasaba a la esquina opuesta (80° en un cuadro: la
+    # frenada salía de la carrera con la muñeca dando vuelta)
+    "hand_l_relax": 0.0,
+    # rodilla guiada (0..1): el polo de la rodilla deja de ser una dirección y pasa a ser la recta de la cadera a
+    # 'knee_at_r/l' (dónde va la rodilla, en el mundo del clip como los pies, interpolado en arco entre claves). Una
+    # dirección fija queda casi sobre la recta cadera-tobillo cuando el tobillo la cruza (la rodilla que baja al piso
+    # desde una rodilla arriba: el pie de Kaito es más largo que su tibia, con el talón arriba el tobillo llega a la
+    # altura de la cadera) y la rodilla saltaba de arriba a abajo en un cuadro (132°); el punto nunca está sobre la recta
+    "knee_guide_r": 0.0, "knee_guide_l": 0.0,
 }
 # canales que 'turn' / 'shift' mueven (posiciones) y giran (direcciones)
 TURN_POS = ("grip", "hand_l", "hand_r", "kat_pos")
@@ -775,7 +776,7 @@ class Solver:
         """Lo que la búsqueda de un cuadro necesita (después de body(): hombros, katana autorada, mano izquierda)."""
         ctx = {"K3": np.array(rot3(K)), "G": np.array(K.translation), "af": ArmFrame(self.rig, pose, R_BONES),
                "pole": np.array(V(c["elbow_r"])), "gl": c["grip_l"], "afl": ArmFrame(self.rig, pose, L_BONES),
-               "pole_l": np.array(V(c["elbow_l"]))}
+               "pole_l": np.array(V(c["elbow_l"])), "relax_l": c.get("hand_l_relax") or 0.0}
         Hf = self.free_left(c)
         ctx["hf_t"], ctx["hf_q"] = np.array(Hf.translation), np.array(Hf.to_quaternion())
         # la derecha suelta (kat_free): el codo derecho se elige para su pose libre, no para la katana
@@ -861,6 +862,11 @@ class Solver:
         Rr = np.swapaxes(F3 @ self.R0np["L"], -1, -2) @ np.array(rot3(Hl))
         ang = wrist_angles_np(Rr, "L")
         gl = ctx["gl"]
+        # (floja, la mano va hacia la recta: lo que queda de la autorada)
+        k = 1.0 - ctx["relax_l"] * (1.0 - gl)
+        if k < 1.0:
+            ang = tuple(a * k for a in ang)
+        self.last_ang_l = (*ang, af.shoulder)
         wrist = gl * wrist_cost_np(*ang, "L") + (1.0 - gl) * wrist_soft_np(*ang, "L")
         return wrist + af.swivel_cost(sw) + af.shoulder_cost()
 
@@ -936,13 +942,16 @@ class Solver:
         # decir dónde van las manos respecto del pecho que del transform; 1 = las posiciones y direcciones de las
         # manos y la hoja se leen como si el pecho estuviera en reposo y lo siguen
         w = c.get("arm_space") or 0.0
-        if w > 0.0:
+        wl = max(w, c.get("arm_space_l") or 0.0)
+        if wl > 0.0:
             A = pose.get("tronco") @ R.rest_inv["tronco"]
             A3 = rot3(A)
             for k in ("grip", "hand_l", "hand_r"):
-                c[k] = tuple(V(c[k]).lerp(A @ V(c[k]), w))
+                u = wl if k == "hand_l" else w
+                c[k] = tuple(V(c[k]).lerp(A @ V(c[k]), u))
             for k in ("blade", "edge", "hand_l_dir", "hand_l_up", "hand_r_dir", "hand_r_up", "elbow_r", "elbow_l"):
-                c[k] = tuple(NA.slerp_dir(V(c[k]), A3 @ V(c[k]), w))
+                u = wl if k in ("hand_l_dir", "hand_l_up", "elbow_l") else w
+                c[k] = tuple(NA.slerp_dir(V(c[k]), A3 @ V(c[k]), u))
         self._upw = up * (1.0 - w)          # con los brazos en el pecho el salto ya viene con el pecho
         # ---- katana autorada (temblor: la tensión de una espera, en el puño)
         g = V(c["grip"]) + self._upw + Vector((math.sin(tr * 37.0), math.cos(tr * 29.0), math.sin(tr * 23.0))) * (0.006 if tr else 0.0)
@@ -1025,7 +1034,11 @@ class Solver:
         self.reach_with_clavicle(pose, L_BONES, Hl.translation)
         miss_l = pose.two_bone("Brazo.L", "Antebrazo.L", Hl.translation, pole_l)
         F_l = rot3(pose.get("Antebrazo.L"))
-        H3l = self.clamp_hand(F_l, rot3(Hl), "L", 1.0 - gl, opened_limits(c["wrist_l_open"]))
+        relax = (c.get("hand_l_relax") or 0.0) * (1.0 - gl)
+        Hl3 = rot3(Hl)
+        if relax > 1e-3:
+            Hl3 = Hl3.to_quaternion().slerp((F_l @ self.R0["L"]).to_quaternion(), relax).to_matrix()
+        H3l = self.clamp_hand(F_l, Hl3, "L", 1.0 - gl, opened_limits(c["wrist_l_open"]))
         if gl < 0.999:
             H3l = self.lift_hand(pose.tail("Antebrazo.L"), H3l)
         pose.place("Mando.L", compose(pose.tail("Antebrazo.L"), H3l))
@@ -1052,7 +1065,14 @@ class Solver:
             low = min((ank + Rp @ (P - A0)).z for P in sole_corners(S))
             if low < 0.0:
                 ank = ank + Vector((0.0, 0.0, -low))
-            miss_legs = max(miss_legs, pose.two_bone(B["thigh"], B["shin"], ank, c["knee_" + s]))
+            pole = V(c["knee_" + s]).normalized()
+            w = c.get("knee_guide_" + s) or 0.0
+            if w > 1e-3 and c.get("knee_at_" + s) is not None:
+                hip = pose.head(B["thigh"]) if B["thigh"] in pose.W else pose.follow(B["thigh"]).translation
+                to = V(c["knee_at_" + s]) + sh - hip
+                if to.length > 1e-6:
+                    pole = pole.lerp(to.normalized(), w)
+            miss_legs = max(miss_legs, pose.two_bone(B["thigh"], B["shin"], ank, pole))
             pose.place(B["foot"], compose(pose.tail(B["shin"]), Rf))
         self.misses["legs"] = miss_legs
 
@@ -1103,6 +1123,9 @@ def step_caps(clip):
     # brazo libre vuela y el codo tiene que poder seguirlo (con tope, el hombro se retorcía 130°)
     if "impact" in clip.timing:
         cuts.append(clip.timing["impact"])
+    # ...y el cuadro en que sale disparado ('burst': el Corte del Viento pasa de la carga del iai al vuelo del dash, que el
+    # juego mueve a 56 m/s): los brazos cambian de pose de golpe y con tope el hombro izquierdo se retorcía 125°
+    cuts += list(clip.timing.get("burst", ()))
     for f in range(1, n + 1):
         if any(f - 1 < c <= f + 1e-6 for c in cuts):
             out[f] = np.inf
@@ -1268,11 +1291,34 @@ def refine_path(evalf, path, pins, axes, time_scale=1.0, ease=None, sweeps=4, st
     return out
 
 
+# estados de brazos de cada clip ya resuelto (las frenadas copian los de Run mientras siguen la carrera)
+PATHS = {}
+
+
+def _nearest(vals, v, wrap):
+    d = np.asarray(vals, float) - v
+    return int(np.argmin(np.abs(_wrap(d) if wrap else d)))
+
+
+def follow_states(rig, solver, clip):
+    """{cuadro: estado} que el clip copia de otro (timing 'arm_follow' = [clip, [[cuadro, cuadro del otro], ...]]): con
+    los mismos brazos autorados, el camino propio de la frenada ya elegía otro codo para el apoyo que viene y el brazo
+    izquierdo se separaba 40-50° del de la carrera en el segundo cuadro."""
+    fl = clip.timing.get("arm_follow")
+    if not fl:
+        return {}
+    import kaito_clips as KC
+    if fl[0] not in PATHS:
+        arm_path(rig, solver, next(c for c in KC.CLIPS if c.name == fl[0]))
+    return {int(j): PATHS[fl[0]][int(k)] for j, k in fl[1]}
+
+
 def arm_path(rig, solver, clip):
     """(giro de la hoja, diagonal del agarre, codo derecho, codo izquierdo) por cuadro: el camino suave de menor costo
     de muñecas y hombros de todo el clip (dp_path en la grilla y refine_path). El filo autorado pesa más cuanto más
     rápido va la punta (en un corte el filo va adelante); los cuadros de empalme quedan en su mejor punto propio con
-    el peso base, así salen iguales en los dos clips."""
+    el peso base, así salen iguales en los dos clips; los de 'arm_follow', en el estado del otro clip."""
+    follow = follow_states(rig, solver, clip)
     n = clip.frames
     ts = clip.timing.get("time_scale", 1.0)
     grid = np.meshgrid(np.array(ROLLS), np.array(TILTS), np.array(SWIVELS), indexing="ij")
@@ -1302,9 +1348,13 @@ def arm_path(rig, solver, clip):
         pins[f] = int(np.argmin(solver.eval_right(tgt_ctx[f][2], *grid) + roll_cost(1.0)[:, None, None]))
     axes = [(ROLLS, STEP_COST["roll"], True, STEP_CAP["roll"]), (TILTS, STEP_COST["tilt"], False, STEP_CAP["tilt"]),
             (SWIVELS, STEP_COST["swivel"], False, STEP_CAP["swivel"])]
+    for f, st in follow.items():
+        pins[f] = int(np.ravel_multi_index(tuple(_nearest(ax[0], v, ax[2]) for ax, v in zip(axes, st[:3])), grid[0].shape))
     ease = step_ease([cx["K3"][:, 1] for cx in ctxs], [cx["G"] for cx in ctxs], ts)
     caps = step_caps(clip)
     path = dp_path(local, axes, pins, ts, ease, caps, wr)
+    for f, st in follow.items():
+        path[f] = st[:3]
 
     def ev(f, cand):
         return solver.eval_right(ctxs[f], cand[:, 0], cand[:, 1], cand[:, 2]) + weight[f] * (cand[:, 0] / ROLL_SCALE) ** 2
@@ -1317,7 +1367,14 @@ def arm_path(rig, solver, clip):
         c = solver.c
         hands_l.append(solver.left_hand(solver.katana, solver.free_left(c), c["grip_l"], path[f][1]))
         ctx_l.append(solver.context(pose, c, solver.katana))
-    loc_l = np.array([solver.eval_left(ctx_l[f], hands_l[f], np.array(SWIVELS_L)) for f in range(n + 1)])
+    # el costo de cada giro de codo y, como en el derecho, la muñeca y el hombro que resultan (el tope de cambio por cuadro
+    # de dp_path: sin él el húmero izquierdo giraba 55-160° de un cuadro al otro aunque el codo fuera suave, con el brazo
+    # casi recto el mismo codo es otro giro de hombro)
+    loc_l, wr_l = [], []
+    for f in range(n + 1):
+        loc_l.append(solver.eval_left(ctx_l[f], hands_l[f], np.array(SWIVELS_L)))
+        wr_l.append(np.stack([np.broadcast_to(solver.last_ang_l[k], (len(SWIVELS_L),)) for k in (0, 2, 3)]))
+    loc_l = np.array(loc_l)
     pins_l = {f: int(np.argmin(loc_l[f])) for f in pins}
     for f, (tclip, tf, _) in tgt_ctx.items():
         # el codo izquierdo del cuadro con el que empalma, resuelto con su propia pose
@@ -1328,10 +1385,16 @@ def arm_path(rig, solver, clip):
         hl = solver.left_hand(solver.katana, solver.free_left(c), c["grip_l"], st[1])
         pins_l[f] = int(np.argmin(solver.eval_left(solver.context(pose, c, solver.katana), hl, np.array(SWIVELS_L))))
     axes_l = [(SWIVELS_L, STEP_COST["swivel_l"], False, STEP_CAP["swivel_l"])]
+    for f, st in follow.items():
+        pins_l[f] = _nearest(SWIVELS_L, st[3], False)
     ease_l = step_ease([np.array(rot3(h).col[1]) for h in hands_l], [np.array(h.translation) for h in hands_l], ts)
-    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l, caps)
+    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l, caps, wr_l)
+    for f, st in follow.items():
+        path_l[f] = st[3:4]
     path_l = refine_path(lambda f, cand: solver.eval_left(ctx_l[f], hands_l[f], cand[:, 0]), path_l, pins_l, axes_l, ts,
                          ease_l, caps=caps)
     solver.path_ease = (ease, ease_l)          # build_kaito: los tirones que cuentan son los que el gesto no tapa
     solver.path_caps = caps
-    return [tuple(float(x) for x in path[f]) + (float(path_l[f][0]),) for f in range(n + 1)]
+    out = [tuple(float(x) for x in path[f]) + (float(path_l[f][0]),) for f in range(n + 1)]
+    PATHS[clip.name] = out
+    return out

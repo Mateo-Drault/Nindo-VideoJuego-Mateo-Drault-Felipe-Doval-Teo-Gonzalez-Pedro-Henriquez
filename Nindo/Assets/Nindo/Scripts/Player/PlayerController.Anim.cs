@@ -34,50 +34,92 @@ namespace Nindo
         }
 
         // =============================================================== frenada
-        // RunStop (clava el talón derecho) y RunStopL (el izquierdo) están autorados con el frenado del juego desde la
-        // carrera (config.acceleration 40 m/s²: de 6.2 m/s a 0 en 0.155 s y 0.48 m, que el clip descuenta de los pies) y
-        // su primer cuadro es un cuadro de Run (fase RunStopPhase*: kaitooo.fbx.json, timing 'run_phase'). Se elige el que
-        // sigue la fase en que va la carrera (con uno solo, la mitad de las veces las piernas se cruzaban en el fundido)
-        // y se arranca en el cuadro en que el frenado autorado va a la velocidad que trae: con el stick a medias o ya
-        // frenando, el pie clavado no patina (antes 4-12 cm por debajo de 6.2 m/s). Solo corriendo hacia donde mira y sin
-        // fijar (con un objetivo fijado se mueve de costado y el clip frena hacia adelante)
+        // Cuatro frenadas autoradas con el frenado del juego desde la carrera (config.acceleration 40 m/s²: de 6.2 m/s a 0
+        // en 0.155 s y 0.48 m, que el clip descuenta de los pies): RunStop y RunStopReach clavan el talón derecho, RunStopL
+        // y RunStopLReach el izquierdo. Cada una arranca en un cuadro de Run (RunStopPhases: kaitooo.fbx.json, timing
+        // 'run_phase'), una cada 0.1 s del ciclo, y sigue la carrera hasta que apoya ('lead'). Al confirmar que soltó, si la
+        // carrera pasó hace poco la fase de una (lo que esa frenada todavía sigue a la carrera: RunStopLead) arranca ya,
+        // metida en su tramo de carrera; si no, Kaito sigue corriendo (sin frenar) hasta la fase de la próxima, como mucho
+        // 0.08 s del ciclo. Así el fundido mezcla dos poses que se mueven igual (con dos frenadas elegidas por la más
+        // cercana, a mitad de camino las piernas quedaban 45-124° separadas en el fundido; simulado sobre el FBX en las 48
+        // fases: 8° como mucho al cambiar y ningún cuadro del fundido gira más que la carrera sola). Se arranca en el cuadro
+        // en que el frenado autorado va a la velocidad que trae: con el stick a medias o ya frenando el pie clavado no
+        // patina. Solo corriendo hacia donde mira y sin fijar (con un objetivo fijado se mueve de costado y el clip frena
+        // hacia adelante)
         const float RunStopMinSpeed = 4.5f, RunStopAlign = 0.96f, RunStopAuthoredSpeed = 6.2f, RunStopMaxSkip = 0.15f;
         // soltar = el stick quieto RunStopDebounce s (al dar vuelta con el teclado hay un cuadro vacío: la frenada arrancaba
-        // y se cortaba al cuadro siguiente); vale haber corrido rápido hasta RunStopMemory s antes (lo que tarda en soltar)
-        const float RunStopDebounce = 0.04f, RunStopMemory = 0.1f, RunStopFade = 0.1f;
-        const float RunStopPhaseR = 8f / 24f, RunStopPhaseL = 20f / 24f;
-        const string RunStopState = "RunStop", RunStopLState = "RunStopL";
-        float fastRunUntil = -9f, stickReleasedAt = -9f;
+        // y se cortaba al cuadro siguiente); vale haber corrido rápido hasta RunStopMemory s antes (lo que tarda en soltar).
+        // RunStopMaxWait: a la cadencia más lenta de la carrera (x0.73 a 4.5 m/s) 0.1 s del ciclo son 0.14 s
+        const float RunStopDebounce = 0.04f, RunStopMemory = 0.1f, RunStopFade = 0.1f, RunStopMaxWait = 0.16f;
+        const string RunStopState = "RunStop";
+        static readonly string[] RunStopStates = { "RunStop", "RunStopL", "RunStopReach", "RunStopLReach" };
+        static readonly float[] RunStopPhases = { 8f / 24f, 20f / 24f, 2f / 24f, 14f / 24f };
+        // segundos del principio de cada frenada que todavía son la carrera (kaito_clips: 'lead' 2 y 3 cuadros, el último
+        // ya es el apoyo)
+        static readonly float[] RunStopLead = { 1f / 30f, 1f / 30f, 2f / 30f, 2f / 30f };
+        float fastRunUntil = -9f, stickReleasedAt = -9f, runStopWaitFrom, runStopPrevPhase;
+        int runStopWaitFrame = -9;
 
-        bool InRunStop => gestureState == RunStopState || gestureState == RunStopLState;
+        bool InRunStop => gestureState != null && gestureState.StartsWith(RunStopState);
+        // esperando la fase de la próxima frenada (TickLocomotion no frena mientras tanto); vence solo si no se pidió este
+        // cuadro o el anterior (un ataque o un golpe en el medio la cortan)
+        bool RunStopWaiting => runStopWaitFrame >= Time.frameCount - 1;
 
         /// <summary>Si soltó el stick corriendo, arranca la frenada como un gesto (el stick o un ataque la cortan).</summary>
         bool TryRunStop(Vector3 wish)
         {
             float v = velocity.magnitude;
+            bool waiting = RunStopWaiting;
+            runStopWaitFrame = -9;
+            if (!waiting) runStopWaitFrom = -1f;
             if (v >= RunStopMinSpeed && Vector3.Dot(velocity, transform.forward) >= RunStopAlign * v) fastRunUntil = Time.time + RunStopMemory;
             if (wish.sqrMagnitude > 0.01f) { stickReleasedAt = -9f; return false; }
             if (stickReleasedAt < 0f) stickReleasedAt = Time.time;
-            if (Time.time - stickReleasedAt < RunStopDebounce || Time.time > fastRunUntil) return false;
+            if (!waiting && Time.time > fastRunUntil) return false;
             if (lockTarget != null || anim.Current != "Locomotion" || !IsGrounded || v < 0.5f || !anim.HasState(RunStopState)) return false;
-            fastRunUntil = -9f;
+            // mientras confirma que soltó también sigue a la velocidad que traía: frenando esos 0.04 s (dos cuadros a 30 fps)
+            // la frenada arrancaba a 3.5 m/s, ya pasado el apoyo, y la fase que sigue a la carrera no se llegaba a ver
+            runStopWaitFrame = Time.frameCount;
+            if (Time.time - stickReleasedAt < RunStopDebounce) return false;
             float skip = Mathf.Clamp((RunStopAuthoredSpeed - v) / Mathf.Max(1f, config.acceleration), 0f, RunStopMaxSkip);
-            // fase de la carrera en el primer cuadro que se va a ver de cada frenada (el blend tree sincroniza los ciclos:
-            // su tiempo normalizado es la fase de Run)
             string state = RunStopState;
-            if (anim.HasState(RunStopLState) && anim.TryNormalizedTime("Locomotion", out float n))
+            float offset = skip;
+            // el blend tree sincroniza los ciclos: su tiempo normalizado es la fase de Run. La frenada i arrancada en 'skip'
+            // sigue a la carrera cuando esta va por RunStopPhases[i] + skip / runLen; se toma la última que la carrera pasó
+            // (desde el cuadro anterior, o hace tan poco que la frenada todavía sigue a la carrera) y se entra lo que pasó
+            if (anim.TryNormalizedTime("Locomotion", out float n))
             {
                 float runLen = anim.Length("Run", LocoFallbackLength[3]);
-                float ph = n - Mathf.Floor(n) - skip / runLen;
-                float eR = Mathf.Abs(Mathf.Repeat(ph - RunStopPhaseR + 0.5f, 1f) - 0.5f);
-                float eL = Mathf.Abs(Mathf.Repeat(ph - RunStopPhaseL + 0.5f, 1f) - 0.5f);
-                if (eL < eR) state = RunStopLState;
+                float ph = n - Mathf.Floor(n);
+                if (runStopWaitFrom < 0f) { runStopWaitFrom = Time.time; runStopPrevPhase = ph - 1f / 24f; }
+                float stepped = Mathf.Repeat(ph - runStopPrevPhase, 1f);
+                int best = -1, near = 0;
+                float bestD = 2f, nearD = 2f;
+                for (int i = 0; i < RunStopStates.Length; i++)
+                {
+                    if (!anim.HasState(RunStopStates[i])) continue;
+                    float d = Mathf.Repeat(ph - RunStopPhases[i] - skip / runLen, 1f);
+                    if ((d <= stepped || skip + d * runLen <= RunStopLead[i]) && d < bestD) { best = i; bestD = d; }
+                    float e = Mathf.Min(d, 1f - d);
+                    if (e < nearD) { near = i; nearD = e; }
+                }
+                if (best < 0 && Time.time - runStopWaitFrom < RunStopMaxWait)
+                {
+                    runStopPrevPhase = ph;
+                    return false;
+                }
+                // (si se pasó del tope sin cruzar ninguna, p. ej. con la carrera frenada por una pared: la más cercana)
+                if (best < 0) { best = near; bestD = 0f; }
+                state = RunStopStates[best];
+                offset = skip + bestD * runLen;
             }
+            fastRunUntil = -9f;
+            runStopWaitFrame = -9;
             float len = anim.Length(state, 0.5333f);
-            anim.Play(state, RunStopFade, skip / len);
-            StartGesture(state, len - skip);
-            // el clip frena derecho hacia adelante
-            velocity = transform.forward * v;
+            anim.Play(state, RunStopFade, offset / len);
+            StartGesture(state, len - offset);
+            // el clip frena derecho hacia adelante, a la velocidad que lleva el cuadro en que arranca
+            velocity = transform.forward * Mathf.Min(v, Mathf.Max(0f, RunStopAuthoredSpeed - config.acceleration * offset));
             return true;
         }
 

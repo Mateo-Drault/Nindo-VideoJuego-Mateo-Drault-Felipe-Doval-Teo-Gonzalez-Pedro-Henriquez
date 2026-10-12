@@ -6,11 +6,11 @@
  "skeleton": "de juego: Mando bajo Antebrazo, Pie bajo Tibia; Target*/Pole* quedan sin pesos y quietos (kits)",
  "chains": {
   "Attack1->Attack2": [
-   0.1,
-   "Dedo1.R",
+   0.0,
+   "Puntapulgar.R",
    0.0,
    0.0,
-   "Mando.L"
+   "Mando.R"
   ],
   "Attack2->Attack3": [
    0.0,
@@ -20,8 +20,8 @@
    "Antebrazo.L"
   ],
   "Attack3->Attack1": [
-   0.0,
-   "Puntapulgar.R",
+   0.1,
+   "Puntadedo1.L",
    0.0,
    0.0,
    "Tibia.L"
@@ -187,34 +187,6 @@
    0.1,
    "Mando.L"
   ],
-  "RunStop->Idle": [
-   0.4,
-   "Antebrazo.L",
-   0.0,
-   0.1,
-   "Mando.L"
-  ],
-  "RunStopL->Idle": [
-   0.4,
-   "Antebrazo.L",
-   0.0,
-   0.1,
-   "Mando.L"
-  ],
-  "Run@8->RunStop": [
-   0.0,
-   "Brazo.L",
-   0.0,
-   0.0,
-   "Antebrazo.L"
-  ],
-  "Run@20->RunStopL": [
-   0.0,
-   "tronco",
-   0.0,
-   0.0,
-   "KatanaBone"
-  ],
   "PrayQuick->Idle": [
    0.4,
    "Antebrazo.L",
@@ -242,6 +214,62 @@
    0.0,
    0.1,
    "Mando.L"
+  ],
+  "RunStop->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
+  ],
+  "RunStopL->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
+  ],
+  "RunStopReach->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
+  ],
+  "RunStopLReach->Idle": [
+   0.4,
+   "Antebrazo.L",
+   0.0,
+   0.1,
+   "Mando.L"
+  ],
+  "Run@8->RunStop": [
+   0.0,
+   "Puntapulgar.R",
+   0.0,
+   0.0,
+   "Antebrazo.R"
+  ],
+  "Run@20->RunStopL": [
+   0.0,
+   "Puntadedo1.L",
+   0.0,
+   0.0,
+   "KatanaBone"
+  ],
+  "Run@2->RunStopReach": [
+   0.0,
+   "Puntapulgar.R",
+   0.0,
+   0.0,
+   "KatanaBone"
+  ],
+  "Run@14->RunStopLReach": [
+   0.0,
+   "tronco",
+   0.0,
+   0.0,
+   "cabeza"
   ]
  },
  "clips": {
@@ -267,7 +295,7 @@
      "Pie.L": []
     },
     "skate_cm": 0.0,
-    "loop_seam_deg": 0.04,
+    "loop_seam_deg": 0.056,
     "wrist_R": {
      "over_comfort_max": 4.2,
      "at": 24,
@@ -280,12 +308,12 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 0,
+     "at": 25,
      "frames_over": 0,
      "pose": [
-      -5.6,
-      -22.8,
-      7.3
+      -10.3,
+      -25.0,
+      3.9
      ]
     },
     "shoulder_R": 18.5,
@@ -390,27 +418,27 @@
      ]
     },
     "skate_cm": 0.3,
-    "loop_seam_deg": 0.0,
+    "loop_seam_deg": 0.056,
     "stance_drift_cm": 0.02,
     "ground_speed_mps": 1.2,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 2,
+     "at": 5,
      "frames_over": 37,
      "pose": [
-      -12.6,
-      -18.7,
+      -15.9,
+      -14.6,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 0,
+     "at": 5,
      "frames_over": 0,
      "pose": [
-      2.2,
-      -22.8,
-      -22.4
+      7.5,
+      -25.0,
+      -23.5
      ]
     },
     "shoulder_R": 34.3,
@@ -507,12 +535,12 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 16,
+     "at": 22,
      "frames_over": 0,
      "pose": [
-      32.7,
+      9.4,
       -25.0,
-      18.8
+      5.8
      ]
     },
     "shoulder_R": 32.4,
@@ -586,27 +614,27 @@
      ]
     },
     "skate_cm": 1.88,
-    "loop_seam_deg": 0.0,
+    "loop_seam_deg": 0.04,
     "stance_drift_cm": 0.8,
     "ground_speed_mps": 6.2,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 18,
-     "frames_over": 20,
+     "at": 22,
+     "frames_over": 21,
      "pose": [
-      -15.9,
-      -27.5,
-      70.0
+      -38.7,
+      -35.0,
+      66.4
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 1,
+     "at": 8,
      "frames_over": 0,
      "pose": [
-      5.9,
-      10.0,
-      -11.6
+      21.3,
+      -25.0,
+      9.9
      ]
     },
     "shoulder_R": 33.6,
@@ -614,7 +642,7 @@
     "blade_fix_deg_soft": 9.3,
     "step_0": 2.5,
     "step_2": 12.4,
-    "step_3": 10.1,
+    "step_3": 12.0,
     "min_z_cm": 0.1
    }
   },
@@ -705,21 +733,28 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 4,
+     "at": 11,
      "frames_over": 0,
      "pose": [
-      40.0,
+      -40.0,
       -25.0,
-      60.0
+      -60.0
      ]
     },
     "shoulder_R": 43.2,
-    "shoulder_L": 32.7,
+    "shoulder_L": 41.4,
     "blade_fix_deg": 0.0,
     "blade_fix_deg_soft": 6.1,
     "step_0": 5.0,
     "step_2": 6.9,
-    "step_3": 12.6,
+    "step_3": 19.8,
+    "snaps": [
+     "f0-1 Mando.R 75°",
+     "f0-1 Mando.L 50°",
+     "f0-1 Tibia.L punta 12 cm",
+     "f0-1 Pie.L 12 cm",
+     "f2-3 Pierna.l 77°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -810,21 +845,33 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 4,
+     "at": 0,
      "frames_over": 0,
      "pose": [
-      23.9,
-      10.0,
+      -40.0,
+      -25.0,
       -60.0
      ]
     },
-    "shoulder_R": 53.3,
-    "shoulder_L": 102.4,
+    "shoulder_R": 53.4,
+    "shoulder_L": 97.7,
     "blade_fix_deg": 0.0,
     "blade_fix_deg_soft": 3.5,
     "step_0": 2.2,
     "step_2": 7.7,
-    "step_3": 35.6,
+    "step_3": 36.8,
+    "snaps": [
+     "f0-1 Mando.R 131°",
+     "f0-1 Mando.L 93°",
+     "f0-1 Pierna.l 55°",
+     "f0-1 Tibia.L punta 15 cm",
+     "f0-1 Pie.L 15 cm",
+     "f0-1 Pierna.l punta 13 cm",
+     "f0-1 Tibia.L 13 cm",
+     "f1-2 Pierna.r 98°",
+     "f1-2 Tibia.R 84°",
+     "f2-3 Tibia.L 46°"
+    ],
     "min_z_cm": -0.1
    }
   },
@@ -929,22 +976,43 @@
      ]
     },
     "wrist_L": {
-     "over_comfort_max": 24.5,
+     "over_comfort_max": 23.8,
      "at": 7,
      "frames_over": 3,
      "pose": [
-      35.3,
-      34.5,
-      -64.4
+      31.0,
+      33.8,
+      -64.3
      ]
     },
     "shoulder_R": 74.4,
-    "shoulder_L": 85.5,
+    "shoulder_L": 108.3,
     "blade_fix_deg": 5.1,
     "blade_fix_deg_soft": 21.3,
     "step_0": 20.2,
     "step_2": 18.2,
-    "step_3": 18.9,
+    "step_3": 18.3,
+    "snaps": [
+     "f0-1 codo L 127°",
+     "f0-1 Mando.L 118°",
+     "f0-1 Mando.R 52°",
+     "f2-3 Mando.R 178°",
+     "f2-3 Mando.L 47°",
+     "f3-4 Tibia.L 127°",
+     "f3-4 Pierna.l 90°",
+     "f3-4 Pierna.r 88°",
+     "f4-5 Tibia.R 66°",
+     "f4-5 Pierna.r 57°",
+     "f6-7 Pierna.l 53°",
+     "f6-7 Tibia.L 50°",
+     "f12-13 Brazo.L 92° se retuerce",
+     "f12-13 codo L 66°",
+     "f12-13 Mando.L 56°",
+     "f12-13 Mando.R 50°",
+     "f13-14 codo L 90°",
+     "f13-14 Mando.L 59°",
+     "f13-14 Mando.R 45°"
+    ],
     "min_z_cm": -0.1
    }
   },
@@ -992,12 +1060,12 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 0,
+     "at": 14,
      "frames_over": 0,
      "pose": [
-      40.0,
+      -8.3,
       -25.0,
-      21.1
+      5.5
      ]
     },
     "shoulder_R": 37.8,
@@ -1006,6 +1074,20 @@
     "step_0": 4.6,
     "step_2": 5.7,
     "step_3": 3.7,
+    "snaps": [
+     "f10-11 codo L 105°",
+     "f10-11 Mando.L 101°",
+     "f10-11 Tibia.L 72°",
+     "f10-11 Brazo.L 72° se retuerce",
+     "f10-11 Pierna.l 65°",
+     "f10-11 Pierna.r 62°",
+     "f10-11 Pie.L punta 21 cm",
+     "f10-11 Tibia.L punta 20 cm",
+     "f10-11 Pie.L 20 cm",
+     "f10-11 Pie.R punta 14 cm",
+     "f10-11 Tibia.R punta 13 cm",
+     "f10-11 Pie.R 13 cm"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1062,11 +1144,11 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 12,
+     "at": 11,
      "frames_over": 0,
      "pose": [
       40.0,
-      -11.1,
+      6.7,
       60.0
      ]
     },
@@ -1076,6 +1158,11 @@
     "step_0": 10.0,
     "step_2": 0.0,
     "step_3": 0.0,
+    "snaps": [
+     "f0-1 Mando.R 125°",
+     "f0-1 Mando.L 100°",
+     "f0-1 codo L 61°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1116,17 +1203,17 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 12,
+     "at": 9,
      "frames_over": 11,
      "pose": [
-      43.0,
-      2.3,
+      41.4,
+      -12.9,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 1,
+     "at": 0,
      "frames_over": 0,
      "pose": [
       40.0,
@@ -1140,6 +1227,7 @@
     "step_0": 2.5,
     "step_2": 8.6,
     "step_3": 0.0,
+    "snaps": [],
     "min_z_cm": -0.0
    }
   },
@@ -1180,11 +1268,11 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 6,
+     "at": 2,
      "frames_over": 10,
      "pose": [
-      41.1,
-      0.5,
+      -43.9,
+      -30.0,
       70.0
      ]
     },
@@ -1203,7 +1291,11 @@
     "blade_fix_deg_soft": 11.4,
     "step_0": 5.0,
     "step_2": 11.3,
-    "step_3": 3.0,
+    "step_3": 7.9,
+    "snaps": [
+     "f3-4 Mando.R 69°",
+     "f3-4 Mando.L 47°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1262,7 +1354,7 @@
      "frames_over": 14,
      "pose": [
       41.1,
-      -0.1,
+      -0.0,
       70.0
      ]
     },
@@ -1281,7 +1373,8 @@
     "blade_fix_deg_soft": 7.2,
     "step_0": 4.9,
     "step_2": 6.5,
-    "step_3": 0.0,
+    "step_3": 1.5,
+    "snaps": [],
     "min_z_cm": -0.0
    }
   },
@@ -1312,11 +1405,11 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 1,
+     "at": 5,
      "frames_over": 5,
      "pose": [
-      30.6,
-      5.3,
+      4.9,
+      -24.5,
       70.0
      ]
     },
@@ -1326,16 +1419,25 @@
      "frames_over": 0,
      "pose": [
       40.0,
-      10.0,
+      -25.0,
       60.0
      ]
     },
     "shoulder_R": 51.6,
-    "shoulder_L": 96.0,
+    "shoulder_L": 50.7,
     "blade_fix_deg_soft": 19.5,
     "step_0": 3.7,
     "step_2": 7.1,
-    "step_3": 10.6,
+    "step_3": 13.7,
+    "snaps": [
+     "f4-5 codo L 77°",
+     "f4-5 codo R 75°",
+     "f4-5 Brazo.L 61° se retuerce",
+     "f4-5 Mando.L 51°",
+     "f5-6 codo L 117°",
+     "f5-6 Mando.L 86°",
+     "f5-6 Brazo.L 73° se retuerce"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1376,20 +1478,23 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 4,
+     "at": 8,
      "frames_over": 0,
      "pose": [
-      40.0,
+      -9.6,
       -25.0,
-      60.0
+      32.5
      ]
     },
     "shoulder_R": 44.7,
-    "shoulder_L": 16.0,
+    "shoulder_L": 39.8,
     "blade_fix_deg_soft": 2.1,
     "step_0": 2.5,
     "step_2": 8.7,
-    "step_3": 1.8,
+    "step_3": 10.0,
+    "snaps": [
+     "f4-5 Mando.L 62°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1420,30 +1525,36 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 2,
+     "at": 1,
      "frames_over": 3,
      "pose": [
-      48.7,
-      19.6,
+      45.8,
+      16.0,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 3,
+     "at": 4,
      "frames_over": 0,
      "pose": [
-      2.2,
+      40.0,
       10.0,
       60.0
      ]
     },
     "shoulder_R": 78.2,
-    "shoulder_L": 87.3,
+    "shoulder_L": 77.0,
     "blade_fix_deg_soft": 21.5,
     "step_0": 33.4,
     "step_2": 28.8,
-    "step_3": 16.5,
+    "step_3": 23.7,
+    "snaps": [
+     "f3-4 Brazo.L 77° se retuerce",
+     "f3-4 Mando.L 55°",
+     "f4-5 Mando.L 105°",
+     "f4-5 codo L 81°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1474,30 +1585,33 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 3,
+     "at": 2,
      "frames_over": 5,
      "pose": [
-      26.3,
-      -30.4,
+      16.0,
+      -30.1,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 1,
+     "at": 3,
      "frames_over": 0,
      "pose": [
-      40.0,
-      10.0,
+      39.9,
+      -25.0,
       60.0
      ]
     },
     "shoulder_R": 34.7,
-    "shoulder_L": 17.2,
+    "shoulder_L": 51.4,
     "blade_fix_deg_soft": 5.6,
     "step_0": 8.7,
     "step_2": 11.2,
-    "step_3": 5.9,
+    "step_3": 12.4,
+    "snaps": [
+     "f4-5 Mando.L 137°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1528,7 +1642,7 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 3.9,
-     "at": 11,
+     "at": 0,
      "frames_over": 0,
      "pose": [
       2.1,
@@ -1538,20 +1652,21 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 2,
+     "at": 3,
      "frames_over": 0,
      "pose": [
       40.0,
-      -25.0,
+      10.0,
       60.0
      ]
     },
     "shoulder_R": 21.5,
-    "shoulder_L": 14.6,
+    "shoulder_L": 28.4,
     "blade_fix_deg_soft": 0.0,
     "step_0": 2.5,
     "step_2": 0.0,
-    "step_3": 2.9,
+    "step_3": 12.5,
+    "snaps": [],
     "min_z_cm": -0.0
    }
   },
@@ -1582,30 +1697,44 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 8,
+     "at": 1,
      "frames_over": 14,
      "pose": [
-      50.0,
-      -23.9,
+      -4.3,
+      -31.0,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 3,
+     "at": 4,
      "frames_over": 0,
      "pose": [
-      40.0,
+      -33.5,
       -25.0,
-      60.0
+      14.5
      ]
     },
     "shoulder_R": 63.0,
-    "shoulder_L": 89.4,
+    "shoulder_L": 62.1,
     "blade_fix_deg_soft": 23.2,
     "step_0": 21.0,
     "step_2": 26.1,
-    "step_3": 9.6,
+    "step_3": 7.4,
+    "snaps": [
+     "f1-2 Pie.R punta 19 cm",
+     "f1-2 Pie.L punta 15 cm",
+     "f3-4 Brazo.L 99° se retuerce",
+     "f3-4 codo R 91°",
+     "f3-4 codo L 84°",
+     "f3-4 Mando.R 56°",
+     "f3-4 Mando.L 52°",
+     "f4-5 codo L 129°",
+     "f4-5 Brazo.L 103° se retuerce",
+     "f4-5 Mando.L 83°",
+     "f5-6 Pierna.l 59°",
+     "f5-6 Tibia.L 58°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1634,42 +1763,48 @@
     "plant_drift_cm": 0.25,
     "skate": {
      "Pie.R": [],
-     "Pie.L": [
-      [
-       17.0,
-       32.0,
-       0.61,
-       0.61
-      ]
-     ]
+     "Pie.L": []
     },
-    "skate_cm": 0.61,
+    "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 1,
+     "at": 2,
      "frames_over": 32,
      "pose": [
-      1.6,
-      -33.7,
+      2.9,
+      -32.6,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 12.0,
-     "at": 35,
-     "frames_over": 14,
+     "at": 41,
+     "frames_over": 11,
      "pose": [
-      7.1,
-      -28.9,
+      -17.4,
+      -16.2,
       -72.0
      ]
     },
-    "shoulder_R": 45.7,
-    "shoulder_L": 78.8,
+    "shoulder_R": 45.9,
+    "shoulder_L": 99.1,
     "blade_fix_deg_soft": 15.2,
     "step_0": 7.7,
     "step_2": 9.8,
-    "step_3": 6.3,
+    "step_3": 21.3,
+    "snaps": [
+     "f0-1 Mando.L 117°",
+     "f6-7 Mando.L 46°",
+     "f32-33 Tibia.R 71°",
+     "f32-33 Pierna.r 69°",
+     "f32-33 Mando.L 50°",
+     "f32-33 Pie.R punta 20 cm",
+     "f33-34 Pie.R punta 19 cm",
+     "f34-35 codo L 112°",
+     "f34-35 Brazo.L 91° se retuerce",
+     "f34-35 Mando.L 56°",
+     "f34-35 Pie.R punta 18 cm"
+    ],
     "min_z_cm": -1.2
    }
   },
@@ -1743,26 +1878,37 @@
      "pose": [
       1.4,
       -38.0,
-      26.5
+      26.4
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 66,
+     "at": 103,
      "frames_over": 0,
      "pose": [
-      -40.0,
-      10.0,
-      -60.0
+      -9.9,
+      -25.0,
+      4.2
      ]
     },
     "shoulder_R": 58.9,
-    "shoulder_L": 84.6,
+    "shoulder_L": 83.8,
     "blade_fix_deg": 0.2,
     "blade_fix_deg_soft": 25.1,
     "step_0": 16.0,
     "step_2": 18.7,
-    "step_3": 17.3,
+    "step_3": 15.6,
+    "snaps": [
+     "f5-6 Brazo.R 105° se retuerce",
+     "f5-6 codo R 92°",
+     "f60-61 Puntadedo3.L 27° gira en la pose quieta",
+     "f61-62 Puntadedo3.L 26° gira en la pose quieta",
+     "f87-88 Brazo.R 80° se retuerce",
+     "f87-88 Mando.R 72°",
+     "f87-88 codo R 71°",
+     "f89-90 Mando.R 69°",
+     "f89-90 Brazo.R 64° se retuerce"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1797,6 +1943,9 @@
     "airborne": [
      10,
      14
+    ],
+    "burst": [
+     10
     ]
    },
    "normalized": {
@@ -1820,30 +1969,53 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 52,
-     "frames_over": 13,
+     "at": 15,
+     "frames_over": 16,
      "pose": [
-      48.7,
+      0.6,
       -35.0,
-      -49.1
+      24.7
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 32,
+     "at": 8,
      "frames_over": 0,
      "pose": [
-      -40.0,
-      10.0,
-      -60.0
+      21.7,
+      -25.0,
+      2.0
      ]
     },
     "shoulder_R": 92.3,
-    "shoulder_L": 90.1,
+    "shoulder_L": 86.9,
     "blade_fix_deg_soft": 29.2,
     "step_0": 25.4,
     "step_2": 16.9,
-    "step_3": 16.2,
+    "step_3": 14.6,
+    "snaps": [
+     "f0-1 Mando.R 54°",
+     "f0-1 Mando.L 51°",
+     "f2-3 codo R 101°",
+     "f2-3 Brazo.R 97° se retuerce",
+     "f10-11 Mando.L 91°",
+     "f10-11 codo L 87°",
+     "f14-15 Mando.L 77°",
+     "f14-15 Mando.R 76°",
+     "f14-15 Pie.L punta 24 cm",
+     "f14-15 Pie.R punta 24 cm",
+     "f14-15 Tibia.R punta 23 cm",
+     "f14-15 Pie.R 23 cm",
+     "f15-16 Puntadedo2.L 32° gira en la pose quieta",
+     "f20-21 Puntadedo3.L 26° gira en la pose quieta",
+     "f21-22 Puntadedo3.L 26° gira en la pose quieta",
+     "f46-47 codo R 99°",
+     "f46-47 Mando.R 91°",
+     "f46-47 Brazo.R 79° se retuerce",
+     "f48-49 Mando.R 92°",
+     "f48-49 Brazo.R 85° se retuerce",
+     "f48-49 codo R 83°"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1913,22 +2085,22 @@
     "skate_cm": 1.76,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 1,
+     "at": 54,
      "frames_over": 54,
      "pose": [
-      50.0,
+      -12.1,
       -35.0,
-      31.2
+      68.5
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 2,
+     "at": 60,
      "frames_over": 0,
      "pose": [
-      -31.2,
-      10.0,
-      10.7
+      9.3,
+      -25.0,
+      24.0
      ]
     },
     "shoulder_R": 53.8,
@@ -1937,6 +2109,21 @@
     "step_0": 28.8,
     "step_2": 16.3,
     "step_3": 11.5,
+    "snaps": [
+     "f0-1 codo R 97°",
+     "f0-1 Mando.R 96°",
+     "f0-1 Pierna.l 50°",
+     "f0-1 Pierna.r 49°",
+     "f1-2 Mando.R 74°",
+     "f3-4 Mando.R 178°",
+     "f3-4 codo R 162°",
+     "f3-4 codo L 97°",
+     "f3-4 Brazo.L 87° se retuerce",
+     "f3-4 Mando.L 83°",
+     "f3-4 Pierna.r 53°",
+     "f3-4 Pie.L punta 18 cm",
+     "f24-25 Puntapulgar.L 27° gira en la pose quieta"
+    ],
     "min_z_cm": -0.0
    }
   },
@@ -1951,7 +2138,21 @@
     "plant": 2,
     "settle": 9,
     "travel_fixed": true,
-    "run_phase": 0.3333333333333333
+    "run_phase": 0.3333333333333333,
+    "lead": 2,
+    "arm_follow": [
+     "Run",
+     [
+      [
+       0,
+       8
+      ],
+      [
+       1,
+       10
+      ]
+     ]
+    ]
    },
    "normalized": {},
    "events": [
@@ -1966,13 +2167,13 @@
      "fn": "FootL"
     }
    ],
-   "notes": "frenada desde la carrera: clava el talón derecho, el impulso lo pasa por encima y se rearma en la guardia (0.53 s)",
+   "notes": "frenada desde la fase 8/24 de la carrera: clava el talón derecho, el impulso lo pasa por encima y se rearma en la guardia (0.53 s)",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.08,
+    "plant_drift_cm": 0.06,
     "skate": {
      "Pie.R": [],
      "Pie.L": []
@@ -1980,30 +2181,31 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 0,
-     "frames_over": 6,
+     "at": 3,
+     "frames_over": 7,
      "pose": [
-      -1.7,
-      -30.3,
+      -26.2,
+      -35.0,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 6,
+     "at": 11,
      "frames_over": 0,
      "pose": [
-      40.0,
-      10.0,
-      34.1
+      -6.0,
+      -25.0,
+      6.6
      ]
     },
-    "shoulder_R": 21.4,
-    "shoulder_L": 71.8,
-    "blade_fix_deg_soft": 18.3,
-    "step_0": 27.2,
-    "step_2": 4.8,
-    "step_3": 8.0,
+    "shoulder_R": 26.7,
+    "shoulder_L": 65.7,
+    "blade_fix_deg_soft": 19.7,
+    "step_0": 18.9,
+    "step_2": 6.5,
+    "step_3": 8.6,
+    "snaps": [],
     "min_z_cm": -0.0
    }
   },
@@ -2018,7 +2220,21 @@
     "plant": 2,
     "settle": 13,
     "travel_fixed": true,
-    "run_phase": 0.8333333333333334
+    "run_phase": 0.8333333333333334,
+    "lead": 2,
+    "arm_follow": [
+     "Run",
+     [
+      [
+       0,
+       20
+      ],
+      [
+       1,
+       22
+      ]
+     ]
+    ]
    },
    "normalized": {},
    "events": [
@@ -2038,7 +2254,7 @@
      "fn": "FootL"
     }
    ],
-   "notes": "frenada sobre el pie izquierdo: clava el talón izquierdo, el derecho pasa adelante y el izquierdo se acomoda (0.53 s)",
+   "notes": "frenada desde la fase 20/24 de la carrera: clava el talón izquierdo, el derecho pasa adelante y el izquierdo se acomoda (0.53 s)",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -2052,36 +2268,236 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 0,
+     "at": 4,
      "frames_over": 6,
      "pose": [
-      -16.1,
-      -28.7,
+      -30.9,
+      -35.0,
       70.0
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 6,
+     "at": 9,
      "frames_over": 0,
      "pose": [
-      40.0,
-      10.0,
-      26.3
+      0.3,
+      -25.0,
+      7.8
      ]
     },
     "shoulder_R": 33.6,
-    "shoulder_L": 76.8,
-    "blade_fix_deg_soft": 15.7,
-    "step_0": 16.5,
-    "step_2": 7.3,
-    "step_3": 12.6,
+    "shoulder_L": 75.1,
+    "blade_fix_deg_soft": 26.7,
+    "step_0": 24.6,
+    "step_2": 8.4,
+    "step_3": 8.1,
+    "snaps": [
+     "f5-6 Tibia.R 46°"
+    ],
+    "min_z_cm": -0.0
+   }
+  },
+  "RunStopReach": {
+   "first": 901,
+   "last": 918,
+   "frames": 17,
+   "loop": false,
+   "seconds": 0.5667,
+   "time_scale": 1.0,
+   "timing": {
+    "plant": 3,
+    "settle": 10,
+    "travel_fixed": true,
+    "run_phase": 0.08333333333333333,
+    "lead": 3,
+    "arm_follow": [
+     "Run",
+     [
+      [
+       0,
+       2
+      ],
+      [
+       1,
+       4
+      ],
+      [
+       2,
+       6
+      ]
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1765,
+     "fn": "FootR"
+    },
+    {
+     "frame": 10,
+     "t": 0.5882,
+     "fn": "FootL"
+    }
+   ],
+   "notes": "frenada desde la fase 2/24 de la carrera: clava el talón derecho, el impulso lo pasa por encima y se rearma en la guardia (0.57 s)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.13,
+    "skate": {
+     "Pie.R": [
+      [
+       3.0,
+       17.0,
+       0.51,
+       0.51
+      ]
+     ],
+     "Pie.L": []
+    },
+    "skate_cm": 0.51,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 4,
+     "frames_over": 7,
+     "pose": [
+      -26.3,
+      -35.0,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 12,
+     "frames_over": 0,
+     "pose": [
+      -6.0,
+      -25.0,
+      6.6
+     ]
+    },
+    "shoulder_R": 25.1,
+    "shoulder_L": 75.4,
+    "blade_fix_deg_soft": 19.5,
+    "step_0": 28.1,
+    "step_2": 11.0,
+    "step_3": 5.3,
+    "snaps": [
+     "f3-4 Mando.L 49°"
+    ],
+    "min_z_cm": -0.0
+   }
+  },
+  "RunStopLReach": {
+   "first": 928,
+   "last": 945,
+   "frames": 17,
+   "loop": false,
+   "seconds": 0.5667,
+   "time_scale": 1.0,
+   "timing": {
+    "plant": 3,
+    "settle": 14,
+    "travel_fixed": true,
+    "run_phase": 0.5833333333333334,
+    "lead": 3,
+    "arm_follow": [
+     "Run",
+     [
+      [
+       0,
+       14
+      ],
+      [
+       1,
+       16
+      ],
+      [
+       2,
+       18
+      ]
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.1765,
+     "fn": "FootL"
+    },
+    {
+     "frame": 10,
+     "t": 0.5882,
+     "fn": "FootR"
+    },
+    {
+     "frame": 14,
+     "t": 0.8235,
+     "fn": "FootL"
+    }
+   ],
+   "notes": "frenada desde la fase 14/24 de la carrera: clava el talón izquierdo, el derecho pasa adelante y el izquierdo se acomoda (0.57 s)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.13,
+    "skate": {
+     "Pie.R": [],
+     "Pie.L": [
+      [
+       3.0,
+       10.0,
+       0.51,
+       0.51
+      ]
+     ]
+    },
+    "skate_cm": 0.51,
+    "wrist_R": {
+     "over_comfort_max": 10.0,
+     "at": 4,
+     "frames_over": 6,
+     "pose": [
+      -29.8,
+      -35.0,
+      70.0
+     ]
+    },
+    "wrist_L": {
+     "over_comfort_max": 0.0,
+     "at": 10,
+     "frames_over": 0,
+     "pose": [
+      0.3,
+      -25.0,
+      7.8
+     ]
+    },
+    "shoulder_R": 20.8,
+    "shoulder_L": 65.4,
+    "blade_fix_deg_soft": 27.0,
+    "step_0": 24.3,
+    "step_2": 7.6,
+    "step_3": 10.3,
+    "snaps": [
+     "f5-6 Pierna.r punta 13 cm",
+     "f5-6 Tibia.R 13 cm",
+     "f6-7 Tibia.R 45°"
+    ],
     "min_z_cm": -0.0
    }
   },
   "Pray": {
-   "first": 901,
-   "last": 941,
+   "first": 955,
+   "last": 995,
    "frames": 40,
    "loop": false,
    "seconds": 1.3333,
@@ -2106,12 +2522,12 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 10.0,
-     "at": 26,
+     "at": 12,
      "frames_over": 20,
      "pose": [
-      46.2,
+      39.4,
       -35.0,
-      32.1
+      36.3
      ]
     },
     "wrist_L": {
@@ -2130,12 +2546,16 @@
     "step_0": 8.3,
     "step_2": 2.5,
     "step_3": 2.5,
+    "snaps": [
+     "f32-33 Tibia.L 46°",
+     "f32-33 Pierna.l 45°"
+    ],
     "min_z_cm": -0.0
    }
   },
   "Interact": {
-   "first": 951,
-   "last": 971,
+   "first": 1005,
+   "last": 1025,
    "frames": 20,
    "loop": false,
    "seconds": 0.6667,
@@ -2169,12 +2589,12 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 16,
+     "at": 3,
      "frames_over": 0,
      "pose": [
-      4.7,
-      10.0,
-      -15.1
+      13.3,
+      -25.0,
+      -14.9
      ]
     },
     "shoulder_R": 54.4,
@@ -2183,21 +2603,22 @@
     "step_0": 13.7,
     "step_2": 8.7,
     "step_3": 0.0,
+    "snaps": [],
     "min_z_cm": -0.0
    }
   },
   "PrayIncense": {
-   "first": 981,
-   "last": 1167,
-   "frames": 186,
+   "first": 1035,
+   "last": 1223,
+   "frames": 188,
    "loop": false,
-   "seconds": 6.2,
+   "seconds": 6.2667,
    "time_scale": 1.0,
    "timing": {
     "skid": [
      [
-      177,
-      181
+      180,
+      184
      ]
     ],
     "hand_r_m": {
@@ -2234,51 +2655,51 @@
       0.92
      ]
     },
-    "katana_down": 27,
-    "kiza": 50,
+    "katana_down": 28,
+    "kiza": 54,
     "incense_take": 70,
     "incense_light": 88,
     "incense_place": 116,
     "palms": 128,
-    "katana_up": 163,
-    "rise": 165,
+    "katana_up": 159,
+    "rise": 166,
     "story": true
    },
    "normalized": {},
    "events": [
     {
-     "frame": 27,
-     "t": 0.1452,
+     "frame": 28,
+     "t": 0.1489,
      "fn": "katana_down"
     },
     {
      "frame": 70,
-     "t": 0.3763,
+     "t": 0.3723,
      "fn": "incense_take"
     },
     {
      "frame": 88,
-     "t": 0.4731,
+     "t": 0.4681,
      "fn": "incense_light"
     },
     {
      "frame": 116,
-     "t": 0.6237,
+     "t": 0.617,
      "fn": "incense_place"
     },
     {
      "frame": 128,
-     "t": 0.6882,
+     "t": 0.6809,
      "fn": "palms"
     },
     {
-     "frame": 163,
-     "t": 0.8763,
+     "frame": 159,
+     "t": 0.8457,
      "fn": "katana_up"
     },
     {
-     "frame": 165,
-     "t": 0.8871,
+     "frame": 166,
+     "t": 0.883,
      "fn": "rise"
     }
    ],
@@ -2288,54 +2709,74 @@
      "hands": 1.2,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.6,
+    "plant_drift_cm": 0.24,
     "skate": {
-     "Pie.R": [],
+     "Pie.R": [
+      [
+       0.0,
+       41.0,
+       2.78,
+       1.87
+      ]
+     ],
      "Pie.L": []
     },
-    "skate_cm": 0.0,
+    "skate_cm": 2.78,
     "wrist_R": {
-     "over_comfort_max": 15.6,
-     "at": 28,
-     "frames_over": 28,
+     "over_comfort_max": 13.3,
+     "at": 158,
+     "frames_over": 21,
      "pose": [
-      52.6,
-      -40.6,
-      38.2
+      53.3,
+      16.0,
+      -6.3
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 120,
+     "at": 159,
      "frames_over": 0,
      "pose": [
-      -30.9,
+      40.0,
       10.0,
-      60.0
+      15.9
      ]
     },
-    "shoulder_R": 39.5,
-    "shoulder_L": 54.0,
-    "blade_fix_deg_soft": 25.8,
-    "step_0": 13.7,
-    "step_2": 10.0,
-    "step_3": 3.5,
-    "min_z_cm": -1.7
+    "shoulder_R": 40.7,
+    "shoulder_L": 53.9,
+    "blade_fix_deg_soft": 25.5,
+    "step_0": 18.7,
+    "step_2": 7.5,
+    "step_3": 5.3,
+    "snaps": [
+     "f23-24 Mando.R 55°",
+     "f42-43 Pie.R punta 18 cm",
+     "f44-45 Pie.R punta 15 cm",
+     "f154-155 Mando.L 50°",
+     "f163-164 Mando.R 52°",
+     "f165-166 Tibia.R 47°",
+     "f165-166 Pie.R punta 13 cm",
+     "f171-172 Pie.R punta 15 cm",
+     "f173-174 Pie.R punta 18 cm",
+     "f181-182 Pie.L punta 12 cm",
+     "f182-183 Pie.L punta 15 cm"
+    ],
+    "min_z_cm": -1.6
    }
   },
   "PrayQuick": {
-   "first": 1177,
-   "last": 1243,
-   "frames": 66,
+   "first": 1233,
+   "last": 1303,
+   "frames": 70,
    "loop": false,
-   "seconds": 2.2,
+   "seconds": 2.3333,
    "time_scale": 1.0,
    "timing": {
     "kneel": 11,
-    "katana_down": 17,
-    "palms": 24,
+    "katana_down": 21,
+    "palms": 28,
     "katana_up": 49,
-    "rise": 53,
+    "rise": 57,
     "story": true,
     "katana_floor_m": {
      "grip": [
@@ -2354,31 +2795,31 @@
    "events": [
     {
      "frame": 11,
-     "t": 0.1667,
+     "t": 0.1571,
      "fn": "kneel"
     },
     {
-     "frame": 17,
-     "t": 0.2576,
+     "frame": 21,
+     "t": 0.3,
      "fn": "katana_down"
     },
     {
-     "frame": 24,
-     "t": 0.3636,
+     "frame": 28,
+     "t": 0.4,
      "fn": "palms"
     },
     {
      "frame": 49,
-     "t": 0.7424,
+     "t": 0.7,
      "fn": "katana_up"
     },
     {
-     "frame": 53,
-     "t": 0.803,
+     "frame": 57,
+     "t": 0.8143,
      "fn": "rise"
     }
    ],
-   "notes": "rezo corto: rodilla al piso, deja la katana a su derecha, palmas juntas y reverencia, la retoma y se para (2.2 s)",
+   "notes": "rezo corto: rodilla al piso, deja la katana a su derecha, palmas juntas y reverencia, la retoma y se para (2.3 s)",
    "lint": {
     "reach_miss_cm": {
      "hands": 0.0,
@@ -2391,37 +2832,45 @@
     },
     "skate_cm": 0.0,
     "wrist_R": {
-     "over_comfort_max": 20.7,
-     "at": 18,
-     "frames_over": 19,
+     "over_comfort_max": 22.6,
+     "at": 22,
+     "frames_over": 16,
      "pose": [
-      60.7,
-      -24.7,
-      16.6
+      62.6,
+      21.9,
+      -3.1
      ]
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 50,
+     "at": 53,
      "frames_over": 0,
      "pose": [
       40.0,
       10.0,
-      35.8
+      22.2
      ]
     },
-    "shoulder_R": 46.6,
-    "shoulder_L": 53.0,
-    "blade_fix_deg_soft": 48.6,
-    "step_0": 14.5,
-    "step_2": 11.2,
+    "shoulder_R": 52.2,
+    "shoulder_L": 52.8,
+    "blade_fix_deg_soft": 25.5,
+    "step_0": 18.7,
+    "step_2": 10.0,
     "step_3": 2.5,
-    "min_z_cm": -1.5
+    "snaps": [
+     "f16-17 Mando.R 55°",
+     "f45-46 Mando.L 75°",
+     "f45-46 codo L 66°",
+     "f52-53 Mando.R 57°",
+     "f61-62 Pie.L 58°",
+     "f61-62 Pie.L punta 20 cm"
+    ],
+    "min_z_cm": -1.2
    }
   },
   "BandanaPower": {
-   "first": 1253,
-   "last": 1328,
+   "first": 1313,
+   "last": 1388,
    "frames": 75,
    "loop": false,
    "seconds": 2.5,
@@ -2465,7 +2914,7 @@
     "skate_cm": 0.0,
     "wrist_R": {
      "over_comfort_max": 3.9,
-     "at": 75,
+     "at": 0,
      "frames_over": 0,
      "pose": [
       2.1,
@@ -2474,27 +2923,45 @@
      ]
     },
     "wrist_L": {
-     "over_comfort_max": 21.2,
-     "at": 38,
+     "over_comfort_max": 15.0,
+     "at": 42,
      "frames_over": 27,
      "pose": [
-      40.4,
-      14.7,
-      81.2
+      55.0,
+      -29.5,
+      47.5
      ]
     },
     "shoulder_R": 31.5,
-    "shoulder_L": 87.5,
+    "shoulder_L": 97.7,
     "blade_fix_deg_soft": 0.0,
     "step_0": 2.5,
     "step_2": 0.0,
-    "step_3": 8.1,
+    "step_3": 18.6,
+    "snaps": [
+     "f36-37 Mando.L 117°",
+     "f36-37 Pie.L punta 14 cm",
+     "f36-37 Pierna.l punta 12 cm",
+     "f36-37 Tibia.L 12 cm",
+     "f36-37 Tibia.L punta 12 cm",
+     "f36-37 Pie.L 12 cm",
+     "f37-38 Brazo.L 94° se retuerce",
+     "f37-38 Mando.L 81°",
+     "f37-38 Tibia.L 65°",
+     "f37-38 codo L 65°",
+     "f37-38 Pierna.l 50°",
+     "f37-38 Tibia.L punta 19 cm",
+     "f37-38 Pie.L 19 cm",
+     "f37-38 Pie.L punta 19 cm",
+     "f37-38 Pierna.l punta 13 cm",
+     "f37-38 Tibia.L 13 cm"
+    ],
     "min_z_cm": -0.1
    }
   },
   "EndingTurn": {
-   "first": 1338,
-   "last": 1422,
+   "first": 1398,
+   "last": 1482,
    "frames": 84,
    "loop": false,
    "seconds": 2.8,
@@ -2567,26 +3034,33 @@
     },
     "wrist_L": {
      "over_comfort_max": 0.0,
-     "at": 81,
+     "at": 79,
      "frames_over": 0,
      "pose": [
-      19.7,
-      4.7,
+      19.3,
+      4.3,
       -60.0
      ]
     },
-    "shoulder_R": 30.8,
+    "shoulder_R": 30.7,
     "shoulder_L": 43.4,
     "blade_fix_deg_soft": 3.3,
     "step_0": 10.4,
     "step_2": 4.5,
     "step_3": 0.0,
+    "snaps": [
+     "f26-27 Pie.L punta 15 cm",
+     "f27-28 Pie.L 56°",
+     "f27-28 Pie.L punta 22 cm",
+     "f28-29 Pie.L 53°",
+     "f28-29 Pie.L punta 17 cm"
+    ],
     "min_z_cm": -0.0
    }
   },
   "WakeUp": {
-   "first": 1432,
-   "last": 1540,
+   "first": 1492,
+   "last": 1600,
    "frames": 108,
    "loop": false,
    "seconds": 3.6,
@@ -2622,33 +3096,33 @@
      "hands": 0.2,
      "legs": 0.0
     },
-    "plant_drift_cm": 0.3,
+    "plant_drift_cm": 0.84,
     "skate": {
      "Pie.R": [
       [
-       71.0,
+       74.0,
        94.0,
-       1.53,
-       1.53
+       2.89,
+       1.75
       ]
      ],
      "Pie.L": []
     },
-    "skate_cm": 1.53,
+    "skate_cm": 2.89,
     "wrist_R": {
      "over_comfort_max": 18.8,
-     "at": 39,
-     "frames_over": 70,
+     "at": 55,
+     "frames_over": 72,
      "pose": [
       58.8,
       17.5,
-      -11.4
+      -8.7
      ]
     },
     "wrist_L": {
      "over_comfort_max": 22.8,
      "at": 62,
-     "frames_over": 47,
+     "frames_over": 49,
      "pose": [
       62.8,
       21.2,
@@ -2656,11 +3130,21 @@
      ]
     },
     "shoulder_R": 68.5,
-    "shoulder_L": 68.0,
+    "shoulder_L": 74.7,
     "blade_fix_deg_soft": 22.2,
     "step_0": 6.2,
     "step_2": 12.5,
-    "step_3": 11.6,
+    "step_3": 9.7,
+    "snaps": [
+     "f69-70 Pie.R punta 12 cm",
+     "f70-71 Pie.R punta 14 cm",
+     "f71-72 Pie.R punta 13 cm",
+     "f77-78 Mando.L 48°",
+     "f86-87 Pie.L 45°",
+     "f86-87 Pie.L punta 16 cm",
+     "f89-90 Pie.L punta 16 cm",
+     "f90-91 Pie.L punta 16 cm"
+    ],
     "min_z_cm": -1.4
    }
   }

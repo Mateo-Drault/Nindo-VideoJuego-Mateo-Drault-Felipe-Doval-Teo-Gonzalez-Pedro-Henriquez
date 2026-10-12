@@ -69,6 +69,8 @@ MonoBehaviour:
     - Whirlwind
     - RunStop
     - RunStopL
+    - RunStopReach
+    - RunStopLReach
     - Pray
     - Interact
     - PrayIncense
@@ -102,10 +104,12 @@ MonoBehaviour:
     - 2.2
     - 0.5333
     - 0.5333
+    - 0.5667
+    - 0.5667
     - 1.3333
     - 0.6667
-    - 6.2
-    - 2.2
+    - 6.2667
+    - 2.3333
     - 2.5
     - 2.8
     - 3.6
