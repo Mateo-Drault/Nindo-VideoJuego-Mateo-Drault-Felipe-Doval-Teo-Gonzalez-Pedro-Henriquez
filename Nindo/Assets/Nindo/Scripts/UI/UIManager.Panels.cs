@@ -580,30 +580,26 @@ namespace Nindo
             var card = UIFactory.Sliced("Controls", bg.transform, UISprites.InkCard, Color.white, 256f);
             pauseCard = card.rectTransform;
             pauseCardImg = card;
-            // 'pair': la acción de la segunda tecla (-1: la alternativa de la misma). Cambiar de objetivo y el mapa también
-            // se reasignan: si no estuvieran acá, lo que el jugador cambió solo se veía en Opciones › Controles. El mapa
-            // va por nombre (UI/UIMap.cs agrega Act.Map): sin esa acción la tarjeta queda como antes
-            var rows = new List<(string label, Act act, int pair)>
-            {
-                ("Moverse", Act.Submit, -1), ("Atacar", Act.Attack, -1), ("Parry", Act.Parry, -1), ("Esquivar (dash)", Act.Dash, -1),
-                ("Fijar objetivo", Act.Lock, -1), ("Cambiar objetivo", Act.LockPrev, (int)Act.LockNext),
-                ("Ejecutar", Act.Finisher, -1), ("Habilidades", Act.Ability1, (int)Act.Ability2), ("Interactuar", Act.Interact, -1),
-            };
-            if (System.Enum.TryParse("Map", out Act mapAct)) rows.Add(("Mapa", mapAct, -1));
-            Place(pauseCard, new Vector2(0.5f, 0.5f), new Vector2(370f, -20f), new Vector2(860, 192f + rows.Count * 56f));
+            Place(pauseCard, new Vector2(0.5f, 0.5f), new Vector2(370f, -20f), new Vector2(860, 640));
             pauseCard.pivot = new Vector2(0.5f, 0.5f);
             card.pixelsPerUnitMultiplier = 1f;
             var ct = UIFactory.Text("Title", pauseCard, "Controles", 36, UIFactory.Gold, new Vector2(0f, 1f), new Vector2(100f, -66f), new Vector2(400, 50), TextAlignmentOptions.TopLeft, true);
             UIFactory.Legible(ct);
-            for (int i = 0; i < rows.Count; i++)
+            (string label, Act act)[] rows =
+            {
+                ("Moverse", Act.Submit), ("Atacar", Act.Attack), ("Parry", Act.Parry), ("Esquivar (dash)", Act.Dash), ("Fijar objetivo", Act.Lock),
+                ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact),
+            };
+            rows = WithTargetSwitch(rows);   // UIControls.cs: "Cambiar objetivo" también se reasigna
+            for (int i = 0; i < rows.Length; i++)
             {
                 float y = -136f - i * 56f;
                 UIFactory.Text("Row", pauseCard, rows[i].label, 28, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(100f, y + 20f), new Vector2(300, 40), TextAlignmentOptions.Left);
                 if (i == 0) { moveKey = UIFactory.KeyCap(pauseCard, "WASD", 44f, new Vector2(0f, 1f), new Vector2(420f, y)); continue; }
                 controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(420f, y)), rows[i].act, false));
-                controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(520f, y)), rows[i].pair >= 0 ? (Act)rows[i].pair : rows[i].act, rows[i].pair < 0));
+                controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(520f, y)), PauseSecondAct(rows[i].act), PauseSecondIsAlt(rows[i].act)));
             }
-            UIFactory.Text("Hint", pauseCard, "Se cambian en Opciones › Controles", 22, UIFactory.PaperDim, new Vector2(0f, 1f), new Vector2(100f, -136f - rows.Count * 56f), new Vector2(660, 30), TextAlignmentOptions.Left);
+            UIFactory.Text("Hint", pauseCard, "Se cambian en Opciones › Controles", 22, UIFactory.PaperDim, new Vector2(0f, 1f), new Vector2(100f, FitPauseRows()), new Vector2(660, 30), TextAlignmentOptions.Left);
             pausePanel.SetActive(false);
         }
 

@@ -938,6 +938,34 @@ namespace Nindo
             return pos;
         }
 
+        // ================================================================== tarjeta de la pausa
+        /// <summary>
+        /// La tarjeta de controles de la pausa también dice cómo se cambia de objetivo, debajo de fijar: se reasigna como
+        /// todo, y si no estuviera ahí lo que el jugador cambió solo se veía en Opciones › Controles.
+        /// </summary>
+        static (string label, Act act)[] WithTargetSwitch((string label, Act act)[] rows)
+        {
+            var list = new List<(string label, Act act)>(rows);
+            list.Insert(list.FindIndex(r => r.act == Act.Lock) + 1, ("Cambiar objetivo", Act.LockPrev));
+            return list.ToArray();
+        }
+
+        /// <summary>La segunda tecla de un renglón de la pausa: la de la otra habilidad, la de la otra dirección o la alternativa.</summary>
+        static Act PauseSecondAct(Act a) => a == Act.Ability1 ? Act.Ability2 : a == Act.LockPrev ? Act.LockNext : a;
+        static bool PauseSecondIsAlt(Act a) => a != Act.Ability1 && a != Act.LockPrev;
+
+        /// <summary>
+        /// La nota va un renglón debajo del último y la tarjeta crece hasta ahí (con ocho renglones de 56 queda como
+        /// antes: 640). El paso entre renglones se mide de las teclas ya puestas, así sirve con cualquier armado.
+        /// </summary>
+        float FitPauseRows()
+        {
+            float pitch = controlKeys[0].row.anchoredPosition.y - controlKeys[2].row.anchoredPosition.y;
+            float hint = controlKeys[controlKeys.Count - 1].row.anchoredPosition.y - pitch;
+            pauseCard.sizeDelta = new Vector2(pauseCard.sizeDelta.x, 56f - hint);
+            return hint;
+        }
+
         /// <summary>'n' paradas más abajo (o más arriba si es negativo) desde 'from', sin salirse de la lista.</summary>
         float StepControlsStops(float from, int n)
         {
