@@ -23,29 +23,33 @@
     "loop_seam_deg": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.49,
-      "twist": 6.4,
-      "fore": 32.6,
+      "excess": 0.3,
+      "twist": 6.7,
+      "fore": 33.9,
       "swivel": 1.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -41.2,
-       -38.1
+       -42.5,
+       -39.3
       ]
      },
      "l": {
-      "excess": 0.45,
-      "twist": 6.7,
-      "fore": 33.1,
+      "excess": 0.31,
+      "twist": 7.0,
+      "fore": 34.6,
       "swivel": 1.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -41.7,
-       -38.7
+       -43.1,
+       -40.1
       ]
      }
     },
     "solver_jump_deg": 1.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 1.3,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -72,29 +76,33 @@
     "loop_seam_deg": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.44,
-      "twist": 6.7,
-      "fore": 33.1,
+      "excess": 0.29,
+      "twist": 7.1,
+      "fore": 34.7,
       "swivel": 1.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -41.7,
-       -40.5
+       -43.3,
+       -41.8
       ]
      },
      "l": {
-      "excess": 0.41,
-      "twist": 6.9,
-      "fore": 33.5,
-      "swivel": 2.0,
+      "excess": 0.34,
+      "twist": 7.4,
+      "fore": 35.3,
+      "swivel": 1.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -42.1,
-       -41.1
+       -43.9,
+       -42.4
       ]
      }
     },
-    "solver_jump_deg": 1.0,
+    "solver_jump_deg": 0.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 2.8,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -122,29 +130,33 @@
     "loop_seam_deg": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.76,
-      "twist": 7.6,
-      "fore": 44.5,
-      "swivel": 22.0,
+      "excess": 0.78,
+      "twist": 6.4,
+      "fore": 36.1,
+      "swivel": 12.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -53.1,
-       -43.8
+       -44.7,
+       -41.2
       ]
      },
      "l": {
-      "excess": 0.77,
-      "twist": 7.1,
-      "fore": 41.7,
-      "swivel": 20.0,
+      "excess": 0.78,
+      "twist": 6.1,
+      "fore": 35.2,
+      "swivel": 12.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -50.3,
-       -42.4
+       -43.8,
+       -40.7
       ]
      }
     },
-    "solver_jump_deg": 7.2,
+    "solver_jump_deg": 1.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 4.2,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -192,27 +204,31 @@
      "r": {
       "excess": 0.75,
       "twist": 14.8,
-      "fore": 72.1,
-      "swivel": 12.0,
+      "fore": 71.0,
+      "swivel": 10.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -43.9,
-       63.5
+       -42.1,
+       62.4
       ]
      },
      "l": {
       "excess": 0.85,
       "twist": 14.8,
-      "fore": 72.1,
-      "swivel": 13.0,
-      "clamp": 8.0,
+      "fore": 71.0,
+      "swivel": 11.0,
+      "clamp": 7.6,
+      "asked_over": 0.0,
       "pron": [
-       -43.9,
-       63.6
+       -42.1,
+       62.4
       ]
      }
     },
-    "solver_jump_deg": 8.8,
+    "solver_jump_deg": 7.5,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 21.2,
     "floor_skate_cm": {
      "r": [],
      "l": []

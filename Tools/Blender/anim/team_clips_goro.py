@@ -13,7 +13,8 @@ Lo que pedía la auditoría (ANIM-01/02) y cómo quedó:
     sale mareado y termina en la pose de StunSpin (el agotamiento que sigue).
   * StunSpin (mareado, agotado y ejecución), Parried y ParriedPerfect (el martillo rebota para arriba), Hit y HitHeavy, ExhaustedHit, Spotted (rugido: también el
     cambio de fase), Death (cae de rodillas sin soltar el martillo y se desploma), Idle, caminar y correr (sin
-    'moonwalk': los pies clavados a la velocidad del transform). La presentación ('Intro') sigue siendo la del equipo.
+    'moonwalk': los pies clavados a la velocidad del transform). La presentación ('Intro') es la toma del equipo
+    (Firstinteraction) con los brazos re-resueltos: en la toma la muñeca del martillo llegaba a 96° en el primer plano.
 """
 import math
 import nindo_anim as NA
@@ -22,6 +23,12 @@ import team_rig as T
 Key = NA.Key
 RUN_SPEED, WALK_SPEED = 3.8, 2.0          # EnemyArchetypes.Goro(): runSpeed, walkSpeed
 LOCOMOTION = (("Idle", 0.0), ("Walk", WALK_SPEED / RUN_SPEED), ("Run", 1.0))
+# cruces del Animator (clip, cuadro, otro clip, cuadro; -1 = el último): build_team_anims ancla ahí los brazos a la rama del
+# otro clip y chequea que los antebrazos lleguen con el mismo giro local
+BLENDS = ([("Walk", 0, "Idle", 0), ("Run", 0, "Walk", 0), ("Spin", -1, "StunSpin", 0), ("ExhaustedHit", 0, "StunSpin", 0),
+           ("ExhaustedHit", -1, "StunSpin", 0)]
+          + [(c, f, "Idle", 0) for c in ("Combo1", "Combo2", "Combo3", "Heavy", "Hit", "HitHeavy", "Spotted") for f in (0, -1)]
+          + [(c, 0, "Idle", 0) for c in ("Spin", "Parried", "ParriedPerfect", "Death")])
 
 # ------------------------------------------------------------------ guardia
 # el martillo bajo adelante a la derecha, la cabeza casi en el piso (se arrastra): desde ahí cada aviso lo levanta a un
@@ -60,6 +67,13 @@ def mix(a, b, u):
     return out
 
 
+def lift(pose, dz):
+    """La pose con el martillo 'dz' m más alto (el agarre de la derecha): entre una clave con la cabeza en el piso y la
+    guardia la interpolación hunde la cabeza unos centímetros; una clave intermedia apenas más alta la deja rozando."""
+    g = pose["grip"]
+    return dict(pose, grip=(g[0], g[1], g[2] + dz))
+
+
 def P2(**kw):
     """Pose de golpe: las dos manos en el mango (en la guardia lo lleva con una sola)."""
     kw.setdefault("grip_l", 1.0)
@@ -88,7 +102,16 @@ def clips(ch):
     out += locomotion(ch)
     out += [combo1(), combo2(), combo3(), heavy(), spin()]
     out += [stun_spin(), exhausted_hit(), parried(), parried_perfect(), hit(), hit_heavy(), spotted(), death()]
+    out += [intro(ch)]
     return out
+
+
+def intro(ch):
+    """Presentación del jefe (Boss.introAnim = 'Intro', con la cámara de PlayBossIntroShot encima): la toma
+    Firstinteraction del equipo, cuadros 0-77 como los usaba el controller, con el cuerpo, los pies y el martillo de la
+    toma y los brazos y las muñecas otra vez por team_limbs (TakeClip)."""
+    return T.TakeClip(ch, "Intro", "Firstinteraction", 0, 77, timing=dict(sheet=[0, 15, 30, 45, 60, 77], take=True),
+                      notes="presentación: la toma del equipo con las muñecas arregladas")
 
 
 # ================================================================== quieto y locomoción
@@ -169,7 +192,7 @@ def combo1():
                   face=(0.1, -0.3, -0.95))
     PUNISH = dict(FOLLOW, hips=(0.0, -0.15, -0.32), spine=(16.0, 0.0, 12.0), head=(-20.0, 0.0, -14.0))
     keys = [Key(0, P()), Key(12, TELL, "inout"), Key(apex, HOLD, "sine"), Key(22, SMEAR, "in"), Key(contact, CONTACT, "lin"),
-            Key(26, FOLLOW, "out"), Key(31, PUNISH, "out"), Key(n, P(), "sine")]
+            Key(26, FOLLOW, "out"), Key(31, PUNISH, "out"), Key(33, lift(mix(PUNISH, P(), 0.35), 0.05), "sine"), Key(n, P(), "sine")]
     feet = {"r": [FR(0), FR(apex), FR(27, lunge, pitch=-10.0), FR(29, lunge)],
             "l": [FL(0), FL(12), FL(apex, pitch=16.0), FL(32, lunge, ease="out")]}
     return T.TeamClip("Combo1", n, keys, travel=tr, feet=feet, notes="martillazo en diagonal; aviso: martillo arriba a la derecha",
@@ -226,7 +249,7 @@ def combo3():
                 grip=(-0.36, -0.88, 1.44), haft=(0.24, -0.88, -0.40), face=(0.0, -0.40, -0.92), slide_l=0.45, elbow_r=(-1.0, 0.3, -0.3), elbow_l=(1.0, 0.3, -0.3))
     FOLLOW = dict(CONTACT, hips=(0.0, -0.18, -0.40), grip=(-0.34, -0.84, 1.38), haft=(0.24, -0.93, -0.28))
     keys = [Key(0, P()), Key(8, TELL, "inout"), Key(apex, HOLD, "sine"), Key(17, SMEAR, "in"), Key(contact, CONTACT, "lin"),
-            Key(21, FOLLOW, "out"), Key(25, FOLLOW, "sine"), Key(n, P(), "sine")]
+            Key(21, FOLLOW, "out"), Key(25, FOLLOW, "sine"), Key(27, lift(mix(FOLLOW, P(), 0.4), 0.05), "sine"), Key(n, P(), "sine")]
     feet = {"r": [FR(0), FR(apex), FR(22, lunge, pitch=-10.0), FR(24, lunge)],
             "l": [FL(0), FL(8), FL(apex, pitch=14.0), FL(26, lunge, ease="out")]}
     return T.TeamClip("Combo3", n, keys, travel=tr, feet=feet, notes="martillazo de arriba; aviso: martillo atrás de la cabeza",
@@ -262,7 +285,7 @@ def heavy():
             Key(50, dict(LAND, grip_r=1.0), "sine"),
             # de vuelta a la guardia el antebrazo pasa de supinación a pronación: a mitad de camino la derecha afloja el
             # mango y cambia el agarre (sin eso no hay muñeca que una los dos y el brazo daba media vuelta en un cuadro)
-            Key(52, dict(mix(LAND, P(), 0.2), grip_r=0.1, fist_r=0.7), "sine"), Key(56, dict(mix(LAND, P(), 0.75), grip_r=0.1, fist_r=0.7), "sine"),
+            Key(52, dict(lift(mix(LAND, P(), 0.2), 0.06), grip_r=0.1, fist_r=0.7), "sine"), Key(56, dict(mix(LAND, P(), 0.75), grip_r=0.1, fist_r=0.7), "sine"),
             Key(n, P(grip_r=1.0, fist_r=1.0), "sine")]
     feet = {"r": [FR(0), FR(22), FR(26, pitch=24.0), FR(apex, 0.25, z=0.40, ease="out"), FR(contact, lunge, ease="in"), FR(n - 6, lunge)],
             "l": [FL(0), FL(22), FL(26, pitch=24.0), FL(apex, 0.25, z=0.40, ease="out"), FL(contact, lunge, ease="in"), FL(n - 6, lunge)]}
@@ -328,11 +351,16 @@ def stun_spin():
     return T.TeamClip("StunSpin", n, keys, loop=True, feet=STUN_FEET, notes="mareado: el cuerpo en círculos")
 
 
-def parried_clip(name, n, settle, recoil, back, knock, hold, stumble, feet, notes):
+def parried_clip(name, n, settle, recoil, back, knock, hold, stumble, feet, notes, regrip=None):
     """Parry recibido: Enemy.OnParried corta el clip a los parriedRecoil s (0.32; x1.5 el perfecto) y arranca el paso
-    siguiente con un cruce de 0.08 s: en el cuadro del corte tiene que estar en la guardia de los golpes ('chain')."""
+    siguiente con un cruce de 0.08 s: en el cuadro del corte tiene que estar en la guardia de los golpes ('chain').
+    'regrip': cuadro entre el trastabilleo y la guardia en que la derecha afloja el mango ('grip_r') para pasar del agarre
+    del martillo arriba al de la guardia (sin eso el antebrazo del perfecto daba 108° en un cuadro)."""
     keys = [Key(0, P()), Key(2, knock, "snap"), Key(hold, dict(knock, grip=(knock["grip"][0], knock["grip"][1] + 0.04, knock["grip"][2] + 0.06)), "out"),
-            Key(hold + 2, stumble, "inout"), Key(settle, P(), "sine"), Key(n, P(), "sine")]
+            Key(hold + 2, dict(stumble, grip_r=1.0), "inout")]
+    if regrip is not None:
+        keys.append(Key(regrip, dict(mix(stumble, P(), 0.5), grip_r=0.3, fist_r=0.75), "sine"))
+    keys += [Key(settle, P(grip_r=1.0, fist_r=1.0), "sine"), Key(n, P(), "sine")]
     return T.TeamClip(name, n, keys, travel=knock_travel(n, back), feet=feet, notes=notes,
                       timing=dict(sheet=[2, hold, hold + 2, settle], chain=[(round(recoil * T.FPS, 1), "Combo1", 0, 0.12)]))
 
@@ -363,7 +391,8 @@ def parried_perfect():
     feet = {"l": [FL(0), FL(6, -b + 0.15, ease="out", lift=0.10), FL(8, -b + 0.15), FL(13, -b, lift=0.05)],
             "r": [FR(0), FR(1), FR(9, -b, pitch=-8.0, ease="out", lift=0.10), FR(11, -b)]}
     return parried_clip("ParriedPerfect", 15, 14, 0.48, b, KNOCK, 6, STUMBLE, feet,
-                        "parry perfecto: el martillo se va atrás por encima de la cabeza, dos pasos atrás; en guardia al corte")
+                        "parry perfecto: el martillo se va atrás por encima de la cabeza, dos pasos atrás; en guardia al corte",
+                        regrip=9)
 
 
 def hit():
@@ -441,16 +470,21 @@ def death():
               grip=(-0.76, -0.52, 1.40), haft=(0.05, -0.10, -0.99), face=flat_face((0.05, -0.10, -0.99), (1.0, 0.0, 0.0)), grip_l=0.0,
               grip_flip=1.0, slide_r=-0.54,
               hand_l=(0.50, -0.30, 0.95), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(-1.0, 0.0, 0.0), fist_l=0.2)
-    BOW = dict(KNEEL, spine=(26.0, 0.0, 0.0), head=(30.0, 0.0, 0.0), hips=(0.0, 0.16, -0.55))
-    # al desplomarse suelta el martillo, que cae acostado por debajo de él (la cabeza no se hunde: 'TIP' a mitad)
+    BOW = dict(KNEEL, spine=(26.0, 0.0, 0.0), head=(30.0, 0.0, 0.0), hips=(0.0, 0.16, -0.55), drop_r=0.0)
+    # al desplomarse suelta el martillo ('drop_r': la derecha deja el mango y para la caída como la izquierda), que cae
+    # acostado delante de él (la cabeza no se hunde: 'TIP' a mitad). Con el puño en el mango hasta el final, el hombro que
+    # cae pasaba a 5 cm de la mano: el brazo se plegaba entero y el antebrazo daba 85° en un cuadro
     DOWN = dict(BOW, hips=(0.0, -0.10, -0.48), hips_rot=(62.0, 0.0, 10.0), spine=(18.0, 0.0, 0.0), head=(-20.0, 0.0, 20.0),
                 grip=(-0.80, -0.70, 0.62), haft=(-0.55, -0.83, 0.0), face=flat_face((-0.55, -0.83, 0.0), (1.0, 0.0, 0.0)),
-                hand_l=(0.55, -0.80, 0.40), hand_l_dir=(0.0, -0.8, -0.3), grip_r=0.15, fist_r=0.5)
-    TIP = dict(DOWN, grip=(-0.80, -0.66, 1.22), haft=(-0.35, -0.64, -0.69), face=flat_face((-0.35, -0.64, -0.69), (1.0, 0.0, 0.0)), grip_r=0.4)
+                hand_l=(0.55, -0.80, 0.40), hand_l_dir=(0.0, -0.8, -0.3), grip_r=0.15, fist_r=0.5,
+                drop_r=1.0, hand_r=(-0.58, -0.82, 0.40), hand_r_dir=(0.0, -0.8, -0.3), elbow_r=(-1.0, 0.3, 0.2))
+    TIP = dict(DOWN, grip=(-0.80, -0.66, 1.27), haft=(-0.35, -0.64, -0.69), face=flat_face((-0.35, -0.64, -0.69), (1.0, 0.0, 0.0)), grip_r=0.4,
+               drop_r=0.9, hand_r=(-0.62, -0.82, 0.70))
     keys = [Key(0, P(grip_flip=0.0, grip_r=1.0, fist_r=1.0, slide_r=0.0)), Key(4, dict(REC, grip_r=0.3, fist_r=0.75), "snap"),
             Key(12, dict(REC, hips=(0.0, 0.16, -0.18), grip_r=1.0, fist_r=1.0), "out"), Key(24, KNEEL, "in2"),
             Key(27, dict(KNEEL, hips=(0.0, 0.16, -0.55)), "out"), Key(32, KNEEL, "sine"), Key(44, BOW, "sine"),
-            Key(50, dict(BOW, hips=(0.0, 0.04, -0.46), hips_rot=(30.0, 0.0, 9.0), spine=(22.0, 0.0, 0.0), grip_r=1.0, fist_r=1.0), "in"),
+            Key(50, dict(BOW, hips=(0.0, 0.04, -0.46), hips_rot=(30.0, 0.0, 9.0), spine=(22.0, 0.0, 0.0), grip_r=0.6, fist_r=0.8,
+                         drop_r=0.6, hand_r=(-0.64, -0.78, 1.10), hand_r_dir=(0.0, -0.8, -0.5), elbow_r=(-1.0, 0.3, -0.2)), "in"),
             Key(52, dict(TIP, hips=(0.0, -0.04, -0.47), hips_rot=(48.0, 0.0, 10.0)), "lin"), Key(54, DOWN, "out"),
             Key(57, dict(DOWN, hips=(0.0, -0.10, -0.45)), "out"), Key(n, DOWN, "sine")]
     # el empujón lo lleva 0.8 m atrás: los pies retroceden con él y quedan de punta para las rodillas apoyadas

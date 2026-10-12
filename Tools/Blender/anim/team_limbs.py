@@ -41,13 +41,23 @@ SWIVEL = 120.0            # cuánto puede girar el codo respecto del polo pedido
 # desde el agarre pedido: 'soft') y la diagonal sobre la palma. El filo de la katana sigue al agarre pedido mientras la
 # muñeca dé; en una pose imposible (la hoja paralela al antebrazo) gira el filo antes que quebrar la muñeca
 KATANA_ROLL, KATANA_SOFT, KATANA_DIAG = 180.0, 45.0, 20.0
+# el mango de la katana cruza la palma en diagonal (del índice al talón de la mano, como en un agarre de verdad) y no
+# derecho a lo ancho como lo dejó el equipo bajo la mano abierta del reposo: con el mango a lo ancho la hoja sale a 90°
+# del antebrazo y, para apuntarla adelante en la guardia, el solver giraba el codo 50° afuera y el antebrazo hasta la
+# supinación completa. Con la diagonal de 40° (la izquierda, espejo: +40) la guardia queda con la muñeca a 16° de recta, el
+# antebrazo neutro (pulgar arriba) y el codo abajo. KATANA_DIAG es lo que el agarre puede moverse alrededor de esa diagonal
+KATANA_DIAG0, KATANA_LDIAG0 = -40.0, 40.0
 CLUB_ROLL, CLUB_SOFT, CLUB_DIAG = 180.0, 90.0, 35.0
-# hasta dónde se endereza la muñeca que lleva el arma (y el arma con ella): la katana hasta el borde; el martillo de Gorō
-# ES el aviso (cada golpe lo lleva a otro lugar de la silueta) y su mano es enorme: solo lo que pasa de 1.3 veces el borde
-KATANA_BEND, CLUB_BEND = 0.99, 1.0
+# hasta dónde se dobla la muñeca que lleva el arma antes de enderezarse llevándose el arma: no hasta el borde anatómico (75°
+# de flexión alrededor de un mango bajo carga se lee como muñeca quebrada, que era la queja original) sino a ~3/4 de él
+# (56° de flexión, 49 de extensión, 19 radial, 28 cubital). Lo que no entra lo resuelven el codo, la pronación y el agarre
+# (el costo en BEND_COST de correr el arma los empuja); el martillo de Gorō, con su mano enorme, un poco más
+KATANA_BEND, CLUB_BEND = 0.75, 0.8
 # la mano libre se endereza hasta el 85 % del borde: muchas palmas de los clips se pidieron cuando la mano salía doblada (no
 # se podía ver qué pedían) y, llevadas justo al límite, las manos se veían forzadas en los primeros planos
 FREE_BEND = 0.85
+# hasta dónde se estira el brazo de una mano libre (fracción del largo del brazo; ver place)
+FREE_REACH = 0.95
 # costo de correr el arma: por cada 10 cm que se corre la punta (o la cabeza del martillo) de lo pedido, al cuadrado
 BEND_COST = 1.5
 # cuánto más barata (en unidades de ArmSolver.cost) tiene que ser la solución sin historia para dejar el valle del cuadro
@@ -64,6 +74,21 @@ RAMPS = (2, 3, 4, 6)
 # que el codo o la mano)
 VIS_FORE = 0.6
 MAX_CANDS = 6
+STEADY_POLE = 0.65
+# un clip que Unity cruza con otro (Idle -> Guard, Guard -> Counter...) mezcla cada hueso por separado: con el antebrazo en
+# otra rama de la pronación (Guard a -70° de giro y Counter a +66°) el antebrazo daba un sacacorchos de 138° a media mezcla
+# y la hoja se salía de su camino. En los cuadros del cruce el camino paga ANCHOR_W veces el costo de un salto respecto de la
+# solución del otro clip
+ANCHOR_W = 4.0
+# la mano en un mango prefiere el antebrazo cerca de neutro, apenas pronado (HOLD_PRON_C, 0 = pulgar arriba): sin esto el
+# costo de la pronación era casi nada al lado del de la muñeca y el solver resolvía cada agarre girando el antebrazo hasta
+# la supinación completa (la palma arriba, 12 de 17 clips del ninja clavados en el tope), que en un primer plano es el
+# puño rodado con el pulgar parado. Por cada 60° de distancia al centro, HOLD_PRON_W unidades de costo
+HOLD_PRON_W, HOLD_PRON_C = 1.0, -15.0
+# el codo que el solver gira (SWIVEL) para que entre la muñeca prefiere bajar a subir: por cada unidad que sube la dirección
+# del codo respecto de la del polo pedido (de -1 a 1 en el eje 'arriba'), ELBOW_UP_W de costo. El codo afuera y arriba en
+# la guardia del ninja (52° de giro) era lo primero que se leía como kenjutsu de aficionado
+ELBOW_UP_W = 3.0
 
 
 def twist_deg(q):
@@ -167,6 +192,12 @@ class Arm:
         sg = 1.0 if ((a1 - a0 + 180.0) % 360.0 - 180.0) > 0.0 else -1.0
         self.t_lo, self.t_hi = sorted(((PRON_MIN - a0) * sg, (PRON_MAX - a0) * sg))
         self.t_mid = -a0 * sg
+        self.sg = sg
+
+    def anat(self, t):
+        """Pronación anatómica (°, 0 = pulgar arriba, + supinación) del giro 't' del antebrazo (aproximada: la medida
+        exacta, pronation(), depende del codo)."""
+        return (t - self.t_mid) * self.sg
 
     def angles(self, Rf, Rh):
         """(flexión, desvío, giro) de la mano respecto del antebrazo, en grados (0 = como en el reposo)."""
@@ -223,12 +254,23 @@ class ArmSolver:
         self.rig = ch.rig
         self.arms = {k: Arm(ch, k) for k in "rl"}
         self.body_r = body_radius(ch)
+        self.up = ch.D((0.0, 0.0, 1.0))
+        # cruces de Unity con clips ya resueltos ({lado: {cuadro: (estado, mano en el mango, mano pedida)}}, ver anchor_for):
+        # los pone el que hornea antes de cada clip y sobreviven a reset()
+        self.anchors = {}
         self.reset()
 
     def reset(self):
         self.prev = {}
         self.elbow = {}
         self.req_tw = {}
+        self.tw_over = {}
+        # el polo estabilizado y la mano libre hecha posible de cada cuadro de la primera pasada: dependen de la historia
+        # (el codo y el giro del cuadro anterior) y en la segunda pasada la historia es otra; sin reusarlos, el camino que
+        # se eligió con un polo se aplicaba con otro y el codo caía en otro lado (Attack1: el brazo libre giraba 112°
+        # en un cuadro sin que el chequeo de saltos lo viera)
+        self.asked = {"r": [], "l": []}
+        self.replay_asked = {}
         self.rows = {"r": [], "l": []}
         self.mode = "free"
         self.cands, self.reqs = {"r": [], "l": []}, {"r": [], "l": []}
@@ -238,11 +280,11 @@ class ArmSolver:
 
     def begin(self, mode):
         """Pasada nueva: 'collect', 'replay' (con el camino de plan_path) o 'free' (ver la clase)."""
-        plan = self.plan
+        plan, asked = self.plan, self.asked
         self.reset()
         self.mode = mode
         if mode == "replay":
-            self.plan = plan
+            self.plan, self.replay_asked = plan, asked
 
     # ------------------------------------------------------------------ piezas
     def target(self, arm, H, Rf):
@@ -319,16 +361,24 @@ class ArmSolver:
         # entra; una que agarra un mango sí puede (la muñeca no tiene otra salida)
         c += 0.25 * ((t - arm.t_mid) / (0.5 * (PRON_MAX - PRON_MIN))) ** 2 + (2.0 if free else 0.6) * (th / 60.0) ** 2 + self.body_cost(pose, E)
         if hold is not None:
-            c += 0.35 * (r / hold["soft"]) ** 2 + 0.35 * (g / max(1.0, hold["diag"] or 1.0)) ** 2
+            c += 0.35 * (r / hold["soft"]) ** 2 + 0.35 * ((g - hold.get("diag0", 0.0)) / max(1.0, hold["diag"] or 1.0)) ** 2
+            c += HOLD_PRON_W * ((arm.anat(t) - HOLD_PRON_C) / 60.0) ** 2
+        if th != 0.0:
+            up = self.up
+            e0, e1 = pole - nd * pole.dot(nd), p - nd * p.dot(nd)
+            if e0.length > 1e-6 and e1.length > 1e-6:
+                c += ELBOW_UP_W * max(0.0, e1.normalized().dot(up) - e0.normalized().dot(up)) ** 2
         return c, t
 
     def steady_pole(self, k, pole, nd, Fu0):
         """El polo pedido casi paralelo al eje hombro-muñeca no dice para qué lado va el codo (la mano justo en la línea
         del polo: el sumo con el brazo abierto al costado, el ninja volviendo a la guardia) y, de un cuadro al otro, el
-        codo daba media vuelta. Ahí se mezcla con hacia dónde estaba el codo en el cuadro anterior."""
+        codo daba media vuelta. Ahí se mezcla con hacia dónde estaba el codo en el cuadro anterior, desde que el polo queda a
+        menos de STEADY_POLE (seno del ángulo) del eje: con 0.4 el brazo libre del ninja que baja después del tajo (el polo
+        afuera y abajo, la mano colgando) pasaba por 0.49 y el codo se iba 23 cm al otro lado en un cuadro."""
         p = pole - nd * pole.dot(nd)
         L = p.length
-        if L >= 0.4:
+        if L >= STEADY_POLE:
             return pole
         fb = self.elbow.get(k)
         if fb is None:
@@ -336,7 +386,7 @@ class ArmSolver:
         fb = fb - nd * fb.dot(nd)
         if fb.length < 1e-6:
             return pole
-        u = (0.4 - L) / 0.4
+        u = (STEADY_POLE - L) / STEADY_POLE
         u = u * u * (3.0 - 2.0 * u)
         q = (p.normalized() if L > 1e-6 else fb.normalized()) * (1.0 - u) + fb.normalized() * u
         return q.normalized() if q.length > 1e-6 else fb.normalized()
@@ -367,10 +417,18 @@ class ArmSolver:
         twist = Quaternion((0.0, 1.0, 0.0), math.radians(tw))
         swing = D @ twist.inverted()
         prev = self.req_tw.get(k)
-        if prev is not None and abs(tw - prev) > 180.0:
-            tw -= math.copysign(360.0, tw - prev)
-        tw_c = max(arm.t_lo - WRIST_TWIST * FREE_BEND, min(arm.t_hi + WRIST_TWIST * FREE_BEND, tw))
+        lo, hi = arm.t_lo - WRIST_TWIST * FREE_BEND, arm.t_hi + WRIST_TWIST * FREE_BEND
+        # el pedido que entra va tal cual; el que no, por la vuelta más cercana a la del cuadro anterior (sin eso la mano
+        # pedida más allá de media vuelta daba la vuelta de golpe). Desenrollar siempre (como antes) acumulaba vueltas: en
+        # la Thrust el giro pedido llegaba a 388° de más y la guardia del final salía en el otro tope que la del Idle.
+        # (Repartirlo entre los dos topes sin historia, probado, daba tics peores con la mano quieta.)
+        if prev is not None and not (lo <= tw <= hi):
+            tw = min((tw, tw - 360.0, tw + 360.0), key=lambda x: abs(x - prev))
+        tw_c = max(lo, min(hi, tw))
         self.req_tw[k] = tw
+        # lo que el pedido gira la mano más allá de lo que dan antebrazo y muñeca: el chequeo lo avisa para que se autore
+        # una palma posible
+        self.tw_over[k] = abs(tw - tw_c)
         twist_c = Quaternion((0.0, 1.0, 0.0), math.radians(tw_c))
         sw_m = N @ swing.to_matrix()
         flex, dev, _ = arm.angles(Rl, sw_m)
@@ -448,7 +506,7 @@ class ArmSolver:
             cands = [(0.0, 0.0)]
         else:
             # una vuelta entera es la misma mano: -180 sobra
-            cands = [(r, g) for r in _grid(hold["roll"], 30.0) for g in _grid(hold["diag"], 10.0) if r > -180.0]
+            cands = [(r, g + hold.get("diag0", 0.0)) for r in _grid(hold["roll"], 30.0) for g in _grid(hold["diag"], 10.0) if r > -180.0]
         best = None
         for r, g in cands:
             c, th, t = self.best_elbow(f, r, g, coarse + [round(f.seed(r, g), 1)])
@@ -469,7 +527,7 @@ class ArmSolver:
     @staticmethod
     def clamp_hold(hold, r, g):
         """(r, g) dentro de las libertades del agarre, o (None, None) si se sale."""
-        if abs(g) > hold["diag"] + 1e-6:
+        if abs(g - hold.get("diag0", 0.0)) > hold["diag"] + 1e-6:
             return None, None
         if hold["roll"] >= 180.0:
             r = (r + 180.0) % 360.0 - 180.0
@@ -484,7 +542,7 @@ class ArmSolver:
         if hold is not None:
             r, g = self.clamp_hold(hold, r, g)
             if r is None:
-                th, r, g = start[0], 0.0, 0.0
+                th, r, g = start[0], 0.0, hold.get("diag0", 0.0)
         else:
             r = g = 0.0
         c, t = f(th, r, g)
@@ -522,7 +580,7 @@ class ArmSolver:
             f = self.evaluator(pose, arm, S, Fu0, Fl0, H, pole, hold, t_ref)
             for th in (-90.0, -30.0, 30.0, 90.0):
                 for r in seeds_r:
-                    cand = self.descend(f, (th, r, 0.0), hold) + (t_ref,)
+                    cand = self.descend(f, (th, r, 0.0 if hold is None else hold.get("diag0", 0.0)), hold) + (t_ref,)
                     if not any(self.same(cand, o) for o in out):
                         out.append(cand)
         out.sort(key=lambda c: c[0])
@@ -573,20 +631,48 @@ class ArmSolver:
                     hq[key] = ev[i][0].hand(a[1], a[2])
                 return hq[key]
 
+            # el codo de cada estado se mide desde el polo de su cuadro: si la muñeca pasa de un lado al otro del polo entre
+            # dos cuadros (el brazo libre del ninja que baja rápido después del tajo), el mismo giro es el codo del otro lado.
+            # poff[i]: cuánto giró la referencia del polo (alrededor del eje hombro-muñeca) del cuadro i-1 al i
+            ak = self.asked.get(k) or []
+            poff = [0.0] * (n + 1)
+            if len(ak) >= n:
+                for i in range(1, n + 1):
+                    pa, pb, ax = ak[i - 1][0], ak[i % n][0], ak[i % n][3]
+                    qa, qb = pa - ax * pa.dot(ax), pb - ax * pb.dot(ax)
+                    if qa.length > 1e-6 and qb.length > 1e-6:
+                        qa.normalize()
+                        qb.normalize()
+                        poff[i] = math.degrees(math.atan2(qa.cross(qb).dot(ax), qa.dot(qb)))
+
             def moved(i, a, b):
                 """Lo que se ve cambiar de a (cuadro i-1) a b (cuadro i) más allá de lo que se movió lo pedido."""
-                return change_deg(a, b, hand((i - 1) % n, a), hand(i % n, b)) - asked_deg(i)
+                a2 = (a[0], a[1], a[2], a[3] - poff[i], a[4])
+                return change_deg(a2, b, hand((i - 1) % n, a), hand(i % n, b)) - asked_deg(i)
 
             def trans(i, a, b):
                 return (max(0.0, moved(i, a, b)) / TRANS_SCALE) ** 2
 
+            anc = self.anchors.get(k, {})
+
+            def node(i, b):
+                """Costo del estado b en el cuadro i: el suyo más, en un cuadro que Unity cruza con otro clip (anchors), lo
+                que se aparta de la solución de ese otro clip en el cuadro del cruce."""
+                a = anc.get(i)
+                if a is None:
+                    return b[0]
+                st, hc, rq = a
+                asked = math.degrees(rq.rotation_difference(reqs[i]).angle)
+                m = change_deg(st, b, hc, hand(i, b)) - min(asked, 360.0 - asked)
+                return b[0] + ANCHOR_W * (max(0.0, m) / TRANS_SCALE) ** 2
+
             def viterbi(first, tm):
-                acc = [[(c[0], None) if (first is None or j == first) else (float("inf"), None) for j, c in enumerate(frames[0])]]
+                acc = [[(node(0, c), None) if (first is None or j == first) else (float("inf"), None) for j, c in enumerate(frames[0])]]
                 for i in range(1, n):
                     row = []
                     for j, b in enumerate(frames[i]):
                         c, q = min(((acc[i - 1][q][0] + tm[i][j][q], q) for q in range(len(frames[i - 1]))), key=lambda x: x[0])
-                        row.append((c + b[0], q))
+                        row.append((c + node(i, b), q))
                     acc.append(row)
                 return acc
 
@@ -661,16 +747,30 @@ class ArmSolver:
         Pc = pose.get(arm.clav) @ R.rel[arm.upper]
         S, Fu0 = Pc.translation.copy(), rot3(Pc)
         Fl0 = Fu0 @ rot3(R.rel[arm.fore])
-        nd0 = self.target(arm, H, rot3(H) @ arm.rel0_t) - S
-        if nd0.length > 1e-6:
-            pole = self.steady_pole(k, pole, nd0.normalized(), Fu0)
-        if free:
-            H = self.plausible(arm, k, S, Fu0, Fl0, H, pole)
+        i = self.index[k]
+        ra = self.replay_asked.get(k)
+        if self.mode == "replay" and ra and i < len(ra):
+            pole, H, self.tw_over[k], _ = ra[i]
+        else:
+            nd0 = self.target(arm, H, rot3(H) @ arm.rel0_t) - S
+            if free and nd0.length > FREE_REACH * (arm.a + arm.b):
+                # la mano libre pedida con el brazo estirado del todo (el ninja despedido por el parry) se acerca al hombro:
+                # con el codo recto el plano del codo y el giro del antebrazo no están definidos y, al volver a doblarse,
+                # el antebrazo daba 70-80° en un cuadro. Una mano libre unos centímetros más cerca no se nota
+                nd0 = nd0.normalized() * (FREE_REACH * (arm.a + arm.b))
+                H = compose(S + nd0 + (rot3(H) @ arm.rel0_t) @ arm.off_f, rot3(H))
+            if nd0.length > 1e-6:
+                pole = self.steady_pole(k, pole, nd0.normalized(), Fu0)
+            if free:
+                H = self.plausible(arm, k, S, Fu0, Fl0, H, pole)
+            if self.mode == "collect":
+                nd1 = self.target(arm, H, rot3(H) @ arm.rel0_t) - S
+                self.asked[k].append((pole.copy(), H.copy(), self.tw_over.get(k, 0.0),
+                                      nd1.normalized() if nd1.length > 1e-6 else Fu0.col[1].copy()))
         # la del camino del clip o, suelta, la mejor sin historia y el valle del cuadro anterior (ver la clase).
         # La pronación del cuadro anterior solo desenrolla el giro pedido del que se queda (una mano que pasa la media
         # vuelta sigue para el mismo lado); la otra se evalúa con el suyo: desenrollada hacia el cuadro anterior, una
         # solución de otro valle salía carísima y el brazo se quedaba en uno malo (el desvío del ninja: el arma corrida 17°)
-        i = self.index[k]
         self.index[k] += 1
         t_ref = None
         t_fix = None
@@ -721,8 +821,10 @@ class ArmSolver:
         Hf = compose(head if miss < 1e-6 else Hc.translation, Rh)
         flex, dev, tw = arm.angles(Rf, Rh)
         pron, pw = arm.pronation(rot3(pose.W[arm.upper]), Rf)
-        self.rows[k].append(dict(excess=excess(flex, dev), flex=flex, dev=dev, twist=tw, fore=t, swivel=th, roll=r, diag=g,
-                                 clamp=clamp, held=not free, req=self.asked_frame(H, hold), hand=Rh.to_quaternion(), cost=c,
+        # columpio: el ángulo entre el eje de la mano y el que tendría siguiendo al antebrazo (lo que mide la revisión)
+        swing = math.degrees((Rf @ arm.rel0).col[1].angle(Rh.col[1], 0.0))
+        self.rows[k].append(dict(excess=excess(flex, dev), swing=swing, hc=Hc.to_quaternion(), state=(c, r, g, th, t), flex=flex, dev=dev, twist=tw, fore=t, swivel=th, roll=r, diag=g,
+                                 clamp=clamp, held=not free, tw_over=self.tw_over.get(k, 0.0) if free else 0.0, req=self.asked_frame(H, hold), hand=Rh.to_quaternion(), cost=c,
                                  pron=pron, pron_w=pw))
         return miss, Hf, Hc
 

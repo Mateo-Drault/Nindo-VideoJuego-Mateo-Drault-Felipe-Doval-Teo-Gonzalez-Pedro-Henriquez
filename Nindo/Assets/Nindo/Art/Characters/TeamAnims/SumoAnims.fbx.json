@@ -28,24 +28,28 @@
       "fore": 65.8,
       "swivel": 5.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        56.0,
-       60.0
+       59.9
       ]
      },
      "l": {
-      "excess": 0.54,
-      "twist": 12.9,
-      "fore": 64.9,
-      "swivel": 4.0,
+      "excess": 0.55,
+      "twist": 12.8,
+      "fore": 64.1,
+      "swivel": 3.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        56.0,
-       59.1
+       58.3
       ]
      }
     },
     "solver_jump_deg": 1.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 1.4,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -72,29 +76,33 @@
     "loop_seam_deg": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.51,
-      "twist": 12.9,
-      "fore": 64.8,
-      "swivel": 4.0,
+      "excess": 0.52,
+      "twist": 12.7,
+      "fore": 64.0,
+      "swivel": 3.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       53.2,
-       59.0
+       54.9,
+       58.2
       ]
      },
      "l": {
-      "excess": 0.51,
-      "twist": 12.9,
-      "fore": 64.8,
-      "swivel": 4.0,
+      "excess": 0.52,
+      "twist": 12.7,
+      "fore": 64.0,
+      "swivel": 3.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       53.2,
-       59.0
+       54.9,
+       58.2
       ]
      }
     },
-    "solver_jump_deg": 3.5,
+    "solver_jump_deg": 2.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 16.8,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -122,29 +130,33 @@
     "loop_seam_deg": 0.04,
     "wrists": {
      "r": {
-      "excess": 0.59,
+      "excess": 0.61,
       "twist": 12.6,
       "fore": 60.3,
-      "swivel": 40.0,
+      "swivel": 39.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       30.0,
+       30.5,
        54.5
       ]
      },
      "l": {
-      "excess": 0.59,
+      "excess": 0.61,
       "twist": 12.6,
       "fore": 60.3,
-      "swivel": 40.0,
+      "swivel": 39.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       30.0,
+       30.5,
        54.5
       ]
      }
     },
     "solver_jump_deg": 9.7,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 12.9,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -199,30 +211,34 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.85,
-      "twist": 19.2,
+      "excess": 0.78,
+      "twist": 23.6,
       "fore": 79.2,
       "swivel": 36.0,
-      "clamp": 3.2,
+      "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        -85.0,
-       67.0
+       56.7
       ]
      },
      "l": {
-      "excess": 0.59,
-      "twist": 14.5,
-      "fore": 70.7,
+      "excess": 0.73,
+      "twist": 14.4,
+      "fore": 70.3,
       "swivel": 31.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        -63.2,
-       64.9
+       64.5
       ]
      }
     },
-    "solver_jump_deg": 11.6,
-    "hold_tip_mps": 1.63,
+    "solver_jump_deg": 11.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 71.1,
+    "hold_tip_mps": 1.61,
     "peak_frame": 16,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.651,
@@ -285,30 +301,34 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.59,
-      "twist": 15.0,
-      "fore": 73.5,
+      "excess": 0.73,
+      "twist": 14.5,
+      "fore": 71.1,
       "swivel": 31.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        -63.0,
-       67.7
+       65.2
       ]
      },
      "l": {
-      "excess": 0.85,
-      "twist": 19.2,
+      "excess": 0.78,
+      "twist": 23.4,
       "fore": 79.2,
       "swivel": 36.0,
-      "clamp": 3.6,
+      "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        -85.0,
-       65.7
+       56.7
       ]
      }
     },
-    "solver_jump_deg": 10.9,
-    "hold_tip_mps": 2.19,
+    "solver_jump_deg": 8.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 58.9,
+    "hold_tip_mps": 2.21,
     "peak_frame": 12,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.536,
@@ -365,7 +385,7 @@
    "notes": "shiko; aviso: la pierna derecha arriba al costado",
    "lint": {
     "reach_miss_cm": {
-     "hands": 3.4,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
@@ -374,26 +394,30 @@
       "excess": 0.85,
       "twist": 12.2,
       "fore": 62.6,
-      "swivel": 6.0,
-      "clamp": 0.4,
+      "swivel": 12.0,
+      "clamp": 0.2,
+      "asked_over": 0.0,
       "pron": [
-       -12.4,
+       -12.6,
        56.7
       ]
      },
      "l": {
       "excess": 0.85,
-      "twist": 12.2,
+      "twist": 15.5,
       "fore": 62.6,
-      "swivel": 24.8,
+      "swivel": 9.6,
       "clamp": 0.2,
+      "asked_over": 0.0,
       "pron": [
-       -34.4,
+       -21.9,
        56.7
       ]
      }
     },
-    "solver_jump_deg": 7.0,
+    "solver_jump_deg": 7.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 38.2,
     "hold_tip_mps": 0.22,
     "peak_frame": 27,
     "prerelease_glide_cm": 0.0,
@@ -462,10 +486,11 @@
       "twist": 25.5,
       "fore": 79.2,
       "swivel": 33.0,
-      "clamp": 16.0,
+      "clamp": 7.3,
+      "asked_over": 1.5,
       "pron": [
        -85.0,
-       65.2
+       56.7
       ]
      },
      "l": {
@@ -473,14 +498,17 @@
       "twist": 25.5,
       "fore": 79.2,
       "swivel": 33.0,
-      "clamp": 16.0,
+      "clamp": 6.6,
+      "asked_over": 1.1,
       "pron": [
        -85.0,
-       65.2
+       56.7
       ]
      }
     },
-    "solver_jump_deg": 14.6,
+    "solver_jump_deg": 6.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 111.2,
     "hold_tip_mps": 1.48,
     "peak_frame": 16,
     "game_T_s": 0.8,
@@ -515,29 +543,33 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.66,
+      "excess": 0.83,
       "twist": 12.8,
-      "fore": 67.5,
-      "swivel": 62.0,
+      "fore": 62.6,
+      "swivel": 63.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       48.2,
-       61.7
+       37.5,
+       56.8
       ]
      },
      "l": {
       "excess": 0.85,
-      "twist": 15.9,
-      "fore": 85.9,
-      "swivel": 21.0,
-      "clamp": 28.6,
+      "twist": 14.4,
+      "fore": 81.3,
+      "swivel": 30.0,
+      "clamp": 28.2,
+      "asked_over": 15.9,
       "pron": [
-       50.2,
-       79.9
+       46.1,
+       75.4
       ]
      }
     },
-    "solver_jump_deg": 15.9,
+    "solver_jump_deg": 13.8,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 48.9,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -563,29 +595,33 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.6,
-      "twist": 15.3,
-      "fore": 79.5,
+      "excess": 0.58,
+      "twist": 13.4,
+      "fore": 66.0,
       "swivel": 48.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       36.4,
-       73.7
+       47.6,
+       60.1
       ]
      },
      "l": {
       "excess": 0.85,
-      "twist": 16.8,
-      "fore": 88.3,
-      "swivel": 18.0,
-      "clamp": 30.1,
+      "twist": 14.8,
+      "fore": 81.7,
+      "swivel": 42.2,
+      "clamp": 25.6,
+      "asked_over": 23.7,
       "pron": [
-       36.5,
-       56.8
+       46.5,
+       75.9
       ]
      }
     },
-    "solver_jump_deg": 9.7,
+    "solver_jump_deg": 9.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 45.6,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -627,28 +663,32 @@
     "wrists": {
      "r": {
       "excess": 0.85,
-      "twist": 17.6,
-      "fore": 85.9,
-      "swivel": 22.0,
-      "clamp": 16.3,
+      "twist": 12.2,
+      "fore": 62.6,
+      "swivel": 18.0,
+      "clamp": 0.7,
+      "asked_over": 0.0,
       "pron": [
-       3.9,
-       80.0
+       2.7,
+       56.7
       ]
      },
      "l": {
       "excess": 0.57,
-      "twist": 14.1,
-      "fore": 68.2,
-      "swivel": 27.0,
+      "twist": 12.2,
+      "fore": 62.6,
+      "swivel": 18.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        -0.8,
-       62.4
+       56.7
       ]
      }
     },
-    "solver_jump_deg": 9.2,
+    "solver_jump_deg": 6.2,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 41.8,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -683,35 +723,39 @@
    "notes": "parry perfecto: despedido 0.8 m con los brazos arriba, trastabilla; en guardia al corte",
    "lint": {
     "reach_miss_cm": {
-     "hands": 2.7,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
       "excess": 0.85,
-      "twist": 18.5,
-      "fore": 89.4,
+      "twist": 12.4,
+      "fore": 62.6,
       "swivel": 23.0,
-      "clamp": 27.0,
+      "clamp": 7.8,
+      "asked_over": 0.0,
       "pron": [
-       8.4,
-       83.5
+       2.4,
+       56.7
       ]
      },
      "l": {
       "excess": 0.57,
-      "twist": 14.4,
-      "fore": 69.3,
+      "twist": 12.3,
+      "fore": 62.6,
       "swivel": 23.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
        -34.6,
-       63.5
+       56.7
       ]
      }
     },
-    "solver_jump_deg": 10.6,
+    "solver_jump_deg": 11.2,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 45.4,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -738,29 +782,33 @@
     "loop_seam_deg": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.46,
-      "twist": 0.4,
-      "fore": 2.0,
-      "swivel": 1.0,
+      "excess": 0.2,
+      "twist": 0.5,
+      "fore": 2.4,
+      "swivel": 2.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -6.8,
-       -3.8
+       -8.3,
+       -7.0
       ]
      },
      "l": {
-      "excess": 0.46,
-      "twist": 0.4,
-      "fore": 2.0,
-      "swivel": 1.0,
+      "excess": 0.2,
+      "twist": 0.5,
+      "fore": 2.4,
+      "swivel": 2.0,
       "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -6.8,
-       -3.8
+       -8.3,
+       -7.0
       ]
      }
     },
-    "solver_jump_deg": 1.2,
+    "solver_jump_deg": 1.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 1.0,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -789,35 +837,39 @@
    "notes": "sacudón agotado sin sacar las manos de las rodillas; vuelve al cuadro 0 de Exhausted",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.3,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.85,
-      "twist": 1.5,
-      "fore": 8.7,
-      "swivel": 3.0,
-      "clamp": 0.6,
+      "excess": 0.23,
+      "twist": 0.9,
+      "fore": 5.1,
+      "swivel": 2.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -4.9,
-       -4.2
+       -8.1,
+       -0.7
       ]
      },
      "l": {
-      "excess": 0.85,
-      "twist": 1.3,
-      "fore": 7.8,
-      "swivel": 1.0,
-      "clamp": 0.3,
+      "excess": 0.18,
+      "twist": 1.2,
+      "fore": 6.5,
+      "swivel": 2.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -4.9,
-       -2.6
+       -8.1,
+       0.7
       ]
      }
     },
-    "solver_jump_deg": 3.8,
+    "solver_jump_deg": 5.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 9.9,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -843,29 +895,33 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.77,
-      "twist": 25.5,
-      "fore": 79.2,
-      "swivel": 27.0,
-      "clamp": 25.0,
+      "excess": 0.78,
+      "twist": 12.2,
+      "fore": 62.6,
+      "swivel": 18.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -85.0,
-       58.4
+       -34.4,
+       56.7
       ]
      },
      "l": {
-      "excess": 0.85,
-      "twist": 12.8,
-      "fore": 64.4,
-      "swivel": 41.2,
-      "clamp": 24.3,
+      "excess": 0.78,
+      "twist": 12.2,
+      "fore": 62.6,
+      "swivel": 18.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
       "pron": [
-       -22.2,
-       58.6
+       -34.4,
+       56.7
       ]
      }
     },
-    "solver_jump_deg": 13.4,
+    "solver_jump_deg": 7.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 51.8,
     "floor_skate_cm": {
      "r": [],
      "l": []
@@ -895,35 +951,39 @@
    "notes": "muerte: cae sentado y después de espaldas",
    "lint": {
     "reach_miss_cm": {
-     "hands": 2.1,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
       "excess": 0.85,
-      "twist": 25.5,
-      "fore": 95.8,
+      "twist": 18.0,
+      "fore": 90.3,
       "swivel": 62.0,
-      "clamp": 18.4,
+      "clamp": 16.1,
+      "asked_over": 0.0,
       "pron": [
-       -43.9,
-       90.0
+       45.0,
+       84.5
       ]
      },
      "l": {
       "excess": 0.85,
-      "twist": 25.5,
-      "fore": 95.8,
-      "swivel": 29.0,
-      "clamp": 31.2,
+      "twist": 17.6,
+      "fore": 89.7,
+      "swivel": 32.0,
+      "clamp": 28.0,
+      "asked_over": 13.2,
       "pron": [
-       -35.2,
-       90.0
+       56.7,
+       83.8
       ]
      }
     },
-    "solver_jump_deg": 22.1,
+    "solver_jump_deg": 14.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 28.7,
     "floor_skate_cm": {
      "r": [],
      "l": []

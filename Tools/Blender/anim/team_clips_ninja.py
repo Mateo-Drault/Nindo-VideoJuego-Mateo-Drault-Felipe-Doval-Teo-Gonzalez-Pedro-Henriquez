@@ -25,6 +25,13 @@ Key = NA.Key
 RUN_SPEED, WALK_SPEED = 5.0, 2.0          # EnemyArchetypes.Ninja(): runSpeed, walkSpeed
 # blend tree de locomoción: Speed = velocidad / runSpeed
 LOCOMOTION = (("Idle", 0.0), ("Walk", WALK_SPEED / RUN_SPEED), ("Run", 1.0))
+# cruces del Animator (clip, cuadro, otro clip, cuadro; -1 = el último): build_team_anims ancla ahí el brazo a la rama del
+# otro clip y chequea que antebrazos y manos lleguen con el mismo giro local
+BLENDS = ([("Walk", 0, "Idle", 0), ("Run", 0, "Walk", 0), ("Guard", 0, "Idle", 0), ("Counter", 0, "Guard", 0),
+           ("ExhaustedHit", 0, "Exhausted", 0), ("ExhaustedHit", -1, "Exhausted", 0)]
+          + [(c, f, "Idle", 0) for c in ("Attack1", "Attack2", "Attack3", "Thrust", "Counter", "Hit", "HitHeavy", "Spotted")
+             for f in (0, -1) if not (c == "Counter" and f == 0)]
+          + [(c, 0, "Idle", 0) for c in ("Parried", "ParriedPerfect", "Death")])
 
 # ------------------------------------------------------------------ guardia (pose base)
 # pie derecho adelante, cadera girada para que el lado de la espada lidere, la hoja baja apuntando a Kaito
@@ -34,11 +41,18 @@ STANCE = dict(
     head=(-8.0, 0.0, -4.0), clav_r=(0, 0, 0), clav_l=(0, 0, 0),
     knee_r=(-0.25, -1.0, 0.0), knee_l=(0.55, -1.0, 0.0),
     grip=(-0.16, -0.30, 0.78), blade=(0.22, -0.86, 0.38), edge=(0.05, -0.35, -1.0), elbow_r=(-0.8, 0.3, -0.6),
-    hand_l=(0.11, -0.17, 0.86), hand_l_dir=(-0.25, -0.55, 0.8), hand_l_palm=(-0.4, -0.9, 0.0), elbow_l=(0.8, 0.2, -0.6),
-    fist_l=0.25, grip_l=0.0, breath=0.0, travel=0.0,
+    # la libre suelta delante del vientre, la palma abajo y los dedos apenas curvados (con la palma pedida hacia adelante,
+    # como estaba, la mano no entraba: el pedido giraba 175° y la que salía dependía de los cuadros de antes)
+    hand_l=(0.11, -0.17, 0.86), hand_l_dir=(-0.53, -0.74, 0.41), hand_l_palm=(-0.12, -0.41, -0.91), elbow_l=(0.8, 0.2, -0.6),
+    fist_l=0.4, grip_l=0.0, breath=0.0, travel=0.0,
 )
 # pies de la guardia en el piso: (x, y, giro de la punta)
 R0, L0 = (-0.12, -0.17, 6.0), (0.17, 0.19, 38.0)
+# en los loops (Idle, Walk, Run: lo que más se ve) el filo va hacia afuera y abajo, 60° de la vertical: desde la cámara
+# del juego se ve la cara clara de la hoja y no el lomo (con el filo abajo derecho, la hoja era una raya oscura de 1 px) y
+# la muñeca queda igual de recta. Los golpes arrancan y terminan con el filo abajo (el Animator cruza los dos en 0.08 s):
+# con el filo inclinado también ahí, la vuelta de cada golpe a la guardia daba vuelta el antebrazo
+LOOP_EDGE = (-0.81, -0.41, -0.42)
 
 
 def P(**kw):
@@ -84,7 +98,7 @@ def idle():
         keys.append(Key(f, P(hips=(0.012 * math.sin(a), 0.03 + 0.006 * math.cos(a), -0.075 - 0.008 * (0.5 - 0.5 * math.cos(2 * a))),
                              breath=0.5 - 0.5 * math.cos(a),
                              grip=(-0.16 + 0.008 * math.sin(a), -0.30, 0.78 + 0.01 * math.sin(2 * a)),
-                             blade=(0.22 + 0.05 * math.sin(a), -0.86, 0.38 + 0.04 * math.cos(a)),
+                             blade=(0.22 + 0.05 * math.sin(a), -0.86, 0.38 + 0.04 * math.cos(a)), edge=LOOP_EDGE,
                              head=(-8.0 + 1.5 * math.sin(a), 0.0, -4.0 + 3.0 * math.sin(a + 1.0))), "sine"))
     return T.TeamClip("Idle", n, keys, loop=True, feet=PLANTED, notes="guardia que respira; mismo pie adelante que los golpes")
 
@@ -105,6 +119,7 @@ def locomotion(ch):
         c["chest"] = (4.0, -1.5 * math.sin(a), -8.0 - 5.0 * math.sin(a))
         c["head"] = (-8.0, 0.0, -4.0 - 1.5 * math.sin(a))
         c["grip"] = (-0.16, -0.30, 0.78 + 0.012 * math.cos(2 * a + 0.6))
+        c["edge"] = LOOP_EDGE
         c["hand_l"] = (0.11, -0.17, 0.86 + 0.01 * math.cos(2 * a + 0.9))
         return c
     out.append(NA.ProcClip("Walk", n, walk, loop=True, root_vel=(0, -WALK_SPEED, 0),
@@ -129,7 +144,7 @@ def locomotion(ch):
         c["head"] = (-22.0, 0.0, 2.0 * math.sin(a))
         c["grip"] = (-0.20, -0.20 - 0.04 * math.sin(a), 0.72 + 0.015 * math.cos(2 * a))
         c["blade"] = (0.14, -0.97, 0.12 + 0.03 * math.sin(a))
-        c["edge"] = (0.0, -0.06, -1.0)
+        c["edge"] = (-0.85, -0.18, -0.49)
         c["elbow_r"] = (-0.8, 0.4, -0.5)
         c["hand_l"] = (0.15, -0.05 + 0.20 * math.sin(a + math.pi), 0.80 - 0.05 * math.cos(a))
         c["hand_l_dir"] = (0.0, -0.4, 1.0)
@@ -155,7 +170,7 @@ def attack1():
              head=(-8.0, -3.0, 32.0),
              grip=(-0.33, 0.06, 0.86), blade=(-0.5, 0.84, 0.16), edge=(-0.84, -0.5, 0.0), elbow_r=(-0.5, 0.7, -0.5),
              hand_l=(0.04, -0.40, 0.98), hand_l_dir=(0.0, -1.0, 0.1), hand_l_palm=(0.0, -0.2, -1.0), elbow_l=(0.6, 0.0, -0.8),
-             fist_l=0.0)
+             fist_l=0.3)
     HOLD = dict(TELL, grip=(-0.34, 0.09, 0.85), blade=(-0.45, 0.88, 0.14), hips=(0.02, 0.075, -0.125))
     SMEAR = dict(HOLD, hips=(0.0, 0.02, -0.10), hips_rot=(6.0, 0.0, 2.0), chest=(4.0, 2.0, -6.0), head=(-8.0, -2.0, 12.0),
                  grip=(-0.38, -0.22, 0.86), blade=(-0.96, -0.26, 0.04), edge=(0.26, -0.96, 0.0))
@@ -166,7 +181,7 @@ def attack1():
                   grip=(0.12, -0.24, 0.84), blade=(0.90, -0.44, 0.01), edge=(0.32, 0.92, 0.0))
     PUNISH = dict(FOLLOW, hips=(0.0, -0.04, -0.16), hips_rot=(8.0, 0.0, 34.0), chest=(10.0, -4.0, 14.0), head=(-12.0, 0.0, -30.0),
                   grip=(0.18, -0.16, 0.78), blade=(0.80, 0.45, -0.39), edge=(-0.45, 0.8, 0.0),
-                  hand_l=(0.30, 0.18, 0.86), hand_l_dir=(0.3, 0.6, -0.6), hand_l_palm=(1, 0, 0), fist_l=0.3)
+                  hand_l=(0.30, 0.18, 0.86), hand_l_dir=(0.3, 0.6, -0.6), hand_l_palm=(0.0, -0.7, -0.7), fist_l=0.3)
     keys = [
         Key(0, P()),
         Key(8, TELL, "inout"),
@@ -195,17 +210,18 @@ def attack2():
     tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
     # el puño adelante y bajo, frente a la cadera izquierda: con la mano en la cadera (0.16, 0.02, 0.56) la hoja quedaba
     # paralela al antebrazo, la muñeca no llegaba y team_limbs la enderezaba hasta 41° (la punta subía en el aviso). Acá
-    # entra sin tocar la hoja y la punta queda a 4 cm del piso
+    # entra sin tocar la hoja; 3 cm más alto que la primera versión, para que la punta pase a 4 cm del piso y no lo roce
+    # en una pendiente
     TELL = P(hips=(-0.02, 0.06, -0.15), hips_rot=(8.0, 0.0, 40.0), spine=(14.0, -4.0, 14.0), chest=(8.0, -4.0, 16.0),
              head=(-14.0, 4.0, -40.0),
-             grip=(0.02, -0.14, 0.44), blade=(0.55, 0.75, -0.38), edge=(0.1, -0.4, -0.9), elbow_r=(-0.3, -0.4, -0.9),
+             grip=(0.02, -0.14, 0.47), blade=(0.55, 0.75, -0.38), edge=(0.1, -0.4, -0.9), elbow_r=(-0.3, -0.4, -0.9),
              hand_l=(0.30, 0.10, 0.80), hand_l_dir=(0.5, 0.4, -0.6), hand_l_palm=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.4, -0.4),
              fist_l=0.4)
-    HOLD = dict(TELL, grip=(0.03, -0.125, 0.43), blade=(0.53, 0.77, -0.39), hips=(-0.02, 0.062, -0.154))
+    HOLD = dict(TELL, grip=(0.03, -0.125, 0.46), blade=(0.53, 0.77, -0.39), hips=(-0.02, 0.062, -0.154))
     SMEAR = dict(HOLD, hips=(0.0, 0.0, -0.11), hips_rot=(6.0, 0.0, 22.0), chest=(4.0, -2.0, 4.0), head=(-12.0, 2.0, -20.0),
-                 grip=(0.00, -0.22, 0.66), blade=(0.55, -0.55, -0.62), edge=(-0.2, -0.6, 0.75))
+                 grip=(0.00, -0.22, 0.70), blade=(0.55, -0.55, -0.62), edge=(-0.69, 0.12, -0.72))
     CONTACT = dict(SMEAR, hips=(0.0, -0.03, -0.08), hips_rot=(4.0, 0.0, 6.0), spine=(6.0, 2.0, -6.0), chest=(0.0, 2.0, -10.0),
-                   head=(-8.0, 0.0, -2.0), grip=(-0.12, -0.42, 0.90), blade=(-0.35, -0.78, 0.5), edge=(-0.55, 0.0, 0.83),
+                   head=(-8.0, 0.0, -2.0), grip=(-0.12, -0.42, 0.90), blade=(-0.35, -0.78, 0.5), edge=(-0.83, 0.02, -0.55),
                    elbow_r=(-0.8, 0.2, -0.5), hand_l=(0.25, -0.02, 0.84), hand_l_dir=(0.5, 0.3, -0.7))
     FOLLOW = dict(CONTACT, hips=(0.0, -0.03, -0.12), hips_rot=(0.0, 0.0, -6.0), chest=(-6.0, 4.0, -22.0), head=(-4.0, 0.0, 14.0),
                   grip=(-0.30, -0.14, 1.12), blade=(-0.55, 0.25, 0.80), edge=(-0.5, 0.4, -0.35))
@@ -243,7 +259,7 @@ def attack3():
     # (parada, desde 52° de cámara se veía como un hilo sobre la cabeza; así proyecta casi todo su largo al costado)
     TELL = P(hips=(0.0, 0.10, -0.14), hips_rot=(-2.0, 0.0, 14.0), spine=(-6.0, 0.0, -6.0), chest=(-10.0, 0.0, -10.0),
              head=(4.0, 0.0, -6.0),
-             grip=(-0.24, 0.04, 1.14), blade=(-0.64, 0.50, 0.58), edge=(0.45, -0.85, 0.25), elbow_r=(-0.9, 0.2, -0.3),
+             grip=(-0.24, 0.04, 1.14), blade=(-0.64, 0.50, 0.58), edge=(-0.32, -0.85, 0.43), elbow_r=(-0.9, 0.2, -0.3),
              grip_l=1.0, elbow_l=(0.8, -0.2, -0.4), fist_l=1.0)
     HOLD = dict(TELL, hips=(0.0, 0.11, -0.17), grip=(-0.25, 0.06, 1.14), blade=(-0.66, 0.52, 0.54), chest=(-12.0, 0.0, -10.0))
     LAUNCH = dict(HOLD, hips=(0.0, 0.0, -0.02), hips_rot=(6.0, 0.0, 10.0), spine=(4.0, 0.0, 0.0), chest=(-4.0, 0.0, -4.0),
@@ -290,7 +306,7 @@ def thrust():
     tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
     LOW = P(hips=(0.0, 0.06, -0.21), hips_rot=(14.0, 0.0, 34.0), spine=(14.0, 0.0, -10.0), chest=(6.0, 0.0, -20.0),
             head=(-24.0, 0.0, -6.0), knee_l=(0.8, -0.6, 0.0), knee_r=(-0.6, -1.0, 0.0),
-            grip=(-0.34, 0.12, 0.50), blade=(-0.45, -0.89, 0.06), edge=(0.0, 0.0, -1.0), elbow_r=(-0.8, 0.6, -0.3),
+            grip=(-0.34, 0.12, 0.50), blade=(-0.45, -0.89, 0.06), edge=(-0.89, 0.45, 0.0), elbow_r=(-0.8, 0.6, -0.3),
             hand_l=(-0.04, -0.30, 0.62), hand_l_dir=(-0.3, -0.9, 0.0), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(0.8, 0.0, -0.6),
             fist_l=0.1)
     HOLD = dict(LOW, grip=(-0.35, 0.15, 0.49), hips=(0.0, 0.07, -0.22), head=(-26.0, 0.0, -6.0))
@@ -340,7 +356,7 @@ def thrust():
 def guard_pose():
     """Guardia cerrada: la hoja horizontal delante de la cara, la mano libre empuja el lomo cerca de la punta."""
     return P(hips=(0.0, 0.05, -0.12), hips_rot=(4.0, 0.0, 10.0), spine=(4.0, 0.0, -4.0), chest=(0.0, 0.0, -6.0), head=(-4.0, 0.0, 0.0),
-             grip=(-0.26, -0.26, 1.02), blade=(0.98, -0.10, 0.12), edge=(0.0, -0.45, 0.89), elbow_r=(-0.9, 0.2, -0.4),
+             grip=(-0.26, -0.26, 1.02), blade=(0.98, -0.10, 0.12), edge=(-0.11, -0.99, 0.05), elbow_r=(-0.9, 0.2, -0.4),
              hand_l=(0.30, -0.30, 1.04), hand_l_dir=(0.1, -0.2, 1.0), hand_l_palm=(0.0, -1.0, 0.0), elbow_l=(0.9, 0.2, -0.4), fist_l=0.1)
 
 
@@ -383,7 +399,7 @@ def hit():
     PEAK = P(hips=(0.0, 0.08, -0.09), hips_rot=(-10.0, 0.0, 26.0), spine=(-10.0, 0.0, 0.0), chest=(-14.0, 0.0, 6.0),
              head=(14.0, 0.0, 8.0),
              grip=(-0.36, -0.08, 0.98), blade=(-0.35, -0.55, 0.75), elbow_r=(-0.9, 0.2, 0.0),
-             hand_l=(0.36, 0.02, 1.0), hand_l_dir=(0.6, 0.0, 0.8), hand_l_palm=(0.0, -1.0, 0.0), elbow_l=(0.9, 0.2, 0.0), fist_l=0.0)
+             hand_l=(0.36, 0.02, 1.0), hand_l_dir=(0.6, 0.0, 0.8), hand_l_palm=(0.8, 0.0, -0.6), elbow_l=(0.9, 0.2, 0.0), fist_l=0.0)
     keys = [Key(0, P()), Key(2, PEAK, "snap"), Key(4, PEAK, "out"), Key(n, P(), "sine")]
     # el de atrás despega enseguida (el empujón es casi todo en los primeros 0.1 s) y el de adelante lo sigue
     feet = {"r": [FR(0), FR(1), FR(6, -back, pitch=-6.0, ease="out"), FR(n, -back)],
@@ -401,7 +417,7 @@ def hit_heavy():
     FLUNG = P(hips=(0.0, 0.10, -0.04), hips_rot=(-18.0, 0.0, 30.0), spine=(-14.0, 0.0, 6.0), chest=(-18.0, 0.0, 10.0),
               head=(22.0, 0.0, 10.0),
               grip=(-0.44, 0.04, 1.02), blade=(-0.45, 0.40, 0.80), elbow_r=(-0.9, 0.2, 0.1), clav_r=(0, 0, 8),
-              hand_l=(0.36, 0.14, 1.00), hand_l_dir=(0.8, 0.2, 0.5), hand_l_palm=(0.0, -1.0, 0.0), elbow_l=(0.9, 0.3, 0.1), fist_l=0.0)
+              hand_l=(0.36, 0.14, 1.00), hand_l_dir=(0.8, 0.2, 0.5), hand_l_palm=(0.5, 0.0, -0.8), elbow_l=(0.9, 0.3, 0.1), fist_l=0.0)
     CATCH = dict(FLUNG, hips=(0.0, 0.10, -0.16), hips_rot=(-2.0, 0.0, 24.0), spine=(2.0, 0.0, 2.0), chest=(-4.0, 0.0, 4.0),
                  head=(6.0, 0.0, 4.0), grip=(-0.36, -0.08, 0.92), blade=(-0.30, -0.45, 0.84), clav_r=(0, 0, 0),
                  hand_l=(0.34, -0.06, 0.92), hand_l_dir=(0.5, -0.3, 0.8))
@@ -431,15 +447,18 @@ def V3(p, dx, dy, dz):
 PARRY_KNOCK = P(hips=(0.0, 0.10, -0.07), hips_rot=(-12.0, 0.0, 34.0), spine=(-12.0, 0.0, 10.0), chest=(-16.0, -6.0, 16.0),
                 head=(16.0, 0.0, 14.0),
                 grip=(-0.42, 0.02, 1.20), blade=(-0.49, 0.68, 0.55), edge=(-0.6, -0.4, 0.4), elbow_r=(-0.9, 0.2, 0.3), clav_r=(0, 0, 10),
-                hand_l=(0.38, 0.16, 0.98), hand_l_dir=(0.9, 0.2, 0.4), hand_l_palm=(0.0, -1.0, 0.0), elbow_l=(0.7, 0.5, 0.2), fist_l=0.0)
+                hand_l=(0.38, 0.16, 0.98), hand_l_dir=(0.9, 0.2, 0.4), hand_l_palm=(0.4, 0.0, -0.9), elbow_l=(0.7, 0.5, 0.2), fist_l=0.0)
 
 
 def parried():
     """Le desviaron el golpe (parry común: Recoil 0.32 s y 0.4 m atrás). La mano de la espada sale despedida arriba y
     AFUERA a la derecha con la hoja apuntando atrás, el pecho se abre y se tuerce, la mano libre se abre: desde arriba
     la silueta se abre en una X (f2-f4); salta para atrás con los dos pies y en f9 (el corte) ya está en guardia."""
+    # al trastabillar la hoja ya vuelve adelante con el codo abajo y la mano libre sigue al hombro que gira: con la hoja
+    # parada y la mano lejos, el brazo de la espada cambiaba de solución en el último cuadro antes del corte (50° en uno)
     STUMBLE = dict(PARRY_KNOCK, hips=(0.0, 0.08, -0.11), hips_rot=(-2.0, 2.0, 24.0), chest=(-4.0, -2.0, 4.0), head=(2.0, 0.0, 2.0),
-                   grip=(-0.30, -0.12, 0.98), blade=(-0.20, -0.30, 0.93), hand_l=(0.24, -0.10, 0.92), clav_r=(0, 0, 3))
+                   grip=(-0.26, -0.20, 0.92), blade=(0.0, -0.6, 0.8), elbow_r=(-0.85, 0.3, -0.3),
+                   hand_l=(0.40, 0.10, 0.94), clav_r=(0, 0, 3))
     b = PARRY_BACK
     feet = {"l": [FL(0), FL(4, -b, ease="out", lift=0.06)],
             "r": [FR(0), FR(1), FR(6, -b, pitch=-8.0, ease="out", lift=0.06), FR(8, -b)]}
@@ -455,7 +474,7 @@ def parried_perfect():
                  chest=(-20.0, -8.0, 18.0), head=(22.0, 0.0, 16.0), grip=(-0.46, 0.12, 1.26), blade=(-0.44, 0.83, 0.35),
                  clav_r=(0, 0, 14), hand_l=(0.30, 0.14, 0.92))
     STUMBLE = dict(KNOCK, hips=(0.0, 0.10, -0.13), hips_rot=(-4.0, 3.0, 26.0), spine=(-4.0, 0.0, 4.0), chest=(-8.0, -3.0, 10.0),
-                   head=(8.0, 0.0, 8.0), grip=(-0.38, 0.0, 1.08), blade=(-0.40, 0.30, 0.86), hand_l=(0.34, 0.04, 0.94), clav_r=(0, 0, 4))
+                   head=(8.0, 0.0, 8.0), grip=(-0.38, 0.0, 1.08), blade=(-0.40, 0.30, 0.86), hand_l=(0.32, 0.05, 0.88), clav_r=(0, 0, 4))
     b = PERFECT_BACK
     feet = {"l": [FL(0), FL(4, -b + 0.14, ease="out", lift=0.10), FL(6, -b + 0.14), FL(11, -b, lift=0.04)],
             "r": [FR(0), FR(6, -b + 0.02, pitch=-8.0, ease="out", lift=0.10), FR(9, -b)]}
@@ -526,10 +545,10 @@ def death():
     slide = [-0.8 * math.sin(min(1.0, (f / T.FPS) * 1.8) * math.pi * 0.5) for f in range(n + 1)]
     D0 = P(hips=(0.0, 0.10, -0.08), hips_rot=(-14.0, 0.0, 22.0), chest=(-16.0, 0.0, 8.0), head=(20.0, 0.0, 8.0),
            grip=(-0.36, 0.0, 0.92), blade=(-0.5, 0.3, 0.8), hand_l=(0.36, 0.06, 0.96), hand_l_dir=(0.6, 0.0, 0.8),
-           hand_l_palm=(0.0, -1.0, 0.0), elbow_r=(-0.9, 0.2, 0.0), elbow_l=(0.9, 0.2, 0.0), fist_l=0.0)
+           hand_l_palm=(0.8, 0.0, -0.6), elbow_r=(-0.9, 0.2, 0.0), elbow_l=(0.9, 0.2, 0.0), fist_l=0.0)
     KNEES = P(hips=(0.0, 0.10, -0.335), hips_rot=(-4.0, 0.0, 6.0), spine=(-2.0, 0.0, 0.0), chest=(-6.0, 0.0, 0.0), head=(16.0, 0.0, 0.0),
               knee_r=(0.0, -1.0, -0.2), knee_l=(0.0, -1.0, -0.2),
-              grip=(-0.22, 0.02, 0.50), blade=(-0.45, -0.80, -0.40), edge=(-0.9, 0.45, 0.0), elbow_r=(-0.8, 0.4, 0.0),
+              grip=(-0.22, 0.02, 0.50), blade=(-0.45, -0.80, -0.40), edge=(0.59, 0.07, -0.80), elbow_r=(-0.8, 0.4, 0.0),
               hand_l=(0.26, -0.04, 0.44), hand_l_dir=(0.1, -0.2, -1.0), hand_l_palm=(-1.0, 0.0, 0.0), elbow_l=(0.8, 0.4, 0.0))
     DOWN = dict(KNEES, hips=(0.0, 0.0, -0.345), hips_rot=(70.0, 0.0, 6.0), spine=(14.0, 0.0, 4.0), chest=(6.0, 0.0, 0.0),
                 head=(-30.0, 0.0, 30.0),

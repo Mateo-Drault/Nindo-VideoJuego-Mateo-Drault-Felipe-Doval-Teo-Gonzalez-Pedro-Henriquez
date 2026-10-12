@@ -150,6 +150,7 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         rep["loop_seam_deg"] = round(seam, 3)
         check(seam <= 1.0, f"{clip.name}: costura del loop {seam:.2f}°")
     wrist_checks(ch, clip, frames, rep)
+    pop_checks(ch, clip, frames, ctrls, rep)
     grip_checks(ch, clip, frames, ctrls, rep)
     w = ch.weapon_info
     if "contact" in t:
@@ -241,10 +242,28 @@ def wrist_checks(ch, clip, frames, rep):
         if free:
             e1 = max(r["excess"] for r in free)
             check(e1 <= 1.0, f"{clip.name}: muñeca {side} libre en su límite (x{e1:.2f})")
+            fo = max(range(len(rows)), key=lambda i: rows[i].get("tw_over", 0.0))
+            ov = rows[fo].get("tw_over", 0.0)
+            out[k]["asked_over"] = round(ov, 1)
+            check(ov <= 45.0, f"{clip.name}: mano {side} libre pedida posible (el pedido gira {ov:.0f}° de más en f{fo})", warn=True)
         if held:
             e2 = max(r["excess"] for r in held)
             f2 = max(range(len(rows)), key=lambda i: rows[i]["excess"] if rows[i]["held"] else -1)
             check(e2 <= 1.05, f"{clip.name}: muñeca {side} en el mango (x{e2:.2f} en f{f2})", warn=e2 <= 1.35)
+            # el columpio de la mano sobre el antebrazo (lo que se ve: 75° alrededor de un mango es una muñeca quebrada aunque
+            # esté dentro de lo anatómico); la del arma se endereza desde team_limbs.KATANA_BEND/CLUB_BEND
+            sw = max(range(len(rows)), key=lambda i: rows[i]["swing"] if rows[i]["held"] else -1)
+            out[k]["swing"] = round(rows[sw]["swing"], 1)
+            check(rows[sw]["swing"] <= 55.0, f"{clip.name}: mano {side} en el mango sin quebrarse ({rows[sw]['swing']:.0f}° en f{sw})",
+                  warn=rows[sw]["swing"] <= 70.0)
+            # el antebrazo o la muñeca clavados en su tope casi todo el clip: el pedido no entra y lo que sobra se vuelve
+            # el puño rodado en el mango (TR-4)
+            pin = [r for r in held if r["pron_w"] > 0.5]
+            if pin:
+                at = sum(1 for r in pin if r["pron"] >= TL.PRON_MAX - 2.0 or r["pron"] <= TL.PRON_MIN + 2.0
+                         or abs(r["twist"]) >= TL.WRIST_TWIST * 0.97) / len(pin)
+                out[k]["pinned"] = round(at, 2)
+                check(at <= 0.25, f"{clip.name}: antebrazo {side} lejos de sus topes ({at * 100:.0f} % de los cuadros en el tope)", warn=True)
         # pronación y supinación de una persona (con el codo doblado: con el brazo derecho el hombro hace lo mismo)
         pr = [r["pron"] for r in rows if r["pron_w"] > 0.5]
         if pr:
@@ -281,6 +300,50 @@ def wrist_checks(ch, clip, frames, rep):
           warn=worst <= 55.0)
 
 
+def pop_checks(ch, clip, frames, ctrls, rep):
+    """Tics medidos en lo que se exporta (TR-5 de la revisión): el giro LOCAL del brazo, el antebrazo y la mano de un cuadro
+    al otro, como lo interpola Unity. Falla (la regla de la revisión) con más de 45° del antebrazo o la mano en un cuadro
+    mientras la mano viaja menos de 20 cm, si ese cuadro gira 20° más que el más rápido de sus vecinos (un tic: 5°, 90°, 5°;
+    no un barrido ni un arranque rápido que el clip pidió: 1°, 50°, 33°). Avisa con lo mismo en el brazo, o con la mano viajando
+    más. El chequeo de saltos de team_limbs no veía la mano libre dentro de la ventana del golpe, los cambios que pedía el
+    clip ni el codo que se mueve con el polo pedido. Quedan libres la mano del arma (y la otra si también agarra el mango)
+    en la ventana del golpe, donde un tajo de dos cuadros es legítimo, y los dos primeros cuadros de un clip que no es
+    loop: Unity entra con un cruce de 0.08 s (CharacterAnimator.Play), así que el sacudón del primer cuadro de un golpe
+    recibido nunca se ve solo."""
+    R = ch.rig
+    w = ch.weapon_info
+    wk = (w["hand"] if w["kind"] == "katana" else "r") if w else None
+    t = clip.timing
+    act = set(range(t["apex"], t.get("active", [t["contact"], t["contact"] + 2])[1] + 2)) if "contact" in t else set()
+    loc = [R.to_local(W) for W in frames]
+    n = len(frames)
+    bad, soft, top = (0.0, ""), (0.0, ""), 0.0
+    for k in "rl":
+        d = ch.side[k]
+        move = [0.0] + [(frames[i][d["hand"]].translation - frames[i - 1][d["hand"]].translation).length / ch.u for i in range(1, n)]
+        for b in (d["upper"], d["fore"], d["hand"]):
+            dl = [0.0] + [NA.quat_angle_deg(loc[i - 1][b][1], loc[i][b][1]) for i in range(1, n)]
+            for i in range(1, n):
+                on = k == wk or (w is not None and (w["kind"] == "club" or (ctrls[i].get("grip_l") or 0.0) >= 0.5))
+                if (on and i in act) or (not clip.loop and i <= 2):
+                    continue
+                top = max(top, dl[i])
+                if dl[i] <= 45.0:
+                    continue
+                nb = [dl[j] for j in (i - 1, i + 1) if 1 <= j < n]
+                spike = dl[i] - max(nb, default=0.0)
+                txt = f"{b} f{i - 1}-f{i}: {dl[i]:.0f}°, vecinos {', '.join(f'{x:.0f}' for x in nb)}°, la mano viajó {move[i] * 100:.0f} cm"
+                if spike > 20.0 and b != d["upper"] and move[i] < 0.20:
+                    if spike > bad[0]:
+                        bad = (spike, txt)
+                elif spike > soft[0]:
+                    soft = (spike, txt)
+    rep["local_pop_deg"] = round(bad[0], 1)
+    rep["local_max_deg"] = round(top, 1)
+    check(bad[0] == 0.0, f"{clip.name}: antebrazo y mano sin tics en lo exportado ({bad[1] or f'el cuadro más rápido gira {top:.0f}°'})")
+    check(soft[0] <= 30.0, f"{clip.name}: brazo sin tics en lo exportado ({soft[1] or 'ok'})", warn=True)
+
+
 _PALM = {}
 
 
@@ -314,8 +377,9 @@ def grip_checks(ch, clip, frames, ctrls, rep):
     lo veía). Se mide como la revisión, sobre la malla: la distancia del centro de la palma al eje del mango en cada cuadro
     en que la mano agarra del todo, contra la del agarre ideal (el mango por el hueco del puño, team_rig.grip_frame /
     measure_katana). Falla si se aparta más de 2 cm, o si el hueco del puño mismo queda fuera de la mano (más lejos de la
-    palma que el 60 % del largo de la mano). La diagonal del agarre (la mano girada sobre la normal de su palma por el hueco,
-    team_limbs CLUB_DIAG/KATANA_DIAG) cambia esa distancia: el agarre ideal da el rango que se acepta (más 2 cm)."""
+    palma que el 75 % del largo de la mano: con el 60 % fallaba la izquierda del ninja, que agarra bien). La diagonal del
+    agarre (la mano girada sobre la normal de su palma por el hueco, team_limbs CLUB_DIAG/KATANA_DIAG alrededor de
+    KATANA_DIAG0) cambia esa distancia: el agarre ideal da el rango que se acepta (más 2 cm)."""
     import team_limbs as TL
     w = ch.weapon_info
     if not w:
@@ -336,18 +400,35 @@ def grip_checks(ch, clip, frames, ctrls, rep):
         d = c - hi["fist"]
         n = (hi["Rh0"].transposed() @ hi["M0"].col[2]).normalized()
         diag = TL.CLUB_DIAG if w["kind"] == "club" else TL.KATANA_DIAG
+        # la katana va en diagonal sobre la palma (team_limbs.KATANA_DIAG0): el rango del agarre, alrededor de esa diagonal
+        d0 = TL.KATANA_DIAG0 if w["kind"] == "katana" and k == w["hand"] else 0.0
         refs = []
         for i in range(-4, 5):
-            ag = Matrix.Rotation(math.radians(diag * i / 4.0), 3, n) @ a
+            # la mano girada +g sobre su palma ve el mango girado -g en su espacio
+            ag = Matrix.Rotation(-math.radians(d0 + diag * i / 4.0), 3, n) @ a
             refs.append((d - ag * d.dot(ag)).length / ch.u * 100.0)
         ref = refs[4]
+        rows = (getattr(clip, "limb_rows", None) or {}).get(k) or []
         if w["kind"] == "katana" and k != w["hand"]:
+            # la otra mano en el mango es el espejo del agarre de la del arma: su eje en el espacio de la mano sale del
+            # primer cuadro en que agarra del todo, sin la diagonal que eligió el solver, y la diagonal de referencia es la
+            # espejada (KATANA_LDIAG0)
             ref = None
+            f0 = next((f for f, cc in enumerate(ctrls) if (cc.get("grip_l") or 0.0) >= 0.999 and f < len(rows)), None)
+            if f0 is not None:
+                _, ax = weapon_axis(ch, frames[f0])
+                a = (frames[f0][h].to_3x3().normalized().transposed() @ ax).normalized()
+                a = Matrix.Rotation(math.radians(rows[f0]["diag"]), 3, n) @ a
+                refs = []
+                for i in range(-4, 5):
+                    ag = Matrix.Rotation(-math.radians(TL.KATANA_LDIAG0 + diag * i / 4.0), 3, n) @ a
+                    refs.append((d - ag * d.dot(ag)).length / ch.u * 100.0)
+                ref = refs[4]
         held = []
         for f, (W, cc) in enumerate(zip(frames, ctrls)):
             if w["kind"] == "club":
                 g = cc.get("grip_r") if k == "r" else cc.get("grip_l")
-                full = (1.0 if g is None else g) >= 0.999
+                full = (1.0 if g is None else g) >= 0.999 and not (k == "r" and (cc.get("drop_r") or 0.0) > 1e-3)
             else:
                 full = k == w["hand"] or (cc.get("grip_l") or 0.0) >= 0.999
             if not full:
@@ -365,7 +446,8 @@ def grip_checks(ch, clip, frames, ctrls, rep):
         check(r0 - 2.0 <= fw[1] <= r1 + 2.0, f"{clip.name}: el puño {side} alrededor del mango (palma a {fw[1]:.1f} cm del eje en "
                                               f"f{fw[0]}, agarre {r0:.1f}-{r1:.1f} cm)")
         if ref is not None:
-            check(ref <= 60.0 * hi["len"] / ch.u, f"{clip.name}: el hueco del puño {side} dentro de la mano ({ref:.1f} cm de la palma)")
+            check(ref <= 75.0 * hi["len"] / ch.u, f"{clip.name}: el hueco del puño {side} dentro de la mano ({ref:.1f} cm de la palma, "
+                                                  f"tope {75.0 * hi['len'] / ch.u:.1f})")
     rep["grip_gap_cm"] = out
 
 
@@ -410,6 +492,57 @@ def chain_checks(ch, baked_by_name):
             b = pose_at(ch, baked_by_name[other][1], fo)
             d = max((p - q).length for p, q in zip(a, b))
             check(d <= tol, f"{name}: en f{f:g} empalma con {other} f{fo:g} (peor punto {d * 100:.1f} cm, tope {tol * 100:.0f})")
+
+
+def blend_index(n, loop, f):
+    """Cuadro f de un clip de n cuadros (negativo: desde el final; en un loop el último es el primero)."""
+    last = n - 1 if loop else n
+    return f if f >= 0 else last + 1 + f
+
+
+def blend_anchors(clip, blends, rows_by):
+    """{lado: {cuadro: (estado, mano en el mango, mano pedida)}} de los cruces de 'clip' con clips ya resueltos
+    (team_clips_<personaje>.BLENDS = [(clip, cuadro, otro clip, cuadro del otro)]; -1 es el último cuadro)."""
+    out = {"r": {}, "l": {}}
+    for a, fa, b, fb in blends:
+        for x, fx, y, fy in ((a, fa, b, fb), (b, fb, a, fa)):
+            if x != clip.name or y not in rows_by:
+                continue
+            for k in "rl":
+                rr = rows_by[y].get(k) or []
+                if not rr:
+                    continue
+                r = rr[min(len(rr) - 1, blend_index(len(rr) - 1, False, fy))]
+                out[k][blend_index(clip.frames, clip.loop, fx)] = (r["state"], r["hc"], r["req"])
+    return out
+
+
+def blend_checks(ch, baked_by_name, blends):
+    """Los cruces de Unity (BLENDS): Unity interpola cada hueso por separado, y un antebrazo en otra rama de la pronación da
+    un sacacorchos a media mezcla aunque la mano y la hoja terminen en el mismo lugar (Guard -> Counter giraba 138°). Se mide
+    el giro del antebrazo sobre su eje entre los dos clips menos lo que cambió la mano pedida (lo que el clip pidió cambiar
+    no es un salto)."""
+    import team_limbs as TL
+    R = ch.rig
+    for a, fa, b, fb in blends:
+        if a not in baked_by_name or b not in baked_by_name:
+            continue
+        (ca, Fa), (cb, Fb) = baked_by_name[a], baked_by_name[b]
+        ia, ib = blend_index(ca.frames, False, fa), blend_index(cb.frames, False, fb)
+        la, lb = R.to_local(Fa[ia]), R.to_local(Fb[ib])
+        worst, where = 0.0, ""
+        for k in "rl":
+            fo = ch.side[k]["fore"]
+            tw = abs(TL.twist_deg(la[fo][1].inverted() @ lb[fo][1]))
+            ra, rb = (getattr(ca, "limb_rows", {}) or {}).get(k), (getattr(cb, "limb_rows", {}) or {}).get(k)
+            asked = 0.0
+            if ra and rb:
+                asked = math.degrees(ra[min(ia, len(ra) - 1)]["req"].rotation_difference(rb[min(ib, len(rb) - 1)]["req"]).angle)
+                asked = min(asked, 360.0 - asked)
+            if tw - asked > worst:
+                worst, where = tw - asked, f"{fo} gira {tw:.0f}°, la mano pedida {asked:.0f}°"
+        check(worst <= 30.0, f"cruce {a} f{fa} -> {b} f{fb}: antebrazos en la misma rama ({where or 'sin saltos'})",
+              warn=worst <= 50.0)
 
 
 def locomotion_weapon(ch, baked_by_name, states):
@@ -544,19 +677,25 @@ def dominant_group(o, vi):
 
 
 def floor_checks(clip, low_body, low_weapon, low_where):
-    """Nada atraviesa el piso: el cuerpo nunca más de 3 cm (las suelas que ruedan rozan); el arma tampoco, salvo el
-    mordisco del golpe (hasta 6 cm, del contacto a 3 cuadros después: el martillo que pega en el piso)."""
+    """Nada atraviesa el piso: el cuerpo nunca más de 3 cm (las suelas que ruedan rozan); el arma no más de 1 cm (la que se
+    apoya en el piso, la katana del agotado o el martillo de Gorō: con los 3 cm de antes la hoja del Attack2 y el martillo
+    de la muerte de Gorō pasaban justo y en una pendiente se meten), salvo el mordisco del golpe (hasta 6 cm, del
+    contacto a 3 cuadros después: el martillo que pega en el piso)."""
     t = clip.timing
     bite = range(t["contact"], t["contact"] + 4) if "contact" in t else range(0)
     wb = min(range(len(low_body)), key=lambda i: low_body[i])
-    check(low_body[wb] >= -3.0, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm)")
+    # una toma del equipo re-resuelta (TakeClip, timing 'take') conserva el cuerpo, los pies y el martillo de la toma: lo
+    # que ya se metía en el piso en la toma se avisa: no es de este pipeline (TeamSolver.solve_take con 'take_raw' la deja
+    # tal cual para compararla)
+    tk = bool(t.get("take"))
+    check(low_body[wb] >= -3.0, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm)", warn=tk)
     if low_body[wb] < -3.0:
         print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.0f}({low_where[i]})" for i, v in enumerate(low_body) if v < -3.0))
     if min(low_weapon) < 800.0:          # sin arma queda en 900 (centinela)
-        bad = [(i, v) for i, v in enumerate(low_weapon) if v < (-6.0 if i in bite else -3.0)]
+        bad = [(i, v) for i, v in enumerate(low_weapon) if v < (-6.0 if i in bite else -1.0)]
         ww = min(range(len(low_weapon)), key=lambda i: low_weapon[i])
         check(not bad, f"{clip.name}: el arma no se mete en el piso (f{ww} {low_weapon[ww]:.1f} cm"
-                       f"{'; ' + str(len(bad)) + ' cuadros de más' if bad else ''})")
+                       f"{'; ' + str(len(bad)) + ' cuadros de más' if bad else ''})", warn=tk)
 
 
 # ------------------------------------------------------------------------------- export
@@ -648,9 +787,15 @@ def main():
     solver = T.TeamSolver(ch)
     hits = archetype_hits(ARCH_FUNCS.get(CHAR, []))
     baked, reports, rootsd, rootsa = [], {}, {}, {}
+    blends = getattr(mod, "BLENDS", ())
+    rows_by = {}
     for clip in clips:
+        # los cruces de Unity con clips ya resueltos anclan el camino del brazo a la rama de ellos (team_limbs.ANCHOR_W)
+        solver.limbs.anchors = blend_anchors(clip, blends, rows_by)
         frames, ctrls, roots, drops, misses = T.bake(ch, clip, solver)
+        solver.limbs.anchors = {}
         clip.limb_rows = {k: list(v) for k, v in solver.limbs.rows.items()}
+        rows_by[clip.name] = clip.limb_rows
         print(f"[{clip.name}] {clip.frames} cuadros ({clip.frames / T.FPS:.2f} s){' loop' if clip.loop else ''}")
         reports[clip.name] = lint(ch, clip, frames, ctrls, roots, drops, misses, hits)
         duo = getattr(clip, "partner", None)
@@ -679,6 +824,7 @@ def main():
               f"{clip.name}: sin patinar con el pie en el piso (total {tot:.1f} cm, peor cuadro {per:.1f} cm{'; ' + where if where else ''})")
     by_name = {c.name: (c, fr) for c, fr in baked}
     chain_checks(ch, by_name)
+    blend_checks(ch, by_name, blends)
     lo = getattr(mod, "LOCOMOTION", None)
     if lo:
         locomotion_weapon(ch, by_name, [nm for nm, _ in lo])

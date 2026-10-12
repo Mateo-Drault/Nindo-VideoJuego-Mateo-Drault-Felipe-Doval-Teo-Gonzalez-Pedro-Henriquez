@@ -986,7 +986,9 @@ CHAR_SWAPS = {
               # la bandana brilla apenas por sí sola: es mágica y es lo que identifica a Kaito de noche
               "AmarilloBandana": (0.25, (0.3, 0.2, 0.03), False)},
     "ninja": {"Metal": (0.6, None, False), "Glint": (0.7, None, False), "Plateado": (0.45, None, False),
-              "OjosNinja": (0.3, (0.3, 0.36, 0.46), False)},
+              "OjosNinja": (0.3, (0.3, 0.36, 0.46), False),
+              # el lomo de la hoja (export_ninja): acero pavonado, menos brillo que la cara clara para que se lea la raya
+              "Lomo": (0.35, None, False)},
     "sumo": {"Pelo": (0.4, None, False), "Pollera": (0.15, None, True)},
     "goro": {"RojoOjosMiniJefe": (0.3, (4.0, 0.55, 0.3), False), "Glint": (0.4, None, False), "OroMiniJefe": (0.5, None, False),
              "ArmaduraMiniJefe": (0.1, None, True), "CueroMiniJefe": (0.15, None, True), "MartilloMiniJefe": (0.1, None, True)},

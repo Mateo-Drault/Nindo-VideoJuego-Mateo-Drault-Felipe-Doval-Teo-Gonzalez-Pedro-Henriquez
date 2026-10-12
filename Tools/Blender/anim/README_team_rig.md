@@ -73,6 +73,11 @@ clip = T.TeamClip("Nombre", n, [Key(0, A), Key(12, B, "inout"), Key(n, A, "sine"
 
 ### Canales (claves de cada pose; lo que falta en una clave sale de la vecina)
 
+Ojo con "sale de la vecina": un canal que solo pide una clave vale eso en todo el tramo que llega a ella. Una mano que
+suelta (`drop_r`) o que afloja (`grip_r`) desde una clave tiene que pedir el valor de antes (0 o 1) también en la clave
+anterior; si no, suelta de golpe desde el principio del tramo. Los dedos y la palma de cada mano se interpolan como un
+marco (slerp del giro, `TeamClip.FRAME_PAIRS`); la hoja y el filo, cada uno por su arco (es el tajo autorado).
+
 | canal | qué es |
 |---|---|
 | `hips`, `hips_rot` | cadera: desplazamiento (m) y giro (°) respecto del reposo |
@@ -90,12 +95,22 @@ clip = T.TeamClip("Nombre", n, [Key(0, A), Key(12, B, "inout"), Key(n, A, "sine"
 
 Katana (ninja, mano `weapon_info["hand"]`): `grip` (dónde va el puño), `blade` (hacia dónde va la hoja), `edge`
 (hacia dónde mira el filo), `grip_l` 0..1 (la otra mano va al mango, espejo del agarre, más cerca del pomo).
-La hoja va donde la pide el clip: el hueso `Katana` se anima aparte y el puño rueda sobre el mango.
+La hoja va donde la pide el clip: el hueso `Katana` se anima aparte y el puño rueda sobre el mango. El mango cruza la
+palma en diagonal (`KATANA_DIAG0` = -40°, la izquierda +40°, ±`KATANA_DIAG`): con esa diagonal la guardia queda con la
+muñeca a 16° de recta y el antebrazo neutro. Para que la hoja se lea desde la cámara del juego, en los loops y en los
+avisos el filo va inclinado (`LOOP_EDGE` en team_clips_ninja: 60° de la vertical, la cara clara hacia arriba); un filo
+abajo derecho deja solo el lomo a la vista. Para elegir un filo nuevo conviene recorrer el giro del filo alrededor de la
+hoja (un cuadro suelto, `limbs.begin("free")`) y mirar costo, pronación y cuánto mira la cara hacia arriba.
 
 Martillo (Gorō): `grip` (la derecha), `haft` (eje del mango hacia la cabeza), `face` (hacia dónde mira la cara de
 golpe), `grip_l` 0..1 y `slide_l`/`slide_r` (corren las manos por el mango, m), `grip_r` < 1 (la derecha afloja para
-cambiar de agarre: se endereza sin llevarse el martillo), `grip_flip` / `grip_flip_l` (meñique hacia la cabeza, como
-un bastón).
+cambiar de agarre: se endereza sin llevarse el martillo; el límite de la muñeca pasa de `CLUB_BEND` a 0.99 en
+proporción), `grip_flip` / `grip_flip_l` (meñique hacia la cabeza, como un bastón), `drop_r` 0..1 (la derecha SUELTA el
+mango y va a `hand_r`/`_dir`/`_palm` como mano libre; el martillo queda donde lo ponen `grip`/`haft`/`face`).
+
+Tomas del equipo: `T.TakeClip(ch, "Intro", "Firstinteraction", 0, 77)` re-resuelve una acción del FBX del modelo (el
+cuerpo, los pies y el arma de la toma; los brazos otra vez por team_limbs, `TeamSolver.solve_take`). Es lo que usa la
+presentación de Gorō; sirve para cualquier toma que el juego siga usando tal cual.
 
 ### Lo que hace el solver con las manos (team_limbs.ArmSolver)
 
@@ -107,9 +122,17 @@ un bastón).
   cómoda, sin meter el codo en el tronco. Hornea en dos pasadas: junta las soluciones de cada cuadro y elige el camino
   más barato del clip entero (Viterbi; en un loop cierra sobre sí mismo), repartiendo en rampas de 2 a 6 cuadros los
   cambios de solución que no se pueden evitar.
+* La mano en un mango prefiere el antebrazo cerca de neutro (`HOLD_PRON_C` -15°, `HOLD_PRON_W`) y el codo que gira
+  prefiere bajar a subir (`ELBOW_UP_W`).
 * La mano LIBRE pedida fuera de lo posible se endereza hasta el 85 % del borde (los dedos apuntan un poco distinto de
-  lo pedido). La del arma se endereza hasta el borde llevándose el arma, y eso cuesta por centímetro que se corre la
-  punta o la cabeza (`hold.reach`). La que agarra un mango sin arma propia nunca se endereza: si no entra, falla.
+  lo pedido) y su brazo no se estira más del 95 % (`FREE_REACH`: con el codo recto el giro del antebrazo no está
+  definido). La del arma se endereza desde 3/4 del borde (`KATANA_BEND` 0.75, `CLUB_BEND` 0.8: 56° de flexión como
+  mucho) llevándose el arma, y eso cuesta por centímetro que se corre la punta o la cabeza (`hold.reach`). La que agarra
+  un mango sin arma propia nunca se endereza: si no entra, falla.
+* Cruces del Animator: `team_clips_<personaje>.BLENDS = [(clip, cuadro, otro, cuadro)]` (-1 = el último). El clip que
+  se hornea después ancla ahí sus brazos a la rama del otro (`ANCHOR_W`): sin eso Guard y Counter quedaban en ramas
+  opuestas de la pronación y la mezcla de Unity daba un sacacorchos de 138°. Un clip nuevo que arranca o termina en la
+  guardia va en BLENDS.
 * Pedir la mano: la palma (`hand_k_palm`) y los dedos (`hand_k_dir`) en el marco de autoría, como se ven en el
   personaje. Si un pedido no entra, el log dice `muñeca ... libre en su límite (xN)` con el exceso ANTES de enderezar.
 
@@ -122,6 +145,12 @@ quieta en la pausa del aviso (< 2.5 m/s) y más rápida en el golpe; embestida q
 `chain` (Parried -> Attack1...); el arma en el blend de locomoción. Muñecas: sin matrices espejadas, exceso <= 1 (en el
 mango: aviso hasta 1.35), giro en la muñeca, pronación dentro de lo humano, el arma corrida <= 12° en el aviso y el
 golpe, y saltos del codo / antebrazo de un cuadro al otro (<= 35° más de lo que giró la mano pedida; aviso hasta 55°).
+Además: la mano en el mango sin quebrarse (columpio <= 55°, falla desde 70°); el antebrazo en su tope más del 25 % de
+los cuadros (aviso); la mano libre pedida con un giro que no entra (aviso, con el cuadro); tics en lo EXPORTADO (el giro
+local del antebrazo o la mano > 45° en un cuadro con la mano viajando < 20 cm y 20° más que el cuadro vecino más rápido:
+falla; lo mismo en el brazo, aviso; quedan libres la mano del arma en el golpe y los 2 primeros cuadros, que Unity cruza
+en 0.08 s); el puño alrededor del mango (la palma a la distancia del agarre ideal ± 2 cm, `grip_gap_cm`); los cruces de
+`BLENDS` (el antebrazo gira <= 30° más que la mano pedida); el arma no se mete en el piso más de 1 cm fuera del golpe.
 
 ## Dos personajes en el mismo FBX (el abuelo y el ninja del secuestro)
 
@@ -137,7 +166,12 @@ clip.partner = T.TeamClip("Kidnap/ninja", n, keys_del_ninja, feet={...})   # mis
 * `bake` resuelve los dos en la misma pose (el abuelo primero); `build_team_anims` corre los mismos chequeos sobre el
   ninja (`reports[clip]["partner"]`) y las hojas de `--renders` lo muestran. `travel` es del transform del NPC: en el
   marco del ninja el piso corre para el otro lado (`ch.partner.travel_axis`), los pies de los dos quedan clavados.
-* Sin `clip.partner`, el ninja queda en la pose fija del cuadro 2 de la toma `Kidnap` del equipo (`kid_pose`).
+* Sin `clip.partner`, el ninja queda en la pose fija del cuadro 2 de la toma `Kidnap` del equipo (`kid_pose`, con las
+  muñecas enderezadas). Está PARADO, con las manos a los costados (no agazapado).
+* Contrato para quien autore `Kidnap`/`Dragged`: el cuadro 0 de `clip.partner` tiene que ser `kid_pose` (el NPC
+  'kidnap' viene del Idle con esa pose y Unity cruza 0.08 s): hoy, de la pose fija a la toma del equipo, la muñeca
+  derecha del ninja salta 13°. La toma `Kidnap` del equipo todavía tiene las muñecas dobladas (78-113°) en los dos
+  esqueletos: se reemplaza con esos clips (o, mientras tanto, con un `TakeClip` de la toma con `clip.partner`).
 * Las mallas: `Cuerpo` (abuelo) y `Cube` (ninja); el NPC `grandpa` oculta la del ninja.
 
 ## Lo que hay que mirar al autorar
@@ -146,5 +180,9 @@ clip.partner = T.TeamClip("Kidnap/ninja", n, keys_del_ninja, feet={...})   # mis
 * Un `WARN ... muñeca` o `codo y antebrazo sin saltos` dice el cuadro: casi siempre es un pedido de mano que la muñeca
   no puede cumplir (la palma al revés, la hoja paralela al antebrazo). Mover `grip`/`hand_k` o la palma unos
   centímetros suele resolverlo sin cambiar la silueta.
+* Un tic que el chequeo marca casi siempre es de autoría: un polo de codo casi paralelo al brazo (el codo cambia de
+  lado cuando la mano lo cruza), una mano libre pedida más allá del alcance (el brazo recto y, al doblarse, el antebrazo
+  gira de golpe) o una palma que en la clave siguiente queda del otro lado (media vuelta en pocos cuadros). La mano libre
+  que sigue al hombro que gira (en vez de quedarse quieta en el espacio) casi siempre lo arregla.
 * Lo que el log no ve: el pulgar del puño sobre el mango no se cierra sobre él (la malla low poly lo deja arriba) y la
   diagonal del puño elegida por el solver puede leerse como "mano de costado" en primeros planos.

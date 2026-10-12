@@ -96,7 +96,7 @@ CHARS = {
         index_pinky={"r": ("Dedo1.L", "Dedo3.L"), "l": ("Dedo1.R", "Dedo3.R")},
         weapon=None, follow={},
         # el FBX del abuelo trae también al ninja del secuestro (esqueleto '.001'): en los clips nuevos queda
-        # quieto en la pose del primer cuadro del secuestro (agazapado, esperando), que es lo que se ve del
+        # quieto en la pose del cuadro 2 del secuestro (parado, con las manos a los costados), que es lo que se ve del
         # NPC 'kidnap' mientras el abuelo respira antes de la toma del equipo
         # (partner_spec / TeamChar.partner: el mismo esqueleto con '.001', parado 1.3 m adelante del abuelo y mirándolo)
         kidnapper=dict(suffix=".001", take_frame=2, fwd=(0, -1, 0)),
@@ -124,6 +124,8 @@ def partner_spec(spec, kd):
     return out
 
 
+# una toma del equipo re-resuelta (TakeClip): la otra mano agarra el mango si en la toma su puño quedaba a menos de esto (m)
+TAKE_GRIP = 0.10
 # polo del codo cuando el clip no lo pide: atrás, afuera y abajo
 ARM_POLE = {"r": (-0.3, 0.6, -0.4), "l": (0.3, 0.6, -0.4)}
 GRIP_CURL = (62.0, 78.0)          # grados de cada falange al cerrar el puño del todo
@@ -588,7 +590,7 @@ class TeamSolver:
         wrist = stick_pt - Rh @ (hi["fist"] - Vector())     # fist está en el espacio de la mano (origen en la muñeca)
         return compose(wrist, Rh)
 
-    def hold(self, k, axis, pivot, roll, soft, diag, bend=None, reach=1.0, look=0.0, loose=0.0, frame=None):
+    def hold(self, k, axis, pivot, roll, soft, diag, bend=None, reach=1.0, look=0.0, loose=0.0, frame=None, diag0=0.0):
         """Agarre de un mango para team_limbs: la mano puede rodar alrededor de 'axis' por 'pivot' (hasta 'roll' grados,
         con un costo que crece en 'soft') y girar en diagonal alrededor de la normal de su palma. 'bend': si igual no
         entra, la muñeca se endereza hasta ese exceso y el arma la sigue (la katana, el martillo); 'reach' (m, del puño a
@@ -597,16 +599,16 @@ class TeamSolver:
         'loose' (0..1) es la mano que afloja el mango para cambiar de agarre: se endereza sin llevarse el arma. 'frame': el
         giro pedido del arma; con él team_limbs mide los saltos del brazo contra lo que se movió el arma (la referencia
         del agarre de un mango puede girar sola, ver grip_frame) y no contra la mano pedida."""
-        return dict(axis=V(axis).normalized(), pivot=V(pivot), palm=self.limbs.arms[k].n, roll=roll, soft=soft, diag=diag,
+        return dict(axis=V(axis).normalized(), pivot=V(pivot), palm=self.limbs.arms[k].n, roll=roll, soft=soft, diag=diag, diag0=diag0,
                     bend=bend is not None, bend_to=bend or 0.99, reach=reach, look=look, loose=loose,
                     frame=frame.to_quaternion() if frame is not None else None)
 
-    def partial_hold(self, k, axis, H, gl, soft, diag):
+    def partial_hold(self, k, axis, H, gl, soft, diag, diag0=0.0):
         """La otra mano yendo al mango (grip_l entre 0 y 1): rueda alrededor de él por donde quedó el puño, con un giro
         que vuelve a cero a medida que suelta (si no, al soltar el agarre la mano perdía de golpe lo que había rodado y el
         antebrazo daba media vuelta en un cuadro) y, mientras no agarra del todo, puede enderezarse (se acerca al mango)."""
         return self.hold(k, axis, H @ self.ch.hand_info[k]["fist"], 180.0, soft * max(gl, 0.05), diag * gl,
-                         bend=None if gl >= 0.75 else 0.99)
+                         bend=None if gl >= 0.75 else 0.99, diag0=diag0 * gl)
 
     def place_hand(self, pose, k, H, pole_c, hold=None):
         """Brazo y mano con la muñeca posible (team_limbs.ArmSolver). Devuelve cuánto faltó para llegar (m de la
@@ -652,6 +654,8 @@ class TeamSolver:
 
     # ---------------------------------------------------------------- cuadro completo
     def solve(self, pose, c):
+        if c.get("take") is not None:
+            return self.solve_take(pose, c)
         ch, R = self.ch, self.rig
         sp = ch.spec
         g = lambda k, dflt=None: c.get(k) if c.get(k) is not None else dflt
@@ -717,7 +721,7 @@ class TeamSolver:
             Rh = Fk @ w["K"]
             ideal = compose(grip - Rh @ w["grip_local"], Rh)
             hold = self.hold(k, Fk.col[1], grip, TL.KATANA_ROLL, TL.KATANA_SOFT, TL.KATANA_DIAG, bend=TL.KATANA_BEND,
-                             reach=w["length"], look=g("look", 0.0), frame=Fk)
+                             reach=w["length"], look=g("look", 0.0), frame=Fk, diag0=TL.KATANA_DIAG0)
             misses["hand_" + k] = self.place_hand(pose, k, ideal, poles[k], hold)
             self.curl(pose, k, g("fist_" + k, 1.0))
             bent = self.bent
@@ -730,7 +734,7 @@ class TeamSolver:
                 # la otra mano va al mango de la hoja que quedó: espejo del agarre ideal de la del arma
                 Hg = self.katana_left(bent @ ideal)
                 H = compose(H.translation.lerp(Hg.translation, gl), H.to_quaternion().slerp(Hg.to_quaternion(), gl).to_matrix())
-                hold = self.partial_hold(o, rot3(bent) @ Fk.col[1], H, gl, TL.KATANA_SOFT, TL.KATANA_DIAG)
+                hold = self.partial_hold(o, rot3(bent) @ Fk.col[1], H, gl, TL.KATANA_SOFT, TL.KATANA_DIAG, TL.KATANA_LDIAG0)
             misses["hand_" + o] = self.place_hand(pose, o, H, poles[o], hold)
             self.curl(pose, o, g("fist_" + o, 0.0))
         elif w and w["kind"] == "club":
@@ -750,15 +754,31 @@ class TeamSolver:
             # mango sin llevarse el martillo
             gr = max(0.0, min(1.0, g("grip_r", 1.0)))
             hold = self.hold("r", haft, grip_r, TL.CLUB_ROLL, TL.CLUB_SOFT, TL.CLUB_DIAG,
-                             bend=TL.CLUB_BEND if gr >= 0.999 else 0.99, reach=w["head_center"] - t_r, look=g("look", 0.0),
+                             bend=TL.CLUB_BEND + (0.99 - TL.CLUB_BEND) * (1.0 - gr), reach=w["head_center"] - t_r, look=g("look", 0.0),
                              loose=1.0 - gr, frame=RB)
             flip = g("grip_flip", 0.0) > 0.5
-            misses["hand_r"] = self.place_hand(pose, "r", self.grip_frame("r", haft, sh_r, grip_r, flip), poles["r"], hold)
-            self.curl(pose, "r", g("fist_r", 1.0))
-            bent = self.bent
-            if gr < 0.999:
-                bent = compose(bent.translation * gr, Quaternion().slerp(bent.to_quaternion(), gr).to_matrix())
-            Bw = bent @ compose(base, RB)
+            dr = max(0.0, min(1.0, g("drop_r", 0.0)))
+            if dr > 1e-3:
+                # 'drop_r' 0..1: la derecha SUELTA el mango y va a donde la piden hand_r/_dir/_palm (mano libre); el martillo
+                # queda donde lo ponen grip/haft/face, sin mano (BaseM se anima aparte de Mano.R). Gorō al desplomarse: con
+                # el puño todavía en el mango, el hombro que cae pasaba a 5 cm de la mano y el brazo se plegaba del todo
+                # (mientras suelta, rueda sobre el puño como la otra mano que va al mango: así arranca del agarre que tenía y
+                # no del ideal, que con la mano enorme de Gorō estaba a 36 cm)
+                Hg = self.grip_frame("r", haft, sh_r, grip_r, flip)
+                Hf = self.free_hand(pose, c, "r", poles["r"])
+                H = compose(Hg.translation.lerp(Hf.translation, dr), Hg.to_quaternion().slerp(Hf.to_quaternion(), dr).to_matrix())
+                hold = self.partial_hold("r", haft, H, 1.0 - dr, TL.CLUB_SOFT, TL.CLUB_DIAG) if dr < 0.999 else None
+                misses["hand_r"] = self.place_hand(pose, "r", H, poles["r"], hold)
+                self.curl(pose, "r", g("fist_r", 1.0))
+                bent = Matrix.Identity(4)
+                Bw = compose(base, RB)
+            else:
+                misses["hand_r"] = self.place_hand(pose, "r", self.grip_frame("r", haft, sh_r, grip_r, flip), poles["r"], hold)
+                self.curl(pose, "r", g("fist_r", 1.0))
+                bent = self.bent
+                if gr < 0.999:
+                    bent = compose(bent.translation * gr, Quaternion().slerp(bent.to_quaternion(), gr).to_matrix())
+                Bw = bent @ compose(base, RB)
             pose.place(sp["weapon"]["bone"], Bw)
             base, haft = Bw.translation.copy(), (rot3(bent) @ haft).normalized()
             self.club = (base, haft, (rot3(bent) @ face).normalized())
@@ -797,6 +817,70 @@ class TeamSolver:
             pose.place(b, M)
         for bn, r in sorted((g("extra", {}) or {}).items(), key=lambda kv: R.names.index(kv[0])):
             pose.delta(bn, ch.Q(V(r)))
+        self.misses = misses
+        return misses
+
+    def solve_take(self, pose, c):
+        """Un cuadro de una toma del equipo (TakeClip) con las muñecas arregladas: todo el cuerpo queda como en la toma y
+        solo se vuelven a resolver los brazos con team_limbs (la mano donde la puso la toma, el codo hacia donde estaba).
+        La mano que sostiene el martillo rueda en su mango y, si igual no entra, se endereza llevándose el martillo, como en
+        los clips nuevos; la otra agarra el mango si en la toma lo agarraba (a menos de TAKE_GRIP del eje) o queda libre.
+        Los huesos que cuelgan del brazo (dedos) conservan lo local de la toma."""
+        ch, R = self.ch, self.rig
+        take = c["take"]
+        for n in R.names:
+            pose.place(n, take[n])
+        if c.get("take_raw"):
+            # la toma tal cual (para comparar con lo re-resuelto)
+            self.hip_drop, self.misses = 0.0, {"legs": 0.0, "hand_r": 0.0, "hand_l": 0.0}
+            return self.misses
+        w = ch.weapon_info
+        wb = ch.spec["weapon"]["bone"] if w else None
+        misses = {"legs": 0.0}
+        placed = set()
+        bent = Matrix.Identity(4)
+
+        def pole_of(k):
+            d = ch.side[k]
+            S, E, Hh = (take[d[r]].translation for r in ("upper", "fore", "hand"))
+            ax = Hh - S
+            q = (E - S) - ax * ((E - S).dot(ax) / max(ax.length_squared, 1e-12))
+            return tuple(ch.Dc(q if q.length > 1e-6 else (E - S)))
+
+        for k in "rl":
+            d = ch.side[k]
+            H = take[d["hand"]]
+            hold = None
+            if w and w["kind"] == "club":
+                B = bent @ take[wb]
+                base, haft = B.translation, rot3(B).col[1].normalized()
+                fist = (bent @ H) @ ch.hand_info[k]["fist"]
+                t = (fist - base).dot(haft)
+                gap = (base + haft * t - fist).length / ch.u
+                if k == "r":
+                    hold = self.hold("r", haft, base + haft * t, TL.CLUB_ROLL, TL.CLUB_SOFT, TL.CLUB_DIAG, bend=TL.CLUB_BEND,
+                                     reach=max(0.2, w["head_center"] - t / ch.u), frame=rot3(B))
+                elif gap < TAKE_GRIP:
+                    # el puño de la toma se cierra sobre el mango (la IK del equipo dejaba la palma atravesada por el palo)
+                    sh = (pose.get(d["clav"]) @ R.rel[d["upper"]]).translation
+                    H = self.grip_frame("l", haft, sh, base + haft * t)
+                    hold = self.partial_hold("l", haft, H, 1.0, TL.CLUB_SOFT, TL.CLUB_DIAG)
+                # lo que agarra cada mano, para los chequeos del puño en el mango
+                c["grip_" + k] = 1.0 if hold is not None else 0.0
+            misses["hand_" + k] = self.place_hand(pose, k, H, pole_of(k), hold)
+            placed |= {d["upper"], d["fore"], d["hand"]}
+            if w and w["kind"] == "club" and k == "r":
+                bent = self.bent
+                pose.place(wb, bent @ take[wb])
+                placed.add(wb)
+        # lo que cuelga de los brazos sigue a su padre con lo local de la toma
+        for k in "rl":
+            for b in R.subtree(ch.side[k]["upper"]):
+                if b in placed:
+                    continue
+                p = R.parent[b]
+                pose.place(b, pose.get(p) @ take[p].inverted() @ take[b])
+        self.hip_drop = 0.0
         self.misses = misses
         return misses
 
@@ -1009,7 +1093,7 @@ class TeamClip(NA.Clip):
         self.partner = None
 
     # canales propios de los personajes del equipo que no son posiciones (nindo_anim no los conoce)
-    SCALARS = ("fist_r", "fist_l", "grip_l", "grip_r", "grip_flip", "grip_flip_l", "slide_r", "slide_l", "auto_drop", "look")
+    SCALARS = ("fist_r", "fist_l", "grip_l", "grip_r", "grip_flip", "grip_flip_l", "slide_r", "slide_l", "auto_drop", "look", "drop_r")
     DIRS = ("hand_r_palm", "hand_l_palm", "haft", "face")
 
     def sample(self, f, channel):
@@ -1029,8 +1113,42 @@ class TeamClip(NA.Clip):
             return va + (vb - va) * s
         return NA.slerp_dir(va, vb, s)
 
+    # pares (dirección, normal) que se interpolan como un marco: los dedos y la palma de cada mano. La hoja y el filo no:
+    # su camino entre claves es el arco del tajo que autoró el clip (como marco, el tajo cambiaba de recorrido)
+    FRAME_PAIRS = (("hand_r_dir", "hand_r_palm"), ("hand_l_dir", "hand_l_palm"))
+
+    def frame_pair(self, f, dn, pn):
+        """Dos direcciones de un mismo marco (los dedos y la palma, la hoja y el filo) entre dos claves interpoladas como
+        UN marco (slerp del giro), no cada una por su arco: entre una mano que apunta atrás y otra que apunta adelante (la
+        Thrust de vuelta a la guardia) los dos arcos sueltos dejaban la palma casi paralela a los dedos a mitad de camino y
+        la mano pedida daba media vuelta en un cuadro. None si alguna de las dos claves no pide las dos."""
+        ks = self.keys
+        f = max(0.0, min(float(self.frames), f))
+        i = self._seg(f)
+        a, b = ks[i], ks[i + 1]
+        fr = []
+        for key in (a, b):
+            d, p = key.ctrl.get(dn), key.ctrl.get(pn)
+            if d is None or p is None:
+                return None
+            d, p = V(d).normalized(), V(p).normalized()
+            p = p - d * p.dot(d)
+            if p.length < 0.2:
+                return None
+            p.normalize()
+            fr.append(Matrix((d, p, d.cross(p))).transposed().to_quaternion())
+        s = NA.ease(b.ease_ch.get(dn, b.ease), (f - a.frame) / max(1e-6, b.frame - a.frame))
+        if fr[0].dot(fr[1]) < 0.0:
+            fr[1].negate()
+        M = fr[0].slerp(fr[1], s).to_matrix()
+        return tuple(M.col[0]), tuple(M.col[1])
+
     def controls(self, f):
         c = super().controls(f)
+        for dn, pn in self.FRAME_PAIRS:
+            fp = self.frame_pair(f, dn, pn)
+            if fp is not None:
+                c[dn], c[pn] = fp
         for k, track in self.feet.items():
             c["foot_" + k], c["foot_%s_rot" % k] = sample_feet(self.ch, k, track, f)
         if self.travel_table is not None:
@@ -1048,6 +1166,47 @@ class TeamClip(NA.Clip):
                 if c.get(k) is not None:
                     c[k] = V(c[k]) + tr
         return c
+
+
+class TakeClip(TeamClip):
+    """Una toma del equipo (las acciones que trae el FBX del modelo) re-resuelta con las muñecas arregladas
+    (TeamSolver.solve_take): el cuerpo, los pies y el arma quedan como en la toma, los brazos los vuelve a poner
+    team_limbs. Para las tomas que el juego todavía usa tal cual (la presentación de Gorō, 'Intro'): en la toma la
+    muñeca de la mano del martillo llegaba a 96° (rest 12°) y se ve en el primer plano de la cámara del jefe.
+    'action': nombre de la acción; 'first'/'last': cuadros de la toma (los mismos que el controller del equipo)."""
+
+    def __init__(self, ch, name, action, first, last, notes="", timing=None):
+        n = last - first
+        super().__init__(name, n, [NA.Key(0, {}), NA.Key(n, {})], loop=False, timing=timing or {}, notes=notes, tremble=0.0)
+        self.take = sample_take(ch, action, first, last)
+
+    def controls(self, f):
+        i = max(0, min(len(self.take) - 1, int(round(f))))
+        return {"take": self.take[i], "travel": 0.0}
+
+
+def sample_take(ch, action, first, last):
+    """{hueso: matriz en espacio de la armadura} de cada cuadro de una acción del FBX (de 'first' a 'last' de la toma,
+    como los cuenta el controller: el cuadro 0 es el primero de la acción). Deja la armadura en reposo."""
+    import charlib as C
+    act = next(a for a in ch.take_actions if a.name.endswith(action))
+    arm = ch.arm
+    C.use_action(arm, act)
+    scn = bpy.context.scene
+    f0 = int(round(act.frame_range[0]))
+    out = []
+    for f in range(first, last + 1):
+        scn.frame_set(f0 + f)
+        bpy.context.view_layer.update()
+        out.append({pb.name: pb.matrix.copy() for pb in arm.pose.bones})
+    arm.animation_data.action = None
+    for pb in arm.pose.bones:
+        pb.location = (0, 0, 0)
+        pb.rotation_quaternion = (1, 0, 0, 0)
+        pb.rotation_euler = (0, 0, 0)
+        pb.scale = (1, 1, 1)
+    bpy.context.view_layer.update()
+    return out
 
 
 def knock_travel(n, meters, delay=0):

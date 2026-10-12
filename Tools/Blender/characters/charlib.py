@@ -730,7 +730,7 @@ def finish(arm, src, rel, opts, export_kw=None, anim_offset=1.0, poses=None, bin
 
 # ======================================================================= armas
 def katana(geo, origin, axis, edge, flat, handle_len, blade_len, width, thick, sori, m,
-           handle_r=None, guard_r=None, wrap_bands=7, blade_rings=9):
+           handle_r=None, guard_r=None, wrap_bands=7, blade_rings=9, taper=0.28):
     """Katana facetada de ~250-350 triángulos sobre un marco dado (mundo):
        origin = tsuba, axis = hacia la punta, edge = hacia el filo, flat = normal de la cara de la hoja.
        m: dict de materiales {'steel', 'glint', 'wrap', 'skin', 'metal'} (skin = rombos del mango).
@@ -758,15 +758,17 @@ def katana(geo, origin, axis, edge, flat, handle_len, blade_len, width, thick, s
     # habaki: collar de la base de la hoja
     geo.prism(P(0.022, width * 0.05, 0), P(0.075, width * 0.05, 0), width * 0.62, width * 0.58, m["metal"], seg=6, up=F, sy=0.55)
     # hoja: sección de 5 vértices (filo, dos aristas del shinogi, dos del lomo). Con m['spine'] (el ninja) son 7 y el
-    # lomo (mune) va en acero oscuro: una raya fina junto a las caras claras que dice para dónde corta. Solo el lomo:
-    # con sus hombros también oscuros, la hoja vista de canto desde la cámara del juego (la guardia) salía más oscura
+    # lomo (mune) va en acero oscuro con sus dos hombros: una banda de ~1/6 del ancho junto a las caras claras, que desde
+    # la cámara del juego (las guardias llevan la cara de la hoja hacia arriba) es una raya de 1 px al lado de 3-4 px de
+    # acero claro. Solo la cara del lomo (como estaba) medía 0.4 px y no se veía; con hombros más anchos la hoja de la
+    # guardia se veía más oscura que la de antes. 'taper': cuánto se angosta hacia la punta
     spine = m.get("spine")
     blade = []
     for k in range(blade_rings):
         s = k / (blade_rings - 1)
         t = 0.06 + (blade_len - 0.06) * (s * 0.94)
         c = -sori * (s ** 2)                             # el centro se va hacia el lomo
-        w = width * (1.0 - 0.28 * s)
+        w = width * (1.0 - taper * s)
         th = thick * (1.0 - 0.45 * s)
         if spine:
             blade.append([P(t, c + w * 0.5, 0), P(t, c + w * 0.08, th * 0.5), P(t, c - w * 0.34, th * 0.42),
@@ -777,7 +779,7 @@ def katana(geo, origin, axis, edge, flat, handle_len, blade_len, width, thick, s
                           P(t, c - w * 0.5, -th * 0.45), P(t, c + w * 0.08, -th * 0.5)])
     nsec = len(blade[0])
     if spine:
-        face_mat = lambda a, j: m["glint"] if j in (0, 6) else (spine if j == 3 else m["steel"])
+        face_mat = lambda a, j: m["glint"] if j in (0, 6) else (spine if j in (2, 3, 4) else m["steel"])
     else:
         face_mat = lambda a, j: m["glint"] if j in (0, 4) else m["steel"]
     ids = geo.loft(blade, m["steel"], cap0=True, cap1=False, mats=face_mat)
