@@ -252,12 +252,20 @@ luces puntuales con un pool (solo se encienden las más cercanas).
 
 Al final, `World/ZoneCulling` deja de dibujar lo que ninguna cámara prendida ve ni le tira sombra en ese frame
 (celdas de 32 m, `forceRenderingOff`: no toca colliders ni el batching), pausa las partículas del mundo que
-quedan escondidas y duerme por campamento a los enemigos quietos a más de 55 m y fuera de cuadro (un componente
-que maneje a un enemigo lo veta con `Enemy.SleepVeto`). En el editor también cuenta lo que mira la vista Scene.
+quedan escondidas, congela la cascada de Kohan fuera de cuadro (`KohanFalls.SetOffscreen`) y duerme por campamento
+a los enemigos quietos a más de 55 m y fuera de cuadro: sin dibujarse y, los comunes, sin Update ni Animator, todos
+en el mismo frame. Un loop de ambiente (`EnemyAmbient`, en Scripted) marca `Enemy.AmbientIdle` para poder dormirse
+con su campamento; un momento de guion de una sola vez lo prohíbe con `Enemy.AddSleepVeto(dueño)` /
+`RemoveSleepVeto(dueño)`; `SetState` y `ScriptedPlay` lo despiertan en el acto. Kokuyō (arrodillado) y Mizuchi
+(escondido en el lago) esperan en Scripted y no se duermen nunca. En el editor también cuenta lo que mira cada
+vista Scene que se está dibujando (`Nindo.ZoneCulling.IncludeSceneView = false` para medir solo la cámara de juego).
 Para depurar: `Nindo.ZoneCulling.ShowHud = true`, `Debug.Log(Nindo.ZoneCulling.Stats)`,
-`Nindo.ZoneCulling.Benchmark(12f)` (con y sin, en el mismo lugar, sin tope de fps ni vsync mientras mide),
+`Nindo.ZoneCulling.Benchmark()` (30 s alternando con y sin en el mismo lugar, sin tope de fps ni vsync mientras
+mide; en un Development Build, F9 o arrancar con `-zcbench`, y el informe va a `Player.log`),
 `Nindo.ZoneCulling.CheckFrame(carpeta)` (el mismo cuadro dibujado dos veces en el mismo frame, con y sin:
-tiene que dar 0 píxeles distintos) y `Nindo.ZoneCulling.On = false` para verlo todo como antes.
+tiene que dar 0 píxeles distintos; `CheckEvery(intervalo, carpeta)` lo repite jugando y `StopCheck()` da el
+resumen), `Nindo.ZoneCulling.HideBatched = false` (no esconder nada del lote estático, por si eso suma draws de
+sombra) y `Nindo.ZoneCulling.On = false` para verlo todo como antes.
 
 ---
 
