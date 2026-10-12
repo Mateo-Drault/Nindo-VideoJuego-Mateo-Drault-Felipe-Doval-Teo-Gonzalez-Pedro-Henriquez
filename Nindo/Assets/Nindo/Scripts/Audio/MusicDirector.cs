@@ -9,8 +9,9 @@ namespace Nindo
     /// </summary>
     public static partial class MusicPlan
     {
-        /// <summary>Loop: se encadena consigo mismo. Once: intro o transición que desemboca en el loop de su fase (su
-        /// grilla de compases se cuenta desde el final, que es donde cae el compás 0 del loop). Outro: el cierre del tema.</summary>
+        /// <summary>Loop: se encadena consigo mismo. Once: intro o frase de entrada que desemboca en el loop de su fase
+        /// (su grilla de compases se cuenta desde el final, que es donde cae el compás 0 del loop), o un tema que suena
+        /// una vez (el final). Outro: el cierre del tema.</summary>
         public enum ClipKind { Loop, Once, Outro }
 
         public sealed class Clip
@@ -24,22 +25,29 @@ namespace Nindo
                 this.key = key; this.samples = samples; this.rate = rate; this.bar = bar; this.kind = kind;
             }
             public double Seconds => samples / (double)rate;
+            public double BeatSamples => bar / 4 * rate;
         }
 
-        /// <summary>Una fase: el loop, la intro o transición que suena una vez antes (o null), desde qué muestra del
-        /// loop se entra (otra sección del mismo tema) y desde qué muestra de la intro (una transición más corta).</summary>
+        /// <summary>
+        /// Una fase: su loop y la frase de entrada que suena una vez antes (o null). Entrando desde el silencio, la frase
+        /// arranca en 'introEntry'; desde lo que suena, el director elige cuántos tiempos de ella tocar para que 'introHit'
+        /// (lo que la frase anuncia: el compás de la sección o los tambores de Gorō) caiga en un compás. 'cut': fundido de
+        /// lo anterior en s cuando la fase cambia de tono (0: el de siempre). 'outro': su cierre (null: el del tema).
+        /// </summary>
         public sealed class Phase
         {
-            public readonly string clip, intro;
-            public readonly int entry, introEntry;
-            public Phase(string clip, string intro, int entry, int introEntry)
+            public readonly string clip, intro, outro;
+            public readonly int introEntry, introHit;
+            public readonly float cut;
+            public Phase(string clip, string intro, int introEntry, int introHit, float cut, string outro)
             {
-                this.clip = clip; this.intro = intro; this.entry = entry; this.introEntry = introEntry;
+                this.clip = clip; this.intro = intro; this.introEntry = introEntry; this.introHit = introHit;
+                this.cut = cut; this.outro = outro;
             }
         }
 
-        /// <summary>Un tema por fases. Al caer el jefe suena 'outro' (o, sin toma final, el loop se funde 'outroFade' s)
-        /// y, si 'resumeExplore', después vuelve la música de la zona.</summary>
+        /// <summary>Un tema por fases. Al caer el jefe suena el cierre de la fase (o, sin toma final, el loop se funde
+        /// 'outroFade' s) y, si 'resumeExplore', después vuelve la música de la zona.</summary>
         public sealed class Track
         {
             public readonly string key, outro;
@@ -53,6 +61,7 @@ namespace Nindo
             /// <summary>Una fase más alta que las que tiene el tema se queda en la última (pedir la 3 a Gorō no rompe nada).</summary>
             public Phase PhaseAt(int n) => phases[Mathf.Clamp(n, 1, phases.Length) - 1];
             public int Clamp(int n) => Mathf.Clamp(n, 1, phases.Length);
+            public string OutroAt(int n) => PhaseAt(n).outro ?? outro;
         }
 
         static Dictionary<string, Clip> clipMap;
@@ -83,18 +92,20 @@ namespace Nindo
     /// Música de jefe por fases y tema del final, encadenados a la muestra con AudioSource.PlayScheduled sobre el reloj
     /// del DSP. Ningún clip usa AudioSource.loop: cada vuelta se agenda al terminar la anterior con el largo de la tabla,
     /// así la costura es la que se midió al cortar el tema aunque el importador de Unity agregue cola al Vorbis.
-    /// Un cambio de fase espera el próximo compás de lo que suena: la sección nueva entra entera en ese tiempo fuerte y
-    /// lo anterior se apaga en un pulso. Antes de un silencio (barra falsa de Gorō, eclipse de Kokuyō) se apaga y la
-    /// fase siguiente entra apenas se la pide. Lo maneja AudioManager (PlayBossMusic, SetBossMusicPhase, ...).
+    /// Un cambio de fase entra en el próximo tiempo de lo que suena con la frase de entrada de la fase nueva (los compases
+    /// que en el tema llevan a esa sección) y la sección cae entera en un compás de lo que sonaba, de 2 a 5 tiempos
+    /// después; lo anterior baja 10 dB en 30 ms y se apaga en un tiempo. Antes de un silencio (barra falsa de Gorō,
+    /// eclipse de Kokuyō) se apaga, con o sin el golpe final, y la fase siguiente entra apenas se la pide. Lo maneja
+    /// AudioManager (PlayBossMusic, SetBossMusicPhase, ...).
     /// </summary>
     public class MusicDirector : MonoBehaviour
     {
         const int VoiceCount = 6;
         // PlayScheduled necesita agendarse antes de que el DSP llegue (buffers de 256-1024 muestras y el decodificador)
         const double Lead = 0.25;
-        // un cambio pedido se fija recién cuando el compás está a menos de esto: si llega otro antes, gana el último
+        // un cambio pedido se fija recién cuando el tiempo está a menos de esto: si llega otro antes, gana el último
         const double CommitWindow = 0.5;
-        // en un reintento la intro larga (16 s de koto solo en Gorō, 13 s de latido en Kokuyō) no se repite
+        // en un reintento la intro larga (16 s de koto solo en Gorō, 14 s de apertura en Mizuchi) no se repite
         const float LongIntro = 4f;
 
         sealed class Voice
@@ -107,6 +118,7 @@ namespace Nindo
             public int offset;              // muestra del clip donde arranca
             public float volume;            // volumen de la entrada de NindoContent
             public double fadeStart = double.MaxValue, fadeLen;
+            public bool dip;
         }
 
         readonly Voice[] voices = new Voice[VoiceCount];
@@ -116,11 +128,16 @@ namespace Nindo
         int layer;              // capa actual; las anteriores se están apagando
         int head = -1, next = -1;
         int playing, target;    // fase que suena y fase pedida
+        float targetLead = -1f; // s hasta lo que anuncia la frase de entrada pedida (-1: lo de siempre)
+        int requestPhase, requestFrame = -1;
         bool pendingStart, silent, inOutro;
         double startAt, outroEnd;
 
         /// <summary>Hay un tema dirigido sonando: una pelea, su cierre o el final. La música de zona y de combate no lo pisa.</summary>
         public bool Busy => track != null;
+
+        /// <summary>La fase pedida en este frame antes de que arranque el tema (o 'fallback').</summary>
+        public int RequestedThisFrame(int fallback) => requestFrame == Time.frameCount ? Mathf.Max(fallback, requestPhase) : fallback;
 
         public void Init(AudioManager audio)
         {
@@ -131,7 +148,7 @@ namespace Nindo
                 go.transform.SetParent(transform, false);
                 var s = go.AddComponent<AudioSource>();
                 s.playOnAwake = false; s.loop = false; s.spatialBlend = 0f; s.priority = 0; s.volume = 0f;
-                // cada voz en su objeto: el fundido de entrada (OnAudioFilterRead) es de esa fuente sola
+                // cada voz en su objeto: los fundidos (OnAudioFilterRead) son de esa fuente sola
                 voices[i] = new Voice { src = s, ramp = go.AddComponent<VoiceRamp>() };
             }
             AudioSettings.OnAudioConfigurationChanged += OnAudioReset;
@@ -142,6 +159,7 @@ namespace Nindo
         /// <summary>Para probar (RunCommand): tema, fase pedida y sonando, y cada voz con su clip, posición y volumen.</summary>
         public string Describe()
         {
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
             var sb = new System.Text.StringBuilder();
             sb.Append(track != null ? track.key : "(nada)").Append(" fase ").Append(playing).Append('/').Append(target);
             if (silent) sb.Append(" silencio");
@@ -153,8 +171,8 @@ namespace Nindo
                 if (v.layer < 0) continue;
                 double pos = (v.offset + (now - v.start) * v.clip.rate) / v.clip.rate;
                 sb.Append("\n  ").Append(i == head ? "> " : i == next ? "+ " : "  ").Append(v.clip.key)
-                  .Append(" capa ").Append(v.layer).Append(" en ").Append(pos.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
-                  .Append(" s, vol ").Append(v.src.volume.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture))
+                  .Append(" capa ").Append(v.layer).Append(" en ").Append(pos.ToString("0.00", inv))
+                  .Append(" s, ganancia ").Append(Envelope(v, now).ToString("0.00", inv))
                   .Append(", fuente ").Append(v.src.timeSamples).Append(" muestras");
             }
             return sb.ToString();
@@ -174,36 +192,45 @@ namespace Nindo
             var t = MusicPlan.Find(key);
             if (t == null) return;
             if (t == track && !silent && !inOutro && (playing > 0 || pendingStart)) return;
-            FadeAll(Now, 0.3);
+            FadeAll(Now, 0.3, false);
             track = t;
-            target = 1; playing = 0;
+            // un SetBossMusicPhase del mismo frame que llegó antes (otro orden de scripts) no se pierde
+            target = t.Clamp(RequestedThisFrame(1)); playing = 0;
             silent = inOutro = false;
             pendingStart = true;
             startAt = Now + Mathf.Max(0f, delay);
             head = next = -1;
         }
 
-        public void SetPhase(int phase)
+        /// <summary>'leadIn' (s): cuánto tarda en caer lo que anuncia la frase de entrada (los tambores de Gorō cuando se
+        /// levanta); -1 deja el de siempre (desde lo que suena, 2 a 5 tiempos; desde el silencio, la frase de la tabla).</summary>
+        public void SetPhase(int phase, float leadIn = -1f)
         {
+            requestPhase = phase; requestFrame = Time.frameCount;
             if (track == null || inOutro) return;
             phase = track.Clamp(phase);
             if (silent)
             {
                 // después del silencio la fase entra apenas se la pide (la misma que sonaba o una más alta), con su
-                // intro o transición, sin esperar compás: no hay nada sonando con qué alinearse
-                target = Mathf.Max(target, phase);
+                // frase de entrada, sin esperar compás: no hay nada sonando con qué alinearse. Lo que todavía suena
+                // (la cola del golpe de la barra falsa) se apaga mientras entra
+                target = Mathf.Max(target, phase); targetLead = leadIn;
+                FadeAll(Now + Lead, 0.4, false);
                 silent = false; pendingStart = true; startAt = Now;
                 return;
             }
             if (phase <= target) return;
-            target = phase;
+            target = phase; targetLead = leadIn;
         }
 
-        /// <summary>Apaga lo que suena sin terminar el tema: la próxima SetPhase entra desde el silencio.</summary>
-        public bool Silence(float fade)
+        /// <summary>Apaga lo que suena sin terminar el tema: la próxima SetPhase entra desde el silencio. Con
+        /// 'withOutro', en el próximo tiempo suena el golpe final de la fase (la barra falsa de Gorō: "le ganaste").</summary>
+        public bool Silence(float fade, bool withOutro)
         {
             if (track == null || inOutro) return false;
-            FadeAll(Now, Mathf.Max(0.05f, fade));
+            if (silent) return true;
+            if (!(withOutro && !pendingStart && head >= 0 && PlayOutro(Now)))
+                FadeAll(Now, Mathf.Max(0.05f, fade), false);
             head = next = -1;
             silent = true; pendingStart = false; playing = 0;
             return true;
@@ -212,7 +239,7 @@ namespace Nindo
         public void Stop(float fade)
         {
             if (track == null && !AnyVoice()) return;
-            FadeAll(Now, Mathf.Max(0.05f, fade));
+            FadeAll(Now, Mathf.Max(0.05f, fade), false);
             track = null;
             head = next = -1;
             pendingStart = silent = inOutro = false;
@@ -230,31 +257,34 @@ namespace Nindo
             double now = Now;
             if (silent || pendingStart || head < 0)
             {
-                FadeAll(now, 1.0);
+                FadeAll(now, 1.0, false);
                 Finish(track.resumeExplore);
                 return true;
             }
-            double b = NextBoundary(now + Lead, 0.25);
-            var o = MusicPlan.FindClip(track.outro);
-            if (o != null && Resolve(o.key) == null) o = null;
-            if (o != null)
+            if (!PlayOutro(now))
             {
-                double pulse = voices[head].clip.bar / 4;
-                FadeLayer(layer, b, pulse);
-                layer++;
-                int v = Schedule(o, 0, b, true);
-                head = v; next = -1;
-                outroEnd = v >= 0 ? voices[v].end : b + pulse;
-            }
-            else
-            {
+                double b = NextBoundary(now + Lead, 0.25);
                 double f = System.Math.Max(0.5, track.outroFade);
-                FadeLayer(layer, b, f);
-                head = next = -1;
+                FadeLayer(layer, b, f, false);
                 outroEnd = b + f;
             }
+            head = next = -1;
             inOutro = true;
             return true;
+        }
+
+        /// <summary>El cierre de la fase que suena en el próximo tiempo; lo anterior baja 10 dB en 30 ms y se apaga en un
+        /// pulso. outroEnd queda en el final del cierre. false si la fase no tiene cierre o falta el clip.</summary>
+        bool PlayOutro(double now)
+        {
+            var o = MusicPlan.FindClip(track.OutroAt(playing));
+            if (o == null || Resolve(o.key) == null || head < 0) return false;
+            double b = NextBoundary(now + Lead, 0.25);
+            FadeLayer(layer, b, voices[head].clip.bar / 4, true);
+            layer++;
+            int v = Schedule(o, 0, b, true);
+            outroEnd = v >= 0 ? voices[v].end : b;
+            return v >= 0;
         }
 
         // ------------------------------------------------------------------ motor
@@ -272,6 +302,13 @@ namespace Nindo
                     pendingStart = false;
                     StartLayer(target, System.Math.Max(startAt, now + Lead), true);
                 }
+                // se perdieron vueltas enteras (pausa del editor, un tirón más largo que lo agendado): lo agendado ya
+                // pasó y PlayScheduled en el pasado avanzaría a los saltos. El loop vuelve a entrar limpio
+                if (head >= 0 && next >= 0 && now >= voices[next].end)
+                {
+                    CancelLayer(layer);
+                    StartLayer(System.Math.Max(1, playing), now + Lead, false);
+                }
                 // lo que suena terminó: sigue lo agendado y se agenda la vuelta siguiente (el loop entero, desde 0)
                 if (head >= 0 && now >= voices[head].end)
                 {
@@ -280,18 +317,20 @@ namespace Nindo
                         next = Schedule(voices[head].clip, 0, voices[head].end, false);
                 }
                 // la música de la zona vuelve cuando el cierre ya se apagó (no encima del último golpe)
-                if (inOutro && now >= outroEnd) Finish(track.resumeExplore);
-                else if (!inOutro && !silent && head >= 0 && target != playing) TryCommit(now);
+                if (inOutro) { if (now >= outroEnd) Finish(track.resumeExplore); }
+                // un tema que suena una vez (el final) terminó: queda el silencio
+                else if (!silent && !pendingStart && head < 0) Finish(track.resumeExplore);
+                else if (!silent && head >= 0 && target != playing) TryCommit(now);
             }
             float vol = owner != null ? owner.MusicVolume : 1f;
             for (int i = 0; i < VoiceCount; i++)
             {
                 var v = voices[i];
                 if (v.layer < 0) continue;
-                float env = Envelope(v, now);
                 bool ended = now > v.end + 0.1 && i != head && i != next;
-                if (env <= 0f || ended) { Release(v); continue; }
-                v.src.volume = vol * v.volume * env;
+                if (Envelope(v, now) <= 0f || ended) { Release(v); continue; }
+                // el fundido lo aplica VoiceRamp a la muestra; acá solo el volumen de la música (y la pausa)
+                v.src.volume = vol * v.volume;
             }
         }
 
@@ -306,43 +345,67 @@ namespace Nindo
                 StartLayer(target, at, true);
                 return;
             }
-            // la fase nueva es una sección más adelante del mismo loop y ya se está tocando esa parte (el desarrollo de
-            // Mizuchi, la sección C del bambú): volver a su comienzo repetiría compases; sigue como está
-            var p = track.PhaseAt(target);
-            var prev = track.PhaseAt(playing);
-            if (h.clip.kind == MusicPlan.ClipKind.Loop && h.clip.key == p.clip && prev.clip == p.clip && p.entry >= prev.entry &&
-                h.offset + (now - h.start) * h.clip.rate >= p.entry)
-            {
-                playing = target;
-                return;
-            }
-            double b = NextBoundary(now + Lead, 1.0);
+            double beat = h.clip.bar / 4;
+            double b = NextBoundary(now + Lead, 0.25);
             if (b - now > CommitWindow) return;
-            FadeLayer(layer, b, h.clip.bar / 4);
-            StartLayer(target, b, true);
+            var p = track.PhaseAt(target);
+            var intro = MusicPlan.FindClip(p.intro);
+            if (intro != null && Resolve(intro.key) == null) intro = null;
+            int entry = 0;
+            if (intro != null)
+            {
+                int beats;
+                if (targetLead >= 0f) beats = Mathf.Max(1, Mathf.RoundToInt((float)(targetLead * intro.rate / intro.BeatSamples)));
+                else
+                {
+                    // la sección nueva cae en un compás de lo que sonaba, de 2 a 5 tiempos después del cambio
+                    double arrive = NextBoundary(b + 2 * beat - 1e-4, 1.0);
+                    beats = Mathf.Max(1, (int)System.Math.Round((arrive - b) / beat));
+                }
+                entry = Mathf.Max(0, p.introHit - (int)System.Math.Round(beats * intro.BeatSamples));
+            }
+            // lo anterior: un cambio de tono se corta en 'cut' s (los dos kotos de Gorō medio tono aparte); si no, cae
+            // 10 dB en 30 ms y se apaga en un tiempo
+            FadeLayer(layer, b, p.cut > 0f ? p.cut : beat, p.cut <= 0f);
+            layer++;
+            head = next = -1;
+            if (intro != null) head = Schedule(intro, entry, b, true);
+            StartLoop(MusicPlan.FindClip(p.clip), b);
+            playing = target; targetLead = -1f;
         }
 
         void StartLayer(int phase, double at, bool allowIntro)
         {
             layer++;
             var p = track.PhaseAt(phase);
-            var loop = MusicPlan.FindClip(p.clip);
             var intro = allowIntro ? MusicPlan.FindClip(p.intro) : null;
             if (intro != null && phase == 1 && introHeard.Contains(track.key) && intro.Seconds > LongIntro) intro = null;
             head = next = -1;
-            if (intro != null) head = Schedule(intro, p.introEntry, at, true);
-            if (head >= 0) next = Schedule(loop, p.entry, voices[head].end, false);
-            else
+            if (intro != null)
             {
-                head = Schedule(loop, p.entry, at, true);
-                if (head >= 0) next = Schedule(loop, 0, voices[head].end, false);
+                int entry = p.introEntry;
+                if (targetLead >= 0f)
+                {
+                    int beats = Mathf.Max(1, Mathf.RoundToInt((float)(targetLead * intro.rate / intro.BeatSamples)));
+                    entry = Mathf.Max(0, p.introHit - (int)System.Math.Round(beats * intro.BeatSamples));
+                }
+                head = Schedule(intro, entry, at, true);
             }
-            playing = phase;
+            StartLoop(MusicPlan.FindClip(p.clip), at);
+            playing = phase; targetLead = -1f;
             if (phase == 1) introHeard.Add(track.key);
         }
 
+        /// <summary>El loop de la fase: después de la frase de entrada (head) o solo desde 'at', y su vuelta siguiente.</summary>
+        void StartLoop(MusicPlan.Clip loop, double at)
+        {
+            if (head >= 0) { next = Schedule(loop, 0, voices[head].end, false); return; }
+            head = Schedule(loop, 0, at, true);
+            if (head >= 0 && loop.kind == MusicPlan.ClipKind.Loop) next = Schedule(loop, 0, voices[head].end, false);
+        }
+
         /// <summary>Próximo límite de compás (o de 'fraction' de compás) a partir de tmin en lo que suena o en lo que
-        /// sigue. Los loops arrancan en un compás; las intros y transiciones terminan en uno.</summary>
+        /// sigue. Los loops arrancan en un compás; las intros y frases de entrada terminan en uno.</summary>
         double NextBoundary(double tmin, double fraction)
         {
             double b = head >= 0 ? Boundary(voices[head], tmin, fraction) : -1;
@@ -368,8 +431,8 @@ namespace Nindo
             return v.start + (b - v.offset) / c.rate;
         }
 
-        /// <summary>'cold': la toma arranca sola (fundido de 6 ms); una vuelta o el loop después de su intro siguen la
-        /// onda de lo anterior y no llevan fundido (sería un hueco de 6 ms en cada costura).</summary>
+        /// <summary>'cold': la toma arranca sola (fundido de 6 ms); una vuelta o el loop después de su frase de entrada
+        /// siguen la onda de lo anterior y no llevan fundido (sería un hueco de 6 ms en cada costura).</summary>
         int Schedule(MusicPlan.Clip c, int offset, double at, bool cold)
         {
             if (c == null) return -1;
@@ -382,7 +445,7 @@ namespace Nindo
             v.clip = c; v.layer = layer; v.offset = offset;
             v.start = at;
             v.end = at + (c.samples - offset) / (double)c.rate;
-            v.fadeStart = double.MaxValue;
+            v.fadeStart = double.MaxValue; v.dip = false;
             v.volume = EntryVolume(c.key);
             v.src.clip = ac;
             // la tabla está en muestras a la frecuencia del clip original; si Unity lo importó a otra, se escala
@@ -407,30 +470,26 @@ namespace Nindo
             return best;
         }
 
-        /// <summary>Apaga una capa desde 'at' en 'len' s. Curva (1-u)²: a un cuarto del fundido ya bajó 5 dB, así lo
-        /// que entra entero en el tiempo fuerte no se suma a lo anterior a pleno (dos cumbres juntas pasaban de 0 dBFS).
-        /// Lo agendado de esa capa que arrancaría ya apagado se cancela; lo que arranca dentro del fundido suena y se
-        /// apaga con él.</summary>
-        void FadeLayer(int l, double at, double len)
+        /// <summary>Apaga una capa desde 'at' en 'len' s (curva de VoiceRamp.Gain, con la caída rápida si 'dip'). Lo
+        /// agendado de esa capa que arrancaría ya apagado se cancela; lo que arranca dentro del fundido suena y se apaga
+        /// con él.</summary>
+        void FadeLayer(int l, double at, double len, bool dip)
         {
-            for (int i = 0; i < VoiceCount; i++)
-            {
-                var v = voices[i];
-                if (v.layer != l) continue;
-                if (v.start >= at + len) { Release(v); continue; }
-                if (at < v.fadeStart) { v.fadeStart = at; v.fadeLen = len; }
-            }
+            for (int i = 0; i < VoiceCount; i++) if (voices[i].layer == l) FadeVoice(voices[i], at, len, dip);
         }
 
-        void FadeAll(double at, double len)
+        void FadeAll(double at, double len, bool dip)
         {
-            for (int i = 0; i < VoiceCount; i++)
-            {
-                var v = voices[i];
-                if (v.layer < 0) continue;
-                if (v.start >= at + len) { Release(v); continue; }
-                if (at < v.fadeStart) { v.fadeStart = at; v.fadeLen = len; }
-            }
+            for (int i = 0; i < VoiceCount; i++) if (voices[i].layer >= 0) FadeVoice(voices[i], at, len, dip);
+        }
+
+        void FadeVoice(Voice v, double at, double len, bool dip)
+        {
+            if (v.start >= at + len) { Release(v); return; }
+            // un fundido más tardío no alarga uno que ya empezó
+            if (at >= v.fadeStart) return;
+            v.fadeStart = at; v.fadeLen = len; v.dip = dip;
+            v.ramp.FadeOut(at, len, dip);
         }
 
         void CancelLayer(int l)
@@ -444,13 +503,7 @@ namespace Nindo
             return false;
         }
 
-        static float Envelope(Voice v, double now)
-        {
-            if (now <= v.fadeStart) return 1f;
-            double u = (now - v.fadeStart) / System.Math.Max(1e-3, v.fadeLen);
-            float k = 1f - (float)u;
-            return u >= 1.0 ? 0f : k * k;
-        }
+        static float Envelope(Voice v, double now) => VoiceRamp.Gain(now, v.fadeStart, v.fadeLen, v.dip);
 
         void Release(Voice v)
         {
@@ -464,7 +517,7 @@ namespace Nindo
         void Finish(bool resume)
         {
             track = null;
-            inOutro = false;
+            inOutro = silent = pendingStart = false;
             head = next = -1;
             playing = target = 0;
             owner?.OnDirectedMusicEnded(resume);
@@ -481,7 +534,7 @@ namespace Nindo
             if (inOutro) { Finish(track.resumeExplore); return; }
             if (silent) return;
             pendingStart = false;
-            StartLayer(target, Now + Lead, false);
+            StartLayer(System.Math.Max(1, target), Now + Lead, false);
         }
 
         static AudioClip Resolve(string key)

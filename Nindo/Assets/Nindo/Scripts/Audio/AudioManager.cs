@@ -179,9 +179,10 @@ namespace Nindo
         // ------------------------------------------------------------------ música de jefe
         // Contrato para los jefes: "boss_goro", "boss_lake", "boss_bamboo", "boss_final" (y "ending" en el final).
         // La fase empieza en 1 al arrancar la pelea; los cambios de fase la suben (Boss.PhaseChange) y cada jefe
-        // puede pedir una en especial. Cada fase es otra sección del tema (MusicPlan): el cambio entra en el próximo
-        // compás de lo que suena. PlayBossMusic + SetBossMusicPhase(n) en el mismo frame arranca directo en la fase n
-        // (un reintento que empieza más adelante). Al caer el jefe, EndBossMusic toca el cierre del tema.
+        // puede pedir una en especial. Cada fase tiene su loop (MusicPlan): el cambio entra en el próximo tiempo con la
+        // frase de entrada de la fase y la sección nueva cae en un compás. PlayBossMusic + SetBossMusicPhase(n) en el
+        // mismo frame (en cualquier orden) arranca directo en la fase n (un reintento que empieza más adelante). Al
+        // caer el jefe, EndBossMusic toca el cierre del tema.
         public int BossMusicPhase { get; private set; }
 
         /// <summary>Estado de la música por fases (para probar con RunCommand: Debug.Log(Game.Audio.MusicState)).</summary>
@@ -189,25 +190,32 @@ namespace Nindo
 
         public void PlayBossMusic(string key, float fadeTime = 1.2f)
         {
-            BossMusicPhase = 1;
+            BossMusicPhase = director.RequestedThisFrame(1);
             if (director.Handles(key)) PlayDirected(key, fadeTime, 0f);
             else PlayMusic(key, fadeTime);
         }
 
-        public void SetBossMusicPhase(int phase)
+        /// <summary>
+        /// Sube la fase (empieza en 1). 'leadIn' (s): cuánto tarda en caer lo que anuncia la frase de entrada desde que
+        /// se pide; la fase 2 de Gorō la usa para que los tambores caigan cuando se levanta con la armadura de roca.
+        /// Con -1, desde lo que suena la sección entra de 2 a 5 tiempos después y desde un silencio, con la frase de la
+        /// tabla (Gorō: los tambores 6.8 s después).
+        /// </summary>
+        public void SetBossMusicPhase(int phase, float leadIn = -1f)
         {
             if (phase > BossMusicPhase) BossMusicPhase = phase;
             // la misma fase también le llega al director: después de SilenceBossMusic es la que vuelve a sonar
-            director.SetPhase(phase);
+            director.SetPhase(phase, leadIn);
         }
 
         /// <summary>
         /// Silencio dentro de la pelea (barra falsa de Gorō, eclipse de Kokuyō): lo que suena se apaga en 'fadeTime' y la
-        /// próxima SetBossMusicPhase entra apenas se la pide (con su transición, si la fase tiene), sin esperar compás.
+        /// próxima SetBossMusicPhase entra apenas se la pide (con su frase de entrada), sin esperar compás. Con
+        /// 'withOutro', en el próximo tiempo suena el golpe final de la fase en vez del fundido: la victoria falsa.
         /// </summary>
-        public void SilenceBossMusic(float fadeTime = 0.5f)
+        public void SilenceBossMusic(float fadeTime = 0.5f, bool withOutro = false)
         {
-            if (!director.Silence(fadeTime)) StopMusic(fadeTime);
+            if (!director.Silence(fadeTime, withOutro)) StopMusic(fadeTime);
         }
 
         /// <summary>
@@ -229,7 +237,9 @@ namespace Nindo
         /// <summary>
         /// El tema del final al reencontrarse (Sakuya4: koto y piano solos que salen del silencio). Para "silencio y
         /// después el tema": StopMusic(1.5f) cuando empieza la escena y PlayEnding() en el abrazo; con 'delay' (s reales)
-        /// la primera nota cae exacta ese tiempo después (agendada en el reloj del audio, no en el de la escena).
+        /// la primera nota cae exacta ese tiempo después (agendada en el reloj del audio, no en el de la escena). Suena
+        /// una vez entera (2 min 20 s) y queda el silencio: no vuelve a empezar ni devuelve la música de la zona. Un
+        /// PlayMusic("ending") posterior (el cartel del final) no la reinicia mientras suena.
         /// </summary>
         public void PlayEnding(float delay = 0f)
         {
@@ -277,7 +287,9 @@ namespace Nindo
         {
             currentMusic = "";
             if (!resume || (Game.Player != null && !Game.Player.IsAlive)) return;
-            bool fighting = Game.Combat != null && Game.Combat.InCombat;
+            // InCombat sigue 2.5 s después de que cae el jefe (más con la cámara lenta del remate): con eso la música
+            // de combate arrancaba un instante entre el cierre del jefe y la de la zona. Solo si hay enemigos encima
+            bool fighting = Game.Combat != null && Game.Combat.Engaged.Count > 0;
             PlayMusic(fighting ? "combat" : exploreMusic, 3f);
         }
 

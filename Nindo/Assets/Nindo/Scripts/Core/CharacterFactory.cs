@@ -393,7 +393,7 @@ namespace Nindo
                     break;
                 case "ozeki":
                     b.bossId = "ozeki"; b.title = "Ōzeki"; b.subtitle = "El Gran Campeón del Bambú";
-                    b.introAnim = "Spotted"; b.phaseAnim = "Spotted"; b.musicKey = "boss"; b.phaseThresholds = new[] { 0.5f };
+                    b.introAnim = "Spotted"; b.phaseAnim = "Spotted"; b.musicKey = "boss_bamboo"; b.phaseThresholds = new[] { 0.5f };
                     break;
                 case "kage":
                     // Kokuyō: los actos (65 % y 30 %) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica

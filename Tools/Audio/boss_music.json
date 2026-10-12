@@ -1,61 +1,77 @@
 {
- "_nota": "Generado por Tools/Audio/build_boss_music.py. Por fase: clip en loop, intro o transición que se toca una vez antes (PlayScheduled del loop a las 'muestras' de la intro) y, si la fase es otro punto del mismo clip, la muestra de entrada. Los cambios de fase conviene hacerlos en el próximo límite de compás del clip que suena (compas_s desde el comienzo del clip).",
+ "_nota": "Generado por Tools/Audio/build_boss_music.py. Por fase: su loop y la frase de entrada que se toca una vez antes (desde el próximo tiempo hasta el compás de la sección; desde el silencio, desde 'intro_muestra'); 'golpe_muestra' es donde cae lo que la frase anuncia.",
  "jefes": {
   "boss_goro": {
    "1": {
     "clip": "boss_goro",
-    "intro": "boss_goro_intro"
+    "intro": "boss_goro_intro",
+    "golpe_muestra": 700942,
+    "cierre": "boss_goro_out_1"
    },
    "2": {
     "clip": "boss_goro_2",
     "intro": "boss_goro_2_in",
+    "golpe_muestra": 584677,
     "intro_compases_antes_del_final": 6,
-    "intro_muestra": 277311
+    "intro_muestra": 277311,
+    "corte_s": 0.04
    }
   },
   "boss_lake": {
    "1": {
     "clip": "boss_lake",
-    "intro": "boss_lake_intro"
+    "intro": "boss_lake_intro",
+    "golpe_muestra": 607652
    },
    "2": {
-    "clip": "boss_lake",
-    "entrada": "desarrollo",
-    "entrada_muestra": 3229016
+    "clip": "boss_lake_2",
+    "intro": "boss_lake_2_in",
+    "golpe_muestra": 179389
    },
    "3": {
-    "clip": "boss_lake_3"
+    "clip": "boss_lake_3",
+    "intro": "boss_lake_3_in",
+    "golpe_muestra": 179390
    }
   },
   "boss_bamboo": {
    "1": {
     "clip": "boss_bamboo",
-    "intro": "boss_bamboo_intro"
+    "intro": "boss_bamboo_intro",
+    "golpe_muestra": 53231
    },
    "2": {
-    "clip": "boss_bamboo",
-    "entrada": "c_taiko",
-    "entrada_muestra": 3112942
+    "clip": "boss_bamboo_2",
+    "intro": "boss_bamboo_2_in",
+    "golpe_muestra": 155647
    },
    "3": {
-    "clip": "boss_bamboo",
-    "entrada": "b",
-    "entrada_muestra": 1867765
+    "clip": "boss_bamboo_3",
+    "intro": "boss_bamboo_3_in",
+    "golpe_muestra": 155647
    }
   },
   "boss_final": {
    "1": {
     "clip": "boss_final",
-    "intro": "boss_final_intro"
+    "intro": "boss_final_intro",
+    "golpe_muestra": 477666
    },
    "2": {
-    "clip": "boss_final_2"
+    "clip": "boss_final_2",
+    "intro": "boss_final_2_in",
+    "golpe_muestra": 201600
    },
    "3": {
-    "clip": "boss_final_3"
+    "clip": "boss_final_3",
+    "intro": "boss_final_3_in",
+    "golpe_muestra": 190260,
+    "corte_s": 0.05
    },
    "4": {
-    "clip": "boss_final_4"
+    "clip": "boss_final_4",
+    "intro": "boss_final_4_in",
+    "golpe_muestra": 190260
    }
   },
   "ending": {
@@ -73,228 +89,60 @@
    "bpm": 130.0,
    "compas_s": 1.846154,
    "tambores_s": 13.851,
-   "LUFS": -22.04
+   "golpe_muestra": 700942,
+   "LUFS": -22.22,
+   "agudos_5k_dB": -17.3
   },
   "boss_goro": {
    "tipo": "loop",
-   "muestras": 3256616,
-   "segundos": 73.8462,
+   "muestras": 5861908,
+   "segundos": 132.9231,
    "sr": 44100,
    "bpm": 130.0,
    "compas_s": 1.846154,
-   "LUFS": -14.0
+   "tramos": [
+    "c8-c47",
+    "c8-c39"
+   ],
+   "LUFS": -14.0,
+   "agudos_5k_dB": -21.4
+  },
+  "boss_goro_out_1": {
+   "tipo": "outro (una vez)",
+   "muestras": 165654,
+   "segundos": 3.7563,
+   "sr": 44100,
+   "bpm": 130.0,
+   "compas_s": 1.846154,
+   "golpe_s": 0.008,
+   "LUFS": -18.38,
+   "agudos_5k_dB": -8.2
   },
   "boss_goro_2_in": {
-   "tipo": "transición (una vez)",
+   "tipo": "intro (una vez)",
    "muestras": 738360,
    "segundos": 16.7429,
    "sr": 44100,
    "bpm": 137.738,
    "compas_s": 1.742437,
    "tambores_s": 13.072,
-   "LUFS": -18.99
+   "golpe_muestra": 584677,
+   "LUFS": -19.17,
+   "agudos_5k_dB": -18.9
   },
   "boss_goro_2": {
    "tipo": "loop",
-   "muestras": 2151492,
-   "segundos": 48.7867,
+   "muestras": 5225220,
+   "segundos": 118.4857,
    "sr": 44100,
    "bpm": 137.738,
    "compas_s": 1.742437,
-   "LUFS": -12.48
-  },
-  "boss_lake_intro": {
-   "tipo": "intro (una vez)",
-   "muestras": 69483,
-   "segundos": 1.5756,
-   "sr": 44100,
-   "bpm": 118.0,
-   "compas_s": 2.033898,
-   "LUFS": -16.07
-  },
-  "boss_lake": {
-   "tipo": "loop",
-   "muestras": 5650780,
-   "segundos": 128.1356,
-   "sr": 44100,
-   "bpm": 118.0,
-   "compas_s": 2.033898,
-   "entradas": {
-    "apertura": {
-     "compas": 0,
-     "muestra": 0,
-     "s": 0.0
-    },
-    "tema_a": {
-     "compas": 6,
-     "muestra": 538169,
-     "s": 12.2034
-    },
-    "tema_a2": {
-     "compas": 22,
-     "muestra": 1973288,
-     "s": 44.7458
-    },
-    "desarrollo": {
-     "compas": 36,
-     "muestra": 3229016,
-     "s": 73.2203
-    },
-    "cumbre": {
-     "compas": 47,
-     "muestra": 4215661,
-     "s": 95.5932
-    },
-    "corte": {
-     "compas": 55,
-     "muestra": 4933220,
-     "s": 111.8644
-    }
-   },
-   "LUFS": -14.0
-  },
-  "boss_lake_3": {
-   "tipo": "loop",
-   "muestras": 4305356,
-   "segundos": 97.6271,
-   "sr": 44100,
-   "bpm": 118.0,
-   "compas_s": 2.033898,
-   "LUFS": -13.65
-  },
-  "boss_bamboo_intro": {
-   "tipo": "intro (una vez)",
-   "muestras": 53231,
-   "segundos": 1.2071,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "LUFS": -22.81
-  },
-  "boss_bamboo": {
-   "tipo": "loop",
-   "muestras": 6303706,
-   "segundos": 142.9412,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "entradas": {
-    "tema": {
-     "compas": 0,
-     "muestra": 0,
-     "s": 0.0
-    },
-    "a": {
-     "compas": 8,
-     "muestra": 622589,
-     "s": 14.1177
-    },
-    "b": {
-     "compas": 24,
-     "muestra": 1867765,
-     "s": 42.3529
-    },
-    "c_taiko": {
-     "compas": 40,
-     "muestra": 3112942,
-     "s": 70.5883
-    },
-    "d": {
-     "compas": 48,
-     "muestra": 3735530,
-     "s": 84.7059
-    },
-    "e": {
-     "compas": 64,
-     "muestra": 4980706,
-     "s": 112.9412
-    }
-   },
-   "LUFS": -14.0
-  },
-  "boss_final_intro": {
-   "tipo": "intro (una vez)",
-   "muestras": 578466,
-   "segundos": 13.1171,
-   "sr": 44100,
-   "bpm": 105.0,
-   "compas_s": 2.285714,
-   "LUFS": -20.11
-  },
-  "boss_final": {
-   "tipo": "loop",
-   "muestras": 1612800,
-   "segundos": 36.5714,
-   "sr": 44100,
-   "bpm": 105.0,
-   "compas_s": 2.285714,
-   "LUFS": -15.74
-  },
-  "boss_final_2": {
-   "tipo": "loop",
-   "muestras": 3628800,
-   "segundos": 82.2857,
-   "sr": 44100,
-   "bpm": 105.0,
-   "compas_s": 2.285714,
-   "entradas": {
-    "comienzo": {
-     "compas": 21,
-     "muestra": 0,
-     "s": 0.0
-    },
-    "cumbre": {
-     "compas": 27,
-     "muestra": 604800,
-     "s": 13.7143
-    },
-    "golpe": {
-     "compas": 35,
-     "muestra": 1411200,
-     "s": 32.0
-    },
-    "vuelta": {
-     "compas": 39,
-     "muestra": 1814400,
-     "s": 41.1429
-    },
-    "subida": {
-     "compas": 55,
-     "muestra": 3427200,
-     "s": 77.7143
-    }
-   },
-   "LUFS": -14.59
-  },
-  "boss_final_3": {
-   "tipo": "loop",
-   "muestras": 1612800,
-   "segundos": 36.5714,
-   "sr": 44100,
-   "bpm": 105.0,
-   "compas_s": 2.285714,
-   "entradas": {
-    "subida": {
-     "compas": 55,
-     "muestra": 0,
-     "s": 0.0
-    },
-    "cumbre": {
-     "compas": 63,
-     "muestra": 806400,
-     "s": 18.2857
-    }
-   },
-   "LUFS": -13.04
-  },
-  "ending": {
-   "tipo": "tema entero (vuelve a empezar si sigue sonando)",
-   "muestras": 6177093,
-   "segundos": 140.0701,
-   "sr": 44100,
-   "bpm": 80.0,
-   "compas_s": 3.0,
-   "LUFS": -16.0
+   "tramos": [
+    "c9-c47",
+    "c8-c36"
+   ],
+   "LUFS": -12.9,
+   "agudos_5k_dB": -20.8
   },
   "boss_goro_out": {
    "tipo": "outro (una vez)",
@@ -304,7 +152,82 @@
    "bpm": 137.738,
    "compas_s": 1.742437,
    "golpe_s": 0.008,
-   "LUFS": -17.14
+   "LUFS": -17.31,
+   "agudos_5k_dB": -7.8
+  },
+  "boss_lake_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 607652,
+   "segundos": 13.779,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "golpe_muestra": 607652,
+   "LUFS": -13.1,
+   "agudos_5k_dB": -20.4
+  },
+  "boss_lake": {
+   "tipo": "loop",
+   "muestras": 2870237,
+   "segundos": 65.0847,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "tramos": [
+    "c6-c36",
+    "c21"
+   ],
+   "LUFS": -14.0,
+   "agudos_5k_dB": -22.1
+  },
+  "boss_lake_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 179389,
+   "segundos": 4.0678,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "golpe_muestra": 179389,
+   "LUFS": -13.01,
+   "agudos_5k_dB": -21.9
+  },
+  "boss_lake_2": {
+   "tipo": "loop",
+   "muestras": 2332068,
+   "segundos": 52.8814,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "tramos": [
+    "c37-c62"
+   ],
+   "LUFS": -13.14,
+   "agudos_5k_dB": -21.6
+  },
+  "boss_lake_3_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 179390,
+   "segundos": 4.0678,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "golpe_muestra": 179390,
+   "LUFS": -12.57,
+   "agudos_5k_dB": -22.1
+  },
+  "boss_lake_3": {
+   "tipo": "loop",
+   "muestras": 4305356,
+   "segundos": 97.6271,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "tramos": [
+    "c47-c54",
+    "c7-c46"
+   ],
+   "LUFS": -13.18,
+   "agudos_5k_dB": -22.2
   },
   "boss_lake_out": {
    "tipo": "outro (una vez)",
@@ -314,26 +237,213 @@
    "bpm": 118.0,
    "compas_s": 2.033898,
    "golpe_s": 0.516,
-   "LUFS": -17.17
+   "LUFS": -16.7,
+   "agudos_5k_dB": -19.2
   },
-  "boss_final_out": {
+  "boss_bamboo_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 53231,
+   "segundos": 1.2071,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_muestra": 53231,
+   "LUFS": -22.73,
+   "agudos_5k_dB": -15.0
+  },
+  "boss_bamboo": {
+   "tipo": "loop",
+   "muestras": 3112942,
+   "segundos": 70.5883,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "tramos": [
+    "c0-c39"
+   ],
+   "LUFS": -14.0,
+   "agudos_5k_dB": -24.3
+  },
+  "boss_bamboo_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 155647,
+   "segundos": 3.5294,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_muestra": 155647,
+   "LUFS": -12.55,
+   "agudos_5k_dB": -23.0
+  },
+  "boss_bamboo_2": {
+   "tipo": "loop",
+   "muestras": 3190764,
+   "segundos": 72.3529,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "tramos": [
+    "c40-c80"
+   ],
+   "LUFS": -13.84,
+   "agudos_5k_dB": -21.6
+  },
+  "boss_bamboo_3_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 155647,
+   "segundos": 3.5294,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_muestra": 155647,
+   "LUFS": -14.9,
+   "agudos_5k_dB": -24.0
+  },
+  "boss_bamboo_3": {
+   "tipo": "loop",
+   "muestras": 2490353,
+   "segundos": 56.4706,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "tramos": [
+    "c24-c39",
+    "c48-c63"
+   ],
+   "LUFS": -13.05,
+   "agudos_5k_dB": -23.0
+  },
+  "boss_bamboo_out": {
    "tipo": "outro (una vez)",
-   "muestras": 228360,
-   "segundos": 5.1782,
+   "muestras": 132300,
+   "segundos": 3.0,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_s": 0.008,
+   "LUFS": -17.02,
+   "agudos_5k_dB": -20.0
+  },
+  "ending": {
+   "tipo": "tema entero (una vez)",
+   "muestras": 6177093,
+   "segundos": 140.0701,
+   "sr": 44100,
+   "bpm": 80.0,
+   "compas_s": 3.0,
+   "LUFS": -16.0,
+   "agudos_5k_dB": -20.0
+  },
+  "boss_final_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 477666,
+   "segundos": 10.8314,
    "sr": 44100,
    "bpm": 105.0,
    "compas_s": 2.285714,
-   "golpe_s": 0.008,
-   "LUFS": -19.93
+   "golpe_muestra": 477666,
+   "LUFS": -19.76,
+   "agudos_5k_dB": -24.5
+  },
+  "boss_final": {
+   "tipo": "loop",
+   "muestras": 3225600,
+   "segundos": 73.1429,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "tramos": [
+    "c4-c19",
+    "c40-c55"
+   ],
+   "LUFS": -14.07,
+   "agudos_5k_dB": -25.7
+  },
+  "boss_final_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 201600,
+   "segundos": 4.5714,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "golpe_muestra": 201600,
+   "LUFS": -14.24,
+   "agudos_5k_dB": -27.6
+  },
+  "boss_final_2": {
+   "tipo": "loop",
+   "muestras": 2822400,
+   "segundos": 64.0,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "tramos": [
+    "c20-c39",
+    "c48-c55"
+   ],
+   "LUFS": -13.53,
+   "agudos_5k_dB": -25.2
+  },
+  "boss_final_3_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 190260,
+   "segundos": 4.3143,
+   "sr": 44100,
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "golpe_muestra": 190260,
+   "LUFS": -14.7,
+   "agudos_5k_dB": -19.4
+  },
+  "boss_final_3": {
+   "tipo": "loop",
+   "muestras": 1902684,
+   "segundos": 43.1448,
+   "sr": 44100,
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "tramos": [
+    "c56-c70",
+    "c35-c39"
+   ],
+   "LUFS": -12.44,
+   "agudos_5k_dB": -24.6
+  },
+  "boss_final_4_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 190260,
+   "segundos": 4.3143,
+   "sr": 44100,
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "golpe_muestra": 190260,
+   "LUFS": -13.84,
+   "agudos_5k_dB": -25.4
   },
   "boss_final_4": {
    "tipo": "loop",
-   "muestras": 806400,
-   "segundos": 18.2857,
+   "muestras": 1522164,
+   "segundos": 34.5162,
    "sr": 44100,
-   "bpm": 105.0,
-   "compas_s": 2.285714,
-   "LUFS": -12.81
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "tramos": [
+    "c61-c70",
+    "c63-c68"
+   ],
+   "LUFS": -11.76,
+   "agudos_5k_dB": -27.5
+  },
+  "boss_final_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 216195,
+   "segundos": 4.9024,
+   "sr": 44100,
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "golpe_s": 0.008,
+   "LUFS": -18.83,
+   "agudos_5k_dB": -25.0
   }
  },
  "finales": {
@@ -348,13 +458,18 @@
    "vuelve_exploracion": true
   },
   "boss_bamboo": {
-   "clip": null,
-   "fundido_s": 3.5,
+   "clip": "boss_bamboo_out",
+   "fundido_s": 0.0,
    "vuelve_exploracion": true
   },
   "boss_final": {
    "clip": "boss_final_out",
    "fundido_s": 0.0,
+   "vuelve_exploracion": false
+  },
+  "ending": {
+   "clip": null,
+   "fundido_s": 2.0,
    "vuelve_exploracion": false
   }
  }

@@ -1325,9 +1325,39 @@ MonoBehaviour:
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_bamboo_2
+    clips:
+    - {fileID: 8300000, guid: 456fd0be231aa01696d264e6aa2fef37, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_2_in
+    clips:
+    - {fileID: 8300000, guid: ac855e8d9d9277adb96f4da6e037ea82, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_3
+    clips:
+    - {fileID: 8300000, guid: dda04df644af3f25a37ba5bfe84780a4, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_3_in
+    clips:
+    - {fileID: 8300000, guid: 83684cfc42d35e8784a2590cf5a3551c, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_bamboo_intro
     clips:
     - {fileID: 8300000, guid: d5e7fb611fe7335b71c77fe09a0248f2, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_out
+    clips:
+    - {fileID: 8300000, guid: 77ba32eb148be17ef3dbb5135bf3aa44, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0
@@ -1343,15 +1373,33 @@ MonoBehaviour:
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_final_2_in
+    clips:
+    - {fileID: 8300000, guid: 77440aed0e0d27cdcdf88615fa5d2517, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_final_3
     clips:
     - {fileID: 8300000, guid: ff8575d0576283db202300931e533cf2, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_final_3_in
+    clips:
+    - {fileID: 8300000, guid: d30406fc1a0a5428abbe5adb530aa3ec, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_final_4
     clips:
     - {fileID: 8300000, guid: ab59932bba3df7eb4ec5ad82dc6860dc, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_4_in
+    clips:
+    - {fileID: 8300000, guid: 30038f32f3fcaddd41c60f9ebcd351f1, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0
@@ -1397,15 +1445,39 @@ MonoBehaviour:
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_goro_out_1
+    clips:
+    - {fileID: 8300000, guid: 260e10cf754dbe093f4394a129da69ca, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_lake
     clips:
     - {fileID: 8300000, guid: 85cc18ccd693cbeb67140b2002517329, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_lake_2
+    clips:
+    - {fileID: 8300000, guid: b9b8c11b205194af56dc94a2609bf6c9, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_2_in
+    clips:
+    - {fileID: 8300000, guid: c46d08a170424f398ac045715c97e8db, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_lake_3
     clips:
     - {fileID: 8300000, guid: 316922e1f9c9e8637737355c7256f488, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_3_in
+    clips:
+    - {fileID: 8300000, guid: 93865d0d54435bb3785f9152a8bd796b, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0
