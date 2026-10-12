@@ -5,15 +5,18 @@ namespace Nindo
     /// <summary>
     /// La sombra viva en los tres actos: el director del dúo cuerpo + sombra (el cómo de cada golpe está en
     /// KageShadow, la regla de lectura en KokuyoDuet).
-    ///  * Turnos: cuando él termina un combo, a veces le toca a la sombra (Acto 1: 40 %, Acto 2: 60 %, Acto 3: 50 %);
-    ///    si la sombra lleva mucho sin atacar (11 / 5.5 / 6.5 s) ataca igual en el próximo hueco. Nunca dos turnos de la
-    ///    sombra más juntos que 5.5 / 2.6 / 3.2 s. La primera vez en el Acto 1 es a los ~15 s, con el grito del abuelo.
+    ///  * Turnos: cuando él termina un combo, a veces le toca a la sombra (Acto 1: 55 %, Acto 2: 60 %, Acto 3: 50 %);
+    ///    si la sombra lleva mucho sin atacar (7 / 5.5 / 5 s) ataca igual en el próximo hueco. Nunca dos turnos de la
+    ///    sombra más juntos que 4 / 2.6 / 3.2 s. La primera vez en el Acto 1 es a los ~6 s (antes de los imparables, que
+    ///    se enseñan a los 12 y 20 s), con el grito del abuelo y una carga más larga para leerlo (TeachLeadMul).
+    ///    Con 15 s y 11 s de silencio, el Acto 1 entero (~24 s) veía menos de un Nobi y en el 28 % de las peleas ninguno.
     ///    El turno de la sombra le saca lugar a él (no se suma): él vuelve a atacar recién 0.6 s después del golpe de la
-    ///    sombra (en el Acto 1 se queda quieto hasta que vuelve a sus pies). Simulado con el bot: la sombra hace ~30-40 %
-    ///    de los golpes en los Actos 2 y 3 y el daño por minuto queda como antes (±5 %).
+    ///    sombra (en el Acto 1 se queda quieto hasta que vuelve a sus pies).
+    ///  * En el eclipse la sombra alterna de lado en cada turno (del lado opuesto a él, después de costado): si siempre
+    ///    salía de enfrente se aprendía el ritmo y dejaba de ser una amenaza.
     ///  * Dúos: los patrones DuetPattern de KokuyoMoves meten un golpe de la sombra en el combo del cuerpo (antes,
     ///    mientras él carga; o entre dos de sus cortes, del otro lado de Kaito).
-    ///  * La regla: el que arranca después pega después, a Gap(primero, segundo) del otro (0.9 / 1.05 / 1.1 s; 1.2 s
+    ///  * La regla: el que arranca después pega después, a Gap(primero, segundo) del otro (0.9 / 1.05 / 1.1 s; 1.7 s
     ///    entre el Nobi y el golpe siguiente de él; 1.3 s entre un golpe de él y el corte desde la oscuridad, que sale
     ///    1.05 s antes). PlanWindup (cuerpo) y ShadowWindup (sombra) estiran el windup.
     ///  * Nada de sombra con él de rodillas, en una escena o en la última resistencia (y nada nuevo mientras está hundido).
@@ -21,14 +24,22 @@ namespace Nindo
     /// </summary>
     public partial class KokuyoBoss
     {
-        static readonly float[] TurnChance = { 0f, 0.4f, 0.6f, 0.5f };
-        static readonly float[] TurnMinGap = { 0f, 5.5f, 2.6f, 3.2f };
-        static readonly float[] MaxQuiet = { 0f, 11f, 5.5f, 6.5f };
-        /// <summary>Segundos desde que arranca cada acto hasta el primer turno de la sombra (en el Acto 1, los imparables
-        /// se enseñan antes: a los 12 y 20 s).</summary>
-        static readonly float[] FirstTurnAfter = { 0f, 15f, 1.6f, 2.5f };
-        /// <summary>Después del Nobi él espera más: su sombra tiene que volver a sus pies para avisarle el golpe.</summary>
-        const float GapAfterNobi = 1.2f;
+        static readonly float[] TurnChance = { 0f, 0.55f, 0.6f, 0.5f };
+        static readonly float[] TurnMinGap = { 0f, 4f, 2.6f, 3.2f };
+        static readonly float[] MaxQuiet = { 0f, 7f, 5.5f, 5f };
+        /// <summary>Segundos desde que arranca cada acto hasta el primer turno de la sombra (en el Acto 1 antes de los
+        /// imparables, que se enseñan a los 12 y 20 s: la sombra es lo primero que se aprende de él).</summary>
+        static readonly float[] FirstTurnAfter = { 0f, 6f, 1.6f, 2.5f };
+        /// <summary>
+        /// Después del Nobi él espera más: su sombra tiene que volver a sus pies para avisarle el golpe. La tinta vuelve
+        /// ~0.9 s después del impacto (lo que queda del clip, 0.6, más el fundido de 0.3) y el adelanto necesita
+        /// GoLead + LeadIn (0.71 s) antes del golpe de él para entrar entero: 1.7 s. Con 1.2 el corte de él en "Sombra
+        /// y Acero" llegaba sin adelanto (la sombra lo copiaba) y el acto perdía su lección.
+        /// </summary>
+        const float GapAfterNobi = 1.7f;
+        /// <summary>La primera vez de cada cosa (el primer Nobi, la primera salida de la oscuridad) la carga dura esto
+        /// más: el grito del abuelo aparece mientras tanto y el primer golpe no puede ser el que se lee y se come.</summary>
+        const float TeachLeadMul = 1.5f, TeachDarkMul = 1.4f;
 
         /// <summary>El modelo animado (la sombra pegada gira desde su rotación).</summary>
         public Transform Body => model;
@@ -40,6 +51,8 @@ namespace Nindo
         // turnos
         float actStart, lastShadowTurn = -99f;
         bool shadowTurnAsked, nobiTaught, darkTaught;
+        // el lado del último corte desde la oscuridad (el próximo turno sale del otro)
+        ShadowSide lastDarkSide = ShadowSide.Flank;
         AttackPattern duetTeach;
         // para el informe de cada acto (consola): cuántos golpes de cada uno, el par más junto y, en el eclipse, la
         // salida de la oscuridad más pegada a un golpe de él
@@ -73,6 +86,7 @@ namespace Nindo
             actStart = Time.time;
             lastShadowTurn = -99f;
             shadowTurnAsked = false;
+            lastDarkSide = ShadowSide.Flank;
             kage?.SetAct(Act);
             duetTeach = null;
             foreach (var p in config.patterns) if (p.name == KokuyoMoves.DuetTeachName) duetTeach = p;
@@ -85,7 +99,7 @@ namespace Nindo
             if (kage != null)
             {
                 // antes de un corte desde la oscuridad tiene que caber también su salida (EmergeLead antes)
-                float before = kage.FromDark ? KokuyoDuet.GapBeforeDark(kind, kage.PendingKind) : KokuyoDuet.Gap(kind, kage.PendingKind);
+                float before = kage.FromDark ? KokuyoDuet.GapBeforeDark(kind, kage.PendingKind, kage.EmergeLeadNow) : KokuyoDuet.Gap(kind, kage.PendingKind);
                 t = Fit(t, kage.PendingImpactAt, before, GapAfter(kage.PendingKind, kage.PendingMove, kind));
             }
             return Mathf.Max(t, shadowLastAt + GapAfter(shadowLastKind, shadowLastMove, kind));
@@ -98,9 +112,10 @@ namespace Nindo
         public float EarliestShadowImpact(float t, AttackKind kind)
         {
             bool dark = kage != null && kage.FromDark;
+            float lead = dark ? kage.EmergeLeadNow : 0f;
             float bp = State == EnemyState.Attack && !float.IsInfinity(StrikeEta) ? Time.time + StrikeEta : -1f;
-            t = Fit(t, bp, KokuyoDuet.Gap(kind, StepKind), dark ? KokuyoDuet.GapBeforeDark(StepKind, kind) : KokuyoDuet.Gap(StepKind, kind));
-            return Mathf.Max(t, bodyLastAt + (dark ? KokuyoDuet.GapBeforeDark(bodyLastKind, kind) : KokuyoDuet.Gap(bodyLastKind, kind)));
+            t = Fit(t, bp, KokuyoDuet.Gap(kind, StepKind), dark ? KokuyoDuet.GapBeforeDark(StepKind, kind, lead) : KokuyoDuet.Gap(StepKind, kind));
+            return Mathf.Max(t, bodyLastAt + (dark ? KokuyoDuet.GapBeforeDark(bodyLastKind, kind, lead) : KokuyoDuet.Gap(bodyLastKind, kind)));
         }
 
         /// <summary>
@@ -134,8 +149,16 @@ namespace Nindo
             foreach (var c in dp.cues)
             {
                 if (c.step != step || c.before != before) continue;
-                if (kage.TryStrike(c.move, c.side)) { statDuet++; OnShadowTurn(c.move); }
+                if (kage.TryStrike(c.move, c.side, TeachMul(c.move))) { statDuet++; OnShadowTurn(c.move, c.side); }
             }
+        }
+
+        /// <summary>Cuánto más carga la sombra la primera vez que hace esto (ver TeachLeadMul).</summary>
+        float TeachMul(string move)
+        {
+            if (Act == 1 && move == KokuyoMoves.Nobi && !nobiTaught) return TeachLeadMul;
+            if (Act >= 3 && move == KokuyoMoves.Giri && !darkTaught) return TeachDarkMul;
+            return 1f;
         }
 
         // ------------------------------------------------------------------ por frame
@@ -170,12 +193,16 @@ namespace Nindo
                 float r = Random.value;
                 move = r < 0.5f ? KokuyoMoves.Giri : r < 0.8f ? KokuyoMoves.Nui : KokuyoMoves.Watari;
             }
-            else { move = KokuyoMoves.Giri; side = ShadowSide.Opposite; }
-            bool ok = kage.TryStrike(move, side);
+            else
+            {
+                move = KokuyoMoves.Giri;
+                side = lastDarkSide == ShadowSide.Opposite ? ShadowSide.Flank : ShadowSide.Opposite;
+            }
+            bool ok = kage.TryStrike(move, side, TeachMul(move));
             // si no se pudo (lejos para el Nui, sin lugar para cruzar) corta como él
-            if (!ok && move != KokuyoMoves.Giri && Act >= 2) ok = kage.TryStrike(move = KokuyoMoves.Giri, side);
+            if (!ok && move != KokuyoMoves.Giri && Act >= 2) ok = kage.TryStrike(move = KokuyoMoves.Giri, side, 1f);
             if (!ok) return false;
-            OnShadowTurn(move);
+            OnShadowTurn(move, side);
             float impact = kage.PendingImpactAt;
             // él no le pisa el turno: en el Acto 1 se queda quieto hasta que la sombra vuelve (HoldsBody); en el 2 y el 3
             // vuelve a atacar 0.6 s después del golpe de la sombra (el turno de ella le saca lugar a él, no se suma)
@@ -183,9 +210,10 @@ namespace Nindo
             return true;
         }
 
-        void OnShadowTurn(string move)
+        void OnShadowTurn(string move, ShadowSide side)
         {
             lastShadowTurn = Time.time;
+            if (Act >= 3 && side != ShadowSide.Any) lastDarkSide = side;
             if (move == KokuyoMoves.Nobi && !nobiTaught)
             {
                 nobiTaught = true;
@@ -235,14 +263,17 @@ namespace Nindo
         }
 
         /// <summary>Informe para probar con el bot: golpes de cada uno en el acto, el par más junto (nunca &lt; 0.9 s) y en
-        /// el eclipse la salida más pegada a un golpe de él (nunca &lt; 0.25 s).</summary>
+        /// el eclipse la salida más pegada a un golpe de él (nunca &lt; 0.25 s). Solo en el editor y en las builds de
+        /// desarrollo: en la build final no escribe nada en el log del jugador.</summary>
         void LogShadowStats(string why)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             var inv = System.Globalization.CultureInfo.InvariantCulture;
             string dark = Act >= 3 && statEmergeClear < 98f ? $", salida más pegada a un golpe de él {statEmergeClear.ToString("0.00", inv)} s" : "";
             Debug.Log($"[Nindo] Kokuyō acto {Act} ({why}): {(Time.time - actStart).ToString("0", inv)} s, " +
                       $"{statBody} golpes de él, {statShadow} de la sombra ({statDuet} en dúos, {statShadowParried} desviados), " +
                       $"par más junto {statMinGap.ToString("0.00", inv)} s{dark}");
+#endif
             statBody = statShadow = statShadowParried = statDuet = 0;
             statMinGap = statEmergeClear = 99f;
         }
@@ -281,8 +312,8 @@ namespace Nindo
             if (kage == null || !ShadowAllowed) return false;
             string m = move == "nobi" ? KokuyoMoves.Nobi : move == "nui" ? KokuyoMoves.Nui : move == "watari" ? KokuyoMoves.Watari : KokuyoMoves.Giri;
             var s = side == "flanco" ? ShadowSide.Flank : side == "opuesto" ? ShadowSide.Opposite : ShadowSide.Any;
-            if (!kage.TryStrike(m, s)) return false;
-            OnShadowTurn(m);
+            if (!kage.TryStrike(m, s, TeachMul(m))) return false;
+            OnShadowTurn(m, s);
             return true;
         }
 #endif

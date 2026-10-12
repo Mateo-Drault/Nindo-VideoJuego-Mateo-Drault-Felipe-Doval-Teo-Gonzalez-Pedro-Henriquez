@@ -565,8 +565,9 @@ namespace Nindo
             }
             hazards.Puddle(transform.position, 1.6f);
             ScriptedFace(target.transform.position);
-            // el paso espera hundido (fin del clip: 4 m bajo las losas) hasta llegar y hervir 0.45 s
-            bool hold = !sinkArrived || Time.time - sinkArriveTime < 0.45f;
+            // el paso espera hundido (fin del clip: 4 m bajo las losas) hasta llegar y hervir SinkBoil (0.45 s; menos en
+            // los tramos siguientes del acto: KokuyoBoss.Pacing)
+            bool hold = !sinkArrived || Time.time - sinkArriveTime < SinkBoil;
             if (stepNorm > 0.95f && hold)
             {
                 if (sinkHoldClock < 0f) sinkHoldClock = stepClock;
@@ -680,7 +681,7 @@ namespace Nindo
             // sin la fase genérica de Boss: los umbrales son pisos y cada uno abre su escena
             if (transition != null || LastStand || !IsAlive) return;
             if (Health <= Gates[Act] * config.maxHealth + 0.5f) StartTransition(Act + 1, false);
-            else CheckSecondHalf();
+            else CheckStage();
         }
 
         public override void OnParried(bool perfect)

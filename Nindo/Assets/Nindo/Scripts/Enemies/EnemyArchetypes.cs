@@ -174,7 +174,7 @@ namespace Nindo
             // ~40 s de pelea; con 1440, la retirada y las fases nuevas el bot "bueno" pelea ~80 s por intento (simulado)
             var c = new EnemyConfig
             {
-                id = "mizuchi", displayName = "Mizuchi", maxHealth = 1440, runSpeed = 5f, walkSpeed = 2.4f, turnSpeed = 4.5f,
+                id = "mizuchi", displayName = "Mizuchi", maxHealth = 1440 * MizuchiBoss.HealthScale, runSpeed = 5f, walkSpeed = 2.4f, turnSpeed = 4.5f,
                 // radio = medio cuerpo (1.95 m de ancho) más algo de aleta; altura 3 m: AimPoint a 1.65 m, el eje del cuerpo
                 radius = 1.3f, height = 3f, scale = 1f, maxImbalance = 4, exhaustedTime = 3.4f, guardTime = 1.2f,
                 poiseHits = 3, hyperArmor = true, knockbackResist = 0.95f, parriedRecoil = 0.4f, staggerTime = 0.3f,

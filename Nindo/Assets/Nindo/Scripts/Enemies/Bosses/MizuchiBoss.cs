@@ -240,6 +240,7 @@ namespace Nindo
             katanaTip = StrikePoint(a);
             trail = TrailFor(a);
             ResetStepState(a);
+            PaceStep(a);
             switch (a.special)
             {
                 case "dive": Run(DiveRoutine(a)); break;
@@ -401,6 +402,8 @@ namespace Nindo
             beachLoopAt = 0f; freeBeach = false;
             lurking = false;
             base.ResetEnemy();
+            // los patrones son otros (la config de fábrica): las firmas de la fase anterior no se restauran sobre ellos
+            for (int n = 0; n < signature.Length; n++) signature[n] = null;
             if (body != null) { body.SetPhase(0); body.SetHidden(false); }
             baseFinisherHealth = config.finisherHealth;
             Game.Camera?.SetFocusBias(Vector3.zero);
@@ -515,6 +518,7 @@ namespace Nindo
                 Game.UI?.ShowToast(StoryText.MizuchiPhase3, UIFactory.Gold, 2.2f);
                 RewardKaito(2);
                 StaggerCooldowns(2, 0.6f);
+                QueueSignatures(2);
             }
         }
 
@@ -620,8 +624,10 @@ namespace Nindo
             SetState(EnemyState.Chase);
             IsAggro = true;
             nextAttackTime = Time.time + 0.8f;
-            // los especiales nuevos entran de a uno en los próximos segundos (no todos juntos al volver)
+            // los especiales nuevos entran de a uno en los próximos segundos (no todos juntos al volver), la ola y los
+            // pilares primero (MizuchiBoss.Pacing)
             StaggerCooldowns(1, 0.6f);
+            QueueSignatures(1);
         }
 
         /// <summary>Cámara baja por detrás de Kaito (mirando hacia la cascada): Kaito en primer plano, el koi y el agua atrás.</summary>

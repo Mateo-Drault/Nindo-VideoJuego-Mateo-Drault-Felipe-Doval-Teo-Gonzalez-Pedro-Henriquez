@@ -129,8 +129,13 @@ Shader "Nindo/Moon"
                 col *= 1.0 - _Veil * (0.35 + 0.6 * cl);
                 a *= 1.0 - _Veil * 0.5 * cl;
 
-                col *= 1.0 + _Flash * 2.5;
-                col += _HaloColor.rgb * _Flash * Glow(x, 2.0, r) * edge * (1.0 - disc);
+                // destello: se enciende la cara; el halo del destello satura despacio (1 - exp) y se apaga desde 0.45
+                // del quad. Antes todo (halo incluido) se multiplicaba x3.5 y el halo lineal pasaba el blanco: la luna que
+                // vuelve era un disco blanco de borde duro del doble de su radio (réplica: brillo > 0.5 hasta 2.3 radios;
+                // ahora 1.8, con caída suave)
+                col *= 1.0 + _Flash * 2.5 * disc;
+                float flashEdge = 1.0 - smoothstep(0.45, 0.98, d);
+                col += _HaloColor.rgb * 0.7 * (1.0 - exp(-_Flash * Glow(x, 4.0, r) * 1.5)) * flashEdge * (1.0 - disc);
                 return half4(col * _Alpha, saturate(a) * _Alpha);
             }
             ENDHLSL

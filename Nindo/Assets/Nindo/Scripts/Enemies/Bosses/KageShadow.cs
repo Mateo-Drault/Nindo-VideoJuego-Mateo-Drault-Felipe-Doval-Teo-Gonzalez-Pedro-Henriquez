@@ -53,9 +53,9 @@ namespace Nindo
         // pose al terminar un golpe (la figura vuelve a la guardia antes de rondar)
         string settleState;
         float settleLeft, settleDur;
-        // a oscuras
+        // a oscuras: si está afuera, cuándo vuelve a apagarse y cuánto antes del golpe sale (más la primera vez)
         bool emerged;
-        float vanishAt = -1f;
+        float vanishAt = -1f, emergeLead = KokuyoMoves.EmergeLead;
         Light glow;
         Transform tipMark;
 
@@ -70,13 +70,19 @@ namespace Nindo
         /// hoja de Kesagiri en el impacto (cuadro 18: 3.5 m adelante, 3.8 m arriba), la sombra de la hoja le pasa a 0.1 m
         /// (medido proyectando Kokuyo.fbx con la cuenta de Nindo/ShadowInk, a 6.4 y 6.9 m de él).
         /// </summary>
-        const float NobiHeadShort = 1f;
+        const float NobiHeadShort = 1f, NobiMinStretch = 0.3f;
         const float NobiAimTime = 0.35f, NobiRetractTime = 0.45f, NobiSnapTime = 0.22f;
         /// <summary>Color del pulso del "¡ahora!" de la sombra (el shader lo multiplica por 2.6: dorado vivo).</summary>
         static readonly Color GoldFlash = new Color(0.42f, 0.31f, 0.1f);
         static readonly Color GlowColor = new Color(0.62f, 0.4f, 1f);
-        /// <summary>A oscuras el filo violeta de la figura brilla más (pasa el umbral del bloom).</summary>
-        const float DarkRim = 1.4f;
+        /// <summary>
+        /// A oscuras el filo violeta de la figura brilla más (pasa el umbral del bloom) y la ilumina su luz propia. Con
+        /// 1.4 y 1.6 la figura era violeta oscuro sobre piso violeta oscuro: en el render del eclipse desde la cámara del
+        /// juego solo se leía el anillo dorado, no la figura con la hoja levantada (la pose del aviso). Con 2.5 y 3 el
+        /// contorno entero se recorta contra el piso; la hoja, que es fina, se lee por su filo y por el destello de la
+        /// punta en el "¡ahora!".
+        /// </summary>
+        const float DarkRim = 2.5f, DarkGlow = 3f;
 
         public Shape Form { get; private set; } = Shape.Bound;
         public bool Pinned => mode == Mode.Pinned;
@@ -105,8 +111,10 @@ namespace Nindo
         /// <summary>Qué golpe es (KokuyoMoves.Nobi, Giri...): después del Nobi el cuerpo espera más (el adelanto vuelve).</summary>
         public string PendingMove => State == EnemyState.Attack && CurrentAttack != null ? CurrentAttack.special
                                      : mode == Mode.Stalk || mode == Mode.LineUp ? stalkMove : "";
-        /// <summary>Sus cortes salen de la oscuridad (eclipse): se ven EmergeLead antes del golpe.</summary>
+        /// <summary>Sus cortes salen de la oscuridad (eclipse): se ven EmergeLeadNow antes del golpe.</summary>
         public bool FromDark => Form == Shape.Hidden;
+        /// <summary>Cuánto antes de su corte sale de la oscuridad el golpe planeado (EmergeLead, más la primera vez).</summary>
+        public float EmergeLeadNow => emergeLead;
         public override bool Targetable => false;
         public override int CurrentPhase => owner != null ? owner.CurrentPhase : 0;
 
@@ -154,9 +162,10 @@ namespace Nindo
         // ================================================================== API de Kokuyō
         /// <summary>
         /// Arranca un golpe de la sombra (Nobi, Giri, Nui o Watari) desde 'side'. Devuelve false si en esta forma o a
-        /// esta distancia no puede. El momento del golpe lo ajusta Kokuyō (nunca pegado al suyo).
+        /// esta distancia no puede. El momento del golpe lo ajusta Kokuyō (nunca pegado al suyo). 'leadMul' estira la
+        /// carga del Nobi y la salida de la oscuridad (la primera vez que se enseñan).
         /// </summary>
-        public bool TryStrike(string move, ShadowSide side)
+        public bool TryStrike(string move, ShadowSide side, float leadMul)
         {
             if (!CanStrike || target == null || !target.IsAlive) return false;
             Vector3 kp = target.transform.position;
@@ -164,10 +173,11 @@ namespace Nindo
             {
                 case KokuyoMoves.Nobi:
                 {
+                    // desde cualquier distancia a tiro: pegado a él (donde pelean el bot y casi todos) la sombra se
+                    // estira poco y la hoja de tinta le barre por encima (UpdateNobiInk)
                     if (Form != Shape.Bound) return false;
-                    float d = CombatMath.FlatDistance(owner.transform.position, kp);
-                    if (d < KokuyoMoves.NobiMinRange || d > KokuyoMoves.NobiMaxRange) return false;
-                    BeginNobi();
+                    if (CombatMath.FlatDistance(owner.transform.position, kp) > KokuyoMoves.NobiMaxRange) return false;
+                    BeginNobi(leadMul);
                     return State == EnemyState.Attack;
                 }
                 case KokuyoMoves.Giri:
@@ -175,12 +185,14 @@ namespace Nindo
                     if (Form == Shape.Bound) return false;
                     attackDir = PickDir(side);
                     float natural = StepTimeline.MinWindup(moves.giri, false, false, CurrentPhase, 1f);
-                    // suelta: el tiempo de llegar a su lugar; a oscuras: se ve al menos EmergeLead antes del golpe
+                    // suelta: el tiempo de llegar a su lugar; a oscuras: se ve al menos emergeLead antes del golpe (la
+                    // regla del dúo se mide con este mismo número: se fija antes de planear)
+                    emergeLead = KokuyoMoves.EmergeLead * Mathf.Max(1f, leadMul);
                     float pre = Form == Shape.Hidden
-                        ? Mathf.Max(0f, KokuyoMoves.EmergeLead - natural)
+                        ? Mathf.Max(0f, emergeLead - natural)
                         : Mathf.Max(0f, CombatMath.FlatDistance(transform.position, StalkSpot()) / StalkSpeed + 0.25f - natural);
                     Plan(KokuyoMoves.Giri, natural, pre, moves.giri.kind);
-                    emergeAt = plannedImpactAt - Mathf.Max(KokuyoMoves.EmergeLead, natural);
+                    emergeAt = plannedImpactAt - Mathf.Max(emergeLead, natural);
                     return true;
                 }
                 case KokuyoMoves.Nui:
@@ -501,15 +513,22 @@ namespace Nindo
             plannedImpactAt = -1f;
             pattern = moves.giriP;
             StartAttack(false);
+            emergeLead = KokuyoMoves.EmergeLead;   // ya salió: lo que sigue se mide con la salida de siempre
+            // la agenda de golpes no le hizo lugar (Enemy lo mandó a rondar): afuera de la oscuridad no puede quedar la
+            // figura parada y con su brillo, y el próximo plan la movería de golpe a otro lado
+            if (State != EnemyState.Attack && Form == Shape.Hidden && emerged) Vanish(0.3f);
         }
 
-        void BeginNobi()
+        void BeginNobi(float leadMul)
         {
             mode = Mode.Hunt;
             nobiPoint = target.transform.position;
             nobiDir = (nobiPoint - owner.transform.position).Flat().normalized;
             pattern = moves.nobiP;
+            // la primera vez carga más: el windup se lee al armar el paso (BeginStep) y vuelve enseguida al de siempre
+            moves.nobi.windup = KokuyoMoves.NobiWindup * Mathf.Max(1f, leadMul);
             StartAttack(false);
+            moves.nobi.windup = KokuyoMoves.NobiWindup;
             if (State != EnemyState.Attack) return;
             nobiWTarget = 1f;
             retractTime = NobiRetractTime;
@@ -539,7 +558,8 @@ namespace Nindo
             locked = erupted = false;
             slideTime = 0f;
             StartAttack(false);
-            if (State != EnemyState.Attack) return;
+            // sin lugar en la agenda: el charco que hervía esperando se apaga (si no, quedaba un hervor sin golpe)
+            if (State != EnemyState.Attack) { hazards?.Puddle(Vector3.zero, 0f); return; }
             if (ink != null) ink.RiseTo(0f, 0.25f);   // se acuesta: es tinta en el piso que corre hacia Kaito
             hazards?.Boil(25f);
             Game.Audio?.Play("kokuyo_whisper", transform.position, 1f);
@@ -939,7 +959,7 @@ namespace Nindo
                 if (vanishAt > 0f && Time.time >= vanishAt) Vanish(0.45f);
                 // el brillo violeta (luz en el piso y un filo más fuerte) la hace legible en la oscuridad mientras está
                 // afuera, y se apaga con ella
-                float want = emerged ? 1.6f * ink.Visibility : 0f;
+                float want = emerged ? DarkGlow * ink.Visibility : 0f;
                 glow.intensity = Mathf.MoveTowards(glow.intensity, want, dt * 8f);
                 glow.enabled = glow.intensity > 0.01f;
                 ink.RimGain = emerged ? DarkRim : 1f;
@@ -979,7 +999,9 @@ namespace Nindo
                 ink.AimRoot(Quaternion.AngleAxis(yaw * k, Vector3.up) * body.rotation);
                 float d = CombatMath.FlatDistance(owner.transform.position, nobiPoint);
                 float unit = ink.Stretch > 0.01f ? ink.Length / ink.Stretch : 6.4f;   // su largo sin estirar (~6.4 m)
-                float stretch = Mathf.Clamp((d - NobiHeadShort) / unit, 0.8f, 2f);
+                // pegado a él la sombra se acorta (la luna "sube") hasta NobiMinStretch: con el piso de 0.8 de antes, a
+                // 2 m la silueta le pasaba 3 m de largo a Kaito y el Nobi solo salía a 2.5 m o más
+                float stretch = Mathf.Clamp((d - NobiHeadShort) / unit, NobiMinStretch, 2f);
                 ink.Stretch = Mathf.Lerp(1f, stretch, k);
                 ink.HoleRadius = Mathf.Lerp(HoleDefault, HoleNobi, k);
                 if (nobiW <= 0f && nobiWTarget <= 0f) { ink.ResetLight(); ink.AimRoot(null); ink.Stretch = 1f; ink.HoleRadius = HoleDefault; }

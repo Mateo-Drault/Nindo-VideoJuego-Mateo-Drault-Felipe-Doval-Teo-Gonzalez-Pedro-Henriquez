@@ -10,19 +10,31 @@ namespace Nindo
     /// redondo, que tenían la forma del aviso ensō (pedido 27). Horizontal en pantalla y no a lo largo de la guardia:
     /// en los prototipos la versión "en el mundo" se leía como un tajo vertical cuando Kaito mira al costado.
     /// Un quad que mira a la cámara, reciclado; corre en tiempo real (el perfecto trae hit-stop global y el destello
-    /// aguanta su pico mientras dura).
+    /// aguanta su pico mientras dura). Corto y chico a propósito: en los dúos de Kokuyō el anillo del golpe siguiente
+    /// arranca 0.05 s después del que se desvía; si hay otro aviso a la vista cerca (Calm), el destello baja al 40 % y
+    /// el perfecto no hace la estrella, para no tapar lo que viene.
     /// </summary>
     public class ParrySteel : MonoBehaviour
     {
-        // las vidas salen del shader (normal 0.17 s, perfecto 0.30 s); se apaga un poco después
-        const float LifeNormal = 0.2f, LifePerfect = 0.34f;
-        static readonly Vector2 ExtentNormal = new Vector2(1.4f, 1.2f), ExtentPerfect = new Vector2(1.8f, 1.4f);
+        // las vidas salen del shader (normal 0.10 s, perfecto 0.15 s); se apaga un poco después
+        const float LifeNormal = 0.12f, LifePerfect = 0.17f;
+        // medio tamaño del quad: la aguja (0.9 / 1.1 m), las líneas de impacto y las púas entran con un margen
+        static readonly Vector2 ExtentNormal = new Vector2(1.0f, 0.85f), ExtentPerfect = new Vector2(1.25f, 1.0f);
+        /// <summary>Otro aviso a esta distancia del choque (y todavía lejos de su golpe) atenúa el destello.</summary>
+        const float CalmRadius = 6f, CalmMinEta = 0.1f;
+
+        /// <summary>
+        /// El VFX ParryEffect del equipo (una cruz dorada) dejó de sonar con el destello nuevo porque duplicaba la
+        /// estrella del perfecto. Queda como decisión del líder: en true vuelve a sonar en el perfecto, encima de esto.
+        /// </summary>
+        public static bool TeamParryVfx = false;
 
         static readonly Stack<ParrySteel> free = new Stack<ParrySteel>();
         static Material mat;
         static Mesh quad;
         static readonly int IdT = Shader.PropertyToID("_T"), IdPerfect = Shader.PropertyToID("_Perfect"),
-            IdSeed = Shader.PropertyToID("_Seed"), IdAim = Shader.PropertyToID("_Aim"), IdExtent = Shader.PropertyToID("_Extent");
+            IdSeed = Shader.PropertyToID("_Seed"), IdAim = Shader.PropertyToID("_Aim"), IdExtent = Shader.PropertyToID("_Extent"),
+            IdCalm = Shader.PropertyToID("_Calm");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetPool() => free.Clear();
@@ -61,8 +73,23 @@ namespace Nindo
             s.mpb.SetVector(IdExtent, ext);
             s.mpb.SetFloat(IdPerfect, perfect ? 1f : 0f);
             s.mpb.SetFloat(IdSeed, Random.value * 10f);
+            s.mpb.SetFloat(IdCalm, OtherTellNear(contact) ? 1f : 0f);
             s.gameObject.SetActive(true);
             s.UpdateShape();
+        }
+
+        /// <summary>¿Hay otro golpe avisándose cerca (el que se desvió ya está pegando: queda afuera por su ETA)?</summary>
+        static bool OtherTellNear(Vector3 p)
+        {
+            var all = Game.Combat != null ? Game.Combat.All : null;
+            if (all == null) return false;
+            for (int i = 0; i < all.Count; i++)
+            {
+                var e = all[i];
+                if (e == null || !e.InTell || e.StrikeEta <= CalmMinEta) continue;
+                if (CombatMath.FlatDistance(e.transform.position, p) <= CalmRadius) return true;
+            }
+            return false;
         }
 
         static bool Build()

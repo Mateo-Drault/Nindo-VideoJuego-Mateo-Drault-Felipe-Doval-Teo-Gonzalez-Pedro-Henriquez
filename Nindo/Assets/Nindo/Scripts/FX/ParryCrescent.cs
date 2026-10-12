@@ -12,6 +12,9 @@ namespace Nindo
     ///  * se acorta hacia el centro al ritmo de la ventana: queda en un tercio justo cuando se cierra;
     ///  * si desvía, destella blanca y se apaga (el destello del choque lo pone FX/ParrySteel); si no llegó nada,
     ///    se parte al medio y se cae en gris (con el "fiu" del parry al aire); si lo cortan, se apaga.
+    /// Legible en todos los pisos (revisado a escala del juego en nieve, patio, pasto y eclipse): 7.6 cm de filo, dorado
+    /// a ~1 para que no salga crema, acero azul frío (perfecto y normal no se confunden), tinta debajo, y a media
+    /// opacidad donde la tapa un cuerpo (Kaito mirando al norte, donde suelen estar los jefes).
     /// Una cinta de cuatro vértices que mira a la cámara, un MaterialPropertyBlock por frame.
     /// </summary>
     public class ParryCrescent : MonoBehaviour
@@ -22,10 +25,16 @@ namespace Nindo
         [Tooltip("Al cerrarse la ventana queda esta fracción del largo")] public float minLength = 0.35f;
         [Tooltip("Altura sobre los pies de Kaito (m): a la de la hoja en guardia")] public float height = 1.0f;
         [Tooltip("Adelante de Kaito (m)")] public float ahead = 0.45f;
-        [Tooltip("Medio ancho del filo (m); nunca menos de 1.6 px")] public float width = 0.022f;
+        [Tooltip("Medio ancho del filo (m); nunca menos de 1.6 px")] public float width = 0.038f;
 
-        static readonly Color Steel = new Color(0.82f, 0.9f, 1f);
-        static readonly Color Broken = new Color(0.5f, 0.5f, 0.54f);
+        static readonly Color Steel = new Color(0.55f, 0.72f, 1f);
+        static readonly Color Broken = new Color(0.62f, 0.62f, 0.66f);
+        const float GoldGlow = 0.95f, SteelGlow = 1f;
+        /// <summary>Al aire: las mitades caen esto (s) y nunca más cortas que esta fracción del largo (al cerrarse la
+        /// ventana quedaba en un tercio y el quiebre era una mota gris de 10 px).</summary>
+        const float WhiffTime = 0.35f, WhiffMinLength = 0.7f;
+        /// <summary>Opacidad de la línea donde la tapa un cuerpo (segunda pasada del shader).</summary>
+        const float OccludedAlpha = 0.5f;
         static readonly Color Flash = new Color(1f, 0.97f, 0.92f);
         // medio ancho de la cinta: entra la tinta de abajo y las mitades que se caen al aire
         const float RibbonHalfWidth = 0.15f;
@@ -43,7 +52,8 @@ namespace Nindo
 
         static readonly int IdColor = Shader.PropertyToID("_Color"), IdGlow = Shader.PropertyToID("_Glow"),
             IdLen = Shader.PropertyToID("_Len"), IdWidth = Shader.PropertyToID("_Width"), IdFade = Shader.PropertyToID("_Fade"),
-            IdHot = Shader.PropertyToID("_Hot"), IdBreak = Shader.PropertyToID("_Break"), IdExtent = Shader.PropertyToID("_Extent");
+            IdHot = Shader.PropertyToID("_Hot"), IdBreak = Shader.PropertyToID("_Break"), IdExtent = Shader.PropertyToID("_Extent"),
+            IdOccluded = Shader.PropertyToID("_Occluded");
 
         void Awake()
         {
@@ -51,7 +61,8 @@ namespace Nindo
             if (sh == null || !sh.isSupported) { enabled = false; return; }
             mat = new Material(sh) { name = "ParryGuard" };
             mat.SetFloat("_Mode", 0f);
-            // la hoja está delante de Kaito: si él la tapa (mirando hacia el norte), queda detrás de su cuerpo
+            // la hoja está delante de Kaito: si él la tapa (mirando hacia el norte), queda detrás de su cuerpo... pero se
+            // sigue viendo a media opacidad (la segunda pasada del shader dibuja solo donde falló la profundidad)
             mat.SetFloat("_ZTest", (float)UnityEngine.Rendering.CompareFunction.LessEqual);
             ParrySteel.ApplyPalette(mat);
             mpb = new MaterialPropertyBlock();
@@ -102,6 +113,7 @@ namespace Nindo
             if (!active || end != End.None) return;
             end = e;
             outT = 0f;
+            if (e == End.Whiff) len = Mathf.Max(len, halfLength * WhiffMinLength);
         }
 
         // ------------------------------------------------------------------ por frame
@@ -114,7 +126,7 @@ namespace Nindo
             if (end == End.None) t += dt;
             else
             {
-                outT += dt / (end == End.Whiff ? 0.22f : end == End.Success ? 0.06f : 0.1f);
+                outT += dt / (end == End.Whiff ? WhiffTime : end == End.Success ? 0.06f : 0.1f);
                 if (outT >= 1f) { Hide(); return; }
             }
             // lo que queda de ventana: se acorta hacia el centro (al terminar queda del último largo)
@@ -140,12 +152,12 @@ namespace Nindo
             mesh.RecalculateBounds();
             mr.enabled = true;
 
-            Color col = TellStyle.Gold;
-            float glow = 2.2f, fade = 1f, hot = 1f, brk = 0f;
-            if (end == End.None) col = t <= perfect ? TellStyle.Gold : Steel;
-            else if (end == End.Success) { col = Flash; glow = 3.5f; fade = 1f - outT; }
+            bool gold = t <= perfect;
+            Color col = gold ? TellStyle.Gold : Steel;
+            float glow = gold ? GoldGlow : SteelGlow, fade = 1f, hot = 1f, brk = 0f;
+            if (end == End.Success) { col = Flash; glow = 3.5f; fade = 1f - outT; }
             else if (end == End.Whiff) { col = Broken; glow = 1f; fade = 1f - outT; hot = 0f; brk = outT; }
-            else { col = t <= perfect ? TellStyle.Gold : Steel; fade = 1f - outT; }
+            else if (end == End.Cancel) fade = 1f - outT;
 
             mpb.Clear();
             mpb.SetVector(IdExtent, new Vector4(ex, RibbonHalfWidth, 0f, 0f));
@@ -156,6 +168,7 @@ namespace Nindo
             mpb.SetFloat(IdFade, fade);
             mpb.SetFloat(IdHot, hot);
             mpb.SetFloat(IdBreak, brk);
+            mpb.SetFloat(IdOccluded, OccludedAlpha);
             mr.SetPropertyBlock(mpb);
         }
 

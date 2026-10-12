@@ -61,8 +61,9 @@ namespace Nindo
         /// </summary>
         public const float EmergeClear = 0.25f;
 
-        /// <summary>Separación entre un golpe del cuerpo y el golpe siguiente de la sombra que sale de la oscuridad.</summary>
-        public static float GapBeforeDark(AttackKind body, AttackKind shadow) =>
-            Mathf.Max(Gap(body, shadow), KokuyoMoves.EmergeLead + EmergeClear);
+        /// <summary>Separación entre un golpe del cuerpo y el golpe siguiente de la sombra que sale de la oscuridad
+        /// 'emergeLead' antes de cortar (la primera vez sale antes: KageShadow.EmergeLeadNow).</summary>
+        public static float GapBeforeDark(AttackKind body, AttackKind shadow, float emergeLead) =>
+            Mathf.Max(Gap(body, shadow), emergeLead + EmergeClear);
     }
 }

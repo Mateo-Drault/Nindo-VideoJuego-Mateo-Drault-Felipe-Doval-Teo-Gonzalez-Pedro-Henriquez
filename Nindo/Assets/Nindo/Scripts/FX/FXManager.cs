@@ -143,18 +143,16 @@ namespace Nindo
         /// <summary>
         /// El parry ILUMINA la escena: luz cálida fuerte y corta, golpe de exposición/bloom (ScreenFX.ParryLight),
         /// destello de ACERO en el choque (FX/ParrySteel: aguja horizontal, líneas de impacto; el perfecto con estrella
-        /// y púas de tinta), chispas que salen raspando hacia los costados de la aguja y tinta dorada hacia el atacante.
-        /// Ya no hay anillo dorado en el piso ni destello redondo (ni el VFX ParryEffect del equipo, una cruz dorada
-        /// que duplicaba la estrella): con la forma del aviso ensō, el parry se leía como otro aviso. 'dir' = de Kaito
-        /// hacia el atacante.
+        /// y púas de tinta), chispas y tinta dorada hacia el atacante (hacia los costados en pantalla caían justo sobre
+        /// el anillo de la sombra que viene del flanco en los dúos de Kokuyō). Ya no hay anillo dorado en el piso ni
+        /// destello redondo: con la forma del aviso ensō, el parry se leía como otro aviso. El VFX ParryEffect del
+        /// equipo queda detrás de ParrySteel.TeamParryVfx (decisión del líder). 'dir' = de Kaito hacia el atacante.
         /// </summary>
         public void ParryFlash(Vector3 p, Vector3 dir, bool perfect)
         {
             ParrySteel.Spawn(p, dir, perfect);
-            var cam = Game.Camera != null ? Game.Camera.Cam : null;
-            Vector3 side = cam != null ? cam.transform.right : Vector3.Cross(Vector3.up, dir);
-            Emit(sparksWhite, p, Dir(side), 0.6f, perfect ? 1.0f : 0.75f);
-            Emit(sparksWhite, p, Dir(-side), 0.6f, perfect ? 1.0f : 0.75f);
+            if (perfect && ParrySteel.TeamParryVfx && C != null) PlayVfx(C.vfxParry, p, Quaternion.identity);
+            Emit(sparksWhite, p, Dir(dir), 0.6f, perfect ? 1.2f : 0.9f);
             Emit(goldInk, p, Dir(dir), 1f, perfect ? 1.4f : 1f);
             FlashLight(p, new Color(1f, 0.9f, 0.68f), perfect ? 28f : 12f, perfect ? 14f : 9f, perfect ? 0.22f : 0.15f);
             Screen?.ParryLight(perfect, 0.15f);
