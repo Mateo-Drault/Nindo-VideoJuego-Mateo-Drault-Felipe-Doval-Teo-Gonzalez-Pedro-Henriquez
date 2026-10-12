@@ -26,6 +26,8 @@ from mathutils import Vector, kdtree
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 import fbxcheck  # noqa: E402
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import bl_compat  # noqa: E402,F401  (Blender 5: Action.fcurves y slots)
 
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 ASSETS = os.path.join(REPO, "Nindo", "Assets")
