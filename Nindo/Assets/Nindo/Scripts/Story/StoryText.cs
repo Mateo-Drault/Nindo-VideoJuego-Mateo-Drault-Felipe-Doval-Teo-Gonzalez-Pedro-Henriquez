@@ -168,7 +168,7 @@ namespace Nindo
                 case "dojo_gate":
                     return new List<DialogueLine> {
                         L(Kaito, "La puerta del dojo... tres huecos con grabados: una montaña, el agua y el bambú."),
-                        L(Kaito, "Sellos. Uno en la Montaña Kodoyama, al oeste. Otro en la Aldea del Lago, al este. Y el último en el Bosque de Bambú, al noreste."),
+                        L(Kaito, "Sellos. Uno en la Montaña Kodoyama, al oeste. Otro en el Lago Kohan, al este. Y el último en el Bosque de Bambú, al noreste."),
                         L(Kaito, "Cada guardián tiene el suyo. Apenas consiga uno, lo traigo y lo pongo en su lugar."),
                     };
                 case "dojo_gate_incomplete":
@@ -233,7 +233,6 @@ namespace Nindo
                 // el final (StoryDirector.Ending): el reencuentro en un plano de los dos y lo de Kokuyō en otro de los tres
                 case "ending":
                     return new List<DialogueLine> {
-                        L(Kaito, "¡Abuelo!"),
                         L(Abuelo, "Kaito... viniste. Sabía que la cinta te elegiría."),
                     };
                 case "ending_kokuyo":
@@ -277,8 +276,6 @@ namespace Nindo
             switch (id)
             {
                 case "kage_shadow": return "La sombra no se corta con la katana: clavala con {Ability1} o {Ability2}";
-                // el primer santuario después del prólogo (StoryDirector.TickShrineTip)
-                case "shrine_pray": return "Rezá en los santuarios con {Interact}: te curan, guardan la partida y, si caés, volvés ahí.";
                 default: return "";
             }
         }
@@ -305,6 +302,12 @@ namespace Nindo
 
         /// <summary>Lo que murmura Kaito tirado en el piso del prólogo, mientras se despierta (StoryDirector.Prologue).</summary>
         public const string WakeMumble = "Ugh... mi cabeza... ¿Qué pasó?";
+
+        /// <summary>Kaito llama al abuelo al ir hacia él en el final, antes de que lo suelten (StoryDirector.Ending).</summary>
+        public const string EndingCall = "¡Abuelo!";
+
+        /// <summary>El consejo del primer santuario después del prólogo (StoryDirector.TickShrineTip).</summary>
+        public const string ShrinePrayHint = "Rezá en los santuarios con {Interact}: te curan, guardan la partida y, si caés, volvés ahí.";
 
         // ------------------------------------------------------------------ puerta de los tres sellos (World/SealGate)
         static readonly string[] sealNames = { "Sello de la Montaña", "Sello del Agua", "Sello del Bambú" };
@@ -355,8 +358,13 @@ namespace Nindo
             // vencer manda ese guardián (no se obliga a volver), en cualquier otro lado, ir a ponerlo
             int pending = SealGate.PendingCount(s);
             if (pending > 0 && !GuardianPending(s, zone))
-                return pending == 1 ? "Volvé a la puerta del dojo a colocar el " + SealName((SealId)SealGate.FirstPending(s))
-                                    : "Volvé a la puerta del dojo a colocar los sellos";
+            {
+                // frente a la puerta (el patio del dojo y el jardín) ya no es "volvé"
+                bool atGate = zone == "dojo" || zone == "jardin";
+                if (pending > 1) return atGate ? "Colocá los sellos en la puerta del dojo" : "Volvé a la puerta del dojo a colocar los sellos";
+                string seal = SealName((SealId)SealGate.FirstPending(s));
+                return atGate ? "Colocá el " + seal + " en la puerta del dojo" : "Volvé a la puerta del dojo a colocar el " + seal;
+            }
             if (s.SealCount >= 3) return "Abrí la puerta del dojo";
             bool pastWall = s.HasFlag(Flags.WallGateOpen) || s.HasFlag(Flags.DojoGateSeen) || s.SealCount > 0 || PastTheWall(zone);
             // guardias vencidos y el portón con su sello de sombra (WallSeal)

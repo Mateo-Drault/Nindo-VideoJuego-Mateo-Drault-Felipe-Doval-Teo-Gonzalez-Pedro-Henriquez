@@ -135,14 +135,16 @@ namespace Nindo
             Game.Camera?.Shake(0.6f);
             yield return new WaitForSecondsRealtime(4.2f);
 
-            // Kaito vuelve en sí en el piso y ve que se llevan al abuelo (StoryDirector.Prologue)
-            yield return KaitoComesTo(kidPos);
+            // Kaito vuelve en sí en el piso y ve, por encima de su hombro, cómo tacklean al abuelo (StoryDirector.Prologue)
+            yield return KaitoComesTo(kidPos, () =>
+            {
+                grandpa.Play("Kidnap", 0.1f);
+                Game.Audio?.Play("hit_heavy", grandpa.transform.position, 0.8f);
+            });
 
-            // ve al abuelo siendo llevado
-            int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(-3.5f, 3.2f, -6f), 1.0f, 32f, 0f, 0.9f, 0.9f, false);
-            grandpa.Play("Kidnap", 0.1f);
-            Game.Audio?.Play("hit_heavy", grandpa.transform.position, 0.8f);
-            yield return new WaitForSecondsRealtime(2.4f);
+            // ve al abuelo siendo llevado (el tackle ya empezó en el contraplano: la espera es la que falta de las 2.4 s)
+            int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(-3.5f, 3.2f, -6f), 1.0f, 32f, 0f, 1.1f, 0.9f, false);
+            yield return new WaitForSecondsRealtime(Mathf.Max(0.6f, 2.4f - WakeRevealHold));
             yield return Say("intro_wake");
             Game.Camera.CancelShot(shot2);
             // lo arrastran lentamente hacia el bosque

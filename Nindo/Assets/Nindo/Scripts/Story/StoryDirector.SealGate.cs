@@ -6,9 +6,9 @@ namespace Nindo
     /// <summary>
     /// La puerta de los tres sellos (World/SealGate). Antes había que juntar los tres y recién ahí la puerta hacía algo;
     /// ahora cada sello se pone apenas se tiene: Kaito se para frente a la puerta, el medallón aparece delante de su
-    /// pecho, la bandana lo manda con un gesto (BandanaPower, el mismo de la muralla) y vuela a su hueco, donde encastra
-    /// con un golpe de luz y queda guardado. Con el tercero la luz corre de un sello al otro, como la raya del HUD, y
-    /// la puerta se abre. La primera vez que Kaito llega, una grúa termina en los tres grabados.
+    /// pecho, la bandana lo manda con un gesto (BandanaPower o su respaldo, el mismo de la muralla) y vuela a su hueco,
+    /// donde encastra con un golpe de luz y queda guardado. Con el tercero la luz corre de un sello al otro, como la raya
+    /// del HUD, y la puerta se abre. La primera vez que Kaito llega, una grúa termina en los tres grabados.
     /// </summary>
     public partial class StoryDirector
     {
@@ -60,7 +60,7 @@ namespace Nindo
                 Vector3 pos = Vector3.Lerp(a, b, u);
                 pos.y = Mathf.Lerp(a.y, b.y, h);
                 return new Pose(pos, Quaternion.LookRotation(Vector3.Lerp(la, board, u) - pos));
-            }, () => Mathf.Lerp(40f, 30f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.unscaledTime - start) / travel))), 1.1f, 0f, 1f);
+            }, () => Mathf.Lerp(40f, 30f, Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((Time.unscaledTime - start) / travel))), BlendOrCut(a, 1.1f), 0f, 1f);
         }
 
         // ================================================================== poner los sellos
@@ -92,12 +92,7 @@ namespace Nindo
             yield return WalkTo(stand, 3.5f);
             yield return NudgeTo(stand, Quaternion.LookRotation(-gate.Front.Flat().normalized), 0.3f);
             EndKneel();
-            var a = P.Anim;
-            bool real = a.HasState(BandanaPowerState);
-            string state = real ? BandanaPowerState : PrayOldState;
-            float speed = real ? 1f : OldPowerSpeed;
-            float len = (real ? a.Length(state, BandanaPowerSeconds) : a.Length(state, 1.333f)) / speed;
-            float release = (real ? NRelease : NOldRelease) * len;
+            float release = PowerRelease(out string state);
             float beat = release + SealFlight + (n - 1) * SealFlightGap + 1.6f;
             int shot = PlaceShot(gate, lead, beat);
 
@@ -108,9 +103,8 @@ namespace Nindo
                 gate.Summon(pendingSeals[k], chest + gate.Left * (((n - 1) * 0.5f - k) * 0.42f));
                 yield return WaitScaled(0.12f);
             }
-            a.Play(state, 0.2f, 0f, speed);
             Game.Audio?.Play("bandana_charge", P.transform.position, 0.55f);
-            yield return WaitScaled(Mathf.Max(0f, release - 0.12f * n));
+            yield return PowerGesture(state);
 
             // 3) suelta: la bandana destella y cada medallón vuela a su hueco
             BandanaGlow.Ensure(P).Pulse(BandanaGlow.Gold, 0.8f);
@@ -126,7 +120,8 @@ namespace Nindo
             while (seated < n && guard < 3f) { guard += Time.deltaTime; yield return null; }
             for (int k = 0; k < n; k++) s.sealsPlaced[(int)pendingSeals[k]] = true;
             SaveSystem.Save();   // sale el pergamino: quedó puesto
-            StartCoroutine(BackToGuard(state, len - release - SealFlight));
+            if (state == BandanaPowerState) StartCoroutine(BackToGuard(state, P.Anim.Length(state, BandanaPowerSeconds) - release - SealFlight));
+            else EndPowerGesture(state);
             UpdateObjective();
 
             // 4) con los tres, se abre; si no, Kaito lo dice en voz baja y vuelve el control
@@ -175,7 +170,7 @@ namespace Nindo
                 float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / duration));
                 Vector3 pos = Vector3.Lerp(c0, c1, u);
                 return new Pose(pos, Quaternion.LookRotation(Vector3.Lerp(look0, look1, u) - pos));
-            }, () => PlaceFov, 0.9f, 0f, 0.9f);
+            }, () => PlaceFov, BlendOrCut(c0, 0.9f), 0f, 0.9f);
         }
 
         // ================================================================== la puerta se abre

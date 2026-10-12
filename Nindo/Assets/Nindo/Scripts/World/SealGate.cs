@@ -8,7 +8,8 @@ namespace Nindo
     /// mismo pictograma que su sello en el HUD; mirando el portón, montaña a la izquierda, lago al centro y bambú a la
     /// derecha, como en el HUD. Los sellos se ponen de a uno, apenas se tienen (SaveData.sealsPlaced): el grabado de un
     /// sello que Kaito ya tiene y todavía no puso late dorado y llama desde lejos; puesto, el medallón queda en su hueco
-    /// con un aro de luz tenue. Con los tres, la luz corre de un sello al otro (como la raya del HUD) y la puerta se abre
+    /// con un aro de luz tenue y en su cara el mismo pictograma en oro (el relieve del modelo key_seal_* es otro dibujo:
+    /// con la puerta terminada contradecía al HUD). Con los tres, la luz corre de un sello al otro (como la raya del HUD) y la puerta se abre
     /// (StoryDirector.SealGate). Antes los huecos eran troncos de piedra macizos y el medallón colocado quedaba enterrado
     /// adentro: se veían tres discos lisos.
     /// El marcador está en el centro del portón, al pie, con el mismo frame que el prop (forward hacia afuera).
@@ -32,26 +33,39 @@ namespace Nindo
         const float StandNear = 3.6f, StandOut = 4.6f, StandShift = 0.45f;
         /// <summary>Más lejos que esto (m a la cámara) los brillos no se actualizan ni se dibujan.</summary>
         const float DrawDistance = 80f;
+        /// <summary>
+        /// La cara del medallón puesto: un disco del color del sello delante del relieve (que llega a 0.088 del centro;
+        /// el borde del aro, a 0.075) y encima el pictograma del HUD; radio dentro de las caras planas del aro de 10 lados.
+        /// </summary>
+        const float FaceZ = 0.09f, FaceRadius = 0.18f, FaceIconSide = IconSide * 0.8f, FaceIconGlow = 0.6f;
+        /// <summary>El fondo de cada medallón (nindo_palette: stone, water_deep, leaf_dark), como el relieve que tapa.</summary>
+        static readonly Color[] FaceColors = { new Color32(0x8a, 0x8a, 0x86, 0xff), new Color32(0x1f, 0x4a, 0x5e, 0xff), new Color32(0x33, 0x65, 0x2c, 0xff) };
+        /// <summary>
+        /// Con Kaito delante de la puerta y algo que hacer en ella, la cámara de juego mira este tanto hacia el portón: el
+        /// tablero (a 5 m de alto y 4 m de Kaito) quedaba a 1.2° del borde de arriba, cortado, y el grabado que llama no se
+        /// veía. Con 2.6 m baja ~4°. Solo mientras Kaito está a menos de FocusRadius del tablero.
+        /// </summary>
+        const float FocusShift = 2.6f, FocusRadius = 9f;
 
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor"), ColorId = Shader.PropertyToID("_Color"),
             HoleFadeId = Shader.PropertyToID("_NindoHoleFade");
         static readonly Color Gold = new Color(1f, 0.74f, 0.3f, 1f);
-        static Mesh quad;
+        static Mesh quad, disc;
         static Material ringMat, linkMat;
-        static readonly Material[] iconMats = new Material[3];
+        static readonly Material[] iconMats = new Material[3], faceMats = new Material[3];
 
         readonly GameObject[] medallions = new GameObject[3];
-        readonly MeshRenderer[] decals = new MeshRenderer[3], rings = new MeshRenderer[3];
+        readonly MeshRenderer[] decals = new MeshRenderer[3], rings = new MeshRenderer[3], faceIcons = new MeshRenderer[3];
         readonly float[] flash = new float[3];
         readonly bool[] flying = new bool[3];
         MeshRenderer link;
         float linkFill, front = 1f;
         MaterialPropertyBlock mpb;
-        bool drawn = true;
+        bool drawn = true, focusing;
         string lastPrompt;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { quad = null; ringMat = null; linkMat = null; for (int i = 0; i < 3; i++) iconMats[i] = null; }
+        static void ResetStatics() { quad = null; disc = null; ringMat = null; linkMat = null; for (int i = 0; i < 3; i++) { iconMats[i] = null; faceMats[i] = null; } }
 
         // ================================================================== partida
         /// <summary>¿Está puesto? Una partida con la puerta ya abierta (de antes de poner de a uno) los tiene todos.</summary>
@@ -133,12 +147,17 @@ namespace Nindo
             // el cartel solo importa cerca (FindBest no mira más allá del radio)
             var pl = Game.Player;
             if (pl != null && (pl.transform.position - transform.position).sqrMagnitude < (radius + 3f) * (radius + 3f)) RefreshPrompt();
+            UpdateFocus(pl);
             var cam = Game.Camera != null ? Game.Camera.transform : null;
             bool near = cam == null || (cam.position - transform.position).sqrMagnitude < DrawDistance * DrawDistance;
             if (near != drawn)
             {
                 drawn = near;
-                for (int i = 0; i < 3; i++) { decals[i].enabled = near; rings[i].enabled = near; }
+                for (int i = 0; i < 3; i++)
+                {
+                    decals[i].enabled = near; rings[i].enabled = near;
+                    if (faceIcons[i] != null) faceIcons[i].enabled = near;
+                }
                 link.enabled = near && linkFill > 0f;
             }
             if (!near) return;
@@ -167,10 +186,41 @@ namespace Nindo
                 else ring = 0f;
                 SetGlow(decals[i], icon * front);
                 SetGlow(rings[i], ring * front);
+                // la cara del medallón: el pictograma en oro, más fuerte mientras vuela y en el golpe de luz al encastrar
+                if (faceIcons[i] != null) SetGlow(faceIcons[i], (flying[i] ? 0.85f : FaceIconGlow + flash[i] * 0.8f) * front);
             }
             if (linkFill > 0f && Mathf.Abs(front - linkFront) > 0.01f) { linkFront = front; ApplyLink(); }
         }
         float linkFront = 1f;
+
+        /// <summary>Corre la mira de la cámara de juego hacia el portón (FocusShift) y la devuelve al alejarse.</summary>
+        void UpdateFocus(PlayerController pl)
+        {
+            var cam = Game.Camera;
+            if (cam == null) return;
+            bool want = false;
+            Vector3 toGate = Vector3.zero;
+            if (pl != null && !Game.InCutscene && !Game.Save.HasFlag(Flags.DojoOpen))
+            {
+                Vector3 lp = transform.InverseTransformPoint(pl.transform.position);
+                toGate = (BoardCenter - pl.transform.position).Flat();
+                want = lp.z > 0.5f && toGate.sqrMagnitude < FocusRadius * FocusRadius;
+            }
+            if (want)
+            {
+                // entra de a poco desde el borde del radio (la cámara además lo suaviza)
+                float k = Mathf.InverseLerp(FocusRadius, FocusRadius - 3f, toGate.magnitude);
+                cam.SetFocusBias(toGate.normalized * (FocusShift * k));
+                focusing = true;
+            }
+            else if (focusing) { cam.SetFocusBias(Vector3.zero); focusing = false; }
+        }
+
+        void OnDisable()
+        {
+            if (focusing && Game.Camera != null) Game.Camera.SetFocusBias(Vector3.zero);
+            focusing = false;
+        }
 
         void SetGlow(MeshRenderer r, float k)
         {
@@ -325,6 +375,13 @@ namespace Nindo
             }
             go.name = SealProps[i];
             foreach (var c in go.GetComponentsInChildren<Collider>()) Destroy(c);
+            // la cara: el disco tapa el relieve del modelo (va antes del cambio de materiales: también se disuelve)
+            var face = new GameObject("Cara");
+            face.transform.SetParent(go.transform, false);
+            face.transform.localPosition = new Vector3(0f, MedallionBase, FaceZ);
+            face.AddComponent<MeshFilter>().sharedMesh = DiscMesh;
+            var fr = face.AddComponent<MeshRenderer>();
+            fr.sharedMaterial = FaceMaterial(i);
             // con los materiales "disolvibles" del mundo y la disolución del hueco siempre puesta: cuando el portón
             // tapa a Kaito (pasando por el vano) el tablero se abre en trama alrededor de él y los medallones con él;
             // si no, quedaban flotando enteros en medio del agujero. Fuera del cono no cambia nada (lo dice el shader)
@@ -344,6 +401,12 @@ namespace Nindo
                 b.SetFloat(HoleFadeId, 0.82f);
                 r.SetPropertyBlock(b);
             }
+            // y encima el pictograma del HUD (aditivo, como el grabado del tablero)
+            var icon = Quad("Pictograma_" + (SealId)i, IconMaterial(i), Vector3.zero, FaceIconSide);
+            icon.transform.SetParent(face.transform, false);
+            icon.transform.localPosition = Vector3.forward * 0.004f;
+            icon.transform.localScale = Vector3.one * FaceIconSide;
+            faceIcons[i] = icon;
             return go;
         }
 
@@ -468,6 +531,40 @@ namespace Nindo
                 quad.RecalculateBounds();
                 return quad;
             }
+        }
+
+        /// <summary>Disco de 20 lados de radio FaceRadius que mira a +Z (como QuadMesh).</summary>
+        static Mesh DiscMesh
+        {
+            get
+            {
+                if (disc != null) return disc;
+                const int n = 20;
+                var v = new Vector3[n + 1];
+                var nr = new Vector3[n + 1];
+                var tri = new int[n * 3];
+                for (int k = 0; k <= n; k++) nr[k] = Vector3.forward;
+                for (int k = 0; k < n; k++)
+                {
+                    float a = k * Mathf.PI * 2f / n;
+                    v[k + 1] = new Vector3(Mathf.Cos(a), Mathf.Sin(a), 0f) * FaceRadius;
+                    // vistos desde +Z (la x queda invertida en pantalla) los triángulos antihorarios en XY son horarios
+                    tri[k * 3] = 0; tri[k * 3 + 1] = k + 1; tri[k * 3 + 2] = k + 1 < n ? k + 2 : 1;
+                }
+                disc = new Mesh { name = "Nindo_SealFace", vertices = v, normals = nr, triangles = tri };
+                disc.RecalculateBounds();
+                return disc;
+            }
+        }
+
+        static Material FaceMaterial(int i)
+        {
+            if (faceMats[i] != null) return faceMats[i];
+            var m = new Material(FXMaterials.FindShader("Universal Render Pipeline/Lit", "Standard")) { name = "Nindo_SealFace_" + (SealId)i };
+            FXMaterials.SetColor(m, FaceColors[i]);
+            if (m.HasProperty("_Smoothness")) m.SetFloat("_Smoothness", 0.15f);
+            if (m.HasProperty("_Metallic")) m.SetFloat("_Metallic", 0f);
+            return faceMats[i] = m;
         }
 
         /// <summary>Aditivo con el pictograma del HUD: el contorno de tinta del sprite es negro y no suma; brilla el relleno.</summary>

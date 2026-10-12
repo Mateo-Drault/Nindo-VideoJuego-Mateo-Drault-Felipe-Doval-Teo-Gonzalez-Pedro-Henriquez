@@ -42,8 +42,8 @@ namespace Nindo
     /// <summary>
     /// Santuario: punto de reaparición. Pasar a menos de 6 m ya lo registra (antes había que rezar: el que no rezaba
     /// reaparecía 75-90 m atrás, lejos del jefe); rezar además cura, guarda y reinicia los encuentros pendientes.
-    /// Rezar es una escena (StoryDirector.PrayAt): la primera vez en cada santuario Kaito prende incienso y queda
-    /// humeando (ShrineIncense); las siguientes, un rezo corto.
+    /// Rezar es una escena (StoryDirector.PrayAt): la primera vez en la partida, entera; después un rezo corto. En cada
+    /// santuario donde rezó queda su incienso humeando (ShrineIncense).
     /// </summary>
     public class Checkpoint : Interactable
     {
@@ -99,8 +99,9 @@ namespace Nindo
         public static Checkpoint Get(string id) => id != null && byId.TryGetValue(id, out var c) ? c : null;
 
         // no se reza en combate: curaba todo y reiniciaba los encuentros en plena pelea (los santuarios de la
-        // entrada de los jefes quedan a pocos metros de sus arenas)
-        public override bool CanInteract => Game.Combat == null || !Game.Combat.InCombat;
+        // entrada de los jefes quedan a pocos metros de sus arenas); ni mientras ya está rezando (el rezo corto no es
+        // una cinemática y el cartel volvía a salir)
+        public override bool CanInteract => (Game.Combat == null || !Game.Combat.InCombat) && (Game.Story == null || !Game.Story.Praying);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         static void ResetDict() { byId.Clear(); toasted.Clear(); }
@@ -116,7 +117,10 @@ namespace Nindo
         public void Activate(PlayerController p, bool fromPlayer)
         {
             Rest(p);
-            Game.FX?.SealGlow(transform.position + Vector3.up);
+            // las motas del incensario, como al pasar cerca: el destello de SealGlow en cada llegada por portal (y al
+            // final del prólogo) era más fuerte que rezar y el santuario volvía a "encenderse"
+            if (incense != null) incense.Awaken();
+            else Game.FX?.SealGlow(transform.position + Vector3.up);
             Game.Audio?.Play("checkpoint", transform.position, 0.9f);
             if (fromPlayer) FinishRest();
         }
@@ -136,8 +140,9 @@ namespace Nindo
         {
             // el guardado lo cuenta el pergamino de abajo a la izquierda: el cartel dice dónde y qué pasó
             Game.UI?.ShowToast(displayName, "Vida restaurada", UIFactory.Gold, 2f);
-            // reaparecen los enemigos de encuentros no completados (como en un souls, pero suave)
-            Encounter.ResetAllIncomplete();
+            // reaparecen los enemigos de encuentros no completados (como en un souls, pero suave); nunca en una pelea:
+            // reiniciaba a los que estaban atacando
+            if (Game.Combat == null || !Game.Combat.InCombat) Encounter.ResetAllIncomplete();
         }
 
         void Update()

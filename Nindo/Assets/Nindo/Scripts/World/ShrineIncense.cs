@@ -162,7 +162,7 @@ namespace Nindo
             if (instant) glowK = 1f;
         }
 
-        /// <summary>Al cargar o al saltar el rezo: directo al estado final.</summary>
+        /// <summary>Al cargar la partida: directo al estado final.</summary>
         public void ShowLit()
         {
             if (Lit) return;
@@ -174,8 +174,8 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Sin el clip del incienso (Kaito con el "Pray" de antes, que ofrece la katana): el manojo aparece clavado en
-        /// la ceniza entre un soplo de humo y lo prende el chispazo de la bandana mientras Kaito se arrodilla.
+        /// Sin tomar el incienso con la mano (el rezo corto en un santuario nuevo, o sin el clip PrayIncense): el manojo
+        /// aparece clavado en la ceniza entre un soplo de humo y lo prende el chispazo de la bandana.
         /// </summary>
         public void KindleInPlace()
         {
@@ -188,9 +188,6 @@ namespace Nindo
             Light(stick);
             Settle(stick, false);
         }
-
-        /// <summary>Lo que el rezo dejó en la mano si se saltó la escena antes de clavarlo.</summary>
-        public static void Discard(Transform stick) { if (stick != null) Destroy(stick.gameObject); }
 
         /// <summary>Kaito pasó cerca y el santuario quedó como punto de reaparición: unas motas doradas suben del incensario.</summary>
         public void Awaken()

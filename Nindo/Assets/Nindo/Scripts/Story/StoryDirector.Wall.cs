@@ -13,11 +13,15 @@ namespace Nindo
     /// </summary>
     public partial class StoryDirector
     {
-        // contrato con kaito-anim: "BandanaPower" (~2.5 s, evento release = la palma empuja hacia el portón)
+        // contrato con kaito-anim: "BandanaPower" (~2.5 s, evento release = la palma empuja hacia el portón; si el clip
+        // no lo trae, NRelease)
         public const string BandanaPowerState = "BandanaPower";
         const float NRelease = 0.55f, BandanaPowerSeconds = 2.5f;
-        // sin el clip: el "Pray" de antes a 0.7x (la katana ofrecida arriba con las dos manos, f10-f30), suelta en f20
-        const float OldPowerSpeed = 0.7f, NOldRelease = 0.5f;
+        // sin el clip: antes el "Pray" (de rodillas con la katana en alto, el mismo gesto que rezar) y el haz le salía de
+        // la frente. Ahora Kaito junta la luz quieto y estira la mano izquierda abierta hacia adelante (el arranque de
+        // "Interact", a 0.55x); la mano queda ahí mientras la luz fluye y después termina el gesto
+        const string PowerFallbackState = "Interact";
+        const float PowerFallbackGather = 0.6f, PowerFallbackSpeed = 0.55f, NPowerHold = 0.3f, InteractSeconds = 0.667f;
         /// <summary>Lo que tarda la luz en llenar el sello antes de romperlo (s).</summary>
         const float WallPour = 1.2f;
 
@@ -40,7 +44,8 @@ namespace Nindo
             }
             Vector3 c = wallSeal.GroundCenter;
             // el plano queda hasta terminar el diálogo (duración 0 = hasta CancelShot)
-            int shot = Game.Camera.PlayStaticShot(c + wallSeal.Front * 9f + wallSeal.Along * 2.5f + Vector3.up * 3.2f, c + Vector3.up * 1.9f, 36f, 0f, 1f, 1f);
+            Vector3 cam = c + wallSeal.Front * 9f + wallSeal.Along * 2.5f + Vector3.up * 3.2f;
+            int shot = Game.Camera.PlayStaticShot(cam, c + Vector3.up * 1.9f, 36f, 0f, BlendOrCut(cam, 1f), 1f);
             yield return new WaitForSecondsRealtime(1.3f);
             yield return Say("wall_sealed");
             Game.Camera.CancelShot(shot);
@@ -60,12 +65,7 @@ namespace Nindo
             yield return WalkTo(stand, 3f);
             yield return NudgeTo(stand, Quaternion.LookRotation(-seal.Front), 0.25f);
             EndKneel();
-            var a = P.Anim;
-            bool real = a.HasState(BandanaPowerState);
-            string state = real ? BandanaPowerState : PrayOldState;
-            float speed = real ? 1f : OldPowerSpeed;
-            float len = (real ? a.Length(state, BandanaPowerSeconds) : a.Length(state, 1.333f)) / speed;
-            float release = (real ? NRelease : NOldRelease) * len;
+            float release = PowerRelease(out string state);
             int shot = WallShot(seal, release + WallPour + 1f);
 
             // 2) la bandana se enciende y la luz se junta alrededor de Kaito
@@ -73,15 +73,14 @@ namespace Nindo
             glow.Enable(0.5f);
             Game.FX?.AbilityCharge(P.transform.position, false);
             Game.Audio?.Play("bandana_charge", P.transform.position, 1f);
-            a.Play(state, 0.2f, 0f, speed);
-            yield return WaitScaled(release);
+            yield return PowerGesture(state);
 
-            // 3) suelta: el haz sale de la mano que empuja (o de la bandana) y entra en el sello
-            Transform src = real ? ForwardHand() : null;
+            // 3) suelta: el haz sale de la mano que empuja y entra en el sello
+            Transform src = ForwardHand();
             Vector3 off = Vector3.zero;
             if (src == null)
             {
-                // la bandana (sobre la frente) o, sin el hueso, a la altura de la cabeza
+                // sin los huesos de las manos: la bandana (sobre la frente) o, sin el hueso, a la altura de la cabeza
                 src = KaitoBone("cabeza");
                 off = Vector3.up * 0.12f;
                 if (src == null) { src = P.transform; off = Vector3.up * 1.35f; }
@@ -108,6 +107,7 @@ namespace Nindo
             Game.Input?.Rumble(0.6f, 0.7f, 0.35f);
             Game.Audio?.Play("wall_seal_break", seal.SealCenter, 1f);
             glow.Disable(1.6f);
+            EndPowerGesture(state);
             yield return WaitScaled(0.45f);
 
             // 5) las hojas se abren (GateDoor gira con el flag y suena "gate_open") y la cámara entra hacia el jardín
@@ -120,6 +120,58 @@ namespace Nindo
             yield return new WaitForSecondsRealtime(2.4f);
             yield return Say("wall_open");
             Game.Camera.CancelShot(shot2);
+        }
+
+        /// <summary>Lo que tarda el gesto de la bandana en soltar la luz (s, desde que arranca) y qué estado lo hace.</summary>
+        float PowerRelease(out string state)
+        {
+            var a = P.Anim;
+            if (a.HasState(BandanaPowerState))
+            {
+                state = BandanaPowerState;
+                return KaitoTimings.Event(state, "release", NRelease) * a.Length(state, BandanaPowerSeconds);
+            }
+            state = PowerFallbackState;
+            return PowerFallbackGather + NPowerHold * a.Length(state, InteractSeconds) / PowerFallbackSpeed;
+        }
+
+        /// <summary>El gesto hasta que suelta la luz (con BandanaPower, su release; sin él, la mano estirada que queda quieta).</summary>
+        IEnumerator PowerGesture(string state)
+        {
+            var a = P.Anim;
+            if (state == BandanaPowerState)
+            {
+                a.Play(state, 0.2f);
+                yield return WaitClip(state, KaitoTimings.Event(state, "release", NRelease), a.Length(state, BandanaPowerSeconds) * 1.5f);
+                yield break;
+            }
+            // quieto mientras la luz se junta, después la mano sale hacia adelante y se queda
+            yield return WaitScaled(PowerFallbackGather);
+            a.Play(state, 0.15f, 0f, PowerFallbackSpeed);
+            yield return WaitClip(state, NPowerHold, 1.5f);
+            a.Play(state, 0f, NPowerHold, 0f);
+        }
+
+        /// <summary>Soltada la luz: sin el clip, la mano termina el gesto y vuelve a la guardia.</summary>
+        void EndPowerGesture(string state)
+        {
+            if (state != PowerFallbackState) return;
+            P.Anim.Play(state, 0.1f, NPowerHold, 1f);
+            StartCoroutine(BackToGuard(state, (1f - NPowerHold) * P.Anim.Length(state, InteractSeconds)));
+        }
+
+        /// <summary>Hasta que el estado llega a 'n' (el Animator lo dice; en el cruce, el reloj) o pasan 'max' s.</summary>
+        IEnumerator WaitClip(string state, float n, float max)
+        {
+            var a = P.Anim;
+            float t = 0f, len = Mathf.Max(0.05f, a.Length(state, 1f) / Mathf.Max(0.05f, a.StateSpeed));
+            while (t < max)
+            {
+                float cur = a.TryNormalizedTime(state, out float an) ? an : t / len;
+                if (cur >= n) yield break;
+                t += Time.deltaTime;
+                yield return null;
+            }
         }
 
         IEnumerator WaitScaled(float s)
@@ -168,7 +220,7 @@ namespace Nindo
                 float k = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / duration));
                 Vector3 pos = start - f * 0.8f * k;
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
-            }, () => 40f, 0.9f, duration, 0.8f);
+            }, () => 40f, BlendOrCut(start, 0.9f), duration, 0.8f);
         }
 
         /// <summary>

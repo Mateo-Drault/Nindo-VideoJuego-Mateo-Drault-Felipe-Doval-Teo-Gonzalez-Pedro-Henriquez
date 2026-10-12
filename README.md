@@ -219,7 +219,6 @@ $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --ex
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
-python3 Tools/Audio/sfx_world_story.py              # rezo con incienso y sello de la muralla (síntesis pura, sin descargas)
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)
 python3 Tools/UI/build_ui_art.py [--preview carpeta]
 # metas, materiales, controllers, NindoContent, escenas  (correr después de cualquiera de los anteriores)
@@ -228,6 +227,10 @@ python3 Tools/Unity/generate_assets.py
 python3 Tools/Fonts/add_macrons.py
 # tiempos de los golpes de Kokuyō (KokuyoTimings.cs) desde el .fbx.json de su build de Blender
 python3 Tools/Unity/kokuyo_timings.py
+# momentos de los clips de Kaito que usan las escenas de la historia (KaitoTimings.cs) desde su kaitooo.fbx.json
+python3 Tools/Unity/kaito_timings.py
+# efectos del rezo con incienso y del sello de la muralla (síntesis pura, sin descargas)
+python3 Tools/Audio/sfx_world_story.py
 # clips del ninja, el sumo, Gorō y el abuelo (Art/Characters/TeamAnims/<Personaje>Anims.fbx + .json): falla si un
 # pie patina, un loop salta o el contacto no coincide con EnemyArchetypes; después metas, controllers y NindoContent
 $B -b --factory-startup --python Tools/Blender/anim/build_team_anims.py -- ninja|sumo|goro|grandpa --export [--renders carpeta]

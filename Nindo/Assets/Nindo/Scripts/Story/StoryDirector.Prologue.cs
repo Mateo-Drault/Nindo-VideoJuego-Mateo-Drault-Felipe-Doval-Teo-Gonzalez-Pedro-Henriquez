@@ -5,28 +5,41 @@ namespace Nindo
 {
     /// <summary>
     /// El prólogo, la parte de Kaito: vuelve en sí boca abajo en el piso, aturdido murmura, se arrodilla y levanta la
-    /// cabeza; en ese momento ve que se llevan al abuelo (contraplano por encima de su hombro) y se levanta mientras
-    /// el plano del secuestro (StoryDirector.Intro) sigue al abuelo. Antes se fundía sobre un Kaito acostado de
-    /// espaldas que se enderezaba de un tirón como una tabla, con la cámara alta mirándolo a él, y el abuelo aparecía
-    /// después en otro plano: no se leía que se despertaba ni que veía algo.
+    /// cabeza; en ese momento, por encima de su hombro, el ninja tacklea al abuelo (lo dispara 'onReveal') y el plano se
+    /// sostiene mientras Kaito se levanta; recién después el plano del secuestro (StoryDirector.Intro) sigue al abuelo.
+    /// Antes se fundía sobre un Kaito acostado de espaldas que se enderezaba de un tirón como una tabla, con la cámara
+    /// alta mirándolo a él, y el abuelo aparecía después en otro plano: no se leía que se despertaba ni que veía algo.
     /// </summary>
     public partial class StoryDirector
     {
         // contrato con kaito-anim: "WakeUp" (boca abajo, aturdido, se arrodilla, ve el secuestro, se levanta; ~3.6 s).
-        // NWakeSees es el momento en que levanta la cabeza y mira adelante (fracción de anim.Length)
+        // El momento en que levanta la cabeza y mira adelante: el evento "sees" del sidecar o NWakeSees
         public const string WakeUpState = "WakeUp";
         const float NWakeSees = 0.6f, WakeUpSeconds = 3.6f;
         // plano del piso: de costado, bajo, a 2.8 m; mientras se arrodilla sube y se aleja un poco
         const float WakeCamDistance = 2.8f, WakeCamHeight = 0.7f, WakeCamDistanceEnd = 3.4f, WakeCamHeightEnd = 1.15f, WakeFov = 36f;
+        /// <summary>
+        /// Lo que se sostiene el contraplano por encima del hombro (s): el tackle del abuelo entero desde los ojos de
+        /// Kaito. Antes duraba lo que tardaba en mezclarse encima el plano del secuestro (~0.3 s limpio).
+        /// </summary>
+        const float WakeRevealHold = 1.4f;
+        // sin WakeUp: de espaldas aturdido (el LieDown de antes), se incorpora hasta quedar de rodillas en 1 s (el pivote
+        // sube mientras el cuerpo pasa a la rodilla al piso de "Pray", f10, quieto) y en el contraplano se para con el
+        // final de "Pray" (f28-f40 a 0.6x). Antes el cuerpo entero giraba rígido del piso a parado, como una tabla
+        const float WakeFallbackSitUp = 1f, NWakeKneel = 0.25f, NWakeStand = 0.7f, WakeStandSpeed = 0.6f, WakeStandDelay = 0.45f;
 
-        /// <summary>Kaito vuelve en sí y ve el secuestro en 'kidnap'. Termina en el contraplano hacia el abuelo.</summary>
-        IEnumerator KaitoComesTo(Vector3 kidnap)
+        /// <summary>
+        /// Kaito vuelve en sí y ve el secuestro en 'kidnap'. 'onReveal' corre al cortar al contraplano (ahí arranca el
+        /// tackle); vuelve con el contraplano ya sostenido, para que el plano del secuestro se mezcle encima.
+        /// </summary>
+        IEnumerator KaitoComesTo(Vector3 kidnap, System.Action onReveal)
         {
             // de cara a donde se llevan al abuelo: al levantar la cabeza lo tiene adelante
             P.ScriptedFace(kidnap);
             var a = P.Anim;
             bool real = a.HasState(WakeUpState);
             float len = real ? a.Length(WakeUpState, WakeUpSeconds) : 0f;
+            float sees = real ? KaitoTimings.Event(WakeUpState, "sees", NWakeSees) : 0f;
             // dónde queda el cuerpo tirado: del primer cuadro del clip (cabeza y pies) o, sin él, el LieDown de antes
             // (de espaldas, con la cabeza hacia atrás)
             Vector3 body;
@@ -39,7 +52,7 @@ namespace Nindo
                 StartCoroutine(LieDown(true));
             }
             const float fadeIn = 2.2f, daze = 0.9f;
-            float rise = real ? len * NWakeSees : 1.6f;
+            float rise = real ? len * sees : WakeFallbackSitUp + 0.4f;
             float sideSign;
             int ground = WakeGroundShot(body, bodyLen, fadeIn + daze - 0.4f, rise + 0.4f, out sideSign);
             yield return Game.UI.Fade(0f, fadeIn);
@@ -50,34 +63,43 @@ namespace Nindo
                 // desde el cuadro 0 a velocidad normal, hasta que levanta la cabeza
                 a.Play(WakeUpState, 0f, 0f, 1f);
                 float t = 0f, n = 0f;
-                while (n < NWakeSees && t < len * 1.5f)
+                while (n < sees && t < len * 1.5f)
                 {
                     n = a.TryNormalizedTime(WakeUpState, out float an) ? an : t / len;
                     t += Time.deltaTime;
                     yield return null;
                 }
-                StartCoroutine(WakeUpToGuard(len * (1f - NWakeSees)));
+                StartCoroutine(WakeUpToGuard(WakeUpState, len * (1f - sees), 0f));
             }
             else
             {
-                // sin el clip: se incorpora a medias, aturdido, y termina de pararse ya en el contraplano
-                yield return PivotPitch(-82f, -38f, 1.1f);
-                yield return new WaitForSecondsRealtime(0.5f);
-                StartCoroutine(PivotPitch(-38f, 0f, 0.9f));
+                // sin el clip: se incorpora hasta quedar de rodillas, aturdido, y se para ya en el contraplano
+                a.Play(PrayOldState, WakeFallbackSitUp * 0.8f, NWakeKneel, 0f);
+                yield return PivotPitch(-82f, 0f, WakeFallbackSitUp);
+                yield return new WaitForSecondsRealtime(0.4f);
+                StartCoroutine(WakeUpToGuard(PrayOldState, (1f - NWakeStand) * a.Length(PrayOldState, OldPraySeconds) / WakeStandSpeed, WakeStandDelay));
             }
-            // ve al abuelo: por encima de su hombro, con lente cerrado (a 17 m el abuelo tiene que leerse); el plano del
-            // secuestro que sigue se mezcla encima
+            // ve al abuelo: por encima de su hombro, con lente cerrado (a 17 m el abuelo tiene que leerse); arranca el
+            // tackle y el plano se sostiene antes de que se mezcle encima el del secuestro
             WakeOverShoulderShot(kidnap, sideSign);
             Game.Camera.CancelShot(ground);
+            onReveal?.Invoke();
+            yield return new WaitForSecondsRealtime(WakeRevealHold);
         }
 
-        IEnumerator WakeUpToGuard(float remaining)
+        /// <summary>
+        /// Termina de pararse y vuelve a la guardia. Sin WakeUp, después de 'delay' s retoma "Pray" desde la rodilla al
+        /// piso para pararse con el clip.
+        /// </summary>
+        IEnumerator WakeUpToGuard(string state, float remaining, float delay)
         {
+            if (delay > 0f) yield return new WaitForSecondsRealtime(delay);
+            if (state != WakeUpState && P != null) P.Anim.Play(state, 0.15f, NWakeStand, WakeStandSpeed);
             yield return new WaitForSecondsRealtime(Mathf.Max(0f, remaining));
-            if (P != null && P.Anim.Current == WakeUpState) P.Anim.Play("Locomotion", 0.3f);
+            if (P != null && P.Anim.Current == state) P.Anim.Play("Locomotion", 0.3f);
         }
 
-        /// <summary>Respaldo sin WakeUp: inclina el pivote del modelo (como LieDown) de un ángulo a otro.</summary>
+        /// <summary>Inclina el pivote del modelo (como LieDown) de un ángulo a otro.</summary>
         IEnumerator PivotPitch(float from, float to, float seconds)
         {
             var motion = P.GetComponent<ProceduralMotion>();
@@ -148,8 +170,9 @@ namespace Nindo
             Vector3 look = kidnap + Vector3.up * 0.9f;
             float free = Clearance(k + Vector3.up * 1.1f, pos - (k + Vector3.up * 1.1f));
             if (free < 0.98f) pos = Vector3.Lerp(k + Vector3.up * 1.1f, pos, Mathf.Max(0.45f, free - 0.05f));
-            // dura lo que tarda en entrar el plano del secuestro (si no hubiera, vuelve solo al de juego)
-            Game.Camera.PlayStaticShot(pos, look, dist > 12f ? 28f : 34f, 4.2f, 0.12f, 0.8f);
+            // corte (0.12 s); dura lo que se sostiene más lo que tarda en entrar encima el plano del secuestro (si no
+            // hubiera, vuelve solo al de juego)
+            Game.Camera.PlayStaticShot(pos, look, dist > 12f ? 28f : 34f, WakeRevealHold + 2.8f, 0.12f, 0.8f);
         }
     }
 }
