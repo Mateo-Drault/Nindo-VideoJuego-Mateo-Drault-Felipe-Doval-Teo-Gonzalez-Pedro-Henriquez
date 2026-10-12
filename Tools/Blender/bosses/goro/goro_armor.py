@@ -45,16 +45,16 @@ EMBER = "glow_fire"
 PIECES = [
     dict(name="Greave_L", bone="Tibia.L", slam=24, flight=0.55, start=(2.6, 1.8, -0.3), arc=1.2, spin=200),
     dict(name="Greave_R", bone="Tibia.R", slam=30, flight=0.55, start=(-2.8, 1.4, -0.3), arc=1.2, spin=220),
-    dict(name="Knee_L", bone="Tibia.L", slam=38, flight=0.6, start=(3.4, -1.0, -0.3), arc=1.6, spin=260),
-    dict(name="Knee_R", bone="Tibia.R", slam=44, flight=0.6, start=(-3.6, -0.6, -0.3), arc=1.6, spin=240),
+    dict(name="Knee_L", bone="Pierna.L", slam=38, flight=0.6, start=(3.4, -1.0, -0.3), arc=1.6, spin=260),
+    dict(name="Knee_R", bone="Pierna.R", slam=44, flight=0.6, start=(-3.6, -0.6, -0.3), arc=1.6, spin=240),
     dict(name="Tasset_L", bone="Pierna.L", slam=52, flight=0.6, start=(4.2, 0.6, -0.3), arc=1.8, spin=180),
     dict(name="Tasset_R", bone="Pierna.R", slam=56, flight=0.6, start=(-4.0, 1.2, -0.3), arc=1.8, spin=200),
     dict(name="Bracer_R", bone="Antebrazo.R", slam=70, flight=0.55, start=(-3.2, -2.6, -0.3), arc=1.6, spin=300),
     dict(name="Bracer_L", bone="Antebrazo.L", slam=76, flight=0.55, start=(3.4, -2.4, -0.3), arc=1.6, spin=280),
     dict(name="Chest_Low", bone="Torso", slam=92, flight=0.65, start=(0.6, -4.6, -0.3), arc=2.0, spin=160),
     dict(name="Chest_High", bone="Torso", slam=100, flight=0.65, start=(-0.8, -5.0, -0.3), arc=2.4, spin=180),
-    dict(name="Pauldron_L", bone="Brazo.L", slam=118, flight=0.75, start=(5.2, 2.2, -0.3), arc=3.0, spin=220),
-    dict(name="Pauldron_R", bone="Brazo.R", slam=128, flight=0.75, start=(-5.4, 1.6, -0.3), arc=3.0, spin=240),
+    dict(name="Pauldron_L", bone="Hombro.L", slam=118, flight=0.75, start=(5.2, 2.2, -0.3), arc=3.0, spin=220),
+    dict(name="Pauldron_R", bone="Hombro.R", slam=128, flight=0.75, start=(-5.4, 1.6, -0.3), arc=3.0, spin=240),
     dict(name="Ridge_L", bone="Torso", slam=146, flight=0.8, start=(2.4, 6.0, -0.3), arc=3.6, spin=140),
     dict(name="Ridge_R", bone="Torso", slam=152, flight=0.8, start=(-2.2, 6.2, -0.3), arc=3.6, spin=160),
     dict(name="Horn_L", bone="Cabeza", slam=170, flight=0.7, start=(1.6, 4.4, 5.5), arc=1.0, spin=320),
@@ -207,16 +207,18 @@ def build_pieces(rg):
     for s, sx in (("L", 1.0), ("R", -1.0)):
         sd = 11 if s == "L" else 23
         m = lambda p: mirror(p, sx)
-        # tibia: dos lajas al frente de la canilla (y -0.21), una arriba de otra
+        # tibia: dos lajas en el costado de afuera de la canilla (x 0.63), por encima del tobillo (la de abajo termina a
+        # 0.30 m): al frente se metían en el piso con el pie en punta de las estocadas y de rodillas en la muerte
         g = "Greave_" + s
-        rock(rg, g, m((0.45, -0.31, 0.49)), (0.16, 0.10, 0.12), (8, 0, 10 * sx), sd + 1)
-        rock(rg, g, m((0.48, -0.29, 0.27)), (0.15, 0.10, 0.09), (-6, 0, -8 * sx), sd + 2, pts=12)
-        core(rg, g, m((0.46, -0.25, 0.375)), (0.13, 0.06, 0.03), seed=sd + 4)
-        # rodilla: canto rodado sobre la rótula (y -0.18) y uno chico afuera
+        rock(rg, g, m((0.67, -0.10, 0.52)), (0.10, 0.16, 0.12), (0, -10 * sx, 10 * sx), sd + 1)
+        rock(rg, g, m((0.64, -0.06, 0.38)), (0.09, 0.14, 0.08), (0, -6 * sx, -8 * sx), sd + 2, pts=12)
+        core(rg, g, m((0.62, -0.08, 0.45)), (0.05, 0.12, 0.03), seed=sd + 4)
+        # rodilla: canto rodado en el costado de afuera, justo arriba de la rodilla, con el muslo (en la tibia, arrodillado
+        # en la muerte, quedaba debajo del piso) y una laja chica delante del muslo
         k = "Knee_" + s
-        rock(rg, k, m((0.43, -0.35, 0.75)), (0.21, 0.17, 0.17), (10, 0, 0), sd + 5, pts=18, jitter=0.12, snow=0.65)
-        rock(rg, k, m((0.66, -0.21, 0.70)), (0.09, 0.12, 0.13), (0, 30, 0), sd + 6, pts=10)
-        core(rg, k, m((0.59, -0.25, 0.72)), (0.04, 0.10, 0.10), seed=sd + 7)
+        rock(rg, k, m((0.66, -0.16, 0.86)), (0.13, 0.17, 0.14), (0, 0, 10 * sx), sd + 5, pts=18, jitter=0.12, snow=0.65)
+        rock(rg, k, m((0.48, -0.40, 0.92)), (0.12, 0.08, 0.09), (12, 0, 0), sd + 6, pts=10)
+        core(rg, k, m((0.58, -0.30, 0.88)), (0.06, 0.06, 0.07), seed=sd + 7)
         # muslo: escarcela de dos lajas al costado de la cadera (x 0.6-0.7), colgando sobre el cuero
         t = "Tasset_" + s
         rock(rg, t, m((0.73, -0.02, 1.19)), (0.10, 0.26, 0.13), (0, -14 * sx, 0), sd + 8)
@@ -229,15 +231,15 @@ def build_pieces(rg):
         rock(rg, b, m((1.47, 0.06, 2.14)), (0.12, 0.16, 0.10), (0, 4 * sx, 15), sd + 13, pts=12, flat_bottom=-0.4)
         rock(rg, b, m((1.27, 0.29, 2.03)), (0.14, 0.08, 0.10), (0, 0, -10 * sx), sd + 14, pts=10)
         core(rg, b, m((1.335, 0.07, 2.14)), (0.03, 0.13, 0.07), seed=sd + 15)
-        # hombrera: el canto más grande partido en dos (adelante y atrás) con la veta a lo largo del hombro, la nieve
-        # arriba, y uno chico que cuelga afuera; 0.9 m de ancho y apoyada en el hombro (z 2.41)
+        # hombrera: el canto más grande partido en dos (adelante y atrás) con la veta a lo largo del hombro y la nieve
+        # arriba, 0.75 m de ancho, apoyada en el hombro (z 2.41) y sin tocar el casco (x > 0.5). Va con la clavícula: con
+        # el brazo, al bajarlo la roca giraba hasta el costado del brazo y el mango de la guardia la atravesaba
         p = "Pauldron_" + s
-        rock(rg, p, m((0.86, -0.17, 2.58)), (0.46, 0.25, 0.34), (0, -16 * sx, 6 * sx), sd + 16, pts=22, jitter=0.12,
+        rock(rg, p, m((0.86, -0.15, 2.60)), (0.36, 0.23, 0.30), (0, -14 * sx, 6 * sx), sd + 16, pts=22, jitter=0.12,
              flat_bottom=-0.55, snow=0.62)
-        rock(rg, p, m((0.80, 0.31, 2.54)), (0.41, 0.21, 0.31), (0, -18 * sx, -4 * sx), sd + 17, pts=20, jitter=0.12,
+        rock(rg, p, m((0.84, 0.27, 2.56)), (0.34, 0.20, 0.28), (0, -16 * sx, -4 * sx), sd + 17, pts=20, jitter=0.12,
              flat_bottom=-0.55, snow=0.62)
-        rock(rg, p, m((1.18, 0.05, 2.30)), (0.14, 0.20, 0.17), (0, 20 * sx, 0), sd + 18, pts=10)
-        core(rg, p, m((0.83, 0.08, 2.52)), (0.32, 0.05, 0.16), seed=sd + 19)
+        core(rg, p, m((0.84, 0.06, 2.52)), (0.28, 0.05, 0.14), seed=sd + 19)
         # espalda: cumbre de tres agujas gruesas sobre el omóplato (x 0.20-0.60), inclinadas atrás y afuera; la más alta
         # pasa por encima del casco (z 3.45). El paso del medio (x < 0.16) queda libre para el mango
         r = "Ridge_" + s
