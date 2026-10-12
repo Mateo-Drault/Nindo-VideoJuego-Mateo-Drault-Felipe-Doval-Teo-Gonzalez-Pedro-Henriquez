@@ -26,6 +26,7 @@ ASSETS = os.path.join(REPO, "Nindo", "Assets")
 KITS_DIR = os.path.join(ASSETS, "Nindo", "Art", "Characters", "Kits")
 sys.path.insert(0, os.path.join(REPO, "Tools", "Blender"))
 import nindo_palette as P  # noqa: E402
+import bl_compat  # noqa: E402,F401  (Blender 5: Action.fcurves y slots)
 
 # fbx: ruta dentro de Assets; body: malla con skin; front: hacia dónde mira en el FBX; height: metros en el juego
 CHARS = {

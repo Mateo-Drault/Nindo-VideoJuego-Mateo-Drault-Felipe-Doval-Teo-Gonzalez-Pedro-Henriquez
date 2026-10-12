@@ -29,6 +29,8 @@ Los ángulos de los controles son grados en ejes de la armadura (XYZ):
 """
 import bpy, math, json, os, subprocess, sys
 from mathutils import Vector, Matrix, Quaternion, Euler
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import bl_compat  # noqa: E402,F401  (Blender 5: Action.fcurves y slots)
 
 FPS = 30
 
