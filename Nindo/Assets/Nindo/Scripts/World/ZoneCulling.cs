@@ -36,11 +36,25 @@ namespace Nindo
     public partial class ZoneCulling : MonoBehaviour
     {
         public static ZoneCulling Instance { get; private set; }
-        /// <summary>Con false todo queda prendido y despierto como antes (comparar, depurar, mirar la escena del editor).</summary>
-        public static bool On = true;
+        /// <summary>
+        /// Con false todo queda prendido y despierto como antes (comparar, depurar, mirar la escena del editor). Apagarlo
+        /// prende todo en el acto, no en el próximo LateUpdate: así sirve alrededor de un Camera.Render a mano en cualquier
+        /// momento del frame; al volver a true, el próximo LateUpdate apaga lo que sobra.
+        /// </summary>
+        public static bool On
+        {
+            get => on;
+            set
+            {
+                if (on == value) return;
+                on = value;
+                if (!value && Instance != null) Instance.ShowAll();
+            }
+        }
+        static bool on = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Instance = null; On = true; hudWanted = false; }
+        static void ResetStatics() { Instance = null; on = true; hudWanted = false; }
 
         /// <summary>Lado de las celdas (m). Simulado sobre el mapa: ~220 celdas y ~390 pruebas por frame; con 24 y 16 m el
         /// resultado por renderer es el mismo pero hay más celdas que probar (420 y 560).</summary>
