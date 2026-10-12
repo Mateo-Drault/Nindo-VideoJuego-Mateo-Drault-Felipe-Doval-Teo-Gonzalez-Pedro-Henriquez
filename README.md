@@ -119,7 +119,8 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
   arquetipo y el bossId siguen siendo `ozeki`): un viejo maestro de kung fu que enseña paciencia.
   Fuera de sus huecos los cortes rebotan y el combo que insiste se contragolpea; se le pega en el
   contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
-  (esperó la postura del bambú, las manos en jade) y en la vuelta de un rojo que no pegó. Fase 1
+  (esperó la postura del bambú: hundido con las palmas cruzadas y un aro de jade en el piso), en la
+  vuelta de un rojo que no pegó y al final del último golpe de un combo. Fase 1
   con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca),
   fase 2 sin el saco (palmas gemelas, patada giratoria, barrida, onda de qi, paso del viento con
   imágenes residuales), fase 3 con el bastón. Vencido se sienta a meditar, saluda y deja el sello.
