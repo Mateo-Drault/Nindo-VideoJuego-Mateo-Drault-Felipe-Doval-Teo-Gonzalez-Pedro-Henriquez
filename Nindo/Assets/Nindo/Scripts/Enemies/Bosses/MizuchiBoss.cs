@@ -245,6 +245,7 @@ namespace Nindo
                 case "dive": Run(DiveRoutine(a)); break;
                 case "greatwave": Run(WaveRoutine(a)); break;
                 case "pillars": Run(PillarRoutine(a)); break;
+                case "retreat": Run(RetreatRoutine(a)); break;
             }
             // BeginStep deja el clip quieto un frame; los pasos que maneja una rutina van a su ritmo
             if (held) anim.SetSpeed(1f);
@@ -486,8 +487,9 @@ namespace Nindo
 
         // ================================================================== fases
         /// <summary>
-        /// 55 %: la transición de 5.5 s (el sello lo corrompe en la cascada). 25 %: el cambio corto genérico, con la
-        /// cascada a pleno y el arcoíris de luna doble. La base hace la cuenta de la fase, el ritmo, el rugido y el empujón.
+        /// 68 %: la transición de 5.5 s (el sello lo corrompe en la cascada). 38 %: el cambio corto genérico, con la
+        /// cascada a pleno y el arcoíris de luna doble. La base hace la cuenta de la fase, el ritmo, el rugido y el empujón;
+        /// MizuchiBoss.Pacing, las esperas de los especiales de la fase y la cura de Kaito.
         /// </summary>
         protected override void PhaseChange(int newPhase)
         {
@@ -497,6 +499,7 @@ namespace Nindo
             newPhase = Mathf.Min(newPhase, CurrentPhase + 1);
             CancelMoves();
             base.PhaseChange(newPhase);
+            ApplyPhasePacing(newPhase);
             if (newPhase == 1)
             {
                 Imbalance = 0f;
@@ -510,8 +513,7 @@ namespace Nindo
             {
                 if (Falls != null) { Falls.Intensity = 1.6f; Falls.Surge(2f, 2f); Falls.MoonbowBoost = 2f; }
                 Game.UI?.ShowToast(StoryText.MizuchiPhase3, UIFactory.Gold, 2.2f);
-                var pil = FindPattern("Pilares");
-                if (pil != null) pil.cooldown = 12f;
+                RewardKaito(2);
                 StaggerCooldowns(2, 0.6f);
             }
         }
@@ -608,6 +610,7 @@ namespace Nindo
             body?.FlareSeal(2.5f, 1f);
             Game.UI?.ShowToast(StoryText.MizuchiPhase2, UIFactory.Crimson, 2.4f);
             Game.UI?.BossEnraged(this);
+            RewardKaito(1);
             yield return new WaitForSeconds(1.1f);
             inCinematic = false;
             move = null;

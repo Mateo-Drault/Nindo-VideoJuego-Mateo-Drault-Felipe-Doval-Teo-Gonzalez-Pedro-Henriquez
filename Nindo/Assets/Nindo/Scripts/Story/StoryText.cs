@@ -211,6 +211,13 @@ namespace Nindo
                     };
                 case "kokuyo_bark_last":
                     return new List<DialogueLine> { L(Kokuyo, "¡Todavía no!") };
+                // a mitad de cada acto (KokuyoBoss.Pacing): se planta, ruge y cambia el ritmo
+                case "kokuyo_bark_mitad1":
+                    return new List<DialogueLine> { L(Kokuyo, "El viejo te enseñó a esperar. Yo no espero.") };
+                case "kokuyo_bark_mitad2":
+                    return new List<DialogueLine> { L(Kokuyo, "Mi sombra aprende rápido. Más rápido que vos.") };
+                case "kokuyo_bark_mitad3":
+                    return new List<DialogueLine> { L(Kokuyo, "En la oscuridad no hay maestro ni alumno.") };
                 case "kokuyo_hint_suelo":
                     return new List<DialogueLine> { L(Abuelo, "El suelo, Kaito. Su sombra golpea primero.") };
                 // la primera vez que la sombra ataca sola (Acto 1) y la primera vez que sale de la oscuridad (eclipse)

@@ -387,8 +387,9 @@ namespace Nindo
                 case "mizuchi":
                     b.bossId = "mizuchi"; b.title = "Mizuchi"; b.subtitle = "El Gran Koi del Lago Kohan";
                     // "Roar" también en el reintento corto; la presentación entera (sale del pozo) es de MizuchiBoss
-                    // fase 3 al 33 %: al 25 %, con el remate habilitado al 12 %, la cascada desatada duraba unos segundos
-                    b.introAnim = "Roar"; b.phaseAnim = "Roar"; b.musicKey = "boss_lake"; b.phaseThresholds = new[] { 0.55f, 0.33f };
+                    // fase 2 al 68 % y 3 al 38 %: con la vida doble (1440) y el remate al 12 %, las tres fases duran parecido
+                    // (simulado con el bot "bueno": ~28 / 28 / 22 s sin la corrupción; con 55/33 la fase 1 duraba 37 s y la 3, 15)
+                    b.introAnim = "Roar"; b.phaseAnim = "Roar"; b.musicKey = "boss_lake"; b.phaseThresholds = new[] { 0.68f, 0.38f };
                     b.phaseSpeedBonus = 0.08f;
                     break;
                 case "ozeki":
@@ -396,9 +397,9 @@ namespace Nindo
                     b.introAnim = "Spotted"; b.phaseAnim = "Spotted"; b.musicKey = "boss"; b.phaseThresholds = new[] { 0.5f };
                     break;
                 case "kage":
-                    // Kokuyō: los actos (65 % y 30 %) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica
+                    // Kokuyō: los actos (70 % y 36 %, KokuyoBoss.Gates) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica
                     b.bossId = "kage"; b.title = "Kokuyō"; b.subtitle = "Señor del Clan Kurokage";
-                    b.introAnim = "Intro"; b.phaseAnim = "Roar"; b.musicKey = "boss_final"; b.phaseThresholds = new[] { 0.65f, 0.30f };
+                    b.introAnim = "Intro"; b.phaseAnim = "Roar"; b.musicKey = "boss_final"; b.phaseThresholds = new[] { 0.70f, 0.36f };
                     b.phaseSpeedBonus = 0f;
                     break;
             }

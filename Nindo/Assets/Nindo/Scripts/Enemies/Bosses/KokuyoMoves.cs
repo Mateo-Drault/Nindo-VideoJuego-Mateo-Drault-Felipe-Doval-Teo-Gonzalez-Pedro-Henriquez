@@ -35,7 +35,15 @@ namespace Nindo
 
         /// <summary>Grieta de obsidiana del Rompecascos: carril de 14 x 2 m que avanza a 28 m/s desde el golpe.</summary>
         public const float RiftLength = 14f, RiftHalfWidth = 1.0f, RiftSpeed = 28f;
-        public const float RiftDamage = 26f, RiftKnockback = 2.5f;
+        public const float RiftDamage = 26f * DamageScale, RiftKnockback = 2.5f;
+
+        /// <summary>
+        /// Todo lo que pega (él, la sombra, la grieta) a este factor de los números de diseño. Con la vida doble (1800) y
+        /// el daño de antes, el bot "bueno" moría cuatro veces más por intento (simulado: 1.0 muertes de media, 48 % sin
+        /// morir; con 900, 0.23 y 80 %); con 0.85 y la cura de 40 por acto, 0.43 y 69 %: la pelea es más larga, no mucho
+        /// más castigadora. Una sola perilla para el balance final en Unity.
+        /// </summary>
+        public const float DamageScale = 0.85f;
         /// <summary>Ichimonji: dentro de este radio la hoja pasa por encima de la cabeza de Kaito (la empuñadura va a
         /// 1.9 m y la punta baja a 0.97 m: a menos de ~2 m del centro la hoja corta arriba de 1.5 m). Sale del sidecar
         /// (safe_core_m), que es la única fuente: el disco pálido y el golpe usan el mismo número.</summary>
@@ -67,7 +75,7 @@ namespace Nindo
             float travel = c.Travel != null ? c.Travel[c.Travel.Length - 1] : 0f;
             return new AttackDef
             {
-                name = name, state = c.State, damage = dmg, kind = kind, arc = arc, knockback = kb,
+                name = name, state = c.State, damage = dmg * DamageScale, kind = kind, arc = arc, knockback = kb,
                 range = c.Reach + travel, activeStart = c.Contact, activeEnd = c.ActiveEnd, apex = c.Apex, releaseRate = c.ReleaseRate,
                 windup = windup, lunge = 0f, tracking = false, hitStop = 0.12f, shake = 0.4f, imbalance = 1f,
                 sfx = "enemy_swing_heavy", special = special,
@@ -154,6 +162,36 @@ namespace Nindo
             return new AttackPattern[] { doble, colmillo, horizonte, rompe, escuela, paso, desfile, media, negra, doble3 };
         }
 
+        /// <summary>
+        /// La segunda mitad de cada acto (KokuyoBoss.Pacing): con la vida doble cada acto dura el doble y repetía lo mismo.
+        /// A mitad de acto se suma un patrón que mezcla lo que el acto ya enseñó, encadenando poses que coinciden:
+        ///  * Acto 1 "Luna y Horizonte": dos cortes dorados y el barrido rojo (READY, LOW_L, READY, READY): cambiar de parry
+        ///    a dash en el ritmo.
+        ///  * Acto 2 "Escuela de la Sombra": la Escuela del Abuelo con la sombra cortando del otro lado entre el gyakugiri y
+        ///    la estocada.
+        ///  * Acto 3 "Luna Nueva": el barrido rojo, el corte, y la sombra sale de la oscuridad del lado opuesto antes del
+        ///    gyakugiri. La regla del dúo (KokuyoDuet) estira los windups igual que en los otros dúos.
+        /// </summary>
+        public static AttackPattern SecondHalf(int act)
+        {
+            var s = new Set(Mathf.Clamp(act, 1, 3));
+            if (act <= 1) return P("Luna y Horizonte", 1.1f, 5.0f, 9f, s.kesa, s.gyaku, s.ichi);
+            if (act == 2) return D("Escuela de la Sombra", 1.2f, 5.0f, 10f, Cue(1, Giri, ShadowSide.Opposite, false), s.kesa, s.gyaku, s.tsuki, tsukiRecover);
+            return D("Luna Nueva", 1.2f, 5.0f, 10f, Cue(2, Giri, ShadowSide.Opposite, true), s.ichi, s.kesa, s.gyaku, recoverHR);
+        }
+
+        /// <summary>En la segunda mitad del acto los especiales (estocada, barrido, Rompecascos, Paso de Sombra) vuelven
+        /// antes: la espera se multiplica por esto. Lo que cambia es cuántas veces salen, nunca su aviso.</summary>
+        public const float SecondHalfCooldownMul = 0.75f;
+
+        /// <summary>¿El patrón abre con un especial? (los que la segunda mitad trae más seguido)</summary>
+        public static bool OpensWithSpecial(AttackPattern p)
+        {
+            if (p == null || p.steps == null || p.steps.Length == 0) return false;
+            string sp = p.steps[0].special;
+            return sp == Thrust || sp == Sweep || sp == Rift || sp == Sink;
+        }
+
         /// <summary>Contraataque (Kaito le pegó dos veces a la guardia): el Counter termina en LOW_L y sigue un gyakugiri.</summary>
         public static AttackPattern Counter(int act)
         {
@@ -176,7 +214,9 @@ namespace Nindo
         {
             return new EnemyConfig
             {
-                id = "kage", displayName = "Kokuyō", maxHealth = 900, runSpeed = 3.0f, walkSpeed = 1.8f, turnSpeed = 4.5f,
+                // 1800 (antes 900): pedido de vida doble para que la partida dure ~1 h. Simulado con el bot "bueno": ~79 s
+                // por intento con las escenas de cambio de acto (antes ~52); cada acto cambia a la mitad (KokuyoBoss.Pacing)
+                id = "kage", displayName = "Kokuyō", maxHealth = 1800, runSpeed = 3.0f, walkSpeed = 1.8f, turnSpeed = 4.5f,
                 radius = 1.1f, height = 4.2f, scale = 1f, tintStrength = 0f,
                 maxImbalance = 5, exhaustedTime = KokuyoTimings.Kneel.Seconds, exhaustedDamageMul = 1.3f, guardTime = 0.8f,
                 poiseHits = 4, hyperArmor = true, knockbackResist = 0.95f, staggerTime = 0.3f, parriedRecoil = 0.55f,
@@ -227,12 +267,12 @@ namespace Nindo
         {
             var nui = new AttackDef
             {
-                name = "Kage-nui", state = "", damage = 18, kind = AttackKind.Unblockable, knockback = 2.2f, lunge = 0f, tracking = false,
+                name = "Kage-nui", state = "", damage = 18 * DamageScale, kind = AttackKind.Unblockable, knockback = 2.2f, lunge = 0f, tracking = false,
                 activeStart = 0.5f, activeEnd = 0.6f, apex = 0.35f, hitStop = 0.1f, sfx = "kokuyo_whisper", special = Nui,
             };
             var watari = new AttackDef
             {
-                name = "Kage-watari", state = "", damage = 20, kind = AttackKind.Unblockable, knockback = 2.4f, lunge = 0f, tracking = false,
+                name = "Kage-watari", state = "", damage = 20 * DamageScale, kind = AttackKind.Unblockable, knockback = 2.4f, lunge = 0f, tracking = false,
                 activeStart = 0.5f, activeEnd = 0.6f, apex = 0.35f, hitStop = 0.1f, sfx = "kokuyo_whisper", special = Watari,
                 windup = 0.6f,
             };

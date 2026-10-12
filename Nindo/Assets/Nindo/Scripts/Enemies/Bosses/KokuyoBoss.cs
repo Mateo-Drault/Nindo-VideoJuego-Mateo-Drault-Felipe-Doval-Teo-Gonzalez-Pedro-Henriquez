@@ -7,17 +7,18 @@ namespace Nindo
     /// <summary>
     /// Kokuyō, Señor del Clan Kurokage (jefe final, bossId "kage": las banderas, la puerta y el final siguen igual).
     /// Un samurái de 4.5 m que se cortó la sombra para no tener lazos; la sombra no se lo perdonó y se mueve primero.
-    ///  * Acto 1 "El Maestro" (100-65 %): su sombra en el piso actúa cada golpe 0.36 s antes que el cuerpo (el doble
+    ///  * Acto 1 "El Maestro" (100-70 %): su sombra en el piso actúa cada golpe 0.36 s antes que el cuerpo (el doble
     ///    de PlanarShadow muestreado más adelante en el mismo clip). Una sola cosa por vez: parry, dash, castigo. Y a
     ///    veces la sombra ataca sola (Kage-nobi): él se queda quieto y ella se estira por el piso hasta Kaito.
-    ///  * Acto 2 "La Sombra Suelta" (65-30 %): se la arranca (Kage, un segundo cazador que no se puede cortar) y el cuerpo
+    ///  * Acto 2 "La Sombra Suelta" (70-36 %): se la arranca (Kage, un segundo cazador que no se puede cortar) y el cuerpo
     ///    queda sin sombra. Pelean de a dos (turnos y dúos, KokuyoBoss.Shadow), nunca a menos de 0.9 s uno del otro.
-    ///  * Acto 3 "Eclipse" (30-10 %): cierra el puño sobre la luna. Sin luz no hay sombra que avise: quedan el anillo, el
+    ///  * Acto 3 "Eclipse" (36-10 %): cierra el puño sobre la luna. Sin luz no hay sombra que avise: quedan el anillo, el
     ///    destello y el hyōshigi; cada parry devuelve la luz. La sombra sigue ahí: sale de la oscuridad un segundo antes
     ///    de cortar (dorado, se desvía). La bandana de Kaito alumbra.
     ///  * Última resistencia (10 %): el Último Desfile termina de rodillas sí o sí y solo ahí se lo puede ejecutar.
     /// Los cambios de acto son escenas cortas e invulnerables (los golpes rebotan) que curan a Kaito: no hay esbirros.
-    /// Los pisos de vida en cada umbral hacen que cada acto dure lo que tiene que durar.
+    /// Los pisos de vida en cada umbral hacen que cada acto dure lo que tiene que durar; a mitad de cada acto cambia el
+    /// ritmo (KokuyoBoss.Pacing).
     /// </summary>
     public partial class KokuyoBoss : Boss, ICameraProfile
     {
@@ -32,14 +33,17 @@ namespace Nindo
         public float CameraPitch => 54f;
         public float CameraExtraDistance => 2f;
 
-        /// <summary>Vida (fracción) en la que termina cada acto: 1 → 65 %, 2 → 30 %, 3 → 10 % (la última resistencia).</summary>
-        static readonly float[] Gates = { 1f, 0.65f, 0.30f, 0.10f };
+        /// <summary>Vida (fracción) en la que termina cada acto: 1 → 70 %, 2 → 36 %, 3 → 10 % (la última resistencia).
+        /// Con la vida doble el Acto 1 (el que enseña) pesa menos y el eclipse más: simulado con el bot "bueno", los
+        /// actos duran ~24 / 27 / 21 s (con 65/30 el eclipse quedaba en 16 s y el Acto 1 en 26).</summary>
+        static readonly float[] Gates = { 1f, 0.70f, 0.36f, 0.10f };
         /// <summary>Postura con la que queda de rodillas al terminar un combo: en el Acto 1 alcanza un parry (enseña);
         /// después hacen falta dos (los puntos se acumulan entre combos).</summary>
         const float KneelThresholdFirst = 1f, KneelThreshold = 2f;
         /// <summary>De rodillas aguanta 8 golpes (no 4): la ventana entera de 3.6 s vale la pena.</summary>
         const int KneelHitCap = 8;
-        const float TransitionHeal = 30f, TransitionSpirit = 30f;
+        // 40 de vida (antes 30): con la vida doble cada acto dura más y la cura tiene que alcanzar para el siguiente
+        const float TransitionHeal = 40f, TransitionSpirit = 30f;
         /// <summary>Paso de Sombra: si el charco no llega (borde de la malla, un brasero en el camino) sale igual.</summary>
         const float SinkTimeout = 1.8f;
         /// <summary>De rodillas los golpes lo devuelven a este punto del Kneel como mucho: después del último
@@ -56,7 +60,7 @@ namespace Nindo
         AttackDef riftDef;
         float fightStart, kneelStart = -99f, tipHideAt = -1f;
         bool lastStandKneel;
-        // reintentos: dos muertes en el Acto 1 → pista del abuelo; llegar al eclipse → se reintenta desde el 65 %
+        // reintentos: dos muertes en el Acto 1 → pista del abuelo; llegar al eclipse → se reintenta desde el 70 %
         int act1Deaths;
         bool hintPending, shadowTipShown;
         int retryAct = 1;
@@ -298,6 +302,7 @@ namespace Nindo
                 prevChainTo = c.ChainTo;
             }
             afterRecoil = false;
+            OnPacingPatternStarted();
             if (a.special == KokuyoMoves.Sink) BeginSink(); else if (sinking) EndSink();
             if (a.state == KokuyoTimings.ShadowEmerge.State)
             {
@@ -626,7 +631,7 @@ namespace Nindo
             bool fromKaito = info.sourceFaction == Faction.Player;
             if (fromKaito && IsAlive && look != null)
             {
-                if (transition != null) { LastHitTime = Time.time; return HitResult.Blocked; }   // rebota (clang): está en escena
+                if (transition != null || Breathing) { LastHitTime = Time.time; return HitResult.Blocked; }   // rebota (clang): escena o rugido
                 if (sinking) return HitResult.Ignored;                                             // es un charco: no hay a quién
             }
             var i = info;
@@ -675,6 +680,7 @@ namespace Nindo
             // sin la fase genérica de Boss: los umbrales son pisos y cada uno abre su escena
             if (transition != null || LastStand || !IsAlive) return;
             if (Health <= Gates[Act] * config.maxHealth + 0.5f) StartTransition(Act + 1, false);
+            else CheckSecondHalf();
         }
 
         public override void OnParried(bool perfect)
@@ -704,7 +710,7 @@ namespace Nindo
             nextAttackTime = Time.time + Random.Range(config.attackCooldown.x, config.attackCooldown.y);
             float need = Act == 1 ? KneelThresholdFirst : KneelThreshold;
             if (forced || Imbalance >= need - 0.01f) BecomeExhausted();
-            else
+            else if (!TryBreather())
             {
                 EnterGuard();
                 // terminó su combo en pie: a veces el próximo turno es de su sombra

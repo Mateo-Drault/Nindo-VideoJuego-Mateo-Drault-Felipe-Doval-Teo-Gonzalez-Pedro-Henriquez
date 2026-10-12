@@ -163,18 +163,18 @@ namespace Nindo
         /// Mizuchi, el Gran Koi de la Cascada Kohan (jefe del lago): un koi espíritu de 7.5 m con el Sello del Agua clavado
         /// en el lomo. Golpes desviables con aviso dorado (mordida, aletazos, coletazo si Kaito se le pone detrás, perlas
         /// que el parry perfecto devuelve) e imparables rojos que siempre se pueden esquivar corriendo (salto del dragón,
-        /// chorro). Fase 2 (55 %): corrompido, inunda la plataforma; combo de ritmo, peloteo de la perla, chorro barrido,
-        /// la ola de la cascada y los pilares de agua. Fase 3 (25 %): perlas de tormenta. Los especiales los maneja
-        /// MizuchiBoss. Tiempos de las hojas de contacto de Art/Characters/Mizuchi/Mizuchi.fbx.json (apex = pose cargada,
+        /// chorro). Fase 2 (68 %): corrompido, inunda la plataforma; combo de ritmo, peloteo de la perla, chorro barrido,
+        /// la ola de la cascada y los pilares de agua. Fase 3 (38 %): perlas de tormenta y el torrente largo. Desde cerca, la
+        /// retirada abre los especiales de distancia. Los especiales los maneja MizuchiBoss. Tiempos de las hojas de contacto de Art/Characters/Mizuchi/Mizuchi.fbx.json (apex = pose cargada,
         /// activeStart = contacto); la mordida ya adelanta el cuerpo 0.6 m en el clip.
         /// </summary>
         public static EnemyConfig Mizuchi()
         {
-            // 720: con 500 el bot de pruebas lo liberaba en ~40 s de pelea y la fase 3 (la cascada a 1.6, los pilares)
-            // casi no llegaba a verse; los varados regalan mucho daño
+            // 1440 (antes 720): pedido de vida doble para que la partida dure ~1 h. Con 500 el bot de pruebas lo liberaba en
+            // ~40 s de pelea; con 1440, la retirada y las fases nuevas el bot "bueno" pelea ~80 s por intento (simulado)
             var c = new EnemyConfig
             {
-                id = "mizuchi", displayName = "Mizuchi", maxHealth = 720, runSpeed = 5f, walkSpeed = 2.4f, turnSpeed = 4.5f,
+                id = "mizuchi", displayName = "Mizuchi", maxHealth = 1440, runSpeed = 5f, walkSpeed = 2.4f, turnSpeed = 4.5f,
                 // radio = medio cuerpo (1.95 m de ancho) más algo de aleta; altura 3 m: AimPoint a 1.65 m, el eje del cuerpo
                 radius = 1.3f, height = 3f, scale = 1f, maxImbalance = 4, exhaustedTime = 3.4f, guardTime = 1.2f,
                 poiseHits = 3, hyperArmor = true, knockbackResist = 0.95f, parriedRecoil = 0.4f, staggerTime = 0.3f,
@@ -218,6 +218,9 @@ namespace Nindo
             pillars.special = "pillars"; pillars.specialParam = 4; pillars.tracking = false;
             // ---- fase 3
             var storm = pearls.Clone(); storm.name = "Perlas de tormenta"; storm.special = "storm"; storm.specialParam = 5; storm.damage = 8;
+            // retirada (MizuchiBoss.Pacing): salta lejos de Kaito y abre un especial de distancia (sin daño, sin aviso)
+            var retreat = Hit("Dive", 0, 0.9f, 0.95f, lunge: 0f);
+            retreat.name = "Retirada"; retreat.special = "retreat"; retreat.tracking = false;
             // los especiales grandes piden 2 m o más: el contraataque (Enemy.Counter elige con distancia 1) es siempre un golpe corto
             c.patterns = new[]
             {
@@ -234,7 +237,18 @@ namespace Nindo
                 new AttackPattern { name = "Ola de la Cascada", steps = new[] { wave }, weight = 0.9f, minRange = 2f, maxRange = 30f, cooldown = 15f, minPhase = 1 },
                 new AttackPattern { name = "Pilares", steps = new[] { pillars }, weight = 0.8f, minRange = 2f, maxRange = 30f, cooldown = 20f, minPhase = 1 },
                 new AttackPattern { name = "Perlas de tormenta", steps = new[] { storm }, weight = 1f, minRange = 6f, maxRange = 14f, cooldown = 6f, minPhase = 2 },
+                // ---- pelea larga (vida doble): otra mezcla de cerca y la retirada que abre los especiales de distancia,
+                // que contra alguien pegado al koi no salían nunca (piden 4-6 m o más)
+                new AttackPattern { name = "Aletas y mordida", steps = new[] { finL, finR, bite }, weight = 1f, maxRange = 3.4f, maxAngle = 110f },
+                new AttackPattern { name = "Torrente largo", steps = new[] { tBite, tFinL, tFinR, tBite, tTail }, weight = 1.2f, maxRange = 3.6f, maxAngle = 70f, minPhase = 2 },
+                new AttackPattern { name = "Perlas desde lejos", steps = new[] { retreat, pearls }, weight = 0.9f, maxRange = 4f, cooldown = 11f, maxPhase = 0 },
+                new AttackPattern { name = "Chorro desde lejos", steps = new[] { retreat, jet }, weight = 0.7f, maxRange = 4f, cooldown = 13f, maxPhase = 0 },
+                new AttackPattern { name = "Peloteo desde lejos", steps = new[] { retreat, rally }, weight = 0.8f, maxRange = 4f, cooldown = 16f, minPhase = 1 },
+                new AttackPattern { name = "Barrido desde lejos", steps = new[] { retreat, sweep }, weight = 0.8f, maxRange = 4f, cooldown = 12f, minPhase = 1 },
+                new AttackPattern { name = "Tormenta desde lejos", steps = new[] { retreat, storm }, weight = 1f, maxRange = 4f, cooldown = 10f, minPhase = 2 },
             };
+            // con la vida doble, el daño de todo a MizuchiBoss.DamageScale (perlas, saltos, ola y pilares incluidos)
+            c.ScaleSteps(MizuchiBoss.DamageScale, 1f);
             return c;
         }
 

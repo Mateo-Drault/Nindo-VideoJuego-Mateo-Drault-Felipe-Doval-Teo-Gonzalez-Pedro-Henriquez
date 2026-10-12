@@ -69,6 +69,7 @@ namespace Nindo
 
         void BeginActShadow()
         {
+            ResetPacing();
             actStart = Time.time;
             lastShadowTurn = -99f;
             shadowTurnAsked = false;
@@ -152,8 +153,8 @@ namespace Nindo
             if (Act == 1 && duetTeach != null) duetTeach.weight = nobiTaught ? 0.9f : 0f;
             // hundido en el Paso de Sombra no arranca nada nuevo (lo que ya venía sigue)
             if (sinking || !BodyFree || kage.Busy || !kage.CanStrike) return;
-            if (now < actStart + FirstTurnAfter[Act] || now < lastShadowTurn + TurnMinGap[Act]) return;
-            bool quiet = now >= Mathf.Max(lastShadowTurn, actStart) + MaxQuiet[Act];
+            if (now < actStart + FirstTurnAfter[Act] || now < lastShadowTurn + TurnMinGap[Act] * ShadowPace) return;
+            bool quiet = now >= Mathf.Max(lastShadowTurn, actStart) + MaxQuiet[Act] * ShadowPace;
             if (!shadowTurnAsked && !quiet && !(Act == 1 && !nobiTaught)) return;
             if (TryShadowTurn()) shadowTurnAsked = false;
         }
