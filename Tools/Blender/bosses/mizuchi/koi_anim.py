@@ -19,6 +19,9 @@ Cada hueso puede ir 'lag' cuadros atrás de la clave (la ola del golpe baja por 
 Los clips cíclicos se simulan tres vueltas y se queda la última: la costura del loop es < 1°.
 """
 import math, random, zlib
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+import bl_compat  # noqa: E402,F401  (Blender 5: Action.fcurves y slots)
 from mathutils import Vector, Quaternion, Matrix
 from koi_common import clamp, lerp, smoothstep
 
