@@ -18,10 +18,11 @@ namespace Nindo
         public const float KneelForward = 0.2f;
         /// <summary>
         /// Alturas (m sobre los pies) de las vueltas de ShadowRopes si no encuentra los huesos del abuelo, medidas en Bound
-        /// f0: las muñecas cruzadas atrás, los codos y el pecho bajo los hombros (línea BOUND de build_team_anims).
+        /// f0 (línea BOUND de build_team_anims): las muñecas cruzadas atrás (0.40), a mitad de los antebrazos (los codos,
+        /// a 0.53, quedan casi a la altura del pecho) y el pecho, 5 cm bajo los hombros (0.61).
         /// </summary>
         public static readonly System.Collections.ObjectModel.ReadOnlyCollection<float> BoundRopeLoops =
-            System.Array.AsReadOnly(new[] { 0.40f, 0.50f, 0.56f });
+            System.Array.AsReadOnly(new[] { 0.40f, 0.48f, 0.56f });
         /// <summary>Medio ancho del abuelo de rodillas a la altura de las cuerdas, con las mangas (m; los bounds de la
         /// pose de bind son de los brazos en cruz: 0.8 m).</summary>
         public const float BoundRopeHalfWidth = 0.21f;
@@ -67,10 +68,14 @@ namespace Nindo
 
         /// <summary>Un estado a 'speed' x su velocidad (Walk al ritmo de un SlideTo que no es WalkClipSpeed: sin esto los pies
         /// patinan lo que difieren las dos velocidades).</summary>
-        public void Play(string state, float fade, float speed) { anim.Play(state, fade, 0f, speed); then = null; dragging = dusting = false; }
+        public void Play(string state, float fade, float speed)
+        {
+            anim.SetSpeed(1f);
+            anim.Play(state, fade, 0f, speed); then = null; dragging = dusting = false;
+        }
 
         /// <summary>El primer cuadro de un estado, quieto.</summary>
-        public void Hold(string state) { anim.Play(state, 0f, 0f, 0f); then = null; dragging = dusting = false; }
+        public void Hold(string state) { anim.SetSpeed(1f); anim.Play(state, 0f, 0f, 0f); then = null; dragging = dusting = false; }
 
         /// <summary>
         /// Antes del secuestro (NPC 'kidnap'): el abuelo respira y mira, el ninja agazapado se balancea delante de él
@@ -87,6 +92,7 @@ namespace Nindo
         /// abuelo quedaba congelado en el último cuadro de Freed como una estatua).</summary>
         public void PlayThen(string state, string next, float fade = 0.15f)
         {
+            anim.SetSpeed(1f);
             anim.Play(state, fade);
             thenFrom = state; then = next; thenDrag = false;
         }
@@ -200,8 +206,13 @@ namespace Nindo
         }
 
         /// <summary>Se desliza hacia un punto sin girar ni cambiar la animación (arrastre) y para justo en él (el clip que
-        /// suena y el transform terminan juntos).</summary>
-        public void SlideTo(Vector3 target, float speed) { walkTarget = target; walkSpeed = speed; walking = true; sliding = true; }
+        /// suena y el transform terminan juntos). Si suena Walk, la lleva al paso del deslizamiento (el final pide Walk y
+        /// SlideTo a 0.88 m/s: a velocidad 1 los pies patinaban 10 %); el próximo Play la devuelve a 1.</summary>
+        public void SlideTo(Vector3 target, float speed)
+        {
+            walkTarget = target; walkSpeed = speed; walking = true; sliding = true;
+            if (anim.Current == WalkState) anim.SetSpeed(speed / WalkClipSpeed);
+        }
         bool sliding;
 
         public void FaceTo(Vector3 p)

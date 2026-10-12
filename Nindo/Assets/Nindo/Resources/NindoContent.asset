@@ -326,15 +326,19 @@ MonoBehaviour:
     - Idle
     - Kidnap
     - Walk
+    - KidnapWait
     - Dragged
     - Bound
+    - BoundStruggle
     - Freed
     stateLengths:
     - 2.5
     - 1.9
     - 0.8
+    - 2.5
     - 2.6667
-    - 3.0
+    - 6.0
+    - 2.2
     - 3.6
   - id: kidnap
     model: {fileID: 919132149155446097, guid: 1b406ff4438a21ba4c45f9adbb20ea7d, type: 3}
@@ -346,15 +350,19 @@ MonoBehaviour:
     - Idle
     - Kidnap
     - Walk
+    - KidnapWait
     - Dragged
     - Bound
+    - BoundStruggle
     - Freed
     stateLengths:
     - 2.5
     - 1.9
     - 0.8
+    - 2.5
     - 2.6667
-    - 3.0
+    - 6.0
+    - 2.2
     - 3.6
   - id: mizuchi_koi
     model: {fileID: 919132149155446097, guid: 6139008ced08c9004d9add9a1249ff10, type: 3}

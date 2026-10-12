@@ -189,8 +189,14 @@ clip.partner = T.TeamClip("Kidnap/ninja", n, keys_del_ninja, feet={...})   # mis
 * `Kidnap` y `Dragged` (team_clips_grandpa) ya reemplazan la toma del equipo. Los contactos entre los dos (las manos de
   cada uno sobre la muñeca del otro) salen de resolver cuadros sueltos de los dos esqueletos (`Probe`/`Duo.resolve`:
   el puño medido contra el antebrazo del otro y corregido); `grandpa_fbx_check.py` los vuelve a medir en el FBX
-  exportado, junto con los empalmes en seco del NPC. El NPC 'kidnap' espera en `Kidnap` f0 quieto (`NPC.Hold`), no en
-  Idle: la pose fija no es la de arranque (en el fundido de 0.1 s la mano del ninja saltaba 21 cm).
+  exportado, junto con los empalmes en seco del NPC. El NPC 'kidnap' espera en `KidnapWait` (`NPC.AwaitKidnap`, que
+  empalma con `Kidnap` f0), no en Idle: la pose fija no es la de arranque (en el fundido de 0.1 s la mano del ninja
+  saltaba 21 cm).
+* La clavícula de estos rigs (20 cm en el abuelo) gira hacia la mano pedida y corre el hombro: una mano puesta "a tal
+  distancia del hombro" hay que recolocarla desde el hombro ya resuelto, varias pasadas (`Duo.resolve`). Y con los
+  brazos tirantes, todo lo que inclina a uno corre al otro: las piernas del ninja (0.33 m) no cubren más de ~1 m/s con
+  los pies clavados, así que los compases que cambian la distancia entre hombros tienen que ser lentos o hacerse con
+  los brazos (`drag_taut`).
 * `grandpa_shots.py` hace las hojas con las cámaras de las escenas (prólogo, ojos de Kaito, bosque, final) y mide
   cuánto se acercan los cuerpos y si el abuelo entra en el poste o su zócalo.
 * Las mallas: `Cuerpo` (abuelo) y `Cube` (ninja); el NPC `grandpa` oculta la del ninja.

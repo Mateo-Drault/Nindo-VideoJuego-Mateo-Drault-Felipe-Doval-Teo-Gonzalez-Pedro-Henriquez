@@ -147,7 +147,9 @@ def post_and_ropes(ch, rv, first):
     axis, side = Vector((0.0, -1.0, 0.0)), Vector((1.0, 0.0, 0.0))
     RopeR, Gap, PostR, HalfD, Limb, HW = 0.027, 0.03, 0.16, 0.12, 0.05, 0.21
     wrist, sh = (hl + hr) * 0.5, (sl + sr) * 0.5
-    zW, zE, zC = wrist.z, (el.z + er.z) * 0.5, sh.z - 0.07
+    zW, zE, zC = wrist.z, (el.z + er.z) * 0.5, sh.z - 0.05
+    if zC - zE < 0.08:          # ShadowRopes.MinLoopGap
+        zE = (zW + zC) * 0.5
     shalf = abs((sl - sr).dot(side)) * 0.5
 
     def at(z):
@@ -245,7 +247,7 @@ def main():
         fs = clip.timing.get("sheet") or list(range(0, clip.frames + 1, max(1, clip.frames // 8)))
         for o in ROPES:
             o.hide_render = clip.name == "Freed"
-        for label, pos, look, fov in CAMS.get(clip.name, []):
+        for ci, (label, pos, look, fov) in enumerate(CAMS.get(clip.name, [])):
             cam.location = Vector(pos)
             cam.rotation_euler = (Vector(look) - Vector(pos)).to_track_quat('-Z', 'Y').to_euler()
             cam.data.angle_y = math.radians(fov)
@@ -256,7 +258,8 @@ def main():
             tiles = []
             for f in fs:
                 scn.frame_set(first + f)
-                p = os.path.join(OUT, f"_{clip.name}_{label}_{f:03d}.png")
+                # el plano por número: su nombre lleva '3/4' y la ruta del scratch ya roza los 260 caracteres de Windows
+                p = os.path.join(OUT, f"_{clip.name}_{ci}_{f:03d}.png")
                 NA.render(scn, p)
                 tiles.append({"img": p, "label": f"f{f}"})
             rows.append({"label": f"{clip.name} · {label} (el abuelo ~{px:.0f} px a 1080p)", "tiles": tiles})

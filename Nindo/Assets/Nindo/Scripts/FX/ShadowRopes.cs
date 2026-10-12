@@ -95,6 +95,8 @@ namespace Nindo
         const float RopeR = 0.027f, RopeGap = 0.03f, PostR = 0.16f;
         // medio fondo del tronco (del eje del cuerpo a la panza o al pecho) y grosor de un brazo
         const float WaistHalfD = 0.12f, ChestHalfD = 0.12f, LimbR = 0.05f;
+        // lo mínimo entre dos vueltas (m): dos diámetros de cuerda y un poco de tela entre ellas
+        const float MinLoopGap = 0.08f;
         readonly List<Vector2> pts2 = new List<Vector2>(), hull = new List<Vector2>();
 
         /// <summary>
@@ -115,11 +117,15 @@ namespace Nindo
             Vector3 handR = hr != null ? hr.position : c + up * loops[0] + back * 0.13f - side * 0.02f;
             Vector3 elbL = el != null ? el.position : c + up * loops[1] + back * 0.10f + side * (hw - LimbR);
             Vector3 elbR = er != null ? er.position : c + up * loops[1] + back * 0.10f - side * (hw - LimbR);
-            Vector3 shL = sl != null ? sl.position : c + up * (loops[2] + 0.07f) + side * (hw - 0.04f);
-            Vector3 shR = sr != null ? sr.position : c + up * (loops[2] + 0.07f) - side * (hw - 0.04f);
+            Vector3 shL = sl != null ? sl.position : c + up * (loops[2] + 0.05f) + side * (hw - 0.04f);
+            Vector3 shR = sr != null ? sr.position : c + up * (loops[2] + 0.05f) - side * (hw - 0.04f);
             Vector3 hip = root != null ? root.position : c + up * 0.16f + axis * 0.05f;
             Vector3 wrist = (handL + handR) * 0.5f, shoulders = (shL + shR) * 0.5f;
-            float yW = wrist.y, yE = (elbL.y + elbR.y) * 0.5f, yC = shoulders.y - 0.07f;
+            float yW = wrist.y, yE = (elbL.y + elbR.y) * 0.5f, yC = shoulders.y - 0.05f;
+            // de rodillas con los hombros tirados atrás los codos quedan casi a la altura del pecho (0.53 y 0.56 m): las
+            // dos vueltas se pisaban y se veían dos cuerdas en vez de tres. Entonces la del medio va a mitad de los
+            // antebrazos, entre la de las muñecas y la del pecho
+            if (yC - yE < MinLoopGap) yE = (yW + yC) * 0.5f;
             float shoulderHalf = Mathf.Abs(Vector3.Dot(shL - shR, side)) * 0.5f;
 
             // cada vuelta: la envolvente (vista desde arriba) del poste, del tronco a esa altura y de lo que sobresale (los
