@@ -8,8 +8,12 @@ Sin Unity. Porta las reglas que deciden la pelea, con los números del código (
     pisos de vida (66 % / 33 %) y escenas de cambio de fase, los rebotes fuera de sus huecos (el 2.º dentro de
     BounceWindow se contragolpea), postura del bambú (desvío + contragolpe, cuya parada perfecta lo arrodilla;
     esperarla lo deja abierto), de rodillas solo con la postura llena, la onda de qi (frente a QiSpeed m/s), la
-    grulla voladora (cae sobre Kaito), la barrida (disco), el paso del viento (carril, x4 hasta que sale en la
-    fase) y el reintento desde la fase más alta a la que llegó Kaito.
+    grulla voladora (cae sobre Kaito), la barrida (disco), el paso del viento (desde lejos o con el salto atrás antes,
+    x4 hasta que sale en la fase, el vuelo entero escalado entre 0.5 y 1.4 para frenar sobre donde va a estar Kaito y,
+    si queda demasiado cerca, le pasa al costado: PlanDash), las variantes de paso de los golpes que
+    avanzan (en la suelta, la más larga que entra: PickReach), el contraataque de Kaito (2 cortes después de un parry, 3
+    después de uno perfecto), el hueco del final del último golpe de un combo, las habilidades (rebotan fuera de los
+    huecos y suman postura) y el reintento desde la fase más alta a la que llegó Kaito.
   * PlayerController: combo de Kaito (clips de 0.43 / 0.37 / 0.70 s, golpe en f4 / f3 / f7), parry 0.24 s
     (perfecto 0.11), guardia imperfecta 0.15 s, encadenar parries 0.18 s, contraataque x1.5 por 0.7 s, dash
     6.5 m con i-frames 0.02-0.24 y 15 de Espíritu (sin Espíritu: paso sin i-frames), aturdido 0.65 s, 0.7 s
@@ -23,7 +27,11 @@ de stick sale hacia adelante), como en el juego.
 Dice cuánto dura la pelea (el intento ganador y el total con las muertes), en qué fase se muere, de dónde sale el
 daño a Chikuō y una tabla de lectura de cada golpe (windup, anillo, "¡ya!" y qué tan seguido lo resuelve el bot).
 
+Con --abilities Kaito usa el Corte del Viento como un jugador (en los huecos, con Espíritu de sobra); el bot de AutoPilot
+no las usa. "avance perdido" cuenta lo que Travel no pudo mover del avance autorado (el pie apoyado patina eso).
+
 Uso: python Tools/Dev/sim_bamboo_master.py [--runs 200] [--seed 1] [--skill bueno|promedio|experto|all] [--table] [--fair]
+     [--abilities]
 """
 import argparse, json, math, os, random
 
@@ -34,16 +42,18 @@ DT = 1.0 / 60.0
 
 # --------------------------------------------------------------------------- Chikuō (BambooMasterBoss / Moves)
 P = dict(
-    health=1400.0,
+    health=2000.0,
     gates=[1.0, 0.66, 0.33, 0.0],
     parry_hold=[0.30, 0.22, 0.16], dodge_hold=[0.14, 0.10, 0.08], chained=0.6, phase_mul=0.9,
-    cooldown=[(2.6, 3.6), (2.0, 3.0), (1.6, 2.4)],      # BambooMasterMoves.Cooldown
+    cooldown=[(1.8, 2.6), (1.4, 2.2), (1.1, 1.8)],      # BambooMasterMoves.Cooldown
     stance_chance=[0.45, 0.40, 0.35], stance_time=(1.8, 2.6),
-    kneel_cap=3, taunt_cap=2, exh_mul=1.15, exh_time=4.0, taunt_time=1.8,
+    kneel_cap=3, taunt_cap=2, exh_mul=1.15, exh_time=4.0, taunt_time=2.0,
     max_imb=8.0, guard_time=0.7, stagger=0.35, bounce_window=0.55,
     recoil=0.4,                          # Parried.Seconds * 0.4 (x1.5 el perfecto)
     run=4.0, walk=1.6, pref=3.6, radius=0.5,
-    qi_speed=[9.0, 9.0, 10.0], qi_radius=[9.0, 9.0, 10.5], leap_min=2.0, leap_max=7.4, leap_minr=1.0,
+    qi_speed=[9.0, 9.0, 10.0], qi_radius=[9.0, 9.0, 10.5], leap_min=2.6, leap_max=7.4, leap_minr=2.5,
+    dash_from=5.6, dash_minr=5.0, hop_min=0.25, dash_k=(0.5, 1.4), pass_beyond=1.0, pass_clear=0.95,
+    riposte_grace=0.3, riposte_cuts=(2, 3), hole_delay=0.1, ability_posture=2.0,
     transition=[3.67, 3.0], heal=30.0, spirit_gift=30.0,
     counter_clip=0.5333, guardhit_extra=0.5,
     dmg_mul=[1.0, 1.0, 1.0],
@@ -62,7 +72,7 @@ K = dict(hp=100.0, spirit0=40.0, run=6.2,
          dash_cost=15.0, dash_len=0.26, dash_recover=0.08, iframe=(0.02, 0.24), dash_dist=6.5, tired_cd=0.8,
          hurt_heavy=0.65, invuln=0.7, blocked=0.5,
          rage_hit=4, rage_parry=14, rage_perfect=20, rage_loss=40, rage_time=9.0, rage_mul=1.45, rage_ext=0.6,
-         sp_hit=3, sp_parry=12, sp_perfect=18)
+         sp_hit=3, sp_parry=12, sp_perfect=18, slash_cost=35.0, slash_dmg=32.0)
 TICK = {False: 0.38, True: 0.42}         # TellStyle.TickParryable / TickUnblockable
 MAXLEAD = {False: 0.85, True: 1.0}
 SKILLS = {
@@ -101,6 +111,18 @@ class Step:
         tr = c.get("travel_m")
         self.travel = tr
         self.frames = c["frames"]
+        air = nm.get("air")
+        self.air = air if air and air[1] > air[0] else None
+        # BambooMasterBoss.StretchSpan: la embestida escala del pie que empuja (DashStart) al que se clava (contacto)
+        ds = [e["t"] for e in c.get("events", []) if e["fn"] == "DashStart"]
+        if ds:
+            self.air = [ds[0], nm["contact"]]
+        self.base = base
+        # las variantes de paso corto (PickReach): (avance total, alcance, travel_m)
+        self.variants = []
+        for v in t.get("reach_variants") or []:
+            cv = CLIPS[v]
+            self.variants.append((cv["travel_m"][-1], cv.get("reach_m", self.reach), cv["travel_m"]))
         hold = (P["dodge_hold"] if self.red else P["parry_hold"])[ph] * (P["chained"] if chained else 1.0)
         natural = self.apex * self.S / 0.85 + (self.contact - self.apex) * self.S / self.rr
         self.windup = natural + hold
@@ -110,18 +132,31 @@ class Step:
         self.range = self.reach + self.travel_at(self.contact)
         if special == "qi":
             self.ring = P["qi_radius"][ph]
+        if special == "hop":
+            self.windup = 0.0
         self.bias = 0.16 if self.red else 0.10
 
-    def travel_at(self, n):
-        if not self.travel:
+    def travel_at(self, n, tr=None):
+        tr = tr or self.travel
+        if not tr:
             return 0.0
         x = min(max(n, 0.0), 1.0) * self.frames
-        i = min(int(x), len(self.travel) - 1)
-        j = min(i + 1, len(self.travel) - 1)
-        return self.travel[i] + (self.travel[j] - self.travel[i]) * (x - i)
+        i = min(int(x), len(tr) - 1)
+        j = min(i + 1, len(tr) - 1)
+        return tr[i] + (tr[j] - tr[i]) * (x - i)
+
+    def stretched(self, n, k, tr=None):
+        """BambooMasterBoss.StretchedTravel: el tramo del despegue a la caída escalado por k."""
+        x = self.travel_at(n, tr)
+        if k != 1.0 and self.air:
+            a0, a1 = self.air
+            x += (k - 1.0) * (self.travel_at(min(max(n, a0), a1), tr) - self.travel_at(a0, tr))
+        return x
 
 
 def min_windup(a, counter, ph):
+    if a.special == "hop":
+        return 0.0                       # sin daño: su ritmo natural (StepTimeline con windup = telegraph = 0)
     b = a.windup
     if counter:
         b = max(b, 0.5)
@@ -181,46 +216,59 @@ def patterns(ph):
             maxr = a.range + 0.1 if a.special == "strike" else a.ring + 0.2 if a.special == "sweep" else a.range
         out.append(dict(name=name, w=w, minr=minr, maxr=maxr, cd=cd, steps=steps, last=-99.0))
 
+    def dash(name, w, cd, steps):
+        # BambooMasterMoves.DashPatterns: desde lejos directo, de cerca con el salto atrás antes (el peso repartido)
+        add(name, w * 0.5, P["dash_minr"], cd, steps, 7.6)
+        add(name + " (salto)", w * 0.5, 0, cd, [S("BackHop", ph, 0, special="hop")] + steps, P["dash_minr"] + 0.4)
+
+    D = DMG
     if ph == 0:
-        palm, chopC = S("Palm", 0, 5), S("ChopPalm", 0, 5, True)
+        palm, chopC = S("Palm", 0, D[0]["palm"]), S("ChopPalm", 0, D[0]["palm"], True)
         add("Palma", 1.3, 0, 0, [palm])
         add("Palma y Sable", 1.6, 0, 0, [palm, chopC])
-        add("Pico de Grulla", 1.0, 0, 2, [S("CraneKick", 0, 5)])
-        add("Sable y Grulla", 1.2, 0, 4, [S("ChopPalm", 0, 5), S("CraneKick", 0, 5, True)])
-        add("Tres de una Mano", 0.8, 0, 8, [palm, chopC, S("CraneKick", 0, 5, True)])
-        add("Grulla Voladora", 1.0, P["leap_minr"], 6, [S("LeapKick", 0, 7, special="leap")], P["leap_max"] - 0.4)
+        add("Pico de Grulla", 1.0, 0, 2, [S("CraneKick", 0, D[0]["palm"])])
+        add("Sable y Grulla", 1.2, 0, 4, [S("ChopPalm", 0, D[0]["palm"]), S("CraneKick", 0, D[0]["palm"], True)])
+        add("Tres de una Mano", 0.8, 0, 8, [palm, chopC, S("CraneKick", 0, D[0]["palm"], True)])
+        add("Grulla Voladora", 1.0, P["leap_minr"], 6, [S("LeapKick", 0, D[0]["leap"], special="leap")], P["leap_max"] - 0.4)
     elif ph == 1:
-        palm, chop = S("Palm", 1, 7), S("ChopPalm", 1, 8)
-        twin, twinC = S("TwinPalm", 1, 8), S("TwinPalm", 1, 8, True)
-        spinC = S("SpinKick", 1, 8, True)
+        d = D[1]
+        palm, chop = S("Palm", 1, d["palm"]), S("ChopPalm", 1, d["gold"])
+        twin, twinC = S("TwinPalm", 1, d["gold"]), S("TwinPalm", 1, d["gold"], True)
+        spinC = S("SpinKick", 1, d["gold"], True)
         add("Palmas Gemelas", 1.2, 0, 0, [twin])
         add("Palma y Viento", 1.4, 0, 3, [palm, spinC])
         add("Sable y Gemelas", 1.2, 0, 3, [chop, twinC])
-        add("Grulla y Barrida", 1.0, 0, 6, [S("CraneKick", 1, 8), S("Sweep", 1, 9, True, "sweep")])
-        add("Barrida", 0.6, 0, 6, [S("Sweep", 1, 9, special="sweep")])
-        add("Cuatro Vientos", 0.7, 0, 9, [palm, S("ChopPalm", 1, 8, True), twinC, spinC])
-        add("Onda de Qi", 0.9, 0, 9, [S("QiWave", 1, 9, special="qi")], 7.0)
-        add("Paso del Viento", 1.1, 4.2, 6, [S("DashStrike", 1, 11, special="dash")], 7.6)
-        add("Grulla Voladora", 0.8, P["leap_minr"], 7, [S("LeapKick", 1, 11, special="leap")], P["leap_max"] - 0.4)
+        add("Grulla y Barrida", 1.0, 0, 6, [S("CraneKick", 1, d["gold"]), S("Sweep", 1, d["red"], True, "sweep")])
+        add("Barrida", 0.6, 0, 6, [S("Sweep", 1, d["red"], special="sweep")])
+        add("Cuatro Vientos", 0.7, 0, 9, [palm, S("ChopPalm", 1, d["gold"], True), twinC, spinC])
+        add("Onda de Qi", 0.9, 0, 9, [S("QiWave", 1, d["red"], special="qi")], 7.0)
+        dash("Paso del Viento", 1.1, 6, [S("DashStrike", 1, d["leap"], special="dash")])
+        add("Grulla Voladora", 0.8, P["leap_minr"], 7, [S("LeapKick", 1, d["leap"], special="leap")], P["leap_max"] - 0.4)
     else:
-        thrust, thrustC = S("Palm", 2, 9), S("Palm", 2, 9, True)
-        smashC = S("ChopPalm", 2, 10, True)
+        d = D[2]
+        thrust, thrustC = S("Palm", 2, d["palm"]), S("Palm", 2, d["palm"], True)
+        smashC = S("ChopPalm", 2, d["gold"], True)
         add("Estocada", 1.2, 0, 0, [thrust])
         add("Estocada y Bambú", 1.4, 0, 0, [thrust, smashC])
-        add("El Bambú Vuelve", 1.1, 0, 6, [thrust, smashC, S("Sweep", 2, 12, True, "sweep")])
-        add("Grulla y Estocada", 1.0, 0, 3, [S("CraneKick", 2, 10), thrustC])
-        add("Barrida del Bastón", 0.6, 0, 6, [S("Sweep", 2, 12, special="sweep")])
-        add("La Última Lección", 0.6, 0, 12, [thrust, smashC, thrustC, S("QiWave", 2, 12, True, "qi")])
-        add("Raíz del Bambú", 0.8, 0, 8, [S("QiWave", 2, 12, special="qi")], 7.0)
-        add("Viento y Bambú", 1.0, 4.2, 6, [S("DashStrike", 2, 13, special="dash"), smashC], 7.6)
-        add("Grulla y Estocada (salto)", 0.8, P["leap_minr"], 7, [S("LeapKick", 2, 13, special="leap"), thrustC], P["leap_max"] - 0.4)
+        add("El Bambú Vuelve", 1.1, 0, 6, [thrust, smashC, S("Sweep", 2, d["red"], True, "sweep")])
+        add("Grulla y Estocada", 1.0, 0, 3, [S("CraneKick", 2, d["gold"]), thrustC])
+        add("Barrida del Bastón", 0.6, 0, 6, [S("Sweep", 2, d["red"], special="sweep")])
+        add("La Última Lección", 0.6, 0, 12, [thrust, smashC, thrustC, S("QiWave", 2, d["red"], True, "qi")])
+        add("Raíz del Bambú", 0.8, 0, 8, [S("QiWave", 2, d["red"], special="qi")], 7.0)
+        dash("Viento y Bambú", 1.0, 6, [S("DashStrike", 2, d["leap"], special="dash"), smashC])
+        add("Grulla y Estocada (salto)", 0.8, P["leap_minr"], 7, [S("LeapKick", 2, d["leap"], special="leap"), thrustC], P["leap_max"] - 0.4)
     return out
 
 
 
 
+# BambooMasterMoves: daño por fase (palma, los otros dorados, los rojos de piso, salto y embestida, contragolpe)
+DMG = [dict(palm=4, gold=4, red=5, leap=5, counter=4), dict(palm=4, gold=5, red=6, leap=6, counter=4),
+       dict(palm=5, gold=6, red=6, leap=7, counter=5)]
+
+
 def counter_step(ph):
-    return Step("CounterStrike", ph, (5, 7, 9)[ph], counter=True)
+    return Step("CounterStrike", ph, DMG[ph]["counter"], counter=True)
 
 
 def gauss(rng, m, s):
@@ -229,8 +277,9 @@ def gauss(rng, m, s):
 
 # --------------------------------------------------------------------------- la pelea
 class Fight:
-    def __init__(self, skill, rng, start_phase=0, stats=None):
+    def __init__(self, skill, rng, start_phase=0, stats=None, abilities=False):
         self.sk, self.rng = skill, rng
+        self.abilities = abilities
         self.t = 0.0
         self.st = stats if stats is not None else {}
         # jefe
@@ -271,6 +320,10 @@ class Fight:
         self.leap_target = None
         self.qi_r = None
         self.qi_pending = False
+        self.k_stretch = 1.0
+        self.passing, self.pass_x = False, 0.0
+        self.v_travel, self.v_reach, self.picked = None, None, False
+        self.riposte_until_b, self.riposte_left, self.last_perfect = -1.0, 0, False
         # Kaito
         self.k_hp = K["hp"]
         self.sp = K["spirit0"]
@@ -407,6 +460,13 @@ class Fight:
         self.leap_target = None
         self.qi_r = None
         self.qi_pending = False
+        self.k_stretch = 1.0
+        self.passing, self.pass_x = False, 0.0
+        self.v_travel, self.v_reach, self.picked = None, None, False
+        if a.special == "hop":
+            # BambooMasterBoss.HopScale: hasta DashFrom de Kaito, como poco un cuarto del salto
+            full = -a.travel[-1]
+            self.k_stretch = min(1.0, max(P["hop_min"], (P["dash_from"] - self.d) / full))
         w = min_windup(a, self.counter_attack and self.step == 0, self.ph)
         self.tl = Timeline(a, w)
         travel = 0.0
@@ -414,7 +474,7 @@ class Fight:
             travel = min(max(self.d - CONTACT_QI, 0.0), a.ring) / P["qi_speed"][self.ph]
             self.tl.sustain = max(0.1, (a.ring - CONTACT_QI) / P["qi_speed"][self.ph])
         self.tell_start = max(0.0, self.tl.T + travel - MAXLEAD[a.red])
-        self.tell_on = True
+        self.tell_on = a.dmg > 0
         self.stat("pasos")
 
     def boss_receive(self, dmg, kind, riposte, stop):
@@ -423,6 +483,15 @@ class Fight:
             return "ignored"
         if self.t < self.trans_until:
             return "blocked"
+        if kind == "ability":
+            # BambooMasterBoss.AbilityAgainstGuard: fuera de los huecos rebota y le dobla la postura
+            kind = "heavy"
+            if self.bounces():
+                self.stat("habilidad_a_la_guardia")
+                if self.stance and self.bs == "guard":
+                    self.deflect("desvios_habilidad")
+                self.add_imb(P["ability_posture"])
+                return "blocked"
         guardable = kind in ("light", "heavy")
         if self.stance and self.bs == "guard" and guardable:
             return self.deflect("desvios")
@@ -434,6 +503,9 @@ class Fight:
         src = self.bs
         if src == "attack":
             src = "attack_" + ("rojo" if self.a.red else "dorado") + ("_tras" if self.clock >= self.tl.T else "_antes")
+        was_recoil = self.bs == "recoil"
+        self.bdur_recoil, self.bt_recoil = self.bdur, self.bt
+        in_riposte = self.bs in ("stagger", "chase", "strafe") and self.t < self.riposte_until_b and self.riposte_left > 0
         if self.bs == "exhausted":
             dmg *= P["exh_mul"]
             self.exh_hits += 1
@@ -455,6 +527,14 @@ class Fight:
             self.bdur = P["stagger"] * (1.6 if kind == "heavy" else 1.0)
             # se rehace antes de volver a atacar
             self.next_attack = max(self.next_attack, self.t + self.bdur + self.rng.uniform(*P["cooldown"][self.ph]))
+        # el contraataque de Kaito: 2 cortes después de un parry, 3 después de uno perfecto
+        if was_recoil:
+            # los cortes que siguen entran mientras le dure el retroceso del parry (más el margen): el perfecto dura 1.5x
+            pf = 1 if self.last_perfect else 0
+            self.riposte_until_b = self.t + max(0.0, self.bdur_recoil - self.bt_recoil) + P["riposte_grace"]
+            self.riposte_left = P["riposte_cuts"][pf] - 1
+        elif in_riposte:
+            self.riposte_left -= 1
         # cambio de fase (OnDamaged)
         if self.ph < 2 and self.hp <= self.floor_hp() + 0.5 and self.t >= self.trans_until:
             self.start_transition()
@@ -463,7 +543,14 @@ class Fight:
     def bounces(self):
         """BambooMasterBoss.Bounces: fuera de sus huecos los cortes rebotan."""
         if self.bs == "attack":
-            return not self.a.red or self.strike_eta() != math.inf
+            a = self.a
+            if a.red and self.strike_eta() == math.inf:
+                return False
+            last = self.pat is not None and self.step == len(self.pat["steps"]) - 1
+            n = self.tl.norm(self.clock)
+            return not (last and a.dmg > 0 and n > a.active_end + P["hole_delay"] / a.S)
+        if self.bs in ("stagger", "chase", "strafe") and self.t < self.riposte_until_b and self.riposte_left > 0:
+            return False
         return self.bs in ("counter", "guard", "chase", "strafe", "alert", "stagger")
 
     def bounce(self):
@@ -562,6 +649,7 @@ class Fight:
             self.enter_guard()
 
     def on_parried(self, perfect):
+        self.last_perfect = perfect
         self.imb = min(P["max_imb"], self.imb + (1.5 if perfect else 1.0))
         self.tell_on = False
         counter = self.pat is self.counter_pat
@@ -662,11 +750,52 @@ class Fight:
                 self.leap_target = min(max(self.d, P["leap_min"]), min(P["leap_max"], 13.0))
                 self.leap_from = self.d
         elif a.travel:
-            x = a.travel_at(n)
+            if not self.picked and self.clock >= tl.release:
+                self.picked = True
+                if a.special == "dash":
+                    # PlanDash: el vuelo entero escalado para frenar con la mano sobre donde va a estar Kaito al contacto
+                    # (el bot corre hacia el jefe); si para eso el vuelo baja de dash_k[0], le pasa al costado
+                    span = a.travel_at(a.air[1]) - a.travel_at(a.air[0])
+                    before, after = a.travel_at(a.air[0]), a.travel[-1] - a.travel_at(a.air[1])
+                    v = K["run"] if self.ks == "loco" and self.d > 2.2 else 0.0
+                    ahead = max(0.0, self.d - v * tl.tR)
+                    k = (ahead - CONTACT - before - after) / span
+                    if k >= P["dash_k"][0]:
+                        self.k_stretch = min(P["dash_k"][1], k)
+                        self.stat("embestida_de_frente")
+                    else:
+                        self.passing = True
+                        self.pass_x = self.d
+                        self.k_stretch = min(P["dash_k"][1], max(P["dash_k"][0], (ahead + P["pass_beyond"] - before - after) / span))
+                        self.stat("embestida_al_costado")
+                elif a.variants:
+                    # PickReach: la variante más larga cuyo paso entra (5 cm de gracia)
+                    room = self.d - CONTACT + self.travel_done + 0.05
+                    if a.travel[-1] > room:
+                        pick = a.variants[-1]
+                        for v in a.variants:
+                            if v[0] <= room:
+                                pick = v
+                                break
+                        self.v_travel, self.v_reach = pick[2], pick[1]
+                        self.stat("variante_" + ("corta" if pick is a.variants[-1] else "media"))
+                    else:
+                        self.stat("variante_entera")
+            x = a.stretched(n, self.k_stretch, self.v_travel)
             dx = x - self.travel_done
             self.travel_done = x
-            if dx > 0:
+            if self.passing:
+                # le pasa al costado (a pass_clear de su centro): no frena contra él
+                self.pass_x -= dx
+                self.d = math.hypot(self.pass_x, P["pass_clear"])
+            elif dx > 0:
+                room = self.d - CONTACT
+                if dx > room:
+                    self.stat("avance_perdido_" + a.base + ("_tras" if n > a.contact else "_antes"), dx - max(0.0, room))
+                    self.stat("avance_perdido", dx - max(0.0, room))
                 self.d = max(CONTACT, self.d - dx)
+            elif dx < 0:
+                self.d -= dx                                   # el salto atrás
         eta = self.strike_eta()
         # "¡ya!": el bot oye y aprieta
         if self.tell_on and not self.ticked and eta <= TICK[a.red] + 0.5 * DT:
@@ -702,18 +831,22 @@ class Fight:
             self.hit_done = True
             self.tell_on = False
             ok = False
-            if a.special == "strike":
-                ok = self.d <= a.reach + 0.3 + K_R
+            if a.special == "hop":
+                ok = False
+                self.hit_done = True
+            elif a.special == "strike":
+                ok = self.d <= (self.v_reach or a.reach) + 0.1 + K_R
             elif a.special == "leap":
                 ok = abs(self.d - self.leap_target) <= a.ring + K_R
                 self.d = max(CONTACT, abs(self.d - self.leap_target))
             elif a.special == "sweep":
                 ok = self.d - K_R <= a.ring
             elif a.special == "dash":
-                ok = self.d - K_R <= a.reach + 0.3
+                # al costado pega igual en el contacto (Kaito sigue en el carril), ya pasado
+                ok = self.passing or self.d - K_R <= a.reach + 0.3
             if ok:
                 self.kaito_receive(a)
-            else:
+            elif a.special != "hop":
                 self.stat("fuera_de_alcance")
         if self.bs != "attack":
             return
@@ -728,6 +861,8 @@ class Fight:
     def kaito_receive(self, a):
         """PlayerController.ReceiveHit."""
         ks, kt = self.ks, self.kt
+        if ks == "ability":
+            return                                         # abilityInvulnerable
         if ks == "dash" and not self.dash_tired and K["iframe"][0] <= kt <= K["iframe"][1]:
             self.stat("esquivas")
             return
@@ -821,7 +956,24 @@ class Fight:
         self.kt += dt
         self.nodmg += dt
         s = self.ks
+        if s == "ability":
+            # Corte del Viento: el tajo llega a los 0.48 s y termina a los 1.03 s (PlayerController.TickWindSlash)
+            if not self.k_hit_done and self.kt >= 0.48:
+                self.k_hit_done = True
+                dmg = K["slash_dmg"] * (K["rage_mul"] if self.rage_on() else 1.0)
+                r = self.boss_receive(dmg, "ability", False, 0.08)
+                if r == "hit":
+                    self.stat("habilidades_que_entran")
+            if self.kt >= 1.03:
+                self.set_ks("loco")
+            return
         if s == "loco":
+            if self.abilities and self.ability_hole():
+                self.sp -= K["slash_cost"]
+                self.k_hit_done = False
+                self.set_ks("ability")
+                self.stat("habilidades")
+                return
             if self.buffered("parry", 0.2):
                 self.consume("parry"); self.start_parry(); return
             if self.buffered("dash", 0.2):
@@ -915,6 +1067,14 @@ class Fight:
             if self.kt >= K["blocked"]:
                 self.set_ks("loco")
 
+    def ability_hole(self):
+        """Lo que haría un jugador con Espíritu de sobra (35 del corte + un dash): el corte en un hueco largo."""
+        if self.sp < K["slash_cost"] + K["dash_cost"] or self.d > 8.0:
+            return False
+        if self.bs == "exhausted" and not self.taunt:
+            return self.bdur - self.bt > 1.0
+        return self.bs == "attack" and self.a.red and self.strike_eta() == math.inf and self.tl.T + 0.15 > self.clock
+
     def kaito_hits(self, c):
         riposte = self.t < self.riposte_until
         dmg = c["dmg"] * (K["rage_mul"] if self.rage_on() else 1.0) * (K["riposte_mul"] if riposte else 1.0)
@@ -926,7 +1086,8 @@ class Fight:
             if riposte:
                 self.riposte_until = -1
                 self.stat("contraataques")
-            self.d += c["kb"] * 0.3 * 0.5
+            if self.bs not in ("exhausted", "attack", "counter"):
+                self.d += (0.42 if c["kb"] > 1.0 else 0.12) * 0.5
         elif r == "blocked":
             self.stat("rebotes")
             self.d += 0.3
@@ -992,12 +1153,12 @@ QI_ONE_FRAME_LATE = True               # BambooMasterBoss.ResolveQiHit (False = 
 K["rage_spd"] = 1.12
 
 
-def campaign(skill, rng, stats):
+def campaign(skill, rng, stats, abilities=False):
     """Intentos hasta ganar: muerte → reaparece y vuelve; llegar al bastón hace arrancar el próximo en la fase 2."""
     total, deaths, retry = 0.0, 0, 0
     reached = []
     while deaths < 15:
-        f = Fight(skill, rng, retry, stats)
+        f = Fight(skill, rng, retry, stats, abilities)
         won, t, ph = f.run()
         total += t + (REINTRO if deaths else 0.0)
         if won:
@@ -1093,6 +1254,7 @@ def main():
     ap.add_argument("--skill", default="all")
     ap.add_argument("--table", action="store_true")
     ap.add_argument("--fair", action="store_true", help="reacción, escapes de los rojos y cuadro de la cámara")
+    ap.add_argument("--abilities", action="store_true", help="Kaito usa el Corte del Viento en los huecos (el bot no)")
     a = ap.parse_args()
     if a.table:
         reading_table()
@@ -1104,7 +1266,7 @@ def main():
     for sk in skills:
         rng = random.Random(a.seed)
         stats = {}
-        rs = [campaign(SKILLS[sk], rng, stats) for _ in range(a.runs)]
+        rs = [campaign(SKILLS[sk], rng, stats, a.abilities) for _ in range(a.runs)]
         wins = sorted(r["win_time"] for r in rs if r["win_time"] is not None)
         tot = sorted(r["total"] for r in rs)
         deaths = [r["deaths"] for r in rs]
@@ -1123,12 +1285,16 @@ def main():
         print("   daño a Chikuō por estado: " + ", ".join("%s %.0f%%" % (k, 100 * v / tot_d) for k, v in sorted(dmg.items(), key=lambda x: -x[1])))
         keys = ["pasos", "parries", "parries_perfectos", "imperfectas", "esquivas", "golpes_a_kaito", "contraataques",
                 "rodillas", "quiebres", "quiebres_contra", "posturas", "abierto_espera", "desvios", "contra_guardia",
-                "rebotes", "dash_sin_espiritu", "furia", "bot_no_vio", "fuera_de_alcance"]
+                "rebotes", "dash_sin_espiritu", "furia", "bot_no_vio", "fuera_de_alcance", "habilidades",
+                "habilidades_que_entran", "habilidad_a_la_guardia", "variante_entera", "variante_media", "variante_corta",
+                "embestida_de_frente", "embestida_al_costado", "avance_perdido"]
         print("   por pelea: " + ", ".join("%s %.1f" % (k, stats.get(k, 0) / n) for k in keys))
         uses = sorted(((k[4:], v / n) for k, v in stats.items() if k.startswith("uso_")), key=lambda x: -x[1])
         print("   patrones: " + ", ".join("%s %.1f" % kv for kv in uses))
         hits = sorted(((k[6:], v / n) for k, v in stats.items() if k.startswith("golpe_")), key=lambda x: -x[1])
         print("   golpes que más le pegan: " + ", ".join("%s %.1f" % kv for kv in hits[:8]))
+        lost = sorted(((k[15:], v / n) for k, v in stats.items() if k.startswith("avance_perdido_")), key=lambda x: -x[1])
+        print("   avance perdido contra Kaito (m por pelea): " + (", ".join("%s %.2f" % kv for kv in lost) or "nada"))
 
 
 if __name__ == "__main__":

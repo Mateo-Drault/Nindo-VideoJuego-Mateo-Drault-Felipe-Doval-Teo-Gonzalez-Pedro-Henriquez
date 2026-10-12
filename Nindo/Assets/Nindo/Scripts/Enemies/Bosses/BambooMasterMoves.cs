@@ -124,7 +124,8 @@ namespace Nindo
         /// terminan en rojo ("el bambú que vuelve"). Mezcla: ~70 % dorados, ~30 % rojos, como el resto de los jefes.
         /// Daño: pega poco y seguido, como un maestro que prueba; lo que sube con las fases es el ritmo y el alcance. Con
         /// 5-7 / 7-11 / 9-13 el bot "promedio" moría ~9 veces y el "bueno" ninguna: el daño castigaba solo al que juega peor
-        /// (Tools/Dev/sim_bamboo_master.py con el daño escalado por fase).
+        /// (Tools/Dev/sim_bamboo_master.py con el daño escalado por fase). Con la vida de 2000 la pelea dura más y el daño
+        /// baja otro poco (4-5 / 4-6 / 5-7) para que el "promedio" siga muriendo ~2 veces y no ~4.
         /// </summary>
         public static AttackPattern[] Phase(int phase)
         {
@@ -138,7 +139,7 @@ namespace Nindo
                     var chopC = M("ChopPalm", 0, "Mano de Sable", 4, 90f, 1.6f, true);
                     var crane = M("CraneKick", 0, "Pico de Grulla", 4, 80f, 1.8f, false);
                     var craneC = M("CraneKick", 0, "Pico de Grulla", 4, 80f, 1.8f, true);
-                    var leap = M("LeapKick", 0, "Grulla Voladora", 6, 360f, 2.6f, false, Leap);
+                    var leap = M("LeapKick", 0, "Grulla Voladora", 5, 360f, 2.6f, false, Leap);
                     var leapP = P("Grulla Voladora", 1.0f, LeapMinRange, 6f, leap);
                     leapP.maxRange = LeapMax - 0.4f;
                     list.Add(P("Palma", 1.3f, 0f, 0f, palm));
@@ -151,18 +152,18 @@ namespace Nindo
                 }
                 case 1:
                 {
-                    var palm = M("Palm", 1, "Palma", 5, 70f, 1.4f, false);
-                    var chopC = M("ChopPalm", 1, "Mano de Sable", 6, 90f, 1.6f, true);
-                    var chop = M("ChopPalm", 1, "Mano de Sable", 6, 90f, 1.6f, false);
-                    var crane = M("CraneKick", 1, "Pico de Grulla", 6, 80f, 1.8f, false);
-                    var twin = M("TwinPalm", 1, "Palmas Gemelas", 6, 90f, 2.2f, false);
-                    var twinC = M("TwinPalm", 1, "Palmas Gemelas", 6, 90f, 2.2f, true);
-                    var spinC = M("SpinKick", 1, "Viento que Gira", 6, 200f, 2.0f, true);
-                    var sweep = M("Sweep", 1, "Barrida del Bambú", 7, 360f, 2.0f, false, Sweep);
-                    var sweepC = M("Sweep", 1, "Barrida del Bambú", 7, 360f, 2.0f, true, Sweep);
-                    var qi = M("QiWave", 1, "Onda de Qi", 7, 360f, 2.8f, false, Qi);
-                    var dash = M("DashStrike", 1, "Paso del Viento", 8, 60f, 2.4f, false, Dash);
-                    var leap = M("LeapKick", 1, "Grulla Voladora", 8, 360f, 2.6f, false, Leap);
+                    var palm = M("Palm", 1, "Palma", 4, 70f, 1.4f, false);
+                    var chopC = M("ChopPalm", 1, "Mano de Sable", 5, 90f, 1.6f, true);
+                    var chop = M("ChopPalm", 1, "Mano de Sable", 5, 90f, 1.6f, false);
+                    var crane = M("CraneKick", 1, "Pico de Grulla", 5, 80f, 1.8f, false);
+                    var twin = M("TwinPalm", 1, "Palmas Gemelas", 5, 90f, 2.2f, false);
+                    var twinC = M("TwinPalm", 1, "Palmas Gemelas", 5, 90f, 2.2f, true);
+                    var spinC = M("SpinKick", 1, "Viento que Gira", 5, 200f, 2.0f, true);
+                    var sweep = M("Sweep", 1, "Barrida del Bambú", 6, 360f, 2.0f, false, Sweep);
+                    var sweepC = M("Sweep", 1, "Barrida del Bambú", 6, 360f, 2.0f, true, Sweep);
+                    var qi = M("QiWave", 1, "Onda de Qi", 6, 360f, 2.8f, false, Qi);
+                    var dash = M("DashStrike", 1, "Paso del Viento", 6, 60f, 2.4f, false, Dash);
+                    var leap = M("LeapKick", 1, "Grulla Voladora", 6, 360f, 2.6f, false, Leap);
                     var leapP = P("Grulla Voladora", 0.8f, LeapMinRange, 7f, leap);
                     leapP.maxRange = LeapMax - 0.4f;
                     var qiP = P("Onda de Qi", 0.9f, 0f, 9f, qi);
@@ -180,16 +181,16 @@ namespace Nindo
                 }
                 default:
                 {
-                    var thrust = M("Palm", 2, "Estocada del Bastón", 6, 50f, 1.6f, false);
-                    var thrustC = M("Palm", 2, "Estocada del Bastón", 6, 50f, 1.6f, true);
-                    var smashC = M("ChopPalm", 2, "Bambú que Cae", 7, 70f, 2.0f, true);
-                    var crane = M("CraneKick", 2, "Pico de Grulla", 7, 80f, 1.8f, false);
-                    var sweep = M("Sweep", 2, "Barrida del Bastón", 8, 360f, 2.2f, false, Sweep);
-                    var sweepC = M("Sweep", 2, "Barrida del Bastón", 8, 360f, 2.2f, true, Sweep);
-                    var qi = M("QiWave", 2, "Raíz del Bambú", 8, 360f, 3.0f, false, Qi);
-                    var qiC = M("QiWave", 2, "Raíz del Bambú", 8, 360f, 3.0f, true, Qi);
-                    var dash = M("DashStrike", 2, "Paso del Viento", 9, 50f, 2.4f, false, Dash);
-                    var leap = M("LeapKick", 2, "Grulla Voladora", 9, 360f, 2.6f, false, Leap);
+                    var thrust = M("Palm", 2, "Estocada del Bastón", 5, 50f, 1.6f, false);
+                    var thrustC = M("Palm", 2, "Estocada del Bastón", 5, 50f, 1.6f, true);
+                    var smashC = M("ChopPalm", 2, "Bambú que Cae", 6, 70f, 2.0f, true);
+                    var crane = M("CraneKick", 2, "Pico de Grulla", 6, 80f, 1.8f, false);
+                    var sweep = M("Sweep", 2, "Barrida del Bastón", 6, 360f, 2.2f, false, Sweep);
+                    var sweepC = M("Sweep", 2, "Barrida del Bastón", 6, 360f, 2.2f, true, Sweep);
+                    var qi = M("QiWave", 2, "Raíz del Bambú", 6, 360f, 3.0f, false, Qi);
+                    var qiC = M("QiWave", 2, "Raíz del Bambú", 6, 360f, 3.0f, true, Qi);
+                    var dash = M("DashStrike", 2, "Paso del Viento", 7, 50f, 2.4f, false, Dash);
+                    var leap = M("LeapKick", 2, "Grulla Voladora", 7, 360f, 2.6f, false, Leap);
                     var leapP = P("Grulla y Estocada", 0.8f, LeapMinRange, 7f, leap, thrustC);
                     leapP.maxRange = LeapMax - 0.4f;
                     var qiP = P("Raíz del Bambú", 0.8f, 0f, 8f, qi);
@@ -213,7 +214,7 @@ namespace Nindo
         public static AttackPattern Counter(int phase)
         {
             int ph = Mathf.Clamp(phase, 0, 2);
-            var c = M("CounterStrike", ph, ph >= 2 ? "Contragolpe del Bastón" : "Contragolpe", ph == 0 ? 4 : ph == 1 ? 5 : 6,
+            var c = M("CounterStrike", ph, ph >= 2 ? "Contragolpe del Bastón" : "Contragolpe", ph == 0 ? 4 : ph == 1 ? 4 : 5,
                       ph >= 2 ? 60f : 80f, 1.4f, false);
             return new AttackPattern { name = "Contragolpe", steps = new[] { c }, weight = 1f, maxRange = 99f };
         }
@@ -224,7 +225,9 @@ namespace Nindo
         public static readonly Vector2[] Cooldown = { new Vector2(1.8f, 2.6f), new Vector2(1.4f, 2.2f), new Vector2(1.1f, 1.8f) };
 
         /// <summary>
-        /// Chikuō, el Maestro del Bambú. 1400 de vida (el doble del jefe de antes, como el resto de los jefes). No se lo
+        /// Chikuō, el Maestro del Bambú. 2000 de vida: con 1400 (el doble del jefe de antes) y los huecos que pagan lo que
+        /// tienen que pagar (dos o tres cortes por parry, el final de los combos, las habilidades que rebotan) el bot "bueno"
+        /// lo terminaba en ~2 min 50 s; con 2000, ~4 min (Tools/Dev/sim_bamboo_master.py). No se lo
         /// ejecuta: termina sentado a meditar (BambooMasterBoss). Postura de 8 (parry 1, perfecto 1.5, unos seis parries):
         /// solo de rodillas con la barra llena, y de rodillas aguanta tres cortes a x1.15. Con 5 y x1.3 se arrodillaba
         /// cada 15 s y la pelea duraba la mitad. Los golpes fuera de sus huecos rebotan (BambooMasterBoss.ReceiveHit), así que poiseHits
@@ -235,7 +238,7 @@ namespace Nindo
         {
             return new EnemyConfig
             {
-                id = "ozeki", displayName = "Chikuō", maxHealth = 1400, runSpeed = 4.0f, walkSpeed = 1.6f, turnSpeed = 7f,
+                id = "ozeki", displayName = "Chikuō", maxHealth = 2000, runSpeed = 4.0f, walkSpeed = 1.6f, turnSpeed = 7f,
                 radius = 0.5f, height = 2.4f, scale = 1f, tintStrength = 0f,
                 maxImbalance = 8, exhaustedTime = BambooMasterTimings.Exhausted.Seconds, exhaustedDamageMul = 1.15f, guardTime = 0.7f,
                 poiseHits = 0, hyperArmor = true, knockbackResist = 0.7f, staggerTime = 0.35f,

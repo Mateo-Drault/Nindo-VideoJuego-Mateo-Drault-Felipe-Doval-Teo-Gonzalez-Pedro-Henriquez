@@ -440,8 +440,22 @@ namespace Nindo
         float StretchedTravel(float n, float k)
         {
             float x = clip.TravelAt(n);
-            if (k != 1f && clip.AirEnd > clip.AirStart) x += (k - 1f) * (clip.TravelAt(Mathf.Clamp(n, clip.AirStart, clip.AirEnd)) - clip.TravelAt(clip.AirStart));
+            StretchSpan(clip, out float a0, out float a1);
+            if (k != 1f && a1 > a0) x += (k - 1f) * (clip.TravelAt(Mathf.Clamp(n, a0, a1)) - clip.TravelAt(a0));
             return x;
+        }
+
+        /// <summary>
+        /// El tramo del avance que se puede escalar (normalizado), con los dos pies en el aire: el vuelo del salto y del
+        /// salto atrás (timing.air) y, en la embestida, del pie que empuja (DashStart) al que se clava (el contacto). En la
+        /// embestida timing.air deja afuera el empuje (1.18 m en un cuadro) y la llegada (0.49 m): escalado solo el medio
+        /// era un tirón, un vuelo en cámara lenta y otro tirón.
+        /// </summary>
+        static void StretchSpan(MasterClip c, out float a0, out float a1)
+        {
+            float ds = c.Event("DashStart");
+            if (ds >= 0f && c.Contact > ds) { a0 = ds; a1 = c.Contact; }
+            else { a0 = c.AirStart; a1 = c.AirEnd; }
         }
 
         /// <summary>
@@ -597,7 +611,9 @@ namespace Nindo
                 laneFixed = true;
                 laneO = transform.position;
                 laneD = transform.forward.Flat().normalized;
-                airStretch = DashStretch(laneO, laneD);
+                // en la suelta cuenta lo que Kaito sigue corriendo hasta el contacto
+                airStretch = PlanDash(laneO, ref laneD, Mathf.Max(0f, tl.T - stepClock));
+                transform.rotation = Quaternion.LookRotation(laneD);
             }
             float start = clip.Event("DashStart"), end = clip.Event("DashEnd");
             if (!dashFx && start >= 0f && stepNorm >= start)
@@ -625,30 +641,59 @@ namespace Nindo
             get
             {
                 if (clip == null) return 8f;
-                float k = LaneLive ? airStretch : DashStretch(transform.position, transform.forward.Flat().normalized);
+                float k = LaneLive ? airStretch : PreviewLane(out _);
                 return StretchedTravel(1f, k) + clip.Reach;
             }
         }
 
+        /// <summary>Por debajo de este factor el vuelo de la embestida deja de leerse como tal (un saltito con fantasmas).</summary>
+        const float DashMinStretch = 0.5f, DashMaxStretch = 1.4f;
+        /// <summary>Cuando le pasa al costado: hasta cuánto más allá de Kaito sigue (m) y lo más que gira el carril.</summary>
+        const float DashPassBeyond = 1f, DashPassMaxTurn = 35f;
+
         /// <summary>
-        /// El paso del viento está autorado con 6.5 m. Se escala el vuelo entero (timing.air: del pie que empuja al pie
-        /// que se clava) para que llegue justo a donde Travel lo deja: el pie se clava con la mano sobre Kaito y el resto
-        /// del frenado entra sin patinar. Antes se escalaba solo el tramo del medio y el empuje y la caída quedaban
-        /// enteros: un tirón, un vuelo en cámara lenta y otro tirón. Por debajo de 0.4 deja de leerse como embestida (por
-        /// eso de cerca primero salta hacia atrás).
+        /// El paso del viento está autorado con 6.5 m: se escala el vuelo entero (StretchSpan) para que la mano frene sobre
+        /// donde va a estar Kaito en el contacto ('lead' s después: sigue corriendo durante el vuelo). Si Kaito quedó tan
+        /// cerca que el vuelo tendría que bajar de DashMinStretch, el carril gira lo justo (hasta DashPassMaxTurn) para
+        /// pasarle al costado sin atravesarlo y el golpe pega igual en el contacto, ya pasado: el corte del viento llega
+        /// después. Antes frenaba contra él en pleno vuelo: el que corría hacia el jefe durante el aviso le comía 2-3 m de
+        /// cada embestida y el cuerpo quedaba flotando quieto con los fantasmas (Tools/Dev/sim_bamboo_master.py).
         /// </summary>
-        float DashStretch(Vector3 from, Vector3 dir)
+        float PlanDash(Vector3 from, ref Vector3 dir, float lead)
         {
-            float air = clip.TravelAt(clip.AirEnd) - clip.TravelAt(clip.AirStart);
-            if (target == null || air < 0.1f) return 1f;
-            float along = Vector3.Dot((target.transform.position - from).Flat(), dir);
-            float want = along - StopShort - (clip.TravelAt(1f) - clip.TravelToContact);
-            return Mathf.Clamp(1f + (want - clip.TravelToContact) / air, 0.4f, 1.4f);
+            StretchSpan(clip, out float a0, out float a1);
+            float span = clip.TravelAt(a1) - clip.TravelAt(a0);
+            if (target == null || span < 0.1f) return 1f;
+            float before = clip.TravelAt(a0), after = clip.TravelAt(1f) - clip.TravelAt(a1);
+            Vector3 to = (target.transform.position - from).Flat();
+            // a lo sumo a la carrera de Kaito (en su dash va a 25 m/s y la cuenta se iría lejos)
+            if (lead > 0f) to += Vector3.ClampMagnitude(target.Velocity.Flat(), target.config.runSpeed) * lead;
+            float k = (Vector3.Dot(to, dir) - StopShort - before - after) / span;
+            if (k >= DashMinStretch) return Mathf.Min(k, DashMaxStretch);
+            float dist = to.magnitude;
+            if (dist > 0.05f)
+            {
+                float side = Vector3.Dot(to, Vector3.Cross(Vector3.up, dir)) >= 0f ? 1f : -1f;
+                float clear = Radius + target.Radius + 0.1f;
+                float turn = Mathf.Min(DashPassMaxTurn, Mathf.Asin(Mathf.Clamp01(clear / dist)) * Mathf.Rad2Deg);
+                // Kaito a la derecha del carril: el carril se abre a la izquierda de él (y al revés)
+                dir = Quaternion.AngleAxis(-side * turn, Vector3.up) * (to / dist);
+            }
+            return Mathf.Clamp((dist + DashPassBeyond - before - after) / span, DashMinStretch, DashMaxStretch);
+        }
+
+        /// <summary>El carril que va a tomar si se suelta ahora (antes de la suelta el aviso ya lo dibuja donde va).</summary>
+        float PreviewLane(out Vector3 dir)
+        {
+            dir = transform.forward.Flat().normalized;
+            return clip != null ? PlanDash(transform.position, ref dir, 0f) : 1f;
         }
 
         bool InLane(Vector3 p, float pad)
         {
-            var area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = LaneLive ? laneD : transform.forward.Flat().normalized, size = LaneLength, width = LaneWidth };
+            Vector3 fwd = laneD;
+            if (!LaneLive) PreviewLane(out fwd);
+            var area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = fwd, size = LaneLength, width = LaneWidth };
             return area.Contains(p, pad);
         }
 
@@ -699,8 +744,12 @@ namespace Nindo
                     area = new TellArea { origin = qiLive && qiOwnedByStep ? qiCenter : transform.position, size = a.specialParam };
                     return true;
                 case BambooMasterMoves.Dash:
-                    area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = LaneLive ? laneD : transform.forward.Flat().normalized, size = LaneLength, width = LaneWidth };
+                {
+                    Vector3 fwd = laneD;
+                    if (!LaneLive) PreviewLane(out fwd);
+                    area = new TellArea { lane = true, origin = LaneLive ? laneO : transform.position, forward = fwd, size = LaneLength, width = LaneWidth };
                     return true;
+                }
             }
             return base.HitAreaFor(a, out area);
         }
@@ -743,7 +792,7 @@ namespace Nindo
                 if (phaseIdx < 2) i.damage = Mathf.Min(i.damage, Mathf.Max(0f, Health - floor) / mul);
             }
             bool inRecoil = State == EnemyState.Recoil;
-            bool inRiposte = State == EnemyState.Stagger && Time.time < riposteUntil;
+            bool inRiposte = RiposteOpen;
             kneelAtHit = State == EnemyState.Exhausted && !taunt;
             var r = base.ReceiveHit(i);
             kneelAtHit = false;
@@ -770,12 +819,15 @@ namespace Nindo
             return r;
         }
 
+        bool RiposteOpen => riposteLeft > 0 && Time.time < riposteUntil &&
+                            (State == EnemyState.Stagger || State == EnemyState.Chase || State == EnemyState.Strafe || State == EnemyState.Idle);
+
         /// <summary>Hasta cuándo le entran los cortes del contraataque después del primero (el 2.º corte de Kaito llega 0.3 s
         /// después del 1.º y el 3.º 0.45 s después del 2.º).</summary>
         const float RiposteSpan = 0.55f, RipostePerfectSpan = 0.95f;
         /// <summary>Postura que suma una habilidad que le entra a la guardia (el Torbellino pega dos veces).</summary>
         const float AbilityPosture = 2f, WhirlPosture = 1f;
-        /// <summary>El final de la vuelta del último golpe de un combo es un hueso (s después de la ventana activa).</summary>
+        /// <summary>El final de la vuelta del último golpe de un combo es un hueco (s después de la ventana activa).</summary>
         const float RecoveryHoleDelay = 0.1f;
 
         /// <summary>
@@ -812,13 +864,14 @@ namespace Nindo
                     if (a.kind == AttackKind.Unblockable && float.IsInfinity(StrikeEta)) return false;
                     return !(pattern != null && step == pattern.steps.Length - 1 && a.damage > 0f && stepNorm > a.activeEnd + RecoveryHoleDelay / Mathf.Max(0.1f, tl.stepLen));
                 case EnemyState.Stagger:
-                    return !(Time.time < riposteUntil && riposteLeft > 0);
-                case EnemyState.Counter:
-                case EnemyState.Guard:
                 case EnemyState.Chase:
                 case EnemyState.Strafe:
-                case EnemyState.Alert:
                 case EnemyState.Idle:
+                    // los cortes que quedan del contraataque (el Stagger del 2.º termina antes de que llegue el 3.º)
+                    return !RiposteOpen;
+                case EnemyState.Counter:
+                case EnemyState.Guard:
+                case EnemyState.Alert:
                     return true;
                 default:
                     return false;   // Recoil, Exhausted: los huecos
