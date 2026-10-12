@@ -576,9 +576,11 @@ namespace Nindo
             // Chikuō también (espera con las manos en la espalda; en los reintentos, el saludo corto con una frase)
             if (b is BambooMasterBoss master)
             {
-                bool first = !Game.Save.HasFlag(BossSeenFlag(b.bossId));
+                // bandera propia: el bossId sigue siendo "ozeki" (partidas, sello) y una partida que vio al sumo de antes
+                // tenía boss_seen_ozeki, así que nunca veía la presentación ni la historia de Chikuō
+                bool first = !Game.Save.HasFlag(BossSeenFlag("chikuo"));
                 yield return master.Presentation(P, first);
-                if (first) { Game.Save.SetFlag(BossSeenFlag(b.bossId)); SaveSystem.Save(); }
+                if (first) { Game.Save.SetFlag(BossSeenFlag("chikuo")); SaveSystem.Save(); }
                 yield return new WaitForSecondsRealtime(0.3f);
                 b.ExitScripted(false);
                 b.BeginFight();

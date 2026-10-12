@@ -559,6 +559,7 @@ namespace Nindo
 
         protected void BeginStep()
         {
+            OnStepStarting();
             var a = pattern.steps[step];
             EndTell(TellOutcome.Struck);   // (el paso anterior ya pegó; por las dudas no queda un anillo colgado)
             clipLen = anim.Length(a.state, 0.8f);
@@ -616,6 +617,10 @@ namespace Nindo
         }
 
         protected virtual void OnStepStarted(AttackDef a) { }
+
+        /// <summary>Antes de armar el paso (pattern.steps[step] todavía se puede cambiar: Chikuō elige ahí la variante del
+        /// golpe que entra en la distancia que hay).</summary>
+        protected virtual void OnStepStarting() { }
 
         /// <summary>Lo que tarda el golpe en llegar a Kaito después de soltarse (embestidas, ondas): el aviso arranca
         /// antes por eso y la agenda de golpes lo reserva para cuando de verdad llega.</summary>
@@ -1102,7 +1107,7 @@ namespace Nindo
                 return HitResult.Killed;
             }
 
-            float kb = info.knockback * (1f - config.knockbackResist);
+            float kb = KnockMeters(info, info.knockback * (1f - config.knockbackResist));
             if (kb > 0f) knock += info.direction.Flat().normalized * kb;
 
             if (State == EnemyState.Exhausted)
@@ -1130,6 +1135,13 @@ namespace Nindo
         }
 
         protected virtual void OnDamaged(in DamageInfo info) { }
+
+        /// <summary>Metros que lo empuja un golpe que entró ('kb' ya con su resistencia). Un jefe con clips autorados lo
+        /// ajusta a lo que dice su reacción (de rodillas o en pleno golpe no se desliza por el piso).</summary>
+        protected virtual float KnockMeters(in DamageInfo info, float kb) => kb;
+
+        /// <summary>El estallido y el sonido de muerte comunes (un jefe que no muere, como Chikuō, no los usa).</summary>
+        protected virtual bool DeathBurst => true;
 
         const float HeavyKnockback = 1f;
         const string HitHeavyState = "HitHeavy", ParriedPerfectState = "ParriedPerfect";
@@ -1211,8 +1223,11 @@ namespace Nindo
             Game.Combat?.Unregister(this);
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
             anim.Play(config.animDeath, 0.06f);
-            Game.FX?.EnemyDeath(AimPoint, info.direction, finisher);
-            Game.Audio?.Play("kill", transform.position, 0.9f);
+            if (DeathBurst)
+            {
+                Game.FX?.EnemyDeath(AimPoint, info.direction, finisher);
+                Game.Audio?.Play("kill", transform.position, 0.9f);
+            }
             GameEvents.RaiseEnemyKilled(this);
             encounter?.OnMemberDied(this);
             StartCoroutine(DeathRoutine(info.direction));

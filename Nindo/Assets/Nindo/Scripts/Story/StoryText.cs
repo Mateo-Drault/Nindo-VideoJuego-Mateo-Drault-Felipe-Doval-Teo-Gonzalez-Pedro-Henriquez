@@ -280,6 +280,8 @@ namespace Nindo
             if (phase == 1) return "Ya no tengo saco que sacarme. Vení.";
             switch (attempt)
             {
+                // volvió otro día (el contador de intentos vive en la pelea y arranca en 0 al cargar la partida)
+                case 0: return "Volviste. Esta vez mirá antes de pegar.";
                 case 1: return "Otra vez. Respirá primero.";
                 case 2: return "El bambú no se apura. Vos tampoco.";
                 case 3: return "Mirá mis manos, no mis ojos.";

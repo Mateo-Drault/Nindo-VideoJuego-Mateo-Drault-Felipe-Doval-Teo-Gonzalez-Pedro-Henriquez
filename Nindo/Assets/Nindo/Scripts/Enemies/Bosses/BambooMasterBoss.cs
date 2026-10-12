@@ -55,7 +55,8 @@ namespace Nindo
         int phaseIdx;
         string suffix = "";
         Coroutine transition;
-        AttackPattern counterPattern, teachLeap, teachDash;
+        // los patrones del paso del viento son dos (desde lejos y con el salto atrás antes): TeachDash pesa los dos
+        AttackPattern counterPattern, teachLeap, teachDashA, teachDashB;
         float teachDashWeight, phaseStart;
         string baseSubtitle;
 
@@ -63,6 +64,14 @@ namespace Nindo
         MasterClip clip;
         float travelDone, airStretch = 1f;
         bool landed, afterRecoil, dashFx;
+        // el golpe con paso adelante elige su largo (blend tree StepReach entre el paso corto y el autorado): reachW 0 =
+        // corto, 1 = entero; se fija cuando el pie de adelante se apoya
+        MasterClip closeClip;
+        float reachW = 1f;
+        bool reachFrozen;
+        static readonly int StepReachParam = Animator.StringToHash("StepReach");
+        // la estela del miembro que pega (mano o pie; el bastón usa la de Enemy)
+        bool limbTrailOn;
         string prevChainTo = "READY";
         Vector3 leapStart, leapDir;
         float leapTarget;
@@ -82,6 +91,19 @@ namespace Nindo
         // locomoción lateral y hacia atrás (los blend trees solo tienen quieto, camina y corre)
         string strafeWanted = "Locomotion";
         float strafeWantedFor;
+        bool sideSpeedSet;
+
+        // nombres de los estados de la fase (se arman en SetPhase: concatenarlos en cada frame asignaba strings)
+        string locoName = "Locomotion", strafeLName = "StrafeL", strafeRName = "StrafeR", walkBackName = "WalkBack",
+               exhaustedHitName = "ExhaustedHit", hitHeavyName = "HitHeavy", parriedPerfectName = "ParriedPerfect",
+               riseName = "ExhaustedRise", tauntName = "Taunt", stanceName = "Stance";
+
+        // contraataque de Kaito después de un parry: cuántos cortes más le entran y hasta cuándo (Bounces)
+        float riposteUntil = -1f;
+        int riposteLeft;
+        bool lastParryPerfect;
+        // el golpe que lo agarró arrodillado (el cambio de fase primero lo para: TransitionRoutine)
+        bool kneelAtHit;
 
         // ================================================================== setup
         protected override void Start()
@@ -102,6 +124,7 @@ namespace Nindo
             GameEvents.BossStarted -= OnBossStarted;
             GameEvents.PlayerDied -= OnPlayerDied;
             ClearQiWave(true);
+            look?.Dispose();
         }
 
         void OnBossStarted(Boss b)
@@ -147,7 +170,12 @@ namespace Nindo
             counterPattern = BambooMasterMoves.Counter(0);
             subtitle = baseSubtitle;
             prevChainTo = "READY";
-            strafeWanted = "Locomotion";
+            CacheNames();
+            strafeWanted = locoName;
+            riposteUntil = -1f;
+            look.ShowStanceRing(false);
+            look.StopLimbTrail();
+            limbTrailOn = false;
             if (tipHideAt > 0f) { Game.UI?.HideTutorial(); tipHideAt = -1f; }
             WaitPose();
         }
@@ -173,6 +201,7 @@ namespace Nindo
         {
             phaseIdx = Mathf.Clamp(phase, 0, 2);
             suffix = BambooMasterMoves.Suffix(phaseIdx);
+            CacheNames();
             config.patterns = BambooMasterMoves.Phase(phaseIdx);
             counterPattern = BambooMasterMoves.Counter(phaseIdx);
             config.attackCooldown = BambooMasterMoves.Cooldown[phaseIdx];
@@ -184,14 +213,39 @@ namespace Nindo
             config.animParried = "Parried" + suffix;
             strafeWanted = config.animLocomotion;
             phaseStart = Time.time;
-            teachDash = null;
-            foreach (var p in config.patterns) if (p.steps[0].special == BambooMasterMoves.Dash) { teachDash = p; teachDashWeight = p.weight; }
+            teachDashA = teachDashB = null;
+            foreach (var p in config.patterns)
+            {
+                if (!HasDash(p)) continue;
+                if (teachDashA == null) teachDashA = p; else teachDashB = p;
+                teachDashWeight = p.weight;
+            }
             // la estela del bastón: de punta a punta (Enemy la prende en la suelta y la apaga después del golpe)
             if (phaseIdx >= 2 && trail == null && look.StaffTip != null)
                 trail = BladeTrail.Create(transform, look.StaffBottom, look.StaffTip, Game.Content != null ? Game.Content.trailMaterial : null, TellStyle.TrailParry);
         }
 
         static string PhaseSubtitle(int phase) => phase <= 0 ? null : phase == 1 ? "Las Dos Manos" : "El Bastón de Bambú";
+
+        void CacheNames()
+        {
+            locoName = "Locomotion" + suffix;
+            strafeLName = "StrafeL" + suffix;
+            strafeRName = "StrafeR" + suffix;
+            walkBackName = "WalkBack" + suffix;
+            exhaustedHitName = "ExhaustedHit" + suffix;
+            hitHeavyName = "HitHeavy" + suffix;
+            parriedPerfectName = "ParriedPerfect" + suffix;
+            riseName = "ExhaustedRise" + suffix;
+            tauntName = "Taunt" + suffix;
+            stanceName = "Stance" + suffix;
+        }
+
+        static bool HasDash(AttackPattern p)
+        {
+            foreach (var s in p.steps) if (s.special == BambooMasterMoves.Dash) return true;
+            return false;
+        }
 
         protected override void OnDamaged(in DamageInfo info)
         {
@@ -212,7 +266,8 @@ namespace Nindo
             // el contraataque siempre es el contragolpe: sale de COIL, el final de Counter
             if (State == EnemyState.Counter && pattern != counterPattern) pattern = counterPattern;
             TickStance();
-            if (State != EnemyState.Attack && clip != null) { clip = null; look.ClearTell(); }
+            if (State != EnemyState.Attack && clip != null) { clip = null; closeClip = null; look.ClearTell(); }
+            if (limbTrailOn && (clip == null || stepNorm > CurrentAttack.activeEnd + 0.05f)) { limbTrailOn = false; look.StopLimbTrail(); }
             TickTellGlow();
             TickQiWave(dt);
             UpdateStrafeAnim(dt);
@@ -227,7 +282,7 @@ namespace Nindo
         void ResumeKneel()
         {
             if (State != EnemyState.Exhausted || taunt) return;
-            string hit = "ExhaustedHit" + suffix;
+            string hit = exhaustedHitName;
             if (anim.Current != hit || !anim.TryNormalizedTime(hit, out float n) || n < 0.97f) return;
             float len = anim.Length(config.animExhausted, 4f);
             float k = Mathf.Clamp(kneelHeld / len, KneelResumeMin, KneelResumeMax);
@@ -252,20 +307,38 @@ namespace Nindo
             look.Tell(clip.Glow, a.kind == AttackKind.Unblockable, Mathf.InverseLerp(GlintLead, a.TellBias, eta));
         }
 
-        /// <summary>Rodea y retrocede con sus clips: el agente se mueve de costado o hacia atrás y Run no lo dice.</summary>
+        /// <summary>
+        /// Rodea y retrocede con sus clips: el agente se mueve de costado o hacia atrás y Run no lo dice. Los clips van a
+        /// walkSpeed (el controller los acelera) y el agente frena al llegar a su lugar: el clip se toca a la velocidad
+        /// real del costado (o del retroceso), si no los pies patinaban hasta 1 m/s.
+        /// </summary>
         void UpdateStrafeAnim(float dt)
         {
-            string loco = "Locomotion" + suffix, want = loco;
+            string want = locoName;
+            float side = 0f;
             if (State == EnemyState.Strafe && agent != null && agent.enabled)
             {
                 Vector3 v = transform.InverseTransformDirection(agent.velocity);
-                if (Mathf.Abs(v.x) > 0.6f && Mathf.Abs(v.x) > Mathf.Abs(v.z) * 1.2f) want = (v.x > 0f ? "StrafeR" : "StrafeL") + suffix;
-                else if (v.z < -0.6f && -v.z > Mathf.Abs(v.x) * 1.2f) want = "WalkBack" + suffix;
+                if (Mathf.Abs(v.x) > 0.6f && Mathf.Abs(v.x) > Mathf.Abs(v.z) * 1.2f) { want = v.x > 0f ? strafeRName : strafeLName; side = Mathf.Abs(v.x); }
+                else if (v.z < -0.6f && -v.z > Mathf.Abs(v.x) * 1.2f) { want = walkBackName; side = -v.z; }
             }
             // un poco de histéresis: el agente corrige y el costado no titila
             if (want != strafeWanted) { strafeWanted = want; strafeWantedFor = 0f; }
             else strafeWantedFor += dt;
-            if (strafeWantedFor > 0.15f || want == loco) config.animLocomotion = strafeWanted;
+            if (strafeWantedFor > 0.15f || want == locoName) config.animLocomotion = strafeWanted;
+            bool sideClip = State == EnemyState.Strafe && (anim.Current == strafeLName || anim.Current == strafeRName || anim.Current == walkBackName);
+            if (sideClip)
+            {
+                // con 'want' de vuelta en la locomoción (histéresis) el clip de costado sigue a la velocidad del agente
+                if (side <= 0f && agent != null) side = agent.velocity.magnitude;
+                anim.SetSpeed(Mathf.Clamp(side / config.walkSpeed, 0.4f, 1.2f));
+                sideSpeedSet = true;
+            }
+            else if (sideSpeedSet)
+            {
+                sideSpeedSet = false;
+                if (State != EnemyState.Attack) anim.SetSpeed(1f);
+            }
         }
 
         /// <summary>La grulla voladora sale sí o sí en los primeros ~20 s (el rojo de la fase 1 se aprende temprano).</summary>
@@ -277,14 +350,17 @@ namespace Nindo
         }
 
         /// <summary>
-        /// El paso del viento solo se elige con Kaito a 4.2 m o más (de cerca el vuelo no tiene dónde estirarse) y el que
-        /// pelea pegado no lo veía nunca: hasta que sale una vez en la fase pesa cuatro veces más, así el primer respiro
-        /// de Kaito a distancia lo trae.
+        /// El paso del viento es la especial de la fase: hasta que sale una vez en la fase pesa cuatro veces más. Desde
+        /// lejos sale directo y de cerca primero salta hacia atrás (BambooMasterMoves.DashPatterns): antes solo se elegía
+        /// con Kaito a 4.2 m o más y el que peleaba pegado no lo veía nunca.
         /// </summary>
         void TeachDash()
         {
-            if (teachDash == null) return;
-            teachDash.weight = teachDash.lastUsed >= phaseStart ? teachDashWeight : teachDashWeight * 4f;
+            if (teachDashA == null) return;
+            bool used = teachDashA.lastUsed >= phaseStart || teachDashB != null && teachDashB.lastUsed >= phaseStart;
+            float w = used ? teachDashWeight : teachDashWeight * 4f;
+            teachDashA.weight = w;
+            if (teachDashB != null) teachDashB.weight = w;
         }
 
         // ================================================================== golpes
@@ -296,17 +372,27 @@ namespace Nindo
             airStretch = 1f;
             landed = leapFixed = laneFixed = dashFx = false;
             look.ClearTell();
+            closeClip = null;
+            reachW = 1f;
+            reachFrozen = false;
             if (clip != null)
             {
-                // fundido según de qué pose viene: los clips encadenan pose con pose (READY, COIL...); si no coinciden,
-                // o viene de un parry, el fundido corto de Enemy cruzaba la mano por el cuerpo
+                // un primer cuadro que se aparta más de 2° de la pose con la que encadena salta con el fundido de 0.08 s
                 bool counter = step == 0 && pattern == counterPattern;
                 string from = counter ? BambooMasterTimings.Counter.ChainTo : prevChainTo;
-                float fade = afterRecoil ? 0.18f : step == 0 && !counter ? 0.15f : from == clip.ChainFrom ? 0.08f : 0.2f;
+                bool chains = from == clip.ChainFrom && clip.ChainFromDeg <= 2f;
+                // fundido según de qué pose viene: los clips encadenan pose con pose (READY, COIL...); si no coinciden,
+                // o viene de un parry, el fundido corto de Enemy cruzaba la mano por el cuerpo
+                float fade = afterRecoil ? 0.18f : step == 0 && !counter ? 0.15f : chains ? 0.08f : from == clip.ChainFrom ? 0.15f : 0.2f;
                 if (fade > 0.08f) anim.Play(a.state, fade);
                 prevChainTo = clip.ChainTo;
+                if (!string.IsNullOrEmpty(clip.CloseState)) closeClip = BambooMasterTimings.Get(clip.CloseState);
+                if (closeClip != null) { reachW = ReachWeight(1f); anim.Animator.SetFloat(StepReachParam, reachW); }
+                if (a.special == BambooMasterMoves.Hop) airStretch = HopScale();
             }
             afterRecoil = false;
+            limbTrailOn = false;
+            look.StopLimbTrail();
             if (a.special == BambooMasterMoves.Qi) BeginQiStep(a);
         }
 
@@ -315,7 +401,9 @@ namespace Nindo
             if (clip == null) { base.TickSpecial(a, dt); return; }
             if (a.special == BambooMasterMoves.Leap) TickLeap(a);
             if (a.special == BambooMasterMoves.Dash) TickDash(a);
+            TickReach(dt);
             Travel(a);
+            TickLimbTrail(a);
             switch (a.special)
             {
                 case BambooMasterMoves.Strike: HitArc(a); break;
@@ -326,29 +414,44 @@ namespace Nindo
 
         /// <summary>
         /// El cuerpo avanza lo que avanza el clip (travel_m) en el reloj del paso: los pies apoyados quedan clavados. La
-        /// grulla voladora estira el tramo en el aire para caer en la marca. Nunca atraviesa a Kaito (salvo el salto,
-        /// que cae sobre él): lo que no entra se pierde.
+        /// grulla voladora y el paso del viento escalan el tramo entre el despegue y la caída para caer donde está Kaito;
+        /// el salto atrás, para no salir de la arena; los golpes con paso adelante mezclan su paso corto con el entero
+        /// (TickReach). Nunca atraviesa a Kaito (salvo el salto, que cae sobre él): lo poco que no entra se pierde.
         /// </summary>
         void Travel(AttackDef a)
         {
             if (clip.Travel == null || anim.Frozen) return;
-            float x = StretchedTravel(stepNorm, airStretch);
+            float x = StepTravel(stepNorm);
             float d = x - travelDone;
             travelDone = x;
-            if (d <= 0f) return;
+            if (Mathf.Abs(d) < 1e-5f) return;
             Vector3 dir = laneFixed ? laneD : leapFixed ? leapDir : transform.forward;
+            // hacia atrás (el salto que toma distancia): el lugar ya lo midió HopScale
+            if (d < 0f) { MoveBy(dir * d); return; }
             float room = d;
             if (target != null && a.special != BambooMasterMoves.Leap)
             {
                 // solo frena contra lo que tiene adelante: con Kaito al costado la embestida sigue entera
                 Vector3 to = (target.transform.position - transform.position).Flat();
                 float along = Vector3.Dot(to, dir), lat = Mathf.Abs(Vector3.Dot(to, Vector3.Cross(Vector3.up, dir)));
-                if (along > 0f && lat < Radius + target.Radius) room = along - Radius - target.Radius - 0.25f;
+                if (along > 0f && lat < Radius + target.Radius) room = along - StopShort;
             }
             if (room > 0f) MoveBy(dir * Mathf.Min(d, room));
         }
 
-        /// <summary>Lo que avanzó el cuerpo en 'n' con el tramo en el aire (los dos pies arriba) estirado por 'k'.</summary>
+        /// <summary>Dónde frena delante de Kaito (de centro a centro).</summary>
+        float StopShort => Radius + (target != null ? target.Radius : 0.35f) + 0.25f;
+
+        /// <summary>Lo que avanzó el cuerpo en 'n': el paso mezclado (corto/entero) o el tramo del aire estirado.</summary>
+        float StepTravel(float n)
+        {
+            if (closeClip == null) return StretchedTravel(n, airStretch);
+            float c = closeClip.TravelAt(n);
+            return c + reachW * (clip.TravelAt(n) - c);
+        }
+
+        /// <summary>Lo que avanzó el cuerpo en 'n' con el tramo del despegue a la caída escalado por 'k' (el clip lleva ese
+        /// tramo en el espacio del personaje: escalarlo no mueve un pie apoyado).</summary>
         float StretchedTravel(float n, float k)
         {
             float x = clip.TravelAt(n);
@@ -356,15 +459,66 @@ namespace Nindo
             return x;
         }
 
-        /// <summary>Golpe dorado: el alcance del miembro (o del bastón) desde donde está en el impacto, más el grosor.</summary>
+        /// <summary>
+        /// El largo del paso de un golpe que avanza (palmas, tajo, contragolpe): el blend tree mezcla el paso corto con el
+        /// entero por StepReach y el avance se mezcla igual, así que el pie de atrás (el mismo en los dos clips) queda
+        /// clavado aunque el peso cambie. Sigue a Kaito mientras el pie de adelante va en el aire y se fija cuando se apoya.
+        /// Antes el clip entero (~0.95 m) chocaba contra Kaito pegado y se perdía el 60-80 % del avance: el pie apoyado
+        /// patinaba hacia atrás lo mismo.
+        /// </summary>
+        void TickReach(float dt)
+        {
+            if (closeClip == null || reachFrozen) return;
+            if (stepNorm >= clip.Contact) { reachFrozen = true; return; }
+            reachW = Mathf.MoveTowards(reachW, ReachWeight(1f), dt * 3f);
+            anim.Animator.SetFloat(StepReachParam, reachW);
+        }
+
+        /// <summary>Cuánto del paso entero entra hasta Kaito (contando lo que ya avanzó), 0 = el corto.</summary>
+        float ReachWeight(float fallback)
+        {
+            if (target == null || closeClip == null) return fallback;
+            Vector3 dir = transform.forward.Flat().normalized;
+            Vector3 to = (target.transform.position - transform.position).Flat();
+            float along = Vector3.Dot(to, dir), lat = Mathf.Abs(Vector3.Dot(to, Vector3.Cross(Vector3.up, dir)));
+            if (along <= 0f || lat >= Radius + target.Radius) return fallback;
+            float room = along - StopShort + travelDone;
+            float near = closeClip.TravelAt(1f), far = clip.TravelAt(1f);
+            return Mathf.Clamp01((room - near) / Mathf.Max(0.01f, far - near));
+        }
+
+        /// <summary>Golpe dorado: el alcance del miembro (o del bastón) desde donde está en el impacto, más el grosor (con
+        /// +0.3 un dorado que se paraba pegaba 30-40 cm antes de que llegara la palma).</summary>
         void HitArc(AttackDef a)
         {
             if (stepHit || target == null || stepNorm < a.activeStart || stepNorm > a.activeEnd) return;
             Vector3 tp = target.transform.position;
             if (Mathf.Abs(tp.y - transform.position.y) > 2.5f) return;
-            if (!CombatMath.InArc(transform, tp, clip.Reach + 0.3f, a.arc, target.Radius)) return;
+            if (!CombatMath.InArc(transform, tp, clip.Reach + 0.1f, a.arc, target.Radius)) return;
             stepHit = true;
             HitPlayer(a, transform.position);
+        }
+
+        /// <summary>La estela dorada o roja de la mano o el pie que pega, de la suelta al final del golpe: el brillo solo de
+        /// la venda eran 5 px desde la cámara del juego.</summary>
+        void TickLimbTrail(AttackDef a)
+        {
+            if (limbTrailOn || a.damage <= 0f || stepClock < tl.ReleaseTime || stepNorm > a.activeEnd) return;
+            limbTrailOn = look.BeginLimbTrail(clip.Glow, a.kind == AttackKind.Unblockable);
+        }
+
+        // ------------------------------------------------------------------ salto atrás
+        /// <summary>
+        /// Cuánto del salto atrás autorado hace (todo el avance va en el aire: escalarlo no patina): hasta quedar a
+        /// DashFrom de Kaito, sin salirse de la arena; como poco un cuarto (un saltito que igual arma el paso del viento).
+        /// </summary>
+        float HopScale()
+        {
+            float full = -clip.TravelAt(1f);
+            if (full < 0.1f) return 1f;
+            float want = BambooMasterMoves.DashFrom - DistToTarget;
+            float room = ArenaRoom(transform.position, -transform.forward.Flat().normalized) - 1f;
+            return Mathf.Clamp(Mathf.Min(want, room) / full, 0.25f, 1f);
         }
 
         // ------------------------------------------------------------------ barrida
@@ -491,19 +645,19 @@ namespace Nindo
         }
 
         /// <summary>
-        /// El paso del viento está autorado con 6.5 m: desde 4.2 m (lo más cerca que lo elige) pasaba 3 m de largo y
-        /// Travel lo frenaba contra Kaito a mitad del vuelo, con el clip todavía corriendo en el aire. Se estira o se
-        /// acorta el vuelo (timing.air, los dos pies arriba) para que llegue justo a donde Travel lo deja: el pie se clava
-        /// con la mano sobre Kaito y el resto del frenado entra sin patinar.
+        /// El paso del viento está autorado con 6.5 m. Se escala el vuelo entero (timing.air: del pie que empuja al pie
+        /// que se clava) para que llegue justo a donde Travel lo deja: el pie se clava con la mano sobre Kaito y el resto
+        /// del frenado entra sin patinar. Antes se escalaba solo el tramo del medio y el empuje y la caída quedaban
+        /// enteros: un tirón, un vuelo en cámara lenta y otro tirón. Por debajo de 0.4 deja de leerse como embestida (por
+        /// eso de cerca primero salta hacia atrás).
         /// </summary>
         float DashStretch(Vector3 from, Vector3 dir)
         {
             float air = clip.TravelAt(clip.AirEnd) - clip.TravelAt(clip.AirStart);
             if (target == null || air < 0.1f) return 1f;
             float along = Vector3.Dot((target.transform.position - from).Flat(), dir);
-            float stop = Radius + target.Radius + 0.25f;
-            float want = along - stop - (clip.TravelAt(1f) - clip.TravelToContact);
-            return Mathf.Clamp(1f + (want - clip.TravelToContact) / air, 0.15f, 1.5f);
+            float want = along - StopShort - (clip.TravelAt(1f) - clip.TravelToContact);
+            return Mathf.Clamp(1f + (want - clip.TravelToContact) / air, 0.4f, 1.4f);
         }
 
         bool InLane(Vector3 p, float pad)
@@ -578,15 +732,23 @@ namespace Nindo
         public override HitResult ReceiveHit(in DamageInfo info)
         {
             bool fromKaito = info.sourceFaction == Faction.Player;
+            var i = info;
             if (fromKaito && IsAlive && look != null)
             {
                 // en escena (cambio de fase): rebota con clang, no hay a quién castigar
                 if (transition != null) { LastHitTime = Time.time; return HitResult.Blocked; }
-                bool guardable = info.kind == AttackKind.Light || info.kind == AttackKind.Heavy;
+                // las habilidades (Corte del Viento, Torbellino) siguen las reglas de un tajo fuerte: antes no eran
+                // "rebotables", le cortaban los dorados, le pegaban en neutral y atravesaban la postura (~45 % de su vida
+                // sin esperar nada). Fuera de sus huecos el bambú se dobla pero le cuesta: suman postura
+                if (i.kind == AttackKind.Ability)
+                {
+                    i.kind = AttackKind.Heavy;
+                    if (Bounces()) { LastHitTime = Time.time; return AbilityAgainstGuard(info); }
+                }
+                bool guardable = i.kind == AttackKind.Light || i.kind == AttackKind.Heavy;
                 if (stance && State == EnemyState.Guard && guardable) { LastHitTime = Time.time; return Deflect(true); }
                 if (guardable && Bounces()) { LastHitTime = Time.time; return Bounce(); }
             }
-            var i = info;
             // piso de vida de la fase: el que lo baja al umbral dispara el cambio; lo que sobra no se cuenta
             if (fromKaito && i.damage > 0f && IsAlive && look != null)
             {
@@ -594,16 +756,27 @@ namespace Nindo
                 float mul = State == EnemyState.Exhausted ? config.exhaustedDamageMul : 1f;
                 if (phaseIdx < 2) i.damage = Mathf.Min(i.damage, Mathf.Max(0f, Health - floor) / mul);
             }
+            bool inRecoil = State == EnemyState.Recoil;
+            bool inRiposte = State == EnemyState.Stagger && Time.time < riposteUntil;
+            kneelAtHit = State == EnemyState.Exhausted && !taunt;
             var r = base.ReceiveHit(i);
+            kneelAtHit = false;
             if (look == null || !fromKaito) return r;
             // Enemy toca las reacciones de la fase 1 por nombre (HitHeavy, ExhaustedHit): con el saco tirado o el bastón
             // en la mano, la pose de la fase 1 no existe
             if (phaseIdx > 0)
             {
-                if (anim.Current == "HitHeavy") anim.Play("HitHeavy" + suffix, 0.03f);
-                else if (anim.Current == "ExhaustedHit") anim.Play("ExhaustedHit" + suffix, 0.03f);
+                if (anim.Current == "HitHeavy") anim.Play(hitHeavyName, 0.03f);
+                else if (anim.Current == "ExhaustedHit") anim.Play(exhaustedHitName, 0.03f);
             }
-            if (anim.Current == "ExhaustedHit" + suffix && State == EnemyState.Exhausted) kneelHeld = kneelClock;
+            if (anim.Current == exhaustedHitName && State == EnemyState.Exhausted) kneelHeld = kneelClock;
+            if (r == HitResult.Hit)
+            {
+                // el contraataque de Kaito: dos cortes después de un parry, tres después de uno perfecto (el combo entero).
+                // Antes el primero lo pasaba a Stagger y el segundo rebotaba: la parada perfecta pagaba lo mismo
+                if (inRecoil) { riposteUntil = Time.time + (lastParryPerfect ? RipostePerfectSpan : RiposteSpan); riposteLeft = lastParryPerfect ? 2 : 1; }
+                else if (inRiposte) riposteLeft--;
+            }
             // le entró el contraataque: se rehace antes de volver a atacar (Enemy lo largaba al combo siguiente apenas
             // se reponía, y el parry se volvía una cinta: parry, contra, golpe, parry...)
             if (r == HitResult.Hit && State == EnemyState.Stagger)
@@ -611,25 +784,87 @@ namespace Nindo
             return r;
         }
 
-        /// <summary>¿Este golpe de Kaito (corte o tajo final) rebota? Ver ReceiveHit.</summary>
+        /// <summary>Hasta cuándo le entran los cortes del contraataque después del primero (el 2.º corte de Kaito llega 0.3 s
+        /// después del 1.º y el 3.º 0.45 s después del 2.º).</summary>
+        const float RiposteSpan = 0.55f, RipostePerfectSpan = 0.95f;
+        /// <summary>Postura que suma una habilidad que le entra a la guardia (el Torbellino pega dos veces).</summary>
+        const float AbilityPosture = 2f, WhirlPosture = 1f;
+        /// <summary>El final de la vuelta del último golpe de un combo es un hueso (s después de la ventana activa).</summary>
+        const float RecoveryHoleDelay = 0.1f;
+
+        /// <summary>
+        /// Una habilidad contra su guardia: no le hace daño pero le dobla la postura (la bandana empuja más que la hoja);
+        /// en la postura del bambú la desvía igual y contragolpea, como a cualquier golpe apurado.
+        /// </summary>
+        HitResult AbilityAgainstGuard(in DamageInfo info)
+        {
+            float posture = info.attackName == "Torbellino" ? WhirlPosture : AbilityPosture;
+            if (stance && State == EnemyState.Guard)
+            {
+                var r = Deflect(false);
+                AddImbalance(posture);
+                return r;
+            }
+            Game.UI?.ShowGuardMark(this);
+            Game.FX?.Shockwave(transform.position, 1.6f, BambooMasterLook.Jade);
+            AddImbalance(posture);
+            return HitResult.Blocked;
+        }
+
+        /// <summary>
+        /// ¿Este golpe de Kaito (corte o tajo final) rebota? Ver ReceiveHit. Los huecos: el retroceso del parry y los
+        /// cortes del contraataque que siguen, de rodillas, llamando a Kaito, la vuelta de un rojo que no pegó y el final
+        /// de la vuelta del último golpe de un combo (el que espera que termine, pega).
+        /// </summary>
         bool Bounces()
         {
             switch (State)
             {
                 case EnemyState.Attack:
                     var a = CurrentAttack;
-                    return a == null || a.kind != AttackKind.Unblockable || !float.IsInfinity(StrikeEta);
+                    if (a == null) return true;
+                    if (a.kind == AttackKind.Unblockable && float.IsInfinity(StrikeEta)) return false;
+                    return !(pattern != null && step == pattern.steps.Length - 1 && a.damage > 0f && stepNorm > a.activeEnd + RecoveryHoleDelay / Mathf.Max(0.1f, tl.stepLen));
+                case EnemyState.Stagger:
+                    return !(Time.time < riposteUntil && riposteLeft > 0);
                 case EnemyState.Counter:
                 case EnemyState.Guard:
                 case EnemyState.Chase:
                 case EnemyState.Strafe:
                 case EnemyState.Alert:
-                case EnemyState.Stagger:
                 case EnemyState.Idle:
                     return true;
                 default:
                     return false;   // Recoil, Exhausted: los huecos
             }
+        }
+
+        /// <summary>
+        /// El empuje de un golpe que entró, el que autoró su reacción: de rodillas no se desliza (ExhaustedHit es un
+        /// sacudón en el lugar), llamando a Kaito retrocede lo que retrocede Hit, y en pleno golpe (la vuelta de un rojo,
+        /// el contragolpe) sigue su movimiento con los pies clavados. Antes el tajo final lo corría 0.5 m por el piso
+        /// arrodillado.
+        /// </summary>
+        protected override float KnockMeters(in DamageInfo info, float kb)
+        {
+            if (look == null) return kb;
+            switch (State)
+            {
+                case EnemyState.Exhausted:
+                    return taunt ? HitKnock(config.animHit, kb) : 0f;
+                case EnemyState.Attack:
+                case EnemyState.Counter:
+                    return 0f;
+                default:
+                    // Stagger: la reacción que va a tocar Enemy (HitHeavy desde 1 m de empuje antes de la resistencia)
+                    return HitKnock(info.knockback > 1f ? hitHeavyName : config.animHit, kb);
+            }
+        }
+
+        static float HitKnock(string state, float fallback)
+        {
+            var c = BambooMasterTimings.Get(state);
+            return c != null && c.KnockM > 0f ? c.KnockM : fallback;
         }
 
         // el último rebote y cuántos seguidos (el segundo dentro de BounceWindow se contragolpea)
@@ -670,7 +905,8 @@ namespace Nindo
             if (wasAttack && State == EnemyState.Recoil)
             {
                 afterRecoil = true;
-                if (phaseIdx > 0 && anim.Current == "ParriedPerfect") anim.Play("ParriedPerfect" + suffix, 0.03f);
+                lastParryPerfect = perfect;
+                if (phaseIdx > 0 && anim.Current == "ParriedPerfect") anim.Play(parriedPerfectName, 0.03f);
             }
             look.ClearTell();
             // la parada perfecta del contragolpe de la postura es la respuesta del maestro: le quiebra la postura entera.
@@ -700,6 +936,11 @@ namespace Nindo
         // el contragolpe en curso salió de la postura del bambú (su parada perfecta lo pone de rodillas)
         bool stanceCounter;
 
+        /// <summary>
+        /// La postura del bambú: su propio clip (agachado en el gato, las dos palmas cruzadas delante del pecho, el saco
+        /// abierto: otra silueta que la guardia común) y un aro de jade en el piso que no depende de ver las palmas.
+        /// Antes era la guardia de siempre con las vendas en jade (~5 px desde la cámara del juego).
+        /// </summary>
         void EnterStance()
         {
             EnterGuard();
@@ -707,23 +948,28 @@ namespace Nindo
             float hold = Random.Range(StanceTime.x, StanceTime.y);
             stanceUntil = Time.time + hold;
             stateDuration = hold + 5f;   // la postura termina por su cuenta (TickStance), no por el tiempo de la guardia
+            if (anim.HasState(stanceName)) anim.Play(stanceName, 0.15f);
             look.SetStance(true);
+            look.ShowStanceRing(true, transform);
             Game.Audio?.Play("parry_ready", transform.position, 0.5f, 0.05f);
             if (!stanceTaught) { stanceTaught = true; ShowTip(StoryText.Hint("bamboo_stance")); }
         }
 
-        /// <summary>Kaito esperó: baja la guardia y lo llama con la mano (abierto unos segundos, sin estar mareado).</summary>
+        /// <summary>Kaito esperó: baja la guardia y lo llama (abierto unos segundos, sin estar mareado).</summary>
         void TickStance()
         {
-            if (!stance) return;
-            if (State != EnemyState.Guard) { stance = false; look.SetStance(false); return; }
+            if (!stance) { if (look.StanceRingShown) look.ShowStanceRing(false); return; }
+            if (State != EnemyState.Guard) { stance = false; look.SetStance(false); look.ShowStanceRing(false); return; }
+            look.TickStanceRing(stanceUntil - Time.time);
             if (Time.time < stanceUntil) return;
             stance = false;
             look.SetStance(false);
+            look.ShowStanceRing(false);
             taunt = true;
             savedImbalance = Imbalance;
             BecomeExhausted();
-            if (!waitToldOnce) { waitToldOnce = true; Bark(StoryText.ChikuoLine("espera")); }
+            // en la fase 1 lo dice cada vez (es la lección); después, la primera
+            if (phaseIdx == 0 || !waitToldOnce) { waitToldOnce = true; Bark(StoryText.ChikuoLine("espera")); }
         }
 
         /// <summary>Le pegaron en la postura (o insistieron contra su guardia): desvía con un círculo de la mano y
@@ -733,6 +979,7 @@ namespace Nindo
             stanceCounter = fromStance;
             stance = false;
             look.SetStance(false);
+            look.ShowStanceRing(false);
             Stop();
             ReleaseToken();
             pattern = counterPattern;
@@ -759,7 +1006,7 @@ namespace Nindo
             look?.ClearTell();
             if (!taunt) return;
             // llamando a Kaito: abierto lo que dura el gesto, parado y con la guardia baja
-            var t = BambooMasterTimings.Get("Taunt" + suffix) ?? BambooMasterTimings.Taunt;
+            var t = BambooMasterTimings.Get(tauntName) ?? BambooMasterTimings.Taunt;
             stateDuration = t.Seconds;
             anim.Play(t.State, 0.2f);
         }
@@ -768,7 +1015,7 @@ namespace Nindo
         {
             if (taunt) { taunt = false; Imbalance = savedImbalance; return; }
             // si se levanta antes de terminar el clip (los golpes de la ventana) usa el clip de pararse, no el fundido
-            if (Time.time - kneelStart < config.exhaustedTime - 0.3f) anim.Play("ExhaustedRise" + suffix, 0.08f);
+            if (Time.time - kneelStart < config.exhaustedTime - 0.3f) anim.Play(riseName, 0.08f);
         }
 
         // ================================================================== ayudas
@@ -797,7 +1044,9 @@ namespace Nindo
         public void DebugJump(int phase)
         {
             if (!Fighting || !IsAlive || transition != null) return;
-            phase = Mathf.Clamp(phase, phaseIdx + 2, 3);
+            // solo hacia adelante: pedir la fase en la que ya está (o una anterior) volvía a tocar la escena con 1 de vida
+            if (phaseIdx >= 2 || phase <= phaseIdx + 1) return;
+            phase = Mathf.Min(phase, 3);
             if (phase == 3 && phaseIdx == 0)
             {
                 // se saltea la escena del saco: queda sin él y en la fase 2, y abre la del bastón

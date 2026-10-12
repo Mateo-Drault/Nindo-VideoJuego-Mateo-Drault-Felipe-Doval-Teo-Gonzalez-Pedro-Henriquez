@@ -34,6 +34,16 @@ namespace Nindo
         public Transform StaffTip => staffTip;
         public bool StaffShown => staff != null && staff.enabled;
 
+        // estelas de las manos y los pies (de la muñeca a la punta de los dedos, del tobillo a la punta del pie)
+        readonly Dictionary<string, BladeTrail> limbTrails = new Dictionary<string, BladeTrail>(4);
+        BladeTrail limbOn;
+        // el aro de jade de la postura del bambú
+        ShockRing stanceRing;
+        Transform ringOwner;
+        /// <summary>Radio del aro de la postura (m): fuera del cuerpo y del alcance de la palma de guardia, dentro de la
+        /// pantalla de pelea.</summary>
+        const float StanceRingRadius = 1.35f;
+
         public BambooMasterLook(Transform model)
         {
             this.model = model;
@@ -55,6 +65,7 @@ namespace Nindo
                 tip.localPosition = local;
                 staffTip = tip;
             }
+            BuildLimbTrails(model);
             // los bigotes y las colas de la faja con la física del juego (perfil 'Tie' de SpringChain)
             var body = model.GetComponentInChildren<SkinnedMeshRenderer>();
             var spring = model.GetComponentInChildren<Animator>()?.gameObject.AddComponent<SpringChain>();
@@ -164,11 +175,88 @@ namespace Nindo
             glint.SetGlow(StaffGlow, Jade, withStaff ? i : 0f);
         }
 
+        // ------------------------------------------------------------------ estelas del miembro que pega
+        void BuildLimbTrails(Transform model)
+        {
+            var mat = Game.Content != null ? Game.Content.trailMaterial : null;
+            Transform owner = model.parent != null ? model.parent : model;
+            float s = model.lossyScale.y;
+            foreach (var t in model.GetComponentsInChildren<Transform>(true))
+            {
+                // el slot del brillo, el hueso de la base y cuánto se estira la punta por su eje (m del modelo)
+                string slot = t.name == "Hand_R" ? HandR : t.name == "Hand_L" ? HandL : t.name == "Toe_R" ? "Master_GlintFootR"
+                            : t.name == "Toe_L" ? "Master_GlintFootL" : null;
+                if (slot == null || limbTrails.ContainsKey(slot)) continue;
+                bool foot = t.name.StartsWith("Toe");
+                Transform basePt = foot ? t.parent : t;
+                var tip = new GameObject(t.name + "_Estela").transform;
+                tip.SetParent(t, false);
+                tip.localPosition = t.InverseTransformPoint(t.position + t.up * (foot ? 0.12f : 0.21f) * s);
+                limbTrails[slot] = BladeTrail.Create(owner, basePt, tip, mat, TellStyle.TrailParry);
+            }
+        }
+
+        /// <summary>La estela del primer slot de 'slots' que es mano o pie (dorada o roja). false si no hay (el bastón usa la
+        /// estela de Enemy).</summary>
+        public bool BeginLimbTrail(string[] slots, bool danger)
+        {
+            StopLimbTrail();
+            if (slots == null) return false;
+            for (int i = 0; i < slots.Length; i++)
+            {
+                if (!limbTrails.TryGetValue(slots[i], out var t) || t == null) continue;
+                t.SetColor(danger ? TellStyle.TrailDanger : new Color(TellStyle.Gold.r, TellStyle.Gold.g, TellStyle.Gold.b, 0.75f));
+                t.SetLifetime(0.2f);
+                t.Begin();
+                limbOn = t;
+                return true;
+            }
+            return false;
+        }
+
+        public void StopLimbTrail()
+        {
+            if (limbOn != null) limbOn.Stop();
+            limbOn = null;
+        }
+
+        // ------------------------------------------------------------------ aro de la postura del bambú
+        public bool StanceRingShown => stanceRing != null && stanceRing.gameObject.activeSelf;
+
+        /// <summary>El aro de jade en el piso mientras dura la postura ("no le pegues"): se ve aunque las palmas queden
+        /// tapadas o de espaldas a la cámara.</summary>
+        public void ShowStanceRing(bool on, Transform owner = null)
+        {
+            if (!on) { if (stanceRing != null) stanceRing.Hide(); return; }
+            if (stanceRing == null) stanceRing = ShockRing.Create(0.22f);
+            ringOwner = owner;
+            if (owner != null) stanceRing.Show(owner.position);
+            TickStanceRing(9f);
+        }
+
+        /// <summary>Respira despacio y se apaga en el último medio segundo (va a bajar la guardia).</summary>
+        public void TickStanceRing(float timeLeft)
+        {
+            if (!StanceRingShown) return;
+            if (ringOwner != null) stanceRing.Show(ringOwner.position);
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.time * 4.2f);
+            Color c = Jade * (1.2f + 0.5f * pulse);
+            c.a = Mathf.Lerp(0.4f, 0.7f, pulse) * Mathf.Clamp01(timeLeft / 0.5f);
+            stanceRing.Hold(StanceRingRadius, c);
+        }
+
         /// <summary>Al morir: nada brilla salvo los ojos, que se apagan despacio (los apaga el jefe).</summary>
         public void Extinguish()
         {
             ClearTell();
             SetStance(false);
+        }
+
+        /// <summary>El aro de la postura no cuelga del jefe (va en el piso): se va con él.</summary>
+        public void Dispose()
+        {
+            if (stanceRing != null) Object.Destroy(stanceRing.gameObject);
+            stanceRing = null;
         }
 
         public void DimEyes(float k)

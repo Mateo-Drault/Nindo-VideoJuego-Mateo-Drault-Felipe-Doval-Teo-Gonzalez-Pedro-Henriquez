@@ -90,7 +90,9 @@ namespace Nindo
 
         IEnumerator TransitionRoutine(int next)
         {
-            bool fromKneel = State == EnemyState.Exhausted && !taunt;
+            // el corte que lo baja al umbral puede ser el último de la rodilla: Enemy ya lo dio por levantado (Guard) en el
+            // mismo golpe, y sin esto la escena lo paraba en 0.15 s
+            bool fromKneel = kneelAtHit || State == EnemyState.Exhausted && !taunt;
             ReleaseToken();
             stance = taunt = false;
             look.SetStance(false);
@@ -195,16 +197,40 @@ namespace Nindo
         }
 
         // ================================================================== derrota
+        /// <summary>Cuadro de Defeat desde el que sigue si lo vencen de rodillas: ya agachado con las piernas cruzadas y el
+        /// bastón en el piso (de pie, Defeat arranca en la guardia y lo paraba 0.55 m en 0.3 s para volver a sentarlo).</summary>
+        const float DefeatFromKneelFrame = 86f;
+        /// <summary>El plano de la muerte de Boss (3.2 s + 1.2 de vuelta): el plano sentado espera a que termine.</summary>
+        const float BossDeathShot = 4.4f;
+        float defeatFrom;
+
+        protected override bool DeathBurst => false;
+
         protected override void Die(in DamageInfo info, bool finisher = false)
         {
             if (State == EnemyState.Dead) return;
+            bool knelt = State == EnemyState.Exhausted && !taunt;
             ClearQiWave(true);
             stance = taunt = false;
             look?.Extinguish();
+            look?.ShowStanceRing(false);
+            look?.StopLimbTrail();
             if (tipHideAt > 0f) { Game.UI?.HideTutorial(); tipHideAt = -1f; }
             base.Die(info, finisher);
             // Enemy cruza a Defeat en 0.06 s desde donde lo agarró el golpe: el clip arranca en la guardia del bastón
-            anim.Play(BambooMasterTimings.Defeat.State, 0.3f);
+            var d = BambooMasterTimings.Defeat;
+            defeatFrom = knelt ? d.FrameNorm(DefeatFromKneelFrame) : 0f;
+            anim.Play(d.State, knelt ? 0.4f : 0.3f, defeatFrom);
+            // no se esfuma: queda sentado en el claro y Kaito no lo atraviesa para tomar el sello (Enemy apagó los
+            // colliders; el de la raíz vuelve a la medida del cuerpo sentado). Los golpes van por Combat, no por física
+            var col = GetComponent<CapsuleCollider>();
+            if (col != null)
+            {
+                col.radius = 0.6f;
+                col.height = 1.5f;
+                col.center = new Vector3(0f, 0.75f, 0f);
+                col.enabled = true;
+            }
         }
 
         /// <summary>
@@ -214,10 +240,17 @@ namespace Nindo
         protected override IEnumerator DeathRoutine(Vector3 dir)
         {
             var d = BambooMasterTimings.Defeat;
-            yield return new WaitForSeconds(d.Seconds * 0.98f);
+            float t0 = Time.time;
+            // el bastón contra el piso (de rodillas ya lo tenía apoyado: lo baja en el fundido)
+            float land = d.Event("StaffLand");
+            float toLand = land > defeatFrom ? (land - defeatFrom) * d.Seconds : 0.35f;
+            yield return new WaitForSeconds(toLand);
+            Game.Audio?.Play("step_wood", transform.position, land > defeatFrom ? 0.9f : 0.5f, 0.1f);
+            Game.Audio?.Play("clang", transform.position, land > defeatFrom ? 0.25f : 0.12f, 0.15f);
+            yield return new WaitForSeconds(Mathf.Max(0f, (1f - defeatFrom) * d.Seconds * 0.98f - toLand));
             anim.Play(BambooMasterTimings.Meditate.State, 0.3f);
-            // el plano de la muerte de Boss (3.2 s + 1.2 de vuelta) ya terminó: los dos en cuadro, de costado
-            yield return new WaitForSeconds(0.6f);
+            // los dos en cuadro, de costado, cuando terminó el plano de la muerte
+            yield return new WaitForSeconds(Mathf.Max(0.6f, BossDeathShot - (Time.time - t0)));
             int shot = SeatedShot();
             anim.Play(BambooMasterTimings.SeatedBow.State, 0.25f);
             Game.Story?.PlayDialogueById("bamboo_defeat");
