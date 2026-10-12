@@ -744,13 +744,14 @@ _d_sink = feet(mod(_d_knee, hips=(0.04, 0.1, -0.38), hips_rot=(30.0, 12.0, -2.0)
 # los brazos ceden: el pecho y la mejilla pegan en el piso (f35), la cabeza y los hombros rebotan apenas (f38) y queda
 # TENDIDO boca abajo y un poco de costado, como el prólogo (WakeUp: PRONE): la cadera a 12 cm, la cabeza de lado sobre el
 # piso, las piernas estiradas atrás con el empeine en el piso (el pie derecho, que estaba adelante, va atrás en el aire
-# mientras cae; las rodillas no se arrastran). Las manos abiertas en el piso a los costados de la cabeza y la katana plana
+# mientras cae; las rodillas no se arrastran). Las manos flojas de canto en el piso a los costados de la cabeza (con la
+# palma plana la muñeca quedaba 60° doblada hacia el dorso) y la katana plana
 # a su derecha. Antes terminaba en cuatro patas con la cabeza levantada: desde la cámara del juego parecía gatear
 _D_DY = -0.55                     # PRONE (cadera 0.62 atrás del transform) corrido hasta donde cae desde la rodilla
 _d_fall = feet(mod(READY, hips=(0.04, 0.62 + _D_DY, -0.26), hips_rot=(78.0, 14.0, 4.0), spine=(2.0, 4.0, 0.0), head=(-28.0, 8.0, 52.0),
                    arm_space=0.0, kat_free=1.0, kat_pos=(-0.62, -0.2, 0.06), kat_blade=(-0.97, -0.22, 0.0), kat_edge=(-0.22, 0.97, 0.0),
-                   hand_r=(-0.62, -0.3 + _D_DY, 0.16), hand_r_dir=(-0.2, -0.95, 0.0), hand_r_up=(0.0, 0.0, 1.0), fingers_r=0.3,
-                   hand_l=(0.55, -0.7 + _D_DY, 0.16), hand_l_dir=(0.3, -0.9, 0.0), hand_l_up=(0.0, 0.0, 1.0), elbow_l=(0.8, 0.2, 0.3),
+                   hand_r=(-0.62, -0.3 + _D_DY, 0.16), hand_r_dir=(-0.15, -0.9, -0.4), hand_r_up=(-0.95, 0.0, 0.3), fingers_r=0.5,
+                   hand_l=(0.55, -0.7 + _D_DY, 0.16), hand_l_dir=(0.2, -0.9, -0.4), hand_l_up=(0.95, 0.0, 0.3), elbow_l=(0.8, 0.2, 0.3),
                    elbow_r=(-0.8, 0.4, 0.2), fingers_l=0.3, wrist_l_open=0.3, wrist_r_open=0.3, knee_r=(-0.1, -0.6, -0.8),
                    knee_l=(0.1, -0.6, -0.8)),
                r=air(-0.22, 1.07 + _D_DY, 0.15, 150.0, -6.0), l=air(0.22, 1.09 + _D_DY, 0.15, 152.0, 6.0))
@@ -759,7 +760,7 @@ _d_bounce = feet(mod(_d_fall, hips=(0.04, 0.62 + _D_DY, -0.27), hips_rot=(82.0, 
                  r=air(-0.22, 1.07 + _D_DY, 0.14, 156.0, -6.0), l=air(0.22, 1.09 + _D_DY, 0.14, 158.0, 6.0))
 # tendido: se asienta (la cadera baja, la cabeza termina de girar de costado)
 _d_rest = feet(mod(_d_fall, hips=(0.05, 0.62 + _D_DY, -0.31), hips_rot=(86.0, 16.0, 4.0), spine=(4.0, 4.0, 0.0), head=(-36.0, 8.0, 68.0),
-                   hand_r=(-0.62, -0.28 + _D_DY, 0.14), hand_l=(0.55, -0.72 + _D_DY, 0.14), fingers_l=0.4, fingers_r=0.35),
+                   hand_r=(-0.62, -0.28 + _D_DY, 0.14), hand_l=(0.55, -0.72 + _D_DY, 0.14), fingers_l=0.55, fingers_r=0.55),
                r=air(-0.22, 1.07 + _D_DY, 0.13, 160.0, -6.0), l=air(0.22, 1.09 + _D_DY, 0.13, 162.0, 6.0))
 _ar, _al = ankle_of(flat("R", -0.24, -0.3, 4.0)), ankle_of(_D_KNEE_L)
 add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "snap"),
@@ -1119,7 +1120,7 @@ _pi_bow2 = mod(_pi_bow, breath=0.2, head=(27.0, 0.0, 0.0), hips=(0.0, 0.2, -0.39
 _pi_lift = mod(_pi_palms, head=(4.0, 0.0, 0.0))
 # vuelve a tomar la katana: se inclina, la mano derecha va al puño, la toma y la levanta
 _pi_grab = feet(mod(_pi_lean, hips=(-0.05, 0.2, -0.37), kat_free=1.0, fingers_r=0.2, hand_r=(-0.64, -0.36, 0.25),
-                   hand_r_dir=(0.05, -0.99, -0.1), hand_r_up=(-0.3, 0.0, 0.95), hand_l=(0.3, -0.24, 0.6), grip=PI_KAT,
+                   hand_r_dir=(0.05, -0.8, -0.6), hand_r_up=(-0.3, -0.55, 0.78), hand_l=(0.3, -0.24, 0.6), grip=PI_KAT,
                    blade=PI_KAT_BLADE, edge=PI_KAT_EDGE, knee_r=(-0.15, -1.0, -0.3), knee_l=(0.15, -1.0, -0.3)),
                 r=_PI_R, l=_PI_L)
 _pi_hold = mod(_pi_grab, kat_free=0.0, fingers_r=0.3, grip=PI_KAT, blade=PI_KAT_BLADE, edge=PI_KAT_EDGE)
