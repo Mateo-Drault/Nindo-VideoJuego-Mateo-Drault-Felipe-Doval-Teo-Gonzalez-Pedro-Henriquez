@@ -24,9 +24,9 @@ abajo) o sintetizado por `Tools/Audio/build_audio.py`.
 | Claves | Tema | Autor | Licencia | Cambios |
 |---|---|---|---|---|
 | `boss_goro*` | [Boss_Koto](https://opengameart.org/content/bosskoto) | G_P | [CC0](https://creativecommons.org/publicdomain/zero/1.0/) | cortado en compases y reordenado: intro, un ciclo de 72 compases con el corte una vez; fase 2 medio tono arriba (re-muestreo 89/84) y +1 dB con su propio ciclo de 68; el golpe final (c51) en los dos tonos como cierre |
-| `boss_lake*` | [Amenoshita](https://peritune.com/blog/2015/07/03/amenoshita/) | PeriTune | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cortado en compases y reordenado por secciones: apertura como intro, un loop por fase (A y A'; desarrollo, cumbre y corte; cumbre y A sin corte), dos compases de entrada por fase y el golpe final como cierre; sonoridad normalizada |
-| `boss_bamboo*` | [Wuxia](https://peritune.com/blog/2018/06/24/wuxia/) | PeriTune | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cortado en compases y reordenado por secciones: crescendo como intro, un loop por fase (tema, A y B; C, D y E; B y D), dos compases de entrada por fase y el primer tiempo del tema con su eco como cierre; sonoridad normalizada |
-| `boss_final*` | [Revenge](https://opengameart.org/content/revenge) | TAD | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cortado en compases y reordenado: intro, un loop por acto (los actos 3 y 4 medio tono arriba), dos compases de entrada por acto y el golpe final (c74) como cierre; estante de +6 dB arriba de 3.5 kHz, ganancia por acto (acto 1 +1.5 dB, acto 3 +0.4 dB), limitador a -1.3 dBFS |
+| `boss_lake*` | [Amenoshita](https://peritune.com/blog/2015/07/03/amenoshita/) | PeriTune | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cortado en compases y reordenado por secciones: apertura como intro, un loop por fase (A y A'; desarrollo, cumbre y corte; cumbre y desarrollo sin corte, medio tono arriba), dos compases de entrada por fase y el golpe final como cierre (también medio tono arriba); sonoridad normalizada |
+| `boss_bamboo*` | [Wuxia](https://peritune.com/blog/2018/06/24/wuxia/) | PeriTune | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cortado en compases y reordenado por secciones: crescendo como intro, un loop por fase (tema, A y B; C, D y E; B y D medio tono arriba), dos compases de entrada por fase y el primer tiempo del tema con su eco como cierre (también medio tono arriba); sonoridad normalizada |
+| `boss_final*` | [Revenge](https://opengameart.org/content/revenge) | TAD | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cortado en compases y reordenado: intro, un loop por acto (el acto 3 medio tono arriba y el 4 dos semitonos arriba), dos compases de entrada por acto y el golpe final (c74) como cierre en los dos tonos; estante de +6 dB arriba de 3.5 kHz, ganancia por acto (acto 1 +1.5 dB, acto 3 +0.4 dB, acto 4 +0.8 dB), limitador a -1.3 dBFS |
 | `ending` | [Sakuya4](https://peritune.com/blog/2018/12/21/sakuya4/) | PeriTune | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | silencios recortados, fundido de 1 s al final, sonoridad normalizada |
 
 El crédito de los temas CC BY 4.0 sale en el cartel del final del juego (UIManager.Panels, BuildEnd): la
@@ -62,7 +62,8 @@ si hace falta una prueba fechada):
    por fase (`arrange`: tramos de compases en orden; cada salto va a un compás parecido al que seguiría en el
    tema), la frase de entrada de cada fase (`pickup`: los compases que llevan a esa sección en el tema) y el
    cierre (`outro`, o `stinger` si el tema termina en un fundido). Una sola ganancia por jefe, picos a -1
-   dBFS como mucho.
+   dBFS como mucho. Una fase que sube de tono (el tema no tiene otra sección que esa fase toque sola) sale
+   de `save_pitched` con sus tramos armados con `multiple=RATIO[semitonos][0]`, y su cierre en el mismo tono.
 4. La fila en `PHASES` (loop, frase de entrada, desde dónde entra después de un silencio, corte de lo anterior
    si cambia de tono, cierre propio) y en `OUTROS` (cierre, fundido si no hay, si vuelve la zona).
 5. Los pasos del encabezado del script: build, Vorbis con Blender, trim, verify (largo exacto, sin retardo,

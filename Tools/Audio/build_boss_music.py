@@ -46,7 +46,11 @@ SOURCES = {
                     "PeriTune", "Sakuya4", "CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/"),
 }
 
-UP, DOWN = 89, 84          # 89/84 = 1.059524 ~ un semitono (2^(1/12) = 1.059463): fase 2 de Gorō, actos 3 y 4 de Kokuyō
+UP, DOWN = 89, 84          # 89/84 = 1.059524 ~ un semitono (2^(1/12) = 1.059463): fase 2 de Gorō, fase 3 de Mizuchi y
+                           # del bambú, acto 3 de Kokuyō
+# semitonos -> (arriba, abajo) del re-muestreo: fracciones chicas, así el largo de un loop se redondea a un múltiplo
+# de 'arriba' quitando menos de 2 ms. 55/49 = 1.122449 ~ dos semitonos (2^(2/12) = 1.122462): el Último Desfile
+RATIO = {1: (UP, DOWN), 2: (55, 49)}
 PAD = 2048                 # muestras de continuación que ve el codificador después del final (ver cmd_trim)
 PICKUP_BARS = 2            # frase de entrada de una fase: el juego toca de 2 a 5 tiempos de ella (ver MusicDirector)
 REPORT = {}
@@ -214,19 +218,38 @@ def arrange(x, sr, T, segs, F=0.025, multiple=1):
     return np.concatenate(pieces), offs, corrs
 
 
-def pitch_loop(y, P=89 * 400):
-    """Medio tono arriba conservando la periodicidad: relleno circular, re-muestreo 84/89 y corte del centro."""
-    assert len(y) % UP == 0
-    z = resample_poly(np.concatenate([y[-P:], y, y[:P]]), DOWN, UP, axis=0).astype(np.float32)
-    p2 = P * DOWN // UP
-    return z[p2:p2 + len(y) * DOWN // UP]
+def pitch_loop(y, semis=1):
+    """'semis' semitonos arriba conservando la periodicidad: relleno circular, re-muestreo y corte del centro."""
+    u, d = RATIO[semis]; P = u * 400
+    assert len(y) % u == 0
+    z = resample_poly(np.concatenate([y[-P:], y, y[:P]]), d, u, axis=0).astype(np.float32)
+    p2 = P * d // u
+    return z[p2:p2 + len(y) * d // u]
 
 
-def pitch_oneshot(y, follow, P=89 * 400):
+def pitch_oneshot(y, follow, semis=1):
     """Ídem para una toma única que desemboca en 'follow': el final no se ensucia con el borde del filtro."""
-    assert len(y) % UP == 0
-    z = resample_poly(np.concatenate([y, follow[:P]]), DOWN, UP, axis=0).astype(np.float32)
-    return z[:len(y) * DOWN // UP]
+    u, d = RATIO[semis]; P = u * 400
+    assert len(y) % u == 0
+    z = resample_poly(np.concatenate([y, follow[:P]]), d, u, axis=0).astype(np.float32)
+    return z[:len(y) * d // u]
+
+
+def pitched_pickup(x, sr, T, k, follow, semis, bars=PICKUP_BARS):
+    """La frase de entrada de la sección k transportada como su loop: arranca hasta 2 ms más tarde, así su largo es
+    múltiplo del re-muestreo y termina justo donde arranca 'follow'."""
+    u = RATIO[semis][0]
+    s = at(T(k), sr); i0 = at(T(k - bars), sr); i0 += (s - i0) % u
+    return pitch_oneshot(x[i0:s], follow, semis)
+
+
+def save_pitched(key, y, offs, g, sr, bar, semis, labels, corrs, pick, extra):
+    """Loop transportado y su frase de entrada: el compás se acorta en la misma proporción (el tema va más rápido)."""
+    u, d = RATIO[semis]; b2 = bar * d / u
+    extra = dict(extra, bpm=round(240.0 / b2, 3), semitonos=semis)
+    note_in = extra.pop("nota_in")
+    save_once(key + "_in", pick * g, sr, b2, key, dict(extra, nota=note_in))
+    save_loop(key, pitch_loop(y, semis) * g, 1.0, sr, b2, [int(o * d / u) for o in offs], labels, corrs, extra)
 
 
 def onset_near(x, sr, t, radius=0.35):
@@ -312,7 +335,7 @@ def pickup(x, sr, T, k, bars=PICKUP_BARS):
 RAMP_IN = 0.006            # fundido de entrada de las tomas que arrancan solas (más corto que los 8 ms antes del tiempo)
 
 
-def outro(x, sr, T, bar, k, g, key, name, pickup_beats=0, up=False, note=""):
+def outro(x, sr, T, bar, k, g, key, name, pickup_beats=0, semis=0, note=""):
     """El final escrito del tema (el último golpe y su cola) para cuando cae el jefe: arranca en un tiempo (el director
     lo pone en el próximo tiempo de lo que suena) y, si hay anacrusa, el golpe cae 'pickup_beats' tiempos después. La
     cola se corta donde baja a -60 dB del pico del tema y se funde 0.3 s. Si el golpe pasa de -1 dBFS con la ganancia
@@ -321,9 +344,10 @@ def outro(x, sr, T, bar, k, g, key, name, pickup_beats=0, up=False, note=""):
     env = np.convolve(np.abs(mono(x)), np.ones(4096) / 4096, mode="same")
     last = len(env) - int(np.argmax(env[::-1] > env.max() * 10 ** (-60 / 20)))
     y = x[s:last].copy()
-    if up:
-        y = resample_poly(y, DOWN, UP, axis=0).astype(np.float32)
-        bar = bar * DOWN / UP
+    if semis:
+        u, d = RATIO[semis]
+        y = resample_poly(y, d, u, axis=0).astype(np.float32)
+        bar = bar * d / u
     Fi, Fo = int(RAMP_IN * sr), int(0.3 * sr)
     y[:Fi] *= fade(Fi, "in"); y[-Fo:] *= fade(Fo, "out")
     gg = min(g, 10 ** ((-1.0 - peak_db(y)) / 20))
@@ -332,11 +356,15 @@ def outro(x, sr, T, bar, k, g, key, name, pickup_beats=0, up=False, note=""):
                            "ganancia_relativa_dB": round(20 * np.log10(gg / g), 2), "nota": note})
 
 
-def stinger(x, sr, T, bar, k, g, key, name, hold=0.35, total=3.0, note=""):
+def stinger(x, sr, T, bar, k, g, key, name, hold=0.35, total=3.0, semis=0, note=""):
     """Cierre para un tema que termina en un fundido (Wuxia): el tiempo fuerte más lleno del tema y su eco, con el
     resto apagándose en exponencial hasta -60 dB en 'total' s. El golpe cae en el tiempo en que arranca."""
     s = at(T(k), sr)
     y = x[s:s + at(total, sr)].copy()
+    if semis:
+        u, d = RATIO[semis]
+        y = resample_poly(y, d, u, axis=0).astype(np.float32)
+        bar = bar * d / u
     t = np.arange(len(y)) / sr
     y *= np.where(t < hold, 1.0, 10 ** (-3 * (t - hold) / (total - hold))).astype(np.float32)[:, None]
     Fi = int(RAMP_IN * sr); y[:Fi] *= fade(Fi, "in")
@@ -383,7 +411,7 @@ def goro(target=-14.0):
     save_loop("boss_goro_2", body2, g2, sr, bar2, [int(o * DOWN / UP) for o in o2], ["c9-c47", "c8-c36"], c2, {
         "fuente": name, "bpm": round(bpm2, 3), "nota": "medio tono arriba, +1 dB: cuerpo, corte, vuelta de los tambores y "
                                                          "otra pasada del cuerpo hasta c36, que lleva a c9"})
-    outro(x, sr, T, bar, 51, g2, "boss_goro_out", name, up=True, note="c51 medio tono arriba: el último golpe de koto y tambores, y su cola")
+    outro(x, sr, T, bar, 51, g2, "boss_goro_out", name, semis=1, note="c51 medio tono arriba: el último golpe de koto y tambores, y su cola")
 
 
 # ============================================================================ Mizuchi: Amenoshita (PeriTune, CC BY 4.0)
@@ -392,24 +420,31 @@ def lake(target=-14.0):
     c37-c46, cumbre c47-c53, corte sin bajos c55-c60 y vuelta c61-c62. Cada fase con lo suyo:
       1 (el koi): apertura como intro y A + A' (c36 sigue en c21, que lleva otra vez a A): 32 compases, 65 s.
       2 (el dragón despierta): desarrollo, cumbre, corte y vuelta, de nuevo al desarrollo: 26 compases, 53 s.
-      3 (cascada desatada): arranca en la cumbre, sin apertura ni corte (c54 salta a c7): 48 compases, 98 s.
-    Las frases de entrada son los dos compases que en el tema llevan a cada sección (c35-c36, c45-c46)."""
+      3 (cascada desatada): cumbre y desarrollo sin el corte (c54 salta a c37, c46 lleva otra vez a la cumbre), medio
+        tono arriba (6 % más rápido): 18 compases, 35 s. El tema toca su segunda vuelta igual a la primera (cada
+        compás k y k+63 coinciden a r 0.98-1.00), así que una sección sin usar no existe: el clímax es lo más lleno del
+        tema en otro tono, como la fase 2 de Gorō, y nunca vuelve al tema A de la fase 1.
+    Las frases de entrada son los dos compases que en el tema llevan a cada sección (c35-c36, c45-c46; la de la fase 3
+    transportada como su loop). Mizuchi cae en la fase 3: su cierre es el golpe final en el tono de esa fase."""
     name = "lake_amenoshita"; x, sr = src(name); bpm = 118.0
     bar, T = grid(bpm, 1.9374)
     a = first_sound(x, sr)
     y1, o1, c1 = arrange(x, sr, T, [(6, 37), (21, 22)])
     y2, o2, c2 = arrange(x, sr, T, [(37, 63)])
-    y3, o3, c3 = arrange(x, sr, T, [(47, 55), (7, 47)])
-    g = gain_for(y1, sr, target, y2, y3)
+    y3, o3, c3 = arrange(x, sr, T, [(47, 55), (37, 47)], multiple=UP)
+    pick3 = pitched_pickup(x, sr, T, 47, y3, 1)
+    g = gain_for(y1, sr, target, y2, pitch_loop(y3), pick3)
     save_once("boss_lake_intro", x[a:at(T(6), sr)] * g, sr, bar, "boss_lake",
               {"fuente": name, "bpm": bpm, "nota": "anacrusa (redoble y golpe) y la apertura c0-c5"})
     save_loop("boss_lake", y1, g, sr, bar, o1, ["c6-c36", "c21"], c1, {"fuente": name, "bpm": bpm})
     save_once("boss_lake_2_in", pickup(x, sr, T, 37) * g, sr, bar, "boss_lake_2", {"fuente": name, "bpm": bpm, "nota": "c35-c36: el final de A'"})
     save_loop("boss_lake_2", y2, g, sr, bar, o2, ["c37-c62"], c2, {"fuente": name, "bpm": bpm})
-    save_once("boss_lake_3_in", pickup(x, sr, T, 47) * g, sr, bar, "boss_lake_3", {"fuente": name, "bpm": bpm, "nota": "c45-c46: la subida a la cumbre"})
-    save_loop("boss_lake_3", y3, g, sr, bar, o3, ["c47-c54", "c7-c46"], c3, {"fuente": name, "bpm": bpm})
+    save_pitched("boss_lake_3", y3, o3, g, sr, bar, 1, ["c47-c54", "c37-c46"], c3, pick3,
+                 {"fuente": name, "nota": "medio tono arriba", "nota_in": "c45-c46: la subida a la cumbre, medio tono arriba"})
     outro(x, sr, T, bar, 125, g, "boss_lake_out", name, pickup_beats=1,
           note="el último tiempo de c124 (la subida de los tambores) y el golpe final de c125 con su cola")
+    outro(x, sr, T, bar, 125, g, "boss_lake_out_3", name, pickup_beats=1, semis=1,
+          note="el mismo cierre medio tono arriba, en el tono de la fase 3")
 
 
 # ============================================================================ Maestro del bambú: Wuxia (PeriTune, CC BY 4.0)
@@ -418,30 +453,37 @@ def bamboo(target=-14.0):
     arriba, lo más fuerte), C c40-c47 (taiko, cambia de color), D c48-c63, E c64-c80. Por fase:
       1: tema, A y B, y vuelta al tema (40 compases, 71 s): el maestro mide a Kaito.
       2: C, D y E, y vuelta a C (41 compases, 72 s): el taiko y otra armonía.
-      3: B y D, las dos secciones más llenas (32 compases, 56 s).
-    Wuxia termina en un fundido: el cierre es el primer tiempo del tema (c81, el más lleno) y su eco."""
+      3: B y D, las dos secciones más llenas, medio tono arriba (32 compases, 53 s): la melodía del comienzo vuelve
+         más alta para el final. La segunda vuelta del tema es la primera otra vez (k y k+81 a r 0.94-0.97), así que
+         no hay sección sin usar; E, la única que quedaría para la fase 3 sola, es la más baja del tema (-20 dB por
+         compás contra -18 de B y D) y el clímax arrancaba más flojo que el final de la fase 2.
+    Wuxia termina en un fundido: el cierre es el primer tiempo del tema (c81, el más lleno) y su eco, en el tono de
+    la fase en que cae el maestro."""
     name = "bamboo_wuxia"; x, sr = src(name); bpm = 136.0
     bar, T = grid(bpm, 1.2864)
     a = first_sound(x, sr)
     y1, o1, c1 = arrange(x, sr, T, [(0, 40)])
     y2, o2, c2 = arrange(x, sr, T, [(40, 81)])
-    y3, o3, c3 = arrange(x, sr, T, [(24, 40), (48, 64)])
-    g = gain_for(y1, sr, target, y2, y3)
+    y3, o3, c3 = arrange(x, sr, T, [(24, 40), (48, 64)], multiple=UP)
+    pick3 = pitched_pickup(x, sr, T, 24, y3, 1)
+    g = gain_for(y1, sr, target, y2, pitch_loop(y3), pick3)
     save_once("boss_bamboo_intro", x[a:at(T(0), sr)] * g, sr, bar, "boss_bamboo",
               {"fuente": name, "bpm": bpm, "nota": "crescendo de entrada hasta el primer golpe"})
     save_loop("boss_bamboo", y1, g, sr, bar, o1, ["c0-c39"], c1, {"fuente": name, "bpm": bpm})
     save_once("boss_bamboo_2_in", pickup(x, sr, T, 40) * g, sr, bar, "boss_bamboo_2", {"fuente": name, "bpm": bpm, "nota": "c38-c39: el final de B"})
     save_loop("boss_bamboo_2", y2, g, sr, bar, o2, ["c40-c80"], c2, {"fuente": name, "bpm": bpm})
-    save_once("boss_bamboo_3_in", pickup(x, sr, T, 24) * g, sr, bar, "boss_bamboo_3", {"fuente": name, "bpm": bpm, "nota": "c22-c23: el final de A, que lleva a B"})
-    save_loop("boss_bamboo_3", y3, g, sr, bar, o3, ["c24-c39", "c48-c63"], c3, {"fuente": name, "bpm": bpm})
+    save_pitched("boss_bamboo_3", y3, o3, g, sr, bar, 1, ["c24-c39", "c48-c63"], c3, pick3,
+                 {"fuente": name, "nota": "medio tono arriba", "nota_in": "c22-c23: el final de A, que lleva a B, medio tono arriba"})
     stinger(x, sr, T, bar, 81, g, "boss_bamboo_out", name, note="c81: el primer tiempo del tema en la segunda vuelta, y su eco")
+    stinger(x, sr, T, bar, 81, g, "boss_bamboo_out_3", name, semis=1, note="el mismo cierre medio tono arriba, en el tono de la fase 3")
 
 
 # ============================================================================ Kokuyō: Revenge (TAD, CC BY 4.0)
 KOKUYO_SHELF = (3500.0, 6.0)        # Hz, dB: Revenge casi no tiene nada arriba de 3.4 kHz (-32 dB arriba de 5 kHz)
 # dB sobre la ganancia base (acto 2 a -13.5 LUFS): el acto 1 es ralo y quedaba en -15.6, por debajo de los otros jefes;
-# la ola del acto 3 y la cumbre del 4 ya suben solas (-12.5 y -12 LUFS)
-KOKUYO_ACTS = {1: 1.5, 2: 0.0, 3: 0.4, 4: 0.0}
+# la ola del acto 3 ya sube sola (-12.5 LUFS). El Último Desfile toca compases que el acto 3 también tiene: con 0 dB
+# sonaban 0.4 dB más bajos que en el acto 3, y la última resistencia nunca puede sonar más floja que lo anterior
+KOKUYO_ACTS = {1: 1.5, 2: 0.0, 3: 0.4, 4: 0.8}
 
 
 def final(target=-13.5):
@@ -451,12 +493,14 @@ def final(target=-13.5):
       Acto 1 (el maestro): lo ralo, c4-c19 y c40-c55, que deja oír los avisos: 32 compases, 73 s.
       Acto 2 (la sombra suelta): la ola, el golpe, el corte y medio tramo bajo, que lleva otra vez a la ola: 28, 64 s.
       Acto 3 (eclipse): la segunda ola, el golpe y el corte medio tono arriba (6 % más rápido): 20 compases, 43 s.
-      Acto 4 (Último Desfile): la cumbre medio tono arriba (c61-c70 y c63-c68): 16 compases, 35 s.
+      Acto 4 (Último Desfile): la cumbre (c61-c70 y c63-c68) dos semitonos arriba (12 % más rápido): 16 compases, 33 s.
+        Es la parte alta de la ola que el acto 3 ya toca, pero un tono más arriba: el tema no tiene otra cumbre (la
+        segunda ola copia la primera), y la subida de tono es lo que marca la última resistencia. Kokuyō cae en este
+        acto, así que su cierre va en el mismo tono (el del acto 3 queda para si cae antes).
     Revenge es muy opaco al lado de los otros jefes: lleva un estante de +6 dB arriba de 3.5 kHz, una ganancia
     por acto (KOKUYO_ACTS) y un limitador con anticipación que sostiene el nivel sin pasar de -1 dBFS."""
     name = "final_tad_revenge"; x0, sr = src(name); bpm = 105.0
     bar, T = grid(bpm, 1.7109)
-    bar2 = bar * DOWN / UP
     xs = high_shelf(x0, sr, *KOKUYO_SHELF)
     a = first_sound(x0, sr)
     # ganancia base: el acto 2 a 'target' LUFS antes del limitador (lo que el limitador saca es solo de los golpes)
@@ -470,21 +514,18 @@ def final(target=-13.5):
     y1, o1, c1 = arrange(x1, sr, T, [(4, 20), (40, 56)])
     y2, o2, c2 = arrange(x2, sr, T, [(20, 40), (48, 56)])
     y3, o3, c3 = arrange(x3, sr, T, [(56, 71), (35, 40)], multiple=UP)
-    y4, o4, c4 = arrange(x4, sr, T, [(61, 71), (63, 69)], multiple=UP)
+    y4, o4, c4 = arrange(x4, sr, T, [(61, 71), (63, 69)], multiple=RATIO[2][0])
     save_once("boss_final_intro", x1[a:at(T(4), sr)], sr, bar, "boss_final",
               dict(lim, fuente=name, bpm=bpm, nota="c0-c3: casi silencio, el taiko como latido, y la primera subida"))
     save_loop("boss_final", y1, 1.0, sr, bar, o1, ["c4-c19", "c40-c55"], c1, dict(lim, fuente=name, bpm=bpm))
     save_once("boss_final_2_in", pickup(x2, sr, T, 20), sr, bar, "boss_final_2", dict(lim, fuente=name, bpm=bpm, nota="c18-c19: el final de lo ralo"))
     save_loop("boss_final_2", y2, 1.0, sr, bar, o2, ["c20-c39", "c48-c55"], c2, dict(lim, fuente=name, bpm=bpm))
-    for key, xp, k, yy, oo, cc, lab, src_bars, note in (
-            ("boss_final_3", x3, 56, y3, o3, c3, ["c56-c70", "c35-c39"], (54, 56), "c54-c55: del silencio del eclipse a la ola"),
-            ("boss_final_4", x4, 61, y4, o4, c4, ["c61-c70", "c63-c68"], (59, 61), "c59-c60: la subida a la cumbre")):
-        s = at(T(k), sr)
-        i0 = at(T(src_bars[0]), sr); i0 += (s - i0) % UP
-        save_once(key + "_in", pitch_oneshot(xp[i0:s], yy), sr, bar2, key, dict(lim, fuente=name, bpm=round(bpm * UP / DOWN, 3), nota=note + ", medio tono arriba"))
-        save_loop(key, pitch_loop(yy), 1.0, sr, bar2, [int(o * DOWN / UP) for o in oo], lab, cc,
-                  dict(lim, fuente=name, bpm=round(bpm * UP / DOWN, 3), nota="medio tono arriba"))
-    outro(proc[3], sr, T, bar, 74, 1.0, "boss_final_out", name, up=True, note="c74 medio tono arriba: el último golpe del taiko y la cola grave")
+    save_pitched("boss_final_3", y3, o3, 1.0, sr, bar, 1, ["c56-c70", "c35-c39"], c3, pitched_pickup(x3, sr, T, 56, y3, 1),
+                 dict(lim, fuente=name, nota="medio tono arriba", nota_in="c54-c55: del silencio del eclipse a la ola, medio tono arriba"))
+    save_pitched("boss_final_4", y4, o4, 1.0, sr, bar, 2, ["c61-c70", "c63-c68"], c4, pitched_pickup(x4, sr, T, 61, y4, 2),
+                 dict(lim, fuente=name, nota="dos semitonos arriba", nota_in="c59-c60: la subida a la cumbre, dos semitonos arriba"))
+    outro(proc[3], sr, T, bar, 74, 1.0, "boss_final_out", name, semis=1, note="c74 medio tono arriba: el último golpe del taiko y la cola grave")
+    outro(proc[4], sr, T, bar, 74, 1.0, "boss_final_out_4", name, semis=2, note="c74 dos semitonos arriba, en el tono del Último Desfile")
 
 
 # ============================================================================ final: Sakuya4 (PeriTune, CC BY 4.0)
@@ -510,12 +551,15 @@ PHASES = {
     # Cambia de tono: lo anterior se corta en 40 ms para que los dos kotos no suenen juntos medio tono aparte
     "boss_goro": {1: dict(clip="boss_goro", intro="boss_goro_intro", outro="boss_goro_out_1"),
                   2: dict(clip="boss_goro_2", intro="boss_goro_2_in", entry_bars=6, cut=0.04)},
+    # las fases 3 de Mizuchi y del bambú y los actos 3 y 4 de Kokuyō suben de tono: corte rápido de lo anterior y el
+    # cierre en el tono nuevo (el jefe cae ahí)
     "boss_lake": {1: dict(clip="boss_lake", intro="boss_lake_intro"), 2: dict(clip="boss_lake_2", intro="boss_lake_2_in"),
-                  3: dict(clip="boss_lake_3", intro="boss_lake_3_in")},
+                  3: dict(clip="boss_lake_3", intro="boss_lake_3_in", cut=0.04, outro="boss_lake_out_3")},
     "boss_bamboo": {1: dict(clip="boss_bamboo", intro="boss_bamboo_intro"), 2: dict(clip="boss_bamboo_2", intro="boss_bamboo_2_in"),
-                    3: dict(clip="boss_bamboo_3", intro="boss_bamboo_3_in")},
+                    3: dict(clip="boss_bamboo_3", intro="boss_bamboo_3_in", cut=0.04, outro="boss_bamboo_out_3")},
     "boss_final": {1: dict(clip="boss_final", intro="boss_final_intro"), 2: dict(clip="boss_final_2", intro="boss_final_2_in"),
-                   3: dict(clip="boss_final_3", intro="boss_final_3_in", cut=0.05), 4: dict(clip="boss_final_4", intro="boss_final_4_in")},
+                   3: dict(clip="boss_final_3", intro="boss_final_3_in", cut=0.05),
+                   4: dict(clip="boss_final_4", intro="boss_final_4_in", cut=0.05, outro="boss_final_out_4")},
 }
 # al caer el jefe: (toma final o None, fundido en s si no hay toma, vuelve la música de la zona al terminar). Kokuyō no
 # devuelve la exploración: después viene la campana, la luna y el final
@@ -784,14 +828,17 @@ def credits_md():
                                "fase 2 medio tono arriba (re-muestreo 89/84) y +1 dB con su propio ciclo de 68; el golpe "
                                "final (c51) en los dos tonos como cierre",
               "lake_amenoshita": "cortado en compases y reordenado por secciones: apertura como intro, un loop por fase "
-                                 "(A y A'; desarrollo, cumbre y corte; cumbre y A sin corte), dos compases de entrada "
-                                 "por fase y el golpe final como cierre; sonoridad normalizada",
+                                 "(A y A'; desarrollo, cumbre y corte; cumbre y desarrollo sin corte, medio tono arriba), "
+                                 "dos compases de entrada por fase y el golpe final como cierre (también medio tono "
+                                 "arriba); sonoridad normalizada",
               "bamboo_wuxia": "cortado en compases y reordenado por secciones: crescendo como intro, un loop por fase "
-                              "(tema, A y B; C, D y E; B y D), dos compases de entrada por fase y el primer tiempo del "
-                              "tema con su eco como cierre; sonoridad normalizada",
-              "final_tad_revenge": "cortado en compases y reordenado: intro, un loop por acto (los actos 3 y 4 medio tono "
-                                   "arriba), dos compases de entrada por acto y el golpe final (c74) como cierre; estante "
-                                   "de +6 dB arriba de 3.5 kHz, ganancia por acto (acto 1 +1.5 dB, acto 3 +0.4 dB), limitador a -1.3 dBFS",
+                              "(tema, A y B; C, D y E; B y D medio tono arriba), dos compases de entrada por fase y el "
+                              "primer tiempo del tema con su eco como cierre (también medio tono arriba); sonoridad "
+                              "normalizada",
+              "final_tad_revenge": "cortado en compases y reordenado: intro, un loop por acto (el acto 3 medio tono arriba "
+                                   "y el 4 dos semitonos arriba), dos compases de entrada por acto y el golpe final (c74) "
+                                   "como cierre en los dos tonos; estante de +6 dB arriba de 3.5 kHz, ganancia por acto "
+                                   "(acto 1 +1.5 dB, acto 3 +0.4 dB, acto 4 +0.8 dB), limitador a -1.3 dBFS",
               "end_sakuya4": "silencios recortados, fundido de 1 s al final, sonoridad normalizada"}
     rows = ["## Música de jefes y del final (por fases, `Tools/Audio/build_boss_music.py`)", "",
             "| Claves | Tema | Autor | Licencia | Cambios |", "|---|---|---|---|---|"]
@@ -827,7 +874,8 @@ def credits_md():
              "   por fase (`arrange`: tramos de compases en orden; cada salto va a un compás parecido al que seguiría en el",
              "   tema), la frase de entrada de cada fase (`pickup`: los compases que llevan a esa sección en el tema) y el",
              "   cierre (`outro`, o `stinger` si el tema termina en un fundido). Una sola ganancia por jefe, picos a -1",
-             "   dBFS como mucho.",
+             "   dBFS como mucho. Una fase que sube de tono (el tema no tiene otra sección que esa fase toque sola) sale",
+             "   de `save_pitched` con sus tramos armados con `multiple=RATIO[semitonos][0]`, y su cierre en el mismo tono.",
              "4. La fila en `PHASES` (loop, frase de entrada, desde dónde entra después de un silencio, corte de lo anterior",
              "   si cambia de tono, cierre propio) y en `OUTROS` (cierre, fundido si no hay, si vuelve la zona).",
              "5. Los pasos del encabezado del script: build, Vorbis con Blender, trim, verify (largo exacto, sin retardo,",

@@ -1361,6 +1361,12 @@ MonoBehaviour:
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_bamboo_out_3
+    clips:
+    - {fileID: 8300000, guid: ebe9caa223471f4e3c0b1fefc4770bc9, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_final
     clips:
     - {fileID: 8300000, guid: 8d8bc8f6cdb29c63ea162ba4c9716418, type: 3}
@@ -1412,6 +1418,12 @@ MonoBehaviour:
   - key: boss_final_out
     clips:
     - {fileID: 8300000, guid: fb8b0fcde0ae679404ebaf54fd417483, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_out_4
+    clips:
+    - {fileID: 8300000, guid: e9737a0cfee1b420181d47a1de7e5d28, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0
@@ -1490,6 +1502,12 @@ MonoBehaviour:
   - key: boss_lake_out
     clips:
     - {fileID: 8300000, guid: 0571f10bd2faafa256149d4ce0dded71, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_out_3
+    clips:
+    - {fileID: 8300000, guid: f72672ad464e2197f23a3c95797fba3d, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0

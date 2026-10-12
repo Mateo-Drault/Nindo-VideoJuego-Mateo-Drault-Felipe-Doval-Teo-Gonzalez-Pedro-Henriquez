@@ -372,7 +372,7 @@ SCEN = {
     "lake": ([(0.5, "Play", "boss_lake"), (100.0, "SetPhase", 2), (170.0, "SetPhase", 3), (280.0, "End")], 290),
     "bamboo": ([(0.5, "Play", "boss_bamboo"), (95.0, "SetPhase", 2), (180.0, "SetPhase", 3), (250.0, "End")], 260),
     "final": ([(0.5, "Play", "boss_final"), (105.0, "SetPhase", 2), (205.0, "Silence", 0.4), (206.6, "SetPhase", 3),
-               (262.0, "SetPhase", 4), (292.0, "End")], 302),
+               (262.0, "SetPhase", 4), (300.0, "End")], 310),
     "final_reintento_acto2": ([(0.5, "Play", "boss_final"), (0.5, "SetPhase", 2), (60.0, "End")], 70),
     "final_fase_antes_que_play": ([(0.5, "SetPhase", 2), (0.5, "Play", "boss_final"), (40.0, "End")], 50),
     "final_reintento_frame_siguiente": ([(0.5, "Play", "boss_final"), (0.52, "SetPhase", 2), (40.0, "End")], 50),

@@ -31,7 +31,9 @@
    "3": {
     "clip": "boss_lake_3",
     "intro": "boss_lake_3_in",
-    "golpe_muestra": 179390
+    "golpe_muestra": 169260,
+    "corte_s": 0.04,
+    "cierre": "boss_lake_out_3"
    }
   },
   "boss_bamboo": {
@@ -48,7 +50,9 @@
    "3": {
     "clip": "boss_bamboo_3",
     "intro": "boss_bamboo_3_in",
-    "golpe_muestra": 155647
+    "golpe_muestra": 146832,
+    "corte_s": 0.04,
+    "cierre": "boss_bamboo_out_3"
    }
   },
   "boss_final": {
@@ -71,7 +75,9 @@
    "4": {
     "clip": "boss_final_4",
     "intro": "boss_final_4_in",
-    "golpe_muestra": 190260
+    "golpe_muestra": 179585,
+    "corte_s": 0.05,
+    "cierre": "boss_final_out_4"
    }
   },
   "ending": {
@@ -155,6 +161,16 @@
    "LUFS": -17.31,
    "agudos_5k_dB": -7.8
   },
+  "ending": {
+   "tipo": "tema entero (una vez)",
+   "muestras": 6177093,
+   "segundos": 140.0701,
+   "sr": 44100,
+   "bpm": 80.0,
+   "compas_s": 3.0,
+   "LUFS": -16.0,
+   "agudos_5k_dB": -20.0
+  },
   "boss_lake_intro": {
    "tipo": "intro (una vez)",
    "muestras": 607652,
@@ -206,28 +222,28 @@
   },
   "boss_lake_3_in": {
    "tipo": "intro (una vez)",
-   "muestras": 179390,
-   "segundos": 4.0678,
+   "muestras": 169260,
+   "segundos": 3.8381,
    "sr": 44100,
-   "bpm": 118.0,
-   "compas_s": 2.033898,
-   "golpe_muestra": 179390,
-   "LUFS": -12.57,
-   "agudos_5k_dB": -22.1
+   "bpm": 125.024,
+   "compas_s": 1.919634,
+   "golpe_muestra": 169260,
+   "LUFS": -12.45,
+   "agudos_5k_dB": -21.5
   },
   "boss_lake_3": {
    "tipo": "loop",
-   "muestras": 4305356,
-   "segundos": 97.6271,
+   "muestras": 1523760,
+   "segundos": 34.5524,
    "sr": 44100,
-   "bpm": 118.0,
-   "compas_s": 2.033898,
+   "bpm": 125.024,
+   "compas_s": 1.919634,
    "tramos": [
     "c47-c54",
-    "c7-c46"
+    "c37-c46"
    ],
-   "LUFS": -13.18,
-   "agudos_5k_dB": -22.2
+   "LUFS": -11.98,
+   "agudos_5k_dB": -21.3
   },
   "boss_lake_out": {
    "tipo": "outro (una vez)",
@@ -240,99 +256,16 @@
    "LUFS": -16.7,
    "agudos_5k_dB": -19.2
   },
-  "boss_bamboo_intro": {
-   "tipo": "intro (una vez)",
-   "muestras": 53231,
-   "segundos": 1.2071,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "golpe_muestra": 53231,
-   "LUFS": -22.73,
-   "agudos_5k_dB": -15.0
-  },
-  "boss_bamboo": {
-   "tipo": "loop",
-   "muestras": 3112942,
-   "segundos": 70.5883,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "tramos": [
-    "c0-c39"
-   ],
-   "LUFS": -14.0,
-   "agudos_5k_dB": -24.3
-  },
-  "boss_bamboo_2_in": {
-   "tipo": "intro (una vez)",
-   "muestras": 155647,
-   "segundos": 3.5294,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "golpe_muestra": 155647,
-   "LUFS": -12.55,
-   "agudos_5k_dB": -23.0
-  },
-  "boss_bamboo_2": {
-   "tipo": "loop",
-   "muestras": 3190764,
-   "segundos": 72.3529,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "tramos": [
-    "c40-c80"
-   ],
-   "LUFS": -13.84,
-   "agudos_5k_dB": -21.6
-  },
-  "boss_bamboo_3_in": {
-   "tipo": "intro (una vez)",
-   "muestras": 155647,
-   "segundos": 3.5294,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "golpe_muestra": 155647,
-   "LUFS": -14.9,
-   "agudos_5k_dB": -24.0
-  },
-  "boss_bamboo_3": {
-   "tipo": "loop",
-   "muestras": 2490353,
-   "segundos": 56.4706,
-   "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "tramos": [
-    "c24-c39",
-    "c48-c63"
-   ],
-   "LUFS": -13.05,
-   "agudos_5k_dB": -23.0
-  },
-  "boss_bamboo_out": {
+  "boss_lake_out_3": {
    "tipo": "outro (una vez)",
-   "muestras": 132300,
-   "segundos": 3.0,
+   "muestras": 127362,
+   "segundos": 2.888,
    "sr": 44100,
-   "bpm": 136.0,
-   "compas_s": 1.764706,
-   "golpe_s": 0.008,
-   "LUFS": -17.02,
-   "agudos_5k_dB": -20.0
-  },
-  "ending": {
-   "tipo": "tema entero (una vez)",
-   "muestras": 6177093,
-   "segundos": 140.0701,
-   "sr": 44100,
-   "bpm": 80.0,
-   "compas_s": 3.0,
-   "LUFS": -16.0,
-   "agudos_5k_dB": -20.0
+   "bpm": 125.024,
+   "compas_s": 1.919634,
+   "golpe_s": 0.488,
+   "LUFS": -16.63,
+   "agudos_5k_dB": -19.0
   },
   "boss_final_intro": {
    "tipo": "intro (una vez)",
@@ -411,28 +344,28 @@
   },
   "boss_final_4_in": {
    "tipo": "intro (una vez)",
-   "muestras": 190260,
-   "segundos": 4.3143,
+   "muestras": 179585,
+   "segundos": 4.0722,
    "sr": 44100,
-   "bpm": 111.25,
-   "compas_s": 2.157303,
-   "golpe_muestra": 190260,
-   "LUFS": -13.84,
-   "agudos_5k_dB": -25.4
+   "bpm": 117.857,
+   "compas_s": 2.036364,
+   "golpe_muestra": 179585,
+   "LUFS": -12.9,
+   "agudos_5k_dB": -24.2
   },
   "boss_final_4": {
    "tipo": "loop",
-   "muestras": 1522164,
-   "segundos": 34.5162,
+   "muestras": 1436827,
+   "segundos": 32.5811,
    "sr": 44100,
-   "bpm": 111.25,
-   "compas_s": 2.157303,
+   "bpm": 117.857,
+   "compas_s": 2.036364,
    "tramos": [
     "c61-c70",
     "c63-c68"
    ],
-   "LUFS": -11.76,
-   "agudos_5k_dB": -27.5
+   "LUFS": -10.95,
+   "agudos_5k_dB": -26.4
   },
   "boss_final_out": {
    "tipo": "outro (una vez)",
@@ -444,6 +377,112 @@
    "golpe_s": 0.008,
    "LUFS": -18.83,
    "agudos_5k_dB": -25.0
+  },
+  "boss_final_out_4": {
+   "tipo": "outro (una vez)",
+   "muestras": 204281,
+   "segundos": 4.6322,
+   "sr": 44100,
+   "bpm": 117.857,
+   "compas_s": 2.036364,
+   "golpe_s": 0.008,
+   "LUFS": -18.35,
+   "agudos_5k_dB": -24.1
+  },
+  "boss_bamboo_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 53231,
+   "segundos": 1.2071,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_muestra": 53231,
+   "LUFS": -22.73,
+   "agudos_5k_dB": -15.0
+  },
+  "boss_bamboo": {
+   "tipo": "loop",
+   "muestras": 3112942,
+   "segundos": 70.5883,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "tramos": [
+    "c0-c39"
+   ],
+   "LUFS": -14.0,
+   "agudos_5k_dB": -24.3
+  },
+  "boss_bamboo_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 155647,
+   "segundos": 3.5294,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_muestra": 155647,
+   "LUFS": -12.55,
+   "agudos_5k_dB": -23.0
+  },
+  "boss_bamboo_2": {
+   "tipo": "loop",
+   "muestras": 3190764,
+   "segundos": 72.3529,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "tramos": [
+    "c40-c80"
+   ],
+   "LUFS": -13.84,
+   "agudos_5k_dB": -21.6
+  },
+  "boss_bamboo_3_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 146832,
+   "segundos": 3.3295,
+   "sr": 44100,
+   "bpm": 144.095,
+   "compas_s": 1.665565,
+   "golpe_muestra": 146832,
+   "LUFS": -14.81,
+   "agudos_5k_dB": -23.3
+  },
+  "boss_bamboo_3": {
+   "tipo": "loop",
+   "muestras": 2350404,
+   "segundos": 53.2971,
+   "sr": 44100,
+   "bpm": 144.095,
+   "compas_s": 1.665565,
+   "tramos": [
+    "c24-c39",
+    "c48-c63"
+   ],
+   "LUFS": -12.95,
+   "agudos_5k_dB": -22.4
+  },
+  "boss_bamboo_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 132300,
+   "segundos": 3.0,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_s": 0.008,
+   "LUFS": -17.02,
+   "agudos_5k_dB": -20.0
+  },
+  "boss_bamboo_out_3": {
+   "tipo": "outro (una vez)",
+   "muestras": 124868,
+   "segundos": 2.8315,
+   "sr": 44100,
+   "bpm": 144.095,
+   "compas_s": 1.665565,
+   "golpe_s": 0.008,
+   "LUFS": -16.9,
+   "agudos_5k_dB": -19.4
   }
  },
  "finales": {
