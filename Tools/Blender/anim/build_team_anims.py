@@ -150,6 +150,7 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         rep["loop_seam_deg"] = round(seam, 3)
         check(seam <= 1.0, f"{clip.name}: costura del loop {seam:.2f}°")
     wrist_checks(ch, clip, frames, rep)
+    grip_checks(ch, clip, frames, ctrls, rep)
     w = ch.weapon_info
     if "contact" in t:
         a = t["contact"]
@@ -163,7 +164,7 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             if hk.startswith("foot_"):
                 bone, local = ch.side[hk[5:]]["foot"], Vector()
             else:
-                bone, local = ch.side[hk]["hand"], Vector((0.0, ch.rig.length[ch.side[hk]["hand"]], 0.0))
+                bone, local = ch.side[hk]["hand"], Vector((0.0, ch.hand_info[hk]["len"], 0.0))
         tip = canon_track(ch, frames, roots, bone, local)
         # pausa y pico se miden respecto del cuerpo (sin el avance del transform: en una embestida el cuerpo entero
         # vuela, lo que importa es que el arma quede quieta en la pausa y que el golpe sea lo más rápido del clip)
@@ -278,6 +279,94 @@ def wrist_checks(ch, clip, frames, rep):
     rep["solver_jump_deg"] = round(worst, 1)
     check(worst <= 35.0, f"{clip.name}: codo y antebrazo sin saltos de un cuadro al otro ({worst:.0f}° más que la mano, {where})",
           warn=worst <= 55.0)
+
+
+_PALM = {}
+
+
+def palm_centroid(ch, k):
+    """Centro de los vértices que pesan > 0.6 en la mano (espacio local del hueso de la mano, reposo)."""
+    key = (ch.name, k)
+    if key not in _PALM:
+        h = ch.side[k]["hand"]
+        pts = []
+        for o in ch.meshes:
+            if h not in o.vertex_groups:
+                continue
+            gi = o.vertex_groups[h].index
+            pts += [ch.Ai @ (o.matrix_world @ v.co) for v in o.data.vertices if any(g.group == gi and g.weight > 0.6 for g in v.groups)]
+        _PALM[key] = (ch.rig.rest_inv[h] @ (sum(pts, Vector()) / len(pts))) if pts else None
+    return _PALM[key]
+
+
+def weapon_axis(ch, W):
+    """(punto, dirección) del eje del mango en la pose W (espacio de la armadura)."""
+    w = ch.weapon_info
+    B = W[ch.spec["weapon"]["bone"]]
+    if w["kind"] == "club":
+        return B.translation.copy(), B.to_3x3().normalized().col[1]
+    Fk = B.to_3x3().normalized() @ w["KB"].transposed()
+    return B.translation - Fk @ w["hb"], Fk.col[1]
+
+
+def grip_checks(ch, clip, frames, ctrls, rep):
+    """El puño alrededor del mango (TR-1 de la revisión: el de Gorō flotaba 12-20 cm al costado del palo y ningún chequeo
+    lo veía). Se mide como la revisión, sobre la malla: la distancia del centro de la palma al eje del mango en cada cuadro
+    en que la mano agarra del todo, contra la del agarre ideal (el mango por el hueco del puño, team_rig.grip_frame /
+    measure_katana). Falla si se aparta más de 2 cm, o si el hueco del puño mismo queda fuera de la mano (más lejos de la
+    palma que el 60 % del largo de la mano). La diagonal del agarre (la mano girada sobre la normal de su palma por el hueco,
+    team_limbs CLUB_DIAG/KATANA_DIAG) cambia esa distancia: el agarre ideal da el rango que se acepta (más 2 cm)."""
+    import team_limbs as TL
+    w = ch.weapon_info
+    if not w:
+        return
+    out = {}
+    for k in "rl":
+        c = palm_centroid(ch, k)
+        if c is None:
+            continue
+        hi = ch.hand_info[k]
+        h = ch.side[k]["hand"]
+        # el eje del mango en el espacio de la mano con el agarre ideal: pasa por el hueco del puño, en la dirección del
+        # índice al meñique (el martillo) o la de la hoja del modelo (la katana: la mano no es la del arma -> su espejo)
+        if w["kind"] == "club":
+            a = (hi["Rh0"].transposed() @ hi["M0"].col[1]).normalized()
+        else:
+            a = (w["K"].transposed() @ Vector((0.0, 1.0, 0.0))).normalized()
+        d = c - hi["fist"]
+        n = (hi["Rh0"].transposed() @ hi["M0"].col[2]).normalized()
+        diag = TL.CLUB_DIAG if w["kind"] == "club" else TL.KATANA_DIAG
+        refs = []
+        for i in range(-4, 5):
+            ag = Matrix.Rotation(math.radians(diag * i / 4.0), 3, n) @ a
+            refs.append((d - ag * d.dot(ag)).length / ch.u * 100.0)
+        ref = refs[4]
+        if w["kind"] == "katana" and k != w["hand"]:
+            ref = None
+        held = []
+        for f, (W, cc) in enumerate(zip(frames, ctrls)):
+            if w["kind"] == "club":
+                g = cc.get("grip_r") if k == "r" else cc.get("grip_l")
+                full = (1.0 if g is None else g) >= 0.999
+            else:
+                full = k == w["hand"] or (cc.get("grip_l") or 0.0) >= 0.999
+            if not full:
+                continue
+            p, ax = weapon_axis(ch, W)
+            q = W[h] @ c - p
+            held.append((f, (q - ax * q.dot(ax)).length / ch.u * 100.0))
+        if not held:
+            continue
+        lo, hi_ = min(g for _, g in held), max(g for _, g in held)
+        side = "derecha" if k == "r" else "izquierda"
+        out[k] = dict(ref=None if ref is None else round(ref, 1), min=round(lo, 1), max=round(hi_, 1))
+        r0, r1 = (min(refs), max(refs)) if ref is not None else (lo, lo)
+        fw = max(held, key=lambda x: max(r0 - x[1], x[1] - r1))
+        check(r0 - 2.0 <= fw[1] <= r1 + 2.0, f"{clip.name}: el puño {side} alrededor del mango (palma a {fw[1]:.1f} cm del eje en "
+                                              f"f{fw[0]}, agarre {r0:.1f}-{r1:.1f} cm)")
+        if ref is not None:
+            check(ref <= 60.0 * hi["len"] / ch.u, f"{clip.name}: el hueco del puño {side} dentro de la mano ({ref:.1f} cm de la palma)")
+    rep["grip_gap_cm"] = out
 
 
 def prerelease_glide(frames, apex, contact, lunge, speed):

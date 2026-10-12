@@ -286,10 +286,10 @@ class TeamChar:
             n = self.palm_normal(k, h, fdir, lat)
             chi = 1.0 if n.dot(lat.cross(fdir)) > 0 else -1.0
             M0 = Matrix((fdir, lat, n)).transposed()
-            hand_len = R.length[h]
+            hand_len = self.hand_length(k, h)
             curl = self.finger_axes(k, n)
             self.hand_info[k] = dict(Rh0=Rh0, fore_tail_local=fore_tail_local, M0=M0, chi=chi, len=hand_len, curl=curl,
-                                     fist=R.rest_inv[h] @ self.fist_hole(k, h, fdir, n, curl))
+                                     fist=R.rest_inv[h] @ self.fist_hole(k, h, fdir, n, curl, hand_len))
             f = d["foot"]
             self.foot_info[k] = dict(shin_tail_local=R.rest_inv[f] @ self.tail(d["shin"]), Rf0=rot3(R.rest[f]))
         L["sole_z"] = {k: self.Pc(self.head(self.side[k]["foot"])).z for k in "rl"}
@@ -360,7 +360,20 @@ class TeamChar:
             n = fdir.cross(lat)
         return n.normalized()
 
-    def fist_hole(self, k, h, fdir, n, curl):
+    def hand_length(self, k, h):
+        """Largo de la mano: la distancia media de la muñeca a la base de los dedos y del pulgar. No el largo del hueso:
+        el FBX no lo guarda y el importador de Blender lo reconstruye como la distancia media a TODOS los hijos. Con el
+        esqueleto de juego el martillo de Gorō (BaseM) cuelga de su mano derecha: el hueso medía 0.83 en vez de 0.26, el
+        hueco del puño quedaba 20 cm más allá de los dedos y el puño flotaba al costado del mango (lo mismo, apenas, con la
+        Katana hija de la mano del ninja)."""
+        R = self.rig
+        digits = {c[0] for c in self.spec["fingers"][k]} | {self.spec["thumb"][k][0]}
+        kids = [c for c in R.children[h] if c in digits]
+        if not kids:
+            return R.length[h]
+        return sum((R.rest[c].translation - R.rest[h].translation).length for c in kids) / len(kids)
+
+    def fist_hole(self, k, h, fdir, n, curl, hand_len):
         """Centro del hueco del puño cerrado (espacio de la armadura, reposo): el promedio de los nudillos, de las
         articulaciones del medio y de las puntas de los dedos ya cerrados con 'curl', y de la palma bajo los nudillos.
         Ahí va el mango: con un punto fijo a media palma (como antes) el mango quedaba sobre los nudillos."""
@@ -378,9 +391,9 @@ class TeamChar:
             tip = R.rest[b] @ Vector((0.0, R.length[b], 0.0))
             T = M + Q1 @ Q0 @ (tip - R.rest[b].translation)
             pts += [B, M, T]
-        palm = self.head(h) + fdir * (R.length[h] * 0.85)
+        palm = self.head(h) + fdir * (hand_len * 0.85)
         if not pts:
-            return palm + n * (R.length[h] * 0.25)
+            return palm + n * (hand_len * 0.25)
         c = sum(pts, Vector()) / len(pts)
         return (c * 3.0 + palm) / 4.0
 

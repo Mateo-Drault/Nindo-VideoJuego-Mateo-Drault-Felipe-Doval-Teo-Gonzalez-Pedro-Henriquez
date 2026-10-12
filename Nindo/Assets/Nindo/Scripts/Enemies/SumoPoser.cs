@@ -464,7 +464,11 @@ namespace Nindo
             Vector3 target = w > 0.001f ? Vector3.Lerp(animTip, CharPoint(pose, l.side, rt, up, fwd, right, u), w) : animTip;
             // rodilla adelante y bien afuera (cuclillas de sumo)
             Vector3 hint = l.upper.t.position + (fwd * 1.0f + right * (l.side * 0.7f)) * u;
-            Vector3 reach = SolveTwoBone(l.upper.t, l.lower.t, l.lowerLen, animTip, target, hint);
+            // la punta de la que parte el IK es el tobillo de ahora: con el pie FK la cadera que bajó ya se lo llevó (el
+            // del clip, de antes de bajar, torcía la tibia y el pie quedaba hasta 40 cm en el aire en el shiko); con el
+            // control en la raíz el pie no se movió y son el mismo punto
+            Vector3 tip = l.control != null ? animTip : l.end.position;
+            Vector3 reach = SolveTwoBone(l.upper.t, l.lower.t, l.lowerLen, tip, target, hint);
             if (l.control != null) l.control.t.position += reach - l.end.position;
             else l.end.rotation = animRot;
         }
