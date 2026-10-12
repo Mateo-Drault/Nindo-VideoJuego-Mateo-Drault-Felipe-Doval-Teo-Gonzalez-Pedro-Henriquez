@@ -107,9 +107,11 @@ namespace Nindo
             }
             Current = state;
             stateMul = speed;
-            // CrossFade mide el cruce en largos del estado de origen
-            float len = Animator.GetCurrentAnimatorStateInfo(0).length;
-            Animator.CrossFade(h, fade / Mathf.Max(0.05f, len), 0, Mathf.Repeat(phase, 1f));
+            phase = Mathf.Repeat(phase, 1f);
+            // un clip con largo conocido arranca en segundos exactos; el blend tree (su largo depende de la mezcla) en fase,
+            // con el cruce medido como lo mide CrossFade: en largos del estado de origen
+            if (stateLengths.TryGetValue(state, out float l) && l > 0.01f) Animator.CrossFadeInFixedTime(h, fade, 0, phase * l);
+            else Animator.CrossFade(h, fade / Mathf.Max(0.05f, Animator.GetCurrentAnimatorStateInfo(0).length), 0, phase);
         }
 
         /// <summary>Fase (0..1) del ciclo que se está mostrando.</summary>
