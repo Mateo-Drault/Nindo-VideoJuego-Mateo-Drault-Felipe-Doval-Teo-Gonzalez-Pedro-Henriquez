@@ -134,14 +134,17 @@ namespace Nindo
                 radius = 1.0f, height = 3.2f, scale = 1f, maxImbalance = 4, exhaustedTime = 4f, guardTime = 0.6f,
                 poiseHits = 5, hyperArmor = true, knockbackResist = 0.9f, preferredDistance = 4.2f, detectRadius = 30f, loseRadius = 80f,
                 finisherHealth = 0.12f, attackCooldown = new Vector2(0.9f, 1.8f),
+                // el martillo rebota, se le resbala en la mano y cae por su peso (GoroAnims Parried: 16 cuadros); con los
+                // 0.32 s de siempre daba la vuelta por encima en dos cuadros
+                parriedRecoil = 0.5f,
                 animGuard = "Idle", animCounter = "Combo1", animExhausted = "StunSpin", animHit = "Hit",
                 animSpotted = "Spotted", animDeath = "Death", animParried = "Parried", deathClipFalls = true,
             };
             // contacto = activeStart de los clips nuevos (TeamAnims/GoroAnims.fbx): la cabeza del martillo llega en ese
             // cuadro; el golpe sísmico pega al aterrizar del salto, no al despegar
-            var c1 = Hit("Combo1", 22, 0.667f, 0.778f, range: 3.4f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, telegraph: 0.2f, kb: 1.8f, apex: 0.583f);
-            var c2 = Hit("Combo2", 24, 0.583f, 0.667f, range: 3.4f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, kb: 1.8f, apex: 0.5f);
-            var c3 = Hit("Combo3", 28, 0.633f, 0.733f, range: 3.6f, arc: 160, kind: AttackKind.Heavy, lunge: 1.0f, kb: 2.4f, apex: 0.533f);
+            var c1 = Hit("Combo1", 22, 0.5714f, 0.6667f, range: 3.4f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, telegraph: 0.2f, kb: 1.8f, apex: 0.5f);
+            var c2 = Hit("Combo2", 24, 0.5f, 0.5714f, range: 3.4f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, kb: 1.8f, apex: 0.4286f);
+            var c3 = Hit("Combo3", 28, 0.5f, 0.5789f, range: 3.6f, arc: 160, kind: AttackKind.Heavy, lunge: 1.0f, kb: 2.4f, apex: 0.4211f);
             var slam = Hit("Heavy", 38, 0.667f, 0.7f, range: 3.4f, arc: 360, kind: AttackKind.Unblockable, lunge: 0.5f, telegraph: 0.3f, kb: 3f, apex: 0.533f);
             slam.special = "slam"; slam.specialParam = 4.6f;
             var spin = Hit("Spin", 20, 0.288f, 0.848f, range: 2.8f, arc: 360, kind: AttackKind.Unblockable, lunge: 0f, telegraph: 0.15f, kb: 2.5f, apex: 0.242f);
