@@ -126,6 +126,10 @@ Shader "Nindo/UI Map"
                 half4 m1l = tex2D(_MistTex, uv * _MistK.x + drift * _MistK.x + float2(-1.15, 1.15) * _MistK.x / _SheetM.xy);   // hacia la luna
                 half4 m2 = tex2D(_MistTex, uv * _MistK.y - drift * _MistK.y + float2(0, 0.37));
                 half4 m3 = tex2D(_MistTex, uv + drift);
+                // el papel no se mueve con la niebla: la fibra de la tierra descubierta y el borde rasgado se leen
+                // quietos (el juego está en pausa y el mapa no se mueve; la fibra corriéndose parecía una película sucia)
+                half4 p1 = tex2D(_MistTex, uv * _MistK.x);
+                half4 p3 = tex2D(_MistTex, uv);
 
                 // dónde hay niebla: la grilla deformada y con el borde que se abre a manchas al descubrir
                 float2 fuv = uv + (float2(m1.a, m2.a) - 0.5) * (6.0 / _SheetM.xy);
@@ -137,7 +141,7 @@ Shader "Nindo/UI Map"
 
                 // la lámina: hasta 5 mips más borrosa donde la niebla empieza a tapar, y con la fibra del papel
                 half3 sheet = (tex2Dbias(_MainTex, float4(uv, 0, F * 5.0)) + _TextureSampleAdd).rgb;
-                sheet *= 0.92 + 0.10 * m3.r + 0.06 * m1.r;
+                sheet *= 0.92 + 0.10 * p3.r + 0.06 * p1.r;
 
                 // la niebla: nubes de tinta con el lomo de la luna, más cargada contra el borde del papel, y las kasumi
                 float bill = saturate(m1.g * 0.6 + m2.g * 0.5 - 0.1);
@@ -157,7 +161,7 @@ Shader "Nindo/UI Map"
                 col = lerp(col, _Tide.rgb, tide * _Tide.a);
 
                 // borde rasgado de arriba y abajo
-                float dk = 3.2 + (m3.a - 0.5) * 2.6 + (m1.r - 0.5) * 0.5;
+                float dk = 3.2 + (p3.a - 0.5) * 2.6 + (p1.r - 0.5) * 0.5;
                 float aa = max(fwidth(ey) * 1.2, 1e-4);
                 half alpha = smoothstep(dk - aa, dk + aa, ey) * i.color.a;
 

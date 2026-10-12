@@ -209,6 +209,8 @@ def composite_uv(U, V, levels, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0, 
     m1l = bilinear(mist_up, U * k1 + drift * k1 - 1.15 * k1 / sheet_m[0], V * k1 + 1.15 * k1 / sheet_m[1], True)   # hacia la luna (noroeste)
     m2 = bilinear(mist_up, U * k2 - drift * k2, V * k2 + 0.37, True)
     m3 = bilinear(mist_up, U + drift, V, True)
+    p1 = bilinear(mist_up, U * k1, V * k1, True)                 # el papel, quieto (no se corre con la niebla)
+    p3 = bilinear(mist_up, U, V, True)
     wu = U + (m1[..., 3] - 0.5) * (6.0 / sheet_m[0])
     wv = V + (m2[..., 3] - 0.5) * (6.0 / sheet_m[1])
     fnow = bilinear(fog_now, wu, wv, False)
@@ -220,7 +222,7 @@ def composite_uv(U, V, levels, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0, 
         fog = fnow
     F = ss(0.3, 0.7, fog + (m1[..., 0] - 0.5) * 0.12 + (m1[..., 1] - 0.5) * 0.30)
     sheet = sample_levels(levels, np.clip(U, 0, 1), np.clip(V, 0, 1), F * MIP_BIAS)
-    sheet = sheet * (0.92 + 0.10 * m3[..., 0:1] + 0.06 * m1[..., 0:1])
+    sheet = sheet * (0.92 + 0.10 * p3[..., 0:1] + 0.06 * p1[..., 0:1])
     bill = np.clip(m1[..., 1] * 0.6 + m2[..., 1] * 0.5 - 0.1, 0, 1)
     fog_col = FOG_LIGHT + (FOG_DARK - FOG_LIGHT) * bill[..., None]
     ey = np.minimum(V, 1 - V) * sheet_m[1]
@@ -234,7 +236,7 @@ def composite_uv(U, V, levels, fog_now, mist, t=0.0, fog_prev=None, reveal=1.0, 
     col = sheet + (fog_col - sheet) * F[..., None]
     col = col + (TIDE[0] - col) * (tide * TIDE[1])[..., None]
     # borde rasgado de arriba y abajo (los costados van contra las varillas)
-    dk = 3.2 + (m3[..., 3] - 0.5) * 2.6 + (m1[..., 0] - 0.5) * 0.5
+    dk = 3.2 + (p3[..., 3] - 0.5) * 2.6 + (p1[..., 0] - 0.5) * 0.5
     aa = max(1e-4, (dpx_m if dpx_m is not None else sheet_m[1] / U.shape[0]) * 1.2)
     alpha = ss(dk - aa, dk + aa, ey) * ((U >= 0) & (U <= 1) & (V >= 0) & (V <= 1))
     return np.clip(col, 0, 1), alpha
