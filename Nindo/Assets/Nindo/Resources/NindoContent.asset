@@ -1053,6 +1053,24 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: map_reveal
+    clips:
+    - {fileID: 8300000, guid: 2b4fbe97ce0f21a4f3bbd1df54480a2c, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 0
+  - key: map_roll
+    clips:
+    - {fileID: 8300000, guid: f8cf41f910f2e4f6c4611169118be0d7, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 0
+  - key: map_unroll
+    clips:
+    - {fileID: 8300000, guid: ddbd9059e3622569dbc808332b3911b4, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 0
   - key: parry
     clips:
     - {fileID: 8300000, guid: 3996a0f0dbc6cce48be0e5ec2f1e88a3, type: 3}

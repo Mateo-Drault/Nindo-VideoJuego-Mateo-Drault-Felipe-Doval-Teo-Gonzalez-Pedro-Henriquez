@@ -34,6 +34,12 @@ Uso:
   python Tools/UI/build_world_map.py --props <scratch>/map_props.json [--preview CARPETA [--ppm 3]] [--no-assets] [--reuse-sheet]
 Con --preview deja la lámina, la niebla en tres estados de exploración y la maqueta de la pantalla del mapa en 16:9,
 21:9 y 4:3 (la niebla se compone con la MISMA cuenta que el shader: Nindo/UI Map).
+
+Cuándo rehacerla: la lámina es una foto del mundo. Cualquier cambio de Tools/Blender/world (world_plan, build_world.py,
+los props y sus manifest_*.json: un portón nuevo, un incienso, un sello en la muralla) no aparece en el mapa hasta
+volver a correr los dos pasos de arriba y commitear WorldMap.jpg / WorldMap.json (los .meta y sus GUID no cambian).
+Si el encuadre de la lámina (MAP_BOUNDS) o la celda cambian, las nieblas guardadas se descartan solas (prefijo de la
+grilla) y esas partidas arrancan como las de antes del mapa.
 """
 import argparse
 import base64

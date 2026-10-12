@@ -427,6 +427,49 @@ def _ui_close(i):
     return K("close_001", 0.8)
 
 
+# ---------------------------------------------------------------- mapa del mundo (UI/UIMap.cs)
+def _paper_crinkle(dur, seed, density, lo=1800, hi=7500):
+    """El papel que se dobla: chasquidos sueltos y finos (densidad por segundo a lo largo de 'dur', una curva)."""
+    r = rng(seed)
+    n = secs(dur)
+    p = np.interp(np.arange(n) / SR, np.linspace(0, dur, len(density)), density) / SR
+    clicks = (r.random(n) < p) * r.uniform(0.3, 1.0, n) * np.sign(r.standard_normal(n))
+    return filt(clicks, lo, hi)
+
+
+@sfx("map_unroll")
+def _map_unroll(i):
+    """El pergamino que se abre (0.42 s entre las varillas): el roce del papel que se desliza, que sube y se apaga,
+    con el crujido del washi y, al final, el toc de la varilla de laca que llega a su lugar."""
+    d = 0.62
+    slide = sweep(noise(d, 900), 900, 3800, q=1.1) * env_points(d, [(0, 0), (0.05, 0.7), (0.3, 1.0), (0.46, 0.35), (d, 0)]) ** 1.3
+    crinkle = _paper_crinkle(d, 901, [40, 260, 380, 120, 0])
+    tok = partials(520, [1, 2.76, 5.4], [1, 0.4, 0.15], [0.06, 0.035, 0.02], 0.2, seed=902) * 0.9
+    knock = thump(240, 160, 0.12, 0.03, seed=903)
+    return reverb(mix((slide, 0, 0.55), (crinkle, 0, 0.9), (tok, 0.43, 0.45), (knock, 0.43, 0.35)), 0.16, 0.9, 0.3)
+
+
+@sfx("map_roll")
+def _map_roll(i):
+    """El pergamino que se enrolla (0.24 s): más corto y hacia abajo, y el toc de las dos varillas que se juntan."""
+    d = 0.4
+    slide = sweep(noise(d, 910), 3200, 1000, q=1.1) * env_points(d, [(0, 0), (0.03, 1.0), (0.2, 0.5), (d, 0)]) ** 1.3
+    crinkle = _paper_crinkle(d, 911, [300, 200, 40, 0])
+    tok = partials(470, [1, 2.76, 5.4], [1, 0.4, 0.15], [0.05, 0.03, 0.02], 0.18, seed=912) * 0.9
+    return reverb(mix((slide, 0, 0.55), (crinkle, 0, 0.8), (tok, 0.24, 0.5)), 0.14, 0.8, 0.3)
+
+
+@sfx("map_reveal")
+def _map_reveal(i):
+    """La niebla de tinta que se abre sobre lo recién descubierto (0.9 s): un soplo que se hincha y se va, y dos notas
+    de cristal bajitas (re y la, las del título de zona) muy atrás."""
+    d = 1.6
+    breath = filt(noise(d, 920), 250, 1800) * env_points(d, [(0, 0), (0.45, 1.0), (1.0, 0.4), (d, 0)]) ** 1.5
+    a = partials(1174.7, [1, 2.0, 3.01], [1, 0.3, 0.1], [0.9, 0.4, 0.25], 1.4, seed=921)
+    b = partials(1760, [1, 2.0], [1, 0.25], [0.8, 0.35], 1.2, seed=922)
+    return reverb(mix((breath, 0, 0.5), (a, 0.18, 0.16), (b, 0.38, 0.12)), 0.4, 2.0, 0.7)
+
+
 @sfx("ui_start")
 def _ui_start(i):
     notes = [293.7, 440, 587.3]
@@ -594,6 +637,8 @@ def _temple_bell(i):
 PEAK = {"ui_move": -10, "ui_open": -7, "ui_close": -7, "dialogue": -12, "denied": -8, "lock": -8,
         "step": -4, "step_snow": -4, "step_wood": -4, "step_stone": -4, "parry_ready": -6, "area_title": -4,
         "parry_whiff": -6, "brazier_crackle": -8, "brazier_out": -3}
+# el pergamino del mapa: papel, por debajo de los clics de los menús
+PEAK.update({"map_unroll": -9, "map_roll": -10, "map_reveal": -13})
 
 
 # ============================================================================ CASCADA KOHAN
