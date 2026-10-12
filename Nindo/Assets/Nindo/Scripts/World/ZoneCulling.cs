@@ -7,15 +7,16 @@ namespace Nindo
     /// <summary>
     /// Activación por zonas del mundo (pedido 17). Antes había FBX por zona, static batching, el frustum culling de Unity,
     /// la decoración fusionada por chunk de 60 m, LightPool (10 luces a menos de 45 m), far clip 400 y la cascada que se
-    /// apaga a 110 m: nada se apagaba por zona. Unity no dibuja lo que queda fuera de cuadro y en el mapa de sombras ya
-    /// descarta lo que no puede sombrear el cuadro (el frustum extruido hacia la luna hasta la distancia de sombras), pero
-    /// probaba los ~2000 renderers del mapa en cada cull (la cámara y cada cascada), su extrusión no tiene fin (un prop
-    /// cuya sombra muere en la ladera de al lado se seguía dibujando en las dos cascadas: ~20 % de los casters, simulado
-    /// sobre el mapa con URP Alta) y cada enemigo del mapa seguía con su IA y su Animator aunque estuviera a 300 m.
+    /// apaga a 110 m. Los Animators ya usaban CullUpdateTransforms, las pieles no se actualizaban fuera de cuadro y los
+    /// resortes y el poser del sumo ya se salteaban sin verse. Nada se apagaba por zona: Unity probaba los ~2000
+    /// renderers del mapa en cada cull (la cámara y cada cascada) y su extrusión de sombras hacia la luna no tiene fin (un
+    /// prop cuya sombra muere en la ladera de al lado se seguía dibujando en el mapa de sombras: simulado sobre el mapa,
+    /// ~20 % de los casters con la calidad Alta, la de serie), y el Update de cada enemigo seguía corriendo aunque
+    /// estuviera a 300 m. En la pasada principal no se ahorra ningún draw: lo que esto apaga, Unity ya no lo dibujaba.
     ///
     /// Corre en cada frame DESPUÉS de que la cámara se movió (orden 10050; CameraDirector es 500) y prueba contra el
     /// frustum de esa misma cámara, sea la de juego, un plano de presentación, la grúa de la cascada o un plano al cielo
-    /// (y contra el de cualquier otra cámara prendida que dibuje el mundo):
+    /// (y contra el de cualquier otra cámara prendida que dibuje el mundo y, en el editor, el de la vista Scene):
     ///  * Renderers del mundo (props del lote estático, terreno, decoración, santuarios, portales, puertas, cuerdas, botes,
     ///    luciérnagas y humo) en celdas de 32 m. La caja de cada celda (y después la de cada renderer de una celda que
     ///    pasó) se barre a lo largo de la luz de la luna hasta el piso más bajo de su vecindario: lo que está fuera de
@@ -23,13 +24,15 @@ namespace Nindo
     ///    'enabled' ni el GameObject (no pisa a quien los prende o apaga), no rompe el static batching ni los colliders.
     ///    Prender es en el mismo frame en que algo entra a cuadro, así que no hay pop-in posible ni con un corte de
     ///    cámara, una cinemática o un teletransporte; apagar espera 0.35 s (sin parpadeo en el borde del cuadro).
-    ///  * Enemigos y jefes del mundo: a más de 55 m de Kaito, fuera de cuadro (con su sombra) y quietos en su puesto
-    ///    (Enemy.CanSleep) se duermen (Enemy.SetAsleep): sin dibujarse, Animator cortado del todo y, los comunes, sin
-    ///    Update. Se despiertan a menos de 45 m, al entrar a cuadro o apenas dejan de cumplir CanSleep (un Alert del
-    ///    encuentro o del guion). Mientras pelea un jefe no se duerme a nadie nuevo.
+    ///  * Partículas del mundo en loop (luciérnagas, humo): al apagarse su renderer se pausan a mano (Pause) y siguen al
+    ///    volver; su caja sale de lo que llegan a moverse según su propio sistema (velocidad, ruido, gravedad, vida).
+    ///  * Enemigos y jefes del mundo, por encuentro: cuando todos los de un campamento están quietos en su puesto
+    ///    (Enemy.CanSleep), a más de 55 m de Kaito y fuera de cuadro (con su sombra) se duermen juntos (Enemy.SetAsleep):
+    ///    sin dibujarse y, los comunes, sin Update; el reloj del Animator sigue (los idles de a dos no se desfasan). Se
+    ///    despiertan todos juntos apenas uno queda a menos de 45 m, entra a cuadro o deja de cumplir CanSleep (un Alert
+    ///    del encuentro o del guion, el veto de quien lo maneja). Mientras pelea un jefe no se duerme a nadie nuevo.
     ///  * Las luces no se tocan: URP descarta solo las que no tocan el frustum y LightPool reparte las de los faroles
-    ///    (simulado sobre el mapa: con su densidad nunca deja apagada una luz que se ve). Las partículas en loop que dejan
-    ///    de dibujarse se pausan solas (cullingMode Automatic de Unity).
+    ///    (simulado sobre el mapa: con su densidad nunca deja apagada una luz que se ve).
     /// Medición y depuración en ZoneCulling.Debug.cs (Stats, ShowHud, Benchmark, CheckFrame).
     /// </summary>
     [DefaultExecutionOrder(10050)]
@@ -54,7 +57,7 @@ namespace Nindo
         static bool on = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Instance = null; on = true; hudWanted = false; }
+        static void ResetStatics() { Instance = null; on = true; hudWanted = false; IncludeSceneView = true; }
 
         /// <summary>Lado de las celdas (m). Simulado sobre el mapa: ~220 celdas y ~390 pruebas por frame; con 24 y 16 m el
         /// resultado por renderer es el mismo pero hay más celdas que probar (420 y 560).</summary>
@@ -80,6 +83,9 @@ namespace Nindo
             public Vector3 min, max;
             public bool shadows, on;
             public float seen;
+            /// <summary>Partículas en loop de este renderer (null si no es eso) y si las pausó ZoneCulling.</summary>
+            public ParticleSystem ps;
+            public bool paused;
         }
 
         struct Cell
@@ -113,6 +119,8 @@ namespace Nindo
         Item[] items;
         Cell[] cells;
         readonly List<Sleeper> sleepers = new List<Sleeper>();
+        /// <summary>Los miembros de cada encuentro (y cada jefe solo): se duermen y se despiertan juntos.</summary>
+        readonly List<Sleeper[]> groups = new List<Sleeper[]>();
         readonly Plane[] planes = new Plane[6];
         readonly FPlane[] fp = new FPlane[6 * MaxCameras];
         Camera[] camBuf = new Camera[8];
@@ -122,7 +130,7 @@ namespace Nindo
         int floorNx, floorNz;
         float lightDown, lightFlat;
         bool allShown = true;
-        int litRenderers, litCasters, totalRenderers, totalCasters, litCells, awake;
+        int litRenderers, litCasters, totalRenderers, totalCasters, totalParticles, litCells, awake;
         float costMs;
 
         // ================================================================== armado
@@ -157,9 +165,19 @@ namespace Nindo
             }
             BuildFloor(staticRoot);
             BuildCells(found);
+            var group = new List<Sleeper>();
             foreach (var enc in encounters)
-                if (enc != null) foreach (var m in enc.Members) AddSleeper(m);
-            foreach (var a in arenas) if (a != null) AddSleeper(a.Boss);
+            {
+                if (enc == null) continue;
+                group.Clear();
+                foreach (var m in enc.Members) { var s = AddSleeper(m); if (s != null) group.Add(s); }
+                if (group.Count > 0) groups.Add(group.ToArray());
+            }
+            foreach (var a in arenas)
+            {
+                var s = a != null ? AddSleeper(a.Boss) : null;
+                if (s != null) groups.Add(new[] { s });
+            }
             Debug.Log($"[Nindo] ZoneCulling: {totalRenderers} renderers en {cells.Length} celdas, {sleepers.Count} enemigos.");
             if (huge > 0) Debug.LogWarning($"[Nindo] ZoneCulling: {huge} renderers con bounds de más de {HugeBounds} m (¿el de la malla combinada del static batching?): quedan siempre prendidos.");
         }
@@ -193,23 +211,65 @@ namespace Nindo
             if (b.size.x > HugeBounds || b.size.z > HugeBounds) huge++;
             b.Expand(2f * (Margin + pad));
             bool shadows = r.shadowCastingMode != ShadowCastingMode.Off;
-            list.Add(new Item { r = r, min = b.min, max = b.max, shadows = shadows, on = true });
+            var ps = r is ParticleSystemRenderer ? r.GetComponent<ParticleSystem>() : null;
+            // uno de una sola vez se termina solo: solo se pausan los que siguen para siempre
+            if (ps != null && !ps.main.loop) ps = null;
+            if (ps != null) totalParticles++;
+            list.Add(new Item { r = r, min = b.min, max = b.max, shadows = shadows, on = true, ps = ps });
             worldMask |= 1 << r.gameObject.layer;
             totalRenderers++;
             if (shadows) totalCasters++;
         }
 
-        /// <summary>Partículas: el bounds del renderer recién creado puede estar vacío; se arma con la forma del emisor y
-        /// lo que llegan a moverse (luciérnagas con ruido, humo que sube ~5 m).</summary>
+        /// <summary>
+        /// Partículas: el bounds del renderer recién creado puede estar vacío y el que da Unity después solo abarca lo que
+        /// ya se emitió. Se arma con la forma del emisor más lo máximo que una partícula llega a alejarse en toda su vida
+        /// según su propio sistema: velocidad inicial, ruido (actúa como velocidad: strength m/s por la parte que va a la
+        /// posición), gravedad (el humo sube con gravedad negativa) y tamaño. Las luciérnagas (ruido 0.6, hasta 8 s)
+        /// llegan a ~7 m del borde de su caja.
+        /// </summary>
         static Bounds ParticleBounds(ParticleSystem ps)
         {
             var t = ps.transform;
+            var m = ps.main;
             var sh = ps.shape;
             Vector3 s = sh.enabled && sh.shapeType == ParticleSystemShapeType.Box ? Vector3.Scale(sh.scale, t.lossyScale) : Vector3.zero;
-            float h = Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.z)) * 0.5f + 3f, v = Mathf.Abs(s.y) * 0.5f;
+            float life = CurveMax(m.startLifetime);
+            float reach = CurveMax(m.startSpeed) * life;
+            var n = ps.noise;
+            if (n.enabled)
+            {
+                float st = n.separateAxes ? Mathf.Max(CurveMax(n.strengthX), Mathf.Max(CurveMax(n.strengthY), CurveMax(n.strengthZ))) : CurveMax(n.strength);
+                reach += st * CurveMax(n.positionAmount) * life;
+            }
+            var sol = ps.sizeOverLifetime;
+            reach += CurveMax(m.startSize) * (sol.enabled ? Mathf.Max(1f, CurveMax(sol.size)) : 1f);
+            // con gravedad positiva caen (la caja baja), con negativa suben (el humo)
+            float g = m.gravityModifier.mode == ParticleSystemCurveMode.Constant ? m.gravityModifier.constant : CurveMax(m.gravityModifier);
+            float fall = g * Physics.gravity.magnitude * 0.5f * life * life;
+            float h = Mathf.Max(Mathf.Abs(s.x), Mathf.Abs(s.z)) * 0.5f + reach, v = Mathf.Abs(s.y) * 0.5f + reach;
             var b = new Bounds();
-            b.SetMinMax(t.position - new Vector3(h, v + 1.5f, h), t.position + new Vector3(h, v + 6f, h));
+            b.SetMinMax(t.position - new Vector3(h, v + Mathf.Max(0f, fall), h), t.position + new Vector3(h, v + Mathf.Max(0f, -fall), h));
             return b;
+        }
+
+        /// <summary>El valor más grande (en módulo) que puede dar una curva de partículas.</summary>
+        static float CurveMax(ParticleSystem.MinMaxCurve c)
+        {
+            switch (c.mode)
+            {
+                case ParticleSystemCurveMode.Constant: return Mathf.Abs(c.constant);
+                case ParticleSystemCurveMode.TwoConstants: return Mathf.Max(Mathf.Abs(c.constantMin), Mathf.Abs(c.constantMax));
+                case ParticleSystemCurveMode.Curve: return Mathf.Abs(c.curveMultiplier) * KeyMax(c.curve);
+                default: return Mathf.Abs(c.curveMultiplier) * Mathf.Max(KeyMax(c.curveMin), KeyMax(c.curveMax));
+            }
+        }
+
+        static float KeyMax(AnimationCurve c)
+        {
+            float m = 0f;
+            if (c != null) foreach (var k in c.keys) m = Mathf.Max(m, Mathf.Abs(k.value));
+            return m;
         }
 
         /// <summary>Bounds de un renderer apagado (la cuerda ya quitada, el portal sin desbloquear): el de Unity da vacío.</summary>
@@ -331,13 +391,15 @@ namespace Nindo
             litRenderers = totalRenderers; litCasters = totalCasters;
         }
 
-        void AddSleeper(Enemy e)
+        Sleeper AddSleeper(Enemy e)
         {
-            if (e == null) return;
+            if (e == null) return null;
             // los jefes son largos (el koi mide 7.5 m) o levantan el arma por encima de su altura
             float extra = e is Boss ? 6f : 1.5f;
-            sleepers.Add(new Sleeper { e = e, pad = e.Radius + extra, height = e.config.height * Mathf.Max(0.5f, e.config.scale) + extra, seen = Time.unscaledTime });
+            var s = new Sleeper { e = e, pad = e.Radius + extra, height = e.config.height * Mathf.Max(0.5f, e.config.scale) + extra, seen = Time.unscaledTime };
+            sleepers.Add(s);
             foreach (var r in e.GetComponentsInChildren<Renderer>(true)) worldMask |= 1 << r.gameObject.layer;
+            return s;
         }
 
         // ================================================================== cada frame
@@ -396,8 +458,29 @@ namespace Nindo
                 if (camCount == MaxCameras) { for (int j = i + 1; j < n; j++) camBuf[j] = null; return false; }
                 AddCamera(c);
             }
+#if UNITY_EDITOR
+            // la vista Scene es una cámara apagada que el editor dibuja a mano: sin esto, en Play se vería solo lo que
+            // mira la cámara de juego. Su pose es la del último repintado (si se la mueve, se pone al día al frame siguiente)
+            if (IncludeSceneView)
+            {
+                var views = UnityEditor.SceneView.sceneViews;
+                for (int i = 0; i < views.Count; i++)
+                {
+                    var c = views[i] is UnityEditor.SceneView sv ? sv.camera : null;
+                    if (c == null) continue;
+                    if (camCount == MaxCameras) return false;
+                    AddCamera(c);
+                }
+            }
+#endif
             return true;
         }
+
+        /// <summary>
+        /// En el editor, también se deja prendido lo que mira cada vista Scene (Felipe revisa el mapa ahí mientras juega).
+        /// Benchmark y CheckFrame lo apagan mientras miden, para que cuente solo la cámara de juego.
+        /// </summary>
+        public static bool IncludeSceneView = true;
 
         /// <summary>Planos del frustum orientados hacia adentro (se verifica con un punto delante de la cámara), con su
         /// producto con la luz para el barrido de sombra.</summary>
@@ -474,6 +557,11 @@ namespace Nindo
             if (it.r != null) it.r.forceRenderingOff = !on;
             litRenderers += k;
             if (it.shadows) litCasters += k;
+            // las partículas escondidas se pausan a mano (no se depende de si el culling propio de Unity cuenta un
+            // forceRenderingOff como "no se ve"). Solo se reanuda lo que pausó esto: si alguien las paró, quedan paradas
+            if (it.ps == null) return;
+            if (!on) { if (it.ps.isPlaying) { it.ps.Pause(true); it.paused = true; } }
+            else if (it.paused) { it.paused = false; if (it.ps.isPaused) it.ps.Play(true); }
         }
 
         void TickSleepers(float now)
@@ -481,27 +569,44 @@ namespace Nindo
             Vector3 k = Game.Player.transform.position;
             bool bossFight = Game.Combat != null && Game.Combat.ActiveBoss != null;
             awake = 0;
-            for (int i = 0; i < sleepers.Count; i++)
+            // por campamento: si cada uno decidiera solo, los compañeros quedarían quietos y volverían en momentos
+            // distintos (sus Update, sus timers de idle). Juntos: duermen cuando todos pueden y despiertan si uno debe
+            for (int g = 0; g < groups.Count; g++)
             {
-                var s = sleepers[i];
-                var e = s.e;
-                if (e == null) continue;
-                // muerto y apagado, o jefe ya vencido: no se toca (y si quedó dormido, se lo despierta)
-                if (!e.gameObject.activeInHierarchy) { if (e.Asleep) Wake(s); continue; }
-                Vector3 p = e.transform.position;
-                float dx = p.x - k.x, dz = p.z - k.z, r = e.Asleep ? WakeRadius : SleepRadius;
-                bool want = dx * dx + dz * dz < r * r;
-                if (!want)
+                var members = groups[g];
+                bool wake = false, ready = !bossFight;
+                for (int i = 0; i < members.Length; i++)
                 {
-                    Vector3 min = new Vector3(p.x - s.pad, p.y - 0.5f, p.z - s.pad), max = new Vector3(p.x + s.pad, p.y + s.height, p.z + s.pad);
-                    if ((p - s.floorAt).sqrMagnitude > 4f) { s.floorAt = p; s.floor = FloorAround(min, max); }
-                    want = Visible(min, max, Sweep(max.y, s.floor));
+                    var s = members[i];
+                    var e = s.e;
+                    if (e == null) continue;
+                    // muerto y apagado, o jefe ya vencido: no cuenta (y si quedó dormido, se lo despierta)
+                    if (!e.gameObject.activeInHierarchy) { if (e.Asleep) Wake(s); continue; }
+                    bool want = Needed(s, k), can = e.CanSleep;
+                    if (want) s.seen = now;
+                    if (want || (e.Asleep && !can)) wake = true;
+                    if (!can || now - s.seen <= SleepDelay) ready = false;
                 }
-                if (want) s.seen = now;
-                if (e.Asleep) { if (want || !e.CanSleep) Wake(s); }
-                else if (!bossFight && now - s.seen > SleepDelay && e.CanSleep) Sleep(s);
-                if (!e.Asleep) awake++;
+                for (int i = 0; i < members.Length; i++)
+                {
+                    var s = members[i];
+                    if (s.e == null || !s.e.gameObject.activeInHierarchy) continue;
+                    if (wake) { if (s.e.Asleep) Wake(s); }
+                    else if (ready && !s.e.Asleep) Sleep(s);
+                    if (!s.e.Asleep) awake++;
+                }
             }
+        }
+
+        /// <summary>¿Hace falta despierto? Cerca de Kaito (con histéresis) o su caja, con la sombra, en cuadro.</summary>
+        bool Needed(Sleeper s, Vector3 kaito)
+        {
+            Vector3 p = s.e.transform.position;
+            float dx = p.x - kaito.x, dz = p.z - kaito.z, r = s.e.Asleep ? WakeRadius : SleepRadius;
+            if (dx * dx + dz * dz < r * r) return true;
+            Vector3 min = new Vector3(p.x - s.pad, p.y - 0.5f, p.z - s.pad), max = new Vector3(p.x + s.pad, p.y + s.height, p.z + s.pad);
+            if ((p - s.floorAt).sqrMagnitude > 4f) { s.floorAt = p; s.floor = FloorAround(min, max); }
+            return Visible(min, max, Sweep(max.y, s.floor));
         }
 
         void Sleep(Sleeper s)

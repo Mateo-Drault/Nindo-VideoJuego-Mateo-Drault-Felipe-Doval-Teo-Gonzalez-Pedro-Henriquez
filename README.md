@@ -251,12 +251,13 @@ Después se hace *static batching*, se construye el NavMesh en runtime y se repa
 luces puntuales con un pool (solo se encienden las más cercanas).
 
 Al final, `World/ZoneCulling` deja de dibujar lo que ninguna cámara prendida ve ni le tira sombra en ese frame
-(celdas de 32 m, `forceRenderingOff`: no toca colliders ni el batching) y duerme a los enemigos
-quietos a más de 55 m y fuera de cuadro. Para depurar: `Nindo.ZoneCulling.ShowHud = true`,
-`Debug.Log(Nindo.ZoneCulling.Stats)`, `Nindo.ZoneCulling.Benchmark(12f)` (con y sin, en el mismo lugar),
+(celdas de 32 m, `forceRenderingOff`: no toca colliders ni el batching), pausa las partículas del mundo que
+quedan escondidas y duerme por campamento a los enemigos quietos a más de 55 m y fuera de cuadro (un componente
+que maneje a un enemigo lo veta con `Enemy.SleepVeto`). En el editor también cuenta lo que mira la vista Scene.
+Para depurar: `Nindo.ZoneCulling.ShowHud = true`, `Debug.Log(Nindo.ZoneCulling.Stats)`,
+`Nindo.ZoneCulling.Benchmark(12f)` (con y sin, en el mismo lugar, sin tope de fps ni vsync mientras mide),
 `Nindo.ZoneCulling.CheckFrame(carpeta)` (el mismo cuadro dibujado dos veces en el mismo frame, con y sin:
-tiene que dar 0 píxeles distintos) y `Nindo.ZoneCulling.On = false` para verlo todo como antes (también en
-la vista Scene).
+tiene que dar 0 píxeles distintos) y `Nindo.ZoneCulling.On = false` para verlo todo como antes.
 
 ---
 

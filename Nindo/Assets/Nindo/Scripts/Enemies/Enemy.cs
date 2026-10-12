@@ -225,7 +225,8 @@ namespace Nindo
             SetState(EnemyState.Idle);
             anim.Play(config.animLocomotion, 0f);
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = true;
-            Game.Combat?.Register(this);
+            // dormido (ZoneCulling) queda fuera de CombatDirector hasta despertar: OnEnable lo registra al volver
+            if (!Asleep) Game.Combat?.Register(this);
         }
 
         void Warp(Vector3 pos, Quaternion rot)
@@ -1278,23 +1279,31 @@ namespace Nindo
         public void ScriptedStop() => Stop();
 
         // ---------------------------------------------------------------- sueño lejos de Kaito (World/ZoneCulling)
-        /// <summary>Lo durmió ZoneCulling: lejos de Kaito y fuera de cuadro, sin dibujarse ni animarse.</summary>
+        /// <summary>Lo durmió ZoneCulling: lejos de Kaito y fuera de cuadro, sin dibujarse ni correr su Update.</summary>
         public bool Asleep { get; private set; }
         AnimatorCullingMode awakeCulling;
 
         /// <summary>
-        /// ¿Se puede dormir? Solo quieto en su puesto: vivo y ya arrancado (Start le dio la vida y el lugar al que vuelve
-        /// si se reinicia el encuentro), sin aggro (un jefe en pelea lo tiene) ni guion, y sin moverse: si volvía a su
-        /// lugar después de perder a Kaito, primero termina de llegar.
+        /// Veto para un componente aparte que maneja a este enemigo (EnemyAmbient, un guion): mientras devuelva true no
+        /// se lo duerme y, si ya dormía, se lo despierta en el mismo frame. Un solo dueño: se asigna, no se suma.
         /// </summary>
-        public virtual bool CanSleep => State == EnemyState.Idle && !IsAggro && Health > 0f && knock.sqrMagnitude < 0.0001f
-                                        && (agent == null || !agent.enabled || agent.velocity.sqrMagnitude < 0.01f);
+        public System.Func<bool> SleepVeto;
 
         /// <summary>
-        /// Dormido, el Animator se corta del todo mientras no se ve (CullCompletely: nadie mira su idle) y los comunes
-        /// apagan su Update. Los jefes lo siguen corriendo (en Idle no hacen casi nada) porque sus subclases hacen cosas
-        /// al apagarse: MizuchiBoss suelta la cinemática en OnDisable. Un Alert del encuentro o del guion lo saca de
-        /// CanSleep y ZoneCulling lo despierta en el mismo frame.
+        /// ¿Se puede dormir? Solo quieto en su puesto: vivo y ya arrancado (Start le dio la vida y el lugar al que vuelve
+        /// si se reinicia el encuentro), sin aggro (un jefe en pelea lo tiene) ni guion, sin moverse (si volvía a su lugar
+        /// después de perder a Kaito, primero termina de llegar) y sin veto de quien lo maneje.
+        /// </summary>
+        public virtual bool CanSleep => State == EnemyState.Idle && !IsAggro && Health > 0f && knock.sqrMagnitude < 0.0001f
+                                        && (agent == null || !agent.enabled || agent.velocity.sqrMagnitude < 0.01f)
+                                        && (SleepVeto == null || !SleepVeto());
+
+        /// <summary>
+        /// Dormido, los comunes apagan su Update. Los jefes lo siguen corriendo (en Idle no hacen casi nada) porque sus
+        /// subclases hacen cosas al apagarse: MizuchiBoss suelta la cinemática en OnDisable. El reloj del Animator NO se
+        /// para (CullCompletely desfasaría los idles de a dos de un campamento, como el sparring): con los renderers
+        /// apagados, CullUpdateTransforms ya no escribe huesos ni piel y solo avanza la máquina de estados. Por eso solo
+        /// se toca un AlwaysAnimate (el koi de Mizuchi), que sí evaluaría la pose entera sin que nadie la vea.
         /// </summary>
         public void SetAsleep(bool on)
         {
@@ -1303,7 +1312,7 @@ namespace Nindo
             var a = anim.Animator;
             if (a != null)
             {
-                if (on) { awakeCulling = a.cullingMode; a.cullingMode = AnimatorCullingMode.CullCompletely; }
+                if (on) { awakeCulling = a.cullingMode; if (awakeCulling == AnimatorCullingMode.AlwaysAnimate) a.cullingMode = AnimatorCullingMode.CullUpdateTransforms; }
                 else a.cullingMode = awakeCulling;
             }
             if (!(this is Boss)) enabled = !on;
