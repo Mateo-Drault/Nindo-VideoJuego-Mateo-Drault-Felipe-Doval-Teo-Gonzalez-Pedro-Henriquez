@@ -892,7 +892,8 @@ namespace Nindo
             Shader.SetGlobalVector(IdBoss, boss != null ? new Vector4(boss.position.x, boss.position.y, boss.position.z, 1f) : Vector4.zero);
             if (fill != null)
                 fill.intensity = FillIntensity * (0.9f + 0.1f * k) * (0.9f + 0.2f * Mathf.PerlinNoise(Time.time * 2.5f, 0.37f));
-            Emit(dt, k);
+            ApplyOffscreen();
+            if (!frozen) Emit(dt, k);
         }
 
         float SurgeFactor()
@@ -906,6 +907,9 @@ namespace Nindo
         void SetActive(bool on)
         {
             Active = on;
+            // Play y Stop dejan los sistemas andando o vacíos: ya no hay nada congelado
+            frozen = false;
+            if (on) activeSince = Time.time;
             foreach (var ps in systems)
             {
                 if (on) ps.Play(true);
@@ -913,6 +917,36 @@ namespace Nindo
             }
             if (fill != null) fill.enabled = on;
             if (!on) Shader.SetGlobalVector(IdBoss, Vector4.zero);
+        }
+
+        // ------------------------------------------------------------------ fuera de cuadro (World/ZoneCulling)
+        /// <summary>
+        /// ZoneCulling avisa cuando ninguna cámara ve la cascada (su caja con la niebla y la llovizna). Dentro del LOD,
+        /// fuera de cuadro, se congelan sus partículas (Pause, no Stop: al volver a cuadro la columna sigue llena y en
+        /// movimiento, sin llenarse de cero a la vista) y no se emite a mano; el caudal, el viento, los materiales, la
+        /// luz y el sonido siguen igual. Recién se congela pasado WarmTime desde que se prendió: si Kaito llega con la
+        /// cascada fuera de cuadro, primero se llena como hoy.
+        /// </summary>
+        public void SetOffscreen(bool off) { offscreen = off; ApplyOffscreen(); }
+
+        /// <summary>Congelada por estar fuera de cuadro.</summary>
+        public bool Frozen => frozen;
+
+        /// <summary>Lo que vive más de lo que se emite (las columnas de niebla, hasta 9 s), con margen.</summary>
+        const float WarmTime = 9.5f;
+        bool offscreen, frozen;
+        float activeSince;
+
+        void ApplyOffscreen()
+        {
+            bool f = offscreen && Active && Time.time - activeSince > WarmTime;
+            if (f == frozen) return;
+            frozen = f;
+            foreach (var ps in systems)
+            {
+                if (f) ps.Pause(true);
+                else ps.Play(true);
+            }
         }
 
         /// <summary>Ráfagas: cada 7-11 s (4-7 s en la crecida) durante 1.6 s la niebla corre el doble y gira hasta 25°,
@@ -936,7 +970,7 @@ namespace Nindo
                         bool combat = Game.Combat != null && Game.Combat.InCombat;
                         Game.Audio?.Play("falls_gust", Vector3.Lerp(PlungeCenter, ArenaCenter, 0.25f) + Vector3.up * 3f, 0.8f * near * (combat ? 0.55f : 1f));
                     }
-                    EmitGustSheet();
+                    if (!frozen) EmitGustSheet();
                 }
             }
             gustDur -= dt;

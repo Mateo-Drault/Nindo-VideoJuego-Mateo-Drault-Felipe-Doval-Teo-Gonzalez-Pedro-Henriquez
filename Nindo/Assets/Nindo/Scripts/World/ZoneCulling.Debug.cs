@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
+using Unity.Collections;
 using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
@@ -10,12 +11,16 @@ namespace Nindo
 {
     /// <summary>
     /// Medición y depuración de ZoneCulling, para el Inspector o RunCommand:
-    ///  * ZoneCulling.Stats: una línea con lo prendido ahora (renderers, casters de sombra, celdas, enemigos despiertos,
-    ///    Animators y luces de la escena, y lo que cuesta el chequeo por frame).
+    ///  * ZoneCulling.Stats: una línea con lo prendido ahora (renderers, y cuántos pide solo la cámara de juego si hay
+    ///    otra cámara contando; casters de sombra, celdas, enemigos despiertos, la cascada, Animators y luces de la
+    ///    escena, y lo que cuesta el chequeo por frame).
     ///  * ZoneCulling.ShowHud = true: esa línea abajo a la izquierda y, en la vista Scene, las celdas (verde = prendida).
     ///  * ZoneCulling.Benchmark(segundos): alterna con y sin culling en el mismo lugar y escribe en la consola el promedio
     ///    de cada contador del Profiler (tiempo del hilo principal y de render, batches, SetPass, casters de sombra...).
-    ///  * ZoneCulling.CheckFrame(carpeta): el mismo cuadro, congelado, con y sin culling: cuántos píxeles cambian.
+    ///    En un Development Build: F9, o arrancar el juego con -zcbench (el informe va a Player.log).
+    ///  * ZoneCulling.CheckFrame(carpeta): el mismo cuadro dibujado dos veces, con y sin culling: cuántos píxeles cambian.
+    ///    ZoneCulling.CheckEvery(intervalo, carpeta) lo repite mientras se juega (presentaciones de jefe, planos al
+    ///    cielo, la grúa de la cascada) y ZoneCulling.StopCheck() da el resumen.
     /// </summary>
     public partial class ZoneCulling
     {
@@ -38,7 +43,46 @@ namespace Nindo
         /// <summary>Estado completo (cuenta también Animators y luces de toda la escena: busca, no usar por frame).</summary>
         public static string Stats => Instance != null ? Instance.Describe(true) : "ZoneCulling: todavía no hay mundo armado";
 
-        void Start() => SyncHud();
+        void Start()
+        {
+            SyncHud();
+            // Development Build sin editor: "-zcbench [segundos]" mide solo apenas se puede jugar
+            if (Application.isEditor || !Debug.isDebugBuild) return;
+            var args = System.Environment.GetCommandLineArgs();
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] != "-zcbench") continue;
+                float s = 30f;
+                if (i + 1 < args.Length && float.TryParse(args[i + 1], NumberStyles.Float, CultureInfo.InvariantCulture, out float v)) s = v;
+                StartCoroutine(AutoBench(s));
+                break;
+            }
+        }
+
+        /// <summary>Espera a que se pueda jugar (Kaito armado, sin cinemática ni pausa) y 5 s más para que se asiente.</summary>
+        IEnumerator AutoBench(float seconds)
+        {
+            while (Game.Player == null || Game.InCutscene || Game.IsPaused) yield return null;
+            float t = Time.unscaledTime + 5f;
+            while (Time.unscaledTime < t) yield return null;
+            Benchmark(seconds);
+        }
+
+        /// <summary>F9 en el editor o en un Development Build: Benchmark de 30 s donde está Kaito.</summary>
+        void PollDebugKeys()
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if ENABLE_INPUT_SYSTEM
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            bool f9 = kb != null && kb.f9Key.wasPressedThisFrame;
+#elif ENABLE_LEGACY_INPUT_MANAGER
+            bool f9 = Input.GetKeyDown(KeyCode.F9);
+#else
+            bool f9 = false;
+#endif
+            if (f9) Benchmark(30f);
+#endif
+        }
 
         void SyncHud()
         {
@@ -58,17 +102,43 @@ namespace Nindo
             return n;
         }
 
+        /// <summary>
+        /// Los renderers que pide solo la cámara de juego en el último frame (sin el Linger ni las otras cámaras): con
+        /// una vista Scene a la vista, Stats compara contra esto y no contra lo que pide la vista Scene.
+        /// </summary>
+        int CountMainCamera()
+        {
+            if (mainCam < 0 || cells == null) return -1;
+            int o = mainCam * 6, n = 0;
+            for (int c = 0; c < cells.Length; c++)
+            {
+                ref var cell = ref cells[c];
+                bool pass = InFrustum(o, cell.min, cell.max, cell.shadows ? Sweep(cell.max.y, cell.floor) : 0f);
+                int end = cell.start + cell.count;
+                for (int i = cell.start; i < end; i++)
+                {
+                    ref var it = ref items[i];
+                    if (it.always || (it.batched && !HideBatched) || (pass && InFrustum(o, it.min, it.max, it.shadows ? Sweep(it.max.y, cell.floor) : 0f))) n++;
+                }
+            }
+            return n;
+        }
+
         /// <summary>'twoLines': el HUD lo parte en dos renglones (lo de dibujo y lo de enemigos y costo).</summary>
         internal string Describe(bool scene, bool twoLines = false)
         {
             var ic = CultureInfo.InvariantCulture;
-            var sb = new StringBuilder(256);
+            var sb = new StringBuilder(320);
             sb.Append(On ? "ZoneCulling ON" : "ZoneCulling OFF (todo prendido)");
             sb.Append(" | renderers ").Append(litRenderers).Append('/').Append(totalRenderers);
+            if (On && camCount > 1 && mainCam >= 0) sb.Append(" (cámara de juego sola ").Append(CountMainCamera()).Append(')');
+            if (!HideBatched) sb.Append(" (lote estático siempre prendido)");
             sb.Append(" | casters de sombra ").Append(litCasters).Append('/').Append(totalCasters);
             sb.Append(" | celdas en cuadro ").Append(litCells).Append('/').Append(cells != null ? cells.Length : 0);
             sb.Append(twoLines ? "\n" : " | ").Append("enemigos despiertos ").Append(awake).Append('/').Append(sleepers.Count);
             sb.Append(" | partículas simulando ").Append(CountSimulating()).Append('/').Append(totalParticles);
+            foreach (var fc in falls)
+                if (fc.f != null) sb.Append(" | cascada ").Append(!fc.f.Active ? "lejos (LOD)" : fc.f.Frozen ? "congelada (fuera de cuadro)" : "en movimiento");
             sb.Append(" | cámaras ").Append(camCount);
             sb.Append(" | chequeo ").Append(costMs.ToString("0.000", ic)).Append(" ms");
             if (!scene) return sb.ToString();
@@ -94,22 +164,32 @@ namespace Nindo
                 float r = l.range;
                 if (Visible(new Vector3(c.x - r, c.y - r, c.z - r), new Vector3(c.x + r, c.y + r, c.z + r), 0f)) lightsInView++;
             }
-            sb.Append(" | animators ").Append(anims).Append(" activos (").Append(culledAnims).Append(" sin pose: fuera de cuadro)");
+            sb.Append(" | animators ").Append(anims).Append(" prendidos (").Append(culledAnims).Append(" sin pose: fuera de cuadro)");
             sb.Append(" | luces puntuales ").Append(lights).Append(" prendidas, ").Append(lightsInView).Append(" tocan el cuadro");
             return sb.ToString();
         }
 
+        /// <summary>Una medición cortada a la mitad (se salió de Play, se rearmó el mundo, se apagó el componente: la
+        /// corrutina muere sin su finally) devuelve todo lo que había cambiado.</summary>
+        void RestoreDebug()
+        {
+            RestoreBench();
+            EndCheck();
+        }
+
         // ================================================================== banco de pruebas
         /// <summary>
-        /// Alterna 6 bloques con y sin culling (3 y 3, intercalados para que la deriva del editor se cancele) en el lugar
-        /// donde está Kaito, y escribe en la consola el promedio de cada contador en cada modo. Mejor con Kaito quieto,
-        /// la cámara de juego (sin cinemáticas), la vista Game con foco y la calidad de serie (Alta). Mientras mide
+        /// Alterna 6 bloques con y sin culling (3 y 3, intercalados para que la deriva se cancele) en el lugar donde
+        /// está Kaito, y escribe en la consola (o en Player.log) el promedio de cada contador en cada modo. Mejor en un
+        /// Development Build (el editor mete ruido del mismo orden que la ganancia), con Kaito quieto, la cámara de
+        /// juego (sin cinemáticas) y la calidad de serie (Alta); de 30 s para arriba (bloques de 5 s). Mientras mide
         /// saca el tope de 120 fps y el vsync de GameBootstrap (si no, el frame da 8.3 ms en los dos modos y la ganancia
-        /// no se ve) y no cuenta la vista Scene; al terminar deja todo como estaba.
+        /// no se ve) y no cuenta la vista Scene; al terminar, o si se corta, deja todo como estaba.
         /// </summary>
-        public static void Benchmark(float seconds = 12f)
+        public static void Benchmark(float seconds = 30f)
         {
             if (Instance == null) { Debug.LogWarning("[Nindo] ZoneCulling.Benchmark: todavía no hay mundo armado."); return; }
+            if (Instance.benchActive || Instance.checkActive) { Debug.LogWarning("[Nindo] ZoneCulling.Benchmark: ya hay una medición o una prueba de cuadros en curso."); return; }
             Instance.StartCoroutine(Instance.BenchmarkRoutine(Mathf.Max(3f, seconds)));
         }
 
@@ -157,14 +237,32 @@ namespace Nindo
             return r;
         }
 
+        // lo que Benchmark cambió y tiene que devolver aunque se corte
+        bool benchActive, benchWasOn, benchScene;
+        int benchFps, benchVsync;
+        ProfilerRecorder[] benchRec;
+
+        void RestoreBench()
+        {
+            if (!benchActive) return;
+            benchActive = false;
+            On = benchWasOn;
+            IncludeSceneView = benchScene;
+            Application.targetFrameRate = benchFps;
+            QualitySettings.vSyncCount = benchVsync;
+            if (benchRec != null) for (int i = 0; i < benchRec.Length; i++) benchRec[i].Dispose();
+            benchRec = null;
+        }
+
         IEnumerator BenchmarkRoutine(float seconds)
         {
-            bool was = On, scene = IncludeSceneView;
-            int fps = Application.targetFrameRate, vsync = QualitySettings.vSyncCount;
+            benchActive = true;
+            benchWasOn = On; benchScene = IncludeSceneView;
+            benchFps = Application.targetFrameRate; benchVsync = QualitySettings.vSyncCount;
             var available = new List<ProfilerRecorderHandle>(4096);
             ProfilerRecorderHandle.GetAvailable(available);
             int n = BenchStats.Length;
-            var rec = new ProfilerRecorder[n];
+            var rec = benchRec = new ProfilerRecorder[n];
             var time = new bool[n];
             // por modo: cada contador, el frame, el chequeo y los tiempos de FrameTimingManager (CPU principal, CPU de
             // render, GPU), que no cuentan la espera del vsync ni del tope de fps
@@ -178,6 +276,7 @@ namespace Nindo
             Application.targetFrameRate = -1;
             QualitySettings.vSyncCount = 0;
             bool focused = true;
+            Debug.Log($"[Nindo] ZoneCulling.Benchmark: midiendo {seconds.ToString("0", CultureInfo.InvariantCulture)} s, no mover a Kaito ni la cámara.");
             try
             {
                 float block = seconds / 6f;
@@ -211,18 +310,16 @@ namespace Nindo
             }
             finally
             {
-                On = was;
-                IncludeSceneView = scene;
-                Application.targetFrameRate = fps;
-                QualitySettings.vSyncCount = vsync;
-                for (int i = 0; i < n; i++) rec[i].Dispose();
+                RestoreBench();
             }
             var ic = CultureInfo.InvariantCulture;
             var sb = new StringBuilder(1024);
             sb.Append("[Nindo] ZoneCulling.Benchmark en (").Append(Game.Player != null ? Game.Player.transform.position.ToString("F0", ic) : "?")
               .Append("), calidad ").Append(QualitySettings.names[QualitySettings.GetQualityLevel()])
+              .Append(", ").Append(Screen.width).Append('x').Append(Screen.height)
+              .Append(Application.isEditor ? ", EDITOR" : ", build").Append(HideBatched ? "" : ", HideBatched = false")
               .Append(", ").Append(frames[0]).Append(" frames con culling y ").Append(frames[1]).Append(" sin (sin tope de fps ni vsync):\n");
-            if (!focused) sb.Append("  OJO: la ventana perdió el foco durante la medición (el editor sin foco frena el juego): repetir con la vista Game activa.\n");
+            if (!focused) sb.Append("  OJO: la ventana perdió el foco durante la medición (sin foco se frena el juego): repetir con la ventana activa.\n");
             void Row(string label, double on, double off, string unit)
             {
                 double d = off != 0 ? (on - off) / off * 100.0 : 0.0;
@@ -230,12 +327,15 @@ namespace Nindo
                   .Append(" | sin ").Append(off.ToString("0.###", ic)).Append(unit)
                   .Append(" | ").Append(d.ToString("+0.0;-0.0", ic)).Append(" %\n");
             }
+            bool moreDraws = false;
             for (int i = 0; i < n; i++)
             {
                 // un contador que esta versión de Unity no tiene queda inválido y no se muestra
                 if (frames[0] == 0 || frames[1] == 0 || !valid[i]) continue;
                 double scale = time[i] ? 1e-6 : 1.0;   // ns -> ms
-                Row(BenchStats[i].name, sum[0, i] / frames[0] * scale, sum[1, i] / frames[1] * scale, time[i] ? " ms" : "");
+                double con = sum[0, i] / frames[0] * scale, sin = sum[1, i] / frames[1] * scale;
+                Row(BenchStats[i].name, con, sin, time[i] ? " ms" : "");
+                if ((BenchStats[i].name == "Batches Count" || BenchStats[i].name == "Draw Calls Count") && con > sin * 1.005 + 0.5) moreDraws = true;
             }
             if (frames[0] > 0 && frames[1] > 0)
             {
@@ -245,89 +345,188 @@ namespace Nindo
                 Row("frame (unscaledDeltaTime)", sum[0, n] / frames[0], sum[1, n] / frames[1], " ms");
                 sb.Append("  chequeo de ZoneCulling por frame: ").Append((sum[0, n + 1] / frames[0]).ToString("0.000", ic)).Append(" ms\n");
             }
+            // esconder casters en medio de una corrida del lote estático puede partirla en más draws de sombra
+            if (moreDraws && HideBatched)
+                sb.Append("  OJO: con culling hay MÁS Batches/Draw Calls: repetir con Nindo.ZoneCulling.HideBatched = false; si así baja el frame, dejarlo en false.\n");
             sb.Append("  ").Append(Describe(true));
             Debug.Log(sb.ToString());
         }
 
         // ================================================================== prueba de pop-in
         /// <summary>
-        /// La prueba objetiva de que el culling no se ve: dibuja la cámara dos veces en el mismo frame (nada se mueve
-        /// entre una y otra: ni el viento, ni el agua, ni las partículas, ni la cámara), primero con el culling del último
-        /// LateUpdate y después con todo prendido, y cuenta los píxeles distintos. Tiene que dar 0 (a lo sumo unos pocos
-        /// en bordes de sombra con diferencia chica, si Unity ajusta la profundidad del mapa de sombras a los casters que
-        /// quedan; un objeto que falta da manchas grandes con diferencia alta). Con 'folder' guarda
-        /// con.png, sin.png y dif.png. Sirve en cualquier plano, aunque la cámara esté en movimiento: la de juego, una
-        /// presentación de jefe, la grúa de la cascada, un plano al cielo. Renderiza a mano en una textura (con el editor
-        /// sin foco la vista Game no siempre se repinta).
+        /// La prueba objetiva de que el culling no se ve: en el LateUpdate de ZoneCulling, recién decidido qué apagar y
+        /// con la cámara ya movida por CameraDirector (la misma pose con la que se decidió), dibuja la cámara de juego dos
+        /// veces en el mismo frame (nada se mueve entre una y otra: ni el viento, ni el agua, ni las partículas): primero
+        /// con el culling y después con todo prendido (también lo de los enemigos dormidos, sin despertarlos), y cuenta los
+        /// píxeles distintos. Tiene que dar 0 (a lo sumo unos pocos en bordes de sombra con diferencia chica, si Unity
+        /// ajusta la profundidad del mapa de sombras a los casters que quedan; un objeto que falta da manchas grandes con
+        /// diferencia alta). Saca la vista Scene y espera un LateUpdate con eso y Linger, así "con" es lo que pide la
+        /// cámara de juego sola. Con 'folder' guarda con.png, sin.png y dif.png. La cascada congelada no se ve en esta
+        /// prueba (sus partículas se dibujan igual, quietas): para eso, Stats dice "cascada congelada" o "en movimiento".
         /// </summary>
-        public static void CheckFrame(string folder = null)
+        public static void CheckFrame(string folder = null) => StartCheck(folder, 0f);
+
+        /// <summary>
+        /// CheckFrame cada 'interval' s mientras se juega: avisa solo de los cuadros con diferencias (y guarda hasta 10 en
+        /// 'folder', con el número de cuadro) y StopCheck() da el resumen. Para pasar por las presentaciones de jefe, los
+        /// planos al cielo, la grúa de la cascada y el santuario lateral sin tener que acertar el momento. Cada prueba
+        /// dibuja la escena dos veces más: el juego va a tirones mientras corre.
+        /// </summary>
+        public static void CheckEvery(float interval = 0.25f, string folder = null) => StartCheck(folder, Mathf.Max(0.05f, interval));
+
+        public static void StopCheck() { if (Instance != null) Instance.EndCheck(); }
+
+        static void StartCheck(string folder, float every)
         {
             if (Instance == null) { Debug.LogWarning("[Nindo] ZoneCulling.CheckFrame: todavía no hay mundo armado."); return; }
-            Instance.StartCoroutine(Instance.CheckFrameRoutine(folder));
+            if (Instance.benchActive) { Debug.LogWarning("[Nindo] ZoneCulling.CheckFrame: hay un Benchmark en curso."); return; }
+            Instance.BeginCheck(folder, every);
         }
 
-        IEnumerator CheckFrameRoutine(string folder)
+        // la prueba en curso, lo que hay que devolver al terminar y lo que lleva contado CheckEvery
+        bool checkActive, checkWasOn, checkScene;
+        string checkFolder;
+        float checkEvery, checkNext;
+        int checkFrom, checkCount, checkBad, checkAllOn, checkMaxPixels, checkSaved;
+        Texture2D checkA, checkB;
+        readonly List<Canvas> checkCanvases = new List<Canvas>();
+
+        void BeginCheck(string folder, float every)
         {
-            var cam = Game.Camera != null ? Game.Camera.Cam : null;
-            if (cam == null) { Debug.LogWarning("[Nindo] ZoneCulling.CheckFrame: no hay cámara de juego."); yield break; }
-            bool was = On, scene = IncludeSceneView;
+            if (!checkActive)
+            {
+                checkActive = true;
+                checkWasOn = On; checkScene = IncludeSceneView;
+                checkCount = checkBad = checkAllOn = checkMaxPixels = checkSaved = 0;
+            }
             On = true;
-            IncludeSceneView = false;   // con lo que mira la vista Scene prendido, "con" tendría de más y la prueba sería floja
-            // un LateUpdate con culling: la corrutina sigue en el frame siguiente antes de que CameraDirector mueva la
-            // cámara, así que la pose es la misma con la que se decidió qué apagar
-            yield return null;
-            var hidden = new List<Canvas>();
+            IncludeSceneView = false;
+            checkFolder = folder;
+            checkEvery = every;
+            // antes, un LateUpdate con estos flags y que se apague por Linger lo que solo pedía la vista Scene (o lo que
+            // quedó prendido si recién se volvió de On = false): si no, "con" sale con todo prendido y no prueba nada
+            checkFrom = Time.frameCount;
+            checkNext = Time.unscaledTime + Linger + 0.1f;
+        }
+
+        /// <summary>Al final del LateUpdate, recién decidido todo con la pose de cámara de este frame.</summary>
+        void TickCheck(float now)
+        {
+            if (!checkActive || lastCullFrame <= checkFrom || now < checkNext) return;
+            var cam = Game.Camera != null ? Game.Camera.Cam : null;
+            if (mainCam < 0 || cam == null) return;
+            RunCheck(cam);
+            if (checkEvery <= 0f) EndCheck();
+            else checkNext = now + checkEvery;
+        }
+
+        void EndCheck()
+        {
+            if (!checkActive) return;
+            checkActive = false;
+            if (checkEvery > 0f)
+                Debug.Log($"[Nindo] ZoneCulling.CheckEvery: {checkCount} cuadros revisados, {checkBad} con píxeles distintos (máx {checkMaxPixels})"
+                          + (checkAllOn > 0 ? $", {checkAllOn} con todo prendido (esos no prueban nada)" : "") + (checkBad > 0 && checkFolder != null ? $"; imágenes en {checkFolder}" : "") + ".");
+            On = checkWasOn;
+            IncludeSceneView = checkScene;
+            if (checkA != null) Destroy(checkA);
+            if (checkB != null) Destroy(checkB);
+            checkA = checkB = null;
+        }
+
+        void RunCheck(Camera cam)
+        {
+            checkCanvases.Clear();
             foreach (var c in FindObjectsByType<Canvas>(FindObjectsSortMode.None))
-                if (c.isRootCanvas && c.enabled && c.renderMode != RenderMode.ScreenSpaceOverlay) { c.enabled = false; hidden.Add(c); }
-            Texture2D a, b;
+                if (c.isRootCanvas && c.enabled && c.renderMode != RenderMode.ScreenSpaceOverlay) { c.enabled = false; checkCanvases.Add(c); }
             string stats;
+            bool allOn = litRenderers == totalRenderers;
             try
             {
-                a = RenderCamera(cam);
+                RenderInto(cam, ref checkA);
                 stats = Describe(false);
-                ShowAll();   // el próximo LateUpdate vuelve a apagar lo que sobra
-                b = RenderCamera(cam);
+                // "sin": todo prendido sin despertar a nadie; el próximo LateUpdate vuelve a apagar lo que sobra
+                ShowItems();
+                foreach (var s in sleepers)
+                    if (s.e != null && s.e.Asleep) foreach (var r in s.e.SleepHidden) if (r != null) r.forceRenderingOff = false;
+                RenderInto(cam, ref checkB);
             }
             finally
             {
-                On = was;
-                IncludeSceneView = scene;
-                foreach (var c in hidden) if (c != null) c.enabled = true;
+                foreach (var s in sleepers)
+                    if (s.e != null && s.e.Asleep) foreach (var r in s.e.SleepHidden) if (r != null) r.forceRenderingOff = true;
+                foreach (var c in checkCanvases) if (c != null) c.enabled = true;
             }
-            var pa = a.GetPixels32();
-            var pb = b.GetPixels32();
-            int diff = 0, maxD = 0, w = a.width;
+            var pa = checkA.GetPixelData<Color32>(0);
+            var pb = checkB.GetPixelData<Color32>(0);
+            int diff = 0, maxD = 0, w = checkA.width;
             int x0 = int.MaxValue, y0 = int.MaxValue, x1 = -1, y1 = -1;
-            var dif = folder != null ? new Color32[pa.Length] : null;
             for (int i = 0; i < pa.Length && i < pb.Length; i++)
             {
-                int d = Mathf.Max(Mathf.Abs(pa[i].r - pb[i].r), Mathf.Max(Mathf.Abs(pa[i].g - pb[i].g), Mathf.Abs(pa[i].b - pb[i].b)));
-                if (dif != null) dif[i] = d > 3 ? new Color32(255, 40, 40, 255) : new Color32((byte)(pa[i].r / 4), (byte)(pa[i].g / 4), (byte)(pa[i].b / 4), 255);
+                Color32 a = pa[i], b = pb[i];
+                int d = Mathf.Max(Mathf.Abs(a.r - b.r), Mathf.Max(Mathf.Abs(a.g - b.g), Mathf.Abs(a.b - b.b)));
                 if (d <= 3) continue;   // ruido de 8 bits
                 diff++;
                 maxD = Mathf.Max(maxD, d);
                 int x = i % w, y = i / w;
                 x0 = Mathf.Min(x0, x); x1 = Mathf.Max(x1, x); y0 = Mathf.Min(y0, y); y1 = Mathf.Max(y1, y);
             }
-            if (folder != null)
+            checkCount++;
+            if (allOn) checkAllOn++;
+            if (diff > 0) { checkBad++; checkMaxPixels = Mathf.Max(checkMaxPixels, diff); }
+            bool every = checkEvery > 0f;
+            string tag = every ? "_" + Time.frameCount.ToString(CultureInfo.InvariantCulture) : "";
+            if (checkFolder != null && (!every || (diff > 0 && checkSaved < 10)))
             {
-                System.IO.Directory.CreateDirectory(folder);
-                System.IO.File.WriteAllBytes(System.IO.Path.Combine(folder, "con.png"), a.EncodeToPNG());
-                System.IO.File.WriteAllBytes(System.IO.Path.Combine(folder, "sin.png"), b.EncodeToPNG());
-                var t = new Texture2D(a.width, a.height, TextureFormat.RGBA32, false);
-                t.SetPixels32(dif);
-                System.IO.File.WriteAllBytes(System.IO.Path.Combine(folder, "dif.png"), t.EncodeToPNG());
-                Destroy(t);
+                if (every) checkSaved++;
+                SaveCheck(pa, pb, tag);
             }
+            if (every && diff == 0) return;
             string box = diff > 0 ? $" en x {x0}..{x1}, y {y0}..{y1} (abajo a la izquierda = 0,0), diferencia máx {maxD}" : "";
-            Debug.Log($"[Nindo] ZoneCulling.CheckFrame: {diff} de {pa.Length} píxeles distintos{box}. Con culling: {stats}");
-            Destroy(a); Destroy(b);
+            string warn = allOn ? " OJO: con culling estaba TODO prendido, así que este cuadro no prueba nada (¿una cámara más, una vista Scene, On recién vuelto a true?)." : "";
+            string msg = $"[Nindo] ZoneCulling.CheckFrame{tag}: {diff} de {pa.Length} píxeles distintos{box}. Con culling: {stats}.{warn}";
+            if (diff > 0 || allOn) Debug.LogWarning(msg); else Debug.Log(msg);
         }
 
-        /// <summary>La cámara con el estado de culling del último LateUpdate, en una textura del tamaño de la pantalla.</summary>
-        static Texture2D RenderCamera(Camera cam)
+        void SaveCheck(NativeArray<Color32> pa, NativeArray<Color32> pb, string tag)
+        {
+            System.IO.Directory.CreateDirectory(checkFolder);
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(checkFolder, "con" + tag + ".png"), checkA.EncodeToPNG());
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(checkFolder, "sin" + tag + ".png"), checkB.EncodeToPNG());
+            var dif = new Color32[pa.Length];
+            for (int i = 0; i < pa.Length && i < pb.Length; i++)
+            {
+                Color32 a = pa[i], b = pb[i];
+                int d = Mathf.Max(Mathf.Abs(a.r - b.r), Mathf.Max(Mathf.Abs(a.g - b.g), Mathf.Abs(a.b - b.b)));
+                dif[i] = d > 3 ? new Color32(255, 40, 40, 255) : new Color32((byte)(a.r / 4), (byte)(a.g / 4), (byte)(a.b / 4), 255);
+            }
+            var t = new Texture2D(checkA.width, checkA.height, TextureFormat.RGBA32, false);
+            t.SetPixels32(dif);
+            System.IO.File.WriteAllBytes(System.IO.Path.Combine(checkFolder, "dif" + tag + ".png"), t.EncodeToPNG());
+            Destroy(t);
+        }
+
+        /// <summary>Los renderers del mundo prendidos (sin tocar enemigos ni la cascada), para el "sin" de CheckFrame.</summary>
+        void ShowItems()
+        {
+            for (int c = 0; c < cells.Length; c++)
+            {
+                ref var cell = ref cells[c];
+                int end = cell.start + cell.count;
+                for (int i = cell.start; i < end; i++)
+                    if (!items[i].on) Set(ref items[i], ref cell, true);
+            }
+        }
+
+        /// <summary>La cámara con el estado de culling de ahora, en una textura del tamaño de la pantalla (se reusa).</summary>
+        static void RenderInto(Camera cam, ref Texture2D tex)
         {
             int w = Mathf.Max(64, cam.pixelWidth), h = Mathf.Max(64, cam.pixelHeight);
+            if (tex == null || tex.width != w || tex.height != h)
+            {
+                if (tex != null) Destroy(tex);
+                tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
+            }
             var rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGB32);
             var prev = cam.targetTexture;
             cam.targetTexture = rt;
@@ -335,12 +534,9 @@ namespace Nindo
             cam.targetTexture = prev;
             var active = RenderTexture.active;
             RenderTexture.active = rt;
-            var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);
             tex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
-            tex.Apply(false);
             RenderTexture.active = active;
             RenderTexture.ReleaseTemporary(rt);
-            return tex;
         }
 
 #if UNITY_EDITOR
