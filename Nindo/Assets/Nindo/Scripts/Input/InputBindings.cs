@@ -38,7 +38,7 @@ namespace Nindo
         {
             // el aviso de cambio de distribución no se toca acá (el Input System puede no estar listo todavía): Init lo
             // saca y lo vuelve a poner, así nunca queda dos veces
-            table = null; names = null; moveGlyph = null; rowUp = -1; Version = 0;
+            table = null; names = null; moveGlyph = null; rowUp = -1; Version = 0; PendingRescue = false;
 #if ENABLE_INPUT_SYSTEM
             namesKeyboard = null;
 #endif
@@ -47,9 +47,13 @@ namespace Nindo
         static void Init()
         {
             // Enum.GetNames va por valor: la fila r es (Act)r (InputReader y los textos "{Attack}" cuentan con eso)
-            table = new BindingTable(BindingCatalog.Build(Enum.GetNames(typeof(Act))), BindingCatalog.Reserved);
+            table = new BindingTable(BindingCatalog.Build(Enum.GetNames(typeof(Act))), BindingCatalog.Reserved, MenuReserved, BindingCatalog.Spares);
             var problems = table.Load(Settings.ControlBindings, BindingCatalog.ParseCode);
             if (problems.Count > 0) Debug.Log("[Nindo] Controles guardados: " + string.Join("; ", problems));
+            // una acción nueva que recibió una tecla libre (sus teclas de fábrica ya las usaba el jugador): queda guardada,
+            // así no cambia de una vez a otra, y la página de controles lo avisa la próxima vez que se abra
+            PendingRescue = table.Rescued.Count > 0;
+            if (PendingRescue) Settings.ControlBindings = table.Save(BindingCatalog.CodeId);
             rowUp = table.IndexOf("MoveUp"); rowDown = table.IndexOf("MoveDown");
             rowLeft = table.IndexOf("MoveLeft"); rowRight = table.IndexOf("MoveRight");
             names = null;
@@ -57,6 +61,28 @@ namespace Nindo
             InputSystem.onDeviceChange -= OnDeviceChange;
             InputSystem.onDeviceChange += OnDeviceChange;
 #endif
+        }
+
+        /// <summary>La última carga le dio una tecla libre a alguna acción (Table.Rescued) y todavía no se avisó.</summary>
+        public static bool PendingRescue;
+
+        /// <summary>
+        /// BindingCatalog.MenuReserved más el + y el - de la distribución del teclado (el mapa acerca con ellos: en el
+        /// teclado español el + está donde el inglés tiene el ']').
+        /// </summary>
+        static string MenuReserved(int code)
+        {
+            string why = BindingCatalog.MenuReserved(code);
+#if ENABLE_INPUT_SYSTEM
+            var kb = Keyboard.current;
+            if (why == null && kb != null && BindCode.IsKey(code))
+            {
+                var plus = kb.FindKeyOnCurrentKeyboardLayout("+");
+                var minus = kb.FindKeyOnCurrentKeyboardLayout("-");
+                if ((plus != null && (int)plus.keyCode == code) || (minus != null && (int)minus.keyCode == code)) why = "menu";
+            }
+#endif
+            return why;
         }
 
         /// <summary>Después de cambiar la tabla: se guarda en las preferencias y los textos con teclas se rehacen.</summary>
@@ -329,7 +355,9 @@ namespace Nindo
         /// (las reservadas también: la tabla las rechaza con su motivo), los botones y la rueda del mouse, y en el mando
         /// todos los botones y los toques del stick derecho. El stick izquierdo nunca: mueve a Kaito.
         /// </summary>
-        public static int Capture(int dev)
+        /// <param name="allowMouse">false: los botones y la rueda del mouse no cuentan (el segundo clic de un doble clic
+        /// sobre la casilla no tiene que quedar asignado).</param>
+        public static int Capture(int dev, bool allowMouse)
         {
 #if ENABLE_INPUT_SYSTEM
             if (dev == BindingTable.Keys)
@@ -342,7 +370,7 @@ namespace Nindo
                         if (keys[i].wasPressedThisFrame && BindingCatalog.IsBindableKey(keys[i].keyCode)) return (int)keys[i].keyCode;
                 }
                 var m = Mouse.current;
-                if (m == null) return BindCode.None;
+                if (m == null || !allowMouse) return BindCode.None;
                 if (m.leftButton.wasPressedThisFrame) return BindCode.MouseLeft;
                 if (m.rightButton.wasPressedThisFrame) return BindCode.MouseRight;
                 if (m.middleButton.wasPressedThisFrame) return BindCode.MouseMiddle;

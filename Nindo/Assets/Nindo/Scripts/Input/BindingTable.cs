@@ -56,12 +56,20 @@ namespace Nindo
     {
         None,
         Locked,             // la casilla es fija
-        Reserved,           // el control no se asigna a nada (Esc, Win, la cruceta...): ver 'reason'
+        Reserved,           // el control no se asigna a nada (Esc, Win, la cruceta...) o a nada de los menús: ver 'reason'
         LockedElsewhere,    // es la tecla fija de otra acción que choca con esta (Enter para pausar)
         OnlyKey,            // es la única tecla de la otra acción y no hay nada para darle a cambio
         NeedsHold,          // la acción se mantiene apretada (moverse, fijar): no sirven la rueda ni los toques del stick
         WrongDevice,
         LastKey,            // quitar dejaría a la acción sin teclas en ese dispositivo
+    }
+
+    /// <summary>Una acción que al cargar quedó sin nada en un dispositivo y recibió una tecla libre (ver BindingTable.Load).</summary>
+    public struct BindRescue
+    {
+        public int row, dev, code;
+        /// <summary>Su tecla de fábrica y quién la tiene (el jugador se la dio a otra acción antes de que esta existiera).</summary>
+        public int lost, holder;
     }
 
     public struct BindResult
@@ -87,10 +95,14 @@ namespace Nindo
     ///     ya resuelve juntas (Ejecutar e Interactuar: gana el remate si hay alguien para rematar; Pausa y Volver).
     ///   - Si la tecla nueva ya era de otra acción, se INTERCAMBIAN: la otra recibe la que tenía esta casilla. Se
     ///     eligió sobre rechazar porque respeta lo que el jugador quiso (esa tecla para esta acción), nunca deja a la
-    ///     otra sin tecla ni pierde nada, y un aviso de dos renglones dice qué pasó. Se rechaza solo lo que rompería
-    ///     algo: las teclas reservadas, las fijas de otra acción, la rueda o un toque del stick para lo que se mantiene
+    ///     otra sin tecla ni pierde nada, y un aviso de dos renglones dice qué pasó. No se le da a cambio lo que no
+    ///     le serviría: si le queda otra tecla y lo que recibiría es de otra clase (un botón del mouse para moverse,
+    ///     una tecla para el parry que estaba en el mouse), solo pierde la suya. Se rechaza solo lo que rompería algo:
+    ///     las teclas reservadas, las fijas de otra acción, la rueda o un toque del stick para lo que se mantiene
     ///     apretado (moverse, fijar: se suelta manteniéndolo) y sacarle a otra acción su única tecla sin nada para
     ///     darle a cambio.
+    ///   - Una acción que también se lee con un menú abierto (la pausa, el mapa) no puede tener nada de lo que usan los
+    ///     menús (el clic, la rueda, WASD y las flechas, Supr...): la misma tecla movería el menú y lo cerraría.
     ///   - Quitar una tecla no puede dejar a una acción sin ninguna en ese dispositivo.
     /// Se guardan solo las casillas que difieren de las de fábrica, por nombre de acción: una acción nueva (p. ej. el
     /// mapa) llega con sus teclas de fábrica y, si alguna ya la usa el jugador para otra cosa, gana la del jugador.
@@ -98,18 +110,28 @@ namespace Nindo
     public sealed class BindingTable
     {
         public const int Keys = 0, Pad = 1, Devices = 2, Slots = 2;
+        /// <summary>Bit de BindRow.context de lo que se lee con un menú abierto (BindingCatalog.Menu).</summary>
+        public const int MenuContext = 2;
         /// <summary>Formato de lo guardado. Si cambia de forma incompatible se vuelve a las de fábrica.</summary>
         public const int FormatVersion = 1;
 
         readonly BindRow[] rows;
         readonly int[] codes;
-        readonly Func<int, string> reserved;
+        readonly Func<int, string> reserved, menuReserved;
+        readonly Func<int, int[]> spares;
+
+        /// <summary>Lo que hizo la última carga para que ninguna acción quede sin teclas (para avisarle al jugador).</summary>
+        public readonly List<BindRescue> Rescued = new List<BindRescue>();
 
         /// <param name="reserved">Motivo por el que un control no se puede asignar a nada (null = libre).</param>
-        public BindingTable(BindRow[] rows, Func<int, string> reserved)
+        /// <param name="menuReserved">Motivo por el que un control no sirve para lo que se lee con un menú abierto.</param>
+        /// <param name="spares">Teclas libres por dispositivo, en orden, para la acción que al cargar quede sin nada.</param>
+        public BindingTable(BindRow[] rows, Func<int, string> reserved, Func<int, string> menuReserved = null, Func<int, int[]> spares = null)
         {
             this.rows = rows;
             this.reserved = reserved;
+            this.menuReserved = menuReserved;
+            this.spares = spares;
             codes = new int[rows.Length * Devices * Slots];
             Reset(-1);
         }
@@ -160,6 +182,14 @@ namespace Nindo
             return true;
         }
 
+        /// <summary>Por qué 'code' no le sirve a la fila r por leerse con un menú abierto (null si le sirve).</summary>
+        string MenuBlock(int r, int code) => (rows[r].context & MenuContext) != 0 ? menuReserved?.Invoke(code) : null;
+
+        /// <summary>¿La fila r puede tener 'code' en ese dispositivo? (sin mirar a las demás filas)</summary>
+        bool Fits(int r, int dev, int code) =>
+            code != BindCode.None && BindCode.DeviceOf(code) == dev && !BindCode.IsDisplayOnly(code) && reserved?.Invoke(code) == null &&
+            MenuBlock(r, code) == null && !(rows[r].hold && BindCode.IsImpulse(code));
+
         BindResult Refuse(BindResult res, BindRefusal why)
         {
             res.outcome = BindOutcome.Refused;
@@ -176,6 +206,8 @@ namespace Nindo
             if (!row.shown[dev] || Locked(r, dev, slot)) return Refuse(res, BindRefusal.Locked);
             if (BindCode.DeviceOf(code) != dev || BindCode.IsDisplayOnly(code)) return Refuse(res, BindRefusal.WrongDevice);
             string why = reserved?.Invoke(code);
+            if (why != null) { res.reason = why; return Refuse(res, BindRefusal.Reserved); }
+            why = MenuBlock(r, code);
             if (why != null) { res.reason = why; return Refuse(res, BindRefusal.Reserved); }
             if (row.hold && BindCode.IsImpulse(code)) return Refuse(res, BindRefusal.NeedsHold);
             int old = res.previous;
@@ -207,8 +239,9 @@ namespace Nindo
                     }
             }
 
-            // qué recibe cada una: la tecla vieja de esta casilla, salvo que no le sirva (la rueda para moverse o fijar), ya la
-            // tenga en su otra casilla o choque con otra acción que también la usa
+            // qué recibe cada una: la tecla vieja de esta casilla, salvo que no le sirva (la rueda para moverse o fijar, el
+            // clic para la pausa), ya la tenga en su otra casilla, choque con otra acción que también la usa o, si le queda
+            // otra tecla, sea de otra clase que la que pierde (teclado contra mouse: el jugador nunca pidió ese cambio)
             var gives = new int[holders.Count];
             for (int h = 0; h < holders.Count; h++)
             {
@@ -217,8 +250,10 @@ namespace Nindo
                 if (give != BindCode.None)
                 {
                     if (rows[q].hold && BindCode.IsImpulse(give)) give = BindCode.None;
+                    else if (MenuBlock(q, give) != null) give = BindCode.None;
                     else if (Get(q, dev, 1 - t) == give) give = BindCode.None;
                     else if (HeldByConflicting(give, dev, q, r)) give = BindCode.None;
+                    else if (Count(q, dev) >= 2 && BindCode.IsKey(give) != BindCode.IsKey(code)) give = BindCode.None;
                 }
                 if (give == BindCode.None && Count(q, dev) <= 1) { res.other = q; return Refuse(res, BindRefusal.OnlyKey); }
                 gives[h] = give;
@@ -287,11 +322,13 @@ namespace Nindo
         /// Vuelve a las de fábrica y aplica lo guardado. Lo que no se entiende (una acción que ya no existe, una
         /// tecla desconocida, una casilla fija) se ignora. Si lo guardado choca con una tecla de fábrica (una acción
         /// nueva que trae la tecla que el jugador ya usa), gana lo del jugador; si una acción queda sin teclas se le
-        /// devuelven las de fábrica que no choquen. Devuelve lo que no se pudo aplicar (para el log).
+        /// devuelven las de fábrica que no choquen y, si no queda ninguna, la primera libre de 'spares' (queda en
+        /// <see cref="Rescued"/>). Devuelve lo que no se pudo aplicar (para el log).
         /// </summary>
         public List<string> Load(string data, Func<string, int> parseCode)
         {
             var problems = new List<string>();
+            Rescued.Clear();
             Reset(-1);
             if (string.IsNullOrEmpty(data)) return problems;
             var parts = data.Split('|');
@@ -314,9 +351,7 @@ namespace Nindo
                 if (r < 0 || d < 0 || s < 0 || Locked(r, d, s) || !rows[r].shown[d]) { problems.Add(p); continue; }
                 string name = p.Substring(eq + 1);
                 int c = name == "-" ? BindCode.None : parseCode(name);
-                if (name != "-" && (c == BindCode.None || BindCode.DeviceOf(c) != d || BindCode.IsDisplayOnly(c) ||
-                    reserved?.Invoke(c) != null || (rows[r].hold && BindCode.IsImpulse(c))))
-                { problems.Add(p); continue; }
+                if (name != "-" && !Fits(r, d, c)) { problems.Add(p); continue; }
                 codes[Ix(r, d, s)] = c;
                 user[Ix(r, d, s)] = true;
             }
@@ -327,7 +362,9 @@ namespace Nindo
         /// <summary>
         /// Deja el dispositivo sin choques: entre lo del jugador y lo de fábrica gana lo del jugador (entre dos del
         /// jugador, solo posible con datos rotos, la primera); una casilla fija nunca pierde. A la acción que quedó
-        /// sin nada se le devuelven sus teclas de fábrica que no choquen con nadie.
+        /// sin nada se le devuelven sus teclas de fábrica que no choquen con nadie y, si todas están tomadas (llega el
+        /// mapa y el jugador ya atacaba con la M), la primera libre de 'spares': ninguna acción que tenga teclas de
+        /// fábrica queda sin forma de usarse. Una que nunca tuvo (una acción nueva sin catálogo) sigue sin nada.
         /// </summary>
         void Resolve(int d, bool[] user, List<string> problems)
         {
@@ -356,15 +393,37 @@ namespace Nindo
             for (int r = 0; r < rows.Length; r++)
             {
                 if (!rows[r].shown[d] || Count(r, d) > 0) continue;
+                int lost = BindCode.None;
                 for (int s = 0; s < Slots; s++)
                 {
                     int c = Default(r, d, s);
-                    if (c != BindCode.None && !HeldByConflicting(c, d, r, r)) codes[Ix(r, d, s)] = c;
+                    if (c == BindCode.None) continue;
+                    if (lost == BindCode.None) lost = c;
+                    if (!HeldByConflicting(c, d, r, r)) codes[Ix(r, d, s)] = c;
+                }
+                if (Count(r, d) > 0 || lost == BindCode.None || spares == null) continue;
+                int slot = Locked(r, d, 0) ? 1 : 0;
+                if (Locked(r, d, slot)) continue;
+                foreach (int c in spares(d))
+                {
+                    if (!Fits(r, d, c) || HeldByConflicting(c, d, r, r)) continue;
+                    codes[Ix(r, d, slot)] = c;
+                    Rescued.Add(new BindRescue { row = r, dev = d, code = c, lost = lost, holder = HolderOf(lost, d, r) });
+                    problems.Add(rows[r].id + " recibe " + c + ": sus teclas de fábrica ya estaban tomadas");
+                    break;
                 }
             }
         }
 
-        /// <summary>Para las pruebas: ¿hay dos casillas que chocan o una acción con la misma tecla dos veces?</summary>
+        /// <summary>La primera fila que choca con 'r' y tiene 'code' (-1 si ninguna).</summary>
+        int HolderOf(int code, int dev, int r)
+        {
+            for (int p = 0; p < rows.Length; p++)
+                if (p != r && rows[p].shown[dev] && Conflicts(p, r) && (Get(p, dev, 0) == code || Get(p, dev, 1) == code)) return p;
+            return -1;
+        }
+
+        /// <summary>Para las pruebas: ¿dos casillas que chocan, una acción con la misma tecla dos veces o una de menú con algo de los menús?</summary>
         public string FindProblem()
         {
             for (int d = 0; d < Devices; d++)
@@ -376,6 +435,7 @@ namespace Nindo
                         int c = Get(r, d, s);
                         if (c == BindCode.None) continue;
                         if (s == 0 && Get(r, d, 1) == c) return rows[r].id + " repite " + c;
+                        if (!Locked(r, d, s) && MenuBlock(r, c) != null) return rows[r].id + " tiene " + c + ", que usan los menús";
                         for (int q = r + 1; q < rows.Length; q++)
                             if (rows[q].shown[d] && Conflicts(r, q) && (Get(q, d, 0) == c || Get(q, d, 1) == c))
                                 return rows[r].id + " y " + rows[q].id + " comparten " + c + " (dispositivo " + d + ")";

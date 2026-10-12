@@ -14,7 +14,7 @@ namespace Nindo
     public static class BindingCatalog
     {
         /// <summary>Contextos: en juego (explorar, pelear) y en menús y diálogos.</summary>
-        public const int Play = 1, Menu = 2;
+        public const int Play = 1, Menu = BindingTable.MenuContext;
         public const int GroupMove = 0, GroupCombat = 1, GroupExplore = 2, GroupMenu = 3;
         public static readonly string[] GroupNames = { "Movimiento", "Combate", "Exploración", "Menú" };
 
@@ -50,7 +50,9 @@ namespace Nindo
             new Spec("Ability1", "Corte del Viento", GroupCombat, Play, 0, K(Key.Digit1), K(Key.U), P(GamepadButton.RightTrigger), 0),
             new Spec("Ability2", "Torbellino de Hojas", GroupCombat, Play, 0, K(Key.Digit2), K(Key.I), P(GamepadButton.LeftTrigger), 0),
             new Spec("Interact", "Interactuar", GroupExplore, Play, ShareFinish, K(Key.E), K(Key.F), P(GamepadButton.North), 0),
-            new Spec("Map", "Mapa", GroupExplore, Play, 0, K(Key.M), 0, P(GamepadButton.Select), 0),
+            // el mapa se abre desde la pausa y se cierra con su misma tecla (UI/UIMap.cs): también es de menú, así que ni
+            // Enter / A / B ni nada de lo que usan los menús y el mapa abierto (el clic arrastra, la rueda acerca)
+            new Spec("Map", "Mapa", GroupExplore, Play | Menu, 0, K(Key.M), 0, P(GamepadButton.Select), 0),
             // Esc y Start pausan siempre: así nunca se puede quedar sin forma de abrir el menú
             new Spec("Pause", "Pausa", GroupMenu, Play | Menu, ShareBack, K(Key.Escape) | L, K(Key.P), P(GamepadButton.Start) | L, 0),
             // confirmar y volver son los de la navegación de los menús (el EventSystem usa Enter / A y Esc / B)
@@ -122,6 +124,46 @@ namespace Nindo
             }
             return null;
         }
+
+        /// <summary>
+        /// Lo que usan los menús y el mapa abierto por su cuenta, sin pasar por la tabla: el puntero y sus botones, la
+        /// rueda (corre las listas, acerca el mapa), la navegación del EventSystem (WASD, flechas, los dos sticks), Supr,
+        /// Retroceso y X / □ (quitan una tecla en Opciones › Controles) y el zoom del mapa (gatillos, + y -). Una acción
+        /// que se lee con un menú abierto (pausa, mapa) no lo puede tener: un clic en "Opciones" también cerraría la
+        /// pausa. El + y el - de la distribución del teclado los suma InputBindings.
+        /// </summary>
+        public static string MenuReserved(int code)
+        {
+            switch (code)
+            {
+                case BindCode.MouseLeft: case BindCode.MouseRight: case BindCode.MouseMiddle:
+                case BindCode.WheelUp: case BindCode.WheelDown:
+                case (int)Key.W: case (int)Key.A: case (int)Key.S: case (int)Key.D:
+                case (int)Key.UpArrow: case (int)Key.DownArrow: case (int)Key.LeftArrow: case (int)Key.RightArrow:
+                case (int)Key.Delete: case (int)Key.Backspace:
+                case (int)Key.Equals: case (int)Key.Minus: case (int)Key.NumpadPlus: case (int)Key.NumpadMinus:
+                case BindCode.PadBase + (int)GamepadButton.West:
+                case BindCode.PadBase + (int)GamepadButton.LeftTrigger: case BindCode.PadBase + (int)GamepadButton.RightTrigger:
+                case BindCode.RStickUp: case BindCode.RStickDown: case BindCode.RStickLeft: case BindCode.RStickRight:
+                    return "menu";
+            }
+            return null;
+        }
+
+        // teclas que nadie usa de fábrica, de las más a mano a las menos (BindingTable.Load las da en este orden)
+        static readonly int[] SpareKeys =
+        {
+            K(Key.N), K(Key.B), K(Key.G), K(Key.H), K(Key.T), K(Key.R), K(Key.Z), K(Key.X), K(Key.C), K(Key.V),
+            K(Key.Tab), K(Key.CapsLock), K(Key.Digit3), K(Key.Digit4), K(Key.Digit5), K(Key.L), K(Key.O), K(Key.Y),
+        };
+        static readonly int[] SparePad =
+        {
+            P(GamepadButton.Select), P(GamepadButton.LeftStick), P(GamepadButton.RightShoulder), P(GamepadButton.LeftShoulder),
+            P(GamepadButton.North), P(GamepadButton.RightStick),
+        };
+
+        /// <summary>Para la acción que al cargar queda sin nada en un dispositivo (sus teclas de fábrica ya eran de otra).</summary>
+        public static int[] Spares(int dev) => dev == BindingTable.Keys ? SpareKeys : SparePad;
 
         // ================================================================== nombres para guardar
         // GamepadButton tiene alias (A = South, Cross = South...) y Enum.GetName elegiría cualquiera: van fijos

@@ -22,7 +22,7 @@ namespace Nindo.Tests
             if (!ok) { fails++; Console.WriteLine("FALLA: " + what); }
         }
 
-        static BindingTable New(string[] acts) => new BindingTable(BindingCatalog.Build(acts), BindingCatalog.Reserved);
+        static BindingTable New(string[] acts) => new BindingTable(BindingCatalog.Build(acts), BindingCatalog.Reserved, BindingCatalog.MenuReserved, BindingCatalog.Spares);
 
         static int R(BindingTable t, string id) { int r = t.IndexOf(id); if (r < 0) throw new Exception("sin fila " + id); return r; }
         static int K(Key k) => (int)k;
@@ -35,6 +35,7 @@ namespace Nindo.Tests
             SameAsOldReader();
             Swaps();
             Refusals();
+            MenuInputs();
             ClearRules();
             Persistence();
             NewActionMerge();
@@ -107,11 +108,30 @@ namespace Nindo.Tests
         {
             var t = New(Acts);
             int atk = R(t, "Attack"), par = R(t, "Parry"), fin = R(t, "Finisher"), inter = R(t, "Interact"), dash = R(t, "Dash");
-            // J (alternativa de Atacar) a la principal de Parry: se intercambian
-            var res = t.Assign(par, Kb, 0, K(Key.J));
-            Check(res.outcome == BindOutcome.Swapped && res.other == atk && res.otherCode == BindCode.MouseRight, "J a Parry intercambia");
-            Check(t.Get(par, Kb, 0) == K(Key.J) && t.Get(atk, Kb, 1) == BindCode.MouseRight, "J/Clic der. quedaron cambiados");
+            // J (alternativa de Atacar) a la alternativa de Parry: se intercambian (las dos son teclas)
+            var res = t.Assign(par, Kb, 1, K(Key.J));
+            Check(res.outcome == BindOutcome.Swapped && res.other == atk && res.otherCode == K(Key.K), "J a Parry intercambia con K");
+            Check(t.Get(par, Kb, 1) == K(Key.J) && t.Get(atk, Kb, 1) == K(Key.K), "J/K quedaron cambiados");
             Check(t.FindProblem() == null, "sin choques tras el intercambio");
+            // J a la principal de Parry (el clic derecho): Atacar no recibe un botón del mouse a cambio de una tecla,
+            // le queda el clic izquierdo
+            t.Reset(-1);
+            res = t.Assign(par, Kb, 0, K(Key.J));
+            Check(res.outcome == BindOutcome.Taken && res.other == atk && res.otherCode == BindCode.MouseLeft && t.Get(atk, Kb, 1) == 0, "J a Parry: Atacar se queda con el clic izquierdo");
+            // W a Atacar: Mover arriba no camina con el clic, se queda con la flecha
+            t.Reset(-1);
+            int up0 = R(t, "MoveUp");
+            res = t.Assign(atk, Kb, 0, K(Key.W));
+            Check(res.outcome == BindOutcome.Taken && t.Get(up0, Kb, 0) == 0 && t.Get(up0, Kb, 1) == K(Key.UpArrow), "W a Atacar: arriba se queda con la flecha");
+            // el clic derecho a Mover arriba: Parry no recibe la flecha, se queda con K
+            t.Reset(-1);
+            res = t.Assign(up0, Kb, 1, BindCode.MouseRight);
+            Check(res.outcome == BindOutcome.Taken && res.other == par && t.Get(par, Kb, 0) == 0 && t.Get(par, Kb, 1) == K(Key.K), "clic derecho para moverse: Parry se queda con K");
+            // si es su única tecla sí recibe la otra clase (nunca se queda sin nada): Ejecutar con F, a Atacar
+            t.Reset(-1);
+            res = t.Assign(atk, Kb, 0, K(Key.F));
+            Check(res.outcome == BindOutcome.Swapped && t.Get(fin, Kb, 0) == BindCode.MouseLeft && t.Get(inter, Kb, 1) == 0, "F al clic de Atacar: Ejecutar recibe el clic, Interactuar se queda con E");
+            Check(t.FindProblem() == null, "sin choques");
             // F (Ejecutar e Interactuar la comparten a propósito) a Atacar: las dos reciben lo que tenía Atacar
             t.Reset(-1);
             res = t.Assign(atk, Kb, 1, K(Key.F));
@@ -196,6 +216,55 @@ namespace Nindo.Tests
             Check(t.IsDefault(Kb) && t.IsDefault(Pd), "lo rechazado no cambió nada");
         }
 
+        /// <summary>La pausa y el mapa se leen con un menú abierto: nada de lo que usan los menús, ni directo ni por intercambio.</summary>
+        static void MenuInputs()
+        {
+            var t = New(ActsMap);
+            int atk = R(t, "Attack"), pause = R(t, "Pause"), map = R(t, "Map"), down = R(t, "MoveDown"), up = R(t, "MoveUp"), inter = R(t, "Interact");
+            foreach (int c in new[] { BindCode.MouseLeft, BindCode.MouseRight, BindCode.MouseMiddle, BindCode.WheelDown, K(Key.W), K(Key.DownArrow), K(Key.Backspace), K(Key.Delete), K(Key.NumpadPlus) })
+            {
+                var res = t.Assign(pause, Kb, 1, c);
+                Check(!res.Ok && res.refusal == BindRefusal.Reserved && res.reason == "menu", "Pausa no toma " + BindingCatalog.CodeId(c));
+                res = t.Assign(map, Kb, 0, c);
+                Check(!res.Ok && res.refusal == BindRefusal.Reserved && res.reason == "menu", "Mapa no toma " + BindingCatalog.CodeId(c));
+            }
+            foreach (int c in new[] { P(GamepadButton.West), P(GamepadButton.LeftTrigger), P(GamepadButton.RightTrigger), BindCode.RStickDown, BindCode.RStickRight })
+            {
+                Check(t.Assign(pause, Pd, 1, c).reason == "menu", "Pausa no toma " + BindingCatalog.CodeId(c));
+                Check(t.Assign(map, Pd, 0, c).reason == "menu", "Mapa no toma " + BindingCatalog.CodeId(c));
+            }
+            // Enter / A / B confirman y vuelven en los menús: el mapa no los puede tener (antes era solo de juego)
+            var r2 = t.Assign(map, Kb, 0, K(Key.Enter));
+            Check(!r2.Ok && r2.refusal == BindRefusal.LockedElsewhere && r2.other == R(t, "Submit"), "Enter no abre el mapa");
+            Check(t.Assign(map, Pd, 0, P(GamepadButton.South)).refusal == BindRefusal.LockedElsewhere, "A no abre el mapa");
+            Check(t.Assign(map, Pd, 0, P(GamepadButton.East)).refusal == BindRefusal.LockedElsewhere, "B no abre el mapa");
+            Check(t.IsDefault(Kb) && t.IsDefault(Pd), "lo rechazado no cambió nada");
+            // por intercambio tampoco: P a Atacar le sacaría a la pausa la P a cambio del clic; se queda solo con Esc
+            var res2 = t.Assign(atk, Kb, 0, K(Key.P));
+            Check(res2.outcome == BindOutcome.Taken && res2.other == pause && t.Get(pause, Kb, 1) == 0 && t.Get(pause, Kb, 0) == K(Key.Escape), "P a Atacar: la pausa no recibe el clic");
+            t.Reset(-1);
+            res2 = t.Assign(down, Kb, 0, K(Key.P));
+            Check(res2.outcome == BindOutcome.Taken && t.Get(pause, Kb, 1) == 0, "P a Mover abajo: la pausa no recibe la S");
+            t.Reset(-1);
+            res2 = t.Assign(up, Kb, 1, K(Key.M));
+            Check(!res2.Ok && res2.refusal == BindRefusal.OnlyKey && res2.other == map, "M a la flecha de arriba: el mapa no puede recibir la flecha y la M es lo único que tiene");
+            Check(t.FindProblem() == null, "sin choques: " + t.FindProblem());
+            // el mando: Vista a Atacar le daría al mapa la X (quita en la página de controles): se rechaza, es su única
+            t.Reset(-1);
+            res2 = t.Assign(atk, Pd, 0, P(GamepadButton.Select));
+            Check(!res2.Ok && res2.refusal == BindRefusal.OnlyKey && res2.other == map, "Vista a Atacar: es lo único del mapa");
+            // pero el mapa sí recibe un botón que le sirve: Vista a la alternativa (RB) de Atacar
+            res2 = t.Assign(atk, Pd, 1, P(GamepadButton.Select));
+            Check(res2.outcome == BindOutcome.Swapped && t.Get(map, Pd, 0) == P(GamepadButton.RightShoulder), "Vista a Atacar: el mapa pasa a RB");
+            Check(t.FindProblem() == null, "sin choques: " + t.FindProblem());
+            // lo que no es de menú puede usar todo eso: Interactuar con el clic, Atacar con Enter
+            t.Reset(-1);
+            Check(t.Assign(inter, Kb, 1, BindCode.MouseMiddle).Ok && t.Assign(atk, Kb, 1, K(Key.Enter)).Ok, "las de juego toman el clic y Enter");
+            // y al cargar (preferencias editadas a mano) también se ignoran
+            var problems = t.Load("1|Pause.k1=Mouse.Left|Map.k0=Key.UpArrow|Map.p0=Pad.West|Pause.p1=Pad.RStickDown", BindingCatalog.ParseCode);
+            Check(problems.Count == 4 && t.IsDefault(Kb) && t.IsDefault(Pd), "lo de menú cargado a mano se ignora: " + string.Join("; ", problems));
+        }
+
         static void ClearRules()
         {
             var t = New(Acts);
@@ -251,9 +320,20 @@ namespace Nindo.Tests
             var problems = u.Load(t.Save(BindingCatalog.CodeId), BindingCatalog.ParseCode);
             Console.WriteLine("con el mapa nuevo: " + string.Join("; ", problems));
             Check(u.Get(R(u, "Attack"), Kb, 1) == K(Key.M), "Atacar conserva la M del jugador");
-            Check(u.Count(R(u, "Map"), Kb) == 0 && u.Count(R(u, "Map"), Pd) == 0, "el mapa queda sin tecla (la página lo muestra) en vez de chocar");
             Check(u.Get(R(u, "Pause"), Pd, 1) == P(GamepadButton.Select), "Pausa conserva Vista");
+            // sin su M ni su Vista el mapa recibe la primera libre de cada dispositivo: nunca queda sin forma de abrirse
+            int map = R(u, "Map");
+            Check(u.Get(map, Kb, 0) == K(Key.N) && u.Get(map, Pd, 0) == P(GamepadButton.LeftStick), "el mapa recibe N y LS");
+            Check(u.Rescued.Count == 2 && u.Rescued.All(x => x.row == map) && u.Rescued.Any(x => x.dev == Kb && x.lost == K(Key.M) && x.holder == R(u, "Attack"))
+                  && u.Rescued.Any(x => x.dev == Pd && x.lost == P(GamepadButton.Select) && x.holder == R(u, "Pause")), "y queda anotado para avisar");
             Check(u.FindProblem() == null, "sin choques con el mapa");
+            // guardado así, la próxima carga ya no tiene nada que rescatar y da lo mismo
+            var again = New(ActsMap);
+            Check(again.Load(u.Save(BindingCatalog.CodeId), BindingCatalog.ParseCode).Count == 0 && again.Rescued.Count == 0 && SameCodes(u, again), "lo rescatado se guarda");
+            // la N también estaba tomada: el mapa recibe la siguiente libre (B)
+            var v = New(ActsMap);
+            v.Load("1|Attack.k1=Key.M|Parry.k1=Key.N", BindingCatalog.ParseCode);
+            Check(v.Get(R(v, "Map"), Kb, 0) == K(Key.B) && v.FindProblem() == null, "con la N tomada, B");
             // y al revés: una acción que ya no existe en el enum se ignora
             var back = New(Acts);
             problems = back.Load(u.Save(BindingCatalog.CodeId), BindingCatalog.ParseCode);

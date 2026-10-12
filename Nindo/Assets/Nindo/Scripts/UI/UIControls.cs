@@ -19,9 +19,17 @@ namespace Nindo
     /// </summary>
     public partial class UIManager
     {
-        // medidas a 1080p, desde la esquina de arriba a la izquierda de la tarjeta (1060 x 930, la de Opciones)
-        const float CtlRowH = 50f, CtlHeadH = 50f, CtlLabelX = 130f, CtlSlot0X = 580f, CtlSlot1X = 790f;
-        const float CtlViewX = 60f, CtlViewTop = -194f, CtlViewW = 940f, CtlViewH = 556f;
+        // medidas a 1080p, desde la esquina de arriba a la izquierda de la tarjeta (1060 x 930, la de Opciones). Las teclas
+        // van a 44 como en la tarjeta de la pausa y los nombres largos ("Stick der. →") más grandes que en el resto
+        // (0.48 del alto: 21 px a 1080p, 14 a 720p), que acá es donde hay que leerlos; la fila crece a 52 para que entren
+        const float CtlRowH = 52f, CtlHeadH = 50f, CtlLabelX = 130f, CtlSlot0X = 580f, CtlSlot1X = 790f;
+        const float CtlKeyH = 44f, CtlKeyLong = 0.48f;
+        // la lista empieza 20 px debajo de "Principal / Alternativa" y se esfuma en los bordes; se detiene siempre con el
+        // borde de arriba sobre el comienzo de una fila o de un grupo (CtlStopPad más abajo, fuera de lo esfumado: nunca
+        // queda una fila cortada al medio bajo los títulos de las columnas)
+        const float CtlViewX = 60f, CtlViewTop = -204f, CtlViewW = 940f, CtlViewH = 546f, CtlSoft = 24f, CtlStopPad = 12f;
+        // la rueda corre la lista una fila y media por muesca, con la misma suavidad que el teclado y el mando
+        const float CtlWheelStops = 1.5f;
         static readonly Color CtlDim = new Color(0.62f, 0.59f, 0.53f, 1f);       // como los ítems no elegidos
         static readonly Color CtlWarn = new Color(1f, 0.46f, 0.4f, 1f);          // el carmesí claro del clan: se lee sobre la tinta
 
@@ -46,12 +54,15 @@ namespace Nindo
         NindoSelector controlsDevice;
         readonly RectTransform[] controlsContent = new RectTransform[BindingTable.Devices];
         readonly List<ControlsRow>[] controlsRows = { new List<ControlsRow>(), new List<ControlsRow>() };
+        /// <summary>Dónde puede detenerse la lista (posición del contenido, de menor a mayor): ver CtlStopPad.</summary>
+        readonly List<float>[] controlsStops = { new List<float>(), new List<float>() };
         int controlsDev, controlsShownVersion = -1, controlsShownFamily = -1;
         bool controlsOpen, controlsHintPad, controlsHintShown;
-        float controlsOpenT, controlsScrollTarget = -1f, controlsInfoT, controlsInfoLife, controlsResetArmed;
+        float controlsOpenT, controlsScrollTarget = -1f, controlsInfoT, controlsInfoLife, controlsResetArmed, controlsWheel;
         GameObject controlsLastSel;
         CaptureState capture;
-        UIControlsSlot captureSlot;
+        UIControlsSlot captureSlot, captureReturn;
+        bool captureByPointer;
         float captureT;
 
         // ================================================================== armado
@@ -98,20 +109,16 @@ namespace Nindo
                 h.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             }
 
-            // la lista se corre: con el teclado son 18 filas en cuatro grupos y no entran
+            // la lista se corre: con el teclado son 19 filas en cuatro grupos y no entran. Sin ScrollRect: la corre
+            // UpdateControls de parada en parada (teclado, mando y rueda por igual, suavizado)
             controlsViewport = UIFactory.Rect("View", controlsCard, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(CtlViewX, CtlViewTop), new Vector2(CtlViewW, CtlViewH));
             var hit = controlsViewport.gameObject.AddComponent<Image>();
             hit.color = new Color(0f, 0f, 0f, 0f);   // la rueda corre la lista también entre las filas
             var mask = controlsViewport.gameObject.AddComponent<RectMask2D>();
-            mask.softness = new Vector2Int(0, 22);    // las filas se esfuman en los bordes, como tinta
-            var scroll = controlsViewport.gameObject.AddComponent<ScrollRect>();
-            scroll.horizontal = false; scroll.vertical = true;
-            scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.inertia = false;
-            scroll.scrollSensitivity = 40f;
-            scroll.viewport = controlsViewport;
+            mask.softness = new Vector2Int(0, (int)CtlSoft);    // las filas se esfuman en los bordes, como tinta
+            // muescas de la rueda (hacia arriba son positivas y suben la lista); un touchpad manda fracciones y se suman
+            controlsViewport.gameObject.AddComponent<UIControlsScroll>().onScroll = ticks => { if (capture == CaptureState.Idle) controlsWheel -= ticks * CtlWheelStops; };
             for (int d = 0; d < BindingTable.Devices; d++) BuildControlsList(d);
-            scroll.content = controlsContent[0];
 
             // barra de pincel que dice dónde está la lista
             controlsTrack = UIFactory.Centered("Track", controlsCard, new Color(UIFactory.Paper.r, UIFactory.Paper.g, UIFactory.Paper.b, 0.1f), new Vector2(0f, 1f), new Vector2(CtlViewX + CtlViewW + 6f, CtlViewTop - CtlViewH * 0.5f), new Vector2(CtlViewH - 16f, 8f), UISprites.BrushLine).rectTransform;
@@ -151,6 +158,8 @@ namespace Nindo
             var t = InputBindings.Table;
             var content = UIFactory.Rect(dev == BindingTable.Keys ? "Keys" : "Pad", controlsViewport, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), Vector2.zero, new Vector2(CtlViewW, 100f));
             controlsContent[dev] = content;
+            var stops = controlsStops[dev];
+            stops.Add(0f);
             var order = new List<int>();
             for (int r = 0; r < t.RowCount; r++) if (t.Row(r).shown[dev]) order.Add(r);
             order.Sort((a, b) => t.Row(a).group != t.Row(b).group ? t.Row(a).group.CompareTo(t.Row(b).group) : t.Row(a).order != t.Row(b).order ? t.Row(a).order.CompareTo(t.Row(b).order) : a.CompareTo(b));
@@ -162,6 +171,7 @@ namespace Nindo
                 if (row.group != group)
                 {
                     if (group >= 0) y += 10f;
+                    if (y - CtlStopPad > 0f) stops.Add(y - CtlStopPad);
                     group = row.group;
                     string name = group >= 0 && group < BindingCatalog.GroupNames.Length ? BindingCatalog.GroupNames[group] : "Otras";
                     var head = UIFactory.Text("Group", content, name, 24, UIFactory.Gold, new Vector2(0f, 1f), new Vector2(70f, -y - 6f), new Vector2(400, 32), TextAlignmentOptions.TopLeft, true);
@@ -172,16 +182,24 @@ namespace Nindo
                     rule.rectTransform.pivot = new Vector2(0f, 0.5f);
                     y += CtlHeadH;
                 }
+                else stops.Add(y - CtlStopPad);
                 controlsRows[dev].Add(BuildControlsRow(content, r, dev, y));
                 y += CtlRowH;
             }
-            // por qué hay teclas apagadas
+            // por qué hay teclas apagadas (en el mando la primera apagada es el movimiento, que no es por los menús)
             y += 10f;
+            stops.Add(y - CtlStopPad);
             string note = dev == BindingTable.Keys ? "Las teclas apagadas son fijas: así siempre podés pausar, confirmar y volver."
-                                                   : "Los botones apagados son fijos: así siempre podés pausar, confirmar y volver.";
-            UIFactory.Text("Note", content, note, 21, CtlDim, new Vector2(0f, 1f), new Vector2(70f, -y), new Vector2(820, 30), TextAlignmentOptions.TopLeft);
-            y += 44f;
-            content.sizeDelta = new Vector2(CtlViewW, y);
+                                                   : "Los botones apagados son fijos: el stick y la cruceta mueven a Kaito,\ny así siempre podés pausar, confirmar y volver.";
+            UIFactory.Text("Note", content, note, 21, CtlDim, new Vector2(0f, 1f), new Vector2(70f, -y), new Vector2(820, dev == BindingTable.Keys ? 30f : 60f), TextAlignmentOptions.TopLeft);
+            y += dev == BindingTable.Keys ? 44f : 74f;
+            // el final también es una parada: se agrega aire abajo hasta la parada siguiente al final justo
+            float end = y - CtlViewH, max = 0f;
+            foreach (float s in stops) if (s >= end) { max = s; break; }
+            if (max < end) max = Mathf.Max(0f, end);
+            stops.RemoveAll(s => s > max);
+            if (stops[stops.Count - 1] < max) stops.Add(max);
+            content.sizeDelta = new Vector2(CtlViewW, Mathf.Max(y, max + CtlViewH));
             content.gameObject.SetActive(false);
         }
 
@@ -205,11 +223,11 @@ namespace Nindo
 
         UIControlsSlot BuildControlsSlot(RectTransform rowRt, int r, int dev, int s, float x)
         {
-            var rt = UIFactory.Rect("Slot" + s, rowRt, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0f), new Vector2(188f, 48f));
+            var rt = UIFactory.Rect("Slot" + s, rowRt, new Vector2(0f, 0.5f), new Vector2(0f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(x, 0f), new Vector2(188f, CtlRowH - 2f));
             var hit = rt.gameObject.AddComponent<Image>();
             hit.color = new Color(0f, 0f, 0f, 0f);
             var line = UIFactory.Centered("Line", rt, new Color(UIFactory.Paper.r, UIFactory.Paper.g, UIFactory.Paper.b, 0.16f), new Vector2(0.5f, 0.5f), new Vector2(0f, -20f), new Vector2(132f, 12f), UISprites.BrushLine);
-            var key = UIFactory.KeyCap(rt, "?", 40f, new Vector2(0.5f, 0.5f), new Vector2(0f, 4f));
+            var key = UIFactory.KeyCap(rt, "?", CtlKeyH, new Vector2(0.5f, 0.5f), new Vector2(0f, 4f));
             var dots = new Image[3];
             for (int i = 0; i < dots.Length; i++)
             {
@@ -243,16 +261,34 @@ namespace Nindo
             RefreshControlsSlots();
             ControlsHint();
             ShowControlsDevice(dev);
+            ControlsRescueNotice();
+        }
+
+        /// <summary>
+        /// Una acción nueva (el mapa) llegó cuando el jugador ya usaba sus teclas para otra cosa y recibió una libre al
+        /// cargar (BindingTable.Load): se avisa una vez, la primera vez que se abre la página.
+        /// </summary>
+        void ControlsRescueNotice()
+        {
+            if (!InputBindings.PendingRescue) return;
+            InputBindings.PendingRescue = false;
+            var t = InputBindings.Table;
+            foreach (var r in t.Rescued)
+            {
+                string who = r.holder >= 0 ? " ya era de " + t.Row(r.holder).label : " ya se usaba para otra cosa";
+                ControlsInfo(t.Row(r.row).label + " usa " + ControlsChip(r.code, r.dev), ControlsChip(r.lost, r.dev) + who, UIFactory.Gold, 6f);
+                // si hay más de una (teclado y mando) se muestra la del dispositivo que se está mirando
+                if (r.dev == controlsDev) break;
+            }
         }
 
         void ShowControlsDevice(int dev)
         {
             controlsDev = dev;
             for (int d = 0; d < BindingTable.Devices; d++) controlsContent[d].gameObject.SetActive(d == dev);
-            var scroll = controlsViewport.GetComponent<ScrollRect>();
-            scroll.content = controlsContent[dev];
             controlsContent[dev].anchoredPosition = Vector2.zero;
             controlsScrollTarget = -1f;
+            controlsWheel = 0f;
             LinkControlsNavigation(dev);
             // al abrir, la primera casilla; al cambiar de dispositivo con el selector, el foco se queda en el selector
             var sel = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
@@ -274,6 +310,7 @@ namespace Nindo
         void ResetControlsPage()
         {
             if (capture != CaptureState.Idle) { capture = CaptureState.Idle; captureSlot = null; SetMenuNavigation(true); }
+            captureReturn = null;
             controlsBlocker.gameObject.SetActive(false);
             controlsOpen = false;
             controlsCard.gameObject.SetActive(false);
@@ -370,7 +407,7 @@ namespace Nindo
                     {
                         string name = InputBindings.Name(row.row, d, s.slot, fam);
                         s.key.gameObject.SetActive(name != null);
-                        if (name != null) UIFactory.SetKeyCap(s.key, name, fam);
+                        if (name != null) UIFactory.SetKeyCap(s.key, name, fam, CtlKeyLong);
                         // una casilla fija vacía (la alternativa de Confirmar) no muestra ni el trazo
                         s.line.enabled = s.interactable;
                     }
@@ -384,14 +421,15 @@ namespace Nindo
             return UIFactory.KeyChip(InputBindings.Display(code, fam) ?? "?", fam);
         }
 
-        /// <summary>Las teclas de la página en el dispositivo que se está usando (Enter / A cambia, Supr / X quita, Esc / B vuelve).</summary>
+        /// <summary>Las teclas de la página en el dispositivo que se está usando (Enter / A cambia, Supr o clic derecho / X quita, Esc / B vuelve).</summary>
         void ControlsHint()
         {
             var t = InputBindings.Table;
             controlsHintPad = Game.Input != null && Game.Input.UsingGamepad;
             int dev = controlsHintPad ? BindingTable.Pad : BindingTable.Keys, fam = ControlsFamily(dev);
             string change = ControlsChip(t.Get((int)Act.Submit, dev, 0), dev);
-            string clear = UIFactory.KeyChip(controlsHintPad ? (fam == 2 ? "□" : "X") : "Supr", fam);
+            // con el mouse se quita con el clic derecho sobre la casilla (UIControlsSlot): si no se dice, nadie lo encuentra
+            string clear = controlsHintPad ? UIFactory.KeyChip(fam == 2 ? "□" : "X", fam) : UIFactory.KeyChip("Supr", 0) + " " + UIFactory.KeyChip("Clic der.", 0);
             string back = ControlsChip(t.Get((int)Act.Cancel, dev, 0), dev);
             controlsInfo.text = change + " Cambiar        " + clear + " Quitar        " + back + " Volver";
             controlsInfo.color = CtlDim;
@@ -415,7 +453,8 @@ namespace Nindo
         }
 
         // ================================================================== reasignar
-        void StartCapture(UIControlsSlot s)
+        /// <param name="byPointer">Se abrió con un clic: el segundo clic de un doble clic no queda asignado.</param>
+        void StartCapture(UIControlsSlot s, bool byPointer)
         {
             if (capture != CaptureState.Idle || !controlsOpen) return;
             var row = InputBindings.Table.Row(s.row);
@@ -427,6 +466,7 @@ namespace Nindo
             }
             capture = CaptureState.Arming;
             captureSlot = s;
+            captureByPointer = byPointer;
             captureT = 0f;
             SetMenuNavigation(false);
             controlsBlocker.gameObject.SetActive(true);
@@ -435,8 +475,10 @@ namespace Nindo
             var t = InputBindings.Table;
             bool padUser = Game.Input != null && Game.Input.UsingGamepad;
             string cancel = padUser ? ControlsChip(t.Get((int)Act.Pause, BindingTable.Pad, 0), BindingTable.Pad) : ControlsChip(t.Get((int)Act.Pause, BindingTable.Keys, 0), BindingTable.Keys);
+            // dos renglones: qué hacer (también un botón del mouse) y cómo salir; la rueda sirve donde se puede pero no se
+            // nombra, y si no sirve (fijar, moverse) el rechazo explica por qué
             if (s.dev == BindingTable.Keys)
-                ControlsInfo("Presioná la tecla nueva para " + row.label, cancel + (row.hold ? " cancela       También sirven los botones del mouse" : " cancela        También sirven los botones y la rueda del mouse"), UIFactory.Gold, 0f);
+                ControlsInfo("Presioná la tecla o el botón del mouse para " + row.label, cancel + " cancela", UIFactory.Gold, 0f);
             else
                 ControlsInfo("Presioná el botón nuevo para " + row.label, cancel + " cancela", UIFactory.Gold, 0f);
         }
@@ -456,7 +498,9 @@ namespace Nindo
                 case CaptureState.Listening:
                     captureT += dt;
                     if (InputBindings.CaptureCancelPressed(captureSlot.dev)) { CancelCapture(); break; }
-                    int code = InputBindings.Capture(captureSlot.dev);
+                    // abierta con un clic, el mouse cuenta recién pasado el tiempo de un doble clic: si no, el segundo
+                    // clic le daba el clic izquierdo a la acción (y le sacaba el ataque al mouse)
+                    int code = InputBindings.Capture(captureSlot.dev, !captureByPointer || captureT >= 0.4f);
                     if (code != BindCode.None) { ApplyCapture(captureSlot, code); EndCapture(); }
                     else if (captureT > 8f)
                     {
@@ -468,11 +512,14 @@ namespace Nindo
                     // la tecla tomada (Enter, la A) no puede confirmar nada en el menú al volver la navegación; confirmar
                     // va por flanco, así que con algo trabado alcanza con esperar un poco
                     captureT += dt;
+                    RestoreCaptureSelection();
                     if (!InputBindings.AnyHeld() || captureT > 0.6f)
                     {
                         capture = CaptureState.Idle;
                         SetMenuNavigation(true);
                         controlsBlocker.gameObject.SetActive(false);
+                        RestoreCaptureSelection();
+                        captureReturn = null;
                     }
                     break;
             }
@@ -481,8 +528,20 @@ namespace Nindo
         void EndCapture()
         {
             capture = CaptureState.Releasing;
+            captureReturn = captureSlot;
             captureSlot = null;
             captureT = 0f;
+        }
+
+        /// <summary>
+        /// Un clic sobre el velo (el que se asignó, o uno del doble clic) le saca la selección a la casilla: el
+        /// EventSystem deselecciona al hacer clic sobre algo que no se elige. Vuelve a la casilla que esperaba la tecla,
+        /// así sigue resaltada y las flechas, el stick y Supr siguen andando.
+        /// </summary>
+        void RestoreCaptureSelection()
+        {
+            var es = EventSystem.current;
+            if (captureReturn != null && es != null && es.currentSelectedGameObject == null) SelectControlsSlot(captureReturn);
         }
 
         void CancelCapture()
@@ -592,6 +651,8 @@ namespace Nindo
                 case BindRefusal.Reserved:
                     if (res.reason == "pausa") ControlsInfo(chip + (button ? " queda fijo para pausar" : " queda fija para pausar"), "Así siempre podés abrir el menú", CtlWarn, 4f);
                     else if (res.reason == "cruceta") ControlsInfo("La cruceta mueve a Kaito", pick, CtlWarn, 4f);
+                    // la pausa y el mapa también se leen con un menú abierto: el clic o las flechas harían dos cosas
+                    else if (res.reason == "menu") ControlsInfo(chip + " se usa en los menús", label + (dev == BindingTable.Keys ? " necesita otra tecla" : " necesita otro botón"), CtlWarn, 4f);
                     else ControlsInfo(chip + " es del sistema", pick, CtlWarn, 4f);
                     break;
                 case BindRefusal.LockedElsewhere:
@@ -684,6 +745,12 @@ namespace Nindo
 
             FollowControlsSelection(sel);
             var content = controlsContent[controlsDev];
+            int notches = (int)controlsWheel;
+            if (notches != 0)
+            {
+                controlsWheel -= notches;
+                controlsScrollTarget = StepControlsStops(controlsScrollTarget >= 0f ? controlsScrollTarget : content.anchoredPosition.y, notches);
+            }
             if (controlsScrollTarget >= 0f)
             {
                 var p = content.anchoredPosition;
@@ -724,18 +791,51 @@ namespace Nindo
             var s = sel.GetComponent<UIControlsSlot>();
             if (s == null || s.dev != controlsDev || s.byPointer) return;
             var rows = controlsRows[controlsDev];
+            var stops = controlsStops[controlsDev];
             for (int i = 0; i < rows.Count; i++)
             {
                 if (rows[i].row != s.row) continue;
-                float cur = content.anchoredPosition.y, top = rows[i].y - 60f, bottom = rows[i].y + CtlRowH + 40f;
+                float cur = controlsScrollTarget >= 0f ? controlsScrollTarget : content.anchoredPosition.y;
+                // con aire: arriba la fila anterior o el título del grupo, abajo casi una fila más
+                float top = rows[i].y - CtlHeadH - CtlStopPad, bottom = rows[i].y + CtlRowH + 40f;
                 // en la primera y en la última que se pueden elegir se ve hasta el borde: arriba el título del grupo,
                 // abajo las fijas (Confirmar, Volver) y la nota que explica por qué están apagadas
                 if (NextControlsSlot(rows, i, -1, s.slot) == null) top = 0f;
                 if (NextControlsSlot(rows, i, 1, s.slot) == null) bottom = content.sizeDelta.y;
-                if (top < cur) controlsScrollTarget = Mathf.Clamp(top, 0f, max);
-                else if (bottom > cur + viewH) controlsScrollTarget = Mathf.Clamp(bottom - viewH, 0f, max);
+                if (top < cur)
+                {
+                    // la parada más baja que deja ver ese aire
+                    float t = 0f;
+                    foreach (float st in stops) if (st <= top + 0.5f) t = st;
+                    controlsScrollTarget = t;
+                }
+                else if (bottom > cur + viewH)
+                {
+                    float t = max;
+                    for (int j = stops.Count - 1; j >= 0; j--) if (stops[j] >= bottom - viewH - 0.5f) t = stops[j];
+                    controlsScrollTarget = Mathf.Min(t, max);
+                }
                 return;
             }
+        }
+
+        /// <summary>'n' paradas más abajo (o más arriba si es negativo) desde 'from', sin salirse de la lista.</summary>
+        float StepControlsStops(float from, int n)
+        {
+            var stops = controlsStops[controlsDev];
+            int i;
+            if (n > 0)
+            {
+                // desde la parada en la que está o la de arriba más cercana
+                i = 0;
+                while (i + 1 < stops.Count && stops[i + 1] <= from + 0.5f) i++;
+            }
+            else
+            {
+                i = stops.Count - 1;
+                while (i > 0 && stops[i - 1] >= from - 0.5f) i--;
+            }
+            return stops[Mathf.Clamp(i + n, 0, stops.Count - 1)];
         }
 
         void UpdateControlsThumb(RectTransform content)

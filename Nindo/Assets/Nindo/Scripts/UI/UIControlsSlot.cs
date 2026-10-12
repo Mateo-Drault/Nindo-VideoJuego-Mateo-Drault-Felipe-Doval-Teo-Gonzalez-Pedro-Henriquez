@@ -17,7 +17,9 @@ namespace Nindo
         public CanvasGroup keyGroup;
         public Image line;
         public Image[] dots;
-        public Action<UIControlsSlot> onActivate, onClear;
+        /// <summary>Esperar la tecla nueva; el bool dice si fue con un clic (para no tomar el segundo de un doble clic).</summary>
+        public Action<UIControlsSlot, bool> onActivate;
+        public Action<UIControlsSlot> onClear;
         /// <summary>La última selección vino del mouse: la lista no se corre sola (si no, al pasar por la última fila
         /// visible la lista subía, el mouse caía sobre otra fila y la elegía).</summary>
         public bool byPointer;
@@ -52,12 +54,12 @@ namespace Nindo
             selectingByPointer = false;
         }
 
-        public void OnSubmit(BaseEventData e) { if (IsInteractable()) onActivate?.Invoke(this); }
+        public void OnSubmit(BaseEventData e) { if (IsInteractable()) onActivate?.Invoke(this, false); }
 
         public void OnPointerClick(PointerEventData e)
         {
             if (!IsInteractable()) return;
-            if (e.button == PointerEventData.InputButton.Left) onActivate?.Invoke(this);
+            if (e.button == PointerEventData.InputButton.Left) onActivate?.Invoke(this, true);
             else if (e.button == PointerEventData.InputButton.Right) onClear?.Invoke(this);
         }
 

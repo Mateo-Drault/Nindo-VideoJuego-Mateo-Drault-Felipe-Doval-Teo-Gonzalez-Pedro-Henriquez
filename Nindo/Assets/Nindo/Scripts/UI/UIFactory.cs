@@ -455,7 +455,8 @@ namespace Nindo
 
         /// <param name="family">0 teclado, 1 Xbox, 2 PlayStation: la página de controles muestra los botones del mando
         /// aunque se esté usando el teclado (y la tecla A del teclado no es el botón A verde).</param>
-        public static void SetKeyCap(RectTransform key, string glyph, int family)
+        /// <param name="longScale">Alto de la letra de los nombres largos ("Clic izq.") respecto de la tecla.</param>
+        public static void SetKeyCap(RectTransform key, string glyph, int family, float longScale = 0.4f)
         {
             var t = key.GetComponentInChildren<TextMeshProUGUI>();
             if (t == null || glyph == null) return;
@@ -468,7 +469,7 @@ namespace Nindo
             cap.type = !round && cap.sprite != null && cap.sprite.border.sqrMagnitude > 0f ? UnityEngine.UI.Image.Type.Sliced : UnityEngine.UI.Image.Type.Simple;
             if (cap.sprite != null) cap.pixelsPerUnitMultiplier = cap.sprite.rect.height / Mathf.Max(1f, h);
             t.text = glyph;
-            t.fontSize = h * (glyph.Length > 2 ? 0.4f : 0.56f);
+            t.fontSize = h * (glyph.Length > 2 ? longScale : 0.56f);
             t.color = GlyphColor(glyph, family);
             // ancho a medida del texto ("Espacio", "Clic izq."), medido con la fuente: es una vez por cambio
             float w = round ? h : Mathf.Max(h, t.GetPreferredValues(glyph, 9999f, h).x + h * 0.56f);

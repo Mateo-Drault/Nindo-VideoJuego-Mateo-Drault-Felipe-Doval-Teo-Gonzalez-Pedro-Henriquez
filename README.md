@@ -79,8 +79,12 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
 | Pausa | Esc / P | Start |
 
 Todo se cambia en **Opciones › Controles** (teclado y mouse, y mando, con dos teclas por acción). Si la
-tecla nueva ya era de otra acción se intercambian; Esc y Start pausan siempre y Enter / A y Esc / B
-confirman y vuelven en los menús, así nunca se pierde el menú. Las reglas y cómo se guarda están en
+tecla nueva ya era de otra acción se intercambian (si a la otra le queda una tecla y lo que recibiría es de
+otra clase, como un botón del mouse para moverse, solo pierde la suya). Esc y Start pausan siempre y no se
+asignan a nada. Enter / A y Esc / B confirman y vuelven en los menús: se pueden dar a acciones del juego (atacar
+con Enter), pero no a la pausa ni al mapa, que también se leen con un menú abierto; esas dos tampoco toman lo que
+usan los menús (el clic, la rueda, WASD y las flechas, Supr, X del mando, los gatillos y el stick derecho del
+mapa). Así nunca se pierde el menú. Las reglas y cómo se guarda están en
 `Input/BindingTable.cs`; `python Tools/Dev/bindings_test.py` las prueba sin Unity.
 
 ## Sistema de combate (se mantuvo el formato original, pulido)
