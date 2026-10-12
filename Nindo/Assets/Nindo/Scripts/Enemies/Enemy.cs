@@ -15,7 +15,7 @@ namespace Nindo
     ///  * en GUARDIA el primer golpe rebota (suma postura) y el segundo te lo DESVÍA con un contraataque.
     /// Reemplaza a EnemyMovement + EnemyCombat + EnemyBeingDamaged + versiones del luchador.
     /// </summary>
-    public class Enemy : MonoBehaviour, IHittable
+    public partial class Enemy : MonoBehaviour, IHittable
     {
         public EnemyConfig config = new EnemyConfig();
         [Tooltip("Encuentro al que pertenece (se reinicia si Kaito muere)")] public Encounter encounter;
@@ -197,6 +197,7 @@ namespace Nindo
             if (katanaBase != null && katanaTip != null)
                 trail = BladeTrail.Create(transform, katanaBase, katanaTip, Game.Content != null ? Game.Content.trailMaterial : null, TellStyle.TrailParry);
             Game.Combat?.Register(this);
+            ResolveClipVariants();   // golpes de zona con clip propio: el de siempre si el controller no lo tiene
             anim.Play(config.animLocomotion, 0f);
             nextAttackTime = Time.time + Random.Range(0.4f, 1.2f);
             if (startAggro) Alert();
@@ -228,6 +229,7 @@ namespace Nindo
             anim.Play(config.animLocomotion, 0f);
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = true;
             Game.Combat?.Register(this);
+            ResetLocomotionAnim();
             Ambient?.Restart();     // vuelve a meditar, practicar, dormir... en su lugar
         }
 
@@ -322,12 +324,9 @@ namespace Nindo
                 case EnemyState.Exhausted: TickExhausted(dt); break;
                 case EnemyState.Stagger: TickTimed(dt, () => SetState(EnemyState.Chase)); break;
             }
-            // los controllers no tienen transiciones (todo es CrossFade por código): al volver a moverse
-            // hay que reentrar al blend tree de locomoción, si no se desliza congelado en la última pose
-            // (fin de Spotted, Guard, Hit, Counter, intro de jefe...)
-            if ((State == EnemyState.Chase || State == EnemyState.Strafe || State == EnemyState.Idle) && stateTime > 0.02f && anim.Current != config.animLocomotion
-                && (Ambient == null || !Ambient.HoldsPose))
-                anim.Play(config.animLocomotion, 0.15f);
+            // reentra a la locomoción y elige el ciclo (de frente, de costado o para atrás): Enemy.Locomotion.cs
+            TickLocomotionAnim(dt);
+            TickLungeWarp(dt);
 
             // el empujón del golpe espera a que termine el hit-stop local (si no, se desliza congelado)
             if (knock.sqrMagnitude > 0.0001f && !anim.Frozen)
@@ -687,7 +686,9 @@ namespace Nindo
                 if (stepClock >= lungeStartT && !anim.Frozen)
                 {
                     float room = DistToTarget - Radius - target.Radius - 0.3f;
-                    if (room > 0f) MoveBy(transform.forward * Mathf.Min(a.lunge / span * dt, room));
+                    float want = a.lunge / span * dt, go = Mathf.Clamp(room, 0f, want);
+                    if (go > 0f) MoveBy(transform.forward * go);
+                    WarpLunge(want - go, lungeLeft);   // lo que cortó el imán: el modelo sigue el final (Enemy.Locomotion.cs)
                 }
             }
             StrikeReach = a.range * Mathf.Max(1f, config.scale * 0.85f) + lungeLeft;

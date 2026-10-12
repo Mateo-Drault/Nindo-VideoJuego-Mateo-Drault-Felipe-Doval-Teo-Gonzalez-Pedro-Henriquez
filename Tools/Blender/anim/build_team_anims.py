@@ -140,6 +140,7 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
     rep["hip_drop_cm"] = round(max(drops) * 100, 1)
     check(max(drops) <= 0.04, f"{clip.name}: la cadera no se cae para alcanzar los pies ({max(drops) * 100:.1f} cm en f{fd})", warn=True)
     pl = plants(ch, frames, roots, ctrls)
+    touch = touch_segments(ch, frames)
     rep["plants"] = pl
     worst = max([p["drift_cm"] for v in pl.values() for p in v] or [0.0])
     allow = t.get("slide_ok", 2.0)
@@ -190,12 +191,25 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             ok = abs(a0 - a / n) <= 1.0 / n + 1e-3 and (apex is None or abs(apex - ap / n) <= 1.0 / n + 1e-3)
             check(ok, f"{clip.name}: {fn}() Hit(\"{st}\") activo {a0:.2f}-{a1:.2f} apex {apex} vs clip contacto "
                       f"{a / n:.3f} apex {ap / n:.3f}")
-            # las variantes que reusan el clip con otra embestida: los pies quedan corridos la diferencia, y si la
-            # embestida no entra en la suelta, el cuerpo se desliza durante la pausa (aviso, no falla: es su número)
-            if t.get("lunge") is not None and hl > 0.0:
-                g = prerelease_glide(n, ap, a, hl, hs)
-                check(g <= 0.02 and abs(hl - t["lunge"]) <= 0.1,
-                      f"{clip.name}: {fn}() embestida {hl:.2f} m (clip {t['lunge']:.2f}), {g * 100:.0f} cm antes de la suelta", warn=True)
+            # las variantes que reusan el clip con otra embestida (o con otra velocidad): lo que se corre un pie apoyado
+            # con el avance que aplica el juego, medido sobre los apoyos del clip (aviso, no falla: es su número). Un clip
+            # cuyos pies vuelan durante la embestida aguanta cualquier largo; uno con un pie clavado patina la diferencia
+            if t.get("lunge") is not None and hl > 0.0 and clip.travel_table is not None:
+                trv, _ = T.lunge_travel(n, ap, a, hl, windup_min=t.get("windup", 0.55), speed=hs)
+                sk = variant_skate(touch, clip.travel_table, trv)
+                rep.setdefault("variant_skate_cm", {})[fn] = round(sk * 100.0, 1)
+                check(sk <= 0.02, f"{clip.name}: {fn}() embestida {hl:.2f} m (clip {t['lunge']:.2f}): los pies apoyados "
+                                  f"se corren {sk * 100:.1f} cm", warn=True)
+        # Kaito pegado (el imán del golpe corta la embestida en Enemy.TickAttack): lo que patina un pie apoyado si el
+        # transform no avanza nada. Con los pies en el aire durante la embestida es 0
+        if t.get("lunge") and clip.travel_table is not None:
+            rep["magnet_skate_cm"] = round(variant_skate(touch, clip.travel_table, [0.0] * len(clip.travel_table)) * 100.0, 1)
+            # y si el transform alcanza a avanzar una parte (Kaito un poco más lejos): el corte cae al final de la embestida
+            # con lungeSlack (Enemy.Locomotion.cs) el modelo hace los últimos 'slack' m de lo que el imán cortó
+            L = t["lunge"]
+            rep["magnet_curve_cm"] = {str(sl): [round(variant_skate(touch, clip.travel_table, [
+                min(x, L * q / 10.0) + max(0.0, x - max(L * q / 10.0, L - sl)) for x in clip.travel_table]) * 100.0, 1) for q in range(11)]
+                for sl in (0.0, 0.15, 0.35)}
         # la embestida del clip tiene que arrancar en la suelta: si arranca antes, con cualquier pausa del juego en el
         # apex (CombatDirector la estira hasta 0.6 s) el ninja se desliza con la pose quieta y los pies clavados
         if t.get("lunge"):
@@ -500,6 +514,47 @@ def prerelease_glide(frames, apex, contact, lunge, speed):
     room = tl.tR + 0.05 * tl.step_len
     span = max(room, lunge / 12.0)
     return lunge * (span - room) / span
+
+
+def touch_segments(ch, frames, tol=0.02):
+    """Tramos de cuadros en que cada pie toca el piso (el punto más bajo de la suela, la punta o el talón, a menos de
+    'tol' del piso), apoyado o rodando sobre la punta: ahí un cambio del avance del transform es un patinazo. Los apoyos
+    de plants() no ven el pie que rueda (el tobillo sube y se mueve) y es justo el que empuja en una embestida."""
+    R = ch.rig
+    out = {}
+    for k in "rl":
+        fb = ch.side[k]["foot"]
+        a0 = ch.land["ankle_" + k]
+        so = ch.sole[k]
+        loc = [R.rest_inv[fb] @ ch.P(a0 + v) for v in (Vector((0.0, 0.0, so["toe"].z)), so["toe"], so["heel"])]
+        zero = [Vector()] * len(frames)
+        low = [min(p.z for p in pts) for pts in zip(*[canon_track(ch, frames, zero, fb, l) for l in loc])]
+        floor = min(low)
+        segs, cur = [], None
+        for f, z in enumerate(low):
+            if z < floor + tol:
+                cur = [f, f] if cur is None else [cur[0], f]
+            else:
+                if cur:
+                    segs.append({"frames": cur})
+                cur = None
+        if cur:
+            segs.append({"frames": cur})
+        out[k] = segs
+    return out
+
+
+def variant_skate(segs, tr, trv):
+    """Lo que se corre en el mundo un pie que toca el piso (tramos de touch_segments) si el juego avanza el transform
+    'trv' en vez del 'tr' con que se autoró: dentro de un tramo el pie se mueve lo que cambia la diferencia de los avances."""
+    worst = 0.0
+    for ss in segs.values():
+        for sgm in ss:
+            a, b = sgm["frames"]
+            d0 = trv[min(a, len(trv) - 1)] - tr[min(a, len(tr) - 1)]
+            for f in range(a, b + 1):
+                worst = max(worst, abs((trv[min(f, len(trv) - 1)] - tr[min(f, len(tr) - 1)]) - d0))
+    return worst
 
 
 def body_points(ch, W):
@@ -849,7 +904,8 @@ def main():
             # el segundo esqueleto del FBX (el ninja del secuestro): los mismos chequeos sobre lo suyo
             duo.limb_rows = {k: list(v) for k, v in solver.partner_solver().limbs.rows.items()}
             reports[clip.name]["partner"] = lint(ch.partner, duo, frames, duo.ctrls, roots, duo.drops, duo.misses, {})
-        rootsd[clip.name] = [(c.get("travel") or 0.0) + clip.root_vel.length * (f / T.FPS) for f, c in enumerate(ctrls)]
+        # avance del transform en el marco de autoría (frente -Y): el rodeo va de costado y el retroceso para atrás
+        rootsd[clip.name] = [Vector((0.0, -(c.get("travel") or 0.0), 0.0)) + clip.root_vel * (f / T.FPS) for f, c in enumerate(ctrls)]
         rootsa[clip.name] = roots
         baked.append((clip, frames))
     act, ranges = NA.write_pack(ch.arm, ch.rig, baked, start=1, gap=GAP)

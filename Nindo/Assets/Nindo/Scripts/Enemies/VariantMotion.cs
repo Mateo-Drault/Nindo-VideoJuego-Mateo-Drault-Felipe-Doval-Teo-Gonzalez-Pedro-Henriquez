@@ -102,7 +102,9 @@ namespace Nindo
             nextScan = Time.time + Random.Range(0.3f, flavor.scanEvery);
         }
 
-        bool InLocomotion => enemy.IsAlive && enemy.State != EnemyState.Scripted && enemy.Anim.Current == enemy.config.animLocomotion;
+        // también rodeando o retrocediendo (los ciclos direccionales de Enemy.Locomotion.cs): si no, la inclinación de la
+        // zona se apagaba y prendía cada vez que el enemigo cambiaba de dirección
+        bool InLocomotion => enemy.IsAlive && enemy.State != EnemyState.Scripted && enemy.InLocomotionPose;
 
         float Speed01 => hasSpeed ? Mathf.Clamp01(animator.GetFloat(SpeedParam)) : 0f;
 
@@ -111,6 +113,8 @@ namespace Nindo
             // Enemy fija Animator.speed en cada Update (CharacterAnimator.Tick): se escala recién si sigue siendo ese
             // valor (congelado por hit-stop o un frame sin Tick no se toca, y nunca se acumula)
             if (!InLocomotion || enemy.Anim.Frozen) return;
+            // los ciclos direccionales ya van al ritmo de la velocidad real (Enemy.GaitRate): solo el blend tree se escala
+            if (enemy.Anim.Current != enemy.config.animLocomotion) return;
             float s = enemy.Anim.StateSpeed;
             // el ritmo de quieto solo parado: apenas arranca (caminar, rodear) ya va al de desplazamiento entero
             float rate = Mathf.Lerp(flavor.idleSpeed, moveSpeed, Mathf.InverseLerp(0f, 0.15f, Speed01));
@@ -181,7 +185,8 @@ namespace Nindo
 
         void Write(bool rotation)
         {
-            transform.localPosition = basePos + Vector3.up * (curLift / Mathf.Max(0.01f, transform.parent != null ? transform.parent.lossyScale.y : 1f));
+            // + el adelanto de una embestida que el imán cortó (Enemy.ModelNudge): si no, el salto lo borraba
+            transform.localPosition = basePos + enemy.ModelNudge + Vector3.up * (curLift / Mathf.Max(0.01f, transform.parent != null ? transform.parent.lossyScale.y : 1f));
             if (!rotation) return;
             transform.localRotation = baseRot * Quaternion.Euler(0f, curYaw, 0f);
             rotDirty = Mathf.Abs(Mathf.DeltaAngle(curYaw, 0f)) > 0.01f;
@@ -199,8 +204,9 @@ namespace Nindo
             switch (a.name)
             {
                 case "Salto":
-                    // en el aire desde que arranca la embestida hasta que cae con el golpe (1.2 m de alto)
-                    lift = 1.2f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((t - (T - 0.42f)) / 0.47f));
+                    // en el aire desde que arranca la embestida hasta que cae con el golpe (1.2 m de alto); el clip propio
+                    // (Leap) ya salta en su arco, solo el de respaldo (Attack3) se levanta acá
+                    if (a.state != LeapState) lift = 1.2f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((t - (T - 0.42f)) / 0.47f));
                     if (struck) Game.FX?.Dust(enemy.transform.position, 1.1f);
                     break;
                 case "Repliegue":
@@ -213,9 +219,10 @@ namespace Nindo
                 }
                 case "Remolino":
                 {
-                    // un giro entero desde la suelta hasta un poco después del golpe (pega en 360°)
+                    // un giro entero desde la suelta hasta un poco después del golpe (pega en 360°); el clip propio (Whirl)
+                    // gira en el aire con los pies, solo el de respaldo (Attack2) se gira entero acá
                     float k = Mathf.Clamp01((t - tl.ReleaseTime) / Mathf.Max(0.05f, T - tl.ReleaseTime + 0.22f));
-                    yaw = 360f * k * k * (3f - 2f * k);
+                    if (a.state != WhirlState) yaw = 360f * k * k * (3f - 2f * k);
                     if (struck) Game.FX?.Splash(enemy.transform.position + Vector3.up * 0.6f);
                     break;
                 }
@@ -242,6 +249,9 @@ namespace Nindo
             }
             return lift > 0.001f || Mathf.Abs(yaw) > 0.01f;
         }
+
+        // golpes de zona con clip propio (EnemyArchetypes: el salto y el giro ya están en el clip)
+        const string LeapState = "Leap", WhirlState = "Whirl";
 
         static void Restore(Bone b)
         {

@@ -22,6 +22,7 @@ import sys
 import nindo_anim as NA
 import team_rig as T
 import team_ambient
+import team_moves
 
 Key = NA.Key
 RUN_SPEED, WALK_SPEED = 5.0, 2.0          # EnemyArchetypes.Ninja(): runSpeed, walkSpeed
@@ -35,7 +36,9 @@ BLENDS = ([("Walk", 0, "Idle", 0), ("Run", 0, "Walk", 0), ("Guard", 0, "Idle", 0
              for f in (0, -1) if not (c == "Counter" and f == 0)]
           + [(c, 0, "Idle", 0) for c in ("Parried", "ParriedPerfect", "Death")]
           # idles ambientales (team_ambient): el despertar sale de la meditación y termina en la guardia
-          + [("AmbientAlert", 0, "IdleMeditate", 0), ("AmbientAlert", -1, "Idle", 0)])
+          + [("AmbientAlert", 0, "IdleMeditate", 0), ("AmbientAlert", -1, "Idle", 0)]
+          # rodeo y retroceso (team_moves): Enemy cruza con Walk en la misma fase
+          + [(c, 0, "Walk", 0) for c in ("StrafeL", "StrafeR", "WalkBack")])
 
 # ------------------------------------------------------------------ guardia (pose base)
 # pie derecho adelante, cadera girada para que el lado de la espada lidere, la hoja baja apuntando a Kaito
@@ -107,6 +110,8 @@ def clips(ch):
     out += [attack1(), attack2(), attack3(), thrust()]
     out += [guard(), counter(), hit(), hit_heavy(), parried(), parried_perfect(), exhausted(), exhausted_hit(), spotted(), death()]
     out += team_ambient.ninja_clips(ch, sys.modules[__name__])
+    # rodeo y retroceso en guardia, golpes propios de las variantes de zona (team_moves)
+    out += team_moves.ninja_clips(ch, sys.modules[__name__])
     return [edge_start(c) if c.name in EDGE_START else c for c in out]
 
 
@@ -276,57 +281,85 @@ def attack2():
                                   lunge=lunge, windup=windup, state="Attack2"))
 
 
+# alto del salto del Attack3 (m, la cadera): con 0.32 desde la cámara del juego apenas se despegaba de su sombra
+HOP3 = 0.45
+
+
 def attack3():
     """Tajo de arriba con salto (cierra el combo, pesado). Aviso: agazapado sobre el pie de atrás, las dos manos
-    arriba del hombro derecho y la hoja horizontal ATRÁS de la cabeza (desde arriba: una barra que sale por detrás),
-    el pecho arqueado. En la suelta salta 1.4 m (la embestida), parte de arriba en el aire y cae agachado con la
-    punta casi en el piso: el castigo más largo del combo. Lo usan también el salto del bambú (VariantMotion lo lleva
-    por el aire) y el rompeguardia de la montaña.
-    Apex en f13 (4 cuadros de suelta): la embestida de 1.4 m (y la del élite, 10 % más rápido) entra entera entre la
-    suelta y el golpe, así ninguna pausa del juego en el apex lo desliza con los pies clavados."""
-    n, apex, contact = 34, 13, 17
+    arriba del hombro derecho y la hoja ATRÁS de la cabeza (desde arriba: una barra que sale por detrás), el pecho
+    arqueado; en el apex se hunde más (carga el salto). Suelta: despega estirando las piernas, sube 0.45 m en arco con
+    las rodillas recogidas y la hoja vertical sobre la cabeza (el cuerpo se separa de su sombra: desde la cámara del
+    juego se lee que está en el aire), parte de arriba bajando y cae aplastado con la punta casi en el piso: el castigo
+    más largo del combo. El vuelo dura 0.29 s del reloj del juego (f11-f26): la embestida de 1.4 m entra entera entre
+    la suelta y el aterrizaje, así ningún pie se arrastra aunque el juego estire la pausa del apex. Lo usa también el
+    rompeguardia de la montaña (VariantMotion lo echa atrás en la carga)."""
+    n, apex, contact, land = 36, 11, 21, 26
     lunge, windup = 1.4, 0.50
     tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    times = team_moves.frame_times(n, apex, contact, windup)
+    arc = team_moves.hop_arc(times, apex, land, HOP3)
     # hasso: las dos manos al lado del hombro derecho y la hoja inclinada ~35° de la horizontal hacia atrás y AFUERA
     # (parada, desde 52° de cámara se veía como un hilo sobre la cabeza; así proyecta casi todo su largo al costado)
     TELL = P(hips=(0.0, 0.10, -0.14), hips_rot=(-2.0, 0.0, 14.0), spine=(-6.0, 0.0, -6.0), chest=(-10.0, 0.0, -10.0),
              head=(4.0, 0.0, -6.0),
              grip=(-0.24, 0.04, 1.14), blade=(-0.64, 0.50, 0.58), edge=(-0.32, -0.85, 0.43), elbow_r=(-0.9, 0.2, -0.3),
              grip_l=1.0, elbow_l=(0.8, -0.2, -0.4), fist_l=1.0)
-    HOLD = dict(TELL, hips=(0.0, 0.11, -0.17), grip=(-0.25, 0.06, 1.14), blade=(-0.66, 0.52, 0.54), chest=(-12.0, 0.0, -10.0))
-    LAUNCH = dict(HOLD, hips=(0.0, 0.0, -0.02), hips_rot=(6.0, 0.0, 10.0), spine=(4.0, 0.0, 0.0), chest=(-4.0, 0.0, -4.0),
-                  head=(-6.0, 0.0, -4.0), grip=(-0.20, -0.20, 1.34), blade=(0.10, 0.07, 0.99), edge=(0.0, -1.0, 0.1),
+    # el apex se hunde para cargar el salto (la anticipación del despegue)
+    HOLD = dict(TELL, hips=(0.0, 0.10, -0.19), hips_rot=(2.0, 0.0, 14.0), grip=(-0.25, 0.06, 1.11), blade=(-0.66, 0.52, 0.54),
+                chest=(-12.0, 0.0, -10.0))
+    # despegue: las piernas se estiran del todo; los brazos todavía en el hasso (suben en el aire)
+    PUSH = dict(HOLD, hips=(0.0, 0.02, 0.0), hips_rot=(2.0, 0.0, 12.0), spine=(-2.0, 0.0, -2.0), chest=(-8.0, 0.0, -6.0),
+                head=(-2.0, 0.0, -4.0), grip=(-0.24, 0.02, 1.16))
+    # arriba del salto: las rodillas recogidas, la hoja vertical sobre la cabeza y el pecho arqueado
+    LAUNCH = dict(HOLD, hips=(0.0, 0.0, -0.08), hips_rot=(0.0, 0.0, 10.0), spine=(-2.0, 0.0, 0.0), chest=(-8.0, 0.0, -4.0),
+                  head=(-4.0, 0.0, -4.0), grip=(-0.20, -0.16, 1.36), blade=(0.08, 0.16, 0.98), edge=(0.0, -1.0, 0.1),
                   knee_r=(-0.2, -1.0, 0.2))
-    CONTACT = dict(LAUNCH, hips=(0.0, -0.06, -0.04), hips_rot=(14.0, 0.0, 10.0), spine=(14.0, 0.0, 0.0), chest=(10.0, 0.0, -4.0),
+    COCK = dict(LAUNCH, hips=(0.0, -0.02, -0.09), chest=(-12.0, 0.0, -4.0), grip=(-0.20, -0.12, 1.38), blade=(0.06, 0.36, 0.93))
+    CONTACT = dict(LAUNCH, hips=(0.0, -0.06, -0.06), hips_rot=(14.0, 0.0, 10.0), spine=(14.0, 0.0, 0.0), chest=(10.0, 0.0, -4.0),
                    head=(-16.0, 0.0, -4.0), grip=(-0.08, -0.46, 0.94), blade=(0.25, -0.93, 0.25), edge=(0.67, -0.02, -0.74),
                    elbow_r=(-0.8, 0.3, -0.4), elbow_l=(0.8, 0.3, -0.4))
-    # el corte baja en diagonal desde el hasso (de arriba a la derecha hacia abajo a la izquierda): la hoja entra 15° hacia
+    # el corte baja en diagonal desde arriba (de arriba a la derecha hacia abajo a la izquierda): la hoja entra 15° hacia
     # la izquierda y sigue hacia ese lado, con el filo abajo y 35° hacia la izquierda (con 45° la izquierda, en el mango,
     # llegaba al tope de la supinación). Con el filo abajo derecho la cámara del juego, de arriba, veía la hoja
     # de canto justo en el golpe y en el castigo (el lomo oscuro); así muestra la cara.
     # el seguimiento frena la punta justo sobre el piso (antes la hoja se hundía 30 cm durante todo el castigo)
-    FOLLOW = dict(CONTACT, hips=(0.0, -0.08, -0.12), hips_rot=(20.0, 0.0, 12.0), spine=(18.0, 0.0, 0.0), head=(-22.0, 0.0, -4.0),
-                  grip=(-0.06, -0.44, 0.66), blade=(0.18, -0.80, -0.57), edge=(0.58, 0.56, -0.60))
-    LAND = dict(FOLLOW, hips=(0.0, -0.07, -0.25), hips_rot=(22.0, 0.0, 14.0), spine=(20.0, 0.0, 0.0), chest=(14.0, 0.0, -4.0),
-                head=(-26.0, 0.0, -4.0), grip=(-0.06, -0.40, 0.48), blade=(0.15, -0.89, -0.41), edge=(0.58, 0.42, -0.70))
+    FOLLOW = dict(CONTACT, hips=(0.0, -0.08, -0.10), hips_rot=(20.0, 0.0, 12.0), spine=(18.0, 0.0, 0.0), head=(-22.0, 0.0, -4.0),
+                  grip=(-0.06, -0.44, 0.70), blade=(0.18, -0.80, -0.57), edge=(0.58, 0.56, -0.60))
+    # aterriza aplastado (lo más bajo del clip): el peso del salto se ve en las rodillas
+    LAND = dict(FOLLOW, hips=(0.0, -0.07, -0.27), hips_rot=(22.0, 0.0, 14.0), spine=(20.0, 0.0, 0.0), chest=(14.0, 0.0, -4.0),
+                head=(-26.0, 0.0, -4.0), grip=(-0.06, -0.40, 0.47), blade=(0.15, -0.89, -0.41), edge=(0.58, 0.42, -0.70))
     PUNISH = dict(LAND, hips=(0.0, -0.06, -0.23), grip=(-0.06, -0.38, 0.49), blade=(0.0, -0.91, -0.41))
     keys = [
         Key(0, P()),
         Key(8, TELL, "inout"),
         Key(apex, HOLD, "sine"),
-        Key(15, LAUNCH, "in"),
-        Key(contact, CONTACT, "lin"),
-        Key(19, FOLLOW, "out"),
-        Key(21, LAND, "in2"),
-        Key(27, PUNISH, "out"),
+        Key(13, PUSH, "out"),
+        Key(16, LAUNCH, "inout"),
+        Key(19, COCK, "sine"),
+        Key(contact, CONTACT, "in"),
+        Key(23, FOLLOW, "out"),
+        Key(land, LAND, "in2"),
+        Key(30, PUNISH, "out"),
         Key(n, P(), "sine"),
     ]
-    feet = {"r": [FR(0), FR(apex), FR(contact, 0.95, z=0.16), FR(20, lunge, pitch=-12.0), FR(22, lunge)],
-            "l": [FL(0), FL(8), FL(apex, pitch=28.0), FL(18, 0.72, z=0.22, ease="out"), FL(23, lunge, ease="out")]}
-    return T.TeamClip("Attack3", n, keys, travel=tr, feet=feet,
-                      notes="tajo de arriba con salto; aviso: agazapado, hoja atrás de la cabeza",
-                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 21], hold=[8, apex],
-                                  lunge=lunge, windup=windup, state="Attack3"))
+    # en el aire los pies van con el cuerpo, cuadro a cuadro (el avance del juego no es lineal en cuadros del clip):
+    # sobre el arco de la cadera y recogidos a mitad del vuelo
+    span = float(land - apex)
+    tuck = lambda f: 0.20 * max(0.0, math.sin(math.pi * (f - apex) / span)) ** 1.5
+    fly_r = [FR(f, tr[f] + 0.06 * (f - apex) / span, z=arc(f) + tuck(f), pitch=-6.0, ease="lin", lift=0.0)
+             for f in range(apex + 1, land)]
+    fly_l = [FL(f, tr[f] - 0.04, z=arc(f) + 0.8 * tuck(f), pitch=24.0 * (1.0 - (f - apex) / span), ease="lin", lift=0.0)
+             for f in range(apex + 2, land + 1)]
+    feet = {"r": [FR(0), FR(apex)] + fly_r + [FR(land, lunge + 0.06, pitch=-10.0, ease="lin", lift=0.0), FR(land + 2, lunge + 0.06),
+                                               FR(33, lunge + 0.06), FR(n, lunge, lift=0.03)],
+            "l": [FL(0), FL(8), FL(apex, pitch=28.0), FL(apex + 1, tr[apex + 1] - 0.04, pitch=30.0, z=arc(apex + 1) * 0.9, ease="lin", lift=0.0)] + fly_l
+                 + [FL(land + 2, lunge - 0.04, ease="out", lift=0.0), FL(33, lunge - 0.04), FL(n, lunge, lift=0.03)]}
+    return team_moves.ArcClip("Attack3", n, keys, travel=tr, feet=feet, arc=arc,
+                              notes="tajo de arriba con salto; aviso: agazapado, hoja atrás de la cabeza",
+                              timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 25], hold=[8, apex],
+                                          lunge=lunge, windup=windup, state="Attack3", land=land, hop_m=HOP3,
+                                          sheet=[8, apex, 13, 16, 19, contact, 23, land, n]))
 
 
 def thrust():

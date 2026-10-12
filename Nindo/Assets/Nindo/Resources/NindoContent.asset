@@ -194,10 +194,15 @@ MonoBehaviour:
     - IdleSparA
     - IdleSparB
     - IdleInspect
+    - StrafeL
+    - StrafeR
+    - WalkBack
+    - Leap
+    - Whirl
     stateLengths:
     - 0.8
     - 0.7333
-    - 1.1333
+    - 1.2
     - 0.3
     - 1.6
     - 1.2
@@ -215,6 +220,11 @@ MonoBehaviour:
     - 3.2
     - 3.2
     - 4.0
+    - 0.3333
+    - 0.3333
+    - 0.4667
+    - 1.6
+    - 1.2
   - id: sumo
     model: {fileID: 919132149155446097, guid: 6e6d595635ec9544d83855ca6d060fbb, type: 3}
     controller: {fileID: 9100000, guid: 2034372f887e01ef4d7d283612f2c20a, type: 2}
@@ -248,6 +258,10 @@ MonoBehaviour:
     - IdleSleep
     - AmbientAlert
     - IdleShiko
+    - StrafeL
+    - StrafeR
+    - WalkBack
+    - Morote
     stateLengths:
     - 0.9
     - 0.9
@@ -265,6 +279,10 @@ MonoBehaviour:
     - 4.0
     - 2.4
     - 5.0
+    - 0.4
+    - 0.4
+    - 0.6667
+    - 1.2
   - id: goro
     model: {fileID: 919132149155446097, guid: dbac39bfe9be5fd41a31f29a324081f6, type: 3}
     controller: {fileID: 9100000, guid: 9670f8c607c12d6033d22ad74703b944, type: 2}

@@ -91,6 +91,34 @@ namespace Nindo
 
         static readonly HashSet<string> warned = new HashSet<string>();
 
+        /// <summary>
+        /// CrossFade a 'state' en 'fade' segundos arrancando en la fase 'phase' (0..1) de su ciclo: para pasar entre ciclos
+        /// de locomoción que pisan en la misma fase (caminar, rodear, retroceder) sin que los pies salten de lugar. Sirve
+        /// también para el blend tree, cuyo largo depende de la mezcla (por eso la fase y no segundos).
+        /// </summary>
+        public void PlayAtPhase(string state, float fade, float phase, float speed = 1f)
+        {
+            if (!Valid) return;
+            int h = Hash(state);
+            if (!Animator.HasState(0, h))
+            {
+                if (warned.Add(state)) Debug.LogWarning($"[Nindo] El Animator de '{Animator.gameObject.name}' no tiene el estado '{state}'.");
+                return;
+            }
+            Current = state;
+            stateMul = speed;
+            // CrossFade mide el cruce en largos del estado de origen
+            float len = Animator.GetCurrentAnimatorStateInfo(0).length;
+            Animator.CrossFade(h, fade / Mathf.Max(0.05f, len), 0, Mathf.Repeat(phase, 1f));
+        }
+
+        /// <summary>Fase (0..1) del ciclo que se está mostrando.</summary>
+        public float Phase => Valid ? Mathf.Repeat(Animator.GetCurrentAnimatorStateInfo(0).normalizedTime, 1f) : 0f;
+
+        /// <summary>Cambia el multiplicador del estado actual sin volver a entrar (el ritmo de un ciclo que sigue a la
+        /// velocidad real).</summary>
+        public void SetStateSpeed(float speed) { stateMul = speed; }
+
         public void SetLocomotion(float normalizedSpeed, float dt)
         {
             if (!Valid || !hasSpeedParam) return;

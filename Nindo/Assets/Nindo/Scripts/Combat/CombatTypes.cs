@@ -86,6 +86,8 @@ namespace Nindo
         public float specialParam = 0f;
         [Tooltip("El atacante sigue girando hacia el objetivo durante la anticipación")] public bool tracking = true;
         [Tooltip("Enemigos: un parry suma postura pero no lo hace retroceder; el combo sigue a su ritmo")] public bool noRecoil;
+        /// <summary>Enemigos: el clip de siempre (estado y tiempos) si el controller no tiene 'state' (Enemy.ResolveClipVariants).</summary>
+        [NonSerialized] public AttackClipFallback fallback;
 
         public float Timing(float n) => timing != null && timing.length > 1 ? Mathf.Max(0.05f, timing.Evaluate(n)) : 1f;
 
