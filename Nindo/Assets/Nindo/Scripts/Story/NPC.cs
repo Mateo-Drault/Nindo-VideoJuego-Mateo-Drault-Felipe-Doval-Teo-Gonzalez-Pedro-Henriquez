@@ -18,7 +18,7 @@ namespace Nindo
         /// <summary>Kidnap: cae sentado en el cuadro 27 de 57 (polvo y golpe).</summary>
         const float KidnapImpact = 27f / 30f;
         // polvo de los talones arrastrados: cerca del piso y corriendo en el mundo más que esto (m, m/s), cada tanto (s)
-        const float HeelHeight = 0.16f, HeelSpeed = 0.45f, HeelDustEvery = 0.17f, HeelDustScale = 0.32f;
+        const float HeelHeight = 0.15f, HeelSpeed = 0.45f, HeelDustEvery = 0.22f, HeelDustScale = 0.32f;
 
         public string characterId = "grandpa";
         CharacterAnimator anim = new CharacterAnimator();
@@ -47,6 +47,10 @@ namespace Nindo
         }
 
         public void Play(string state, float fade = 0.15f) { anim.Play(state, fade); then = null; dragging = false; }
+
+        /// <summary>El primer cuadro de un estado, quieto (el NPC 'kidnap' espera en el de Kidnap: el ninja de Idle está en la
+        /// pose fija del FBX, que no es la de arranque del secuestro, y el fundido de 0.1 s le movía la mano 21 cm).</summary>
+        public void Hold(string state) { anim.Play(state, 0f, 0f, 0f); then = null; dragging = false; }
 
         /// <summary>Un clip que no es loop y, cuando termina, 'next' (los controllers no tienen transiciones: sin esto el
         /// abuelo quedaba congelado en el último cuadro de Freed como una estatua).</summary>

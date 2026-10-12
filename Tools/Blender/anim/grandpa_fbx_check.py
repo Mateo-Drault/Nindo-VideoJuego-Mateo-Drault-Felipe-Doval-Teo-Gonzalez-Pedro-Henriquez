@@ -6,7 +6,8 @@ acción a la armadura del modelo la aplicaría relativa a otro reposo: el del ni
 
 Mide, en metros del juego:
   * los empalmes que el código hace en seco o con un fundido corto (NPC): Kidnap fin -> Dragged f0 (en seco),
-    Dragged fin -> f0 (loop), Bound f0 -> Freed f0, Freed fin -> Idle f0 (cada hueso, en grados, y el peor punto);
+    Dragged fin -> f0 (loop), Bound f0 -> Freed f0, Freed fin -> Idle f0 (cada hueso que pesa en la malla, en grados, y
+    el peor punto);
   * el agarre en Kidnap (desde que se agarran) y Dragged: la palma de cada uno sobre el antebrazo del otro (cm);
   * que el Root de cada esqueleto no tenga curvas de escala ni salga del lugar (el bug de los enemigos invisibles).
 Sale con código 1 si algo pasa de los topes.
@@ -35,6 +36,13 @@ def load(path):
 def main():
     bpy.ops.wm.read_factory_settings(use_empty=True)
     side = json.load(open(ANIM + ".json", encoding="utf-8"))
+    # los huesos que mueven vértices del modelo (los controles de IK y las puntas de los dedos que quedaron en el FBX no)
+    load(MODEL)
+    weighted = set()
+    for o in bpy.data.objects:
+        if o.type == 'MESH':
+            used = {g.group for v in o.data.vertices for g in v.groups if g.weight > 0.01}
+            weighted |= {vg.name for vg in o.vertex_groups if vg.index in used}
     model, acts = load(ANIM)
     act = acts[0]
     moving = lambda fc: max(k.co[1] for k in fc.keyframe_points) - min(k.co[1] for k in fc.keyframe_points) > 1e-4
@@ -52,6 +60,8 @@ def main():
     def compare(a, b):
         worst_d, worst_a, wa = 0.0, 0.0, ""
         for n in a:
+            if n not in weighted:
+                continue
             d = (a[n][0] - b[n][0]).length / U
             ang = math.degrees(a[n][1].rotation_difference(b[n][1]).angle)
             ang = min(ang, 360.0 - ang)
@@ -72,6 +82,8 @@ def main():
              ("Bound fin -> f0 (loop)", c["Bound"]["last"], c["Bound"]["first"], 1.0, 2.0),
              ("Bound f0 -> Freed f0", c["Bound"]["first"], c["Freed"]["first"], 1.0, 2.0),
              ("Freed fin -> Idle f0", c["Freed"]["last"], c["Idle"]["first"], 2.0, 3.0)]
+    # (el NPC 'kidnap' no entra a Kidnap desde Idle: espera en Kidnap f0 quieto, NPC.Hold; desde Idle el ninja de la pose
+    # fija del FBX saltaba 21 cm en el fundido de 0.1 s)
     for name, fa, fb, tol_cm, tol_deg in joins:
         d, ang, n = compare(snap(fa), snap(fb))
         ok = d <= tol_cm and ang <= tol_deg

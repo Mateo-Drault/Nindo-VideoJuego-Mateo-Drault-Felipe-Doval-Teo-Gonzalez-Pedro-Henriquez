@@ -123,7 +123,7 @@ namespace Nindo
             Vector3 kidPos = PointPos("kidnap_a", P.transform.position + new Vector3(6, 0, 8));
             Vector3 exit = PointPos("kidnap_exit", kidPos + new Vector3(0, 0, 25));
             var grandpa = NPC.Spawn("kidnap", kidPos, Quaternion.LookRotation((exit - kidPos).Flat().normalized + Vector3.forward * 0.001f), null);
-            grandpa.Play("Idle", 0f);
+            grandpa.Hold(NPC.KidnapState);
             Enemy kidnapper = null;
 
             // texto de apertura sobre negro

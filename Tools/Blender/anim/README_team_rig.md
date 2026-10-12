@@ -179,15 +179,20 @@ clip.partner = T.TeamClip("Kidnap/ninja", n, keys_del_ninja, feet={...})   # mis
 
 * El ninja se autora en SU marco: origen en el piso bajo su cadera de reposo (1.3 m adelante del abuelo) y frente hacia
   donde mira en el reposo (hacia el abuelo). En el marco del abuelo, un punto (x, y) del ninja es (-x, -1.3 - y).
-* `bake` resuelve los dos en la misma pose (el abuelo primero); `build_team_anims` corre los mismos chequeos sobre el
+* `bake` resuelve los dos en la misma pose (el abuelo primero; antes de resolver al ninja se le borra la pose fija que
+  dejó el primero, `drop_kid`: si no, la IK de sus brazos y piernas arrancaba de los hombros y las caderas de `kid_pose`
+  aunque su cadera se moviera); `build_team_anims` corre los mismos chequeos sobre el
   ninja (`reports[clip]["partner"]`) y las hojas de `--renders` lo muestran. `travel` es del transform del NPC: en el
   marco del ninja el piso corre para el otro lado (`ch.partner.travel_axis`), los pies de los dos quedan clavados.
 * Sin `clip.partner`, el ninja queda en la pose fija del cuadro 2 de la toma `Kidnap` del equipo (`kid_pose`, con las
   muñecas enderezadas). Está PARADO, con las manos a los costados (no agazapado).
-* Contrato para quien autore `Kidnap`/`Dragged`: el cuadro 0 de `clip.partner` tiene que ser `kid_pose` (el NPC
-  'kidnap' viene del Idle con esa pose y Unity cruza 0.08 s): hoy, de la pose fija a la toma del equipo, la muñeca
-  derecha del ninja salta 13°. La toma `Kidnap` del equipo todavía tiene las muñecas dobladas (78-113°) en los dos
-  esqueletos: se reemplaza con esos clips (o, mientras tanto, con un `TakeClip` de la toma con `clip.partner`).
+* `Kidnap` y `Dragged` (team_clips_grandpa) ya reemplazan la toma del equipo. Los contactos entre los dos (las manos de
+  cada uno sobre la muñeca del otro) salen de resolver cuadros sueltos de los dos esqueletos (`Probe`/`Duo.resolve`:
+  el puño medido contra el antebrazo del otro y corregido); `grandpa_fbx_check.py` los vuelve a medir en el FBX
+  exportado, junto con los empalmes en seco del NPC. El NPC 'kidnap' espera en `Kidnap` f0 quieto (`NPC.Hold`), no en
+  Idle: la pose fija no es la de arranque (en el fundido de 0.1 s la mano del ninja saltaba 21 cm).
+* `grandpa_shots.py` hace las hojas con las cámaras de las escenas (prólogo, ojos de Kaito, bosque, final) y mide
+  cuánto se acercan los cuerpos y si el abuelo entra en el poste o su zócalo.
 * Las mallas: `Cuerpo` (abuelo) y `Cube` (ninja); el NPC `grandpa` oculta la del ninja.
 
 ## Lo que hay que mirar al autorar
