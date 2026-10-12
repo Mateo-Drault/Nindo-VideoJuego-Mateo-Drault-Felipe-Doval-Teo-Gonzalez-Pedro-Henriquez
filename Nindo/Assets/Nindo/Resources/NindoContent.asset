@@ -300,22 +300,36 @@ MonoBehaviour:
     - Hit
     - HitHeavy
     - Death
+    - FakeDefeat
+    - ArmorRise
+    - Combo1B
+    - Combo2B
+    - Combo3B
+    - SlamWave
+    - AvalancheSummon
     stateLengths:
-    - 2.6667
-    - 1.2
-    - 1.2
-    - 1.0
+    - 3.2
+    - 1.4
+    - 1.4
+    - 1.2667
     - 2.0
     - 2.2
     - 2.0
-    - 0.3333
+    - 0.5333
     - 1.4
-    - 2.5667
+    - 2.8
     - 0.4
-    - 0.5
+    - 0.7667
     - 0.5
     - 0.5
     - 2.0
+    - 2.6
+    - 7.0
+    - 1.8
+    - 1.5333
+    - 1.8
+    - 2.1333
+    - 2.8
   - id: grandpa
     model: {fileID: 919132149155446097, guid: 1b406ff4438a21ba4c45f9adbb20ea7d, type: 3}
     controller: {fileID: 9100000, guid: be45274efe33497904d9a5dacd0d55a7, type: 2}
@@ -471,6 +485,8 @@ MonoBehaviour:
     - 1.2
     - 1.2
   kits:
+  - id: goro_armor
+    model: {fileID: 919132149155446097, guid: d9163b055f46bf9cf1a218a4e55a6dee, type: 3}
   - id: kaito_bandana
     model: {fileID: 919132149155446097, guid: ca9a3f83c9c07ac24716e40606d17627, type: 3}
   - id: ninja_bamboo

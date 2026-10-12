@@ -1,0 +1,792 @@
+{
+ "kit": "goro_armor",
+ "fbx": "Kit_goro_armor.fbx",
+ "character": "goro",
+ "model": "Models/Minijefe.fbx",
+ "tris": 1322,
+ "bones": [
+  "Acc_Roca_Greave_L",
+  "Acc_Roca_Greave_R",
+  "Acc_Roca_Knee_L",
+  "Acc_Roca_Knee_R",
+  "Acc_Roca_Tasset_L",
+  "Acc_Roca_Tasset_R",
+  "Acc_Roca_Bracer_R",
+  "Acc_Roca_Bracer_L",
+  "Acc_Roca_Chest_Low",
+  "Acc_Roca_Chest_High",
+  "Acc_Roca_Pauldron_L",
+  "Acc_Roca_Pauldron_R",
+  "Acc_Roca_Ridge_L",
+  "Acc_Roca_Ridge_R",
+  "Acc_Roca_Horn_L",
+  "Acc_Roca_Horn_R"
+ ],
+ "materials": {
+  "Nindo_Palette": "granito (rock, rock_dark, rock_light, rock_brown) y nieve (snow, snow_shade) por UV",
+  "Nindo_Emissive": "glow_fire (las vetas de brasa entre las rocas de cada pieza)"
+ },
+ "frames": "start_unity / center_unity / spin_axis_unity: metros en el espacio local del transform de Gorō (el que tiene Enemy: +Z adelante, +X derecha, +Y arriba). *_authoring: el marco de autoría de team_rig (frente -Y, izquierda +X, arriba +Z).",
+ "contract": [
+  "Vestir: CharacterKits.Attach(model, 'goro_armor') cuelga cada hueso Acc_Roca_<Pieza> del hueso vivo 'parent' con el mismo transform local y re-apunta el skin (una sola malla, 1 draw call). Para mover las piezas de a una hay que encontrar los huesos por nombre ANTES de Attach (Attach renombra la malla a 'Acc_Kit_goro_armor').",
+  "Fase 1: la armadura no se ve (renderer apagado o cada hueso de roca con escala 0). Fase 2: todas puestas.",
+  "Cinemática (estado ArmorRise de GoroAnims, 7 s, arranca en la pose final de FakeDefeat): cada pieza sale a launch_s = slam_s - flight_s desde start_unity (enterrada 0.3 m: se arranca del piso con polvo) y llega pegada justo en slam_s, el cuadro 'slam_<Pieza>' de los eventos del clip (polvo, sacudón, sonido de roca).",
+  "Vuelo: u = (t - launch_s) / flight_s; posición = lerp(salida_mundo, pegada_mundo(t), u*u) + Vector3.up * arc_m * 4u(1-u); giro = pegada_mundo(t).rotation * AngleAxis(spin_deg * (1-u)^2, spin_axis_unity). salida_mundo = transform.TransformPoint(start_unity) al empezar el clip; pegada_mundo(t) = el hueso de la pieza colgado del vivo en ese cuadro (el cuerpo se mueve: el destino se recalcula cada cuadro). Antes de launch_s la pieza no se ve.",
+  "Tools/Blender/bosses/goro/goro_review.py simula esta misma fórmula: las hojas de revisión muestran cómo se ve.",
+  "Gorō no se mueve durante FakeDefeat ni ArmorRise (sin travel): conviene girarlo de perfil a la cámara del juego antes de la derrota falsa (boca arriba a lo largo de la vista no se lee) o usar un plano de costado."
+ ],
+ "pieces": [
+  {
+   "name": "Greave_L",
+   "bone": "Acc_Roca_Greave_L",
+   "parent": "Tibia.L",
+   "order": 0,
+   "slam_frame": 24,
+   "slam_s": 0.8,
+   "flight_s": 0.55,
+   "launch_s": 0.25,
+   "start_unity": [
+    -2.6,
+    -0.3,
+    -1.8
+   ],
+   "start_authoring": [
+    2.6,
+    1.8,
+    -0.3
+   ],
+   "arc_m": 1.2,
+   "spin_deg": 200,
+   "spin_axis_unity": [
+    0.8876,
+    0.4379,
+    -0.1429
+   ],
+   "spin_axis_authoring": [
+    -0.8876,
+    0.1429,
+    0.4379
+   ],
+   "center_unity": [
+    -0.6483,
+    0.458,
+    0.0773
+   ],
+   "center_authoring": [
+    0.6483,
+    -0.0773,
+    0.458
+   ],
+   "size_authoring_m": [
+    0.195,
+    0.302,
+    0.316
+   ]
+  },
+  {
+   "name": "Greave_R",
+   "bone": "Acc_Roca_Greave_R",
+   "parent": "Tibia.R",
+   "order": 1,
+   "slam_frame": 30,
+   "slam_s": 1.0,
+   "flight_s": 0.55,
+   "launch_s": 0.45,
+   "start_unity": [
+    2.8,
+    -0.3,
+    -1.4
+   ],
+   "start_authoring": [
+    -2.8,
+    1.4,
+    -0.3
+   ],
+   "arc_m": 1.2,
+   "spin_deg": 220,
+   "spin_axis_unity": [
+    0.1171,
+    0.879,
+    -0.4622
+   ],
+   "spin_axis_authoring": [
+    -0.1171,
+    0.4622,
+    0.879
+   ],
+   "center_unity": [
+    0.6511,
+    0.4577,
+    0.0758
+   ],
+   "center_authoring": [
+    -0.6511,
+    -0.0758,
+    0.4577
+   ],
+   "size_authoring_m": [
+    0.185,
+    0.273,
+    0.309
+   ]
+  },
+  {
+   "name": "Knee_L",
+   "bone": "Acc_Roca_Knee_L",
+   "parent": "Pierna.L",
+   "order": 2,
+   "slam_frame": 38,
+   "slam_s": 1.2667,
+   "flight_s": 0.6,
+   "launch_s": 0.6667,
+   "start_unity": [
+    -3.4,
+    -0.3,
+    1.0
+   ],
+   "start_authoring": [
+    3.4,
+    -1.0,
+    -0.3
+   ],
+   "arc_m": 1.6,
+   "spin_deg": 260,
+   "spin_axis_unity": [
+    0.6669,
+    0.2002,
+    -0.7178
+   ],
+   "spin_axis_authoring": [
+    -0.6669,
+    0.7178,
+    0.2002
+   ],
+   "center_unity": [
+    -0.595,
+    0.8828,
+    0.2624
+   ],
+   "center_authoring": [
+    0.595,
+    -0.2624,
+    0.8828
+   ],
+   "size_authoring_m": [
+    0.406,
+    0.44,
+    0.252
+   ]
+  },
+  {
+   "name": "Knee_R",
+   "bone": "Acc_Roca_Knee_R",
+   "parent": "Pierna.R",
+   "order": 3,
+   "slam_frame": 44,
+   "slam_s": 1.4667,
+   "flight_s": 0.6,
+   "launch_s": 0.8667,
+   "start_unity": [
+    3.6,
+    -0.3,
+    0.6
+   ],
+   "start_authoring": [
+    -3.6,
+    -0.6,
+    -0.3
+   ],
+   "arc_m": 1.6,
+   "spin_deg": 240,
+   "spin_axis_unity": [
+    0.2791,
+    0.5968,
+    -0.7523
+   ],
+   "spin_axis_authoring": [
+    -0.2791,
+    0.7523,
+    0.5968
+   ],
+   "center_unity": [
+    0.584,
+    0.8807,
+    0.2532
+   ],
+   "center_authoring": [
+    -0.584,
+    -0.2532,
+    0.8807
+   ],
+   "size_authoring_m": [
+    0.385,
+    0.452,
+    0.26
+   ]
+  },
+  {
+   "name": "Tasset_L",
+   "bone": "Acc_Roca_Tasset_L",
+   "parent": "Pierna.L",
+   "order": 4,
+   "slam_frame": 52,
+   "slam_s": 1.7333,
+   "flight_s": 0.6,
+   "launch_s": 1.1333,
+   "start_unity": [
+    -4.2,
+    -0.3,
+    -0.6
+   ],
+   "start_authoring": [
+    4.2,
+    0.6,
+    -0.3
+   ],
+   "arc_m": 1.8,
+   "spin_deg": 180,
+   "spin_axis_unity": [
+    -0.1669,
+    0.7071,
+    -0.6871
+   ],
+   "spin_axis_authoring": [
+    0.1669,
+    0.6871,
+    0.7071
+   ],
+   "center_unity": [
+    -0.7164,
+    1.0777,
+    0.0197
+   ],
+   "center_authoring": [
+    0.7164,
+    -0.0197,
+    1.0777
+   ],
+   "size_authoring_m": [
+    0.184,
+    0.472,
+    0.445
+   ]
+  },
+  {
+   "name": "Tasset_R",
+   "bone": "Acc_Roca_Tasset_R",
+   "parent": "Pierna.R",
+   "order": 5,
+   "slam_frame": 56,
+   "slam_s": 1.8667,
+   "flight_s": 0.6,
+   "launch_s": 1.2667,
+   "start_unity": [
+    4.0,
+    -0.3,
+    -1.2
+   ],
+   "start_authoring": [
+    -4.0,
+    1.2,
+    -0.3
+   ],
+   "arc_m": 1.8,
+   "spin_deg": 200,
+   "spin_axis_unity": [
+    -0.6266,
+    0.5556,
+    -0.5465
+   ],
+   "spin_axis_authoring": [
+    0.6266,
+    0.5465,
+    0.5556
+   ],
+   "center_unity": [
+    0.7193,
+    1.077,
+    0.0074
+   ],
+   "center_authoring": [
+    -0.7193,
+    -0.0074,
+    1.077
+   ],
+   "size_authoring_m": [
+    0.181,
+    0.389,
+    0.436
+   ]
+  },
+  {
+   "name": "Bracer_R",
+   "bone": "Acc_Roca_Bracer_R",
+   "parent": "Antebrazo.R",
+   "order": 6,
+   "slam_frame": 70,
+   "slam_s": 2.3333,
+   "flight_s": 0.55,
+   "launch_s": 1.7833,
+   "start_unity": [
+    3.2,
+    -0.3,
+    2.6
+   ],
+   "start_authoring": [
+    -3.2,
+    -2.6,
+    -0.3
+   ],
+   "arc_m": 1.6,
+   "spin_deg": 300,
+   "spin_axis_unity": [
+    0.329,
+    0.6242,
+    0.7086
+   ],
+   "spin_axis_authoring": [
+    -0.329,
+    -0.7086,
+    0.6242
+   ],
+   "center_unity": [
+    1.2883,
+    2.1499,
+    -0.1093
+   ],
+   "center_authoring": [
+    -1.2883,
+    0.1093,
+    2.1499
+   ],
+   "size_authoring_m": [
+    0.618,
+    0.445,
+    0.401
+   ]
+  },
+  {
+   "name": "Bracer_L",
+   "bone": "Acc_Roca_Bracer_L",
+   "parent": "Antebrazo.L",
+   "order": 7,
+   "slam_frame": 76,
+   "slam_s": 2.5333,
+   "flight_s": 0.55,
+   "launch_s": 1.9833,
+   "start_unity": [
+    -3.4,
+    -0.3,
+    2.4
+   ],
+   "start_authoring": [
+    3.4,
+    -2.4,
+    -0.3
+   ],
+   "arc_m": 1.6,
+   "spin_deg": 280,
+   "spin_axis_unity": [
+    0.5998,
+    0.5965,
+    0.5333
+   ],
+   "spin_axis_authoring": [
+    -0.5998,
+    -0.5333,
+    0.5965
+   ],
+   "center_unity": [
+    -1.2824,
+    2.1491,
+    -0.1165
+   ],
+   "center_authoring": [
+    1.2824,
+    0.1165,
+    2.1491
+   ],
+   "size_authoring_m": [
+    0.56,
+    0.454,
+    0.394
+   ]
+  },
+  {
+   "name": "Chest_Low",
+   "bone": "Acc_Roca_Chest_Low",
+   "parent": "Torso",
+   "order": 8,
+   "slam_frame": 92,
+   "slam_s": 3.0667,
+   "flight_s": 0.65,
+   "launch_s": 2.4167,
+   "start_unity": [
+    -0.6,
+    -0.3,
+    4.6
+   ],
+   "start_authoring": [
+    0.6,
+    -4.6,
+    -0.3
+   ],
+   "arc_m": 2.0,
+   "spin_deg": 160,
+   "spin_axis_unity": [
+    0.3482,
+    0.6562,
+    0.6694
+   ],
+   "spin_axis_authoring": [
+    -0.3482,
+    -0.6694,
+    0.6562
+   ],
+   "center_unity": [
+    -0.0048,
+    1.8974,
+    0.4888
+   ],
+   "center_authoring": [
+    0.0048,
+    -0.4888,
+    1.8974
+   ],
+   "size_authoring_m": [
+    0.876,
+    0.217,
+    0.297
+   ]
+  },
+  {
+   "name": "Chest_High",
+   "bone": "Acc_Roca_Chest_High",
+   "parent": "Torso",
+   "order": 9,
+   "slam_frame": 100,
+   "slam_s": 3.3333,
+   "flight_s": 0.65,
+   "launch_s": 2.6833,
+   "start_unity": [
+    0.8,
+    -0.3,
+    5.0
+   ],
+   "start_authoring": [
+    -0.8,
+    -5.0,
+    -0.3
+   ],
+   "arc_m": 2.4,
+   "spin_deg": 180,
+   "spin_axis_unity": [
+    0.6125,
+    0.6774,
+    -0.4075
+   ],
+   "spin_axis_authoring": [
+    -0.6125,
+    0.4075,
+    0.6774
+   ],
+   "center_unity": [
+    0.0103,
+    2.1915,
+    0.5185
+   ],
+   "center_authoring": [
+    -0.0103,
+    -0.5185,
+    2.1915
+   ],
+   "size_authoring_m": [
+    1.093,
+    0.244,
+    0.362
+   ]
+  },
+  {
+   "name": "Pauldron_L",
+   "bone": "Acc_Roca_Pauldron_L",
+   "parent": "Hombro.L",
+   "order": 10,
+   "slam_frame": 118,
+   "slam_s": 3.9333,
+   "flight_s": 0.75,
+   "launch_s": 3.1833,
+   "start_unity": [
+    -5.2,
+    -0.3,
+    -2.2
+   ],
+   "start_authoring": [
+    5.2,
+    2.2,
+    -0.3
+   ],
+   "arc_m": 3.0,
+   "spin_deg": 220,
+   "spin_axis_unity": [
+    0.5757,
+    0.4057,
+    -0.7099
+   ],
+   "spin_axis_authoring": [
+    -0.5757,
+    0.7099,
+    0.4057
+   ],
+   "center_unity": [
+    -0.8356,
+    2.5756,
+    -0.0461
+   ],
+   "center_authoring": [
+    0.8356,
+    0.0461,
+    2.5756
+   ],
+   "size_authoring_m": [
+    0.643,
+    0.805,
+    0.525
+   ]
+  },
+  {
+   "name": "Pauldron_R",
+   "bone": "Acc_Roca_Pauldron_R",
+   "parent": "Hombro.R",
+   "order": 11,
+   "slam_frame": 128,
+   "slam_s": 4.2667,
+   "flight_s": 0.75,
+   "launch_s": 3.5167,
+   "start_unity": [
+    5.4,
+    -0.3,
+    -1.6
+   ],
+   "start_authoring": [
+    -5.4,
+    1.6,
+    -0.3
+   ],
+   "arc_m": 3.0,
+   "spin_deg": 240,
+   "spin_axis_unity": [
+    -0.6935,
+    0.3359,
+    -0.6374
+   ],
+   "spin_axis_authoring": [
+    0.6935,
+    0.6374,
+    0.3359
+   ],
+   "center_unity": [
+    0.8497,
+    2.5783,
+    -0.0531
+   ],
+   "center_authoring": [
+    -0.8497,
+    0.0531,
+    2.5783
+   ],
+   "size_authoring_m": [
+    0.66,
+    0.784,
+    0.496
+   ]
+  },
+  {
+   "name": "Ridge_L",
+   "bone": "Acc_Roca_Ridge_L",
+   "parent": "Torso",
+   "order": 12,
+   "slam_frame": 146,
+   "slam_s": 4.8667,
+   "flight_s": 0.8,
+   "launch_s": 4.0667,
+   "start_unity": [
+    -2.4,
+    -0.3,
+    -6.0
+   ],
+   "start_authoring": [
+    2.4,
+    6.0,
+    -0.3
+   ],
+   "arc_m": 3.6,
+   "spin_deg": 140,
+   "spin_axis_unity": [
+    0.9774,
+    0.2073,
+    -0.0406
+   ],
+   "spin_axis_authoring": [
+    -0.9774,
+    0.0406,
+    0.2073
+   ],
+   "center_unity": [
+    -0.4198,
+    2.3758,
+    -0.6621
+   ],
+   "center_authoring": [
+    0.4198,
+    0.6621,
+    2.3758
+   ],
+   "size_authoring_m": [
+    0.91,
+    0.796,
+    1.706
+   ]
+  },
+  {
+   "name": "Ridge_R",
+   "bone": "Acc_Roca_Ridge_R",
+   "parent": "Torso",
+   "order": 13,
+   "slam_frame": 152,
+   "slam_s": 5.0667,
+   "flight_s": 0.8,
+   "launch_s": 4.2667,
+   "start_unity": [
+    2.2,
+    -0.3,
+    -6.2
+   ],
+   "start_authoring": [
+    -2.2,
+    6.2,
+    -0.3
+   ],
+   "arc_m": 3.6,
+   "spin_deg": 160,
+   "spin_axis_unity": [
+    -0.7908,
+    0.585,
+    -0.1799
+   ],
+   "spin_axis_authoring": [
+    0.7908,
+    0.1799,
+    0.585
+   ],
+   "center_unity": [
+    0.4378,
+    2.3642,
+    -0.6964
+   ],
+   "center_authoring": [
+    -0.4378,
+    0.6964,
+    2.3642
+   ],
+   "size_authoring_m": [
+    0.732,
+    0.801,
+    1.615
+   ]
+  },
+  {
+   "name": "Horn_L",
+   "bone": "Acc_Roca_Horn_L",
+   "parent": "Cabeza",
+   "order": 14,
+   "slam_frame": 170,
+   "slam_s": 5.6667,
+   "flight_s": 0.7,
+   "launch_s": 4.9667,
+   "start_unity": [
+    -1.6,
+    5.5,
+    -4.4
+   ],
+   "start_authoring": [
+    1.6,
+    4.4,
+    5.5
+   ],
+   "arc_m": 1.0,
+   "spin_deg": 320,
+   "spin_axis_unity": [
+    -0.6987,
+    0.6839,
+    0.21
+   ],
+   "spin_axis_authoring": [
+    0.6987,
+    -0.21,
+    0.6839
+   ],
+   "center_unity": [
+    -0.5413,
+    2.9541,
+    -0.1847
+   ],
+   "center_authoring": [
+    0.5413,
+    0.1847,
+    2.9541
+   ],
+   "size_authoring_m": [
+    0.522,
+    0.575,
+    1.04
+   ]
+  },
+  {
+   "name": "Horn_R",
+   "bone": "Acc_Roca_Horn_R",
+   "parent": "Cabeza",
+   "order": 15,
+   "slam_frame": 174,
+   "slam_s": 5.8,
+   "flight_s": 0.7,
+   "launch_s": 5.1,
+   "start_unity": [
+    1.6,
+    5.8,
+    -4.2
+   ],
+   "start_authoring": [
+    -1.6,
+    4.2,
+    5.8
+   ],
+   "arc_m": 1.0,
+   "spin_deg": 340,
+   "spin_axis_unity": [
+    -0.8706,
+    0.1879,
+    0.4547
+   ],
+   "spin_axis_authoring": [
+    0.8706,
+    -0.4547,
+    0.1879
+   ],
+   "center_unity": [
+    0.5189,
+    2.9664,
+    -0.1804
+   ],
+   "center_authoring": [
+    -0.5189,
+    0.1804,
+    2.9664
+   ],
+   "size_authoring_m": [
+    0.476,
+    0.479,
+    1.066
+   ]
+  }
+ ]
+}

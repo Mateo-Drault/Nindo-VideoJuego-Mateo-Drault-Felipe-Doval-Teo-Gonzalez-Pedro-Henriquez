@@ -22,7 +22,7 @@ van horizontales con la palma abajo: el dorso del antebrazo mira a +Z); casco ha
 y -0.18, tibia y -0.21.
 """
 import bpy, bmesh, math, os, sys, random
-from mathutils import Vector, Matrix, Quaternion, Euler
+from mathutils import Vector, Euler
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))

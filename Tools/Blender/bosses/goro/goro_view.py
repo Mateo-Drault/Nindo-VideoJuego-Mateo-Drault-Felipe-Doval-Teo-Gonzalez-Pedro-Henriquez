@@ -6,7 +6,7 @@ Marco: el de team_review: el personaje en metros del juego, parado en el origen 
 (hacia la cámara del juego).
 """
 import bpy, os, sys, math
-from mathutils import Vector, Matrix, Euler
+from mathutils import Vector
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))

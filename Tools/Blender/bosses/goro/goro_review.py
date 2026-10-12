@@ -1,7 +1,7 @@
 """Hojas de revisión de Gorō con la armadura de roca (Blender 4.4, -b), incluida la cinemática de armado.
 
   blender -b --factory-startup --python Tools/Blender/bosses/goro/goro_review.py -- OUT [--clips FakeDefeat,ArmorRise]
-          [--frames 0,24,...] [--hero]
+          [--frames 0,24,...] [--hero] [--noarmor]
 
 Hornea los clips pedidos de team_clips_goro (como build_team_anims), arma la armadura (goro_armor) colgada de los mismos
 huesos y renderiza cada cuadro con la cámara del juego (52°, 24 m, FOV 30) y, con --hero, un plano de 3/4 más cerca. En
@@ -90,6 +90,7 @@ def main():
     clips = ("FakeDefeat", "ArmorRise")
     frames = None
     hero = "--hero" in argv
+    noarmor = "--noarmor" in argv
     for i, a in enumerate(argv):
         if a == "--clips":
             clips = tuple(argv[i + 1].split(","))
@@ -103,11 +104,11 @@ def main():
     for name in clips:
         clip, _, _ = v.baked[name]
         fs = frames or clip.timing.get("sheet") or list(range(0, clip.frames + 1, 10))
-        armored = clip.timing.get("armored", name not in ("Intro", "FakeDefeat", "ArmorRise"))
+        armored = not noarmor and clip.timing.get("armored", name not in ("Intro", "FakeDefeat", "ArmorRise"))
         tiles = []
         for f in fs:
             v.set_frame(name, f, moving=True)
-            obj.hide_render = not (armored or name == "ArmorRise")
+            obj.hide_render = not (armored or (name == "ArmorRise" and not noarmor))
             fl.apply(f / FPS, name)
             if hero:
                 v.hero_camera(target=(0.0, 0.3, 1.2), azimuth=-40.0, elevation=24.0, dist=13.0)

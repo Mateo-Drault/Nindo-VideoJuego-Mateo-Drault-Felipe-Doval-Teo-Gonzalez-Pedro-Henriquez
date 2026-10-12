@@ -1,20 +1,31 @@
 """Clips de Gorō, el Martillo de Kodoyama (Models/Minijefe.fbx), en el marco de autoría de team_rig (metros del juego,
-frente -Y, izquierda +X). 3.4 m, piernas de 0.98 m, brazos de 1.04 m y un martillo de 3.7 m (la cabeza a 1.38 m de la
-mano de arriba): el martillo ES el aviso, y cada golpe lo lleva a un lugar distinto de la silueta.
+frente -Y, izquierda +X). 3.4 m, piernas de 0.98 m, brazos de 1.04 m y un martillo de 3.7 m: el martillo ES el aviso, y
+cada golpe lo lleva a un lugar distinto de la silueta.
 
-Lo que pedía la auditoría (ANIM-01/02) y cómo quedó:
-  * Combo1 (martillazo en diagonal): el martillo ARRIBA a la derecha y atrás, el cuerpo torcido; baja cruzando al frente
-    izquierdo. Combo2 (revés horizontal): el martillo atrás a la IZQUIERDA a la altura de la cadera; barre de izquierda a
-    derecha. Combo3 (el de arriba): el martillo parado atrás de la cabeza con el pecho arqueado; cae derecho al frente.
-    Contacto = activeStart en los tres (antes pegaban con el martillo todavía arriba).
-  * Heavy (golpe sísmico, imparable): se agacha con el martillo atrás, SALTA (la pausa del juego cae en la cima) y el
-    martillo pega en el piso al aterrizar: la onda sale con el impacto, no al despegar.
-  * Spin: carga torcido con el martillo estirado a la derecha (el juego gira el modelo a 900°/s durante la fase activa);
-    sale mareado y termina en la pose de StunSpin (el agotamiento que sigue).
-  * StunSpin (mareado, agotado y ejecución), Parried y ParriedPerfect (el martillo rebota para arriba), Hit y HitHeavy, ExhaustedHit, Spotted (rugido: también el
-    cambio de fase), Death (cae de rodillas sin soltar el martillo y se desploma), Idle, caminar y correr (sin
-    'moonwalk': los pies clavados a la velocidad del transform). La presentación ('Intro') es la toma del equipo
-    (Firstinteraction) con los brazos re-resueltos: en la toma la muñeca del martillo llegaba a 96° en el primer plano.
+El mango sigue 1.16 m más allá del agarre de abajo del equipo (Agarre1): con ese agarre la cola atravesaba el torso, la
+cadera o el casco en casi todos los clips (goro_checks, colgado de build_team_anims por mesh_checks, lo mide contra cascos
+convexos de cada hueso). Por eso:
+  * la guardia lo lleva con una mano y la cola pasa por fuera del hombro derecho;
+  * los golpes se blanden con las dos manos juntas en la punta del mango (SR/SL): la cabeza llega a 3.6-3.9 m del centro
+    (más de lo que medía Hit range, 3.4-3.6: GoroBoss tiene que ajustar los alcances);
+  * las poses se piden por la cabeza del martillo (club) y las vueltas a la guardia por tween (la mano y la cabeza en línea
+    recta): mezclar grip/haft canal por canal hundía la cabeza en el piso o cruzaba la cola por el cuerpo.
+
+Fase 1 (los de siempre, rehechos): Idle (respira, mira, el martillo apoyado), Walk, Run, Combo1 (diagonal desde arriba a
+la derecha), Combo2 (revés a la altura de la cadera), Combo3 (de arriba), Heavy (salta y pega al aterrizar), Spin (el
+torbellino con las manos en la punta), StunSpin/ExhaustedHit (doblado sobre el martillo), Parried/ParriedPerfect (rebota,
+se le resbala en la mano y cae por su peso: parriedRecoil 0.5 s), Hit, HitHeavy, Spotted (el rugido), Death (se ataja con
+el martillo clavado y se desploma) e Intro (clava el martillo, se lo apoya en el hombro, ruge y lo llama).
+
+Fase 2 (con la armadura de roca de goro_armor): FakeDefeat (se tiene que creer que ganaste: de rodilla y de espaldas),
+ArmorRise (las 16 rocas se le clavan una por una y se levanta trepando por el martillo), Combo1B (amague), Combo2B
+(barrido a ras del piso), Combo3B (bombeo), SlamWave (ara el piso: la onda sale adelante) y AvalancheSummon (dos
+martillazos y el rugido al cielo). Todos los demás clips, salvo Intro, FakeDefeat y ArmorRise, se miden también con la
+armadura puesta (timing['armored'] en el sidecar): la fase 2 sigue caminando, corriendo, recibiendo golpes y muriendo
+con las rocas encima.
+
+El contrato con el juego está en el sidecar (GoroAnims.fbx.json: cuadros, normalizados, eventos, armor_from,
+armor_window, punish) y en Kit_goro_armor.fbx.json (las piezas y la fórmula del vuelo).
 """
 import math, os, sys
 from mathutils import Vector
