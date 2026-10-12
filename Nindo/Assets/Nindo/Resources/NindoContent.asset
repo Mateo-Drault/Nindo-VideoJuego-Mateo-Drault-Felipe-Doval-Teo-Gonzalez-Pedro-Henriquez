@@ -610,6 +610,8 @@ MonoBehaviour:
     model: {fileID: 919132149155446097, guid: 71c2bd7e8d522e04e6dfcdfc61e01c96, type: 3}
   - id: flowers_yellow
     model: {fileID: 919132149155446097, guid: 2f3890aebaca33488d56367c91385e40, type: 3}
+  - id: goro_boulders
+    model: {fileID: 919132149155446097, guid: afcbb327b9d774f38057e5a65376c362, type: 3}
   - id: grass_tuft_a
     model: {fileID: 919132149155446097, guid: 3cad8d6c73e57e7be1959fd37db3737c, type: 3}
   - id: grass_tuft_b
@@ -831,6 +833,12 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: avalanche_rumble
+    clips:
+    - {fileID: 8300000, guid: d415913873d7688d980da564fad8d6a2, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: barrier
     clips:
     - {fileID: 8300000, guid: 5fb8c1e3693a57dfca9c95ef5dfd0a77, type: 3}
@@ -846,6 +854,19 @@ MonoBehaviour:
   - key: boss_roar
     clips:
     - {fileID: 8300000, guid: 39dbb987b8dda93575d881bb7c4a40ba, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: boulder_break
+    clips:
+    - {fileID: 8300000, guid: 1bf4951081b5b41352b9dc574c8ff506, type: 3}
+    - {fileID: 8300000, guid: b52541aff6e6c7a11dc19eeaf262c0ff, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: boulder_roll
+    clips:
+    - {fileID: 8300000, guid: 0807b7562bdec6bebcad54372c7a0777, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
@@ -1149,6 +1170,13 @@ MonoBehaviour:
   - key: rage_on
     clips:
     - {fileID: 8300000, guid: 0ffb8ef18721cf2e4a3d9e0012b77e20, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: rock_impact
+    clips:
+    - {fileID: 8300000, guid: 117d75471280e27aee4969e9d6dba4fb, type: 3}
+    - {fileID: 8300000, guid: b3626f92980a41df9fc35ff96a48e6a1, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1

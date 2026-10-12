@@ -20,6 +20,11 @@ namespace Nindo
         public const string MizuchiPhase2 = "¡El sello corrompe a Mizuchi!";
         public const string MizuchiPhase3 = "¡La cascada responde!";
         public const string MizuchiFreed = "Mizuchi, liberado";
+        // Gorō armado (GoroBoss): el cartel de la fase 2 y la barra ("Gorō," + el epíteto en dorado, como el título de
+        // la primera barra). La montaña le da la armadura y le tira las rocas: despertó con él
+        public const string GoroEpithet = "la Montaña Despierta";
+        public const string GoroTitle = "Gorō, la Montaña Despierta";
+        public const string GoroTitleBar = "Gorō,";
 
         public static string CheckpointName(string id)
         {
@@ -254,6 +259,23 @@ namespace Nindo
             {
                 case "fase2": return "Ōzeki: «¡Basta de jugar! ¡Que la sal limpie mi dohyō!»";
                 case "choque": return "Ōzeki: «¡Grr! ¡Bambú maldito!»";
+                default: return "";
+            }
+        }
+
+        /// <summary>
+        /// Gorō armado (GoroBoss): el grito al levantarse con la armadura, el aviso de la primera avalancha y el del primer
+        /// corte que le rebota en la roca (título y detalle, en dos renglones).
+        /// </summary>
+        public static string GoroLine(string beat)
+        {
+            switch (beat)
+            {
+                case "fase2": return "¿Creíste que me habías ganado? La montaña recién despierta.";
+                case "avalancha": return "¡Avalancha!";
+                case "avalancha_sub": return "Las rocas no se desvían: salí del carril rojo";
+                case "coraza": return "La roca rebota tus cortes";
+                case "coraza_sub": return "Desviá o esquivá el golpe y pegale después";
                 default: return "";
             }
         }

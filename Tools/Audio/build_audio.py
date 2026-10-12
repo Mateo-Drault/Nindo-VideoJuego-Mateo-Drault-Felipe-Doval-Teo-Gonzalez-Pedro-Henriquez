@@ -591,6 +591,71 @@ def _temple_bell(i):
 
 
 # pico de normalización por clave (los clips cortos de interfaz no deben sonar como un golpe)
+# ---------------------------------------------------------------------------- Gorō armado (fase 2)
+# Sintetizados del todo (sin Kenney): la armadura que se le clava, las rocas de la avalancha que caen, ruedan y se
+# rompen, y el retumbe de la montaña. Granito: graves cortos con crujido de grava encima, nada metálico.
+def _gravel(dur, seed, density, lo=300, hi=3500, decay=0.025):
+    """granos de grava: chasquidos filtrados con tiempos al azar (más densos al principio)."""
+    r = rng(seed)
+    out = np.zeros(secs(dur))
+    for k in range(int(density * dur)):
+        t0 = dur * r.random() ** 1.8
+        g = filt(noise(0.06, seed * 31 + k), lo * r.uniform(0.7, 1.3), hi * r.uniform(0.7, 1.2)) * env_exp(0.06, decay * r.uniform(0.5, 1.5), 0.0005)
+        i = secs(t0)
+        n = min(len(g), len(out) - i)
+        if n > 0:
+            out[i:i + n] += g[:n] * r.uniform(0.3, 1.0)
+    return out
+
+
+@sfx("rock_impact", 2)
+def _rock_impact(i):
+    """una roca grande que pega (las piezas de la armadura, las rocas de la avalancha al caer): golpe sordo y grava."""
+    sub = thump(120 - 15 * i, 38, 0.6, 0.16, seed=600 + i)
+    knock = filt(noise(0.12, 602 + i), 150, 900) * env_exp(0.12, 0.03)
+    grit = _gravel(0.45, 604 + i, 40, 300, 2600)
+    # cola corta: en el armado suenan 16 seguidas y no pueden empastarse
+    return reverb(distort(mix((sub, 0, 1.0), (knock, 0, 0.7), (grit, 0.01, 0.3)), 1.6), 0.2, 0.9, 0.25)
+
+
+@sfx("boulder_break", 2)
+def _boulder_break(i):
+    """la roca se parte contra la barrera (o contra Gorō): crack seco, crujido medio y los pedazos que caen."""
+    crack = filt(noise(0.03, 610 + i), 1500, 9000) * env_exp(0.03, 0.006, 0.0005)
+    crunch = filt(noise(0.25, 612 + i), 250, 2400) * env_exp(0.25, 0.06)
+    low = thump(95, 40, 0.4, 0.12, seed=614 + i)
+    debris = _gravel(0.8, 616 + i, 28, 400, 3200, 0.03)
+    return reverb(mix((crack, 0, 0.7), (crunch, 0.005, 0.9), (low, 0, 0.9), (debris, 0.04, 0.45)), 0.2, 1.0, 0.3)
+
+
+@sfx("boulder_roll")
+def _boulder_roll(i):
+    """una roca que rueda por la nieve dura: tumbos graves cada vez más seguidos que se alejan, con grava."""
+    d = 1.9
+    out = np.zeros(secs(d))
+    t, gap, k = 0.0, 0.24, 0
+    while t < d - 0.3:
+        b = thump(85 + 10 * (k % 3), 45, 0.3, 0.07, seed=620 + k) * (1 - t / d) ** 1.2
+        j = secs(t)
+        out[j:j + len(b)] += b[:len(out) - j]
+        t += gap * (0.85 + 0.3 * rng(621 + k).random())
+        gap = max(0.13, gap * 0.93)
+        k += 1
+    grit = _gravel(d, 625, 40, 300, 2600) * env_points(d, [(0, 0.2), (0.3, 1), (d, 0)])
+    return reverb(mix((out, 0, 1.0), (grit, 0, 0.25)), 0.2, 1.0, 0.3)
+
+
+@sfx("avalanche_rumble")
+def _avalanche_rumble(i):
+    """la montaña retumba: grave que crece y se va, con la nieve y la grava que bajan lejos."""
+    d = 3.2
+    rum = filt(noise(d, 630), 22, 140) * (0.75 + 0.25 * osc(np.full(secs(d), 0.0) + 2.3, d)) * env_points(d, [(0, 0), (0.7, 1), (2.0, 0.8), (d, 0)])
+    sub = thump(48, 30, d, 1.2, seed=631) * 0.6
+    hiss = filt(noise(d, 632), 600, 2500) * env_points(d, [(0, 0), (1.0, 0.5), (2.4, 0.4), (d, 0)])
+    grit = _gravel(d, 633, 22, 300, 2400, 0.04) * env_points(d, [(0, 0), (0.8, 1), (d, 0.2)])
+    return reverb(distort(mix((rum, 0, 1.0), (sub, 0, 0.8), (hiss, 0, 0.12), (grit, 0.2, 0.2)), 1.2), 0.3, 1.8, 0.6)
+
+
 PEAK = {"ui_move": -10, "ui_open": -7, "ui_close": -7, "dialogue": -12, "denied": -8, "lock": -8,
         "step": -4, "step_snow": -4, "step_wood": -4, "step_stone": -4, "parry_ready": -6, "area_title": -4,
         "parry_whiff": -6, "brazier_crackle": -8, "brazier_out": -3}
