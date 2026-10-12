@@ -180,10 +180,12 @@ namespace Nindo
             if (Time.time < gestureUntil && anim.Current == gestureState && MoveInput.sqrMagnitude < 0.04f)
             {
                 // la frenada sigue el frenado del juego (RunStop lo descuenta de los pies); los otros paran en seco
-                velocity = gestureState == RunStopState ? Vector3.MoveTowards(velocity, Vector3.zero, config.acceleration * dt) : Vector3.zero;
+                bool brake = InRunStop;
+                velocity = brake ? Vector3.MoveTowards(velocity, Vector3.zero, config.acceleration * dt) : Vector3.zero;
                 anim.SetLocomotion(0f, dt);
                 anim.SetSpeed(1f);
-                if (input != null && !Game.InCutscene) TryCombatActions(input, allowAttack: true);
+                if (input != null && !Game.InCutscene && !TryCombatActions(input, allowAttack: true) && brake)
+                    TryInteract(input);   // la frenada es como se llega a un santuario o a una llave: no se come el botón
                 return;
             }
             gestureUntil = 0f;
@@ -565,7 +567,11 @@ namespace Nindo
             // con clip de muerte (cae de rodillas y de costado) no hace falta voltear el modelo entero como una tabla
             bool deathClip = anim.HasState("Death");
             anim.Play(deathClip ? "Death" : "Hit", 0.05f);
-            Game.Time?.SlowMotion(0.25f, 1.6f, 0.02f, 0.5f);
+            // el golpe y el paso en cámara lenta, la caída casi a velocidad normal: con 0.25 durante 1.6 s la rodilla
+            // (Death f17) llegaba a los 1.9 s reales y el pecho al piso (f35) a los 2.6 s, debajo del panel de muerte y
+            // del fundido a negro (StoryDirector: el panel entra a los 0.8 s, el negro de 2.2 a 2.8 s). Así la rodilla
+            // pega a ~1.1 s, el pecho a ~1.7 s y queda tendido a ~1.9 s
+            Game.Time?.SlowMotion(0.35f, 1.0f, 0.02f, 0.5f);
             Game.Audio?.Play("death", transform.position, 1f);
             if (!deathClip) StartCoroutine(DeathFall());
             Game.Save.deaths++;

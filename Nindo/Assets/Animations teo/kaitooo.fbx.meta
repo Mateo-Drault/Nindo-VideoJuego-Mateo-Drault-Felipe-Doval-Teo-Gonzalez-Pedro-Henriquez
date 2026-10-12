@@ -700,11 +700,40 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
+      name: RunStopL
+      takeName: Scene
+      internalID: 181171162168127033
+      firstFrame: 875
+      lastFrame: 891
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
       name: Pray
       takeName: Scene
       internalID: 884414543542850232
-      firstFrame: 875
-      lastFrame: 915
+      firstFrame: 901
+      lastFrame: 941
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -732,37 +761,8 @@ ModelImporter:
       name: Interact
       takeName: Scene
       internalID: 311008360635144052
-      firstFrame: 925
-      lastFrame: 945
-      wrapMode: 0
-      orientationOffsetY: 0
-      level: 0
-      cycleOffset: 0
-      loop: 0
-      hasAdditiveReferencePose: 0
-      loopTime: 0
-      loopBlend: 0
-      loopBlendOrientation: 0
-      loopBlendPositionY: 0
-      loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
-      keepOriginalPositionY: 1
-      keepOriginalPositionXZ: 0
-      heightFromFeet: 0
-      mirror: 0
-      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
-      curves: []
-      events: []
-      transformMask: []
-      maskType: 3
-      maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 0
-    - serializedVersion: 16
-      name: PrayQuick
-      takeName: Scene
-      internalID: 212874392332563096
-      firstFrame: 955
-      lastFrame: 1015
+      firstFrame: 951
+      lastFrame: 971
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -790,8 +790,37 @@ ModelImporter:
       name: PrayIncense
       takeName: Scene
       internalID: 1092860424606854458
-      firstFrame: 1025
-      lastFrame: 1211
+      firstFrame: 981
+      lastFrame: 1167
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: PrayQuick
+      takeName: Scene
+      internalID: 212874392332563096
+      firstFrame: 1177
+      lastFrame: 1243
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -819,8 +848,8 @@ ModelImporter:
       name: BandanaPower
       takeName: Scene
       internalID: 263761408209152178
-      firstFrame: 1221
-      lastFrame: 1296
+      firstFrame: 1253
+      lastFrame: 1328
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -848,8 +877,8 @@ ModelImporter:
       name: EndingTurn
       takeName: Scene
       internalID: 726516880040410626
-      firstFrame: 1306
-      lastFrame: 1390
+      firstFrame: 1338
+      lastFrame: 1422
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -877,8 +906,8 @@ ModelImporter:
       name: WakeUp
       takeName: Scene
       internalID: 269392185252430833
-      firstFrame: 1400
-      lastFrame: 1508
+      firstFrame: 1432
+      lastFrame: 1540
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

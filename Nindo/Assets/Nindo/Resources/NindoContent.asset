@@ -68,10 +68,11 @@ MonoBehaviour:
     - WindSlash
     - Whirlwind
     - RunStop
+    - RunStopL
     - Pray
     - Interact
-    - PrayQuick
     - PrayIncense
+    - PrayQuick
     - BandanaPower
     - EndingTurn
     - WakeUp
@@ -100,10 +101,11 @@ MonoBehaviour:
     - 1.9333
     - 2.2
     - 0.5333
+    - 0.5333
     - 1.3333
     - 0.6667
-    - 2.0
     - 6.2
+    - 2.2
     - 2.5
     - 2.8
     - 3.6

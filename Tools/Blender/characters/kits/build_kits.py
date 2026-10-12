@@ -1139,8 +1139,10 @@ def kaito_bandana(k):
         widths = [0.13 - 0.06 * (i / (n - 1)) for i in range(n)]
         widths[-1] = 0.045
         # mismo material que la bandana del cuerpo: CharacterKits le pone el material vivo de ese slot (color,
-        # emisión del Espíritu y rim iguales a la bandana)
-        g.ribbon(rows, widths, 0.024, "mat:AmarilloBandana#ffc21a", up=(-1, 0, 0.3)).chain(name)
+        # emisión del Espíritu y rim iguales a la bandana). Se retuerce 50° hacia afuera a lo largo: plana, de costado
+        # era una raya de 2 cm (y desde la cámara del juego, de canto, casi nada)
+        g.ribbon(rows, widths, 0.024, "mat:AmarilloBandana#ffc21a", up=(-1, 0, 0.3),
+                 twist=[s * 50.0 * (i / (n - 1)) ** 1.2 for i in range(n)]).chain(name)
     k.collider("Head", "cabeza", (-0.02, 0.0, 2.38), 0.55)
     k.collider("Back", "tronco", (-0.05, 0.0, 1.55), 0.40)
 

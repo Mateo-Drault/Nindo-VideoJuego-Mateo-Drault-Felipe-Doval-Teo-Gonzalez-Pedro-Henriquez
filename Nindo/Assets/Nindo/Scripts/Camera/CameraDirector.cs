@@ -257,22 +257,59 @@ namespace Nindo
         /// de frente del lado de la hoja (su derecha: la hoja sale de la silueta hacia la cámara y no queda tapada por el
         /// cuerpo), mirando un poco detrás de él para que lo cortado entre al fondo; se acerca despacio. Dura hasta
         /// 'duration' (s reales) o hasta que el código lo cancela al terminar la pose (se va en 0.5 s).
+        /// Los planos no tienen colisión y este va 4-5 m delante de Kaito, que suele terminar mirando una pared (el Corte del
+        /// Viento se frena contra ella) o el borde de la arena (el remate lo pone detrás del cortado): al empezar se busca
+        /// una vez un lugar con la vista libre (del lado de la hoja, del otro, más cerca). Si no hay ninguno devuelve -1 y
+        /// queda el plano que estaba.
         /// </summary>
         public int PlayZanshinShot(Transform kaito, Vector3 behind, float duration)
         {
             Vector3 fwd = kaito.forward.Flat().normalized;
             Vector3 right = Vector3.Cross(Vector3.up, fwd);
             Vector3 c0 = kaito.position;
+            if (!ZanshinSpot(c0, fwd, right, out float side, out float dist)) return -1;
+            right *= side;
             float back = Mathf.Clamp(Vector3.Dot((c0 - behind).Flat(), fwd), 1.5f, 6f);
             return PlayShot(t =>
             {
                 float k = Mathf.SmoothStep(0f, 1f, t / Mathf.Max(0.01f, duration));
-                float ang = Mathf.Lerp(38f, 30f, k) * Mathf.Deg2Rad;
+                float ang = Mathf.Lerp(ZanshinAngleFrom, ZanshinAngleTo, k) * Mathf.Deg2Rad;
                 Vector3 c = kaito != null ? kaito.position : c0;
-                Vector3 pos = c + (fwd * Mathf.Cos(ang) + right * Mathf.Sin(ang)) * Mathf.Lerp(4.8f, 4.1f, k) + Vector3.up * 1.15f;
+                Vector3 pos = c + (fwd * Mathf.Cos(ang) + right * Mathf.Sin(ang)) * Mathf.Lerp(dist, dist * ZanshinPushIn, k) + Vector3.up * ZanshinHeight;
                 Vector3 look = c + Vector3.up * 0.85f - fwd * (back * 0.35f);
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
             }, () => 36f, 0f, duration, 0.5f);
+        }
+
+        const float ZanshinAngleFrom = 38f, ZanshinAngleTo = 30f, ZanshinPushIn = 0.85f, ZanshinHeight = 1.15f;
+        static readonly float[] ZanshinDistances = { 4.8f, 3.6f, 2.6f };
+        static int zanshinMask = -1;
+
+        /// <summary>Lado (+1 la hoja, -1 el otro) y distancia del zanshin con la vista libre al principio y al final del
+        /// acercamiento (SphereCast desde el pecho contra el escenario: personajes y agua no tapan).</summary>
+        static bool ZanshinSpot(Vector3 c, Vector3 fwd, Vector3 right, out float side, out float dist)
+        {
+            if (zanshinMask == -1) zanshinMask = LayerMask.GetMask("Default");
+            Vector3 eye = c + Vector3.up * 1f;
+            for (int s = 0; s < 2; s++)
+            {
+                side = s == 0 ? 1f : -1f;
+                for (int i = 0; i < ZanshinDistances.Length; i++)
+                {
+                    dist = ZanshinDistances[i];
+                    if (ZanshinClear(eye, c, fwd, right * side, ZanshinAngleFrom, dist) &&
+                        ZanshinClear(eye, c, fwd, right * side, ZanshinAngleTo, dist * ZanshinPushIn)) return true;
+                }
+            }
+            side = 1f; dist = ZanshinDistances[0];
+            return false;
+        }
+
+        static bool ZanshinClear(Vector3 eye, Vector3 c, Vector3 fwd, Vector3 right, float angle, float dist)
+        {
+            float a = angle * Mathf.Deg2Rad;
+            Vector3 to = c + (fwd * Mathf.Cos(a) + right * Mathf.Sin(a)) * dist + Vector3.up * ZanshinHeight - eye;
+            return !Physics.SphereCast(eye, 0.3f, to.normalized, out _, to.magnitude, zanshinMask, QueryTriggerInteraction.Ignore);
         }
 
         /// <summary>Presentación de jefe: se acerca de frente y sube. La re-presentación de un reintento usa fundidos cortos.</summary>

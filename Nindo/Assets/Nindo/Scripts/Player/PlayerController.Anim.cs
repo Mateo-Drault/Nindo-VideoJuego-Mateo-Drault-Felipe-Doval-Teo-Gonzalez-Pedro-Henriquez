@@ -12,7 +12,8 @@ namespace Nindo
     ///    el pie apoyado patinaba (60 % entre quieto y caminar, 6 % entre caminar y trotar). Se corrige la velocidad del
     ///    Animator para que el suelo que recorre el pie apoyado sea el que recorre el personaje, y GaitSpeed elige el
     ///    Speed por zonas para no quedarse en las mezclas que patinan igual.
-    ///  * RiposteReady: la réplica del parry sale cuando el desvío ya llegó a la carga del Corte 1 (sin salto de pose).
+    ///  * RiposteReady: la réplica del parry sale a tiempo (el desviado todavía aturdido) y con el desvío ya en la carga
+    ///    del Corte 1 (sin salto de pose).
     /// </summary>
     public partial class PlayerController
     {
@@ -33,20 +34,50 @@ namespace Nindo
         }
 
         // =============================================================== frenada
-        // RunStop está autorado con el frenado del juego desde la carrera (config.acceleration 40 m/s²: de 6.2 m/s a 0 en
-        // 0.155 s y 0.48 m, que el clip descuenta de los pies). Solo cuando corre hacia donde mira y sin fijar: con un
-        // objetivo fijado se mueve de costado y el clip frena hacia adelante
-        const float RunStopMinSpeed = 4.5f, RunStopAlign = 0.8f;
-        const string RunStopState = "RunStop";
+        // RunStop (clava el talón derecho) y RunStopL (el izquierdo) están autorados con el frenado del juego desde la
+        // carrera (config.acceleration 40 m/s²: de 6.2 m/s a 0 en 0.155 s y 0.48 m, que el clip descuenta de los pies) y
+        // su primer cuadro es un cuadro de Run (fase RunStopPhase*: kaitooo.fbx.json, timing 'run_phase'). Se elige el que
+        // sigue la fase en que va la carrera (con uno solo, la mitad de las veces las piernas se cruzaban en el fundido)
+        // y se arranca en el cuadro en que el frenado autorado va a la velocidad que trae: con el stick a medias o ya
+        // frenando, el pie clavado no patina (antes 4-12 cm por debajo de 6.2 m/s). Solo corriendo hacia donde mira y sin
+        // fijar (con un objetivo fijado se mueve de costado y el clip frena hacia adelante)
+        const float RunStopMinSpeed = 4.5f, RunStopAlign = 0.96f, RunStopAuthoredSpeed = 6.2f, RunStopMaxSkip = 0.15f;
+        // soltar = el stick quieto RunStopDebounce s (al dar vuelta con el teclado hay un cuadro vacío: la frenada arrancaba
+        // y se cortaba al cuadro siguiente); vale haber corrido rápido hasta RunStopMemory s antes (lo que tarda en soltar)
+        const float RunStopDebounce = 0.04f, RunStopMemory = 0.1f, RunStopFade = 0.1f;
+        const float RunStopPhaseR = 8f / 24f, RunStopPhaseL = 20f / 24f;
+        const string RunStopState = "RunStop", RunStopLState = "RunStopL";
+        float fastRunUntil = -9f, stickReleasedAt = -9f;
+
+        bool InRunStop => gestureState == RunStopState || gestureState == RunStopLState;
 
         /// <summary>Si soltó el stick corriendo, arranca la frenada como un gesto (el stick o un ataque la cortan).</summary>
         bool TryRunStop(Vector3 wish)
         {
-            if (wish.sqrMagnitude > 0.01f || lockTarget != null || anim.Current != "Locomotion") return false;
             float v = velocity.magnitude;
-            if (v < RunStopMinSpeed || Vector3.Dot(velocity / v, transform.forward) < RunStopAlign || !anim.HasState(RunStopState)) return false;
-            anim.Play(RunStopState, 0.08f);
-            StartGesture(RunStopState, anim.Length(RunStopState));
+            if (v >= RunStopMinSpeed && Vector3.Dot(velocity, transform.forward) >= RunStopAlign * v) fastRunUntil = Time.time + RunStopMemory;
+            if (wish.sqrMagnitude > 0.01f) { stickReleasedAt = -9f; return false; }
+            if (stickReleasedAt < 0f) stickReleasedAt = Time.time;
+            if (Time.time - stickReleasedAt < RunStopDebounce || Time.time > fastRunUntil) return false;
+            if (lockTarget != null || anim.Current != "Locomotion" || !IsGrounded || v < 0.5f || !anim.HasState(RunStopState)) return false;
+            fastRunUntil = -9f;
+            float skip = Mathf.Clamp((RunStopAuthoredSpeed - v) / Mathf.Max(1f, config.acceleration), 0f, RunStopMaxSkip);
+            // fase de la carrera en el primer cuadro que se va a ver de cada frenada (el blend tree sincroniza los ciclos:
+            // su tiempo normalizado es la fase de Run)
+            string state = RunStopState;
+            if (anim.HasState(RunStopLState) && anim.TryNormalizedTime("Locomotion", out float n))
+            {
+                float runLen = anim.Length("Run", LocoFallbackLength[3]);
+                float ph = n - Mathf.Floor(n) - skip / runLen;
+                float eR = Mathf.Abs(Mathf.Repeat(ph - RunStopPhaseR + 0.5f, 1f) - 0.5f);
+                float eL = Mathf.Abs(Mathf.Repeat(ph - RunStopPhaseL + 0.5f, 1f) - 0.5f);
+                if (eL < eR) state = RunStopLState;
+            }
+            float len = anim.Length(state, 0.5333f);
+            anim.Play(state, RunStopFade, skip / len);
+            StartGesture(state, len - skip);
+            // el clip frena derecho hacia adelante
+            velocity = transform.forward * v;
             return true;
         }
 
@@ -102,8 +133,10 @@ namespace Nindo
         // mezclado se arrastra (simulación con los pies horneados, Tools/Blender/anim/kaito: 11 cm por ciclo a 1.6 m/s,
         // 3.9 a 4.4 m/s). Cada ciclo cubre su zona acelerado o frenado por la cadencia y entre zonas se pasa a una mezcla
         // pareja (lo que tarda la amortiguación del Animator); con eso queda en 0.6-1.8 cm por ciclo a cualquier
-        // velocidad (antes 36 cm entre quieto y caminar). Histéresis para no ir y venir en el borde
-        static readonly float[] GaitUp = { 2.1f, 4.4f }, GaitDown = { 1.9f, 4.2f };
+        // velocidad (antes 36 cm entre quieto y caminar). Histéresis para no ir y venir en el borde. La caminata pura llega
+        // hasta 1.7 m/s (cadencia x1.42 como mucho: hasta 2.1 m/s llegaba a x1.75, un pasito apurado que se notaba con el
+        // stick a medias); de 1.7 a 2.1 la mezcla con el trote va a x0.75-0.93 y patina 0.6-0.7 cm por ciclo (sim_gait)
+        static readonly float[] GaitUp = { 1.7f, 4.4f }, GaitDown = { 1.5f, 4.2f };
         int gaitZone;
 
         /// <summary>Speed (m/s, antes de dividir por runSpeed) que se le pasa al blend tree para ir a 'v' m/s.</summary>
@@ -121,25 +154,31 @@ namespace Nindo
         }
 
         // =============================================================== réplica del parry
-        // los desvíos terminan en la carga del Corte 1 (COUNTER = Attack1 f2, donde arranca la réplica). Antes la réplica
-        // salía a los 0.06 s, desde el desvío, y el fundido saltaba de pose (100° el brazo en el perfecto, que pasa por
-        // una guardia agazapada). Ahora queda pedida y sale cuando el desvío llega a la carga (kaitooo.fbx.json y
-        // kaito_clips.CHAINS: f7 de 12 en ParrySuccessR/L, a 10° de la carga; f13 de 14 en PerfectParry, a 8°); para que
-        // no se sienta lenta, pasado su quieto (el hit-stop autorado: f3 / f4) el desvío se toca más rápido hasta ahí
+        // Los desvíos llegan a la carga del Corte 1 (COUNTER = Attack1 f2, donde arranca la réplica) en su cuadro
+        // 'counter_ready' (kaitooo.fbx.json; kaito_clips.CHAINS lo mide contra la carga). La réplica es la recompensa del
+        // parry: tiene que pegar con el desviado todavía aturdido (Enemy.parriedRecoil 0.32 s; el Corte 1 desde la carga
+        // pega a los 0.08 s), así que arranca a lo sumo a los RiposteBy s del desvío (antes de los 0.06 s no: el choque),
+        // en el perfecto igual que en el normal. Mientras está pedida, el desvío corre hacia la carga lo justo para llegar a
+        // tiempo (sin su quieto autorado: el código ya pone el hit-stop); si igual no llegó, el fundido es más largo. Antes
+        // salía desde el primer cuadro del desvío y el fundido saltaba de pose (100° el brazo en el perfecto), y después
+        // esperaba la carga a velocidad de clip: pegaba recién cuando el desviado ya se recuperaba
         bool ripostePending;
-        const float RiposteFade = 0.06f, RiposteRush = 2.5f;
+        float riposteFade;
+        const float RiposteMin = 0.06f, RiposteBy = 0.11f, RiposteRushMax = 4f, RiposteFade = 0.06f, RiposteLateFade = 0.1f;
+        const float ParryReadyN = 5f / 12f, PerfectReadyN = 8f / 14f;
 
-        bool RiposteReady()
+        /// <summary>¿Sale ya la réplica pedida? (y con qué fundido)</summary>
+        bool RiposteReady(out float fade)
         {
+            fade = RiposteFade;
             string s = anim.Current;
-            bool perfect = s == "PerfectParry";
-            float ready = perfect ? 13f / 14f : 7f / 12f, hold = perfect ? 4f / 14f : 3f / 12f;
-            if (anim.TryNormalizedTime(s, out float n))
-            {
-                if (n >= hold) anim.SetSpeed(RiposteRush);
-                return n >= ready;
-            }
-            return stateTime >= (perfect ? 0.36f : 0.22f);
+            if (!anim.TryNormalizedTime(s, out float n)) { fade = RiposteLateFade; return stateTime >= RiposteBy; }
+            float ready = s == "PerfectParry" ? PerfectReadyN : ParryReadyN;
+            if (n >= ready) return stateTime >= RiposteMin;
+            float time = RiposteBy - stateTime;
+            if (time <= 0f) { fade = RiposteLateFade; return true; }
+            anim.SetSpeed(Mathf.Clamp((ready - n) * anim.Length(s, 0.4f) / time, 1f, RiposteRushMax));
+            return false;
         }
     }
 }

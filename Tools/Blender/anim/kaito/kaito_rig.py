@@ -150,6 +150,10 @@ SWIVELS_L = SWIVELS
 SWIVEL_SCALE = 25.0
 SWIVEL_BEND = 45.0
 ROLL_SCALE = 30.0            # idem para el giro de la hoja (multiplicado por roll_weight: más en los cortes)
+# fuera de los cuadros que cortan el filo autorado casi no se ve (una hoja de 2 cm de ancho desde 24 m) y es lo que
+# decide hacia qué lado gira el antebrazo: pesando lo mismo que en un corte, el camino seguía el filo autorado aunque
+# la muñeca tuviera que saltar de un tope al otro (de la guardia a la espalda en el iai)
+ROLL_FREE = 0.35
 
 
 def _excess(x, lo, hi):
@@ -328,7 +332,14 @@ def bandana_knot(body, slot="AmarilloBandana"):
     Mi = M.inverted()
     bm = bmesh.new()
     bm.from_mesh(body.data)
-    fins = [f for f in bm.faces if f.material_index in mi and (M @ f.calc_center_median()).x < KNOT_FIN_X]
+    core_c = None
+    knot0 = [M @ v.co for f in bm.faces if f.material_index in mi for v in f.verts if (M @ v.co).x < KNOT_FRONT_X]
+    if knot0:
+        core_c = Vector((KNOT_FRONT_X - KNOT_CORE_DEPTH, (min(p.y for p in knot0) + max(p.y for p in knot0)) * 0.5,
+                         (min(p.z for p in knot0) + max(p.z for p in knot0)) * 0.5))
+    # (el bloque del nudo, si ya está, no es una aleta)
+    fins = [f for f in bm.faces if f.material_index in mi and (M @ f.calc_center_median()).x < KNOT_FIN_X
+            and not (core_c is not None and in_core(M, f, core_c))]
     bmesh.ops.delete(bm, geom=fins, context='FACES')
     loose = [v for v in bm.verts if not v.link_faces]
     bmesh.ops.delete(bm, geom=loose, context='VERTS')
@@ -346,10 +357,55 @@ def bandana_knot(body, slot="AmarilloBandana"):
             p = M @ v.co
             p = Vector((KNOT_FRONT_X + (p.x - KNOT_FRONT_X) * scale[0], cy + (p.y - cy) * scale[1], cz + (p.z - cz) * scale[2]))
             v.co = Mi @ p
+        knot_core(body, bm, mi, Vector((KNOT_FRONT_X - KNOT_CORE_DEPTH, cy, cz)), M)
     bm.to_mesh(body.data)
     bm.free()
     body.data.update()
     return len(fins), tuple(round(s, 3) for s in scale)
+
+
+# El nudo es un aro hueco (la cinta dando la vuelta): de atrás se leía como un rombo de alambre y, tapada la bandana
+# (prólogo: el slot pasa al material del pelo), por el agujero se veía la nuca. Adentro va un bloque del mismo material
+# (12 triángulos, en la cabeza): el nudo tiene volumen y no deja ver nada. Medidas en unidades del archivo
+KNOT_CORE = (0.075, 0.1, 0.09)
+KNOT_CORE_DEPTH = 0.035                # centro del bloque detrás del frente del nudo (su cara de atrás no es una aleta)
+
+
+def in_core(M, f, center, k=1.05):
+    """¿La cara f está toda dentro del bloque del nudo centrado en 'center'?"""
+    hx, hy, hz = (s * 0.5 * k for s in KNOT_CORE)
+    for v in f.verts:
+        d = M @ v.co - center
+        if abs(d.x) > hx or abs(d.y) > hy or abs(d.z) > hz:
+            return False
+    return True
+
+
+def knot_core(body, bm, mats, center, M):
+    """Agrega el bloque del nudo (idempotente: si ya hay caras del slot dentro de ese bloque, no hace nada)."""
+    Mi = M.inverted()
+    hx, hy, hz = (s * 0.5 for s in KNOT_CORE)
+    for f in bm.faces:
+        if f.material_index in mats and in_core(M, f, center):
+            return
+    vg = body.vertex_groups.get("cabeza")
+    dl = bm.verts.layers.deform.verify()
+    vs = []
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            for sz in (-1, 1):
+                v = bm.verts.new(Mi @ (center + Vector((sx * hx, sy * hy, sz * hz))))
+                if vg is not None:
+                    v[dl][vg.index] = 1.0
+                vs.append(v)
+    import bmesh
+    mat = min(mats)
+    faces = []
+    for q in ((0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)):
+        f = bm.faces.new([vs[i] for i in q])
+        f.material_index = mat
+        faces.append(f)
+    bmesh.ops.recalc_face_normals(bm, faces=faces)
 
 
 def c_rig(arm):
@@ -758,6 +814,7 @@ class Solver:
         F3 = af.forearm(W, af.swiveled(W, ctx["pole"], swivel, "R"))
         Rr = np.swapaxes(F3 @ self.R0np["R"], -1, -2) @ H3
         ang = wrist_angles_np(Rr, "R")
+        self.last_ang = (*ang, af.shoulder)
         # la libre paga solo lo que le va a corregir el recorte (como la izquierda en eval_left)
         wrist = wrist_cost_np(*ang, "R") if fr <= 1e-3 else (1.0 - fr) * wrist_cost_np(*ang, "R") + fr * wrist_soft_np(*ang, "R")
         cost = wrist + af.swivel_cost(swivel) + af.shoulder_cost() + 0.5 * ((tilt - TILT_PREF) / 20.0) ** 2
@@ -1021,6 +1078,45 @@ STEP_COST = {"roll": 0.6, "tilt": 0.6, "swivel": 0.8, "swivel_l": 1.2}
 # el costo del cambio baja a la mitad. Sin esto el camino se quedaba pegado al cuadro fijo del principio (la guardia)
 # en los golpes que llegan de un cuadro al otro y la muñeca pasaba 2-4 cuadros contra el tope
 STEP_EASE = 20.0
+# ...pero con el costo abaratado el camino igual daba media vuelta en un cuadro donde la mano autorada se movía mucho (el
+# codo 127° en el primer cuadro del Corte final, la hoja 180° sobre su eje justo al llegar al zanshin, con la cámara
+# encima): un giro por cuadro del juego más grande que STEP_CAP se ve siempre, por rápido que vaya el gesto. Pasado el
+# tope cada 10° cuestan CAP_PENALTY (no es infinito: entre dos cuadros fijos muy distintos el camino tiene que existir).
+# En los cuadros que cortan el tope se estira (CAP_SMEAR: la estela tapa la mano) y en un corte de cámara del clip
+# ('cut', el teletransporte del remate) no hay tope
+STEP_CAP = {"roll": 40.0, "tilt": None, "swivel": 35.0, "swivel_l": 35.0}
+CAP_SMEAR = 1.8
+CAP_PENALTY = 60.0
+# ...y lo mismo para la muñeca que resulta de cada estado: la grilla puede ir suave y la mano igual dar media vuelta
+# respecto del antebrazo (una hoja que pasa de adelante a la espalda con la muñeca contra el tope, que el recorte
+# llevaba al tope opuesto de un cuadro al otro), o el húmero girar 100° (la manga se retuerce). Doblez y giro de la
+# muñeca y giro del hombro, grados por cuadro del juego
+WRIST_STEP_CAP = 30.0
+
+
+def step_caps(clip):
+    """(n + 1,) multiplicador del tope de cambio entre f-1 y f (ver STEP_CAP); el primero no se usa."""
+    n = clip.frames
+    out = np.ones(n + 1)
+    cuts = list(clip.timing.get("cut", ()))
+    # el cuadro en que lo golpean ('impact' de los golpes recibidos y los desvíos) es un sacudón de un cuadro: ahí el
+    # brazo libre vuela y el codo tiene que poder seguirlo (con tope, el hombro se retorcía 130°)
+    if "impact" in clip.timing:
+        cuts.append(clip.timing["impact"])
+    for f in range(1, n + 1):
+        if any(f - 1 < c <= f + 1e-6 for c in cuts):
+            out[f] = np.inf
+        elif cutting(clip, f) or cutting(clip, f - 1):
+            out[f] = CAP_SMEAR
+    return out
+
+
+def cap_cost(dv_deg, cap, mul, time_scale=1.0):
+    """Castigo de un cambio por cuadro del juego que pasa el tope 'cap' x 'mul' (grados; arrays)."""
+    if cap is None or not np.isfinite(mul):
+        return 0.0
+    over = np.maximum(0.0, np.abs(dv_deg) * time_scale - cap * mul)
+    return CAP_PENALTY * (over / 10.0) ** 2
 
 
 def step_ease(dirs, pts, time_scale=1.0):
@@ -1037,27 +1133,48 @@ def _wrap(d):
     return (d + 180.0) % 360.0 - 180.0
 
 
-def dp_path(local, axes, pins, time_scale=1.0, ease=None):
+def _axis_dv(vals, wrap):
+    v = np.asarray(vals, float)
+    dv = v[:, None] - v[None, :]
+    return _wrap(dv) if wrap else dv
+
+
+def dp_path(local, axes, pins, time_scale=1.0, ease=None, caps=None, wrist=None):
     """Camino por la grilla que minimiza la suma de los costos de cada cuadro más el de cambiar entre cuadros
-    (programación dinámica). local: (n, *forma de la grilla); axes: [(valores, costo por (10°)², da la vuelta)] por
-    eje; pins: {cuadro: índice plano} que quedan fijos (los empalmes con otros clips: el mismo cuadro tiene que salir
-    igual en los dos); ease: (n,) multiplicador del costo de cambio de f-1 a f (step_ease). Devuelve los valores
-    (n, ejes) suavizados ([1 2 1] dos veces, salvo los fijos)."""
+    (programación dinámica). local: (n, *forma de la grilla); axes: [(valores, costo por (10°)², da la vuelta[, tope
+    por cuadro])] por eje; pins: {cuadro: índice plano} que quedan fijos (los empalmes con otros clips: el mismo cuadro
+    tiene que salir igual en los dos); ease: (n,) multiplicador del costo de cambio de f-1 a f (step_ease); caps: (n,)
+    multiplicador del tope de cada eje (step_caps; el castigo del tope no se abarata con ease); wrist: (n, 3, celdas)
+    doblez y giro de la muñeca y giro del hombro de cada celda en cada cuadro (el cambio por cuadro que pasa WRIST_STEP_CAP también se
+    castiga). Devuelve los valores (n, ejes) suavizados ([1 2 1] dos veces, salvo los fijos)."""
     n = local.shape[0]
     ease = np.ones(n) if ease is None else ease
+    caps = np.ones(n) if caps is None else caps
     shape = local.shape[1:]
     flat = local.reshape(n, -1).astype(float).copy()
-    T = 0.0
-    for d, (vals, w, wrap) in enumerate(axes):
-        v = np.asarray(vals, float)
-        dv = v[:, None] - v[None, :]
-        if wrap:
-            dv = _wrap(dv)
-        c = w * time_scale * time_scale * (dv / 10.0) ** 2
-        sh = [1] * (2 * len(axes))
-        sh[d], sh[len(axes) + d] = len(v), len(v)
-        T = T + c.reshape(sh)
-    T = np.broadcast_to(T, shape + shape).reshape(flat.shape[1], flat.shape[1])
+    nax = len(axes)
+
+    def axis_sum(fn):
+        T = 0.0
+        for d, ax in enumerate(axes):
+            c = fn(d, ax)
+            if np.isscalar(c):
+                continue
+            sh = [1] * (2 * nax)
+            sh[d], sh[nax + d] = c.shape[0], c.shape[1]
+            T = T + c.reshape(sh)
+        if np.isscalar(T):
+            return 0.0
+        return np.broadcast_to(T, shape + shape).reshape(flat.shape[1], flat.shape[1])
+    T = axis_sum(lambda d, ax: ax[1] * time_scale * time_scale * (_axis_dv(ax[0], ax[2]) / 10.0) ** 2)
+    pen = {}
+
+    def penalty(mul):
+        key = float(mul)
+        if key not in pen:
+            pen[key] = axis_sum(lambda d, ax: cap_cost(_axis_dv(ax[0], ax[2]), ax[3] if len(ax) > 3 else None, mul, time_scale)
+                                if len(ax) > 3 and ax[3] is not None and np.isfinite(mul) else 0.0)
+        return pen[key]
     for f, i in pins.items():
         keep = flat[f, i]
         flat[f, :] = np.inf
@@ -1065,7 +1182,10 @@ def dp_path(local, axes, pins, time_scale=1.0, ease=None):
     cost = flat[0].copy()
     back = np.zeros((n, flat.shape[1]), dtype=np.int64)
     for f in range(1, n):
-        tot = cost[:, None] + T * ease[f]
+        tot = cost[:, None] + T * ease[f] + penalty(caps[f])
+        if wrist is not None and np.isfinite(caps[f]):
+            for k in range(len(wrist[f])):
+                tot = tot + cap_cost(_wrap(wrist[f][k][None, :] - wrist[f - 1][k][:, None]), WRIST_STEP_CAP, caps[f], time_scale)
         back[f] = np.argmin(tot, axis=0)
         cost = tot[back[f], np.arange(flat.shape[1])] + flat[f]
     idx = [int(np.argmin(cost))]
@@ -1073,7 +1193,8 @@ def dp_path(local, axes, pins, time_scale=1.0, ease=None):
         idx.append(int(back[f][idx[-1]]))
     idx = idx[::-1]
     out = np.array([[axes[d][0][k] for d, k in enumerate(np.unravel_index(i, shape))] for i in idx], float)
-    for d, (vals, w, wrap) in enumerate(axes):
+    for d, ax in enumerate(axes):
+        wrap = ax[2]
         col = out[:, d]
         if wrap:
             col = np.concatenate([[col[0]], col[0] + np.cumsum(_wrap(np.diff(col)))])
@@ -1112,7 +1233,8 @@ def chain_targets(clip):
     return out
 
 
-def refine_path(evalf, path, pins, axes, time_scale=1.0, ease=None, sweeps=4, steps=(-10.0, -5.0, -2.5, 2.5, 5.0, 10.0)):
+def refine_path(evalf, path, pins, axes, time_scale=1.0, ease=None, sweeps=4, steps=(-10.0, -5.0, -2.5, 2.5, 5.0, 10.0),
+                caps=None):
     """Pulido continuo del camino de dp_path: cuadro a cuadro y eje por eje, el valor cercano que minimiza el costo
     del cuadro más el de cambiar respecto de los vecinos. Entre dos puntos de la grilla el costo no siempre es suave
     (promediar dos estados buenos podía caer en uno malo: el brazo retorcido del Interact). evalf(f, estados (m, ejes))
@@ -1120,12 +1242,15 @@ def refine_path(evalf, path, pins, axes, time_scale=1.0, ease=None, sweeps=4, st
     out = np.array(path, float)
     n = out.shape[0]
     ease = np.ones(n) if ease is None else ease
+    caps = np.ones(n) if caps is None else caps
     st = np.array((0.0,) + tuple(steps))
     for sweep in range(sweeps):
         for f in (range(n) if sweep % 2 == 0 else range(n - 1, -1, -1)):
             if f in pins:
                 continue
-            for d, (vals, w, wrap) in enumerate(axes):
+            for d, ax in enumerate(axes):
+                vals, w, wrap = ax[:3]
+                cap = ax[3] if len(ax) > 3 else None
                 cand = np.repeat(out[f][None, :], len(st), axis=0)
                 cand[:, d] = out[f, d] + st
                 if wrap:
@@ -1136,7 +1261,9 @@ def refine_path(evalf, path, pins, axes, time_scale=1.0, ease=None, sweeps=4, st
                 for g in (f - 1, f + 1):
                     if 0 <= g < n:
                         dv = cand[:, d] - out[g, d]
-                        cost = cost + w * ease[max(f, g)] * time_scale * time_scale * ((_wrap(dv) if wrap else dv) / 10.0) ** 2
+                        dv = _wrap(dv) if wrap else dv
+                        cost = cost + w * ease[max(f, g)] * time_scale * time_scale * (dv / 10.0) ** 2
+                        cost = cost + cap_cost(dv, cap, caps[max(f, g)], time_scale)
                 out[f] = cand[int(np.argmin(cost))]
     return out
 
@@ -1149,20 +1276,21 @@ def arm_path(rig, solver, clip):
     n = clip.frames
     ts = clip.timing.get("time_scale", 1.0)
     grid = np.meshgrid(np.array(ROLLS), np.array(TILTS), np.array(SWIVELS), indexing="ij")
-    ctxs, base, tips = [], [], []
+    ctxs, base, tips, wr = [], [], [], []
     for f in range(n + 1):
         pose = NA.Pose(rig)
         c, K = solver.body(pose, clip.controls(f))
         ctx = solver.context(pose, c, K)
         ctxs.append(ctx)
         base.append(solver.eval_right(ctx, *grid))
+        wr.append(np.stack([np.broadcast_to(solver.last_ang[k], grid[0].shape).ravel() for k in (0, 2, 3)]))
         tips.append(solver.tip(K))
     base = np.array(base)
     weight = []
     for f in range(n + 1):
         a, b = max(0, f - 1), min(n, f + 1)
         v = (tips[b] - tips[a]).length * M_PER_U * NA.FPS * ts / max(1, b - a)
-        weight.append(1.0 + min(1.0, v / 8.0))
+        weight.append((1.0 + min(1.0, v / 8.0)) * (1.0 if cutting(clip, f) else ROLL_FREE))
     local = base + np.array([roll_cost(w) for w in weight])[:, :, None, None]
     pins = {f: int(np.argmin(base[f] + roll_cost(1.0)[:, None, None])) for f in pinned_frames(clip)}
     targets = chain_targets(clip)
@@ -1172,13 +1300,15 @@ def arm_path(rig, solver, clip):
         c, K = solver.body(pose, tclip.controls(tf))
         tgt_ctx[f] = (tclip, tf, solver.context(pose, c, K))
         pins[f] = int(np.argmin(solver.eval_right(tgt_ctx[f][2], *grid) + roll_cost(1.0)[:, None, None]))
-    axes = [(ROLLS, STEP_COST["roll"], True), (TILTS, STEP_COST["tilt"], False), (SWIVELS, STEP_COST["swivel"], False)]
+    axes = [(ROLLS, STEP_COST["roll"], True, STEP_CAP["roll"]), (TILTS, STEP_COST["tilt"], False, STEP_CAP["tilt"]),
+            (SWIVELS, STEP_COST["swivel"], False, STEP_CAP["swivel"])]
     ease = step_ease([cx["K3"][:, 1] for cx in ctxs], [cx["G"] for cx in ctxs], ts)
-    path = dp_path(local, axes, pins, ts, ease)
+    caps = step_caps(clip)
+    path = dp_path(local, axes, pins, ts, ease, caps, wr)
 
     def ev(f, cand):
         return solver.eval_right(ctxs[f], cand[:, 0], cand[:, 1], cand[:, 2]) + weight[f] * (cand[:, 0] / ROLL_SCALE) ** 2
-    path = refine_path(ev, path, pins, axes, ts, ease)
+    path = refine_path(ev, path, pins, axes, ts, ease, caps=caps)
     # el codo izquierdo con la mano ya decidida (en la empuñadura depende de la katana)
     ctx_l, hands_l = [], []
     for f in range(n + 1):
@@ -1197,10 +1327,11 @@ def arm_path(rig, solver, clip):
         c = solver.c
         hl = solver.left_hand(solver.katana, solver.free_left(c), c["grip_l"], st[1])
         pins_l[f] = int(np.argmin(solver.eval_left(solver.context(pose, c, solver.katana), hl, np.array(SWIVELS_L))))
-    axes_l = [(SWIVELS_L, STEP_COST["swivel_l"], False)]
+    axes_l = [(SWIVELS_L, STEP_COST["swivel_l"], False, STEP_CAP["swivel_l"])]
     ease_l = step_ease([np.array(rot3(h).col[1]) for h in hands_l], [np.array(h.translation) for h in hands_l], ts)
-    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l)
+    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l, caps)
     path_l = refine_path(lambda f, cand: solver.eval_left(ctx_l[f], hands_l[f], cand[:, 0]), path_l, pins_l, axes_l, ts,
-                         ease_l)
+                         ease_l, caps=caps)
     solver.path_ease = (ease, ease_l)          # build_kaito: los tirones que cuentan son los que el gesto no tapa
+    solver.path_caps = caps
     return [tuple(float(x) for x in path[f]) + (float(path_l[f][0]),) for f in range(n + 1)]
