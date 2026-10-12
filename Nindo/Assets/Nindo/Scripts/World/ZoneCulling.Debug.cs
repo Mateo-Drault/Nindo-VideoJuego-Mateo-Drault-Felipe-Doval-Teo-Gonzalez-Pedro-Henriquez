@@ -12,7 +12,7 @@ namespace Nindo
     /// Medición y depuración de ZoneCulling, para el Inspector o RunCommand:
     ///  * ZoneCulling.Stats: una línea con lo prendido ahora (renderers, casters de sombra, celdas, enemigos despiertos,
     ///    Animators y luces de la escena, y lo que cuesta el chequeo por frame).
-    ///  * ZoneCulling.ShowHud = true: esa línea arriba a la izquierda y, en la vista Scene, las celdas (verde = prendida).
+    ///  * ZoneCulling.ShowHud = true: esa línea abajo a la izquierda y, en la vista Scene, las celdas (verde = prendida).
     ///  * ZoneCulling.Benchmark(segundos): alterna con y sin culling en el mismo lugar y escribe en la consola el promedio
     ///    de cada contador del Profiler (tiempo del hilo principal y de render, batches, SetPass, casters de sombra...).
     ///  * ZoneCulling.CheckFrame(carpeta): el mismo cuadro, congelado, con y sin culling: cuántos píxeles cambian.
@@ -357,7 +357,7 @@ namespace Nindo
 #endif
     }
 
-    /// <summary>La línea de ZoneCulling arriba a la izquierda (solo mientras ZoneCulling.ShowHud está prendido).</summary>
+    /// <summary>La línea de ZoneCulling abajo a la izquierda (solo mientras ZoneCulling.ShowHud está prendido).</summary>
     public class ZoneCullingHud : MonoBehaviour
     {
         float next;
