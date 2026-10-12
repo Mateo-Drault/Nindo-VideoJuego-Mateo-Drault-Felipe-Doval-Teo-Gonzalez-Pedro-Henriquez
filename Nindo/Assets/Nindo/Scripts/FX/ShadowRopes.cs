@@ -110,6 +110,13 @@ namespace Nindo
             Transform el = NPC.FindDeep(captive, "Antebrazo.L"), er = NPC.FindDeep(captive, "Antebrazo.R");
             Transform sl = NPC.FindDeep(captive, "Brazo.L"), sr = NPC.FindDeep(captive, "Brazo.R");
             Transform root = NPC.FindDeep(captive, "Root");
+            if (!LooksKneeling(c, hl, hr, sl, sr, root))
+            {
+                // los huesos están pero no en Bound (el Animator no llegó a evaluar: el GameObject apagado, otro
+                // controller): las medidas de NPC, que son las de Bound, antes que vueltas sobre el sombrero
+                Debug.LogWarning("[Nindo] El abuelo no está en la pose de Bound al atarlo: las cuerdas usan las medidas de NPC.");
+                hl = hr = el = er = sl = sr = root = null;
+            }
             Vector3 up = Vector3.up, back = -axis;
             var loops = NPC.BoundRopeLoops;
             float hw = NPC.BoundRopeHalfWidth;
@@ -173,6 +180,24 @@ namespace Nindo
             float hang = Mathf.Max(0.05f, knot.y - (c.y + 0.26f));
             Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.04f + side * 0.03f + Vector3.down * (0.4f * hang), knot + axis * 0.05f + side * 0.07f + Vector3.down * hang }, 0.022f, 5, false);
             Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.05f - side * 0.02f + Vector3.down * (0.45f * hang), knot + axis * 0.03f + side * 0.01f + Vector3.down * (0.9f * hang) }, 0.022f, 5, false);
+        }
+
+        // la pose de Bound y BoundStruggle con margen (m sobre los pies del transform): manos a 0.40-0.44 y 0.13 atrás,
+        // hombros a 0.57-0.66, cadera a 0.18. Bind: las manos a 0.8 a los costados; Idle: manos a 0.70, hombros a 0.92
+        const float MaxHandOut = 0.35f, MaxHandUp = 0.6f, MaxShoulderUp = 0.78f, MaxHipUp = 0.35f;
+
+        /// <summary>Los huesos que hay están en la pose de Bound (de rodillas, las manos juntas atrás).</summary>
+        static bool LooksKneeling(Vector3 c, Transform hl, Transform hr, Transform sl, Transform sr, Transform root)
+        {
+            foreach (var h in new[] { hl, hr })
+            {
+                if (h == null) continue;
+                Vector3 d = h.position - c;
+                if (d.y > MaxHandUp || new Vector2(d.x, d.z).magnitude > MaxHandOut) return false;
+            }
+            if (sl != null && sl.position.y - c.y > MaxShoulderUp) return false;
+            if (sr != null && sr.position.y - c.y > MaxShoulderUp) return false;
+            return root == null || root.position.y - c.y <= MaxHipUp;
         }
 
         /// <summary>El eje del tronco (de la cadera al medio de los hombros) a la altura y.</summary>

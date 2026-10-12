@@ -163,6 +163,8 @@ falla; lo mismo en el brazo, aviso; quedan libres la mano del arma en el golpe y
 en 0.08 s); el puño alrededor del mango (la palma a la distancia del agarre ideal ± 2 cm, `grip_gap_cm`); los cruces de
 `BLENDS` (el antebrazo gira <= 30° más que la mano pedida, y aparte el giro crudo, aviso arriba de 45°: los golpes del
 ninja salvo el Attack1 arrancan con el filo de los loops, `edge_start`, pero las vueltas a Idle todavía ruedan ~57°); el arma no se mete en el piso más de 1 cm fuera del golpe;
+la cadera sin tirones (cuánto cambia su paso de un cuadro al otro, con el avance del transform: aviso desde 6 cm, falla
+con `hip_acc_cm` en el timing; el ninja de Kidnap y Dragged lo tienen en 3.5);
 la cara de la katana hacia la cámara del juego (media de |normal . cámara| desde 6 lados a 52°, >= 0.5, aviso) en el
 inicio del aviso, el apex y el golpe, en los loops y en los cuadros `timing["read"]` de un clip sin golpe (`blade_face`
 en el sidecar). Ese número no ve lo que tapa el cuerpo: para comparar de verdad, contar píxeles con máscaras planas

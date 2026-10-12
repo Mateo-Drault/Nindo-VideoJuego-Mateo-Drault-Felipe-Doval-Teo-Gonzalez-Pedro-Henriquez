@@ -54,6 +54,13 @@ RUN_ARM = dict(hand_r_dir=RUN_DIR, hand_r_palm=RUN_PALM, elbow_r=(-1.0, 0.3, 0.0
 GRIP_R = 0.022
 GRAB, IMPACT, DRAG_START = 17, 27, 47
 KID_TAUT = 40                   # desde acá Kidnap se funde con el arranque del arrastre (ver kidnap_and_dragged)
+# lo más que cambia de un cuadro al otro el paso de la cadera del ninja en Kidnap (m por cuadro, 27 m/s²): las claves de
+# la carrera con sus curvas daban 22 cm en f10 entre 14 y 14 y, al agarrar, 24 cm en f18 y 1 en f20 (se teletransportaba y
+# se clavaba). Así arranca de la guardia, corre parejo y el agarre le va frenando el impulso en 5-6 cuadros
+NINJA_HIP_ACC = 0.03
+# lo mismo para el giro de la cadera y del tronco (° por cuadro por cuadro): al agarrar, la curva 'out' de la clave f20
+# giraba el tronco 6° en el primer cuadro y, con la mano clavada en la muñeca del abuelo, el brazo del agarre saltaba 45°
+NINJA_ROT_ACC = 3.0
 # lo más hondo que puede ir la malla de los clips nuevos (cm del marco de autoría): los pies de Idle (y los del ninja
 # escondido en la pose fija) quedan a -1.4 y el juego apoya eso en el piso, así que nada va más hondo que un pie parado.
 # Sentado y de rodillas la túnica se metía 2.3-2.6 cm bajo ese piso (se veía hundido)
@@ -130,6 +137,26 @@ def blend_ctrls(a, b, w, keep=()):
         else:
             out[k] = lerp3(va, vb, w)
     return out
+
+
+def smooth_track(pts, a_max, pin=2):
+    """La recta más parecida a 'pts' (posiciones por cuadro) cuya aceleración no pasa de a_max (m por cuadro por cuadro):
+    mínimos cuadrados con una penalidad a la segunda diferencia que crece hasta cumplir el tope. Los 'pin' cuadros de cada
+    punta quedan donde estaban (posición y velocidad con las que empalma lo de antes y lo de después)."""
+    import numpy as np
+    P0 = np.array([tuple(p) for p in pts], dtype=float)
+    n = len(P0)
+    D = np.zeros((n - 2, n))
+    for i in range(n - 2):
+        D[i, i:i + 3] = (1.0, -2.0, 1.0)
+    w = np.ones(n)
+    w[:pin] = w[-pin:] = 1e6
+    lam = 0.5
+    while True:
+        P = np.linalg.solve(np.diag(w) + lam * D.T @ D, w[:, None] * P0)
+        if np.linalg.norm(np.diff(P, 2, axis=0), axis=1).max() <= a_max or lam > 1e5:
+            return [tuple(float(x) for x in p) for p in P]
+        lam *= 1.25
 
 
 def sampler(name, n, keys, loop=False):
@@ -533,6 +560,10 @@ N_PELVIS_G = (0.42, 0.90)
 NINJA_DUTY = 0.55
 NINJA_CROUCH = 0.035
 NINJA_FOOT_X, NINJA_FOOT_BACK = 0.095, 0.03      # los apoyos un poco detrás de la cadera: empuja inclinado
+# y más atrás cuanto más rápido va el grupo que DRAG_SPEED (s: m de apoyo por m/s de más; más adelante cuando frena). En
+# la vuelta rápida después del tirón (1.0-1.5 m/s) el pie derecho apoyaba 24 cm delante de la cadera y el solver la bajaba
+# 5 cm en f38-f40 para alcanzarlo (un pozo en el paso); frenado por el abuelo, los pies adelante son los de quien aguanta
+NINJA_FOOT_LEAD = 0.10
 # los últimos cuadros de Kidnap el grupo acelera de quieto a DRAG_SPEED: arranca LAUNCH_SHIFT m atrás de la disposición
 LAUNCH = KID_N - DRAG_START
 LAUNCH_SHIFT = DRAG_SPEED * LAUNCH / NA.FPS / 2.0
@@ -610,7 +641,10 @@ def ninja_gait(duo, hips_w):
 
     x0 = duo.g2n((N_PELVIS_G[0], 0.0, 0.0))[0]
     feet = {"r": (x0 - NINJA_FOOT_X, -8.0, 0), "l": (x0 + NINJA_FOOT_X, 8.0, dur // 2)}
-    plant = lambda s: Hp(s + duty * dur * 0.5) - NINJA_FOOT_BACK
+    def plant(s):
+        m = s + duty * dur * 0.5
+        v = (Hp(m + 0.5) - Hp(m - 0.5)) * NA.FPS
+        return Hp(m) - NINJA_FOOT_BACK - NINJA_FOOT_LEAD * (v - DRAG_SPEED)
 
     def one(k, f):
         x, yaw, ph = feet[k]
@@ -822,10 +856,14 @@ def kidnap_and_dragged(ch):
                       hand_l_dir=(0.1, -1.0, 0.2), hand_l_palm=(0.0, 0.0, -1.0)), "in2"),
          Key(14, dict(hips=n_at(0.48, -0.36, -0.045), hips_rot=(24.0, 0.0, -4.0), spine=(10.0, 0.0, 2.0), head=(-18.0, 0.0, 22.0),
                       hand_r_rel=(-0.07, 0.12, -0.20), hand_l_rel=(0.10, -0.14, -0.12), fist_r=0.9, fist_l=0.3,
-                      elbow_l=(1.0, 0.3, 0.0),
+                      elbow_l=(1.0, 0.3, -0.5),
                       elbow_r=(-1.0, 0.3, 0.0), hand_r_dir=RUN_DIR, hand_r_palm=RUN_PALM), "lin"),
          Key(GRAB, dict(hips=n_at(0.60, -0.02, -0.05), hips_rot=(16.0, 0.0, 8.0), spine=(6.0, 0.0, 8.0), head=(-14.0, 0.0, 40.0),
-                        hand_r_rel=(-0.17, 0.04, -0.17), fist_r=0.8, **RUN_ARM), "lin"),
+                        hand_r_rel=(-0.17, 0.04, -0.17), fist_r=0.8, **RUN_ARM,
+                        # el codo del agarre abajo y afuera, como en Dragged: la mano queda en la muñeca del abuelo y el
+                        # ninja pasa de largo, así que el brazo barre de adelante para atrás en 4 cuadros. Con el codo al
+                        # costado el barrido pasaba por la dirección del polo y el codo se daba vuelta (97° en un cuadro)
+                        elbow_l=(0.6, 0.2, -0.8)), "lin"),
          Key(20, dict(hips=n_at(0.62, 0.30, -0.10), hips_rot=(6.0, 0.0, 24.0), spine=(4.0, 0.0, 14.0), head=(-10.0, 0.0, 55.0),
                       hand_r_rel=(-0.15, -0.12, -0.17), fist_r=0.9, **RUN_ARM), "out"),
          Key(24, dict(hips=n24, hips_rot=(24.0, 0.0, 16.0), spine=(8.0, 0.0, 10.0), head=(-14.0, 0.0, 30.0),
@@ -839,6 +877,8 @@ def kidnap_and_dragged(ch):
                       hand_r_rel=(-0.05, 0.07, -0.24), fist_r=0.9, **RUN_ARM)),
          Key(DRAG_START, shift_n(raw0[1], -LAUNCH_SHIFT))]
     Gs, Ns = sampler("Kidnap/g", DRAG_START, G), sampler("Kidnap/n", DRAG_START, N)
+    n_smooth = {k: smooth_track([Ns(f)[k] for f in range(KID_TAUT + 1)], acc)
+                for k, acc in (("hips", NINJA_HIP_ACC), ("hips_rot", NINJA_ROT_ACC), ("spine", NINJA_ROT_ACC))}
 
     # apoyos. Abuelo: parado; en la pasada da un paso atrás con la izquierda y al caer los pies se le van al aire (arco
     # de 7 cm que llega frenando: antes el derecho barría el piso y frenaba en seco de 3.5 m/s) a los talones de Dragged f0
@@ -891,6 +931,8 @@ def kidnap_and_dragged(ch):
             K.append((g, n))
             continue
         g, n = Gs(f), Ns(f)
+        if f <= KID_TAUT:
+            n.update({k: v[f] for k, v in n_smooth.items()})
         for k in "rl":
             g["foot_" + k], g["foot_%s_rot" % k] = T.sample_feet(ch, k, gfeet[k], f)
             n["foot_" + k], n["foot_%s_rot" % k] = T.sample_feet(kid, k, nfeet[k], f)
@@ -942,12 +984,15 @@ def kidnap_and_dragged(ch):
         events=dict(grab=GRAB, impact=IMPACT, grip=32, digs=[[30, 34], [34, 38]], drag_start=DRAG_START)),
         notes="el ninja pasa por la izquierda, le agarra la muñeca y lo tira al piso; se agarran de las muñecas, clava los "
               "talones, se los arrastran y arranca el arrastre")
-    kid_g.partner = dense("Kidnap/ninja", KID_N, [r[1] for r in K], timing=dict(sheet=kid_g.timing["sheet"]))
+    # (el tope de la cadera con medio cm para lo que la baja el solver al alcanzar los pies)
+    kid_g.partner = dense("Kidnap/ninja", KID_N, [r[1] for r in K],
+                          timing=dict(sheet=kid_g.timing["sheet"], hip_acc_cm=NINJA_HIP_ACC * 100.0 + 0.5))
     drag_g = dense("Dragged", DRAG_N, [r[0] for r in D], loop=True, root_vel=(0, DRAG_SPEED, 0), timing=dict(
         sheet=[0, 8, 16, 22, 26, 28, 30, 34, 40, 50, 60, 70], slide_ok=80.0, floor_cm=FLOOR_CM,
         events=dict(resist=[RES_IN, RES_OUT], yank=RES_OUT + 4, two_hands=[24, 40], pull=[RES_OUT, 34], reach=50, limp=[60, 80])),
         notes="arrastrado del brazo: el ninja camina tirando, el abuelo clava los talones, resiste, el tirón y se rinde")
-    drag_g.partner = dense("Dragged/ninja", DRAG_N, [r[1] for r in D], loop=True, timing=dict(sheet=drag_g.timing["sheet"]))
+    drag_g.partner = dense("Dragged/ninja", DRAG_N, [r[1] for r in D], loop=True,
+                           timing=dict(sheet=drag_g.timing["sheet"], hip_acc_cm=NINJA_HIP_ACC * 100.0 + 0.5))
     return wait, kid_g, drag_g
 
 

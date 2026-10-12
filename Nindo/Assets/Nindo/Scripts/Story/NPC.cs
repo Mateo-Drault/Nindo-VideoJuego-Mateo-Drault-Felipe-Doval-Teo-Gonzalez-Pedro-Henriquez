@@ -127,13 +127,23 @@ namespace Nindo
 
         /// <summary>
         /// Atado al poste: de rodillas, KneelForward adelante del marcador (ver la constante). Antes de armar las cuerdas:
-        /// el Animator se evalúa en el acto para que ShadowRopes lea los huesos ya en la pose de Bound.
+        /// el Animator se evalúa en el acto para que ShadowRopes lea los huesos ya en la pose de Bound. Con
+        /// CullUpdateTransforms un Animator que nunca se dibujó (partida nueva: Kaito está en el prólogo, a 300 m) no
+        /// escribe los huesos ni en un Update manual y quedaban en la pose de bind (brazos en cruz): las cuerdas salían
+        /// sobre el sombrero. Por eso, solo para esta evaluación, AlwaysAnimate.
         /// </summary>
         public void KneelBound()
         {
             transform.position += transform.forward * KneelForward;
             Play(BoundState, 0f);
-            if (anim.Valid) anim.Animator.Update(0f);
+            if (anim.Valid)
+            {
+                var a = anim.Animator;
+                var cm = a.cullingMode;
+                a.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+                a.Update(0f);
+                a.cullingMode = cm;
+            }
             nextStruggle = Time.time + Random.Range(StruggleMin, StruggleMax);
         }
         float nextStruggle;
