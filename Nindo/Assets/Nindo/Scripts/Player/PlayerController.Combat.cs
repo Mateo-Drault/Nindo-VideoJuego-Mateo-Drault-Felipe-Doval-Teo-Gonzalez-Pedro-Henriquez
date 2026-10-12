@@ -509,19 +509,29 @@ namespace Nindo
         bool finisherStruck;
         int finisherShot = -1;
         int finisherSlowMo = -1;
-        // los comunes se rematan rápido (≤ 1 s, sin plano de cámara); la cinemática (~2.6 s) queda para élites,
-        // sumos, jefes y el último de la pelea: antes cada ejecución era mirar una película
+        // los comunes se rematan rápido (≤ 1 s, sin plano de cámara); la cinemática queda para élites, sumos, jefes y el
+        // último de la pelea: antes cada ejecución era mirar una película
         bool finisherCinematic;
         float finisherSpeed = CinematicFinisherSpeed;
-        // corto: clip x2.8 con cámara lenta 0.6 hasta el tajo → tajo a 0.75 s y control de vuelta a 1.0 s reales
-        // (el cinemático: tajo a 1.85 s, fin a 2.5 s)
+        float finisherClock;        // segundos de clip que avanzó el remate (sigue al Animator: velocidad x tiempo escalado)
+        float finisherStruckAt;     // stateTime del tajo
+        // corto: clip x2.8 con cámara lenta 0.6 hasta el tajo → tajo a 0.75 s, 0.2 s de zanshin y control de vuelta a
+        // ~1.0 s reales, como antes. El cinemático: tajo a 1.85 s y el zanshin a x1 (~1 s de pose con ZanshinShot: el
+        // usuario pedía "un segundo de Kaito en la pose final"; antes la cámara volvía en el tajo y el clip seguía a x1.7
+        // hasta la guardia)
         const float CinematicFinisherSpeed = 1.7f, ShortFinisherSpeed = 2.8f;
-        // ShortFinisherEnd = f72/80 del clip (kaitooo.fbx.json, Finisher 'short_end'): ya volvió a la guardia y el fundido
-        // a Locomotion no arrastra los pies
-        const float FinisherStrikeAt = 0.68f, ShortFinisherEnd = 0.9f;
-        // después del remate: los que estaban cerca salen despedidos y esperan antes de atacar; Kaito queda
-        // invulnerable un instante (el control volvía en medio del golpe de otro)
+        // cuadros del clip a 30 fps (kaitooo.fbx.json, Finisher: 'strike' con el corte en f54.5, 'hold' f55-f86, 'guard'
+        // f98 de 106): el teletransporte va en el tajo; desde el final del zanshin el resto del clip (chiburi y el paso a
+        // la guardia) es un gesto que el stick o un ataque cortan
+        const float FinisherStrikeFrame = 54.4f, FinisherHoldEndFrame = 86f, FinisherFrames = 106f;
+        // el corto no se queda: 0.2 s en la pose y salta al final del zanshin con un fundido corto (las poses del zanshin
+        // son casi iguales: kaito_clips.CHAINS Finisher@71 -> Finisher@86)
+        const float FinisherHoldSpeed = 1f, ShortHoldTime = 0.2f, ShortSkipFade = 0.12f;
+        // después del remate: los que estaban cerca salen despedidos y esperan antes de atacar (en el cinemático, además,
+        // lo que dura el zanshin); Kaito queda invulnerable un instante (el control volvía en medio del golpe de otro)
         const float FinisherRoomRadius = 4f, FinisherPush = 1.5f, FinisherAttackDelay = 0.8f, FinisherGrace = 0.6f;
+        // el plano del zanshin dura a lo sumo esto (s reales): lo corta el código al terminar la pose
+        const float ZanshinShotMax = 3f;
 
         public Enemy FinisherCandidate()
         {
@@ -549,6 +559,7 @@ namespace Nindo
             if (!SpendSpirit(config.finisherCost)) return false;
             finisherTarget = e;
             finisherStruck = false;
+            finisherClock = 0f;
             finisherCinematic = e is Boss || e.config.cinematicFinisher || LastOfFight(e);
             finisherSpeed = finisherCinematic ? CinematicFinisherSpeed : ShortFinisherSpeed;
             CancelAbilityCamera();
@@ -573,14 +584,16 @@ namespace Nindo
         void TickFinisher(float dt)
         {
             velocity = Vector3.zero;
-            // la línea de tiempo asume el clip a finisherSpeed (Play de TryFinisher): la furia no lo acelera
-            // (SetState pone su multiplicador y puede activarse en plena ejecución con la muerte)
-            anim.SetSpeed(1f);
-            float len = anim.Length("Finisher", 2.6f) / finisherSpeed;
-            float n = stateTime / len;
-            if (!finisherStruck && n >= FinisherStrikeAt)
+            // la línea de tiempo asume el clip a finisherSpeed (Play de TryFinisher): la furia no lo acelera (SetState pone
+            // su multiplicador y puede activarse en plena ejecución con la muerte). El zanshin del cinemático va a x1
+            float mul = finisherStruck && finisherCinematic ? FinisherHoldSpeed / finisherSpeed : 1f;
+            anim.SetSpeed(mul);
+            finisherClock += dt * finisherSpeed * mul;
+            float frame = finisherClock * 30f;
+            if (!finisherStruck && frame >= FinisherStrikeFrame)
             {
                 finisherStruck = true;
+                finisherStruckAt = stateTime;
                 var e = finisherTarget;
                 if (e != null)
                 {
@@ -594,14 +607,17 @@ namespace Nindo
                     Game.FX?.FinisherSlash(from + Vector3.up, behind + Vector3.up, RageActive);
                     Game.FX?.Execution(e.AimPoint, dir);
                     Game.Audio?.Play("finisher_hit", e.transform.position, 1f);
+                    // el cinemático corta (lo tapa el destello) al zanshin de frente, con el cortado detrás
                     Game.Camera?.CancelShot(finisherShot);
+                    finisherShot = finisherCinematic && Game.Camera != null ? Game.Camera.PlayZanshinShot(transform, e.transform.position, ZanshinShotMax) : -1;
                     Game.Camera?.Shake(finisherCinematic ? 0.8f : 0.6f);
                     Game.Camera?.Punch(finisherCinematic ? -7f : -3f, 0.4f);
                     Game.Time?.CancelSlowMotion(finisherSlowMo);
                     Game.Time?.HitStop(finisherCinematic ? 0.16f : 0.08f);
                     Game.FX?.Screen?.WhiteFlash(finisherCinematic ? 0.8f : 0.35f);
                     Game.Input?.Rumble(1f, 1f, 0.35f);
-                    GiveRoomAround(transform.position);
+                    GiveRoomAround(transform.position, FinisherRoomRadius, FinisherPush,
+                                   FinisherAttackDelay + (finisherCinematic ? FinisherHoldSeconds : ShortHoldTime));
                     e.Execute(this);
                     OnKilledEnemy(e, true);
                     GameEvents.RaiseEnemyFinished(e, true);
@@ -610,30 +626,44 @@ namespace Nindo
                 // limpió todo y Kaito no debe volver a Locomotion en medio de ella
                 if (State != PlayerState.Finisher) return;
             }
-            // el corto devuelve el control apenas termina el tajo (el resto del clip es la vuelta a la guardia)
-            if (n >= (finisherCinematic ? 1f : ShortFinisherEnd))
-            {
-                Game.FX?.Screen?.Finisher(false);
-                Game.Camera?.CancelShot(finisherShot);
-                finisherShot = -1;
-                finisherSlowMo = -1;
-                invulnUntil = Mathf.Max(invulnUntil, Time.time + FinisherGrace);
-                SetState(PlayerState.Locomotion);
-                anim.Play("Locomotion", 0.2f);
-                finisherTarget = null;
-            }
+            if (!finisherStruck) return;
+            if (finisherCinematic ? frame >= FinisherHoldEndFrame : stateTime - finisherStruckAt >= ShortHoldTime) EndFinisher();
         }
 
-        /// <summary>El tajo del remate despide a los que están cerca y les da un respiro antes de volver a atacar.</summary>
-        void GiveRoomAround(Vector3 c)
+        /// <summary>Segundos (escalados) del zanshin del cinemático, del tajo al final de la pose.</summary>
+        static float FinisherHoldSeconds => (FinisherHoldEndFrame - FinisherStrikeFrame) / 30f / FinisherHoldSpeed;
+
+        /// <summary>
+        /// Fin del zanshin: vuelve el control y la cámara de juego (el plano se va en 0.5 s). Lo que queda del clip (chiburi
+        /// y el paso a la guardia) sigue como un gesto que el stick o un ataque cortan: la pose larga no alarga la pelea
+        /// más que lo que dura la pose.
+        /// </summary>
+        void EndFinisher()
+        {
+            Game.FX?.Screen?.Finisher(false);
+            Game.Camera?.CancelShot(finisherShot);
+            finisherShot = -1;
+            finisherSlowMo = -1;
+            invulnUntil = Mathf.Max(invulnUntil, Time.time + FinisherGrace);
+            SetState(PlayerState.Locomotion);
+            finisherTarget = null;
+            float len = anim.Length("Finisher", FinisherFrames / 30f);
+            float from = Mathf.Min(FinisherHoldEndFrame / 30f, len);
+            if (!finisherCinematic) anim.Play("Finisher", ShortSkipFade, from / len, finisherSpeed);
+            StartGesture("Finisher", (len - from) / finisherSpeed);
+        }
+
+        /// <summary>Despide a los que están a menos de 'radius' de c ('push' m) y les da 'delay' s antes de volver a atacar
+        /// (el tajo del remate, el zanshin de las habilidades).</summary>
+        void GiveRoomAround(Vector3 c, float radius, float push, float delay)
         {
             var list = Game.Combat != null ? Game.Combat.All : null;
             if (list == null) return;
             for (int i = 0; i < list.Count; i++)
             {
                 var o = list[i];
-                if (o != null && o.IsAlive && CombatMath.FlatDistance(o.transform.position, c) <= FinisherRoomRadius)
-                    o.GiveRoom(c, FinisherPush, FinisherAttackDelay);
+                if (o != null && o.IsAlive && CombatMath.FlatDistance(o.transform.position, c) <= radius)
+                    o.GiveRoom(c, push, delay);
             }
         }
 
@@ -646,6 +676,16 @@ namespace Nindo
         readonly List<Enemy> abilityVictims = new List<Enemy>(8);
         int whirlTicks;
         bool abilityOwnClip;
+        float abilityHoldFrom = -1f;     // stateTime en que empezó el zanshin (< 0: todavía no)
+        // ZANSHIN de las habilidades (pedido del usuario: un segundo de Kaito en la pose final, con la cámara encima): el
+        // Corte del Viento llega de espaldas a los cortados y queda quieto mientras aparecen los cortes (ZanshinShot de
+        // frente); el Torbellino cae agachado con la hoja siguiendo el giro (la órbita baja sigue, frenando). Tiempos de los
+        // clips (kaitooo.fbx.json 'hold'; se tocan a x1, así que son stateTime): WindSlash f15-f45, Whirlwind f24-f54. Los
+        // últimos AbilityHoldCancel s la pose se corta con cualquier acción (stick, ataque, dash, parry) y lo que queda del
+        // clip es un gesto que también se corta; Kaito sigue invulnerable (abilityInvulnerable) y los de alrededor esperan
+        const float WindPrep = 0.32f, WindTravel = 0.16f, WindSlashDelay = 0.06f, WindHoldEnd = 1.5f;
+        const float WhirlSpinStart = 0.12f, WhirlSpinTime = 0.62f, WhirlLand = 0.8f, WhirlHoldEnd = 1.8f;
+        const float AbilityHoldCancel = 0.25f, AbilityRoomRadius = 9f, AbilityAfterDelay = 0.5f;
 
         bool TryAbility(int index)
         {
@@ -656,6 +696,7 @@ namespace Nindo
             abilityFired = false;
             abilityVictims.Clear();
             whirlTicks = 0;
+            abilityHoldFrom = -1f;
             swingConnected = false;
             SetState(PlayerState.Ability);
             velocity = Vector3.zero;
@@ -688,7 +729,8 @@ namespace Nindo
                 abilityInvulnerable = true;
                 if (abilityOwnClip) anim.Play("Whirlwind", 0.05f);
                 else anim.Play("Attack3", 0.05f, 0f, 0.8f);
-                abilityShot = Game.Camera != null ? Game.Camera.PlayAbilityShot(transform, CameraDirector.AbilityShot.LowOrbit, 1.1f) : -1;
+                // la órbita cubre el giro y la pose final (la corta EndAbility)
+                abilityShot = Game.Camera != null ? Game.Camera.PlayAbilityShot(transform, CameraDirector.AbilityShot.LowOrbit, abilityOwnClip ? 2.4f : 1.1f) : -1;
                 Game.Time?.SlowMotion(0.35f, 0.3f, 0.03f, 0.15f);
                 Game.FX?.AbilityCharge(transform.position, true);
                 Game.Audio?.Play("ability_whirl", transform.position, 0.9f);
@@ -702,14 +744,14 @@ namespace Nindo
         {
             // el clip propio sigue el reloj de stateTime: la furia no lo acelera (SetState le pone su multiplicador)
             if (abilityOwnClip) anim.SetSpeed(1f);
-            if (abilityIndex == 1) TickWindSlash(dt);
-            else TickWhirlwind(dt);
+            if (abilityIndex == 1) TickWindSlash(input, dt);
+            else TickWhirlwind(input, dt);
         }
 
-        void TickWindSlash(float dt)
+        void TickWindSlash(InputReader input, float dt)
         {
             // fase 1 (0-0.32s escalados): preparación; fase 2: tajo-dash; fase 3: los cortes "llegan"
-            const float prep = 0.32f, travel = 0.16f;
+            const float prep = WindPrep, travel = WindTravel;
             if (stateTime < prep) { velocity = Vector3.zero; return; }
             if (!abilityFired)
             {
@@ -732,7 +774,7 @@ namespace Nindo
                 return;
             }
             velocity = Vector3.zero;
-            if (stateTime > prep + travel + 0.06f && abilityVictims.Count > 0)
+            if (stateTime > prep + travel + WindSlashDelay && abilityVictims.Count > 0)
             {
                 // los cortes aparecen después de pasar (iaido)
                 Game.FX?.SlashLine(abilityStart + Vector3.up, abilityEnd + Vector3.up);
@@ -748,7 +790,10 @@ namespace Nindo
                 if (State != PlayerState.Ability) return;
                 if (!abilityOwnClip) anim.Play("Attack3", 0.05f, 0.55f, 1f);
             }
-            if (stateTime > prep + travel + 0.55f) EndAbility();
+            if (!abilityOwnClip) { if (stateTime > prep + travel + 0.55f) EndAbility(); return; }
+            // con los cortes, el corte de cámara al zanshin de frente (lo tapa el destello de los cortes)
+            if (abilityHoldFrom < 0f && stateTime > prep + travel + WindSlashDelay) BeginAbilityHold(true, (abilityStart + abilityEnd) * 0.5f, WindHoldEnd);
+            if (abilityHoldFrom >= 0f) TickAbilityHold(input, WindHoldEnd);
         }
 
         void CollectLineVictims(Vector3 a, Vector3 b, float radius)
@@ -770,9 +815,9 @@ namespace Nindo
             }
         }
 
-        void TickWhirlwind(float dt)
+        void TickWhirlwind(InputReader input, float dt)
         {
-            const float spinStart = 0.12f, spinTime = 0.62f;
+            const float spinStart = WhirlSpinStart, spinTime = WhirlSpinTime;
             velocity = Vector3.zero;
             if (stateTime >= spinStart && stateTime <= spinStart + spinTime)
             {
@@ -790,7 +835,9 @@ namespace Nindo
             {
                 if (model != null) model.localRotation = modelBaseRot;
                 trail?.Stop();
-                if (stateTime > spinStart + spinTime + 0.25f) EndAbility();
+                if (!abilityOwnClip) { if (stateTime > spinStart + spinTime + 0.25f) EndAbility(); return; }
+                if (abilityHoldFrom < 0f && stateTime >= WhirlLand) BeginAbilityHold(false, transform.position, WhirlHoldEnd);
+                if (abilityHoldFrom >= 0f) TickAbilityHold(input, WhirlHoldEnd);
             }
         }
 
@@ -810,14 +857,37 @@ namespace Nindo
 
         static float EaseOut(float t) => 1f - (1f - t) * (1f - t);
 
+        /// <summary>Arranca el zanshin de la habilidad (hasta 'end', stateTime): los de alrededor esperan a que termine.</summary>
+        void BeginAbilityHold(bool zanshinShot, Vector3 behind, float end)
+        {
+            abilityHoldFrom = stateTime;
+            GiveRoomAround(transform.position, AbilityRoomRadius, 0f, end - stateTime + AbilityAfterDelay);
+            if (!zanshinShot || Game.Camera == null) return;
+            Game.Camera.CancelShot(abilityShot);
+            abilityShot = Game.Camera.PlayZanshinShot(transform, behind, ZanshinShotMax);
+        }
+
+        /// <summary>La pose dura hasta 'end'; en sus últimos AbilityHoldCancel s cualquier acción la termina (y se ejecuta).</summary>
+        void TickAbilityHold(InputReader input, float end)
+        {
+            bool act = input != null && !Game.InCutscene && (MoveInput.sqrMagnitude > 0.04f || input.Buffered(Act.Attack, 0.2f)
+                       || input.Buffered(Act.Dash, config.defenseBuffer) || input.Buffered(Act.Parry, config.defenseBuffer));
+            if (stateTime >= end || (act && stateTime >= end - AbilityHoldCancel)) EndAbility();
+        }
+
         void EndAbility()
         {
             abilityInvulnerable = false;
             if (model != null) model.localRotation = modelBaseRot;
             CancelAbilityCamera();
             Game.FX?.Screen?.AbilityFocus(0f);
+            string clip = abilityIndex == 1 ? "WindSlash" : "Whirlwind";
+            float left = anim.Length(clip, 0f) - stateTime;
             SetState(PlayerState.Locomotion);
-            anim.Play("Locomotion", 0.2f);
+            // con el clip propio, lo que queda (chiburi y el paso a la guardia, o pararse) es un gesto que el stick o un
+            // ataque cortan: no alarga la pelea
+            if (abilityOwnClip && anim.Current == clip && left > 0.05f) StartGesture(clip, left);
+            else anim.Play("Locomotion", 0.2f);
         }
 
         void CancelAbilityCamera()

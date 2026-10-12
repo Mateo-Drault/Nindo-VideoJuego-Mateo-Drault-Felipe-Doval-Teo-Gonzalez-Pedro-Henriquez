@@ -109,6 +109,15 @@ def widened(margin):
 SOFT_LIMIT = widened(SOFT_MARGIN)
 
 
+def opened_limits(w):
+    """Topes de la mano izquierda suelta entre lo cómodo (w 0) y el tope de la muñeca (w 1)."""
+    if w <= 0.0:
+        return WRIST_COMFORT
+    w = min(1.0, w)
+    return {S: {k: tuple(a + (b - a) * w for a, b in zip(WRIST_COMFORT[S][k], WRIST_LIMIT[S][k])) for k in WRIST_COMFORT[S]}
+            for S in "RL"}
+
+
 def cutting(clip, f):
     """¿El cuadro f está en un tramo en que la hoja corta (la ventana que pega, el impacto, el tajo) o al lado?"""
     t = clip.timing
@@ -405,14 +414,32 @@ NEUTRAL = {
     "kat_free": 0.0, "kat_pos": tuple(GRIP_REST), "kat_blade": tuple(BLADE_REST), "kat_edge": tuple(EDGE_REST),
     # ...y la mano derecha, ya sin la katana, va como la izquierda libre (muñeca, dedos, dorso)
     "hand_r": (-0.5, -0.2, 1.1), "hand_r_dir": (-0.2, -0.4, -0.9), "hand_r_up": (-1.0, 0.0, 0.0),
+    # dedos de la derecha suelta (< 0: los de siempre, medio cerrados): tomar un sahumerio, apoyar la palma
+    "fingers_r": -1.0,
+    # el cuerpo entero (cadera, brazos, katana y rodillas, NO los pies) girado 'turn' grados alrededor del origen y
+    # corrido 'shift' (u): para un clip que arranca mirando a otro lado o desde otro lugar (EndingTurn empieza de
+    # espaldas y medio metro atrás del transform) se escriben las poses de siempre y no hay que rotarlas a mano. Los
+    # pies van aparte, en el mundo del clip: un pie apoyado no puede girar con el cuerpo
+    "turn": 0.0, "shift": (0.0, 0.0, 0.0),
+    # la mano izquierda suelta se recorta a lo cómodo (0) o hasta el tope (1): un empujón con la palma o una palma que
+    # frena necesitan la muñeca bien doblada hacia el dorso (60°), que en un gesto común sería quebrarla
+    "wrist_l_open": 0.0,
+    # ...y la derecha suelta (kat_free): las palmas en el piso (empujarse para levantarse) piden la muñeca al tope
+    "wrist_r_open": 0.0,
 }
+# canales que 'turn' / 'shift' mueven (posiciones) y giran (direcciones)
+TURN_POS = ("grip", "hand_l", "hand_r", "kat_pos")
+TURN_DIR = ("blade", "edge", "elbow_r", "hand_l_dir", "hand_l_up", "elbow_l", "kat_blade", "kat_edge", "hand_r_dir",
+            "hand_r_up", "knee_r", "knee_l")
 # puntos de la mano (marco de Mando: Y a los dedos, +Z el dorso) que no pueden entrar en el piso: las puntas de los
 # dedos abiertos, los nudillos y el talón de la palma del puño, y el pulgar (a cada lado: -X en la derecha, +X en la
 # izquierda)
 HAND_FLOOR_PTS = (Vector((0.0, 0.33, 0.0)), Vector((0.07, 0.30, 0.0)), Vector((-0.07, 0.30, 0.0)),
                   Vector((0.0, 0.24, -0.05)), Vector((0.0, 0.12, -0.07)), Vector((0.13, 0.14, -0.05)),
                   Vector((-0.13, 0.14, -0.05)), Vector((0.0, 0.29, -0.09)), Vector((0.07, 0.27, -0.09)),
-                  Vector((-0.07, 0.27, -0.09)))
+                  Vector((-0.07, 0.27, -0.09)),
+                  # la punta del pulgar abierto (4.6 cm debajo de la palma: con la palma en el piso se metía 2 cm)
+                  Vector((0.16, 0.22, -0.09)), Vector((-0.16, 0.22, -0.09)))
 
 
 def floor_raise(H, floor=0.03):
@@ -784,6 +811,16 @@ class Solver:
         brazos ya en el espacio del pecho, katana autorada)."""
         c = {**NEUTRAL, **{k: v for k, v in c.items() if v is not None}}
         R = self.rig
+        turn, shift = c["turn"] or 0.0, V(c["shift"])
+        if abs(turn) > 1e-6 or shift.length > 1e-6:
+            Rz = Matrix.Rotation(math.radians(turn), 3, 'Z')
+            c["hips"] = tuple(Rz @ V(c["hips"]) + shift)
+            hr = c["hips_rot"]
+            c["hips_rot"] = (hr[0], hr[1], hr[2] + turn)
+            for k in TURN_POS:
+                c[k] = tuple(Rz @ V(c[k]) + shift)
+            for k in TURN_DIR:
+                c[k] = tuple(Rz @ V(c[k]))
         # 'travel': lo que el juego ya movió el transform (lo clavado en el mundo se corre hacia atrás en el cuerpo);
         # 'lift': un salto (sube cadera y manos; los pies van en el mundo y el piso no se mueve)
         sh = Vector((0.0, c["travel"], 0.0))
@@ -864,12 +901,15 @@ class Solver:
             hr.z += floor_raise(compose(hr, B))
             Hf = compose(hr, B)
             Hr = compose(Hr.translation.lerp(Hf.translation, free), Hr.to_quaternion().slerp(Hf.to_quaternion(), free).to_matrix())
-        pole_r = self.swivel_pole(pose, R_BONES, Hr.translation, c["elbow_r"], sw_r, "R")
+        # el giro del codo del camino (arm_path) es el de la mano CON la katana: suelta, el codo es el autorado (con el
+        # giro de la katana, una mano apoyada en el piso quedaba con el antebrazo retorcido 140°)
+        pole_r = self.swivel_pole(pose, R_BONES, Hr.translation, c["elbow_r"], sw_r * (1.0 - free), "R")
         self.reach_with_clavicle(pose, R_BONES, Hr.translation)
         miss_r = pose.two_bone("Brazo.R", "Antebrazo.R", Hr.translation, pole_r)
         F_r = rot3(pose.get("Antebrazo.R"))
         self.wrist_raw = self.wrist_angles(F_r, rot3(Hr), "R")
-        Hc = compose(Hr.translation, self.clamp_hand(F_r, rot3(Hr), "R", 1.0, limits))
+        wo = c["wrist_r_open"] * free
+        Hc = compose(Hr.translation, self.clamp_hand(F_r, rot3(Hr), "R", 1.0, opened_limits(wo) if wo > 0.0 else limits))
         H3 = self.lift_tip(Hc, hfk)
         if free > 1e-3:
             # suelta: la punta de la katana deja de contar y la que no entra en el piso es la mano
@@ -877,7 +917,8 @@ class Solver:
         pose.place("Mando.R", compose(pose.tail("Antebrazo.R"), H3))
         wr = self.wrist_angles(F_r, H3, "R")
         pose.twist_follow("Antebrazo.R", "Mando.R", 0.5)
-        self.fingers(pose, "R", 1.0 - 0.6 * free)
+        fr = c["fingers_r"]
+        self.fingers(pose, "R", (1.0 - free) + free * (fr if fr >= 0.0 else 0.4))
         Kc = pose.get("Mando.R") @ hfk.inverted()
         # (suelta, la hoja autorada ya no dice nada: no cuenta)
         self.blade_fix = math.degrees(rot3(Kc).col[1].angle(Bd, 0.0)) if free < 0.5 else 0.0
@@ -886,6 +927,9 @@ class Solver:
             # la punta nunca entra en el piso)
             Kf = self.clear_floor(self.katana_frame(V(c["kat_pos"]), c["kat_blade"], c["kat_edge"]))
             Kc = compose(Kc.translation.lerp(Kf.translation, free), Kc.to_quaternion().slerp(Kf.to_quaternion(), free).to_matrix())
+            # entre la mano y el piso (apoyarla, levantarla) el giro intermedio podía hundir la punta
+            if free < 0.999:
+                Kc = self.clear_floor(Kc)
         pose.place("KatanaBone", Kc @ self.K_to_bone)
         self.katana = Kc
         # ---- mano libre / segunda mano en la empuñadura (su codo, el mejor si no viene decidido)
@@ -897,7 +941,7 @@ class Solver:
         self.reach_with_clavicle(pose, L_BONES, Hl.translation)
         miss_l = pose.two_bone("Brazo.L", "Antebrazo.L", Hl.translation, pole_l)
         F_l = rot3(pose.get("Antebrazo.L"))
-        H3l = self.clamp_hand(F_l, rot3(Hl), "L", 1.0 - gl, WRIST_COMFORT)
+        H3l = self.clamp_hand(F_l, rot3(Hl), "L", 1.0 - gl, opened_limits(c["wrist_l_open"]))
         if gl < 0.999:
             H3l = self.lift_hand(pose.tail("Antebrazo.L"), H3l)
         pose.place("Mando.L", compose(pose.tail("Antebrazo.L"), H3l))

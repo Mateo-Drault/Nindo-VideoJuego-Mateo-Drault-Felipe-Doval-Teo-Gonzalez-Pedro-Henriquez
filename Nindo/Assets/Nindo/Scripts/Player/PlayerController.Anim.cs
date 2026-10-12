@@ -5,7 +5,8 @@ namespace Nindo
     /// <summary>
     /// Kaito: qué clip toca según la situación y el paso de la locomoción (clips de Tools/Blender/anim/kaito/kaito_clips.py):
     ///  * HitFrom: el golpe liviano según de dónde viene (HitBack / HitLeft / HitRight; de frente, Hit).
-    ///  * TryRunStop: la frenada al soltar el stick corriendo.
+    ///  * TryRunStop: la frenada al soltar el stick corriendo; StartGesture: el resto de un clip como gesto que se corta
+    ///    (la frenada, la vuelta a la guardia después del zanshin del remate y de las habilidades).
     ///  * LocomotionCadence: el blend tree mezcla quieto / camina / trota / corre por Speed y Unity le da el largo
     ///    promedio de los clips mezclados; entre dos umbrales la zancada mezclada no coincide con lo que avanza Kaito y
     ///    el pie apoyado patinaba (60 % entre quieto y caminar, 6 % entre caminar y trotar). Se corrige la velocidad del
@@ -45,9 +46,18 @@ namespace Nindo
             float v = velocity.magnitude;
             if (v < RunStopMinSpeed || Vector3.Dot(velocity / v, transform.forward) < RunStopAlign || !anim.HasState(RunStopState)) return false;
             anim.Play(RunStopState, 0.08f);
-            gestureState = RunStopState;
-            gestureUntil = Time.time + anim.Length(RunStopState);
+            StartGesture(RunStopState, anim.Length(RunStopState));
             return true;
+        }
+
+        /// <summary>
+        /// El clip que ya está tocando 'state' sigue 'seconds' más como un gesto de Locomotion (TickLocomotion): quieto hasta
+        /// que termina; el stick o una acción de combate lo cortan.
+        /// </summary>
+        void StartGesture(string state, float seconds)
+        {
+            gestureState = state;
+            gestureUntil = Time.time + seconds;
         }
 
         // =============================================================== cadencia de la locomoción

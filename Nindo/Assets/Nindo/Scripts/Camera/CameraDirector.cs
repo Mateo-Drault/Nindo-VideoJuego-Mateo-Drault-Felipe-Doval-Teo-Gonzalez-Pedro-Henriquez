@@ -14,7 +14,8 @@ namespace Nindo
     ///  * lo que avisa fuera de pantalla no mueve la cámara (la movía en plena ventana del parry): lo marca
     ///    UI/ThreatIndicators,
     ///  * "planos" cinemáticos que se mezclan suavemente: habilidad por encima del hombro,
-    ///    órbita baja del torbellino, órbita del finisher, presentación y muerte de jefes,
+    ///    órbita baja del torbellino, órbita del finisher, zanshin (la pose final del remate y del Corte del Viento),
+    ///    presentación y muerte de jefes,
     ///  * temblor por trauma (Perlin), impulsos direccionales y golpe de FOV amortiguado (tope ±3°),
     ///  * lo que tapa a Kaito, al fijado o a un atacante se disuelve (CameraOcclusion),
     ///  * el oído (AudioListener) va sobre Kaito, girado como la cámara.
@@ -248,6 +249,30 @@ namespace Nindo
                 Vector3 pos = mid + dir * 4.4f + Vector3.up * 1.3f;
                 return new Pose(pos, Quaternion.LookRotation(mid + Vector3.up * 0.9f - pos));
             }, () => 36f, 0.12f, 6f, 0.35f);
+        }
+
+        /// <summary>
+        /// Zanshin: después del tajo (remate cinemático, Corte del Viento) Kaito queda quieto en la pose final, de espaldas a
+        /// lo que cortó ('behind'). Corte seco (sin fundido de entrada: lo tapa el destello del tajo) a un plano bajo de 3/4
+        /// de frente del lado de la hoja (su derecha: la hoja sale de la silueta hacia la cámara y no queda tapada por el
+        /// cuerpo), mirando un poco detrás de él para que lo cortado entre al fondo; se acerca despacio. Dura hasta
+        /// 'duration' (s reales) o hasta que el código lo cancela al terminar la pose (se va en 0.5 s).
+        /// </summary>
+        public int PlayZanshinShot(Transform kaito, Vector3 behind, float duration)
+        {
+            Vector3 fwd = kaito.forward.Flat().normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, fwd);
+            Vector3 c0 = kaito.position;
+            float back = Mathf.Clamp(Vector3.Dot((c0 - behind).Flat(), fwd), 1.5f, 6f);
+            return PlayShot(t =>
+            {
+                float k = Mathf.SmoothStep(0f, 1f, t / Mathf.Max(0.01f, duration));
+                float ang = Mathf.Lerp(38f, 30f, k) * Mathf.Deg2Rad;
+                Vector3 c = kaito != null ? kaito.position : c0;
+                Vector3 pos = c + (fwd * Mathf.Cos(ang) + right * Mathf.Sin(ang)) * Mathf.Lerp(4.8f, 4.1f, k) + Vector3.up * 1.15f;
+                Vector3 look = c + Vector3.up * 0.85f - fwd * (back * 0.35f);
+                return new Pose(pos, Quaternion.LookRotation(look - pos));
+            }, () => 36f, 0f, duration, 0.5f);
         }
 
         /// <summary>Presentación de jefe: se acerca de frente y sube. La re-presentación de un reintento usa fundidos cortos.</summary>
