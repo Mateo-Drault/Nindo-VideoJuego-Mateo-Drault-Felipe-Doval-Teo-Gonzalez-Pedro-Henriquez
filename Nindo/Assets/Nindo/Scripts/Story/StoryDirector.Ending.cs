@@ -425,9 +425,10 @@ namespace Nindo
             // Kokuyō de rodillas tiene la cara a 2.6 m de alto y la cresta a 3.2-3.4; la mano con la cinta queda a 0.8-1.1 m.
             // Antes, desde 1.6 m de alto, la mano caía en la franja de abajo (y = 0.11-0.24 con la franja hasta 0.11): solo
             // se veía una astilla dorada detrás del hombro. Bajo (0.8 m) y mirando un poco hacia arriba entran las dos:
-            // la mano en y 0.32-0.45, la cara de Kokuyō en 0.71 y la cresta en 0.87 (scratchpad sim_offer2.py, FOV 42)
+            // la mano en y 0.33-0.45, la cara de Kokuyō en 0.71 y la cresta en 0.87, la cabeza de Kaito al costado de la
+            // suya (sim_offer2.py y maqueta final3/ofrenda_b_offer.png, FOV 42)
             Vector3 axis = (kokuyo - kaito).Flat().normalized;
-            Vector3 pos = kaito - axis * 2.3f + camSide * 1.1f + Vector3.up * 0.8f;
+            Vector3 pos = kaito - axis * 2.3f + camSide * 1.5f + Vector3.up * 0.8f;
             Vector3 look = kaito + axis * 1.2f + Vector3.up * 1.3f;
             // por si la mano o la cinta (más baja si el clip no la sube) terminan detrás de la franja: la mira baja
             Vector3 hand = kaito + axis * 0.35f + Vector3.up * 0.8f;
