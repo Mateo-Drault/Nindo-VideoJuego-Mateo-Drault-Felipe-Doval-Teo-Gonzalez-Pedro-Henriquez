@@ -772,6 +772,10 @@ def kaito_assets():
     meta = model_meta(anim_type=2, import_anim=True, clips=clips, readable=False)
     write_meta(KAITO_FBX, meta.replace("animationCompression: 1", "animationCompression: 0"), force=True)
     write_meta(KAITO_FBX + ".json", TEXT_META)
+    # los momentos de los clips de historia que leen las escenas (Scripts/Story/KaitoTimings.cs): con el FBX nuevo
+    # salen del mismo sidecar, así nadie tiene que acordarse de regenerarlos
+    import kaito_timings
+    kaito_timings.main()
 
 
 # ============================================================================ Kokuyō (jefe final)

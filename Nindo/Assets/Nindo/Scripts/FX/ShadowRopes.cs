@@ -26,7 +26,9 @@ namespace Nindo
         ParticleSystem motes;
         readonly List<Vector3> path = new List<Vector3>();   // puntos de las cuerdas (para las motas al deshacerse)
         float dissolve, glowBase = 1.2f;
-        Coroutine routine;
+        Coroutine routine, dropRoutine;
+        Vector3 pivot;                                         // el pie del abuelo: alrededor de él caen las cuerdas (Drop)
+        const float FloorSquash = 0.04f, FloorSpread = 1.15f;
 
         /// <summary>Ata a 'captive' (el NPC del abuelo) contra 'post' (el binding_post). Devuelve null si falta algo.</summary>
         public static ShadowRopes Bind(Transform post, Transform captive, Transform parent)
@@ -57,6 +59,7 @@ namespace Nindo
             }
             float height = Mathf.Clamp(b.max.y - captive.position.y, 0.9f, 2.2f);
             Vector3 p = post.position, c = captive.position;
+            pivot = c;
             Vector3 axis = (c - p); axis.y = 0f;
             float dist = axis.magnitude;
             axis = dist > 0.01f ? axis / dist : Vector3.back;
@@ -204,7 +207,8 @@ namespace Nindo
                 var ep = new ParticleSystem.EmitParams();
                 for (int i = 0; i < path.Count; i += 2)
                 {
-                    ep.position = path[i];
+                    // donde está la cuerda ahora (si cayó con Drop, en el piso)
+                    ep.position = rope != null ? rope.transform.TransformPoint(path[i]) : path[i];
                     ep.applyShapeToPosition = false;
                     motes.Emit(ep, 2);
                 }
@@ -227,10 +231,44 @@ namespace Nindo
             routine = null;
         }
 
+        /// <summary>
+        /// Las cuerdas se aflojan y caen al piso en 'seconds', como algo suelto (lentas al principio): las vueltas se abren
+        /// un poco y quedan tiradas alrededor del abuelo. El final las hace caer y después las deshace (Dissolve) en el piso.
+        /// </summary>
+        public void Drop(float seconds = 0.55f)
+        {
+            if (!Bound || rope == null) return;
+            if (dropRoutine != null) StopCoroutine(dropRoutine);
+            dropRoutine = StartCoroutine(DropRoutine(seconds));
+        }
+
+        IEnumerator DropRoutine(float seconds)
+        {
+            float k = 0f;
+            while (k < 1f)
+            {
+                k = Mathf.Min(1f, k + Time.unscaledDeltaTime / Mathf.Max(0.05f, seconds));
+                float g = k * k;
+                SetDrop(Mathf.Lerp(1f, FloorSquash, g), Mathf.Lerp(1f, FloorSpread, g));
+                yield return null;
+            }
+            dropRoutine = null;
+        }
+
+        /// <summary>La malla está en coordenadas de mundo (su objeto en el origen): se escala alrededor del pie del abuelo.</summary>
+        void SetDrop(float sy, float sxz)
+        {
+            var t = rope.transform;
+            t.localScale = new Vector3(sxz, sy, sxz);
+            t.position = pivot - Vector3.Scale(t.localScale, pivot);
+        }
+
         /// <summary>Atado de nuevo, ya (reintento antes de vencer a Kokuyō).</summary>
         public void Restore()
         {
             if (routine != null) { StopCoroutine(routine); routine = null; }
+            if (dropRoutine != null) { StopCoroutine(dropRoutine); dropRoutine = null; }
+            if (rope != null) SetDrop(1f, 1f);
             dissolve = 0f;
             Bound = true;
             if (rope != null) rope.enabled = true;

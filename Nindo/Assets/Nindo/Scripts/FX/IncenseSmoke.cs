@@ -188,4 +188,53 @@ namespace Nindo
             return ps;
         }
     }
+
+    /// <summary>
+    /// La llamita del incienso recién prendido (2-3 cm, amarilla con el pie naranja) que Kaito apaga abanicando con la
+    /// mano en PrayIncense; sin ella los dos abanicos del clip apagaban nada. Lenguas que suben y se achican en 0.15-0.25 s
+    /// (titila sola); Douse corta la emisión y las que quedan se consumen.
+    /// </summary>
+    public static class IncenseFlame
+    {
+        const string Name = "Llama";
+
+        public static ParticleSystem Create(Transform tip)
+        {
+            var ps = FXFactory.NewSystem(Name, tip);
+            ps.transform.localPosition = Vector3.up * 0.008f;
+            var m = ps.main;
+            m.loop = true; m.duration = 1f; m.playOnAwake = true;
+            m.simulationSpace = ParticleSystemSimulationSpace.World;   // se inclina sola si la mano se mueve
+            m.startLifetime = new ParticleSystem.MinMaxCurve(0.15f, 0.25f);
+            m.startSpeed = new ParticleSystem.MinMaxCurve(0.08f, 0.14f);
+            m.startSize = new ParticleSystem.MinMaxCurve(0.018f, 0.03f);
+            m.startColor = new ParticleSystem.MinMaxGradient(new Color(1f, 0.86f, 0.42f, 1f), new Color(1f, 0.62f, 0.2f, 1f));
+            m.gravityModifier = -0.05f;
+            m.maxParticles = 14;
+            var em = ps.emission; em.rateOverTime = 40f;
+            var sh = ps.shape; sh.enabled = true; sh.shapeType = ParticleSystemShapeType.Cone; sh.angle = 6f; sh.radius = 0.004f;
+            sh.rotation = new Vector3(-90f, 0f, 0f);   // el cono hacia arriba del manojo
+            var size = ps.sizeOverLifetime; size.enabled = true;
+            size.size = new ParticleSystem.MinMaxCurve(1f, new AnimationCurve(new Keyframe(0f, 0.7f), new Keyframe(0.3f, 1f), new Keyframe(1f, 0.1f)));
+            var col = ps.colorOverLifetime; col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(new Color(1f, 0.95f, 0.7f), 0f), new GradientColorKey(new Color(1f, 0.45f, 0.15f), 1f) },
+                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.2f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            ps.Play();
+            return ps;
+        }
+
+        /// <summary>Apaga la llama de esa punta (si tiene): deja de salir y se borra cuando se consumen las últimas lenguas.</summary>
+        public static void Douse(Transform tip)
+        {
+            var f = tip != null ? tip.Find(Name) : null;
+            if (f == null) return;
+            var ps = f.GetComponent<ParticleSystem>();
+            if (ps != null) ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            // otro nombre: un segundo Douse no la encuentra
+            f.name = Name + "Apagada";
+            Object.Destroy(f.gameObject, 0.4f);
+        }
+    }
 }

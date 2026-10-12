@@ -157,7 +157,18 @@ namespace Nindo
             {
                 tail = Mathf.MoveTowards(tail, 1f, dt * fadeSpeed);
                 fade = Mathf.MoveTowards(fade, 0f, dt * fadeSpeed);
-                if (fade <= 0f) { Destroy(gameObject); return; }
+                if (fade <= 0f)
+                {
+                    // las motas que ya salieron terminan su vuelo (0.3-0.6 s): se sueltan del haz antes de borrarlo
+                    if (motes != null)
+                    {
+                        motes.transform.SetParent(null, true);
+                        motes.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+                        Destroy(motes.gameObject, motes.main.startLifetime.constantMax + 0.1f);
+                    }
+                    Destroy(gameObject);
+                    return;
+                }
             }
             Vector3 a = (from != null ? from.position : transform.position) + fromOffset;
             Vector3 c = Control(a, to);

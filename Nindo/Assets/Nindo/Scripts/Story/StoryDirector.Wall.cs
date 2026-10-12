@@ -13,10 +13,12 @@ namespace Nindo
     /// </summary>
     public partial class StoryDirector
     {
-        // contrato con kaito-anim: "BandanaPower" (~2.5 s, evento release = la palma empuja hacia el portón; si el clip
-        // no lo trae, NRelease)
+        // contrato con kaito-anim: "BandanaPower" (2.5 s): glow = la mano izquierda toca la bandana (f14), release = la palma
+        // empuja hacia el portón con un paso (f40 de 75, la mano a (-0.10, 0.73, 0.47) m de su raíz); si el clip no los
+        // trae, NGlow / NRelease (los del clip entregado)
         public const string BandanaPowerState = "BandanaPower";
-        const float NRelease = 0.55f, BandanaPowerSeconds = 2.5f;
+        const float NGlow = 0.187f, NRelease = 0.533f, BandanaPowerSeconds = 2.5f;
+        static readonly Vector3 BandanaReleaseHand = new Vector3(-0.1f, 0.73f, 0.47f);
         // sin el clip: antes el "Pray" (de rodillas con la katana en alto, el mismo gesto que rezar) y el haz le salía de
         // la frente. Ahora Kaito junta la luz quieto y estira la mano izquierda abierta hacia adelante (el arranque de
         // "Interact", a 0.55x); la mano queda ahí mientras la luz fluye y después termina el gesto
@@ -68,12 +70,14 @@ namespace Nindo
             float release = PowerRelease(out string state);
             int shot = WallShot(seal, release + WallPour + 1f);
 
-            // 2) la bandana se enciende y la luz se junta alrededor de Kaito
+            // 2) la bandana se enciende (cuando la mano la toca) y la luz se junta alrededor de Kaito
             var glow = BandanaGlow.Ensure(P);
-            glow.Enable(0.5f);
-            Game.FX?.AbilityCharge(P.transform.position, false);
-            Game.Audio?.Play("bandana_charge", P.transform.position, 1f);
-            yield return PowerGesture(state);
+            yield return PowerGesture(state, () =>
+            {
+                glow.Enable(0.5f);
+                Game.FX?.AbilityCharge(P.transform.position, false);
+                Game.Audio?.Play("bandana_charge", P.transform.position, 1f);
+            });
 
             // 3) suelta: el haz sale de la mano que empuja y entra en el sello
             Transform src = ForwardHand();
@@ -108,7 +112,8 @@ namespace Nindo
             Game.Audio?.Play("wall_seal_break", seal.SealCenter, 1f);
             glow.Disable(1.6f);
             EndPowerGesture(state);
-            yield return WaitScaled(0.45f);
+            // el estallido y sus campanas de oro (hasta 0.6 s) suenan solos antes de que crujan las dos hojas
+            yield return WaitScaled(0.7f);
 
             // 5) las hojas se abren (GateDoor gira con el flag y suena "gate_open") y la cámara entra hacia el jardín
             Game.Save.SetFlag(Flags.WallGateOpen);
@@ -135,16 +140,24 @@ namespace Nindo
             return PowerFallbackGather + NPowerHold * a.Length(state, InteractSeconds) / PowerFallbackSpeed;
         }
 
-        /// <summary>El gesto hasta que suelta la luz (con BandanaPower, su release; sin él, la mano estirada que queda quieta).</summary>
-        IEnumerator PowerGesture(string state)
+        /// <summary>
+        /// El gesto hasta que suelta la luz (con BandanaPower, su release; sin él, la mano estirada que queda quieta).
+        /// 'onGlow' corre cuando la bandana se enciende: con el clip, al tocarla (antes se encendía medio segundo antes de
+        /// que la mano llegara); sin él, al empezar.
+        /// </summary>
+        IEnumerator PowerGesture(string state, System.Action onGlow)
         {
             var a = P.Anim;
             if (state == BandanaPowerState)
             {
+                float max = a.Length(state, BandanaPowerSeconds) * 1.5f;
                 a.Play(state, 0.2f);
-                yield return WaitClip(state, KaitoTimings.Event(state, "release", NRelease), a.Length(state, BandanaPowerSeconds) * 1.5f);
+                yield return WaitClip(state, KaitoTimings.Event(state, "glow", NGlow), max);
+                onGlow?.Invoke();
+                yield return WaitClip(state, KaitoTimings.Event(state, "release", NRelease), max);
                 yield break;
             }
+            onGlow?.Invoke();
             // quieto mientras la luz se junta, después la mano sale hacia adelante y se queda
             yield return WaitScaled(PowerFallbackGather);
             a.Play(state, 0.15f, 0f, PowerFallbackSpeed);

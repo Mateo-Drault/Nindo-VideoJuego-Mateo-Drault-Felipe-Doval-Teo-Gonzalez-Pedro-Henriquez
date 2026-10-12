@@ -96,15 +96,16 @@ namespace Nindo
             float beat = release + SealFlight + (n - 1) * SealFlightGap + 1.6f;
             int shot = PlaceShot(gate, lead, beat);
 
-            // 2) los medallones aparecen delante de su pecho (varios: en abanico, el de la montaña a su izquierda)
-            Vector3 chest = P.transform.position + Vector3.up * 1.25f + P.transform.forward * 0.65f;
+            // 2) los medallones aparecen delante de él, donde la palma va a empujar en el release (varios: en abanico, el
+            // de la montaña a su izquierda). Antes flotaban a la altura del pecho y la palma, que empuja a 0.73 m de alto,
+            // empujaba el aire medio metro abajo; con el paso del clip la cabeza quedaba casi contra el medallón
+            Vector3 front = P.transform.TransformPoint(ReleaseHandLocal(state) + new Vector3(0f, SealAboveHand, SealAheadOfHand));
             for (int k = 0; k < n; k++)
             {
-                gate.Summon(pendingSeals[k], chest + gate.Left * (((n - 1) * 0.5f - k) * 0.42f));
+                gate.Summon(pendingSeals[k], front + gate.Left * (((n - 1) * 0.5f - k) * 0.42f));
                 yield return WaitScaled(0.12f);
             }
-            Game.Audio?.Play("bandana_charge", P.transform.position, 0.55f);
-            yield return PowerGesture(state);
+            yield return PowerGesture(state, () => Game.Audio?.Play("bandana_charge", P.transform.position, 0.55f));
 
             // 3) suelta: la bandana destella y cada medallón vuela a su hueco
             BandanaGlow.Ensure(P).Pulse(BandanaGlow.Gold, 0.8f);
@@ -130,6 +131,27 @@ namespace Nindo
             yield return WaitScaled(1.4f);
             Game.Camera.CancelShot(shot);
         }
+
+        /// <summary>
+        /// Dónde empuja la palma en el release, respecto de Kaito (x a su derecha, y arriba, z adelante): con BandanaPower
+        /// la mano más adelantada muestreada en ese momento; sin él (la mano estirada de Interact), al frente y abajo.
+        /// </summary>
+        Vector3 ReleaseHandLocal(string state)
+        {
+            if (state == BandanaPowerState && SampleKaitoClip(state, KaitoTimings.Event(state, "release", NRelease)))
+            {
+                var h = ForwardHand();
+                if (h != null)
+                {
+                    Vector3 l = P.transform.InverseTransformPoint(h.position);
+                    if (l.z > 0.2f && l.z < 1f && l.y > 0.4f && l.y < 1.5f) return l;
+                }
+            }
+            return state == BandanaPowerState ? BandanaReleaseHand : new Vector3(0f, 0.8f, 0.4f);
+        }
+
+        /// <summary>El medallón delante de la palma (m): un poco arriba y adelante, para que el empujón le llegue sin tocarlo.</summary>
+        const float SealAboveHand = 0.1f, SealAheadOfHand = 0.45f;
 
         /// <summary>Termina el gesto y vuelve a la guardia (el clip queda en su pose final si nadie lo cambia).</summary>
         IEnumerator BackToGuard(string state, float remaining)

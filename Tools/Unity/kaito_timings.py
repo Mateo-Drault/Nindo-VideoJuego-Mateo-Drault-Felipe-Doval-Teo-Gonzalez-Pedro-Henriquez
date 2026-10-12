@@ -6,16 +6,18 @@ levanta la cabeza... Esos momentos son eventos del sidecar (los escribe build_ka
 eran fracciones escritas a mano en cada escena para clips que todavía no existían: cuando llegaran, el incienso iba
 a aparecer en una mano vacía. Este script copia los eventos de los clips del contrato a una tabla; cada escena
 pregunta KaitoTimings.Event(estado, evento, respaldo) y, si el clip o el evento no está, usa su fracción de siempre.
-Si se rehace un clip de Kaito, se corre este script y se recompila.
+Si se rehace un clip de Kaito, se corre este script y se recompila (generate_assets.py kaito_assets también lo corre).
+Las fracciones de respaldo de cada escena son las del clip entregado por kaito-anim (para que una fusión sin
+regenerar no dispare nada a destiempo).
 
 Eventos que leen las escenas (el contrato con kaito-anim):
   PrayIncense: incense_take, incense_light, incense_place, palms, rise   (StoryDirector.Shrines)
-  PrayQuick:   palms                                                      (StoryDirector.Shrines)
-  BandanaPower: release                                                   (StoryDirector.Wall / .SealGate)
-  WakeUp:      sees   (levanta la cabeza y ve el secuestro)               (StoryDirector.Prologue)
+  PrayQuick:   kneel, palms                                               (StoryDirector.Shrines)
+  BandanaPower: glow, release                                             (StoryDirector.Wall / .SealGate)
+  WakeUp:      see (levanta la cabeza y ve el secuestro), stand           (StoryDirector.Prologue)
   EndingTurn:  offer  (el brazo ya extendido con la media cinta)          (StoryDirector.Ending)
 
-Uso: python Tools/Unity/kaito_timings.py
+Uso: python Tools/Unity/kaito_timings.py [--src otro/kaitooo.fbx.json]
 """
 import json, os, sys
 
@@ -40,8 +42,11 @@ def lst(xs):
     return "{ " + ", ".join(xs) + " }" if xs else "{ }"
 
 
-def main():
-    clips = json.load(open(SRC, encoding="utf-8")).get("clips", {})
+def main(src=SRC):
+    if not os.path.exists(src):
+        print("sin", os.path.relpath(src, U.REPO), "- KaitoTimings.cs queda como está")
+        return
+    clips = json.load(open(src, encoding="utf-8")).get("clips", {})
     rows = []
     for st in STATES:
         c = clips.get(st)
@@ -80,4 +85,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # --src: el sidecar de otra rama (p. ej. la de kaito-anim antes de fusionar), para no esperar al merge
+    main(os.path.abspath(sys.argv[sys.argv.index("--src") + 1]) if "--src" in sys.argv else SRC)

@@ -27,7 +27,7 @@ namespace Nindo
         Transform socket, tip;
         IncenseSmoke smoke, smoke2;
         Light glow;
-        ParticleSystem motes;
+        ParticleSystem motes, ashGlow;
         float glowK, glowTarget, checkTimer;
         bool near;
 
@@ -88,26 +88,32 @@ namespace Nindo
 
         /// <summary>
         /// Lo prende el espíritu de la bandana: un chispazo dorado en la punta, la brasa y un hilo de humo corto que la
-        /// sigue mientras está en la mano.
+        /// sigue mientras está en la mano. 'flame': con una llamita que después apaga Douse (PrayIncense la apaga con
+        /// dos abanicos de la mano; si nadie la apaga, Place).
         /// </summary>
-        public void Light(Transform stick)
+        public void Light(Transform stick, bool flame = false, int sparks = 9)
         {
             var t = Tip(stick);
             if (t == null) return;
             IncenseEmber.Create(t, Vector3.zero);
-            Spark(t.position);
+            if (flame) IncenseFlame.Create(t);
+            Spark(t.position, sparks);
             smoke = IncenseSmoke.Create(transform, t, Vector3.zero, 0.3f, 0.07f, 1f, Random.Range(0f, 10f));
             smoke.moving = true;
             smoke.Fade(true, 0.6f);
-            Game.Audio?.Play("incense_light", t.position, 0.8f);
+            // un fósforo, no un golpe: el sello que estalla en la muralla tiene que seguir siendo lo más fuerte
+            Game.Audio?.Play("incense_light", t.position, 0.6f);
         }
 
-        void Spark(Vector3 p)
+        /// <summary>Apaga la llamita de la punta (queda la brasa).</summary>
+        public void Douse(Transform stick) => IncenseFlame.Douse(Tip(stick));
+
+        void Spark(Vector3 p, int count)
         {
             Game.FX?.FlashLight(p, new Color(1f, 0.82f, 0.45f), 2.2f, 2.2f, 0.3f);
             if (motes == null) motes = MakeMotes();
             motes.transform.position = p;
-            motes.Emit(9);
+            motes.Emit(count);
         }
 
         /// <summary>Lo clava en la ceniza en 'seconds' (desde donde lo tenga la mano) y arranca el humo del santuario.</summary>
@@ -117,6 +123,7 @@ namespace Nindo
             // apagado ya: Destroy espera al final del cuadro y su LateUpdate lo volvería a la mano
             var hold = stick.GetComponent<IncenseHold>();
             if (hold != null) { hold.enabled = false; Destroy(hold); }
+            Douse(stick);
             stick.SetParent(socket, true);
             StartCoroutine(PlaceRoutine(stick, seconds));
         }
@@ -160,7 +167,43 @@ namespace Nindo
             EnsureGlow();
             glowTarget = 1f;
             if (instant) glowK = 1f;
+            if (ashGlow == null) ashGlow = MakeAshGlow();
         }
+
+        /// <summary>
+        /// La ceniza encendida: un halo cálido de 0.45 m que respira despacio sobre el incensario. Desde la cámara de juego
+        /// el humo es un hilo de 2 px sobre la piedra clara y la luz no llega al cuerpo del santuario: sin esto no se
+        /// distinguía uno rezado de uno apagado. Tenue (alfa 0.4, lejos del umbral del bloom), como pide el santuario que
+        /// no brille; con 0.3 m y alfa 0.3 la maqueta desde la cámara de juego no se distinguía del apagado.
+        /// </summary>
+        ParticleSystem MakeAshGlow()
+        {
+            var ps = FXFactory.NewSystem("BrilloDeLaCeniza", socket);
+            ps.transform.localPosition = Vector3.up * AshGlowHeight;
+            var m = ps.main;
+            m.loop = true; m.duration = 1f; m.playOnAwake = true;
+            m.simulationSpace = ParticleSystemSimulationSpace.Local;
+            m.startLifetime = AshGlowCycle;
+            m.startSpeed = 0f;
+            m.startSize = new ParticleSystem.MinMaxCurve(AshGlowSize * 0.9f, AshGlowSize * 1.1f);
+            m.startColor = AshGlowColor;
+            m.maxParticles = 4;
+            // dos a la vez, a destiempo: el brillo sube y baja sin código por cuadro
+            var em = ps.emission; em.rateOverTime = 2f / AshGlowCycle;
+            var sh = ps.shape; sh.enabled = false;
+            var col = ps.colorOverLifetime; col.enabled = true;
+            var g = new Gradient();
+            g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
+                      new[] { new GradientAlphaKey(0f, 0f), new GradientAlphaKey(1f, 0.5f), new GradientAlphaKey(0f, 1f) });
+            col.color = g;
+            // ya respirando al cargar la partida o al terminar de clavarlo
+            ps.Simulate(AshGlowCycle, true, true);
+            ps.Play();
+            return ps;
+        }
+
+        const float AshGlowHeight = 0.05f, AshGlowCycle = 2.6f, AshGlowSize = 0.45f;
+        static readonly Color AshGlowColor = new Color(1f, 0.56f, 0.24f, 0.4f);
 
         /// <summary>Al cargar la partida: directo al estado final.</summary>
         public void ShowLit()
@@ -185,7 +228,8 @@ namespace Nindo
             stick.localPosition = Vector3.down * StickSink;
             stick.localRotation = Quaternion.Euler(-3f, 0f, 2f);
             Game.FX?.SmokePuff(socket.position + Vector3.up * 0.12f, 0.22f);
-            Light(stick);
+            // desde la cámara de juego (Kaito de 100 px) el chispazo tiene que leerse: el doble de chispas
+            Light(stick, false, 20);
             Settle(stick, false);
         }
 

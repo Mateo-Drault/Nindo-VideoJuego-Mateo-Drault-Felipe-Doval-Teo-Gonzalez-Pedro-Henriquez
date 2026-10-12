@@ -18,12 +18,16 @@ namespace Nindo
     /// </summary>
     public partial class StoryDirector
     {
-        // contrato con kaito-anim: "EndingTurn" (~2.5 s). Arranca mirando al abuelo con Kokuyō a la espalda (como lo
-        // deja esta escena), se da vuelta y le ofrece la media cinta con la mano libre de la katana; desde NEndingOffer
-        // el brazo ya está extendido y la pose se sostiene hasta el final del clip. El giro que trae el clip se mide al
-        // empezar, así sirve con 180°, con otro ángulo o sin giro
+        // contrato con kaito-anim: "EndingTurn" (2.8 s). Su primer cuadro es el cuerpo como lo deja esta escena (mirando
+        // al abuelo, Kokuyō a la espalda) pero 0.55 m detrás del transform y girado 180°: se da vuelta en tres pasos
+        // acercándose a Kokuyō y termina parado en el transform, mirándolo, con la media cinta en la palma izquierda
+        // (offer f61 de 84, hand_l_m (-0.06, 0.64, 0.40)) hasta el final. Así que el transform va primero ahí, mirando a
+        // Kokuyō, y el clip entra sin fundido (lo mismo que PlayerController.PlayEndingTurn de kaito-anim). Antes se medía
+        // el giro del último cuadro (~0°): Kaito giraba 180° rígido, el fundido lo devolvía de espaldas y 0.55 m atrás, y
+        // el clip lo giraba otra vez
         public const string EndingTurnState = "EndingTurn";
-        const float NEndingOffer = 0.6f, EndingTurnSeconds = 2.5f;
+        const float NEndingOffer = 0.726f, EndingTurnSeconds = 2.8f, EndingTurnShift = 0.55f;
+        static readonly Vector3 EndingOfferHand = new Vector3(-0.06f, 0.64f, 0.4f);
         // sin EndingTurn: un paso hacia Kokuyō y el arranque de "Interact" (el brazo izquierdo sale hacia adelante y
         // abajo) a 0.6x, quieto en f4
         const string OfferFallbackState = "Interact";
@@ -38,10 +42,11 @@ namespace Nindo
         /// </summary>
         const float EndMeet = 2.2f, EndKokuyo = 5.8f, EndRibbonAhead = 2.2f, EndRibbonSide = 0.55f, EndReturnAhead = 1.75f;
         const float EndPickReach = 0.42f, EndGrandpaStep = 0.8f, GrandpaWalkSpeed = 0.8f;
+        /// <summary>Lo que tardan las cuerdas de sombra en aflojarse y caer al piso (ShadowRopes.Drop), antes de deshacerse.</summary>
+        const float RopeDropSeconds = 0.55f;
 
         bool endingMusic;
         HalfRibbon halfRibbon;
-        float offerTurn;
 
         IEnumerator Ending()
         {
@@ -70,9 +75,10 @@ namespace Nindo
             while (Game.Combat != null && Game.Combat.InCombat) yield return null;
             yield return null;
             // PlayMusic no hace nada si ese tema sigue sonando; si la del dojo alcanzó a entrar, el final vuelve a entrar
-            // encima con un fundido
+            // encima con un fundido. El silencio se funde en 1.5 s, no de golpe: con la música por fases (rama de música)
+            // Boss.Die toca el golpe final del tema de Kokuyō y lo que quede de su cola se apaga, no se corta
             if (endingMusic) Game.Audio?.PlayMusic("ending", 1.5f);
-            else Game.Audio?.StopMusic(0.3f);
+            else Game.Audio?.StopMusic(1.5f);
         }
 
         IEnumerator EndingScene()
@@ -134,8 +140,15 @@ namespace Nindo
             int two = ReunionShot(meet, g, camSide);
             Game.Camera.CancelShot(wide);
 
-            // 3) las cuerdas de sombra se deshacen y el abuelo queda libre: recién ahí, el tema del final
-            if (fx != null && fx.Ropes != null && fx.Ropes.Bound) { fx.Ropes.Dissolve(1.6f); yield return Wait(1.2f); }
+            // 3) las cuerdas de sombra se aflojan y caen al piso, y ahí se deshacen mientras el abuelo se libera: recién
+            // ahí, el tema del final (antes se deshacían en el aire, sin que nada cayera)
+            if (fx != null && fx.Ropes != null && fx.Ropes.Bound)
+            {
+                fx.Ropes.Drop(RopeDropSeconds);
+                yield return Wait(RopeDropSeconds * 0.85f);
+                fx.Ropes.Dissolve(1.4f);
+                yield return Wait(0.35f);
+            }
             endingMusic = true;
             Game.Audio?.PlayMusic("ending", 6f);
             yield return FreeGrandpa(grandpa);
@@ -152,9 +165,13 @@ namespace Nindo
             int offer = -1;
             if (k != null)
             {
-                offer = OfferShot(P.transform.position, kokuyoSpot, camSide);
+                // el plano sale de donde Kaito termina de ofrecerla (corrido hacia Kokuyō) y de la mano del clip
+                Vector3 toK = (k.transform.position - P.transform.position).Flat().normalized;
+                bool turnClip = P.Anim.HasState(EndingTurnState);
+                Vector3 offerAt = P.transform.position + toK * (turnClip ? EndingTurnShift : OfferStep);
+                offer = OfferShot(offerAt, toK, camSide, OfferHandLocal(turnClip));
                 Game.Camera.CancelShot(three);
-                yield return OfferRibbon(k);
+                yield return OfferRibbon(toK, turnClip);
                 yield return Say("ending_ribbon");
                 k.Bow();
                 yield return Wait(0.35f);
@@ -175,7 +192,15 @@ namespace Nindo
             // Kaito, que quedó junto a Kokuyō, alcanza al abuelo y se van uno al lado del otro
             Vector3 beside = Vector3.Cross(Vector3.up, home) * 0.7f;
             P.ScriptedMoveTo(grandpa.transform.position + home * 6f - beside, 1.0f);
-            grandpa.WalkTo(grandpa.transform.position + home * 6f + beside, GrandpaWalkSpeed * 1.1f);
+            Vector3 gHome = grandpa.transform.position + home * 6f + beside;
+            // con el mismo paso que los que dio hacia Kaito (Walk), no el Locomotion: no cambia de andar entre planos
+            if (NpcHasState(grandpa, GrandpaWalkState))
+            {
+                grandpa.TurnTo(gHome, 0.35f);
+                grandpa.Play(GrandpaWalkState, 0.2f);
+                grandpa.SlideTo(gHome, GrandpaWalkSpeed * 1.1f);
+            }
+            else grandpa.WalkTo(gHome, GrandpaWalkSpeed * 1.1f);
             Game.Save.SetFlag(Flags.Ending);
             SaveSystem.Save();
             yield return Wait(1.6f);
@@ -288,17 +313,16 @@ namespace Nindo
 
         // ================================================================== la media cinta
         /// <summary>
-        /// Kaito se da vuelta hacia Kokuyō y le ofrece la cinta. Con EndingTurn se mide cuánto gira el clip (su último
-        /// cuadro) y Kaito arranca de modo que termine de frente a Kokuyō. Sin el clip, antes giraba 180° en el lugar en
-        /// 0.6 s con los pies quietos (patinaba) y la cinta seguía colgando a la altura de la cadera: el giro sale de un
+        /// Kaito se da vuelta hacia Kokuyō ('toK') y le ofrece la cinta. Con EndingTurn: el transform se corre los 0.55 m
+        /// del clip hacia Kokuyō mirándolo y el clip entra sin fundido (su primer cuadro es la pose en la que estaba, de
+        /// espaldas); termina parado en el transform con la cinta en la palma. Sin el clip, antes giraba 180° en el lugar
+        /// en 0.6 s con los pies quietos (patinaba) y la cinta seguía colgando a la altura de la cadera: el giro sale de un
         /// paso hacia Kokuyō y el brazo se estira hacia él con el arranque de "Interact", quieto mientras habla.
         /// </summary>
-        IEnumerator OfferRibbon(KokuyoBoss k)
+        IEnumerator OfferRibbon(Vector3 toK, bool turnClip)
         {
             var a = P.Anim;
-            Vector3 toK = (k.transform.position - P.transform.position).Flat().normalized;
-            offerTurn = 0f;
-            if (!a.HasState(EndingTurnState))
+            if (!turnClip)
             {
                 P.ScriptedMoveTo(P.transform.position + toK * OfferStep, 1.2f);
                 float tw = 0f;
@@ -312,14 +336,10 @@ namespace Nindo
                 yield return Wait(0.3f);
                 yield break;
             }
-            float turn = ClipYaw(EndingTurnState);
-            offerTurn = turn;
-            // el clip deja el cuerpo girado 'turn' respecto del transform: el transform arranca en (hacia Kokuyō - turn)
-            Vector3 start = Quaternion.AngleAxis(-turn, Vector3.up) * toK;
-            if (Vector3.Angle(P.transform.forward.Flat(), start) > 15f) yield return TurnInPlace(start, 0.5f);
+            P.Teleport(P.transform.position + toK * EndingTurnShift, Quaternion.LookRotation(toK));
+            a.Play(EndingTurnState, 0f);
             float len = a.Length(EndingTurnState, EndingTurnSeconds);
             float offer = KaitoTimings.Event(EndingTurnState, "offer", NEndingOffer);
-            a.Play(EndingTurnState, 0.2f);
             yield return Wait(len * offer);
             // el brazo extendido: un destello dorado tenue en la cinta (la tela es la de la bandana)
             Game.FX?.FlashLight(halfRibbon.Knot, BandanaGlow.Gold, 1.6f, 2.5f, 0.7f);
@@ -327,29 +347,15 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Baja el brazo: de la pose sostenida de EndingTurn a la guardia sin que el cuerpo vuelva a girar. El transform se
-        /// gira hasta donde mira el cuerpo y el pivote del modelo compensa al revés mientras dura el cruce. Sin el clip,
-        /// de la mano estirada a la guardia.
+        /// Baja el brazo: de la pose sostenida (EndingTurn termina mirando al frente del transform; el respaldo, la mano
+        /// estirada de Interact) a la guardia.
         /// </summary>
         IEnumerator SettleOffer(float fade)
         {
             var a = P.Anim;
-            if (a.Current == OfferFallbackState) { a.Play("Locomotion", fade); yield return Wait(fade); yield break; }
-            if (a.Current != EndingTurnState) yield break;
-            var motion = P.GetComponent<ProceduralMotion>();
-            float turn = offerTurn;
-            if (motion == null || Mathf.Abs(turn) < 1f) { a.Play("Locomotion", fade); yield break; }
-            P.transform.rotation = Quaternion.AngleAxis(turn, Vector3.up) * P.transform.rotation;
-            motion.scriptedPose = Quaternion.AngleAxis(-turn, Vector3.up);
+            if (a.Current != OfferFallbackState && a.Current != EndingTurnState) yield break;
             a.Play("Locomotion", fade);
-            float t = 0f;
-            while (t < 1f)
-            {
-                t = Mathf.Min(1f, t + Time.deltaTime / fade);
-                motion.scriptedPose = Quaternion.AngleAxis(-turn * (1f - t), Vector3.up);
-                yield return null;
-            }
-            motion.scriptedPose = Quaternion.identity;
+            yield return Wait(fade);
         }
 
         /// <summary>Gira a Kaito en el lugar hacia 'dir' (sin clip de giro: corto, en la guardia).</summary>
@@ -366,23 +372,21 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Cuánto gira un clip de Kaito (grados alrededor de Y, desde el frente del transform) en su último cuadro: el frente
-        /// del cuerpo por la línea de los hombros y la de las rodillas (el Animator lo vuelve a posar antes de dibujar).
+        /// Dónde queda la mano de la cinta al ofrecerla, respecto de Kaito ya en su lugar (x a su derecha, y arriba, z
+        /// adelante): con EndingTurn, la izquierda muestreada en 'offer' (el clip termina en el transform, así que vale
+        /// antes de moverlo); sin él, la de Interact quieta en NOfferHold. Si no hay huesos, lo del contrato.
         /// </summary>
-        float ClipYaw(string state)
+        Vector3 OfferHandLocal(bool turnClip)
         {
-            if (!SampleKaitoClip(state, 1f)) return 0f;
-            Vector3 f = BodyForward();
-            return f.sqrMagnitude < 1e-4f ? 0f : Vector3.SignedAngle(P.transform.forward.Flat(), f, Vector3.up);
-        }
-
-        Vector3 BodyForward()
-        {
-            Vector3 right = Vector3.zero;
-            Transform sr = KaitoBone("Brazo.R"), sl = KaitoBone("Brazo.L"), kr = KaitoBone("Tibia.R"), kl = KaitoBone("Tibia.L");
-            if (sr != null && sl != null) right += (sr.position - sl.position).Flat();
-            if (kr != null && kl != null) right += (kr.position - kl.position).Flat();
-            return right.sqrMagnitude < 1e-4f ? Vector3.zero : Vector3.Cross(right.normalized, Vector3.up);
+            var hand = KaitoBone("Mando.L");
+            string state = turnClip ? EndingTurnState : OfferFallbackState;
+            float n = turnClip ? KaitoTimings.Event(EndingTurnState, "offer", NEndingOffer) : NOfferHold;
+            if (hand != null && SampleKaitoClip(state, n))
+            {
+                Vector3 h = P.transform.InverseTransformPoint(hand.position);
+                if (h.z > 0.05f && h.z < 0.9f && h.y > 0.3f && h.y < 1.5f) return h;
+            }
+            return turnClip ? EndingOfferHand : new Vector3(-0.15f, 0.8f, 0.35f);
         }
 
         // ================================================================== cámaras
@@ -417,27 +421,47 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Por encima del hombro izquierdo de Kaito (el de la cinta: queda del lado de la cámara) hacia Kokuyō: la mano
-        /// con la cinta cerca, grande, y la cara de Kokuyō de frente para ver que se inclina.
+        /// Tres cuartos desde atrás y a la izquierda de Kaito (el lado de la mano de la cinta y de la cámara del patio),
+        /// casi a ras del piso mirando hacia arriba: Kaito de espaldas a la derecha del cuadro, la media cinta colgando de
+        /// su palma delante del cuerpo y Kokuyō de rodillas entero, con la cara y la cresta. 'kaito' es donde queda al
+        /// ofrecerla (EndingTurn lo acerca 0.55 m), 'hand' la mano de la cinta respecto de él (OfferHandLocal).
+        /// Antes, por encima del hombro desde 2.3 m atrás y 0.8 m de alto y armado desde donde Kaito estaba antes de
+        /// acercarse, con la mano real del clip (0.64 m de alto) la cinta quedaba detrás de su cadera y la cola en la franja,
+        /// y el abuelo entraba en cuadro. Encuadre de sim_offer_real.py y la maqueta con el clip entregado
+        /// (r2/ofrenda_nueva4_offer.png): la cinta en y 0.18-0.28, la cara de Kokuyō en 0.60 y la cresta en 0.78,
+        /// la línea a la cinta pasa a 13 cm del cuerpo de Kaito y el abuelo queda detrás de la cámara.
         /// </summary>
-        int OfferShot(Vector3 kaito, Vector3 kokuyo, Vector3 camSide)
+        int OfferShot(Vector3 kaito, Vector3 axis, Vector3 camSide, Vector3 hand)
         {
-            // Kokuyō de rodillas tiene la cara a 2.6 m de alto y la cresta a 3.2-3.4; la mano con la cinta queda a 0.8-1.1 m.
-            // Antes, desde 1.6 m de alto, la mano caía en la franja de abajo (y = 0.11-0.24 con la franja hasta 0.11): solo
-            // se veía una astilla dorada detrás del hombro. Bajo (0.8 m) y mirando un poco hacia arriba entran las dos:
-            // la mano en y 0.33-0.45, la cara de Kokuyō en 0.71 y la cresta en 0.87, la cabeza de Kaito al costado de la
-            // suya (sim_offer2.py y maqueta final3/ofrenda_b_offer.png, FOV 42)
-            Vector3 axis = (kokuyo - kaito).Flat().normalized;
-            Vector3 pos = kaito - axis * 2.3f + camSide * 1.5f + Vector3.up * 0.8f;
-            Vector3 look = kaito + axis * 1.2f + Vector3.up * 1.3f;
-            // por si la mano o la cinta (más baja si el clip no la sube) terminan detrás de la franja: la mira baja
-            Vector3 hand = kaito + axis * 0.35f + Vector3.up * 0.8f;
-            if (halfRibbon != null && halfRibbon.Knot.y < hand.y) hand = halfRibbon.Knot;
-            for (int i = 0; i < 3 && ViewportY(pos, look, OfferFov, hand) < 0.2f; i++) look.y -= 0.15f;
+            Vector3 side = (camSide - axis * Vector3.Dot(camSide, axis)).normalized;
+            Vector3 pos = kaito - axis * OfferBack + side * OfferSide + Vector3.up * OfferHeight;
+            Vector3 look = kaito + axis * OfferLookAhead + side * 0.15f + Vector3.up * OfferLookHeight;
+            Vector3 handW = kaito + Quaternion.LookRotation(axis) * hand;
+            // si la mano del clip queda más adentro, la cámara se abre al costado hasta ver la cinta (la mano y la tela que
+            // cuelga debajo) sin el cuerpo de Kaito en el medio
+            for (int i = 0; i < 3 && (RayNearKaito(pos, handW, kaito) < OfferBodyClear || RayNearKaito(pos, handW + Vector3.down * 0.22f, kaito) < OfferBodyClear); i++)
+                pos += side * 0.3f;
+            // y si la mano cae sobre la franja de abajo, la mira baja
+            for (int i = 0; i < 3 && ViewportY(pos, look, OfferFov, handW) < 0.24f; i++) look.y -= 0.12f;
             return Game.Camera.PlayStaticShot(pos, look, OfferFov, 0f, 0.9f, 1.0f);
         }
 
-        const float OfferFov = 42f;
+        const float OfferBack = 1.6f, OfferSide = 1.6f, OfferHeight = 0.4f, OfferLookAhead = 1.4f, OfferLookHeight = 1.5f, OfferFov = 54f;
+        /// <summary>Lo más cerca que la línea de la cámara a la cinta puede pasar del eje de Kaito (m: su torso tiene 0.21).</summary>
+        const float OfferBodyClear = 0.29f;
+
+        /// <summary>Lo más cerca que pasa el segmento a-b del eje vertical de Kaito (de los tobillos a la cabeza).</summary>
+        static float RayNearKaito(Vector3 a, Vector3 b, Vector3 kaito)
+        {
+            float best = float.MaxValue;
+            for (int i = 0; i <= 16; i++)
+            {
+                Vector3 q = Vector3.Lerp(a, b, i / 16f);
+                float h = Mathf.Clamp(q.y - kaito.y, 0.15f, 1.45f);
+                best = Mathf.Min(best, Vector3.Distance(q, kaito + Vector3.up * h));
+            }
+            return best;
+        }
 
         /// <summary>Altura en pantalla (0 abajo, 1 arriba) de 'p' visto desde 'cam' mirando a 'look' con ese FOV vertical.</summary>
         static float ViewportY(Vector3 cam, Vector3 look, float fov, Vector3 p)

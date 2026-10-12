@@ -6,8 +6,9 @@ namespace Nindo
     /// La katana de Kaito apoyada en el piso mientras reza: con la espada en una mano no puede juntar las palmas, y en
     /// el plano de costado la hoja le cruzaba la cara a 10 cm del ojo. Se copia la malla del arma en la pose de ese
     /// momento (la hoja es rígida: alcanza con una), se acuesta de plano a la derecha de su rodilla derecha y la de la
-    /// mano se esconde; al levantarse vuelve a la mano y la del piso desaparece. No hay clip de envainar: el cambio
-    /// pasa cuando Kaito ya está arrodillado (se arrodilla con ella) y cuando se para.
+    /// mano se esconde; al levantarse vuelve a la mano y la del piso desaparece. Solo con el "Pray" de antes (sin los
+    /// clips nuevos): PrayIncense deja y retoma la katana él mismo (el hueso del arma, katana_down / katana_up) y
+    /// PrayQuick reza con una mano y la katana en la otra.
     /// </summary>
     public static class KatanaRest
     {

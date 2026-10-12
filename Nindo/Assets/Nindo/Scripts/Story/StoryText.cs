@@ -230,11 +230,11 @@ namespace Nindo
                     };
                 case "seal_bamboo":
                     return new List<DialogueLine> { L(Kaito, "El Sello del Bambú. Hasta el campeón terminó doblándose.") };
-                // el final (StoryDirector.Ending): el reencuentro en un plano de los dos y lo de Kokuyō en otro de los tres
                 case "ending":
                     return new List<DialogueLine> {
                         L(Abuelo, "Kaito... viniste. Sabía que la cinta te elegiría."),
                     };
+                // el final (StoryDirector.Ending): el reencuentro va en un plano de los dos y esto en otro de los tres
                 case "ending_kokuyo":
                     return new List<DialogueLine> {
                         L(Kokuyo, "...Te eligió a vos. Como a él."),
@@ -361,9 +361,11 @@ namespace Nindo
             {
                 // frente a la puerta (el patio del dojo y el jardín) ya no es "volvé"
                 bool atGate = zone == "dojo" || zone == "jardin";
-                if (pending > 1) return atGate ? "Colocá los sellos en la puerta del dojo" : "Volvé a la puerta del dojo a colocar los sellos";
+                // "Llevá" y no "Volvé a la puerta del dojo a colocar el Sello de la Montaña": esa no entraba en un renglón
+                // y cortaba el nombre del sello ("Montaña" sola abajo)
+                if (pending > 1) return atGate ? "Colocá los sellos en la puerta del dojo" : "Llevá los sellos a la puerta del dojo";
                 string seal = SealName((SealId)SealGate.FirstPending(s));
-                return atGate ? "Colocá el " + seal + " en la puerta del dojo" : "Volvé a la puerta del dojo a colocar el " + seal;
+                return atGate ? "Colocá el " + seal + " en la puerta del dojo" : "Llevá el " + seal + " a la puerta del dojo";
             }
             if (s.SealCount >= 3) return "Abrí la puerta del dojo";
             bool pastWall = s.HasFlag(Flags.WallGateOpen) || s.HasFlag(Flags.DojoGateSeen) || s.SealCount > 0 || PastTheWall(zone);

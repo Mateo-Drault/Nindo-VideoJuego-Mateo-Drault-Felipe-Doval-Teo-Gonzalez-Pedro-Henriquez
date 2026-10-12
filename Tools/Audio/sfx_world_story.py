@@ -33,13 +33,15 @@ def crackles(dur, seed, density, lo=2500, hi=8000):
 
 
 def incense_light():
+    # un fósforo que prende, no un golpe: el chasquido entra en 30 ms (antes en 2 ms, y con -8 dB de RMS pegaba como el
+    # sello de la muralla que estalla); el nivel lo baja PEAK_DB
     d = 1.0
-    spark = filt(noise(0.03, 1201), 2500, 9000) * env_exp(0.03, 0.006)
+    spark = filt(noise(0.06, 1201), 2500, 9000) * env_exp(0.06, 0.012, attack=0.03)
     chime = partials(1318.5, [1, 2.01, 3.02], [1, 0.25, 0.08], [0.7, 0.3, 0.18], 0.9, seed=1202)
     fizz = band(noise(d, 1203), 3000, 1.5) * env_points(d, [(0, 0), (0.04, 0.6), (0.3, 0.25), (d, 0)])
     pops = crackles(d, 1204, 14, 1800, 6000) * env_points(d, [(0, 0), (0.05, 1), (d, 0.2)])
     warm = partials(880, [1, 2.0], [1, 0.25], [0.5, 0.25], 0.8, seed=1205)
-    x = mix((spark, 0, 0.7), (chime, 0.01, 0.4), (warm, 0.01, 0.25), (fizz, 0.0, 0.08), (pops, 0.02, 0.22))
+    x = mix((spark, 0, 0.45), (chime, 0.02, 0.4), (warm, 0.02, 0.25), (fizz, 0.0, 0.1), (pops, 0.03, 0.22))
     return reverb(x, 0.25, 1.2, 0.4)
 
 
@@ -77,8 +79,14 @@ def wall_seal_break():
     tail = bell(392, 3.2, 2.2, 0.8, seed=1245)
     x = mix((crack, 0, 0.7), (shards, 0.01, 0.22), (boom, 0, 1.0), (rumble, 0, 0.7),
             (gold[0], 0.25, 0.25), (gold[1], 0.37, 0.22), (gold[2], 0.49, 0.2), (gold[3], 0.61, 0.18), (tail, 0.15, 0.45))
-    return reverb(x, 0.4, 2.8, 1.0)
+    # saturado suave al final: más cuerpo con el mismo pico (RMS de -9.9 a -6.4 dB en 50 ms), así es lo más fuerte de su
+    # escena aunque las dos hojas del portón suenen (gate_open) después
+    x = reverb(x, 0.4, 2.8, 1.0)
+    return distort(x / np.abs(x).max(), 1.8)
 
+
+# pico de cada uno (dBFS): todos se normalizan al pico; el del incienso queda abajo para que la brasa sea chiquita
+PEAK_DB = {"incense_light": -9.0}
 
 SOUNDS = {
     "incense_light": incense_light,
@@ -91,7 +99,7 @@ SOUNDS = {
 def main():
     for key, fn in SOUNDS.items():
         p = os.path.join(OUT, f"{key}_1.wav")
-        write_wav(p, fn())
+        write_wav(p, fn(), PEAK_DB.get(key, -1.0))
         write_meta(p, audio_meta(stream=False, mono=True))
         print(f"{key:18} {os.path.getsize(p) / 1024:6.0f} KB  guid {ensure_guid(p)}")
 
