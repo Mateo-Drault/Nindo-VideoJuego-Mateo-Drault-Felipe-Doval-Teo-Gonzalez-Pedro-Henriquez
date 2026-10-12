@@ -118,6 +118,12 @@ def opened_limits(w):
             for S in "RL"}
 
 
+def mix_limits(a, b, w):
+    """Topes entre 'a' (w 0) y 'b' (w 1): la mano derecha que suelta o retoma la katana pasa de los de la katana a los
+    de la mano libre sin saltar."""
+    return {S: {k: tuple(x + (y - x) * w for x, y in zip(a[S][k], b[S][k])) for k in a[S]} for S in "RL"}
+
+
 def cutting(clip, f):
     """¿El cuadro f está en un tramo en que la hoja corta (la ventana que pega, el impacto, el tajo) o al lado?"""
     t = clip.timing
@@ -716,6 +722,11 @@ class Solver:
                "pole_l": np.array(V(c["elbow_l"]))}
         Hf = self.free_left(c)
         ctx["hf_t"], ctx["hf_q"] = np.array(Hf.translation), np.array(Hf.to_quaternion())
+        # la derecha suelta (kat_free): el codo derecho se elige para su pose libre, no para la katana
+        ctx["free"] = c.get("kat_free") or 0.0
+        if ctx["free"] > 1e-3:
+            Hr = self.free_right(c)
+            ctx["hr_t"], ctx["hr_q"] = np.array(Hr.translation), np.array(Hr.to_quaternion())
         return ctx
 
     def hands_np(self, ctx, roll, tilt):
@@ -735,11 +746,21 @@ class Solver:
         (arm_path lo suma con el peso de cada cuadro)."""
         roll, tilt, swivel = np.broadcast_arrays(*(np.asarray(v, float) for v in (roll, tilt, swivel)))
         Kp, H3, W = self.hands_np(ctx, roll, tilt)
+        fr = ctx["free"]
+        if fr > 1e-3:
+            # suelta (o soltándola): la mano va de la empuñadura a su pose libre, como en _arms
+            W = W + (ctx["hr_t"] - W) * fr
+            q0 = mat_to_quat(H3)
+            q1 = np.broadcast_to(ctx["hr_q"], q0.shape)
+            q1 = q1 * np.where(np.sum(q1 * q0, -1, keepdims=True) < 0.0, -1.0, 1.0)
+            H3 = quat_to_mat(_norm(q0 + (q1 - q0) * fr))
         af = ctx["af"]
         F3 = af.forearm(W, af.swiveled(W, ctx["pole"], swivel, "R"))
         Rr = np.swapaxes(F3 @ self.R0np["R"], -1, -2) @ H3
-        cost = (wrist_cost_np(*wrist_angles_np(Rr, "R"), "R") + af.swivel_cost(swivel) + af.shoulder_cost()
-                + 0.5 * ((tilt - TILT_PREF) / 20.0) ** 2)
+        ang = wrist_angles_np(Rr, "R")
+        # la libre paga solo lo que le va a corregir el recorte (como la izquierda en eval_left)
+        wrist = wrist_cost_np(*ang, "R") if fr <= 1e-3 else (1.0 - fr) * wrist_cost_np(*ang, "R") + fr * wrist_soft_np(*ang, "R")
+        cost = wrist + af.swivel_cost(swivel) + af.shoulder_cost() + 0.5 * ((tilt - TILT_PREF) / 20.0) ** 2
         gl = ctx["gl"]
         if gl > 0.001:
             cost = cost + gl * self._left_grip_cost(ctx, Kp, H3, gl)
@@ -805,6 +826,14 @@ class Solver:
         B = basis_yz(c["hand_l_dir"], c["hand_l_up"])
         hl.z += floor_raise(compose(hl, B))
         return compose(hl, B)
+
+    def free_right(self, c):
+        """La mano derecha suelta (sin la katana), como la izquierda libre: sobre el piso con la orientación autorada."""
+        hr = V(c["hand_r"]) + self._upw
+        hr.z = max(hr.z, 0.12)
+        B = basis_yz(c["hand_r_dir"], c["hand_r_up"])
+        hr.z += floor_raise(compose(hr, B))
+        return compose(hr, B)
 
     def body(self, pose, c):
         """Cadera, tronco, cabeza, hombros y la katana autorada (antes de los brazos). Devuelve (controles con los
@@ -895,21 +924,19 @@ class Solver:
         free = c.get("kat_free") or 0.0
         if free > 1e-3:
             # suelta la katana: la mano va de donde la tenía a su pose libre (como la izquierda)
-            hr = V(c["hand_r"]) + self._upw
-            hr.z = max(hr.z, 0.12)
-            B = basis_yz(c["hand_r_dir"], c["hand_r_up"])
-            hr.z += floor_raise(compose(hr, B))
-            Hf = compose(hr, B)
+            Hf = self.free_right(c)
             Hr = compose(Hr.translation.lerp(Hf.translation, free), Hr.to_quaternion().slerp(Hf.to_quaternion(), free).to_matrix())
-        # el giro del codo del camino (arm_path) es el de la mano CON la katana: suelta, el codo es el autorado (con el
-        # giro de la katana, una mano apoyada en el piso quedaba con el antebrazo retorcido 140°)
-        pole_r = self.swivel_pole(pose, R_BONES, Hr.translation, c["elbow_r"], sw_r * (1.0 - free), "R")
+        # el giro del codo del camino (arm_path) ya es el de la mano que toca: con la katana o suelta (eval_right). Antes
+        # la suelta iba con el codo autorado y la muñeca quedaba en el recorte todo el rezo (radial 20°, dorso 50°)
+        pole_r = self.swivel_pole(pose, R_BONES, Hr.translation, c["elbow_r"], sw_r, "R")
         self.reach_with_clavicle(pose, R_BONES, Hr.translation)
         miss_r = pose.two_bone("Brazo.R", "Antebrazo.R", Hr.translation, pole_r)
         F_r = rot3(pose.get("Antebrazo.R"))
         self.wrist_raw = self.wrist_angles(F_r, rot3(Hr), "R")
-        wo = c["wrist_r_open"] * free
-        Hc = compose(Hr.translation, self.clamp_hand(F_r, rot3(Hr), "R", 1.0, opened_limits(wo) if wo > 0.0 else limits))
+        # suelta, la derecha se recorta como la izquierda libre (a lo cómodo, o más con wrist_r_open): con los topes de la
+        # katana (lo cómodo + SOFT_MARGIN) la mano en el muslo o en el gassho quedaba 20° quebrada hacia el pulgar
+        lim_r = limits if free <= 1e-3 else mix_limits(limits, opened_limits(c["wrist_r_open"]), free)
+        Hc = compose(Hr.translation, self.clamp_hand(F_r, rot3(Hr), "R", 1.0, lim_r))
         H3 = self.lift_tip(Hc, hfk)
         if free > 1e-3:
             # suelta: la punta de la katana deja de contar y la que no entra en el piso es la mano

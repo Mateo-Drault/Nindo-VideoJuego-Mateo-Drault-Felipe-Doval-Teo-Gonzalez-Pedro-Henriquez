@@ -791,7 +791,7 @@ IAI = feet(mod(READY, hips=(0.0, 0.1, -0.3), hips_rot=(12.0, 0.0, -28.0), spine=
                clav_r=(0.0, 4.0, 0.0), grip=(-0.45, 0.22, 1.04), blade=(-0.35, 0.87, 0.34), edge=(0.0, 0.35, -0.94),
                elbow_r=(-0.6, 0.6, -0.2), hand_l=(0.22, -0.48, 1.3), hand_l_dir=(-0.1, -0.5, 0.86), hand_l_up=(0.0, 1.0, 0.3),
                elbow_l=(0.8, 0.2, -0.5), fingers_l=0.0, knee_l=(0.6, -0.8, 0.0)),
-           r=flat("R", -0.3, -0.38, 10.0), l=flat("L", *L_FOOT))
+           r=flat("R", -0.3, -0.35, 10.0), l=flat("L", *L_FOOT))
 _step_in = feet(inter(READY, IAI, 0.5), r=lifted("R", -0.27, -0.27, 0.08, -6.0, 8.0), l=flat("L", *L_FOOT))
 _iai_b = mod(IAI, breath=1.0, hips=(0.0, 0.1, -0.31), head=(-15.0, 0.0, 30.0), tremble=0.3)
 _iai_deep = mod(IAI, hips=(0.0, 0.12, -0.35), hips_rot=(18.0, 0.0, -30.0), head=(-18.0, 0.0, 30.0), tremble=1.0,
@@ -802,19 +802,19 @@ _iai_cmp = mod(IAI, hips=(0.0, 0.11, -0.36), hips_rot=(20.0, 0.0, -30.0), spine=
 # abierto atrás por el envión
 AFTER_CUT = feet(mod(READY, hips=(0.0, -0.25, -0.32), hips_rot=(16.0, 0.0, -32.0), spine=(12.0, 0.0, -18.0), head=(-8.0, 0.0, 14.0),
                      clav_r=(0.0, 12.0, 0.0), grip=(-0.84, -0.22, 1.08), blade=(-0.72, 0.06, 0.69),
-                     edge=perp((-0.72, 0.06, 0.69), (0.0, -1.0, 0.0)), elbow_r=(-0.8, 0.1, -0.5), hand_l=(0.4, 0.05, 1.12),
+                     edge=perp((-0.72, 0.06, 0.69), (0.0, -1.0, 0.0)), elbow_r=(-0.8, 0.1, -0.5), hand_l=(0.36, 0.05, 1.08),
                      hand_l_dir=(0.6, 0.75, -0.2), hand_l_up=(0.0, 0.0, 1.0), elbow_l=(0.6, 0.6, -0.3), fingers_l=0.05),
                  r=flat("R", -0.28, -0.64, 4.0), l=toe("L", *L_FOOT, 30.0))
 # el envión: la cadera baja un poco más y la hoja sigue hacia atrás y abajo
 _zan_over = mod(AFTER_CUT, hips=(0.0, -0.27, -0.36), hips_rot=(18.0, 0.0, -28.0), spine=(13.0, 0.0, -15.0), head=(-11.0, 0.0, 16.0),
                 grip=(-0.96, -0.02, 0.98), blade=(-0.9, 0.05, -0.38), edge=perp((-0.9, 0.05, -0.38), (0.2, 1.0, 0.4)),
-                hand_l=(0.38, 0.04, 0.8), hand_l_dir=(0.05, -0.9, -0.3), hand_l_up=(0.3, 0.0, -0.95), elbow_l=(0.6, 0.8, -0.2),
+                hand_l=(0.34, 0.04, 0.82), hand_l_dir=(0.05, -0.9, -0.3), hand_l_up=(0.3, 0.0, -0.95), elbow_l=(0.6, 0.8, -0.2),
                 fingers_l=0.8)
 # asentado: el brazo derecho estirado a su costado, la hoja baja y atrás (desde arriba, una raya larga que sale de la
 # silueta por la derecha y hacia atrás), el puño izquierdo cerrado en la cadera, el pecho abierto y la vista adelante
 ZANSHIN = mod(_zan_over, hips=(0.0, -0.26, -0.35), hips_rot=(16.0, 0.0, -26.0), spine=(11.0, 0.0, -14.0), head=(-10.0, 0.0, 16.0),
               clav_r=(0.0, 10.0, 0.0), grip=(-0.96, 0.08, 0.98), blade=(-0.78, 0.39, -0.5),
-              edge=perp((-0.78, 0.39, -0.5), (0.3, 1.0, 0.3)), hand_l=(0.36, 0.02, 0.74), hand_l_dir=(0.0, -1.0, 0.05),
+              edge=perp((-0.78, 0.39, -0.5), (0.3, 1.0, 0.3)), hand_l=(0.33, 0.02, 0.77), hand_l_dir=(0.0, -1.0, 0.05),
               hand_l_up=(0.15, 0.0, -1.0), elbow_l=(0.6, 0.8, -0.2), fingers_l=1.0)
 _zan_in = mod(ZANSHIN, breath=1.0, hips=(0.0, -0.26, -0.345), head=(-11.0, 0.0, 15.0))
 # exhala y mira por encima del hombro derecho hacia el que cortó (la hoja no se mueve)
@@ -1009,7 +1009,7 @@ add("PrayQuick", 60, [
 
 # ------------------------------------------------------------------ rezo con sahumerio (primera visita)
 # Para una cámara de costado, lento y respetuoso. Rodilla izquierda al piso; se inclina y apoya la katana en el piso a su
-# derecha (la empuñadura adelante, junto a la rodilla, la hoja hacia atrás y el filo hacia él: la deja en paz), la suelta
+# derecha (la empuñadura junto a la rodilla, la hoja adelante y abierta hacia afuera: PI_KAT), la suelta
 # y se endereza; baja la otra rodilla y queda sentado sobre los talones (kiza, los dedos de los pies doblados). Toma un
 # sahumerio del santuario con la derecha (incense_take), lo acerca a la llama con la izquierda haciendo de pantalla
 # (incense_light), lo apaga con dos abanicos de la izquierda, lo lleva con la izquierda sosteniendo la muñeca derecha y
@@ -1018,8 +1018,14 @@ add("PrayQuick", 60, [
 # derecha (Mando.R) en cada evento, en metros respecto del transform (derecha, arriba, adelante), medido en el horneado:
 # timing 'hand_r_m' (va al .fbx.json); la punta del sahumerio queda ~10 cm más adelante. Los pies no se corren: cada uno
 # pasa de apoyado a arrodillado con un paso en el aire
-PI_KAT = (-0.72, -0.34, 0.125)                 # la katana en el piso: puño, hoja hacia atrás, el filo hacia él
-PI_KAT_BLADE, PI_KAT_EDGE = (0.0, 1.0, 0.0), (1.0, 0.0, 0.0)
+# la katana en el piso a su derecha: el puño junto a la rodilla, la hoja adelante y abierta 30° hacia afuera (lejos del
+# santuario), el filo hacia afuera: la mano la apoya con la palma abajo, como cualquier cosa que se deja en el piso.
+# Con la hoja hacia atrás la mano tenía que darla vuelta 180° al dejarla y al retomarla (la muñeca saltaba de un tope
+# de giro al otro en un cuadro, 140°), y con el filo hacia él había que supinar la mano 90° (al tope: la hoja se hundía
+# en el piso al soltarla)
+PI_KAT = (-0.66, -0.3, 0.125)
+PI_KAT_BLADE = (-0.5, -0.866, 0.0)
+PI_KAT_EDGE = perp(PI_KAT_BLADE, (-1.0, 0.0, 0.0))
 _PI_L = KNEE_L
 _PI_R = air(-0.22, 0.36, 0.18, 160.0, -6.0)
 _pi_k1 = feet(mod(READY, hips=(0.0, 0.1, -0.34), hips_rot=(4.0, 0.0, 0.0), spine=(5.0, 0.0, 0.0), head=(8.0, 0.0, 0.0),
@@ -1031,7 +1037,7 @@ _pi_k1 = feet(mod(READY, hips=(0.0, 0.1, -0.34), hips_rot=(4.0, 0.0, 0.0), spine
               r=flat("R", *R_FOOT), l=_PI_L)
 # se inclina hacia su derecha y apoya la katana (la mano izquierda en el muslo sostiene el peso)
 _pi_lean = mod(_pi_k1, hips=(-0.04, 0.12, -0.36), hips_rot=(30.0, -10.0, -12.0), spine=(22.0, -8.0, -8.0), head=(6.0, 6.0, 6.0),
-               grip=(-0.7, -0.36, 0.2), blade=(-0.05, 0.99, -0.08), edge=perp((-0.05, 0.99, -0.08), (1.0, 0.0, 0.0)),
+               grip=(-0.66, -0.32, 0.22), blade=(-0.45, -0.88, -0.15), edge=perp((-0.45, -0.88, -0.15), (-1.0, 0.0, 0.0)),
                elbow_r=(-0.8, 0.5, 0.2), hand_l=(0.3, -0.36, 0.66))
 _pi_set = mod(_pi_lean, grip=PI_KAT, blade=PI_KAT_BLADE, edge=PI_KAT_EDGE, hips=(-0.05, 0.12, -0.37))
 _pi_let = mod(_pi_set, kat_free=1.0, fingers_r=0.15, hand_r=(-0.64, -0.36, 0.25), hand_r_dir=(0.05, -0.99, -0.1),
@@ -1103,7 +1109,10 @@ add("PrayIncense", 186, [
     (186, READY, "in2")],
     # al pararse la punta del pie izquierdo roza el piso mientras el empeine se da vuelta (la rodilla ya subió): a propósito
     timing={"skid": [[177, 181]], "hand_r_m": {"incense_take": [0.16, 0.4, 0.37], "incense_light": [0.06, 0.44, 0.38],
-                                                  "incense_place": [0.04, 0.33, 0.44], "katana_down": [0.38, 0.14, 0.19]},
+                                                  "incense_place": [0.04, 0.33, 0.44], "katana_down": [0.31, 0.13, 0.14]},
+            # dónde queda la katana en el piso (m, como hand_r_m): el centro del puño y la punta; el santuario no la tiene
+            # que tapar
+            "katana_floor_m": {"grip": [0.35, 0.07, 0.16], "tip": [0.79, 0.07, 0.92]},
             "katana_down": 27, "kiza": 50, "incense_take": 70, "incense_light": 88, "incense_place": 116, "palms": 128,
             "katana_up": 163, "rise": 165, "story": True},
     events=[{"frame": 27, "fn": "katana_down"}, {"frame": 70, "fn": "incense_take"}, {"frame": 88, "fn": "incense_light"},
