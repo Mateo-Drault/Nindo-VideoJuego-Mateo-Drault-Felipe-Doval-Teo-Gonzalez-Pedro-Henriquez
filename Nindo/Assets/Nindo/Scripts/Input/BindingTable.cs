@@ -21,6 +21,8 @@ namespace Nindo
         public const int RStickUp = 2100, RStickDown = 2101, RStickLeft = 2102, RStickRight = 2103;
         /// <summary>Solo para mostrar: el movimiento del mando es fijo (stick izquierdo y cruceta).</summary>
         public const int PadMoveStick = 2200, PadMoveDpad = 2201;
+        /// <summary>Solo para mostrar: el panel táctil de los de PlayStation abre el mapa (fijo, lo lee InputBindings.PollPad).</summary>
+        public const int PadTouchpad = 2202;
 
         public static int Pad(int gamepadButton) => PadBase + gamepadButton;
         public static bool IsKey(int c) => c > 0 && c < 1000;
@@ -29,7 +31,7 @@ namespace Nindo
         public static int DeviceOf(int c) => c >= PadBase ? BindingTable.Pad : BindingTable.Keys;
         /// <summary>La rueda y los toques del stick son un impulso: no se pueden mantener (no sirven para moverse).</summary>
         public static bool IsImpulse(int c) => c == WheelUp || c == WheelDown || (c >= RStickUp && c <= RStickRight);
-        public static bool IsDisplayOnly(int c) => c == PadMoveStick || c == PadMoveDpad;
+        public static bool IsDisplayOnly(int c) => c == PadMoveStick || c == PadMoveDpad || c == PadTouchpad;
     }
 
     /// <summary>Una fila de la tabla: una acción de <see cref="Act"/> o una dirección del movimiento.</summary>
@@ -42,7 +44,7 @@ namespace Nindo
         public int act = -1;           // valor de Act (-1 = movimiento)
         public int move;               // 0 no mueve; 1 arriba, 2 abajo, 3 izquierda, 4 derecha
         public bool hold;              // se usa manteniendo (moverse; fijar se suelta así): nada de rueda ni toques del stick
-        public int context;            // máscara: dónde se usa (BindingCatalog.Play / Menu)
+        public int context;            // máscara: dónde se usa (BindingCatalog.Play / Menu / MapView)
         public int share;              // != 0: puede compartir tecla con las filas del mismo número
         public readonly bool[] shown = new bool[BindingTable.Devices];
         public readonly int[] defaults = new int[BindingTable.Devices * BindingTable.Slots];
@@ -102,7 +104,9 @@ namespace Nindo
     ///     apretado (moverse, fijar: se suelta manteniéndolo) y sacarle a otra acción su única tecla sin nada para
     ///     darle a cambio.
     ///   - Una acción que también se lee con un menú abierto (la pausa, el mapa) no puede tener nada de lo que usan los
-    ///     menús (el clic, la rueda, WASD y las flechas, Supr...): la misma tecla movería el menú y lo cerraría.
+    ///     menús (el clic, la rueda, WASD y las flechas, Supr...): la misma tecla movería el menú y lo cerraría. Lo mismo
+    ///     con el mapa abierto: lo que también se lee ahí (fijar centra en Kaito, moverse corre el cursor) no puede tener
+    ///     lo que el mapa usa por su cuenta (el clic arrastra, la rueda, + y - y los gatillos acercan).
     ///   - Quitar una tecla no puede dejar a una acción sin ninguna en ese dispositivo.
     /// Se guardan solo las casillas que difieren de las de fábrica, por nombre de acción: una acción nueva (p. ej. el
     /// mapa) llega con sus teclas de fábrica y, si alguna ya la usa el jugador para otra cosa, gana la del jugador.
@@ -112,12 +116,14 @@ namespace Nindo
         public const int Keys = 0, Pad = 1, Devices = 2, Slots = 2;
         /// <summary>Bit de BindRow.context de lo que se lee con un menú abierto (BindingCatalog.Menu).</summary>
         public const int MenuContext = 2;
+        /// <summary>Bit de BindRow.context de lo que se lee con el mapa abierto (BindingCatalog.MapView).</summary>
+        public const int MapContext = 4;
         /// <summary>Formato de lo guardado. Si cambia de forma incompatible se vuelve a las de fábrica.</summary>
         public const int FormatVersion = 1;
 
         readonly BindRow[] rows;
         readonly int[] codes;
-        readonly Func<int, string> reserved, menuReserved;
+        readonly Func<int, string> reserved, menuReserved, mapReserved;
         readonly Func<int, int[]> spares;
 
         /// <summary>Lo que hizo la última carga para que ninguna acción quede sin teclas (para avisarle al jugador).</summary>
@@ -125,12 +131,14 @@ namespace Nindo
 
         /// <param name="reserved">Motivo por el que un control no se puede asignar a nada (null = libre).</param>
         /// <param name="menuReserved">Motivo por el que un control no sirve para lo que se lee con un menú abierto.</param>
+        /// <param name="mapReserved">Lo mismo para lo que se lee con el mapa abierto.</param>
         /// <param name="spares">Teclas libres por dispositivo, en orden, para la acción que al cargar quede sin nada.</param>
-        public BindingTable(BindRow[] rows, Func<int, string> reserved, Func<int, string> menuReserved = null, Func<int, int[]> spares = null)
+        public BindingTable(BindRow[] rows, Func<int, string> reserved, Func<int, string> menuReserved = null, Func<int, string> mapReserved = null, Func<int, int[]> spares = null)
         {
             this.rows = rows;
             this.reserved = reserved;
             this.menuReserved = menuReserved;
+            this.mapReserved = mapReserved;
             this.spares = spares;
             codes = new int[rows.Length * Devices * Slots];
             Reset(-1);
@@ -147,6 +155,13 @@ namespace Nindo
 
         /// <summary>Cuántas casillas con algo tiene la fila en ese dispositivo.</summary>
         public int Count(int r, int dev) => (Get(r, dev, 0) != 0 ? 1 : 0) + (Get(r, dev, 1) != 0 ? 1 : 0);
+
+        /// <summary>
+        /// Cuántas sirven en cualquier mando o teclado: las que solo se muestran no cuentan (el panel táctil del mapa no
+        /// existe en un Xbox; si el mapa se quedara solo con él, ahí no se abriría).
+        /// </summary>
+        public int Usable(int r, int dev) => Usable1(Get(r, dev, 0)) + Usable1(Get(r, dev, 1));
+        static int Usable1(int c) => c != BindCode.None && !BindCode.IsDisplayOnly(c) ? 1 : 0;
 
         public int IndexOf(string id)
         {
@@ -182,8 +197,14 @@ namespace Nindo
             return true;
         }
 
-        /// <summary>Por qué 'code' no le sirve a la fila r por leerse con un menú abierto (null si le sirve).</summary>
-        string MenuBlock(int r, int code) => (rows[r].context & MenuContext) != 0 ? menuReserved?.Invoke(code) : null;
+        /// <summary>Por qué 'code' no le sirve a la fila r por leerse con un menú o el mapa abierto (null si le sirve).</summary>
+        string MenuBlock(int r, int code)
+        {
+            int ctx = rows[r].context;
+            string why = (ctx & MenuContext) != 0 ? menuReserved?.Invoke(code) : null;
+            if (why == null && (ctx & MapContext) != 0) why = mapReserved?.Invoke(code);
+            return why;
+        }
 
         /// <summary>¿La fila r puede tener 'code' en ese dispositivo? (sin mirar a las demás filas)</summary>
         bool Fits(int r, int dev, int code) =>
@@ -207,9 +228,10 @@ namespace Nindo
             if (BindCode.DeviceOf(code) != dev || BindCode.IsDisplayOnly(code)) return Refuse(res, BindRefusal.WrongDevice);
             string why = reserved?.Invoke(code);
             if (why != null) { res.reason = why; return Refuse(res, BindRefusal.Reserved); }
+            // antes que lo de los menús y el mapa: "la rueda no sirve para moverse" explica más que "se usa en el mapa"
+            if (row.hold && BindCode.IsImpulse(code)) return Refuse(res, BindRefusal.NeedsHold);
             why = MenuBlock(r, code);
             if (why != null) { res.reason = why; return Refuse(res, BindRefusal.Reserved); }
-            if (row.hold && BindCode.IsImpulse(code)) return Refuse(res, BindRefusal.NeedsHold);
             int old = res.previous;
             if (old == code) { res.outcome = BindOutcome.Same; return res; }
 
@@ -253,9 +275,9 @@ namespace Nindo
                     else if (MenuBlock(q, give) != null) give = BindCode.None;
                     else if (Get(q, dev, 1 - t) == give) give = BindCode.None;
                     else if (HeldByConflicting(give, dev, q, r)) give = BindCode.None;
-                    else if (Count(q, dev) >= 2 && BindCode.IsKey(give) != BindCode.IsKey(code)) give = BindCode.None;
+                    else if (Usable(q, dev) >= 2 && BindCode.IsKey(give) != BindCode.IsKey(code)) give = BindCode.None;
                 }
-                if (give == BindCode.None && Count(q, dev) <= 1) { res.other = q; return Refuse(res, BindRefusal.OnlyKey); }
+                if (give == BindCode.None && Usable(q, dev) <= 1) { res.other = q; return Refuse(res, BindRefusal.OnlyKey); }
                 gives[h] = give;
             }
 
@@ -291,7 +313,7 @@ namespace Nindo
             var res = new BindResult { row = r, dev = dev, slot = slot, other = -1, previous = Get(r, dev, slot) };
             if (!rows[r].shown[dev] || Locked(r, dev, slot)) return Refuse(res, BindRefusal.Locked);
             if (res.previous == BindCode.None) { res.outcome = BindOutcome.Same; return res; }
-            if (Count(r, dev) <= 1) return Refuse(res, BindRefusal.LastKey);
+            if (Usable(r, dev) <= 1) return Refuse(res, BindRefusal.LastKey);
             codes[Ix(r, dev, slot)] = BindCode.None;
             res.outcome = BindOutcome.Cleared;
             return res;
@@ -392,16 +414,16 @@ namespace Nindo
             }
             for (int r = 0; r < rows.Length; r++)
             {
-                if (!rows[r].shown[d] || Count(r, d) > 0) continue;
+                if (!rows[r].shown[d] || Usable(r, d) > 0) continue;
                 int lost = BindCode.None;
                 for (int s = 0; s < Slots; s++)
                 {
                     int c = Default(r, d, s);
-                    if (c == BindCode.None) continue;
+                    if (c == BindCode.None || BindCode.IsDisplayOnly(c)) continue;
                     if (lost == BindCode.None) lost = c;
                     if (!HeldByConflicting(c, d, r, r)) codes[Ix(r, d, s)] = c;
                 }
-                if (Count(r, d) > 0 || lost == BindCode.None || spares == null) continue;
+                if (Usable(r, d) > 0 || lost == BindCode.None || spares == null) continue;
                 int slot = Locked(r, d, 0) ? 1 : 0;
                 if (Locked(r, d, slot)) continue;
                 foreach (int c in spares(d))

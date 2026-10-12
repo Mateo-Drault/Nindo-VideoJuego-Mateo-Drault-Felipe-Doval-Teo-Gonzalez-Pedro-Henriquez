@@ -47,7 +47,7 @@ namespace Nindo
         static void Init()
         {
             // Enum.GetNames va por valor: la fila r es (Act)r (InputReader y los textos "{Attack}" cuentan con eso)
-            table = new BindingTable(BindingCatalog.Build(Enum.GetNames(typeof(Act))), BindingCatalog.Reserved, MenuReserved, BindingCatalog.Spares);
+            table = new BindingTable(BindingCatalog.Build(Enum.GetNames(typeof(Act))), BindingCatalog.Reserved, MenuReserved, MapReserved, BindingCatalog.Spares);
             var problems = table.Load(Settings.ControlBindings, BindingCatalog.ParseCode);
             if (problems.Count > 0) Debug.Log("[Nindo] Controles guardados: " + string.Join("; ", problems));
             // una acción nueva que recibió una tecla libre (sus teclas de fábrica ya las usaba el jugador): queda guardada,
@@ -70,19 +70,23 @@ namespace Nindo
         /// BindingCatalog.MenuReserved más el + y el - de la distribución del teclado (el mapa acerca con ellos: en el
         /// teclado español el + está donde el inglés tiene el ']').
         /// </summary>
-        static string MenuReserved(int code)
+        static string MenuReserved(int code) => BindingCatalog.MenuReserved(code) ?? (LayoutPlusMinus(code) ? "menu" : null);
+
+        /// <summary>BindingCatalog.MapReserved más el + y el - de la distribución del teclado (igual que en los menús).</summary>
+        static string MapReserved(int code) => BindingCatalog.MapReserved(code) ?? (LayoutPlusMinus(code) ? "mapa" : null);
+
+        /// <summary>¿Es la tecla que escribe + o - en la distribución del teclado de ahora? (el mapa acerca y aleja con ellas)</summary>
+        static bool LayoutPlusMinus(int code)
         {
-            string why = BindingCatalog.MenuReserved(code);
 #if ENABLE_INPUT_SYSTEM
             var kb = Keyboard.current;
-            if (why == null && kb != null && BindCode.IsKey(code))
-            {
-                var plus = kb.FindKeyOnCurrentKeyboardLayout("+");
-                var minus = kb.FindKeyOnCurrentKeyboardLayout("-");
-                if ((plus != null && (int)plus.keyCode == code) || (minus != null && (int)minus.keyCode == code)) why = "menu";
-            }
+            if (kb == null || !BindCode.IsKey(code)) return false;
+            var plus = kb.FindKeyOnCurrentKeyboardLayout("+");
+            var minus = kb.FindKeyOnCurrentKeyboardLayout("-");
+            return (plus != null && (int)plus.keyCode == code) || (minus != null && (int)minus.keyCode == code);
+#else
+            return false;
 #endif
-            return why;
         }
 
         /// <summary>Después de cambiar la tabla: se guarda en las preferencias y los textos con teclas se rehacen.</summary>
@@ -94,10 +98,12 @@ namespace Nindo
         }
 
 #if ENABLE_INPUT_SYSTEM
-        // cambiar la distribución del teclado (español, inglés...) cambia lo que dicen las letras y los signos
+        // cambiar la distribución del teclado (español, inglés...) cambia lo que dicen las letras y los signos; cambiar de
+        // mando, los del mando (el Share del DualShock 4 es Create en el DualSense)
         static void OnDeviceChange(InputDevice d, InputDeviceChange c)
         {
-            if (d is Keyboard && c == InputDeviceChange.ConfigurationChanged) { names = null; Version++; }
+            if ((d is Keyboard && c == InputDeviceChange.ConfigurationChanged) || (d is Gamepad && (c == InputDeviceChange.Added || c == InputDeviceChange.Removed)))
+            { names = null; Version++; }
         }
 #endif
 
@@ -110,19 +116,24 @@ namespace Nindo
             return names[((row * 2 + dev) * 2 + slot) * 3 + f];
         }
 
-        /// <summary>La tecla de la acción en el dispositivo de esa familia (0 teclado): la principal o, si no hay, la otra.</summary>
+        /// <summary>
+        /// La tecla de la acción en el dispositivo de esa familia (0 teclado): la principal o, si no hay, la otra. En los
+        /// de PlayStation el panel táctil va primero: es el botón del mapa que se busca ahí (y nunca cambia).
+        /// </summary>
         public static string Glyph(int row, int family)
         {
-            int dev = family == 0 ? BindingTable.Keys : BindingTable.Pad;
-            return Name(row, dev, 0, family) ?? Name(row, dev, 1, family) ?? "?";
+            int dev = family == 0 ? BindingTable.Keys : BindingTable.Pad, first = TouchpadFirst(row, family) ? 1 : 0;
+            return Name(row, dev, first, family) ?? Name(row, dev, 1 - first, family) ?? "?";
         }
 
         /// <summary>La segunda tecla de la acción (null si tiene una sola).</summary>
         public static string GlyphAlt(int row, int family)
         {
-            int dev = family == 0 ? BindingTable.Keys : BindingTable.Pad;
-            return Name(row, dev, 0, family) != null ? Name(row, dev, 1, family) : null;
+            int dev = family == 0 ? BindingTable.Keys : BindingTable.Pad, first = TouchpadFirst(row, family) ? 1 : 0;
+            return Name(row, dev, first, family) != null ? Name(row, dev, 1 - first, family) : null;
         }
+
+        static bool TouchpadFirst(int row, int family) => family == 2 && Table.Get(row, BindingTable.Pad, 1) == BindCode.PadTouchpad;
 
         /// <summary>"WASD" (o "ZQSD", "↑←↓→"... lo que haya elegido) en el teclado; el stick en el mando.</summary>
         public static string MoveGlyph(int family)
@@ -176,6 +187,8 @@ namespace Nindo
                 case BindCode.RStickRight: return "Stick der. →";
                 case BindCode.PadMoveStick: return "Stick izq.";
                 case BindCode.PadMoveDpad: return "Cruceta";
+                // solo los de PlayStation lo tienen: en los demás la casilla queda vacía
+                case BindCode.PadTouchpad: return family == 2 ? "Táctil" : null;
             }
 #if ENABLE_INPUT_SYSTEM
             if (BindCode.IsKey(code)) return KeyName((Key)code, Keyboard.current);
@@ -270,7 +283,8 @@ namespace Nindo
                 case GamepadButton.RightStick: return ps ? "R3" : "RS";
                 // los de Xbox como los llama Microsoft en castellano (botón Menú, botón Vista)
                 case GamepadButton.Start: return ps ? "Options" : "Menú";
-                case GamepadButton.Select: return ps ? "Share" : "Vista";
+                // como están impresos: Share en el DualShock 4, Create en el DualSense
+                case GamepadButton.Select: return !ps ? "Vista" : Gamepad.current != null && Gamepad.current.layout.Contains("DualSense") ? "Create" : "Share";
                 case GamepadButton.DpadUp: return "Cruceta ↑";
                 case GamepadButton.DpadDown: return "Cruceta ↓";
                 case GamepadButton.DpadLeft: return "Cruceta ←";
@@ -317,6 +331,11 @@ namespace Nindo
             if (BindCode.IsKey(code))
             {
                 if (kb == null || code - 1 >= kb.allKeys.Count) return false;
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+                // Windows manda el Alt Gr (español, latinoamericano) como Ctrl izquierdo + Alt derecho: si no, el Alt Gr
+                // también apretaría lo que tenga el Ctrl
+                if (code == (int)Key.LeftCtrl && kb.rightAltKey.isPressed) return false;
+#endif
                 var k = kb[(Key)code];
                 held |= k.isPressed;
                 return k.wasPressedThisFrame;
@@ -343,6 +362,13 @@ namespace Nindo
         {
             if (pad == null) return false;
             if (code >= BindCode.RStickUp && code <= BindCode.RStickRight) return code == flick;
+            if (code == BindCode.PadTouchpad)
+            {
+                // DualShockGamepad es también la base del DualSense
+                if (!(pad is UnityEngine.InputSystem.DualShock.DualShockGamepad ds)) return false;
+                held |= ds.touchpadButton.isPressed;
+                return ds.touchpadButton.wasPressedThisFrame;
+            }
             if (code < BindCode.PadBase || code >= BindCode.RStickUp) return false;
             var b = pad[(GamepadButton)(code - BindCode.PadBase)];
             held |= b.isPressed;
@@ -350,10 +376,24 @@ namespace Nindo
         }
 #endif
 
+        // el modificador que se apretó solo mientras se espera una tecla: se toma al soltarlo (ver Capture)
+        static int captureMod;
+        const int ModSpoiled = -1;
+
+        /// <summary>Al empezar a esperar una tecla nueva (olvida un Shift o un Alt de la espera anterior).</summary>
+        public static void BeginCapture() => captureMod = BindCode.None;
+
+#if ENABLE_INPUT_SYSTEM
+        static bool IsModifier(Key k) => k == Key.LeftShift || k == Key.RightShift || k == Key.LeftCtrl || k == Key.RightCtrl || k == Key.LeftAlt || k == Key.RightAlt;
+#endif
+
         /// <summary>
         /// Lo primero que se apretó este cuadro en ese dispositivo, para reasignar (0 si nada). Toma cualquier tecla
         /// (las reservadas también: la tabla las rechaza con su motivo), los botones y la rueda del mouse, y en el mando
         /// todos los botones y los toques del stick derecho. El stick izquierdo nunca: mueve a Kaito.
+        /// Shift, Ctrl y Alt se toman al soltarlos y solo si no se apretó otra cosa mientras: Ctrl+K o Shift+K toman la
+        /// K, Alt+Tab no toma nada (es de Windows: el Alt bajaba antes que el Tab y quedaba asignado) y el Alt Gr, que
+        /// Windows manda como Ctrl + Alt derecho, queda como Alt Gr.
         /// </summary>
         /// <param name="allowMouse">false: los botones y la rueda del mouse no cuentan (el segundo clic de un doble clic
         /// sobre la casilla no tiene que quedar asignado).</param>
@@ -367,7 +407,27 @@ namespace Nindo
                 {
                     var keys = kb.allKeys;
                     for (int i = 0; i < keys.Count; i++)
-                        if (keys[i].wasPressedThisFrame && BindingCatalog.IsBindableKey(keys[i].keyCode)) return (int)keys[i].keyCode;
+                    {
+                        var k = keys[i];
+                        if (!k.wasPressedThisFrame || !BindingCatalog.IsBindableKey(k.keyCode)) continue;
+                        if (IsModifier(k.keyCode))
+                        {
+                            // el Alt derecho reemplaza al Ctrl que Windows manda con él (puede llegar un cuadro antes)
+                            if (captureMod == BindCode.None || (k.keyCode == Key.RightAlt && captureMod == (int)Key.LeftCtrl)) captureMod = (int)k.keyCode;
+                            continue;
+                        }
+                        // con el Alt izquierdo apretado es un atajo de Windows (Alt+Tab, Alt+F4, Alt+Enter): nada
+                        if (kb.leftAltKey.isPressed) { captureMod = ModSpoiled; continue; }
+                        captureMod = BindCode.None;
+                        return (int)k.keyCode;
+                    }
+                    if (captureMod > 0 && !kb[(Key)captureMod].isPressed)
+                    {
+                        int mod = captureMod;
+                        captureMod = BindCode.None;
+                        return mod;
+                    }
+                    if (captureMod == ModSpoiled && !kb.shiftKey.isPressed && !kb.ctrlKey.isPressed && !kb.altKey.isPressed) captureMod = BindCode.None;
                 }
                 var m = Mouse.current;
                 if (m == null || !allowMouse) return BindCode.None;

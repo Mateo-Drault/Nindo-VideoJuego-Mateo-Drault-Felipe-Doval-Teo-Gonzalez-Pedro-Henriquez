@@ -72,7 +72,7 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
 | Atacar (combo de 3) | J / clic izq. | □ / X · R1 / RB |
 | Parry (un toque justo antes del golpe; no hay guardia sostenida) | K / clic der. | L1 / LB |
 | Esquiva (dash) | Espacio / Shift | ○ / B  ·  ✕ / A |
-| Fijar objetivo (cambiar: rueda o stick der.) | Q / clic de la rueda | R3 |
+| Fijar objetivo (cambiar: rueda o stick der.) | Q / Tab | R3 |
 | Remate / interactuar | F (E interactúa) | △ / Y |
 | Corte del Viento (habilidad 1) | 1 / U | RT |
 | Torbellino (habilidad 2) | 2 / I | LT |
@@ -84,7 +84,11 @@ otra clase, como un botón del mouse para moverse, solo pierde la suya). Esc y S
 asignan a nada. Enter / A y Esc / B confirman y vuelven en los menús: se pueden dar a acciones del juego (atacar
 con Enter), pero no a la pausa ni al mapa, que también se leen con un menú abierto; esas dos tampoco toman lo que
 usan los menús (el clic, la rueda, WASD y las flechas, Supr, X del mando, los gatillos y el stick derecho del
-mapa). Así nunca se pierde el menú. Las reglas y cómo se guarda están en
+mapa). Así nunca se pierde el menú. Con el mapa abierto también se leen fijar (centra en Kaito) y moverse
+(corre el cursor): no toman lo que usa el mapa (el clic arrastra; la rueda, + y - y los gatillos acercan) ni la B
+del mando, que lo cierra. Shift, Ctrl y Alt se toman al soltarlos (Ctrl+K toma la K; Alt+Tab no toma nada). De
+fábrica cada acción tiene las dos teclas que mostraba la tarjeta de la pausa: la L del dash y el clic de la rueda
+para fijar, que antes andaban sin verse, ahora se asignan a mano. Las reglas y cómo se guarda están en
 `Input/BindingTable.cs`; `python Tools/Dev/bindings_test.py` las prueba sin Unity.
 
 ## Sistema de combate (se mantuvo el formato original, pulido)

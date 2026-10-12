@@ -21,8 +21,6 @@ namespace Nindo
     {
         // sale del enum: una acción nueva (Map) no deja los arreglos cortos
         static readonly int ActCount = System.Enum.GetValues(typeof(Act)).Length;
-        // el mapa (Act.Map, UI/UIMap.cs) va por nombre: este archivo compila y anda con o sin esa acción (-1 si no está)
-        static readonly int MapAct = System.Array.IndexOf(System.Enum.GetNames(typeof(Act)), "Map");
         readonly float[] pressedAt = new float[ActCount];
         readonly bool[] pressedNow = new bool[ActCount];
         readonly bool[] consumed = new bool[ActCount];
@@ -64,7 +62,8 @@ namespace Nindo
             var pad = Gamepad.current;
             if (kb != null && kb.anyKey.wasPressedThisFrame) UsingGamepad = false;
             if (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)) UsingGamepad = false;
-            // cada acción (y cada dirección del teclado) con sus dos teclas y sus dos botones del mando
+            // cada acción (y cada dirección del teclado) con sus dos teclas y sus dos botones del mando (el panel táctil
+            // de los de PlayStation, que abre el mapa, es la segunda casilla fija del mapa)
             var table = InputBindings.Table;
             float wheel = mouse != null ? mouse.scroll.ReadValue().y : 0f;
             int flick = pad != null ? StickFlick(pad.rightStick.ReadValue()) : 0;
@@ -103,10 +102,6 @@ namespace Nindo
                 if (ls.sqrMagnitude < 0.04f) ls = Vector2.zero;
                 ls += pad.dpad.ReadValue();
                 if (ls.sqrMagnitude > 0.01f) { move += ls; UsingGamepad = true; }
-                // el panel táctil de los de PlayStation también abre el mapa, como en sus juegos: fijo y fuera de la
-                // tabla (los demás mandos no lo tienen y no se toma al reasignar, así que no choca con nada)
-                if (MapAct >= 0 && pad is UnityEngine.InputSystem.DualShock.DualShockGamepad ds && ds.touchpadButton.wasPressedThisFrame)
-                    Press((Act)MapAct, true);
             }
 #elif ENABLE_LEGACY_INPUT_MANAGER
             move.x = Input.GetAxisRaw("Horizontal");
