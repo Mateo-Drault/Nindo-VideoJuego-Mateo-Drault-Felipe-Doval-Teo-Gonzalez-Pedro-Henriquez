@@ -280,11 +280,15 @@ namespace Nindo
         }
 
         /// <summary>Lo corre ya, con colisiones (un sumo que embiste con Kaito pegado lo arrastra con la panza en vez de
-        /// patinar en el lugar). No mueve a Kaito esquivando, invulnerable ni muerto: devuelve lo que se movió (m).</summary>
+        /// patinar en el lugar). No mueve a Kaito esquivando, rematando ni muerto: devuelve lo que se movió (m).</summary>
         public float Shove(Vector3 delta)
         {
             delta.y = 0f;
-            if (cc == null || !cc.enabled || State == PlayerState.Dash || IsInvulnerable || delta.sqrMagnitude < 1e-8f) return 0f;
+            // la panza lo arrastra aunque esté invulnerable: después de un golpe (0.7 s) el segundo cachetazo de las
+            // Bofetadas no lo podía mover, el imán cortaba la embestida y el pie de atrás del sumo patinaba hasta 25 cm
+            // (build_team_anims, magnet_curve_cm). En el dash, el remate, la muerte o una escena no se lo mueve
+            if (cc == null || !cc.enabled || State == PlayerState.Dash || State == PlayerState.Finisher || State == PlayerState.Dead
+                || Game.InCutscene || delta.sqrMagnitude < 1e-8f) return 0f;
             Vector3 before = transform.position;
             cc.Move(delta);
             return CombatMath.FlatDistance(before, transform.position);
