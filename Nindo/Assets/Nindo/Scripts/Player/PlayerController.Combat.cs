@@ -670,10 +670,13 @@ namespace Nindo
             finisherTarget = null;
             float len = anim.Length("Finisher", FinisherFrames / 30f);
             float from = Mathf.Min(FinisherHoldEndFrame / 30f, len);
-            if (!finisherCinematic) anim.Play("Finisher", ShortSkipFade, from / len, finisherSpeed);
+            // el resto va a x1 en los dos caminos, como está autorado (kaito_clips): a la velocidad del remate (x1.7 el
+            // cinemático, x2.8 el corto) el latigazo del chiburi daba 90-190° por cuadro. Es un gesto: no alarga la pelea
+            if (!finisherCinematic) anim.Play("Finisher", ShortSkipFade, from / len);
+            else anim.SetStateSpeed(1f);
             // lo que queda del clip desde donde está de verdad (al jefe se le termina apenas cae, en pleno zanshin)
             float left = finisherCinematic && anim.TryNormalizedTime("Finisher", out float n) ? (1f - n) * len : len - from;
-            StartGesture("Finisher", left / finisherSpeed);
+            StartGesture("Finisher", left);
         }
 
         /// <summary>Despide a los que están a menos de 'radius' de c ('push' m) y les da 'delay' s antes de volver a atacar
