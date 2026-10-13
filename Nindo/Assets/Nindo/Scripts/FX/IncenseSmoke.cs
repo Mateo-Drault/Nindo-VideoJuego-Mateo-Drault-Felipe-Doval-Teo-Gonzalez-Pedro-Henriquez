@@ -14,6 +14,12 @@ namespace Nindo
         const int N = 16;
         /// <summary>Más allá de esto (m a la cámara) la cinta queda quieta: es un hilo de 1-3 px.</summary>
         const float AnimateDistance = 55f;
+        /// <summary>
+        /// Desde la cámara de juego (a ~24 m) el santuario rezado se distinguía del que no por un hilo gris de 1-2 px: de
+        /// FarFrom a FarTo m de la cámara la cinta se ensancha hasta x(1 + FarWidth) y su alfa sube hasta x(1 + FarAlpha).
+        /// En los planos cerca del rezo (2-6 m) queda como está, fina.
+        /// </summary>
+        const float FarFrom = 12f, FarTo = 22f, FarWidth = 0.8f, FarAlpha = 0.6f;
         static readonly int BaseColorId = Shader.PropertyToID("_BaseColor"), ColorId = Shader.PropertyToID("_Color");
         static readonly Color Tint = new Color(0.86f, 0.88f, 0.94f, 1f);
         static Material mat;
@@ -26,7 +32,7 @@ namespace Nindo
         readonly Vector3[] pts = new Vector3[N];
         float height, targetHeight, growSpeed = 1f;
         float alpha, targetAlpha = 1f, fadeSpeed = 1f, alphaMul;
-        float seed, sway;
+        float seed, sway, baseWidth;
         bool posed;
         /// <summary>La fuente se mueve (el incienso en la mano): se rearma aunque no se vea.</summary>
         public bool moving;
@@ -58,7 +64,7 @@ namespace Nindo
             s.lr.receiveShadows = false;
             s.lr.sharedMaterial = Material;
             // hilo de 1.5 cm en la brasa que se abre a 'width' arriba
-            s.lr.widthMultiplier = width;
+            s.lr.widthMultiplier = s.baseWidth = width;
             s.lr.widthCurve = new AnimationCurve(new Keyframe(0f, 0.14f), new Keyframe(0.25f, 0.32f), new Keyframe(0.7f, 0.7f), new Keyframe(1f, 1f));
             var g = new Gradient();
             g.SetKeys(new[] { new GradientColorKey(Color.white, 0f), new GradientColorKey(Color.white, 1f) },
@@ -128,10 +134,13 @@ namespace Nindo
             height = Mathf.MoveTowards(height, targetHeight, growSpeed * dt);
             alpha = Mathf.MoveTowards(alpha, targetAlpha, fadeSpeed * dt);
             var cam = Game.Camera != null ? Game.Camera.Cam : null;
-            bool near = cam == null || (cam.transform.position - transform.position).sqrMagnitude < AnimateDistance * AnimateDistance;
+            float d2 = cam != null ? (cam.transform.position - transform.position).sqrMagnitude : 0f;
+            bool near = cam == null || d2 < AnimateDistance * AnimateDistance;
             // quieta si no se ve y ya está armada (los bounds siguen siendo los de la última pose)
             if (!posed || (lr.isVisible && near) || moving) Pose(Time.time);
-            var c = Tint; c.a = alpha * alphaMul;
+            float far = cam != null ? Mathf.InverseLerp(FarFrom, FarTo, Mathf.Sqrt(d2)) : 0f;
+            lr.widthMultiplier = baseWidth * (1f + FarWidth * far);
+            var c = Tint; c.a = Mathf.Min(1f, alpha * alphaMul * (1f + FarAlpha * far));
             mpb.SetColor(BaseColorId, c); mpb.SetColor(ColorId, c);
             lr.SetPropertyBlock(mpb);
             lr.enabled = alpha > 0.002f;
