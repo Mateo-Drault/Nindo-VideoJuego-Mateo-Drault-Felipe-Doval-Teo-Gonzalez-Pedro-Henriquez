@@ -117,6 +117,8 @@ namespace Nindo
 
             foreach (var e in encounters) e.SpawnAll();
             foreach (var b in bossSpawns) b.arena.SpawnBoss(b.pos, b.rot);
+            // activación por zonas: con el lote ya combinado (sus bounds por renderer valen) y los enemigos creados
+            ZoneCulling.Create(gameObject, staticRoot, dynamicRoot, encounters, arenas);
             Built = true;
         }
 

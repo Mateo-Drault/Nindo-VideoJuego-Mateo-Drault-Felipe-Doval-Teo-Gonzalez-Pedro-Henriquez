@@ -349,6 +349,9 @@ namespace Nindo
 
         protected void SetState(EnemyState s)
         {
+            // dormido por ZoneCulling: un Alert, un guion o un reinicio lo despiertan en el acto (Animator, Update y
+            // renderers), antes de que pidan nada al Animator apagado
+            if (Asleep) SetAsleep(false);
             // al salir del ataque (fin, stagger, cambio de fase...) el modelo vuelve a su rotación (p. ej. el giro de Gorō)
             // y el aviso que quedaba a medias se borra (no puede quedar un anillo de un golpe que ya no va a salir)
             if (State == EnemyState.Attack && s != EnemyState.Attack)
@@ -1319,9 +1322,110 @@ namespace Nindo
             if (aggro) { IsAggro = false; Alert(); }
         }
 
-        public void ScriptedPlay(string state, float fade = 0.1f) => anim.Play(state, fade);
+        public void ScriptedPlay(string state, float fade = 0.1f) { if (Asleep) SetAsleep(false); anim.Play(state, fade); }
         public void ScriptedMoveTo(Vector3 p, float speed) { useAgent = agent != null && agent.isOnNavMesh; MoveTo(p, speed); }
         public void ScriptedFace(Vector3 p) { Vector3 d = (p - transform.position).Flat(); if (d.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(d); }
         public void ScriptedStop() => Stop();
+
+        // ---------------------------------------------------------------- sueño lejos de Kaito (World/ZoneCulling)
+        /// <summary>Lo durmió ZoneCulling: lejos de Kaito y fuera de cuadro, sin dibujarse ni correr su Update.</summary>
+        public bool Asleep { get; private set; }
+
+        /// <summary>
+        /// Contrato con EnemyAmbient (idles de ambiente: meditar, sparring, dormir): mientras pasa un loop de ambiente
+        /// en su puesto (en Scripted, porque en Idle Update le vuelve a poner la locomoción) lo marca con true, y vuelve a
+        /// false en AmbientAlert. Así un campamento de ambiente se duerme igual que uno en Idle, todo junto y quieto: el
+        /// sparring se hace en el lugar con el Animator, sin mover el agente (moviéndose no se duerme nunca). Mientras
+        /// esté dormido (Asleep), EnemyAmbient no corre su lógica y no lleva su fase contra Time.time: al despertar,
+        /// los dos del sparring siguen juntos donde quedaron.
+        /// </summary>
+        public bool AmbientIdle;
+
+        /// <summary>
+        /// Prohíbe dormirlo mientras haya algún dueño anotado (un momento de guion de una sola vez; NO un loop de
+        /// ambiente, que se duerme y se despierta con todo su campamento). Varios dueños conviven: cada uno saca el suyo.
+        /// Si ya dormía, se lo despierta en el acto.
+        /// </summary>
+        public void AddSleepVeto(object owner)
+        {
+            sleepVetoes ??= new List<object>(2);
+            if (!sleepVetoes.Contains(owner)) sleepVetoes.Add(owner);
+            if (Asleep) SetAsleep(false);
+        }
+
+        public void RemoveSleepVeto(object owner) => sleepVetoes?.Remove(owner);
+
+        List<object> sleepVetoes;
+
+        /// <summary>
+        /// ¿Se puede dormir? Solo quieto en su puesto (Idle o en su loop de ambiente): vivo y ya arrancado (Start le dio
+        /// la vida y el lugar al que vuelve si se reinicia el encuentro), sin aggro (un jefe en pelea lo tiene) ni otro
+        /// guion, sin moverse (si volvía a su lugar después de perder a Kaito, primero termina de llegar) y sin vetos.
+        /// </summary>
+        public virtual bool CanSleep => (State == EnemyState.Idle || (State == EnemyState.Scripted && AmbientIdle))
+                                        && !IsAggro && Health > 0f && knock.sqrMagnitude < 0.0001f
+                                        && (agent == null || !agent.enabled || agent.velocity.sqrMagnitude < 0.01f)
+                                        && (sleepVetoes == null || sleepVetoes.Count == 0);
+
+        /// <summary>Lo que escondió la siesta (lo que otro ya tenía escondido no se toca ni se devuelve).</summary>
+        internal IReadOnlyList<Renderer> SleepHidden => sleepHidden;
+        readonly List<Renderer> sleepHidden = new List<Renderer>();
+        readonly List<SkinnedMeshRenderer> sleepSkins = new List<SkinnedMeshRenderer>();
+        AnimatorCullingMode awakeCulling;
+        bool sleepDisabled, sleepAnimator, sleepKeepState;
+
+        /// <summary>
+        /// Dormido no se dibuja (forceRenderingOff, sin tocar 'enabled', que Boss usa) y una piel con
+        /// updateWhenOffscreen deja de calcularse. Los comunes apagan su Update y su Animator: el campamento entero se
+        /// duerme en el mismo frame y se despierta en el mismo frame, así que los del sparring quedan congelados juntos
+        /// y no se desfasan (keepAnimatorStateOnDisable conserva estado y tiempo). Solo se enciende al despertar lo que
+        /// apagó la siesta: si un guion había apagado el componente, queda apagado. Los jefes siguen con su Update y su
+        /// Animator (lo consultan en cada frame y sus subclases hacen cosas al apagarse: MizuchiBoss suelta la
+        /// cinemática en OnDisable); a uno con AlwaysAnimate (el koi de Mizuchi) se le baja a CullUpdateTransforms.
+        /// </summary>
+        public void SetAsleep(bool on)
+        {
+            if (on == Asleep) return;
+            Asleep = on;
+            var a = anim.Animator;
+            if (on)
+            {
+                GetComponentsInChildren(true, sleepHidden);
+                for (int i = sleepHidden.Count - 1; i >= 0; i--)
+                {
+                    var r = sleepHidden[i];
+                    if (r.forceRenderingOff) { sleepHidden.RemoveAt(i); continue; }
+                    r.forceRenderingOff = true;
+                    if (r is SkinnedMeshRenderer smr && smr.updateWhenOffscreen) { smr.updateWhenOffscreen = false; sleepSkins.Add(smr); }
+                }
+                sleepDisabled = enabled && !(this is Boss);
+                if (sleepDisabled) enabled = false;
+                sleepAnimator = sleepDisabled && a != null && a.enabled;
+                if (sleepAnimator)
+                {
+                    sleepKeepState = a.keepAnimatorStateOnDisable;
+                    a.keepAnimatorStateOnDisable = true;
+                    a.enabled = false;
+                }
+                else if (a != null)
+                {
+                    awakeCulling = a.cullingMode;
+                    if (awakeCulling == AnimatorCullingMode.AlwaysAnimate) a.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                }
+                return;
+            }
+            // lo que otro sistema destruyó mientras dormía se saltea (el == de Unity)
+            foreach (var r in sleepHidden) if (r != null) r.forceRenderingOff = false;
+            foreach (var smr in sleepSkins) if (smr != null) smr.updateWhenOffscreen = true;
+            sleepHidden.Clear();
+            sleepSkins.Clear();
+            if (a != null)
+            {
+                if (sleepAnimator) { a.enabled = true; a.keepAnimatorStateOnDisable = sleepKeepState; }
+                else a.cullingMode = awakeCulling;
+            }
+            if (sleepDisabled) enabled = true;
+            sleepDisabled = sleepAnimator = false;
+        }
     }
 }
