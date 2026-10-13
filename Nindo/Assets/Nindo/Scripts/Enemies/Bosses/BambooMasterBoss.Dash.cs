@@ -31,17 +31,20 @@ namespace Nindo
         // el golpe ya se probó una vez en la ventana (el primer cuadro que llega a activeStart siempre prueba)
         bool dashTested;
 
-        /// <summary>De centro a centro en el cruce: medido en la pose de vuelo, el cuerpo queda a más de ~0.3 m del eje de
-        /// Kaito (con 0.85, la suma de los dos radios, el brazo y la pierna de atrás pasaban por adentro). Kaito queda a la
-        /// derecha del maestro (el clip corta con la derecha).</summary>
-        const float PassBeside = 1.15f;
+        /// <summary>De centro a centro en el cruce: medido en el FBX con el reloj del juego (vuelo x0.2-1.0), el cuerpo queda
+        /// a 35 cm o más del eje de Kaito y la mano que corta a 14-30 cm (con 0.85, la suma de los dos radios, el brazo y la
+        /// pierna de atrás pasaban por adentro; con 1.15 rozaban la canilla y la cola del lazo). Kaito queda a la derecha
+        /// del maestro (el clip corta con la derecha).</summary>
+        const float PassBeside = 1.2f;
         /// <summary>
         /// Lo menos que queda al costado de Kaito en el vuelo y lo rápido que se abre en el aire para mantenerlo
-        /// (PassAside), entre PassAsideAhead m antes del cruce y PassAsideBehind después. Antes frenaba como la de frente: si
-        /// Kaito se metía hacia el carril después de la suelta (corriendo, de costado o con el corte), el vuelo quedaba
-        /// colgado 4-8 cuadros en la pose del aire, perdía hasta 1.7 m y el corte del cruce erraba. Kaito corre a 6.2 m/s.
+        /// (PassAside), entre PassAsideAhead m antes del cruce y PassAsideBehind después (a 1.15 m la canilla y la cola del
+        /// lazo pasan a 32-35 cm de su eje, a la altura de sus rodillas y de su cabeza: no lo tocan). Antes frenaba como la de
+        /// frente: si Kaito se metía hacia el carril después de la suelta (corriendo, de costado o con el corte), el vuelo
+        /// quedaba colgado 4-8 cuadros en la pose del aire, perdía hasta 1.7 m y el corte del cruce erraba. Kaito corre a
+        /// 6.2 m/s.
         /// </summary>
-        const float PassGap = 1.1f, PassAsideSpeed = 8f, PassAsideAhead = 2.5f, PassAsideBehind = 1f;
+        const float PassGap = 1.15f, PassAsideSpeed = 8f, PassAsideAhead = 2.5f, PassAsideBehind = 1f;
         /// <summary>La cadera apenas pasada de Kaito en el contacto (m por el carril).</summary>
         const float PassOver = 0.1f;
         /// <summary>Cuánto tarda en pasar de apuntarle de frente a apuntarle al costado (s).</summary>

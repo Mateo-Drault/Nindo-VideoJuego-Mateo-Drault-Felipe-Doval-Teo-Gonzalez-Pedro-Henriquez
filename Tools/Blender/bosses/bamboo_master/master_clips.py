@@ -543,6 +543,7 @@ def define_clips():
     for ph in (1, 2, 3):
         guard(ph)
         guard_hit(ph)
+        guard_hit_l(ph)
         counter(ph)
         counter_strike(ph)
         for v in REACH_K:
@@ -872,20 +873,107 @@ def guard(ph):
                      "desde f15: el juego deja el último cuadro")
 
 
-def guard_hit(ph):
-    """El golpe de Kaito rebota en la guardia (el primero; Enemy.GuardHit devuelve Blocked): la palma alzada baja de un
-    manotazo hacia afuera y adelante, la cadera cede atrás y vuelve; el bastón cede y empuja."""
+# el desvío (BambooMasterBoss.Swat): dónde está la hoja de Kaito cuando llega (kaitooo.fbx, Kaito a 1.4 m de centro a
+# centro, en el espacio del maestro) y para dónde sigue. El primer corte y el final cruzan bajando de su izquierda a su
+# derecha (la mitad de la hoja en x +0.05..0.14, 0.6 m adelante, a 0.65 m: el muslo del maestro) y el revés sube de su
+# derecha a su izquierda (x -0.06, 0.64 m adelante, a 0.85 m). El jefe arranca el manotazo antes del contacto (ReadCut)
+# para que la palma (o el bastón) encuentre la hoja en f3; desde ahí la acompaña para donde va
+SWAT_MEET = 3
+
+
+def _swat_body(u, yaw=0.0):
+    """El cuerpo que se inclina hacia la hoja (u = 0 la guardia, 1 lo más bajo): la cadera baja y atrás, el tronco
+    adelante, la cabeza mira la hoja; yaw gira la cadera y el tronco con el barrido (+ = hacia su izquierda)."""
+    return mod(G_BODY, hips=(0.03, 0.15 + 0.1 * u, -0.17 - 0.18 * u), hips_rot=(7.0 * u, 0.0, 18.0 + yaw),
+               spine=(2.0 + 30.0 * u, 0.0, 4.0 + 0.5 * yaw), chest=(-2.0 + 10.0 * u, 0.0, 4.0 + 0.3 * yaw),
+               neck=(-2.0 + 2.0 * u, 0.0, -12.0), head=(-6.0 - 6.0 * u, 0.0, -14.0))
+
+
+def _swat_keys(ph, track, staff_track, bows):
+    """Claves del desvío: track = (cuadro, mano que barre (pos, dedos, dorso), la otra (pos, dedos, dorso) o None) para
+    las fases 1 y 2 (la derecha en la 1; en la 2 la mano que está del lado por donde entra la hoja), staff_track =
+    (cuadro, corrimiento del centro, eje) para la 3 y bows = (cuadro, u, yaw)."""
     g = guard_arms(G_BODY, ph)
-    slap = guard_arms(mod(G_BODY, hips=(0.03, 0.2, -0.17), hips_rot=(0.0, 0.0, 11.0), head=(-9.0, 2.0, -12.0)), ph,
-                      r=(-0.14, -0.16, -0.26, (-0.55, 0.75, 0.35)), l=(-0.14, -0.06, 0.06),
-                      staff=(0.03, 0.08, -0.04, (1.0, 0.25, 0.2)))
-    back = guard_arms(mod(G_BODY, hips=(0.03, 0.17, -0.175), head=(-7.0, 1.0, -13.0)), ph, r=(-0.04, -0.03, -0.06),
-                      staff=(0.0, 0.02, 0.0))
-    return add("GuardHit", 15, [(0, g, "lin"), (2, slap, "snap"), (6, back, "out"), (15, g, "sine")], ph=ph,
-               lag={"head": 1.0},
-               timing={"kind": "none", "chain_from": "GUARD", "chain_to": "GUARD"}, events=[{"frame": 1, "fn": "Deflect"}],
-               notes="el golpe rebota en la guardia: la palma alzada baja de un manotazo hacia afuera en f2 (clang), la "
-                     "cadera cede 5 cm y vuelve a la guardia en f15")
+    keys = [(0, g, "lin")]
+    eases = {1: "in2", 2: "lin", SWAT_MEET: "out", 5: "inout", 7: "inout", 10: "inout"}
+    for (f, u, yaw), tr, st in zip(bows, track, staff_track):
+        body = _swat_body(u, yaw)
+        if ph == 3:
+            q = guard_arms(body, 3, staff=st[1] + (st[2],))
+        else:
+            side, hs, other = tr[1], tr[2], tr[3]
+            q = hand(body, side, hs[0], hs[1], hs[2], shape="palm")
+            if ph == 1:
+                q = arms(q, 1)
+            else:
+                o = "l" if side == "r" else "r"
+                if other is None:
+                    other = (_G_L if o == "l" else _G_R)
+                    other = (other["pos"], other["fingers"], other["dorsum"])
+                if o == "l":
+                    q = arms(q, 2, left=dict(pos=other[0], fingers=other[1], dorsum=other[2], elbow=_G_L["elbow"], shape="palm"))
+                else:
+                    q = arms(hand(q, "r", other[0], other[1], other[2], elbow=_G_R["elbow"], shape="palm"), 2,
+                             left=dict(pos=hs[0], fingers=hs[1], dorsum=hs[2], elbow=_G_L["elbow"], shape="palm"))
+        keys.append((f, q, eases[f]))
+    keys.append((15, g, "sine"))
+    return keys
+
+
+def guard_hit(ph):
+    """El primer corte de Kaito fuera de un hueco, cuando cruza bajando de su izquierda a su derecha (el primer corte y
+    el final): lo aparta sin clang (HitResult.Deflected). Se inclina hacia la hoja, la palma la encuentra a la altura del
+    muslo (f3) y la acompaña hacia su derecha y abajo, lejos del cuerpo; vuelve a la guardia en f15. En la fase 1 con la
+    derecha (la izquierda en la espalda), en la 2 con la izquierda (la baja, del lado por donde entra la hoja) y en la 3
+    con la punta derecha del bastón, que baja a la hoja y barre. Antes la palma alzada se sacudía hacia su derecha a la
+    altura de la cabeza, del otro lado de la hoja."""
+    bows = [(1, 0.3, 0.0), (2, 0.75, 0.0), (SWAT_MEET, 1.0, -2.0), (5, 1.0, -9.0), (7, 0.6, -6.0), (10, 0.2, -2.0)]
+    if ph == 1:
+        track = [(1, "r", ((-0.38, -0.42, 1.85), (0.2, -0.6, -0.75), (-0.4, 0.3, 0.85)), None),
+                 (2, "r", ((-0.15, -0.55, 1.15), (0.45, -0.85, -0.3), (0.0, 0.1, 1.0)), None),
+                 (SWAT_MEET, "r", ((0.06, -0.6, 0.76), (0.55, -0.8, -0.2), (0.05, 0.05, 1.0)), None),
+                 (5, "r", ((-0.28, -0.58, 0.64), (0.2, -1.0, -0.2), (-0.3, 0.1, 0.95)), None),
+                 (7, "r", ((-0.44, -0.48, 0.8), (-0.2, -1.0, 0.2), (-0.6, 0.2, 0.75)), None),
+                 (10, "r", ((-0.45, -0.38, 1.5), (-0.1, -0.6, 0.8), (-0.4, 0.6, 0.5)), None)]
+    else:
+        # fase 2: la izquierda baja encuentra la hoja y la lleva cruzando por delante; la derecha se alza un poco atrás
+        rr = ((-0.5, -0.22, 2.22), _G_R["fingers"], _G_R["dorsum"])
+        track = [(1, "l", ((0.36, -0.55, 1.02), (-0.1, -0.9, -0.3), (0.2, 0.1, 1.0)), rr),
+                 (2, "l", ((0.18, -0.6, 0.86), (-0.25, -0.9, -0.3), (0.1, 0.05, 1.0)), rr),
+                 (SWAT_MEET, "l", ((0.06, -0.6, 0.76), (-0.35, -0.9, -0.2), (0.05, 0.0, 1.0)), rr),
+                 (5, "l", ((-0.12, -0.58, 0.64), (-0.6, -0.8, -0.1), (0.15, 0.0, 1.0)), rr),
+                 (7, "l", ((0.0, -0.52, 0.82), (-0.4, -0.85, 0.2), (0.3, 0.2, 0.9)), rr),
+                 (10, "l", ((0.32, -0.5, 1.06), (0.1, -0.7, 0.6), (0.2, 0.7, 0.6)), None)]
+    staff = [(1, (0.03, -0.03, -0.32), (1.0, 0.1, 0.25)), (2, (0.06, -0.06, -0.7), (1.0, 0.15, 0.45)),
+             (SWAT_MEET, (0.12, -0.08, -0.92), (1.0, 0.2, 0.5)), (5, (0.0, -0.06, -0.9), (1.0, 0.15, 0.6)),
+             (7, (-0.02, -0.03, -0.6), (1.0, 0.1, 0.5)), (10, (0.0, 0.0, -0.2), (1.0, 0.1, 0.15))]
+    return add("GuardHit", 15, _swat_keys(ph, track, staff, bows), ph=ph, lag={"head": 1.0},
+               timing={"kind": "none", "chain_from": "GUARD", "chain_to": "GUARD", "swat_meet": SWAT_MEET},
+               events=[{"frame": SWAT_MEET, "fn": "Deflect"}],
+               notes="desvío del corte que cruza bajando hacia su derecha: se inclina, la palma (o el bastón) encuentra la "
+                     "hoja a la altura del muslo en f3 y la acompaña hacia afuera y abajo; vuelve a la guardia en f15")
+
+
+def guard_hit_l(ph):
+    """El revés de Kaito (Corte 2), que sube de su derecha a su izquierda: la mano derecha (la del lado por donde entra)
+    baja a la hoja a la altura de la cadera (f3) y la lleva hacia su izquierda y arriba, por delante; en la fase 3 el
+    bastón la toma por arriba y la levanta. Va con GuardHit: BambooMasterBoss elige por el corte de Kaito."""
+    bows = [(1, 0.25, 0.0), (2, 0.55, 2.0), (SWAT_MEET, 0.7, 4.0), (5, 0.55, 10.0), (7, 0.35, 8.0), (10, 0.1, 3.0)]
+    other = None if ph == 1 else ((0.5, -0.36, 1.26), _G_L["fingers"], _G_L["dorsum"])
+    track = [(1, "r", ((-0.42, -0.45, 1.8), (0.25, -0.6, -0.7), (-0.6, 0.2, 0.75)), other),
+             (2, "r", ((-0.22, -0.58, 1.25), (0.5, -0.8, -0.2), (-0.6, 0.0, 0.8)), other),
+             (SWAT_MEET, "r", ((-0.08, -0.64, 0.98), (0.6, -0.75, 0.1), (-0.5, 0.0, 0.85)), other),
+             (5, "r", ((0.26, -0.66, 1.24), (0.5, -0.8, 0.4), (-0.6, 0.0, 0.8)), other),
+             (7, "r", ((0.36, -0.55, 1.45), (0.3, -0.7, 0.65), (-0.7, 0.2, 0.6)), other),
+             (10, "r", ((-0.05, -0.42, 1.85), (0.1, -0.4, 0.9), (-0.4, 0.8, 0.3)), None)]
+    staff = [(1, (0.02, -0.03, -0.28), (1.0, 0.1, 0.0)), (2, (0.04, -0.07, -0.62), (1.0, 0.05, -0.1)),
+             (SWAT_MEET, (0.06, -0.1, -0.82), (1.0, 0.0, -0.15)), (5, (0.18, -0.12, -0.5), (1.0, 0.05, 0.35)),
+             (7, (0.12, -0.08, -0.25), (1.0, 0.1, 0.25)), (10, (0.03, -0.02, -0.1), (1.0, 0.1, 0.1))]
+    return add("GuardHitL", 15, _swat_keys(ph, track, staff, bows), ph=ph, lag={"head": 1.0},
+               timing={"kind": "none", "chain_from": "GUARD", "chain_to": "GUARD", "swat_meet": SWAT_MEET},
+               events=[{"frame": SWAT_MEET, "fn": "Deflect"}],
+               notes="desvío del revés que sube hacia su izquierda: la derecha (o el bastón) encuentra la hoja a la altura "
+                     "de la cadera en f3 y la lleva hacia afuera y arriba; vuelve a la guardia en f15")
 
 
 C_BODY = feet(mod(G_BODY, hips=(0.03, 0.16, -0.18), hips_rot=(0.0, -2.0, -10.0), spine=(0.0, 0.0, -6.0), chest=(-2.0, 0.0, -6.0),
@@ -2191,11 +2279,12 @@ def dash_pass():
     suelta cuando Kaito quedó demasiado cerca para frenar de frente (BambooMasterBoss.PlanDash). Hasta la suelta es
     DashStrike cuadro por cuadro; sale volando por al lado de Kaito (que queda a su derecha) y el transform GIRA en el
     vuelo (turn, como el avance: lo aplica el jefe): en el cruce (el contacto, f17) ya lo mira y le clava los dedos de
-    espada de frente; sigue de largo girando en el aire hasta quedar de espaldas al carril, de frente a Kaito, y frena hacia
-    atrás en dos pasos hasta la guardia. Antes la embestida que lo atravesaba era la estocada de frente: en el impacto la
-    mano roja apuntaba lejos de Kaito, el cuerpo le pasaba por adentro y terminaba de espaldas a él. El jefe escala el
-    avance de DashStart a DashEnd para que el cruce caiga sobre Kaito."""
-    N, APEX, PUSH, CONTACT, LAND = 36, 8, 9, 17, 21
+    espada de frente, y los SOSTIENE sobre él mientras le pasa por al lado (f17-f20: el jefe lo hace mirar a Kaito en ese
+    tramo, BambooMasterBoss.CutTrack, y corre el clip con sustain); recién después gira en el aire hasta quedar de
+    espaldas al carril, de frente a Kaito, y frena hacia atrás en dos pasos hasta la guardia. Antes la mano extendida era
+    un solo cuadro (f17) y salía a su derecha girando en f18: a la velocidad del juego casi nunca se veía llegar. El jefe
+    escala el avance de DashStart a DashEnd para que el cruce caiga sobre Kaito."""
+    N, APEX, PUSH, CONTACT, HOLD, LAND = 36, 8, 9, 17, 20, 23
     RR = 0.68
     TC = 4.0                         # avance en el cruce con el vuelo autorado (el jefe lo escala: 0.3 + k * 3.7)
     TL = 5.6                         # y al apoyar (DashEnd)
@@ -2205,10 +2294,14 @@ def dash_pass():
     E = DASH_EARLY
 
     def turn_at(f):
-        return curve([(11, 0.0), (13, -14.0), (15, -46.0), (CONTACT, -82.0), (19, -138.0), (LAND, -176.0), (23, -180.0)], f)
+        # de frente a Kaito en el cruce y siguiéndolo mientras le pasa (~15°/cuadro con el vuelo típico, x0.3-0.45); el
+        # giro grande, después del corte
+        return curve([(11, 0.0), (13, -14.0), (15, -46.0), (CONTACT, -82.0), (18, -95.0), (19, -108.0), (HOLD, -121.0),
+                      (21, -145.0), (22, -168.0), (LAND, -179.0), (24, -180.0)], f)
 
     def trav(f):
-        return curve([(PUSH, 0.3), (CONTACT, TC), (LAND, TL), (24, TL + 0.5), (27, TL + 0.7), (30, T_END)], f)
+        # después del cruce el vuelo se frena hasta apoyar (el corte lo frena: el jefe además corre el clip más lento ahí)
+        return curve([(PUSH, 0.3), (CONTACT, TC), (HOLD, TC + 1.0), (LAND, TL), (26, TL + 0.5), (29, TL + 0.7), (31, T_END)], f)
 
     def air_feet(p, f, r, l):
         """Pies en el aire autorados en el espacio del personaje (se pasan al mundo con el avance y el giro del cuadro)."""
@@ -2233,26 +2326,41 @@ def dash_pass():
                  hr=(-0.36 + 0.14 * g, 0.05 - 0.2 * g, 1.3 - 0.06 * g), hr_dir=(0.1 * g, -1.0, 0.1), hr_up=(-0.3, 0.0, 1.0),
                  el_r=(-0.6, 0.7, -0.1), hl=(0.34 + 0.08 * g, -0.45 + 0.85 * g, 1.48), hl_dir=(0.2 * g, -0.4 + 1.2 * g, 0.6),
                  hl_up=(0.6 * g, 0.4, 0.6), el_l=(0.7, 0.2, -0.6),
-                 r=air(-0.22 - 0.2 * g, -0.6 + 0.4 * g, 0.22 + 0.08 * g, pitch=-14.0 + 10.0 * g, yaw=0.0),
+                 r=air(-0.22 - 0.1 * g, -0.6 + 0.52 * g, 0.22 + 0.1 * g, pitch=-14.0 + 10.0 * g, yaw=0.0),
                  l=air(0.22 - 0.24 * g, 0.5 - 0.1 * g, 0.42 + 0.04 * g, pitch=28.0 - 8.0 * g, yaw=LYAW * (1.0 - g)))
         keys.append((f, p, "lin", {"turn": "lin", "travel": "lin"}))
-    # el cruce: de frente a Kaito (que va a su derecha, un poco atrás), los dedos de espada clavados a la altura de su
-    # pecho; la izquierda abierta atrás para el equilibrio y las piernas recogidas del lado de afuera
-    cut = body(CONTACT, hips=(0.0, -0.1, -0.42), hrot=(10.0, 8.0, 6.0), spine=(18.0, 0.0, -10.0), chest=(6.0, 0.0, -12.0),
-               neck=(-12.0, 0.0, 8.0), head=(-14.0, 0.0, 10.0), clav_r=(0.0, -4.0, 8.0),
-               hr=(-0.34, -0.98, 1.18), hr_dir=(-0.3, -1.0, 0.0), hr_up=(0.0, 0.0, 1.0), el_r=(-0.3, 0.3, -0.9),
-               hl=(0.5, 0.42, 1.42), hl_dir=(0.4, 0.8, -0.2), hl_up=(0.5, -0.2, 0.85), el_l=(0.8, 0.2, -0.4),
-               r=air(-0.44, -0.18, 0.32, pitch=-6.0, yaw=-20.0), l=air(-0.06, 0.34, 0.5, pitch=24.0, yaw=10.0))
+    # el cruce: de frente a Kaito (que va a su derecha), los dedos de espada clavados a la altura de su pecho; la izquierda
+    # abierta atrás para el equilibrio y las piernas recogidas del lado de afuera. De f17 a f20 los sostiene sobre él
+    # (la mano corre un poco hacia su derecha, con Kaito que pasa) y el tronco empieza a girar
+    def cut_pose(f, u):
+        return body(f, hips=(0.0, -0.1, -0.42 + 0.01 * u), hrot=(10.0 - 2.0 * u, 8.0 - 3.0 * u, 6.0 - 8.0 * u),
+                    spine=(18.0 - 2.0 * u, 0.0, -10.0 - 6.0 * u), chest=(6.0, 0.0, -12.0 - 4.0 * u),
+                    neck=(-12.0, 0.0, 8.0 + 2.0 * u), head=(-14.0, 0.0, 10.0 + 2.0 * u), clav_r=(0.0, -4.0, 8.0),
+                    hr=(-0.12 - 0.06 * u, -1.08 + 0.02 * u, 1.16 + 0.02 * u), hr_dir=(-0.06 - 0.12 * u, -1.0, -0.04),
+                    hr_up=(0.0, 0.0, 1.0), el_r=(-0.3, 0.3, -0.9),
+                    hl=(0.5 - 0.04 * u, 0.42 + 0.02 * u, 1.42), hl_dir=(0.4, 0.8, -0.2), hl_up=(0.5, -0.2, 0.85), el_l=(0.8, 0.2, -0.4),
+                    r=air(-0.4 + 0.04 * u, -0.1 + 0.08 * u, 0.32 - 0.02 * u, pitch=-6.0 + 3.0 * u, yaw=-20.0 + 6.0 * u),
+                    l=air(-0.06 + 0.06 * u, 0.34 + 0.02 * u, 0.5 - 0.05 * u, pitch=24.0 - 6.0 * u, yaw=10.0 + 4.0 * u))
+    cut = cut_pose(CONTACT, 0.0)
     POSES["paso del viento al costado"] = arms(cut, 2, left=cut["_left_p2"])
     keys.append((CONTACT, cut, "lin", {"turn": "lin", "travel": "lin"}))
-    # sigue de largo girando en el aire: la derecha barre hasta su derecha y atrás, la izquierda viene adelante y las
+    keys.append((18, cut_pose(18, 0.33), "lin", {"turn": "lin", "travel": "lin"}))
+    keys.append((19, cut_pose(19, 0.67), "lin", {"turn": "lin", "travel": "lin"}))
+    keys.append((HOLD, cut_pose(HOLD, 1.0), "lin", {"turn": "lin", "travel": "lin"}))
+    # suelta el corte y gira en el aire: la derecha barre hasta su derecha y atrás, la izquierda viene adelante y las
     # piernas pasan por debajo para apoyar de espaldas al carril
-    spin = body(19, hips=(0.0, 0.02, -0.41), hrot=(8.0, 4.0, -8.0), spine=(14.0, 0.0, -14.0), chest=(4.0, 0.0, -10.0),
+    sw = body(21, hips=(0.0, -0.04, -0.41), hrot=(8.0, 4.0, -2.0), spine=(15.0, 0.0, -14.0), chest=(5.0, 0.0, -12.0),
+              neck=(-11.0, 0.0, 10.0), head=(-13.0, 0.0, 12.0),
+              hr=(-0.62, -0.52, 1.24), hr_dir=(-0.8, -0.6, 0.05), hr_up=(0.0, -0.1, 1.0), el_r=(-0.3, 0.5, -0.8),
+              hl=(0.42, -0.06, 1.4), hl_dir=(0.1, -1.0, 0.2), hl_up=(0.4, 0.0, 1.0), el_l=(0.8, 0.15, -0.45),
+              r=air(-0.34, 0.04, 0.28, pitch=2.0, yaw=-12.0), l=air(0.08, 0.38, 0.38, pitch=14.0, yaw=16.0))
+    keys.append((21, sw, "out", {"turn": "lin", "travel": "lin"}))
+    spin = body(22, hips=(0.0, 0.02, -0.41), hrot=(8.0, 4.0, -8.0), spine=(14.0, 0.0, -14.0), chest=(4.0, 0.0, -10.0),
                 neck=(-10.0, 0.0, 10.0), head=(-12.0, 0.0, 12.0),
                 hr=(-0.8, -0.1, 1.3), hr_dir=(-1.0, 0.1, 0.1), hr_up=(0.0, -0.2, 1.0), el_r=(-0.3, 0.6, -0.7),
                 hl=(0.32, -0.46, 1.38), hl_dir=(-0.2, -1.0, 0.2), hl_up=(0.3, 0.0, 1.0), el_l=(0.8, 0.1, -0.5),
                 r=air(-0.3, 0.12, 0.26, pitch=4.0, yaw=-8.0), l=air(0.18, 0.4, 0.3, pitch=10.0, yaw=20.0))
-    keys.append((19, spin, "out", {"turn": "lin", "travel": "lin"}))
+    keys.append((22, spin, "out", {"turn": "lin", "travel": "lin"}))
     # apoya (DashEnd): el derecho adelante del frenado (detrás de él, para donde va), el izquierdo todavía en el aire;
     # los pies quedan clavados donde termina en la guardia (el cuerpo frena pasando por encima)
     fin = at_pose(arms(BODY, 2, right=True), T_END, -180.0)
@@ -2265,33 +2373,34 @@ def dash_pass():
     land["foot_r"], land["foot_r_rot"], land["toe_r"] = RF, fin["foot_r_rot"], 0.0
     keys.append((LAND, land, "out", {"turn": "lin", "travel": "lin"}))
     absorb = mod(land, hips=(0.0, 0.08, -0.36), spine=(10.0, 0.0, 2.0))
-    keys.append((24, mod(absorb, travel=trav(24)), "out", {"travel": "out2"}))
-    settle = mod(fin, hips=(0.02, 0.07, -0.16), travel=trav(27))
+    keys.append((26, mod(absorb, travel=trav(26)), "out", {"travel": "out2"}))
+    settle = mod(fin, hips=(0.02, 0.07, -0.16), travel=trav(29))
     settle["foot_r"], settle["foot_l"] = RF, LF
-    keys.append((27, settle, "inout", {"travel": "out2"}))
-    keys.append((30, mod(fin, hips=(0.02, 0.065, -0.1)), "inout"))
+    keys.append((29, settle, "inout", {"travel": "out2"}))
+    keys.append((32, mod(fin, hips=(0.02, 0.065, -0.1)), "inout"))
     keys.append((N, fin, "sine"))
     for k in keys:
         if k[0] > PUSH:
             k[1]["turn"] = turn_at(k[0])
-    # los apoyos (pista aparte de los pies, una clave por cuadro): el derecho baja ENCIMA de su huella en f20 y apoya en
-    # f21; el izquierdo, en f24 sobre su lugar de la guardia
-    s19 = keys[[k[0] for k in keys].index(19)][1]
-    rtrack = [(19, (s19["foot_r"], s19["foot_r_rot"], 0.0), "lin"),
-              (20, (tuple(Vector(RF) + Vector((0.0, 0.0, 0.06))), fin["foot_r_rot"], 0.0), "out"),
+    # los apoyos (pista aparte de los pies, una clave por cuadro): el derecho baja ENCIMA de su huella en f22 y apoya en
+    # f23; el izquierdo, en f26 sobre su lugar de la guardia
+    s21 = keys[[k[0] for k in keys].index(21)][1]
+    rtrack = [(21, (s21["foot_r"], s21["foot_r_rot"], 0.0), "lin"),
+              (22, (tuple(Vector(RF) + Vector((0.0, 0.0, 0.06))), fin["foot_r_rot"], 0.0), "out"),
               (LAND, (tuple(RF), fin["foot_r_rot"], 0.0), "in2"), (N, (tuple(RF), fin["foot_r_rot"], 0.0), "lin")]
-    ltrack = [(19, (s19["foot_l"], s19["foot_l_rot"], 0.0), "lin"), (LAND, (land["foot_l"], land["foot_l_rot"], 0.0), "lin"),
-              (23, (tuple(Vector(LF) + Vector((0.0, 0.08, 0.05))), fin["foot_l_rot"], 0.0), "out"),
-              (24, (tuple(LF), fin["foot_l_rot"], 0.0), "inout"), (N, (tuple(LF), fin["foot_l_rot"], 0.0), "lin")]
-    steps = [(f, st, e) for f, st, e in feet_track(rtrack, ltrack, N, r0=rtrack[0][1], l0=ltrack[0][1]) if f >= 19]
-    keys = [(k[0], arms(k[1], 2, left=k[1].get("_left_p2")) if k[0] < 27 else arms(k[1], 2, right=True)) + tuple(k[2:]) for k in keys]
+    ltrack = [(21, (s21["foot_l"], s21["foot_l_rot"], 0.0), "lin"), (LAND, (land["foot_l"], land["foot_l_rot"], 0.0), "lin"),
+              (25, (tuple(Vector(LF) + Vector((0.0, 0.08, 0.05))), fin["foot_l_rot"], 0.0), "out"),
+              (26, (tuple(LF), fin["foot_l_rot"], 0.0), "inout"), (N, (tuple(LF), fin["foot_l_rot"], 0.0), "lin")]
+    steps = [(f, st, e) for f, st, e in feet_track(rtrack, ltrack, N, r0=rtrack[0][1], l0=ltrack[0][1]) if f >= 21]
+    keys = [(k[0], arms(k[1], 2, left=k[1].get("_left_p2")) if k[0] < 29 else arms(k[1], 2, right=True)) + tuple(k[2:]) for k in keys]
     return add("DashStrike_Pass", N, keys, ph=2, variant=False, steps=steps,
-               timing={"tell": [0, APEX], "apex": APEX, "hold": [6, APEX], "contact": CONTACT, "active": [CONTACT, 19],
-                       "recover": [19, N], "lunge": [APEX, 30, round(T_END, 3)], "air": [PUSH + 1, LAND - 1], "release_rate": RR,
+               timing={"tell": [0, APEX], "apex": APEX, "hold": [6, APEX], "contact": CONTACT, "active": [CONTACT, 20],
+                       "recover": [20, N], "lunge": [APEX, 31, round(T_END, 3)], "air": [PUSH + 1, LAND - 1], "release_rate": RR,
                        "root_max": 26.0, "kind": RED, "glow": "Master_GlintHandR", "strike": PALM_R, "spin": True,
                        "chain_from": "READY", "chain_to": "READY"},
                events=[{"frame": APEX, "fn": "Apex"}, {"frame": PUSH, "fn": "DashStart"}, {"frame": CONTACT, "fn": "Strike"},
-                       {"frame": LAND, "fn": "DashEnd"}, {"frame": LAND, "fn": "Step"}, {"frame": 24, "fn": "Step"}],
+                       {"frame": LAND, "fn": "DashEnd"}, {"frame": LAND, "fn": "Step"}, {"frame": 26, "fn": "Step"}],
                notes=f"paso del viento al costado: igual que DashStrike hasta la suelta (f{APEX}), vuela por al lado de Kaito "
-                     f"girando hacia él (turn, el jefe gira el transform), lo corta de frente en el cruce (f{CONTACT}), gira en "
-                     f"el aire hasta quedar de espaldas al carril y apoya en f{LAND} y f24 frenando hacia atrás hasta la guardia")
+                     f"girando hacia él (turn, el jefe gira el transform), lo corta de frente en el cruce (f{CONTACT}) y le "
+                     f"sostiene los dedos encima hasta f{HOLD}, gira en el aire hasta quedar de espaldas al carril y apoya en "
+                     f"f{LAND} y f26 frenando hacia atrás hasta la guardia")

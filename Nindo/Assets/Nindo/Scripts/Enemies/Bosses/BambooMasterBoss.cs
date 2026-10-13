@@ -267,6 +267,7 @@ namespace Nindo
             // antes que Enemy: la guardia que termina sale con el golpe, no con un cuadro rondando (BambooMasterBoss.Guard.cs)
             RestGuard();
             AnswerFromGuard();
+            ReadCut();
             base.Update();
             float dt = Time.deltaTime;
             if (State == EnemyState.Exhausted && !anim.Frozen && anim.Current == config.animExhausted) kneelClock += dt * anim.StateSpeed;
@@ -891,9 +892,11 @@ namespace Nindo
                     stateDuration = Mathf.Max(stateDuration, stateTime + Mathf.Max(GuardHitHold, nextAttackTime - Time.time));
                 }
                 if (target != null) transform.rotation = Quaternion.LookRotation((target.transform.position - transform.position).Flat().normalized + transform.forward * 0.001f);
-                // GuardHit arranca en la guardia: desde la pose de la locomoción el fundido de 0.03 s cruzaba el brazo en un cuadro.
-                // La palma va con la hoja: hacia su izquierda y arriba para el revés, hacia su derecha y abajo para los otros
-                anim.Play(left && anim.HasState(guardHitLName) ? guardHitLName : guardHitName, guarding ? 0.03f : 0.08f);
+                // la palma va con la hoja: hacia su izquierda y arriba para el revés, hacia su derecha y abajo para los otros.
+                // Si ReadCut ya salió al encuentro de este corte, el manotazo sigue (empezarlo de nuevo en el contacto lo
+                // dejaba lejos de la hoja)
+                if (!SwatRead) PlaySwat(left, guarding);
+                swatReadAt = -9f;
                 Game.UI?.ShowGuardMark(this);
                 lastBounce = Time.time;
                 TellPatience();
@@ -939,7 +942,7 @@ namespace Nindo
             if (p == null) return HitResult.Deflected;
             Vector3 d = (p.transform.position - transform.position).Flat();
             Vector3 dir = d.sqrMagnitude > 1e-4f ? d.normalized : transform.forward;
-            // donde la palma encuentra la hoja (GuardHit f2) y hacia dónde la lleva: el trazo sigue a la mano. El sonido es
+            // donde la palma encuentra la hoja (GuardHit f3) y hacia dónde la lleva: el trazo sigue a la mano. El sonido es
             // la palma contra el plano de la hoja y lo pone Kaito (PlayerController con Deflected)
             Vector3 right = Vector3.Cross(Vector3.up, dir);
             Vector3 c = transform.position + dir * SwatReach + Vector3.up * (left ? SwatHighL : SwatHigh);
@@ -950,7 +953,7 @@ namespace Nindo
         }
 
         /// <summary>Dónde la palma encuentra la hoja, delante de él (m) y a qué altura (el revés le llega más arriba).</summary>
-        const float SwatReach = 0.65f, SwatHigh = 0.85f, SwatHighL = 1.05f;
+        const float SwatReach = 0.62f, SwatHigh = 0.72f, SwatHighL = 0.92f;
 
         void TellPatience()
         {

@@ -349,9 +349,9 @@ def dash_p3():
 def dash_pass_p3():
     """DashStrike_Pass_P3, el paso del viento al costado con el bastón (rojo): el cuerpo de DashStrike_Pass y, hasta la
     suelta, los brazos de DashStrike_P3. En el vuelo lo lleva bajo y en diagonal por delante y en el cruce se lo clava a
-    Kaito con la punta de abajo, las dos manos cerca de ella y el resto del bastón hacia atrás por afuera de su cadera
-    izquierda (de frente a Kaito, la punta llega a ~0.9 m: lo toca sin que el cuerpo pase por él); gira con él en el aire y
-    lo recoge a la guardia al frenar."""
+    Kaito con la punta de abajo, las dos manos adelante y el resto del bastón hacia atrás por afuera de su cadera
+    izquierda (de frente a Kaito, la punta llega a ~1.1 m: lo toca sin que el cuerpo pase por él) y se la sostiene encima
+    mientras le pasa (f17-f20); gira con él en el aire y lo recoge a la guardia al frenar."""
     B = MC.BODY
     er, el = dict(elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), dict(elbow_r=(-0.6, 0.1, -0.8), elbow_l=(0.5, 0.3, -0.8))
     coil = line(B, (0.11, -0.46, 1.02), (0.5, 0.28, 1.0), 0.42, **er)
@@ -361,16 +361,21 @@ def dash_pass_p3():
              (10, line(B, (0.15, -0.7, 0.95), (0.5, -0.06, 0.95), 0.8, **er), "in2"),
              (13, line(B, (0.08, -0.7, 1.0), (0.45, -0.12, 0.98), 0.6, **er), "inout"),
              (15, line(B, (0.06, -0.6, 1.06), (0.4, -0.1, 1.0), 0.5, **el), "inout"),
-             # el cruce: la punta de abajo a la altura del pecho de Kaito, las manos cerca de ella y el resto del bastón
-             # hacia atrás por afuera de su cadera izquierda
-             (17, line(B, (0.05, -0.52, 1.12), (0.32, -0.08, 1.02), 0.42, **el), "expo_in"),
-             # gira con él y lo recoge al apoyar
-             (19, line(B, (-0.1, -0.46, 1.12), (0.3, 0.04, 1.06), 0.55, **el), "out"),
-             (21, line(B, (0.0, -0.66, 1.04), (0.38, 0.0, 1.02), 0.7, **er), "inout"),
-             (27, line(B, (0.08, -0.56, 1.13), (0.27, 0.12, 1.27), 0.82, **er), "inout"), (36, G3(), "sine")]
+             # el cruce: la punta de abajo a la altura del pecho de Kaito, las manos adelante y el bastón casi por la línea
+             # que va a él (el resto hacia atrás, por afuera de su cadera izquierda); la sostiene sobre él mientras le pasa
+             # (f17-f20: el jefe lo hace mirar a Kaito), corriéndola un poco hacia su derecha
+             (17, line(B, (0.06, -0.6, 1.12), (0.23, -0.14, 1.04), 0.5, **el), "expo_in"),
+             (18, line(B, (0.04, -0.61, 1.12), (0.22, -0.14, 1.05), 0.5, **el), "lin"),
+             (19, line(B, (0.02, -0.61, 1.12), (0.21, -0.13, 1.05), 0.51, **el), "lin"),
+             (20, line(B, (-0.01, -0.6, 1.12), (0.21, -0.12, 1.05), 0.52, **el), "lin"),
+             # la suelta y gira con él; lo recoge al apoyar
+             (21, line(B, (-0.1, -0.46, 1.12), (0.3, 0.04, 1.06), 0.55, **el), "out"),
+             (23, line(B, (0.0, -0.66, 1.04), (0.38, 0.0, 1.02), 0.7, **er), "inout"),
+             (29, line(B, (0.08, -0.56, 1.13), (0.27, 0.12, 1.27), 0.82, **er), "inout"), (36, G3(), "sine")]
     return p3_from("DashStrike_Pass", track, glow="Master_GlintStaff",
                    notes="paso del viento al costado con el bastón: tsuki recogido (aviso f8), vuela por al lado de Kaito "
-                         "y se lo clava de frente en el cruce (f17); gira en el aire y apoya frenando hacia atrás")
+                         "y se lo clava de frente en el cruce (f17), lo sostiene sobre él hasta f20, gira en el aire y apoya "
+                         "frenando hacia atrás")
 
 
 # ============================================================================ derrota: se sienta a meditar y saluda

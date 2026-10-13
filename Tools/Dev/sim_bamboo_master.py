@@ -68,10 +68,10 @@ P = dict(
     dash_from=4.8, dash_minr=4.8, hop_min=0.25, dash_k=(0.5, 1.4), dash_flight=0.1, leap_from=4.8, leap_near=0.5,
     # la que pasa al costado (DashStrike_Pass): a PassBeside del carril, el cruce PassOver pasado de Kaito en el contacto,
     # el vuelo escalado entre pass_k (y en menos tiempo); en el contacto le pega si está a pass_reach por el carril
-    pass_beside=1.15, pass_over=0.1, pass_k=(0.2, 1.4), pass_reach=1.1,
+    pass_beside=1.2, pass_over=0.1, pass_k=(0.2, 1.4), pass_reach=1.1,
     # BambooMasterBoss.FixLane: el vuelo que se vuelve a planear al despegar (contra la compresión de la suelta) y lo más
     # rápido que corre el clip en el corte del cruce (sustain)
-    replan=(0.6, 1.8), cut_rate=2.0, pass_gap=1.1,
+    replan=(0.6, 1.8), cut_rate=2.0, pass_gap=1.15,
     # el primer corte fuera de un hueco (en neutral o en la guardia): lo desvía con el manotazo (HitResult.Deflected:
     # Kaito se frena 0.05 s y resbala deflect_push m) y contesta con su combo answer[fase] s después, nunca antes del
     # descanso que se toma después de un contraataque de Kaito (BambooMasterBoss.Swat)
