@@ -300,8 +300,7 @@ Al final, `World/ZoneCulling` deja de dibujar lo que ninguna cámara prendida ve
 quedan escondidas, congela la cascada de Kohan fuera de cuadro (`KohanFalls.SetOffscreen`) y duerme por campamento
 a los enemigos quietos a más de 55 m y fuera de cuadro: sin dibujarse y, los comunes, sin Update ni Animator, todos
 en el mismo frame. Los idles de ambiente (`EnemyAmbient`) corren en Idle, así que se duermen con su campamento y
-mientras duermen no siguen el reloj de su pareja; un momento de guion de una sola vez lo prohíbe con `Enemy.AddSleepVeto(dueño)` /
-`RemoveSleepVeto(dueño)`; `SetState` y `ScriptedPlay` lo despiertan en el acto. Kokuyō (arrodillado) y Mizuchi
+mientras duermen no siguen el reloj de su pareja; `SetState` y `ScriptedPlay` lo despiertan en el acto. Kokuyō (arrodillado) y Mizuchi
 (escondido en el lago) esperan en Scripted y no se duermen nunca. En el editor también cuenta lo que mira cada
 vista Scene que se está dibujando (`Nindo.ZoneCulling.IncludeSceneView = false` para medir solo la cámara de juego).
 Para depurar: `Nindo.ZoneCulling.ShowHud = true`, `Debug.Log(Nindo.ZoneCulling.Stats)`,

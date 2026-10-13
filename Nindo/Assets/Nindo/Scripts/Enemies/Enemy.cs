@@ -1328,32 +1328,15 @@ namespace Nindo
         public bool Asleep { get; private set; }
 
         /// <summary>
-        /// Prohíbe dormirlo mientras haya algún dueño anotado (un momento de guion de una sola vez; NO un loop de
-        /// ambiente, que se duerme y se despierta con todo su campamento). Varios dueños conviven: cada uno saca el suyo.
-        /// Si ya dormía, se lo despierta en el acto.
-        /// </summary>
-        public void AddSleepVeto(object owner)
-        {
-            sleepVetoes ??= new List<object>(2);
-            if (!sleepVetoes.Contains(owner)) sleepVetoes.Add(owner);
-            if (Asleep) SetAsleep(false);
-        }
-
-        public void RemoveSleepVeto(object owner) => sleepVetoes?.Remove(owner);
-
-        List<object> sleepVetoes;
-
-        /// <summary>
         /// ¿Se puede dormir? Solo quieto en su puesto (Idle): vivo y ya arrancado (Start le dio la vida y el lugar al que
         /// vuelve si se reinicia el encuentro), sin aggro (un jefe en pelea lo tiene) ni guion, sin moverse (si volvía a su
-        /// lugar después de perder a Kaito, primero termina de llegar) y sin vetos. Los idles de ambiente (EnemyAmbient:
+        /// lugar después de perder a Kaito, primero termina de llegar). Los idles de ambiente (EnemyAmbient:
         /// meditar, el sparring en el lugar, dormir) corren en Idle (HoldsPose), así que se duermen con su campamento; el
         /// sobresalto ya es Alert y los despierta.
         /// </summary>
         public virtual bool CanSleep => State == EnemyState.Idle
                                         && !IsAggro && Health > 0f && knock.sqrMagnitude < 0.0001f
-                                        && (agent == null || !agent.enabled || agent.velocity.sqrMagnitude < 0.01f)
-                                        && (sleepVetoes == null || sleepVetoes.Count == 0);
+                                        && (agent == null || !agent.enabled || agent.velocity.sqrMagnitude < 0.01f);
 
         /// <summary>Lo que escondió la siesta (lo que otro ya tenía escondido no se toca ni se devuelve).</summary>
         internal IReadOnlyList<Renderer> SleepHidden => sleepHidden;

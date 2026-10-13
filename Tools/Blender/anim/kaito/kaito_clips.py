@@ -1411,7 +1411,7 @@ add("BandanaPower", 75, [
     notes="toca la bandana (glow), junta fuerza y empuja la palma hacia la muralla con un paso (release); vuelve a la guardia")
 
 # ------------------------------------------------------------------ final: se da vuelta y le ofrece la media cinta a Kokuyō
-# El transform ya mira a Kokuyō y está medio metro más cerca de él (PlayerController.PlayEndingTurn): el clip arranca
+# El transform ya mira a Kokuyō y está medio metro más cerca de él (StoryDirector.OfferRibbon): el clip arranca
 # con el cuerpo como estaba (de espaldas, mirando al abuelo, 0.55 m atrás: 'turn' 180 y 'shift') y cuadro a cuadro gira
 # a su derecha y se acerca en tres pasos (la cabeza adelante del pecho y el pecho de la cadera); se endereza, saca la
 # cinta del cinturón con la izquierda (ribbon) y se la ofrece con la palma arriba, con una reverencia chica (offer). La

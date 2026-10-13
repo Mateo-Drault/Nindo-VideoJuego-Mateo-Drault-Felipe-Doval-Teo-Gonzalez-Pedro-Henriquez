@@ -22,11 +22,11 @@ namespace Nindo
         // al abuelo, Kokuyō a la espalda) pero 0.55 m detrás del transform y girado 180°: se da vuelta en tres pasos
         // acercándose a Kokuyō y termina parado en el transform, mirándolo, con la media cinta en la palma izquierda
         // (offer f61 de 84, hand_l_m (-0.06, 0.64, 0.40)) hasta el final. Así que el transform va primero ahí, mirando a
-        // Kokuyō, y el clip entra sin fundido (lo mismo que PlayerController.PlayEndingTurn de kaito-anim). Antes se medía
-        // el giro del último cuadro (~0°): Kaito giraba 180° rígido, el fundido lo devolvía de espaldas y 0.55 m atrás, y
-        // el clip lo giraba otra vez
+        // Kokuyō, y el clip entra sin fundido. Antes se medía el giro del último cuadro (~0°): Kaito giraba 180° rígido, el
+        // fundido lo devolvía de espaldas y 0.55 m atrás, y el clip lo giraba otra vez. El corrimiento sale del sidecar
+        // (KaitoTimings.EndingTurnShift, timing.shift_m del clip)
         public const string EndingTurnState = "EndingTurn";
-        const float NEndingOffer = 0.726f, EndingTurnSeconds = 2.8f, EndingTurnShift = 0.55f;
+        const float NEndingOffer = 0.726f, EndingTurnSeconds = 2.8f;
         // el clip saca la cinta del cinturón: la mano izquierda baja a la cadera (f46) y el puño se cierra en el nudo en
         // 'ribbon' (f50). Por eso la cinta va guardada ahí desde el reencuentro (StowRibbon), no colgando de la mano
         const float NEndingRibbon = 0.595f, RibbonStowSeconds = 0.35f;
@@ -212,7 +212,7 @@ namespace Nindo
                 // el plano sale de donde Kaito termina de ofrecerla (corrido hacia Kokuyō) y de la mano del clip
                 Vector3 toK = (k.transform.position - P.transform.position).Flat().normalized;
                 bool turnClip = P.Anim.HasState(EndingTurnState);
-                Vector3 offerAt = P.transform.position + toK * (turnClip ? EndingTurnShift : OfferStep);
+                Vector3 offerAt = P.transform.position + toK * (turnClip ? KaitoTimings.EndingTurnShift : OfferStep);
                 offer = OfferShot(offerAt, toK, camSide, OfferHandLocal(turnClip));
                 Game.Camera.CancelShot(three);
                 yield return OfferRibbon(toK, turnClip);
@@ -382,7 +382,7 @@ namespace Nindo
                 yield return Wait(0.3f);
                 yield break;
             }
-            P.Teleport(P.transform.position + toK * EndingTurnShift, Quaternion.LookRotation(toK));
+            P.Teleport(P.transform.position + toK * KaitoTimings.EndingTurnShift, Quaternion.LookRotation(toK));
             a.Play(EndingTurnState, 0f);
             float len = a.Length(EndingTurnState, EndingTurnSeconds);
             float ribbon = KaitoTimings.Event(EndingTurnState, "ribbon", NEndingRibbon);

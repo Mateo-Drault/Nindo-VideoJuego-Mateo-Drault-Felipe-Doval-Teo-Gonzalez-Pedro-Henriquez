@@ -778,48 +778,13 @@ def write_sidecar(baked, ranges, reports, fbx_summary):
 
 # los momentos con nombre de los clips (eventos del sidecar) también van al código: el sidecar está fuera de Resources y
 # el FBX no trae AnimationEvents, así que las escenas (santuario, prólogo, final) tenían que copiar cuadros a mano y un
-# clip re-tomado las dejaba esperando un número viejo. PlayerController.ClipEventTime lee esta tabla
-EVENTS_CS = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Scripts", "Player", "KaitoClipEvents.cs")
-
-
+# clip re-tomado las dejaba esperando un número viejo. La tabla la escribe un solo generador, Tools/Unity/kaito_timings.py
+# (Story/KaitoTimings.cs, lo que leen las escenas): antes este script escribía otra igual (KaitoClipEvents.cs) que no leía
+# nadie, y una re-toma regenerada por uno solo de los dos las desincronizaba sin aviso
 def write_events_cs(clipd):
-    rows = []
-    for name, c in clipd.items():
-        for e in c["events"]:
-            fn = e["fn"]
-            if fn[:1].islower():               # los de historia (los de combate, Strike / FootR..., los usa el código)
-                rows.append(f'            {{ ("{name}", "{fn}"), {e["t"]:.4f}f }},')
-    text = "\n".join([
-        "using System.Collections.Generic;",
-        "",
-        "namespace Nindo",
-        "{",
-        "    /// <summary>",
-        "    /// GENERADO por Tools/Blender/anim/kaito/build_kaito.py (no editar a mano): tiempo normalizado (0..1 del clip) de",
-        "    /// cada momento con nombre de los clips de historia de Kaito (incense_take, palms, release, offer...), sacado de",
-        "    /// los 'events' de kaitooo.fbx.json. Lo lee PlayerController.ClipEventTime.",
-        "    /// </summary>",
-        "    public static class KaitoClipEvents",
-        "    {",
-        "        static readonly Dictionary<(string, string), float> times = new Dictionary<(string, string), float>",
-        "        {",
-        *rows,
-        "        };",
-        "",
-        "        public static bool TryGet(string state, string evt, out float normalized) => times.TryGetValue((state, evt), out normalized);",
-        "    }",
-        "}",
-        ""])
-    with open(EVENTS_CS, "w", encoding="utf-8", newline="\n") as fh:
-        fh.write(text)
-    meta = EVENTS_CS + ".meta"
-    if not os.path.exists(meta):
-        sys.path.insert(0, os.path.join(ROOT, "Tools", "Unity"))
-        import unity_yaml as UY
-        UY.write_meta(EVENTS_CS, "MonoImporter:\n  externalObjects: {}\n  serializedVersion: 2\n  defaultReferences: []\n"
-                                 "  executionOrder: 0\n  icon: {instanceID: 0}\n  userData: \n  assetBundleName: \n"
-                                 "  assetBundleVariant: \n")
-    print("ESCRITO", EVENTS_CS, len(rows), "momentos")
+    sys.path.insert(0, os.path.join(ROOT, "Tools", "Unity"))
+    import kaito_timings
+    kaito_timings.main(FBX + ".json")
 
 
 main()

@@ -16,7 +16,8 @@ Eventos que leen las escenas (el contrato con kaito-anim):
   BandanaPower: glow, release                                             (StoryDirector.Wall / .SealGate)
   WakeUp:      see (levanta la cabeza y ve el secuestro), stand           (StoryDirector.Prologue)
   EndingTurn:  ribbon (el puño toma la cinta del cinturón), offer (el brazo ya extendido con ella)
-               (StoryDirector.Ending)
+               (StoryDirector.Ending), y EndingTurnShift: cuánto más cerca de Kokuyō termina que donde arranca (timing.shift_m)
+Es el único generador de esta tabla (build_kaito.py lo llama al exportar).
 
 Uso: python Tools/Unity/kaito_timings.py [--src otro/kaitooo.fbx.json]
 """
@@ -49,6 +50,8 @@ def main(src=SRC):
         return
     clips = json.load(open(src, encoding="utf-8")).get("clips", {})
     rows = []
+    # el clip arranca 'shift_m' detrás del transform y termina en él: el transform va primero ahí (StoryDirector.OfferRibbon)
+    shift = float(clips.get("EndingTurn", {}).get("timing", {}).get("shift_m", 0.55))
     for st in STATES:
         c = clips.get(st)
         if not c:
@@ -71,6 +74,9 @@ def main(src=SRC):
     w("        static readonly string[] states = %s;" % lst('"%s"' % r[0] for r in rows))
     w("        static readonly string[] names = %s;" % lst('"%s"' % r[1] for r in rows))
     w("        static readonly float[] times = %s;" % lst(f(r[2]) for r in rows))
+    w("")
+    w("        /// <summary>EndingTurn arranca con el cuerpo este tanto (m) detrás del transform y termina parado en él.</summary>")
+    w("        public const float EndingTurnShift = %s;" % f(shift))
     w("")
     w("        /// <summary>El primer evento 'name' del clip 'state' o, si el clip no lo trae, 'fallback'.</summary>")
     w("        public static float Event(string state, string name, float fallback)")
