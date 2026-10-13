@@ -160,6 +160,7 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         check(seam <= 1.0, f"{clip.name}: costura del loop {seam:.2f}°")
     wrist_checks(ch, clip, frames, rep)
     pop_checks(ch, clip, frames, ctrls, rep)
+    hip_pop_check(ch, clip, frames, roots, rep)
     grip_checks(ch, clip, frames, ctrls, rep)
     blade_checks(ch, clip, frames, rep)
     w = ch.weapon_info
@@ -499,6 +500,30 @@ def pop_checks(ch, clip, frames, ctrls, rep):
     check(bad[0] == 0.0, f"{clip.name}: antebrazo y mano sin tics en lo exportado ({bad[1] or f'el cuadro más rápido gira {top:.0f}°'})")
     check(soft[0] <= 30.0, f"{clip.name}: brazo sin tics en lo exportado ({soft[1] or 'ok'})",
           warn=not (clip.loop and "ambient" in clip.timing))
+
+
+def hip_pop_check(ch, clip, frames, roots, rep):
+    """Tirones de la cadera: cuánto cambia de un cuadro al otro su paso (cm por cuadro, con el avance del transform). Los
+    chequeos de giros no ven una cadera que corre 11 cm, 24 cm y 1 cm en tres cuadros (el ninja de Kidnap al agarrar: se
+    leía como un salto y un frenazo en seco). Con 'hip_acc_cm' en el timing del clip es una falla; sin él, un aviso desde
+    6 cm (un golpe o una caída pueden pedir más). Sin los dos primeros cuadros de un clip que no es loop (el cruce de Unity)."""
+    p = canon_track(ch, frames, roots, ch.spec["pelvis"], Vector())
+    if clip.loop:
+        # los dos cuadros de antes de la costura, sin lo que avanzó el transform en la vuelta
+        d = p[-1] - p[0]
+        p = [p[-3] - d, p[-2] - d] + p
+    st = [p[i] - p[i - 1] for i in range(1, len(p))]
+    acc = [(st[i] - st[i - 1]).length * 100.0 for i in range(1, len(st))]
+    first = 0 if clip.loop else 2
+    worst = max(range(first, len(acc)), key=lambda i: acc[i], default=None)
+    if worst is None:
+        return
+    lim = clip.timing.get("hip_acc_cm")
+    f = worst + 1 - (2 if clip.loop else 0)
+    rep["hip_acc_cm"] = round(acc[worst], 1)
+    check(acc[worst] <= (lim if lim is not None else 6.0),
+          f"{clip.name}: la cadera sin tirones (su paso cambia {acc[worst]:.1f} cm en f{f % clip.frames if clip.loop else f}"
+          f"{f', tope {lim:.1f}' if lim is not None else ''})", warn=lim is None)
 
 
 _PALM = {}
@@ -899,9 +924,12 @@ def floor_checks(clip, low_body, low_weapon, low_where):
     # una toma del equipo re-resuelta (TakeClip) se corrige igual que un clip nuevo (team_rig.take_floor_fix: el pie
     # gira sobre el tobillo, el martillo alrededor del puño), así que también falla; 'take_raw' en solve_take la deja tal
     # cual para comparar (la presentación de Gorō: el pie derecho -8.2 cm y el martillo -22.4 cm)
-    check(low_body[wb] >= -3.0, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm)")
-    if low_body[wb] < -3.0:
-        print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.0f}({low_where[i]})" for i, v in enumerate(low_body) if v < -3.0))
+    # 'floor_cm' en el timing: un tope propio para lo que se apoya entero (el abuelo sentado o de rodillas: con -3 cm la
+    # túnica y las canillas se veían hundidas)
+    lim = t.get("floor_cm", -3.0)
+    check(low_body[wb] >= lim, f"{clip.name}: el cuerpo no se mete en el piso (f{wb} {low_body[wb]:.1f} cm, tope {lim:.1f})")
+    if low_body[wb] < lim:
+        print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.1f}({low_where[i]})" for i, v in enumerate(low_body) if v < lim))
     if min(low_weapon) < 800.0:          # sin arma queda en 900 (centinela)
         bad = [(i, v) for i, v in enumerate(low_weapon) if v < (-6.0 if i in bite else -1.0)]
         ww = min(range(len(low_weapon)), key=lambda i: low_weapon[i])

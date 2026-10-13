@@ -118,11 +118,12 @@ namespace Nindo
             bandana.radius = 2.5f;
             bandana.enabled = false;
 
-            // abuelo y su secuestrador (animación "inicio" del equipo: el ninja lo tacklea y lo arrastra)
+            // abuelo y su secuestrador (GrandpaAnims Kidnap/Dragged). El NPC 'kidnap' mira hacia donde se lo llevan: el
+            // abuelo, de cara a Kaito, y el ninja entre los dos, de espaldas a Kaito
             Vector3 kidPos = PointPos("kidnap_a", P.transform.position + new Vector3(6, 0, 8));
             Vector3 exit = PointPos("kidnap_exit", kidPos + new Vector3(0, 0, 25));
-            var grandpa = NPC.Spawn("kidnap", kidPos, Quaternion.LookRotation((P.transform.position - kidPos).Flat().normalized + Vector3.forward * 0.001f), null);
-            grandpa.Play("Idle", 0f);
+            var grandpa = NPC.Spawn("kidnap", kidPos, Quaternion.LookRotation((exit - kidPos).Flat().normalized + Vector3.forward * 0.001f), null);
+            grandpa.AwaitKidnap();
             Enemy kidnapper = null;
 
             // texto de apertura sobre negro
@@ -143,15 +144,20 @@ namespace Nindo
             Game.Camera.CancelShot(shot);
 
             // ve al abuelo siendo llevado
-            int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(-3.5f, 3.2f, -6f), 1.0f, 32f, 0f, 0.9f, 0.9f, false);
-            grandpa.Play("Kidnap", 0.1f);
-            Game.Audio?.Play("hit_heavy", grandpa.transform.position, 0.8f);
-            yield return new WaitForSecondsRealtime(2.4f);
+            // de costado al arrastre y del lado del ninja (offset local: el transform mira a 'exit'): se ven los dos brazos
+            // tirantes y las muñecas agarradas. Desde atrás, el abuelo sentado tapaba al ninja y no se leía el tirón
+            int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(4.6f, 2.4f, -3.4f), 0.7f, 32f, 0f, 0.9f, 0.9f, true);
+            // el ninja le agarra la muñeca, lo tira al piso (el golpe y el polvo, de NPC) y se lo lleva hacia el bosque. Arranca
+            // kidnapLead después del corte: el contraplano de Kaito (StoryDirector.Prologue) se sostiene ~1.4 s encima de
+            // este plano y se mezcla en 0.8 s, así la carrera se ve desde Kaito y el agarre (0.57 s) y la caída (0.9 s) ya en
+            // este plano; arrancando en el corte, el secuestro entero pasaba en el contraplano a 17 m. Mientras, se miran
+            // (KidnapWait: el ninja agazapado, el abuelo respira)
+            const float kidnapLead = 1.2f;
+            yield return new WaitForSecondsRealtime(kidnapLead);
+            grandpa.Kidnap(exit);
+            yield return new WaitForSecondsRealtime(2.4f - kidnapLead + 0.8f);
             yield return Say("intro_wake");
             Game.Camera.CancelShot(shot2);
-            // lo arrastran lentamente hacia el bosque
-            grandpa.FaceTo(grandpa.transform.position - (exit - grandpa.transform.position));
-            grandpa.SlideTo(exit, 1.1f);
 
             // control al jugador: tiene que desatar la cinta
             Game.UI.Letterbox(false);
@@ -219,9 +225,12 @@ namespace Nindo
             Game.Camera.CancelShot(shot);
             yield return Say("intro_bandana");
             // el secuestrador se lleva al abuelo entre el humo
-            if (grandpa != null) { Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.6f); Destroy(grandpa.gameObject); }
+            // (si ya llegó a kidnap_exit, NPC.Arrive lo esfumó: no hay una segunda nube ni otro sonido)
+            bool vanish = grandpa != null && grandpa.gameObject.activeSelf;
+            if (vanish) Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.6f);
+            if (grandpa != null) Destroy(grandpa.gameObject);
             if (kidnapper != null) Destroy(kidnapper.gameObject);
-            Game.Audio?.Play("teleport", P.transform.position, 0.8f);
+            if (vanish) Game.Audio?.Play("teleport", P.transform.position, 0.8f);
             P.AddSpirit(60f);
         }
 
@@ -448,17 +457,15 @@ namespace Nindo
         {
             Vector3 a = PointPos("forest_kidnap_a", P.transform.position + new Vector3(0, 0, 18));
             Vector3 b = PointPos("forest_kidnap_b", a + new Vector3(0, 0, 14));
-            // el ninja arrastra al abuelo (último frame de la animación del secuestro)
-            var grandpa = NPC.Spawn("kidnap", a, Quaternion.LookRotation(-(b - a).Flat().normalized + Vector3.forward * 0.001f), null);
-            grandpa.Play("Kidnap", 0f);
-            grandpa.SkipToEnd();
-            yield return null;
-            grandpa.SlideTo(b, 1.3f);
-            int shot = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(-5f, 4.5f, -7f), 1f, 34f, 0f, 1.2f, 1.2f, false);
+            // el ninja sigue arrastrando al abuelo (Dragged), de costado y del lado del ninja como en el prólogo
+            var grandpa = NPC.Spawn("kidnap", a, Quaternion.LookRotation((b - a).Flat().normalized + Vector3.forward * 0.001f), null);
+            grandpa.Drag(b);
+            int shot = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(5.5f, 3.6f, -5f), 0.7f, 34f, 0f, 1.2f, 1.2f, true);
             yield return new WaitForSecondsRealtime(1.5f);
             yield return Say("forest_reveal");
             yield return new WaitForSecondsRealtime(1.2f);
-            Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.5f);
+            // (si llegó a 'b' antes, NPC.Arrive ya lo esfumó)
+            if (grandpa.gameObject.activeSelf) Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.5f);
             Destroy(grandpa.gameObject);
             Game.Camera.CancelShot(shot);
             Game.Save.SetFlag(Flags.ForestSeen);
