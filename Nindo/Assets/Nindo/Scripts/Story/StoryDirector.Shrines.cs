@@ -23,7 +23,11 @@ namespace Nindo
         // La katana la dejan y la retoman los dos clips (el hueso del arma): KatanaRest es solo para el "Pray" de antes
         public const string PrayIncenseState = "PrayIncense", PrayQuickState = "PrayQuick", PrayOldState = "Pray";
         const float NTake = 0.372f, NLight = 0.468f, NPlace = 0.617f, NPalms = 0.681f, NRise = 0.883f;
-        const float NQuickKneel = 0.157f, NQuickPalms = 0.4f;
+        const float NQuickKneel = 0.157f, NQuickPalms = 0.4f, NQuickKatanaDown = 0.3f, NQuickKatanaUp = 0.7f;
+        /// <summary>
+        /// Saltado o cortado con la katana en el piso: el final de PrayQuick (la retoma y se para) a esta velocidad, ~0.3 s.
+        /// </summary>
+        const float QuickPickupSpeed = 2.5f;
         /// <summary>
         /// La llama del incienso se apaga con el segundo abanico de la izquierda (f98: un 36 % del tramo entre prenderlo y
         /// clavarlo); queda la brasa.
@@ -234,12 +238,13 @@ namespace Nindo
             float kindleAt = real ? Mathf.Min(KaitoTimings.Event(PrayQuickState, "kneel", NQuickKneel) + 0.03f, palms - 0.02f) : NOldKneel;
             // ya vio el rezo entero: este se puede saltar (y se dice abajo a la derecha)
             bool skippable = Game.Save.HasFlag(PraySeenFlag);
-            if (skippable) SkipHint.Show();
             yield return KneelAt(cp, QuickReachFor(cp, kindle), kindle);
             bool rested = false, kindled = !kindle;
             // si lo encontraron mientras rodeaba el santuario, ni se arrodilla
             if (!PrayInterrupted)
             {
+                // el aviso de saltar recién arrodillado: mientras rodea el santuario Submit no hace nada
+                if (skippable) SkipHint.Show();
                 // PrayQuick deja la katana en el piso a su derecha y la retoma él mismo (como PrayIncense). Corrido al
                 // costado y girado a medias hacia la ceniza, la hoja queda a 5.6 cm o más de la base de piedra en todo
                 // el rango de QuickReachFor (a 9.2 cm sin corrimiento)
@@ -247,10 +252,14 @@ namespace Nindo
                 a.Play(state, 0.2f);
                 float t = 0f, n = 0f;
                 bool skipped = false;
+                int pausedFrame = -10;
                 while (n < 1f && t < len * 1.5f && !PrayInterrupted)
                 {
                     n = a.TryNormalizedTime(state, out float an) ? an : t / len;
-                    skipped = skippable && t > SkipAfter && Game.Input != null && Game.Input.Pressed(Act.Submit);
+                    // la pausa no lo salta: el Enter o la A que confirman "Continuar" son el mismo Submit, y ese botón
+                    // llega todavía en el cuadro en que el panel se cierra
+                    if (Game.IsPaused) pausedFrame = Time.frameCount;
+                    skipped = skippable && t > SkipAfter && Time.frameCount > pausedFrame + 1 && Game.Input != null && Game.Input.Pressed(Act.Submit);
                     if (!kindled && (n >= kindleAt || skipped))
                     {
                         kindled = true;
@@ -263,8 +272,8 @@ namespace Nindo
                     t += Time.deltaTime;
                     yield return null;
                 }
-                // saltado: de la pose que tenga a la guardia (la cura, el guardado y el incienso ya pasaron)
-                if (skipped) a.Play("Locomotion", 0.25f);
+                // saltado o cortado por una pelea: a la guardia (si se saltó, la cura, el guardado y el incienso ya pasaron)
+                if (skipped || PrayInterrupted) yield return RiseFromPrayer(state, real, n, len);
                 Game.Camera.CancelShot(shot);
             }
             SkipHint.Hide();
@@ -274,6 +283,33 @@ namespace Nindo
             P.ExitScripted();
             Game.Input?.ClearBuffer();
             praying = false;
+        }
+
+        /// <summary>
+        /// Del rezo corto a la guardia antes de que termine. Con la katana en el piso (entre katana_down y katana_up) la
+        /// retoma con el final del clip a QuickPickupSpeed: el fundido directo a la guardia llevaba la hoja del piso a la
+        /// mano a través de las piernas en 0.25 s (al saltar) o en 0.12 s (al cortarlo una pelea). Si no, de la pose
+        /// que tenga a la guardia.
+        /// </summary>
+        IEnumerator RiseFromPrayer(string state, bool real, float n, float len)
+        {
+            var a = P.Anim;
+            float down = KaitoTimings.Event(PrayQuickState, "katana_down", NQuickKatanaDown);
+            float up = KaitoTimings.Event(PrayQuickState, "katana_up", NQuickKatanaUp);
+            if (real && n > down && n < up)
+            {
+                // de las palmas (o de la katana todavía en el piso) a la mano que va a buscarla, ya agachado
+                float from = up - 0.02f;
+                a.Play(state, 0.12f, from, QuickPickupSpeed);
+                float t = 0f, limit = (1f - from) * len / QuickPickupSpeed + 0.15f;
+                // un golpe en el medio lo saca del modo guionado (Hurt): su reacción manda
+                while (t < limit && P.State == PlayerState.Scripted && !(a.TryNormalizedTime(state, out float m) && m >= 0.97f))
+                {
+                    t += Time.deltaTime;
+                    yield return null;
+                }
+            }
+            if (P.State == PlayerState.Scripted) a.Play("Locomotion", 0.2f);
         }
 
         // ================================================================== Kaito frente al incensario
