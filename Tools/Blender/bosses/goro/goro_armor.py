@@ -4,8 +4,9 @@ Concepto (Docs/handoff/conceptos/goro_fase2_armado.jpg y goro_fase2_armadura*.jp
 Gorō cae y la montaña se le pega encima. Exagerada a propósito: rocas de granito oscuro (carbón y pardo) facetadas, con
 vetas anchas de brasa (glow_fire) entre las rocas de cada pieza y nieve SOLO en las tapas. La cámara del juego (52°) ve
 sobre todo caras que miran arriba: con nieve desde n.z 0.45-0.78 la armadura se leía como cristales de hielo azulados,
-más clara que las rocas del mundo; ahora la nieve va de n.z 0.90 (0.85 en las agujas, 0.82 en la tapa de las hombreras) y las caras de arriba son de
-granito oscuro.
+más clara que las rocas del mundo; ahora la nieve va de n.z 0.90 (0.95 en la tapa de las hombreras y ninguna en las
+agujas) y las caras de arriba son de granito oscuro y pardo. Cada pieza sale 8-30 % más grande que lo modelado en
+build_pieces, agrandada desde donde apoya en el cuerpo (GROW).
 
 Se lee desde la cámara del juego (52°, 24 m): la silueta crece arriba y a los costados (dos cumbres de agujas en la
 espalda que asoman por encima del casco, dos hombreras de 0.9 m, dos cuernos de piedra a los lados del casco) y el
@@ -66,9 +67,47 @@ PIECES = [
 PIECE = {p["name"]: p for p in PIECES}
 
 
+# ------------------------------------------------------------------ tamaño
+# Cuánto más grande que el modelado de build_pieces sale cada pieza y desde dónde crece (C3: en el juego la armadura se
+# leía chica al lado del concepto, Docs/handoff/conceptos/goro_fase2_armadura.jpg, sobre todo de la cintura para abajo y
+# las hombreras). (escala, ancla del lado izquierdo en el marco de autoría; la derecha es el espejo). El ancla es el
+# borde por donde la pieza toca el cuerpo o algo que tiene que quedar libre, así crece hacia afuera: escaladas desde el
+# centro (o desde el eje del hueso), las hombreras se metían en el casco, las cumbres cerraban el paso del medio por
+# donde pasa el mango y las canilleras bajaban al piso arrodillado. Las que andan cerca del mango crecen menos: el
+# pecho, las rodillas y los guanteletes, y las del lado DERECHO (el del martillo: el mango pasa por afuera de la
+# hombrera, de la cumbre, de la rodilla y de la canillera derechas en la onda, la avalancha, el rugido y la cinemática;
+# con la misma escala que las izquierdas se metía 4-10 cm).
+GROW = {
+    # canillera: desde el costado de la canilla y el borde de abajo (no baja: arrodillado ya queda a 2 cm del piso)
+    "Greave": (1.22, (0.54, -0.12, 0.33)), "Greave_R": (1.10, (0.54, -0.12, 0.33)),
+    # rodilla: desde el costado del muslo; adelante crece poco (la laja del frente pasa cerca del mango en la guardia)
+    "Knee": (1.18, (0.50, -0.45, 0.86)), "Knee_R": (1.04, (0.50, -0.45, 0.86)),
+    "Tasset": (1.18, (0.59, -0.02, 1.08)),
+    "Bracer": (1.12, (1.27, 0.10, 2.00)),
+    # pecho: la banda de abajo desde el peto (y -0.41) para adelante, apenas; la de arriba queda como está (la cola del
+    # mango le pasa por delante cuando sube el martillo arriba de la cabeza)
+    "Chest_High": (1.0, (0.0, -0.41, 2.17)), "Chest_Low": (1.08, (0.0, -0.40, 1.90)),
+    # hombrera: desde el borde de adentro (x 0.47, el costado del casco) y la tapa del hombro: crece afuera y arriba
+    "Pauldron": (1.25, (0.47, 0.04, 2.36)), "Pauldron_R": (1.15, (0.47, 0.04, 2.36)),
+    # cumbre: desde el paso del medio (x 0.07) y la base: crece afuera, atrás y arriba, el paso queda igual de ancho
+    "Ridge": (1.22, (0.07, 0.40, 2.00)), "Ridge_R": (1.12, (0.07, 0.40, 2.00)),
+    # cuerno: desde donde sale del casco
+    "Horn": (1.18, (0.30, 0.08, 2.70)),
+}
+
+
+def grown(piece, p):
+    """El punto 'p' de la pieza (marco de autoría, modelado) con la pieza agrandada desde su ancla (GROW)."""
+    kind, _, side = piece.partition("_")
+    k, a = GROW.get(piece) or GROW[kind]
+    a = Vector((-a[0] if side == "R" else a[0], a[1], a[2]))
+    return a + (Vector(p) - a) * k
+
+
 # ------------------------------------------------------------------ geometría en el marco de autoría
 class RockGeo:
-    """Junta las rocas de cada pieza en el marco de autoría (m) y las pasa al Geo del kit (mundo del FBX)."""
+    """Junta las rocas de cada pieza en el marco de autoría (m) y las pasa al Geo del kit (mundo del FBX), cada pieza
+    agrandada desde su ancla (GROW)."""
 
     def __init__(self, kit, ch):
         self.kit, self.ch, self.geo = kit, ch, (kit.geo if kit is not None else None)
@@ -80,7 +119,8 @@ class RockGeo:
         return self.ch.A @ self.ch.P(p)
 
     def faces(self, piece, verts, faces, color_fn):
-        """Agrega un poliedro (vértices en el marco de autoría, caras con su color por normal)."""
+        """Agrega un poliedro (vértices en el marco de autoría, caras con su color por normal), agrandado (GROW)."""
+        verts = [grown(piece, v) for v in verts]
         self.local.setdefault(piece, []).extend(verts)
         if color_fn is not ember:
             self.rocks.setdefault(piece, []).append(list(verts))
@@ -169,6 +209,10 @@ def rock(rg, piece, center, radii, rot=(0, 0, 0), seed=1, pts=16, jitter=0.16, f
     rg.faces(piece, out, fs, color or rock_color(seed, snow_z=snow))
 
 
+# la nieve: solo en las caras casi horizontales de arriba (n.z mayor que esto); las agujas no tienen ninguna
+SPIRE_SNOW, PAULDRON_SNOW = 1.01, 0.95
+
+
 def spire(rg, piece, base, tip, r, sides=5, seed=1, kink=0.25):
     """Aguja de roca: prisma de 'sides' lados que se afina hasta la punta, con un quiebre a 'kink' del largo (las
     agujas rectas parecen conos de plástico); nieve en las caras de arriba."""
@@ -200,7 +244,8 @@ def spire(rg, piece, base, tip, r, sides=5, seed=1, kink=0.25):
     for j in range(sides):
         faces.append((last + j, last + (j + 1) % sides, len(verts) - 1))
     faces.append(tuple(reversed(range(sides))))
-    rg.faces(piece, verts, faces, rock_color(seed + 7, snow_z=0.85))
+    # sin nieve en las agujas (C3): de arriba la nieve en las puntas de la espalda era lo que se leía como hielo
+    rg.faces(piece, verts, faces, rock_color(seed + 7, snow_z=SPIRE_SNOW))
 
 
 # cuánto más grueso que el autorado es cada núcleo de brasa: asoma más por las vetas (con el de antes la brasa era una
@@ -257,9 +302,9 @@ def build_pieces(rg):
         # el brazo, al bajarlo la roca giraba hasta el costado del brazo y el mango de la guardia la atravesaba
         p = "Pauldron_" + s
         rock(rg, p, m((0.86, -0.17, 2.60)), (0.36, 0.23, 0.30), (0, -14 * sx, 6 * sx), sd + 16, pts=22, jitter=0.12,
-             flat_bottom=-0.55, snow=0.82)
+             flat_bottom=-0.55, snow=PAULDRON_SNOW)
         rock(rg, p, m((0.84, 0.29, 2.56)), (0.34, 0.20, 0.28), (0, -16 * sx, -4 * sx), sd + 17, pts=20, jitter=0.12,
-             flat_bottom=-0.55, snow=0.82)
+             flat_bottom=-0.55, snow=PAULDRON_SNOW)
         core(rg, p, m((0.84, 0.06, 2.54)), (0.29, 0.11, 0.16), seed=sd + 19)
         # espalda: cumbre de tres agujas gruesas sobre el omóplato (x 0.20-0.60), inclinadas atrás y afuera; la más alta
         # pasa por encima del casco (z 3.45). El paso del medio (x < 0.16) queda libre para el mango

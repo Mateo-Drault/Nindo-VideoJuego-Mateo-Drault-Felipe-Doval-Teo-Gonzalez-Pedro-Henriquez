@@ -124,7 +124,7 @@ ModelImporter:
       takeName: Scene
       internalID: 763175419158581928
       firstFrame: 171
-      lastFrame: 219
+      lastFrame: 224
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -152,8 +152,8 @@ ModelImporter:
       name: Combo2
       takeName: Scene
       internalID: 863915759717458116
-      firstFrame: 229
-      lastFrame: 271
+      firstFrame: 234
+      lastFrame: 281
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -181,8 +181,8 @@ ModelImporter:
       name: Combo3
       takeName: Scene
       internalID: 150624608784040956
-      firstFrame: 281
-      lastFrame: 328
+      firstFrame: 291
+      lastFrame: 342
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -210,8 +210,8 @@ ModelImporter:
       name: Heavy
       takeName: Scene
       internalID: 96202929600578661
-      firstFrame: 338
-      lastFrame: 402
+      firstFrame: 352
+      lastFrame: 416
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -239,8 +239,8 @@ ModelImporter:
       name: Spin
       takeName: Scene
       internalID: 474340523197511367
-      firstFrame: 412
-      lastFrame: 478
+      firstFrame: 426
+      lastFrame: 492
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -268,8 +268,8 @@ ModelImporter:
       name: StunSpin
       takeName: Scene
       internalID: 596894670851483028
-      firstFrame: 488
-      lastFrame: 548
+      firstFrame: 502
+      lastFrame: 562
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -297,8 +297,8 @@ ModelImporter:
       name: ExhaustedHit
       takeName: Scene
       internalID: 139154594955789551
-      firstFrame: 558
-      lastFrame: 570
+      firstFrame: 572
+      lastFrame: 584
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -326,8 +326,8 @@ ModelImporter:
       name: Parried
       takeName: Scene
       internalID: 234637049272809079
-      firstFrame: 580
-      lastFrame: 596
+      firstFrame: 594
+      lastFrame: 610
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -355,8 +355,8 @@ ModelImporter:
       name: ParriedPerfect
       takeName: Scene
       internalID: 423045990972328149
-      firstFrame: 606
-      lastFrame: 629
+      firstFrame: 620
+      lastFrame: 643
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -384,8 +384,8 @@ ModelImporter:
       name: Hit
       takeName: Scene
       internalID: 208930882649529804
-      firstFrame: 639
-      lastFrame: 654
+      firstFrame: 653
+      lastFrame: 668
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -413,8 +413,8 @@ ModelImporter:
       name: HitHeavy
       takeName: Scene
       internalID: 664197911944182152
-      firstFrame: 664
-      lastFrame: 679
+      firstFrame: 678
+      lastFrame: 693
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -442,8 +442,8 @@ ModelImporter:
       name: Spotted
       takeName: Scene
       internalID: 20407951057934453
-      firstFrame: 689
-      lastFrame: 731
+      firstFrame: 703
+      lastFrame: 745
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -471,8 +471,8 @@ ModelImporter:
       name: Death
       takeName: Scene
       internalID: 536744046599192327
-      firstFrame: 741
-      lastFrame: 801
+      firstFrame: 755
+      lastFrame: 815
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -500,8 +500,8 @@ ModelImporter:
       name: Intro
       takeName: Scene
       internalID: 886532016550439255
-      firstFrame: 811
-      lastFrame: 895
+      firstFrame: 825
+      lastFrame: 909
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -529,8 +529,8 @@ ModelImporter:
       name: FakeDefeat
       takeName: Scene
       internalID: 598275582299285731
-      firstFrame: 905
-      lastFrame: 983
+      firstFrame: 919
+      lastFrame: 997
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -558,8 +558,8 @@ ModelImporter:
       name: ArmorRise
       takeName: Scene
       internalID: 668201777733492500
-      firstFrame: 993
-      lastFrame: 1203
+      firstFrame: 1007
+      lastFrame: 1217
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -587,8 +587,8 @@ ModelImporter:
       name: Combo1B
       takeName: Scene
       internalID: 404029917611568586
-      firstFrame: 1213
-      lastFrame: 1272
+      firstFrame: 1227
+      lastFrame: 1292
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -616,8 +616,8 @@ ModelImporter:
       name: Combo2B
       takeName: Scene
       internalID: 805720265195626732
-      firstFrame: 1282
-      lastFrame: 1328
+      firstFrame: 1302
+      lastFrame: 1351
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -645,8 +645,8 @@ ModelImporter:
       name: Combo3B
       takeName: Scene
       internalID: 383128363825556590
-      firstFrame: 1338
-      lastFrame: 1395
+      firstFrame: 1361
+      lastFrame: 1425
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -674,8 +674,8 @@ ModelImporter:
       name: SlamWave
       takeName: Scene
       internalID: 699656378742373158
-      firstFrame: 1405
-      lastFrame: 1469
+      firstFrame: 1435
+      lastFrame: 1499
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -703,8 +703,8 @@ ModelImporter:
       name: AvalancheSummon
       takeName: Scene
       internalID: 827317883458804229
-      firstFrame: 1479
-      lastFrame: 1569
+      firstFrame: 1509
+      lastFrame: 1599
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

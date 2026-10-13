@@ -202,8 +202,11 @@ namespace Nindo
             // en el aire no frena (cae cuando ya terminó de avanzar); en el piso y al caer de un salto sin daño, sí
             lungeBrake = a.lungeAir ? 0f : LungeBrake;
             lungeStartT = tl.TimeAt(a.lungeFrom);
+            // lungeTo: la embestida termina en ese cuadro (el martillo de Gorō pega el piso con el cuerpo ya llegado; si
+            // seguía avanzando después del golpe, la cabeza clavada se arrastraba por el piso con él)
             lungeEndT = hop ? tl.TimeAt(a.activeEnd)
-                : Mathf.Max(tl.T + 0.05f * tl.stepLen, lungeStartT + lungeLen * LungePeak(lungeBrake) / MaxClipLunge);
+                : Mathf.Max(a.lungeTo > 0f ? tl.TimeAt(a.lungeTo) : tl.T + 0.05f * tl.stepLen,
+                    lungeStartT + lungeLen * LungePeak(lungeBrake) / MaxClipLunge);
             lungeFull = lungeLen;
             lungeKeep = Mathf.Min(lungeFrames, Mathf.RoundToInt(a.lungeFrom * lungeFrames) + 1);
             lungeKeepAt = ProfileLunge(tl.TimeAt(lungeKeep / (float)lungeFrames));

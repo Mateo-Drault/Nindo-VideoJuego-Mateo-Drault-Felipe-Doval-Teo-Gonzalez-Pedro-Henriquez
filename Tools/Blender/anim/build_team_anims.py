@@ -57,9 +57,10 @@ def check(ok, msg, warn=False):
 # ------------------------------------------------------------------------------- golpes del juego
 def archetype_hits(func_names):
     """Hit("Estado", ...) de las funciones dadas de EnemyArchetypes.cs:
-    {estado: [(activeStart, activeEnd, apex, función, embestida, velocidad, lungeFrom), ...]}.
-    Los apex y lungeFrom con nombre (NinjaApex1 = 0.50f) se resuelven con las constantes del archivo; embestida y
-    velocidad, con los valores por omisión de Hit() (0.8 m, 1); lungeFrom None = sin 'from:' (embestida lineal)."""
+    {estado: [(activeStart, activeEnd, apex, función, embestida, velocidad, lungeFrom, aire, lungeTo), ...]}.
+    Los apex, lungeFrom y lungeTo con nombre (NinjaApex1 = 0.50f) se resuelven con las constantes del archivo; embestida y
+    velocidad, con los valores por omisión de Hit() (0.8 m, 1); lungeFrom None = sin 'from:' (embestida lineal); lungeTo
+    None = sin 'to:' (termina un poco después del golpe)."""
     src = open(ARCHETYPES, encoding="utf-8").read()
     consts = {m.group(1): float(m.group(2)) for m in re.finditer(r"(\w+)\s*=\s*([\d.]+)f", src)}
     out = {}
@@ -76,13 +77,16 @@ def archetype_hits(func_names):
                 apex = consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
             lm = re.search(r"lunge:\s*([\d.]+)f", rest)
             sm = re.search(r"speed:\s*([\d.]+)f", rest)
-            fm = re.search(r"from:\s*([\w.]+)", rest)
             air = bool(re.search(r"air:\s*true", rest))
-            frm = None
-            if fm:
+
+            def named(key):
+                fm = re.search(key + r":\s*([\w.]+)", rest)
+                if not fm:
+                    return None
                 v = fm.group(1).rstrip("f")
-                frm = consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
-            out.setdefault(st, []).append((a0, a1, apex, fn, float(lm.group(1)) if lm else 0.8, float(sm.group(1)) if sm else 1.0, frm, air))
+                return consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
+            out.setdefault(st, []).append((a0, a1, apex, fn, float(lm.group(1)) if lm else 0.8, float(sm.group(1)) if sm else 1.0,
+                                           named("from"), air, named(r"\bto")))
     return out
 
 
@@ -195,7 +199,9 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         # el golpe del juego: activeStart = contacto / largo (±1 cuadro), apex = fin de la pausa
         st = t.get("state", clip.name)
         lf = t.get("lunge_from")
-        for a0, a1, apex, fn, hl, hs, frm, air in hits.get(st, []):
+        lt = t.get("lunge_to")
+        rr = t.get("release_rate", 1.6)
+        for a0, a1, apex, fn, hl, hs, frm, air, to in hits.get(st, []):
             ok = abs(a0 - a / n) <= 1.0 / n + 1e-3 and (apex is None or abs(apex - ap / n) <= 1.0 / n + 1e-3)
             check(ok, f"{clip.name}: {fn}() Hit(\"{st}\") activo {a0:.2f}-{a1:.2f} apex {apex} vs clip contacto "
                       f"{a / n:.3f} apex {ap / n:.3f}")
@@ -204,11 +210,15 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             if lf is not None and hl > 0.0:
                 check(frm is None or abs(frm - lf / n) <= 0.5 / n, f"{clip.name}: {fn}() Hit(\"{st}\") from {frm} vs clip "
                       f"lunge_from {lf / n:.4f} (f{lf})", warn=frm is None)
+                # y termina donde el clip la autoró (lunge_to: el martillo de Gorō pega con el cuerpo ya llegado)
+                if lt is not None:
+                    check(to is not None and abs(to - lt / n) <= 0.5 / n, f"{clip.name}: {fn}() Hit(\"{st}\") to {to} vs clip "
+                          f"lunge_to {lt / n:.4f} (f{lt})")
             # las variantes que reusan el clip con otra embestida (o con otra velocidad): lo que se corre un pie apoyado
             # con el avance que aplica el juego, medido sobre los apoyos del clip (aviso, no falla: es su número). Un clip
             # cuyos pies vuelan durante la embestida aguanta cualquier largo; uno con un pie clavado patina la diferencia
             if t.get("lunge") is not None and hl > 0.0 and clip.travel_table is not None:
-                trv = game_travel(n, ap, a, hl, t.get("windup", 0.55), hs, frm, air=air)
+                trv = game_travel(n, ap, a, hl, t.get("windup", 0.55), hs, frm, air=air, lunge_to=to, rr=rr)
                 sk = variant_skate(touch, clip.travel_table, trv)
                 rep.setdefault("variant_skate_cm", {})[fn] = round(sk * 100.0, 1)
                 check(sk <= 0.02, f"{clip.name}: {fn}() embestida {hl:.2f} m (clip {t['lunge']:.2f}): los pies apoyados "
@@ -234,18 +244,19 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             else:
                 check(lf > ap, f"{clip.name}: la embestida arranca después del apex (f{lf}, apex f{ap})")
             # lo mismo medido con el reloj: con 0.45 s más de pausa, lo que avanzó hasta el apex (la pose congelada)
-            held = game_travel(n, ap, a, t["lunge"], t.get("windup", 0.55) + 0.45, 1.0, None if lf is None else lf / n, air=t.get("lunge_air", False))
+            held = game_travel(n, ap, a, t["lunge"], t.get("windup", 0.55) + 0.45, 1.0, None if lf is None else lf / n,
+                               air=t.get("lunge_air", False), lunge_to=None if lt is None else lt / n, rr=rr)
             dh = max(held[:ap + 1])
             check(dh <= 0.02, f"{clip.name}: con 0.45 s de pausa no avanza con la pose del apex quieta ({dh * 100:.1f} cm)")
         # con el reloj del juego: segundos desde que arranca el paso hasta el golpe
-        tl = NA.StepTimeline(n, ap, a, windup_min=t.get("windup", 0.55), creep_in=lf is not None)
+        tl = NA.StepTimeline(n, ap, a, release_rate=rr, windup_min=t.get("windup", 0.55), creep_in=lf is not None)
         rep["game_T_s"] = round(tl.T, 3)
         rep["game_hold_s"] = round(tl.hold, 3)
         rep["contact_tip_m"] = [round(x, 2) for x in tip[a]]
     if "hop" in t:
         # saltos sin daño (HopBack, HopSide): el Hit del juego despega y cae en los cuadros del clip
         hp = t["hop"]
-        for a0, a1, apex, fn, hl, hs, frm, air in hits.get(t.get("state", clip.name), []):
+        for a0, a1, apex, fn, hl, hs, frm, air, to in hits.get(t.get("state", clip.name), []):
             ok = (abs(a0 - hp["takeoff"] / n) <= 0.5 / n and abs(a1 - hp["land"] / n) <= 0.5 / n
                   and apex is not None and abs(apex - hp["apex"] / n) <= 0.5 / n and frm is not None and abs(frm - hp["takeoff"] / n) <= 0.5 / n)
             check(ok, f"{clip.name}: {fn}() Hit despega {a0:.3f} cae {a1:.3f} apex {apex} from {frm} vs clip "
@@ -253,13 +264,15 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
     return rep
 
 
-def game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame=None, air=False):
+def game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame=None, air=False, lunge_to=None, rr=1.6):
     """Lo que avanza el transform del juego en cada cuadro del clip: en cuadros del clip desde 'frm' (normalizado,
-    AttackDef.lungeFrom: team_moves.clip_lunge_travel) o la lineal de siempre si no tiene."""
+    AttackDef.lungeFrom: team_moves.clip_lunge_travel; 'lunge_to', normalizado: AttackDef.lungeTo) o la lineal de siempre
+    si no tiene. 'rr': AttackDef.releaseRate."""
     import team_moves as TM
     if frm is None:
-        return T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed)[0]
-    return TM.clip_lunge_travel(n, apex, contact, lunge, windup, round(frm * n), speed=speed, end_frame=end_frame, air=air)[0]
+        return T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed, release_rate=rr)[0]
+    return TM.clip_lunge_travel(n, apex, contact, lunge, windup, round(frm * n), speed=speed, end_frame=end_frame, air=air,
+                                lunge_to=None if lunge_to is None else round(lunge_to * n), release_rate=rr)[0]
 
 
 def _hermite(P, i, s):
@@ -278,18 +291,19 @@ def _hermite(P, i, s):
     return (2 * s3 - 3 * s2 + 1) * a + (s3 - 2 * s2 + s) * ma + (-2 * s3 + 3 * s2) * b + (s3 - s2) * mb
 
 
-def replay_skate(clip, pts, roots_auth, tdir, n, apex, contact, windup, lunge, frm, speed=1.0, end_frame=None, air=False, floor_tol=0.01, hz=240.0):
+def replay_skate(clip, pts, roots_auth, tdir, n, apex, contact, windup, lunge, frm, speed=1.0, end_frame=None, air=False, floor_tol=0.01,
+                 hz=240.0, lunge_to=None, rr=1.6):
     """El golpe con el reloj del juego (StepTimeline a 240 Hz, cuadros fraccionarios) y la embestida del juego (en cuadros
     del clip o lineal): lo que se corre en el mundo la suela que toca el piso, con el clip interpolado entre cuadros como
     en Unity (cúbica) y el transform como lo mueve Enemy (lineal entre cuadros en LungeAt). Medido así, la estocada
     patinaba 34-45 cm aunque los cuadros enteros dieran 0. Devuelve (peor total cm, peor por muestra cm, dónde)."""
     import numpy as np
-    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed, creep_in=frm is not None)
+    tl = NA.StepTimeline(n, apex, contact, release_rate=rr, windup_min=windup, speed=speed, creep_in=frm is not None)
     import team_moves as TM
-    knots = game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame, air=air)
+    knots = game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame, air=air, lunge_to=lunge_to, rr=rr)
     lin = None
     if frm is None:
-        tr0 = T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed)[1]
+        tr0 = T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed, release_rate=rr)[1]
         end = tr0.T + 0.05 * tr0.step_len
         start = max(0.0, end - max(end - (tr0.tA + tr0.hold), lunge / 12.0))
         lin = (start, end)
@@ -935,6 +949,8 @@ def floor_checks(clip, low_body, low_weapon, low_where):
         ww = min(range(len(low_weapon)), key=lambda i: low_weapon[i])
         check(not bad, f"{clip.name}: el arma no se mete en el piso (f{ww} {low_weapon[ww]:.1f} cm"
                        f"{'; ' + str(len(bad)) + ' cuadros de más' if bad else ''})")
+        if bad:
+            print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.1f}" for i, v in enumerate(low_weapon) if v < 0.0))
 
 
 def replay_checks(ch, clip, soles, hits):
@@ -957,16 +973,17 @@ def replay_checks(ch, clip, soles, hits):
         return
     ap, a = t["apex"], t["contact"]
     roots = [Vector((td[0], td[1], 0.0)) * x for x in clip.travel_table]
-    lf = t.get("lunge_from")
+    lf, lt, rr = t.get("lunge_from"), t.get("lunge_to"), t.get("release_rate", 1.6)
     w, p, at = replay_skate(clip, soles, roots, td, n, ap, a, t.get("windup", 0.55), t["lunge"], None if lf is None else lf / n,
-                            air=t.get("lunge_air", False))
+                            air=t.get("lunge_air", False), lunge_to=None if lt is None else lt / n, rr=rr)
     check(w <= 3.0 and p <= 2.0, f"{clip.name}: con el reloj del juego los pies apoyados no patinan en la embestida ({w:.1f} cm, peor "
                                  f"muestra {p:.1f} cm, {at})")
     out = {"clip": round(w, 1)}
-    for a0, a1, apex, fn, hl, hs, frm, air in hits.get(t.get("state", clip.name), []):
+    for a0, a1, apex, fn, hl, hs, frm, air, to in hits.get(t.get("state", clip.name), []):
         if hl <= 0.0:
             continue
-        wv, pv, atv = replay_skate(clip, soles, roots, td, n, ap, a, t.get("windup", 0.55), hl, frm, speed=hs, air=air)
+        wv, pv, atv = replay_skate(clip, soles, roots, td, n, ap, a, t.get("windup", 0.55), hl, frm, speed=hs, air=air,
+                                   lunge_to=to, rr=rr)
         out[fn] = round(wv, 1)
         check(wv <= 2.0, f"{clip.name}: {fn}() ({hl:.2f} m, velocidad {hs:g}{', lineal' if frm is None else ''}) con el reloj del "
                          f"juego: {wv:.1f} cm ({atv})", warn=True)
