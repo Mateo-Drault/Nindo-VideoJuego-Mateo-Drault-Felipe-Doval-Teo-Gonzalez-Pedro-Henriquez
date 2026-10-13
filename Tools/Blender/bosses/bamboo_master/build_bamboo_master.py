@@ -346,6 +346,7 @@ def main():
         lint_reach(rig, clips, framesd, reports)
     act, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
     last = max(b for a, b in ranges.values())
+    write_coat_slip(meshes["Master_Robe"], baked, ranges, ctrlsd, last)
     # techo y piso de la silueta en todos los cuadros (mallas evaluadas, solo las que se ven en ese cuadro)
     for clip, frames in ([] if lab else baked):
         a, b = ranges[clip.name]
@@ -438,6 +439,43 @@ def main():
         if "PoseTest" in ranges and not ONLY and not SHEETS:
             pose_test_sheets(rv, ranges)
     finish(t0)
+
+
+def write_coat_slip(robe, baked, ranges, ctrlsd, last):
+    """El peso de la forma CoatSlip del saco puesto en la toma única: el control 'robe_slip' de los clips que lo
+    animan (PhaseCoat) y 0 en todos los demás cuadros. Desde robe_off el saco puesto ya está apagado: queda en 1 hasta el
+    final del clip. El FBX lo lleva como DeformPercent y Unity como blendShape.CoatSlip de Master_Robe."""
+    keys = shape_keys(robe)
+    if keys is None or MM.COAT_SLIP not in keys.key_blocks:
+        return
+    kb = keys.key_blocks[MM.COAT_SLIP]
+    vals = {0: 0.0, last: 0.0}
+    for clip, frames in baked:
+        cs = ctrlsd[clip.name]
+        if not any(c.get("robe_slip") for c in cs):
+            continue
+        a, b = ranges[clip.name]
+        off = clip.timing.get("robe_off")
+        vals[a - 1] = 0.0
+        for i, c in enumerate(cs):
+            v = c.get("robe_slip")
+            vals[a + i] = 1.0 if off is not None and i >= off else (v or 0.0)
+        vals[b + 1] = 0.0
+    for f in sorted(vals):
+        kb.value = vals[f]
+        kb.keyframe_insert("value", frame=f)
+    kb.value = 0.0
+    # lineal: entre las claves de cada cuadro no hay nada que suavizar y afuera de PhaseCoat queda en 0 parejo
+    ad = keys.animation_data
+    if ad is not None and ad.action is not None:
+        for fc in ad.action.fcurves:      # (bl_compat: la channelbag del slot de la forma)
+            for kp in fc.keyframe_points:
+                kp.interpolation = 'LINEAR'
+    print(f"  {robe.name}: {MM.COAT_SLIP} animada en {sum(1 for v in vals.values() if v > 0.0)} cuadros")
+
+
+def shape_keys(o):
+    return o.data.shape_keys if o is not None and o.type == 'MESH' else None
 
 
 def lint_chains(rig, MC, clips, framesd, reports):

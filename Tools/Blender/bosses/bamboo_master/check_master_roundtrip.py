@@ -34,5 +34,21 @@ for f, bones in ref.items():
 print(f"RT error máx {worst[0] * 100:.2f} cm en {worst[1]} f{worst[2]}")
 mats = sorted({m.name for o in bpy.data.objects if o.type == 'MESH' for m in o.data.materials if m})
 print("MESHES", sorted(o.name for o in bpy.data.objects if o.type == 'MESH'), "MATERIALES", mats)
-print("ROUNDTRIP", "OK" if worst[0] < 0.01 else "FALLA")
-sys.exit(0 if worst[0] < 0.01 else 1)
+# la forma CoatSlip del saco puesto vuelve con su animación (el peso llega a 1 en CoatOff de PhaseCoat)
+robe = bpy.data.objects.get("Master_Robe")
+keys = robe.data.shape_keys if robe is not None else None
+kb = keys.key_blocks.get("CoatSlip") if keys is not None else None
+peak = 0.0
+if kb is not None and keys.animation_data and keys.animation_data.action:
+    act_k = keys.animation_data.action
+    try:
+        fcs = act_k.fcurves                      # Blender 4.x
+    except AttributeError:                       # Blender 5: las curvas viven en la channelbag del slot
+        from bpy_extras import anim_utils
+        fcs = anim_utils.action_get_channelbag_for_slot(act_k, keys.animation_data.action_slot).fcurves
+    peak = max((k.co[1] for fc in fcs if "CoatSlip" in fc.data_path for k in fc.keyframe_points), default=0.0)
+slip_ok = kb is not None and peak > 0.99
+print(f"CoatSlip {'presente' if kb is not None else 'FALTA'}, peso máx. {peak:.2f}")
+ok = worst[0] < 0.01 and slip_ok
+print("ROUNDTRIP", "OK" if ok else "FALLA")
+sys.exit(0 if ok else 1)

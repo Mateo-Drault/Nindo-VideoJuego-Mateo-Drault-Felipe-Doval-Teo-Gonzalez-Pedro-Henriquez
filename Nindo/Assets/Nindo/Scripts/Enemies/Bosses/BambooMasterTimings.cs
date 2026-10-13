@@ -214,11 +214,11 @@ namespace Nindo
         public static readonly MasterClip GuardHit = new MasterClip("GuardHit", 15, 0.5f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "GUARD", "GUARD", 0.04f, new string[0], new[] { "Deflect" }, new[] { 0.0667f });
+            "GUARD", "GUARD", 0.0f, new string[0], new[] { "Deflect" }, new[] { 0.0667f });
         public static readonly MasterClip Counter = new MasterClip("Counter", 16, 0.5333f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "GUARD", "COIL", 0.04f, new string[0], new[] { "Deflect" }, new[] { 0.125f });
+            "GUARD", "COIL", 0.0f, new string[0], new[] { "Deflect" }, new[] { 0.125f });
         public static readonly MasterClip CounterStrike = new MasterClip("CounterStrike", 26, 0.8667f, 0.1154f, 0.2692f, 0.3462f, 1.6f, 1.3f, 1, new[] { "Master_GlintHandR" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.075f, 0.15f, 0.255f, 0.36f, 0.4725f, 0.51f, 0.5359f, 0.5561f, 0.5705f, 0.5791f, 0.582f, 0.5839f, 0.5883f, 0.5937f, 0.5981f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f },
@@ -274,11 +274,11 @@ namespace Nindo
         public static readonly MasterClip GuardHit_P2 = new MasterClip("GuardHit_P2", 15, 0.5f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "GUARD", "GUARD", 0.04f, new string[0], new[] { "Deflect" }, new[] { 0.0667f });
+            "GUARD", "GUARD", 0.0f, new string[0], new[] { "Deflect" }, new[] { 0.0667f });
         public static readonly MasterClip Counter_P2 = new MasterClip("Counter_P2", 16, 0.5333f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "GUARD", "COIL", 0.04f, new string[0], new[] { "Deflect" }, new[] { 0.125f });
+            "GUARD", "COIL", 0.0f, new string[0], new[] { "Deflect" }, new[] { 0.125f });
         public static readonly MasterClip CounterStrike_P2 = new MasterClip("CounterStrike_P2", 26, 0.8667f, 0.1154f, 0.2692f, 0.3462f, 1.6f, 1.3f, 1, new[] { "Master_GlintHandR" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.075f, 0.15f, 0.255f, 0.36f, 0.4725f, 0.51f, 0.5359f, 0.5561f, 0.5705f, 0.5791f, 0.582f, 0.5839f, 0.5883f, 0.5937f, 0.5981f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f, 0.6f },
@@ -330,7 +330,7 @@ namespace Nindo
         public static readonly MasterClip Guard_P3 = new MasterClip("Guard_P3", 20, 0.6667f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "READY", "GUARD", 0.04f, new string[0], new string[0], new float[0]);
+            "READY", "GUARD", 0.0f, new string[0], new string[0], new float[0]);
         public static readonly MasterClip GuardHit_P3 = new MasterClip("GuardHit_P3", 15, 0.5f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
@@ -354,19 +354,19 @@ namespace Nindo
         public static readonly MasterClip Taunt_P3 = new MasterClip("Taunt_P3", 60, 2.0f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "READY", "READY", 0.04f, new string[0], new[] { "Step", "Open", "Beckon", "Step" }, new[] { 0.1667f, 0.2333f, 0.55f, 0.9f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Step", "Open", "Beckon", "Step" }, new[] { 0.1667f, 0.2333f, 0.55f, 0.9f });
         public static readonly MasterClip Stance_P3 = new MasterClip("Stance_P3", 20, 0.6667f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "READY", "STANCE", 0.04f, new string[0], new string[0], new float[0]);
+            "READY", "STANCE", 0.0f, new string[0], new string[0], new float[0]);
         public static readonly MasterClip Hit_P3 = new MasterClip("Hit_P3", 18, 0.6f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.12f, 0.0f, 0.0f,
             new[] { 0.0f, -0.0292f, -0.0584f, -0.0697f, -0.0811f, -0.0924f, -0.1038f, -0.1067f, -0.1097f, -0.1127f, -0.1157f, -0.1167f, -0.1176f, -0.1183f, -0.1189f, -0.1194f, -0.1197f, -0.1199f, -0.12f },
-            "READY", "READY", 0.04f, new string[0], new string[0], new float[0]);
+            "READY", "READY", 0.0f, new string[0], new string[0], new float[0]);
         public static readonly MasterClip HitHeavy_P3 = new MasterClip("HitHeavy_P3", 27, 0.9f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.42f, 0.0f, 0.0f,
             new[] { 0.0f, -0.0885f, -0.177f, -0.2655f, -0.2906f, -0.3156f, -0.3407f, -0.3658f, -0.3908f, -0.395f, -0.3992f, -0.4034f, -0.4076f, -0.4118f, -0.4161f, -0.4166f, -0.4172f, -0.4177f, -0.4181f, -0.4185f, -0.4189f, -0.4192f, -0.4194f, -0.4196f, -0.4198f, -0.4199f, -0.42f, -0.42f },
-            "READY", "READY", 0.04f, new string[0], new string[0], new float[0]);
+            "READY", "READY", 0.0f, new string[0], new string[0], new float[0]);
         public static readonly MasterClip Parried_P3 = new MasterClip("Parried_P3", 30, 1.0f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.4f, 0.0f, 0.0f,
             new[] { 0.0f, -0.0973f, -0.1946f, -0.2379f, -0.2812f, -0.3244f, -0.3342f, -0.3439f, -0.3537f, -0.3634f, -0.3732f, -0.3829f, -0.3927f, -0.3935f, -0.3942f, -0.3949f, -0.3956f, -0.3962f, -0.3967f, -0.3973f, -0.3977f, -0.3982f, -0.3986f, -0.3989f, -0.3992f, -0.3994f, -0.3996f, -0.3998f, -0.3999f, -0.4f, -0.4f },
@@ -378,7 +378,7 @@ namespace Nindo
         public static readonly MasterClip Exhausted_P3 = new MasterClip("Exhausted_P3", 120, 4.0f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "READY", "READY", 0.04f, new string[0], new[] { "Kneel", "Breath", "Breath", "Breath" }, new[] { 0.125f, 0.2167f, 0.4333f, 0.65f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Kneel", "Breath", "Breath", "Breath" }, new[] { 0.125f, 0.2167f, 0.4333f, 0.65f });
         public static readonly MasterClip ExhaustedHit_P3 = new MasterClip("ExhaustedHit_P3", 16, 0.5333f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
@@ -434,51 +434,51 @@ namespace Nindo
         public static readonly MasterClip BackHop_P3 = new MasterClip("BackHop_P3", 22, 0.7333f, 0.2727f, 0.6818f, 0.6818f, 1.0f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.4091f, 0.6818f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.5494f, -1.0335f, -1.4711f, -1.8736f, -2.2482f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f },
-            "READY", "READY", 0.04f, new string[0], new[] { "TakeOff", "Land" }, new[] { 0.4091f, 0.6818f });
+            "READY", "READY", 0.0f, new string[0], new[] { "TakeOff", "Land" }, new[] { 0.4091f, 0.6818f });
         public static readonly MasterClip Palm_P3 = new MasterClip("Palm_P3", 34, 1.1333f, 0.2941f, 0.4412f, 0.5f, 1.6f, 2.4f, 1, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.247f, 0.4227f, 0.5985f, 0.7624f, 0.817f, 0.8586f, 0.8882f, 0.9061f, 0.912f, 0.916f, 0.9254f, 0.9366f, 0.946f, 0.95f, 0.95f, 0.95f, 0.95f, 0.95f, 0.95f, 0.95f, 0.95f, 0.95f },
-            "READY", "READY", 0.04f, new[] { "Palm_Mid_P3", "Palm_Close_P3" }, new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.2941f, 0.4412f, 0.4118f, 0.7059f });
+            "READY", "READY", 0.0f, new[] { "Palm_Mid_P3", "Palm_Close_P3" }, new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.2941f, 0.4412f, 0.4118f, 0.7059f });
         public static readonly MasterClip Palm_Mid_P3 = new MasterClip("Palm_Mid_P3", 34, 1.1333f, 0.2941f, 0.4412f, 0.5f, 1.6f, 1.87f, 1, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.1309f, 0.2241f, 0.3172f, 0.4041f, 0.433f, 0.455f, 0.4708f, 0.4802f, 0.4834f, 0.4855f, 0.4904f, 0.4964f, 0.5014f, 0.5035f, 0.5035f, 0.5035f, 0.5035f, 0.5035f, 0.5035f, 0.5035f, 0.5035f, 0.5035f },
-            "READY", "READY", 0.04f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.2941f, 0.4412f, 0.4118f, 0.7059f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.2941f, 0.4412f, 0.4118f, 0.7059f });
         public static readonly MasterClip Palm_Close_P3 = new MasterClip("Palm_Close_P3", 34, 1.1333f, 0.2941f, 0.4412f, 0.5f, 1.6f, 1.43f, 1, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0321f, 0.055f, 0.0778f, 0.0991f, 0.1062f, 0.1116f, 0.1155f, 0.1178f, 0.1186f, 0.1191f, 0.1203f, 0.1218f, 0.123f, 0.1235f, 0.1235f, 0.1235f, 0.1235f, 0.1235f, 0.1235f, 0.1235f, 0.1235f, 0.1235f },
-            "READY", "READY", 0.04f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.2941f, 0.4412f, 0.4118f, 0.7059f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.2941f, 0.4412f, 0.4118f, 0.7059f });
         public static readonly MasterClip ChopPalm_P3 = new MasterClip("ChopPalm_P3", 36, 1.2f, 0.3056f, 0.4722f, 0.5278f, 1.6f, 2.79f, 1, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.126f, 0.252f, 0.405f, 0.558f, 0.72f, 0.774f, 0.8134f, 0.8415f, 0.8584f, 0.864f, 0.8677f, 0.8767f, 0.8873f, 0.8963f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f, 0.9f },
-            "READY", "READY", 0.04f, new[] { "ChopPalm_Mid_P3", "ChopPalm_Close_P3" }, new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3056f, 0.4722f, 0.4444f, 0.7222f });
+            "READY", "READY", 0.0f, new[] { "ChopPalm_Mid_P3", "ChopPalm_Close_P3" }, new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3056f, 0.4722f, 0.4444f, 0.7222f });
         public static readonly MasterClip ChopPalm_Mid_P3 = new MasterClip("ChopPalm_Mid_P3", 36, 1.2f, 0.3056f, 0.4722f, 0.5278f, 1.6f, 2.13f, 1, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0668f, 0.1336f, 0.2147f, 0.2957f, 0.3816f, 0.4102f, 0.4311f, 0.446f, 0.4549f, 0.4579f, 0.4599f, 0.4646f, 0.4703f, 0.475f, 0.477f, 0.477f, 0.477f, 0.477f, 0.477f, 0.477f, 0.477f, 0.477f, 0.477f },
-            "READY", "READY", 0.04f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3056f, 0.4722f, 0.4444f, 0.7222f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3056f, 0.4722f, 0.4444f, 0.7222f });
         public static readonly MasterClip ChopPalm_Close_P3 = new MasterClip("ChopPalm_Close_P3", 36, 1.2f, 0.3056f, 0.4722f, 0.5278f, 1.6f, 1.59f, 1, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0164f, 0.0328f, 0.0527f, 0.0725f, 0.0936f, 0.1006f, 0.1057f, 0.1094f, 0.1116f, 0.1123f, 0.1128f, 0.114f, 0.1154f, 0.1165f, 0.117f, 0.117f, 0.117f, 0.117f, 0.117f, 0.117f, 0.117f, 0.117f, 0.117f },
-            "READY", "READY", 0.04f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3056f, 0.4722f, 0.4444f, 0.7222f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3056f, 0.4722f, 0.4444f, 0.7222f });
         public static readonly MasterClip CraneKick_P3 = new MasterClip("CraneKick_P3", 42, 1.4f, 0.3095f, 0.4286f, 0.4762f, 1.6f, 1.32f, 1, new[] { "Master_GlintFootR" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0075f, 0.03f, 0.0675f, 0.12f, 0.1407f, 0.1926f, 0.26f, 0.3274f, 0.3793f, 0.4f, 0.413f, 0.437f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f },
-            "READY", "READY", 1.61f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3095f, 0.4286f, 0.6667f, 0.8571f });
+            "READY", "READY", 1.39f, new string[0], new[] { "Apex", "Strike", "Step", "Step" }, new[] { 0.3095f, 0.4286f, 0.6667f, 0.8571f });
         public static readonly MasterClip LeapKick_P3 = new MasterClip("LeapKick_P3", 56, 1.8667f, 0.3393f, 0.5893f, 0.6429f, 0.6f, 0.31f, 2, new[] { "Master_GlintFootR" },
             1.8f, 4.79f, 0.0f, 0.375f, 0.5893f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.15f, 0.7509f, 1.2574f, 1.7037f, 2.1072f, 2.4782f, 2.8236f, 3.1479f, 3.4547f, 3.7465f, 4.0253f, 4.2927f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f, 4.55f },
-            "READY", "READY", 0.04f, new string[0], new[] { "Apex", "TakeOff", "Strike", "Land", "Step" }, new[] { 0.3393f, 0.375f, 0.5893f, 0.5893f, 0.6429f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "TakeOff", "Strike", "Land", "Step" }, new[] { 0.3393f, 0.375f, 0.5893f, 0.5893f, 0.6429f });
         public static readonly MasterClip Sweep_P3 = new MasterClip("Sweep_P3", 48, 1.6f, 0.25f, 0.3333f, 0.625f, 1.6f, 2.46f, 2, new[] { "Master_GlintStaff" },
             2.3f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "READY", "READY", 0.04f, new string[0], new[] { "Apex", "Strike", "SweepEnd", "Step" }, new[] { 0.25f, 0.3333f, 0.625f, 0.7917f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "Strike", "SweepEnd", "Step" }, new[] { 0.25f, 0.3333f, 0.625f, 0.7917f });
         public static readonly MasterClip QiWave_P3 = new MasterClip("QiWave_P3", 56, 1.8667f, 0.5357f, 0.6429f, 0.6964f, 1.6f, 0.95f, 2, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "READY", "READY", 0.04f, new string[0], new[] { "Gather", "Apex", "Stomp", "QiRelease", "Strike" }, new[] { 0.375f, 0.5357f, 0.6429f, 0.6429f, 0.6429f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Gather", "Apex", "Stomp", "QiRelease", "Strike" }, new[] { 0.375f, 0.5357f, 0.6429f, 0.6429f, 0.6429f });
         public static readonly MasterClip DashStrike_P3 = new MasterClip("DashStrike_P3", 36, 1.2f, 0.2222f, 0.4722f, 0.5278f, 0.68f, 2.43f, 2, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.2778f, 0.4444f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 1.4805f, 2.3863f, 3.15f, 3.8228f, 4.431f, 4.9904f, 5.511f, 6.0f, 6.1312f, 6.225f, 6.2812f, 6.3f, 6.3111f, 6.3397f, 6.3787f, 6.4213f, 6.4603f, 6.4889f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f },
-            "READY", "READY", 0.04f, new string[0], new[] { "Apex", "DashStart", "DashEnd", "Strike", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.4722f, 0.6667f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "DashStart", "DashEnd", "Strike", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.4722f, 0.6667f });
         public static readonly MasterClip PhaseStaff = new MasterClip("PhaseStaff", 90, 3.0f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
@@ -486,7 +486,7 @@ namespace Nindo
         public static readonly MasterClip Defeat = new MasterClip("Defeat", 150, 5.0f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
-            "READY", "MEDITATE", 0.04f, new string[0], new[] { "Exhale", "StaffDrop", "StaffLand", "Step", "Step", "SitDown", "Meditate" }, new[] { 0.1333f, 0.2f, 0.2667f, 0.4f, 0.48f, 0.6533f, 0.7467f });
+            "READY", "MEDITATE", 0.0f, new string[0], new[] { "Exhale", "StaffDrop", "StaffLand", "Step", "Step", "SitDown", "Meditate" }, new[] { 0.1333f, 0.2f, 0.2667f, 0.4f, 0.48f, 0.6533f, 0.7467f });
         public static readonly MasterClip Meditate = new MasterClip("Meditate", 96, 3.2f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,

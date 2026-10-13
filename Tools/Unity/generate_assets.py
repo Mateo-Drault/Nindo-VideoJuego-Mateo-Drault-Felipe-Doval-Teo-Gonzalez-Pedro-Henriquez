@@ -1002,6 +1002,8 @@ def bamboo_master_assets(mats):
     meta = meta.replace("optimizeBones: 1", "optimizeBones: 0").replace("removeConstantScaleCurves: 0", "removeConstantScaleCurves: 1")
     for k in ("animationRotationError", "animationPositionError", "animationScaleError"):
         meta = meta.replace(f"{k}: 0.5", f"{k}: 0.05")
+    # la forma CoatSlip de Master_Robe (el saco que se desliza en PhaseCoat antes de CoatOff) llega como blendShape
+    meta = meta.replace("importBlendShapes: 0", "importBlendShapes: 1")
     write_meta(BAMBOO_FBX, meta, force=True)
     write_meta(BAMBOO_FBX + ".json", TEXT_META)
     ensure_folder_metas(P_BAMBOO)

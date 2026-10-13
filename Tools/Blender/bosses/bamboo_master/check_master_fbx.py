@@ -10,6 +10,8 @@ python Tools/Blender/bosses/bamboo_master/check_master_fbx.py [ruta del .fbx]   
 * Están los huesos de los que dependen el código y las etapas siguientes (dedos, Toe, Staff, Facing, las cadenas
   Acc_* con su '_end' y las esferas AccCol_* con su '_r') y las cuatro mallas, cada una con sus materiales.
 * Una sola toma ('Scene') que cubre los cuadros del sidecar, a 30 fps.
+* La forma CoatSlip de Master_Robe (el saco que se desliza antes de CoatOff) con su curva DeformPercent, que solo pesa
+  dentro de PhaseCoat (el .meta tiene que importar blend shapes: generate_assets.bamboo_master_assets).
 """
 import json, os, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -87,6 +89,34 @@ moving_scale = sorted({n for st in mv.values() for n, prop, ax in st if prop == 
 check(not moving_scale, f"ninguna escala se mueve (curvas de escala constantes en {len(scale_nodes)} huesos)")
 s = FC.summary(FBX)
 info = json.load(open(FBX + ".json", encoding="utf-8"))
+# la forma CoatSlip del saco puesto: canal de Master_Robe, animado solo dentro de PhaseCoat (Unity: blendShape.CoatSlip)
+chans = {i: o for i, o in objs.items() if o.id == b"Deformer" and len(o.props) > 2 and o.props[2] == b"BlendShapeChannel"}
+slip = next((i for i, o in chans.items() if FC.obj_name(o) == "CoatSlip"), None)
+
+
+def owner_mesh(cid):
+    """El Model de la malla que deforma un canal: canal -> BlendShape -> Geometry -> Model."""
+    for bs, _ in up.get(cid, ()):
+        for geo, _ in up.get(bs, ()):
+            for m, _ in up.get(geo, ()):
+                if m in models:
+                    return name_of[m]
+    return None
+
+
+check(slip is not None and owner_mesh(slip) == "Master_Robe",
+      f"forma CoatSlip en Master_Robe (canales: {sorted(FC.obj_name(o) + '@' + str(owner_mesh(i)) for i, o in chans.items())})")
+if slip is not None:
+    pc = info["clips"].get("PhaseCoat")
+    curves = [k for cn, prop in down.get(slip, ()) if cn in objs and objs[cn].id == b"AnimationCurveNode" and prop == "DeformPercent"
+              for k, _ in down.get(cn, ()) if k in objs and objs[k].id == b"AnimationCurve"]
+    on = []
+    for k in curves:
+        el = {x.id: x.props[0] for x in objs[k].elems if x.id in (b"KeyTime", b"KeyValueFloat")}
+        on += [round(t / FC.KTIME * s["fps"]) for t, v in zip(el.get(b"KeyTime", ()), el.get(b"KeyValueFloat", ())) if v > 0.5]
+    inside = pc is not None and on and all(pc["first"] <= f <= pc["last"] for f in on)
+    check(bool(curves) and inside, f"CoatSlip animada solo en PhaseCoat (cuadros con peso: {min(on) if on else '-'}..{max(on) if on else '-'}; "
+                                   f"PhaseCoat {pc['first'] if pc else '?'}..{pc['last'] if pc else '?'})")
 last = max(r["last"] for r in info["clips"].values())
 st = s["stacks"]
 check(list(st) == ["Scene"], f"una sola toma 'Scene' ({list(st)})")

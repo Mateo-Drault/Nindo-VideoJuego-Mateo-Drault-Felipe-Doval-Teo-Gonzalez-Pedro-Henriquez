@@ -1719,8 +1719,11 @@ def phase_coat():
     track = [(0, dict(robe_free=0.0, robe_pos=path[0][1], robe_rot=path[0][2], robe_fold=path[0][3]), "lin"),
              (40, dict(robe_free=0.0, robe_pos=path[0][1], robe_rot=path[0][2], robe_fold=path[0][3]), "lin")] + track + \
             [(110, dict(robe_free=1.0, robe_pos=path[-1][1], robe_rot=path[-1][2], robe_fold=path[-1][3]), "lin")]
-    keys = [(0, ready(1), "sine"), (10, tall, "inout"), (18, mod(tall, breath=0.8), "sine"), (24, out_l, "inout"), (30, grab, "inout"),
-            (35, opn, "inout"), (38, shrug, "inout"), (41, slip, "out"), (44, fling, "expo_out"),
+    # robe_slip: el peso de la forma CoatSlip del saco puesto (master_model). Se abre un poco con los puños (f35) y en
+    # seis cuadros se le desliza por la espalda y los brazos hasta CoatOff (f41), donde ya es casi la copia que vuela
+    keys = [(0, ready(1), "sine"), (10, tall, "inout"), (18, mod(tall, breath=0.8), "sine"), (24, out_l, "inout"),
+            (30, mod(grab, robe_slip=0.0), "inout"), (35, mod(opn, robe_slip=0.12), "inout"), (38, mod(shrug, robe_slip=0.55), "inout"),
+            (41, mod(slip, robe_slip=1.0), "out"), (44, fling, "expo_out"),
             (48, mod(fling, spine=(-4.0, 0.0, 2.0), breath=0.7), "out"), (57, roll, "inout"), (66, rise, "inout"), (78, sink, "inout"),
             (92, mod(READY2, hips=(0.02, 0.065, -0.09)), "inout"), (110, ready(2), "sine")]
     return add("PhaseCoat", 110, keys, ph=1, lag={"head": 2.0, "neck": 1.0}, steps=track,
