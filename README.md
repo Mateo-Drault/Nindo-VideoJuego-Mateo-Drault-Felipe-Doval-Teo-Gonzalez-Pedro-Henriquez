@@ -253,6 +253,10 @@ python3 Tools/Unity/generate_assets.py
 python3 Tools/Fonts/add_macrons.py
 # tiempos de los golpes de Kokuyō (KokuyoTimings.cs) desde el .fbx.json de su build de Blender
 python3 Tools/Unity/kokuyo_timings.py
+# momentos de los clips de Kaito que usan las escenas de la historia (KaitoTimings.cs) desde su kaitooo.fbx.json
+python3 Tools/Unity/kaito_timings.py
+# efectos del rezo con incienso y del sello de la muralla (síntesis pura, sin descargas)
+python3 Tools/Audio/sfx_world_story.py
 # clips del ninja, el sumo, Gorō y el abuelo (Art/Characters/TeamAnims/<Personaje>Anims.fbx + .json): falla si un
 # pie patina, un loop salta o el contacto no coincide con EnemyArchetypes; después metas, controllers y NindoContent
 $B -b --factory-startup --python Tools/Blender/anim/build_team_anims.py -- ninja|sumo|goro|grandpa --export [--renders carpeta]

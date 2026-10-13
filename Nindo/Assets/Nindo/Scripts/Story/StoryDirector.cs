@@ -45,6 +45,7 @@ namespace Nindo
         // ================================================================== inicio
         public void Begin(bool newGame)
         {
+            SetupWallSeal();   // el sello de sombra del portón de la muralla, si sigue cerrado (StoryDirector.Wall)
             var s = Game.Save;
             P.SetKatanaVisible(s.HasFlag(Flags.KatanaObtained));
             UpdateObjective();
@@ -135,13 +136,8 @@ namespace Nindo
             Game.Camera?.Shake(0.6f);
             yield return new WaitForSecondsRealtime(4.2f);
 
-            // Kaito tirado en el piso
-            var lie = StartCoroutine(LieDown(true));
-            int shot = Game.Camera.PlayFollowShot(P.transform, new Vector3(2.2f, 2.2f, 2.6f), 0.3f, 32f, 0f, 0f, 1f, false);
-            yield return Game.UI.Fade(0f, 2.5f);
-            yield return new WaitForSecondsRealtime(0.8f);
-            yield return LieDown(false);
-            Game.Camera.CancelShot(shot);
+            // Kaito vuelve en sí en el piso; vuelve al cortar por encima de su hombro hacia el abuelo (StoryDirector.Prologue)
+            yield return KaitoComesTo(kidPos);
 
             // ve al abuelo siendo llevado
             // de costado al arrastre y del lado del ninja (offset local: el transform mira a 'exit'): se ven los dos brazos
@@ -431,7 +427,8 @@ namespace Nindo
                 case "wall_guards":
                     StartCoroutine(Cutscene(Say("wall_guards"), false));
                     break;
-                case "enc_done_wall": StartCoroutine(Cutscene(WallOpens())); break;
+                // el portón ya no se abre solo: tiene un sello de sombra que Kaito abre con la bandana (StoryDirector.Wall)
+                case "enc_done_wall": StartCoroutine(Cutscene(WallGuardsDown())); break;
                 case "garden": StartCoroutine(Cutscene(Say("garden"), false)); break;
                 case "sumo_intro":
                 {
@@ -471,16 +468,6 @@ namespace Nindo
             Game.Save.SetFlag(Flags.ForestSeen);
         }
 
-        IEnumerator WallOpens()
-        {
-            Game.Save.SetFlag(Flags.WallGateOpen);
-            Vector3 gate = PointPos("wall_gate", P.transform.position + P.transform.forward * 8f);
-            int shot = Game.Camera.PlayStaticShot(gate + new Vector3(4f, 6f, -12f), gate + Vector3.up * 2f, 34f, 3.2f, 1f, 1f);
-            yield return new WaitForSecondsRealtime(3.4f);
-            yield return Say("wall_open");
-            Game.Camera.CancelShot(shot);
-        }
-
         IEnumerator SumoIntro()
         {
             var enc = Encounter.Get("sumo");
@@ -513,16 +500,6 @@ namespace Nindo
             Game.Camera.CancelShot(shot);
             Game.UI.ShowTutorial($"{{Ability1}} Corte del Viento (35)   ·   {{Ability2}} Torbellino de Hojas (30)");
             StartCoroutine(HideTutorialLater(6f));
-        }
-
-        IEnumerator DojoGateFirstLook()
-        {
-            var gate = Game.World.Point("seal_gate");
-            int shot = -1;
-            if (gate != null) shot = Game.Camera.PlayStaticShot(gate.position + gate.forward * -16f + Vector3.up * 7f, gate.position + Vector3.up * 5f, 36f, 6f, 1.2f, 1f);
-            yield return new WaitForSecondsRealtime(1.4f);
-            yield return Say("dojo_gate");
-            if (shot >= 0) Game.Camera.CancelShot(shot);
         }
 
         // ================================================================== presentación de la cascada
@@ -674,38 +651,6 @@ namespace Nindo
             SaveSystem.Save();
         }
 
-        public void OpenSealGate(SealGate gate)
-        {
-            if (Game.Save.SealCount < 3) { StartCoroutine(Cutscene(Say("dojo_gate_incomplete"), false)); return; }
-            if (Game.Save.HasFlag(Flags.DojoOpen)) return;
-            StartCoroutine(Cutscene(SealGateRoutine(gate)));
-        }
-
-        IEnumerator SealGateRoutine(SealGate gate)
-        {
-            // cámara frente al portón (forward del marcador = hacia afuera), mirando los huecos
-            int shot = Game.Camera.PlayStaticShot(gate.transform.position + gate.transform.forward * 13f + Vector3.up * 4f, gate.SocketPosition(1), 34f, 7f, 1f, 1f);
-            yield return new WaitForSecondsRealtime(1f);
-            for (int i = 0; i < 3; i++) { gate.LightSocket(i); yield return new WaitForSecondsRealtime(0.8f); }
-            Game.Camera.Shake(0.5f);
-            Game.Save.SetFlag(Flags.DojoOpen);
-            SaveSystem.Save();
-            yield return new WaitForSecondsRealtime(2.2f);
-            yield return Say("dojo_gate_open");
-            Game.Camera.CancelShot(shot);
-        }
-
-        IEnumerator Ending()
-        {
-            Game.Save.SetFlag(Flags.FinalBossDone);
-            SaveSystem.Save();
-            // Kokuyō suelta la espada, pierde la máscara y la luna vuelve antes del fundido (KokuyoBoss.FinaleSeconds)
-            yield return new WaitForSecondsRealtime(FinalBoss() != null ? KokuyoBoss.FinaleSeconds : 3.5f);
-            yield return Cutscene(EndingScene());
-            Game.Audio?.PlayMusic("ending", 3f);
-            Game.UI.ShowEnding();
-        }
-
         // ================================================================== muerte / viaje
         void OnPlayerDied()
         {
@@ -782,73 +727,6 @@ namespace Nindo
         {
             Game.Save.SetFlag(Flags.KatanaObtained);
             enabled = false;
-        }
-    }
-
-    /// <summary>Puerta del dojo con los tres huecos para los sellos.</summary>
-    /// <summary>
-    /// Portón del dojo con los tres huecos para los sellos (modelados en dojo_gate). El marcador
-    /// está en el centro del portón y su forward mira hacia afuera (hacia el jugador que llega).
-    /// </summary>
-    public class SealGate : Interactable
-    {
-        readonly GameObject[] sockets = new GameObject[3];
-        // centro de cada hueco en coordenadas locales del portón (ver build_dojo_gate: x ±1.15,
-        // altura 4.5+0.57, cara frontal en z 1.59); el medallón tiene el origen en su base (-0.25)
-        static readonly Vector3[] offsets = { new Vector3(-1.15f, 4.82f, 1.64f), new Vector3(0f, 4.82f, 1.64f), new Vector3(1.15f, 4.82f, 1.64f) };
-        static readonly string[] sealProps = { "key_seal_mountain", "key_seal_lake", "key_seal_bamboo" };
-
-        void Awake()
-        {
-            prompt = "Colocar los sellos";
-            radius = 4.5f;
-            promptHeight = 2.2f;
-        }
-
-        void Start()
-        {
-            if (Game.Save.HasFlag(Flags.DojoOpen))
-                for (int i = 0; i < 3; i++) Place(i);
-        }
-
-        public override bool CanInteract => !Game.Save.HasFlag(Flags.DojoOpen);
-
-        public override void Interact(PlayerController p) => Game.Story?.OpenSealGate(this);
-
-        /// <summary>Punto donde va el sello i (en el mundo).</summary>
-        public Vector3 SocketPosition(int i) => transform.TransformPoint(offsets[i] + Vector3.up * 0.25f);
-
-        GameObject Place(int i)
-        {
-            if (sockets[i] != null) return sockets[i];
-            GameObject go;
-            var model = Game.Content != null ? Game.Content.Prop(sealProps[i]) : null;
-            if (model != null) go = Instantiate(model, transform);
-            else
-            {
-                go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                Destroy(go.GetComponent<Collider>());
-                go.transform.SetParent(transform, false);
-                go.transform.localScale = new Vector3(0.5f, 0.05f, 0.5f);
-                go.GetComponent<MeshRenderer>().sharedMaterial = FXMaterials.Flash;
-            }
-            go.name = sealProps[i];
-            go.transform.localPosition = offsets[i];
-            go.transform.localRotation = model != null ? Quaternion.identity : Quaternion.Euler(90f, 0f, 0f);
-            var lg = new GameObject("Glow");
-            lg.transform.SetParent(go.transform, false);
-            lg.transform.localPosition = new Vector3(0f, 0.25f, 0.6f);
-            var l = lg.AddComponent<Light>();
-            l.type = LightType.Point; l.range = 3.5f; l.intensity = 1.6f; l.color = new Color(1f, 0.82f, 0.4f); l.shadows = LightShadows.None;
-            sockets[i] = go;
-            return go;
-        }
-
-        public void LightSocket(int i)
-        {
-            var go = Place(i);
-            Game.FX?.SealGlow(go.transform.position + go.transform.up * 0.25f);
-            Game.Audio?.Play("seal", go.transform.position, 1f);
         }
     }
 }

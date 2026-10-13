@@ -116,9 +116,10 @@ namespace Nindo
         {
             switch (id)
             {
+                // lo que murmura en el piso va antes, mientras se despierta (WakeMumble): esto es cuando ya lo vio
                 case "intro_wake":
                     return new List<DialogueLine> {
-                        L(Kaito, "Ugh... mi cabeza... ¿Qué pasó? Había un ruido en los cultivos y..."),
+                        L(Kaito, "¡Abuelo!"),
                         L(Abuelo, "¡KAITO! ¡Desatá la cinta de la guadaña! ¡Rápido!"),
                     };
                 case "intro_bandana":
@@ -146,9 +147,15 @@ namespace Nindo
                         L(Ninja, "¡Alto ahí! Nadie cruza la muralla Kurokage."),
                         L(Kaito, "Entonces voy a tener que abrirla yo."),
                     };
+                // vencidos los guardias: el portón tiene un sello de sombra (StoryDirector.WallGuardsDown)
+                case "wall_sealed":
+                    return new List<DialogueLine> {
+                        L(Kaito, "El portón está atado con cuerdas de sombra... Así no se abre ni a golpes."),
+                        L(Espiritu, "Esa sombra la tejió el clan. Acercate al portón y soltá la luz de la bandana."),
+                    };
                 case "wall_open":
                     return new List<DialogueLine> {
-                        L(Kaito, "El portón está abierto. Más allá está el jardín del clan."),
+                        L(Kaito, "¡Se abrió! Más allá está el jardín del clan. Aguantá, abuelo."),
                     };
                 case "garden":
                     return new List<DialogueLine> {
@@ -163,11 +170,12 @@ namespace Nindo
                         L(Kaito, "La bandana brilla... el espíritu del abuelo me habla."),
                         L("Espíritu de la Bandana", "Usá mi fuerza cuando el espíritu esté lleno. Corte del Viento {Ability1} y Torbellino de Hojas {Ability2}."),
                     };
+                // la primera vez frente a la puerta (StoryDirector.DojoGateFirstLook: el plano termina en los tres huecos)
                 case "dojo_gate":
                     return new List<DialogueLine> {
-                        L(Kaito, "La puerta del dojo... tiene tres huecos. Sellos."),
-                        L(Kaito, "Uno en la Montaña Kodoyama, al oeste. Otro en la Aldea del Lago, al este. Y el último en el Bosque de Bambú, al noreste."),
-                        L(Kaito, "Los guardianes de cada sello me esperan. Abuelo, ya falta poco."),
+                        L(Kaito, "La puerta del dojo... tres huecos con grabados: una montaña, el agua y el bambú."),
+                        L(Kaito, "Sellos. Uno en la Montaña Kodoyama, al oeste. Otro en el Lago Kohan, al este. Y el último en el Bosque de Bambú, al noreste."),
+                        L(Kaito, "Cada guardián tiene el suyo. Apenas consiga uno, lo traigo y lo pongo en su lugar."),
                     };
                 case "dojo_gate_incomplete":
                     return new List<DialogueLine> {
@@ -254,6 +262,10 @@ namespace Nindo
                 case "ending":
                     return new List<DialogueLine> {
                         L(Abuelo, "Kaito... viniste. Sabía que la cinta te elegiría."),
+                    };
+                // el final (StoryDirector.Ending): el reencuentro va en un plano de los dos y esto en otro de los tres
+                case "ending_kokuyo":
+                    return new List<DialogueLine> {
                         L(Kokuyo, "...Te eligió a vos. Como a él."),
                         L(Abuelo, "No te dejé solo, Kokuyō. Vos cortaste la cinta."),
                         L(Abuelo, "El verdadero poder nace del lazo que nos une a los nuestros."),
@@ -336,6 +348,67 @@ namespace Nindo
         }
 
         /// <summary>
+        /// Lo que Kaito reza en voz baja con las manos juntas, la primera vez en cada santuario (sale arriba sin pausar la
+        /// escena). La primera de la partida es por el abuelo; después cambia con lo que avanzó, para no repetirse.
+        /// </summary>
+        public static string PrayerLine(bool first, SaveData s)
+        {
+            if (first) return "Abuelo... donde sea que te tengan, aguantá. Ya voy a buscarte.";
+            int seals = s.SealCount;
+            if (seals >= 3) return "Los tres sellos, abuelo. Esta noche volvés a casa.";
+            if (seals == 2) return "Dos sellos, abuelo. Me falta uno solo.";
+            if (seals == 1) return "Ya tengo un sello, abuelo. Esperame.";
+            int n = s.shrines != null ? s.shrines.Count : 0;
+            switch (n % 3)
+            {
+                case 0: return "Que el camino me lleve hasta vos, abuelo.";
+                case 1: return "Abuelo, cuidate. Te voy a traer de vuelta a casa.";
+                default: return "Cada santuario me acerca un poco más a vos.";
+            }
+        }
+
+        /// <summary>Lo que murmura Kaito tirado en el piso del prólogo, mientras se despierta (StoryDirector.Prologue).</summary>
+        public const string WakeMumble = "Ugh... mi cabeza... ¿Qué pasó?";
+
+        /// <summary>Kaito llama al abuelo al ir hacia él en el final, antes de que lo suelten (StoryDirector.Ending).</summary>
+        public const string EndingCall = "¡Abuelo!";
+
+        /// <summary>El consejo del primer santuario después del prólogo (StoryDirector.TickShrineTip).</summary>
+        public const string ShrinePrayHint = "Rezá en los santuarios con {Interact}: te curan, guardan la partida y, si caés, volvés ahí.";
+
+        // ------------------------------------------------------------------ puerta de los tres sellos (World/SealGate)
+        static readonly string[] sealNames = { "Sello de la Montaña", "Sello del Agua", "Sello del Bambú" };
+        static readonly string[] placeSealPrompts = { "Colocar el Sello de la Montaña", "Colocar el Sello del Agua", "Colocar el Sello del Bambú" };
+        public const string PlaceSealsPrompt = "Colocar los sellos", OpenGatePrompt = "Abrir la puerta", ExamineGatePrompt = "Examinar la puerta";
+
+        /// <summary>El nombre de cada sello (el HUD, los carteles y el objetivo dicen lo mismo).</summary>
+        public static string SealName(SealId s) => sealNames[(int)s];
+
+        /// <summary>El cartel de la puerta cuando Kaito trae un solo sello (cadenas fijas: se compara cada cuadro).</summary>
+        public static string PlaceSealPrompt(SealId s) => placeSealPrompts[(int)s];
+
+        /// <summary>Lo que dice Kaito (arriba, sin pausar) al quedar un sello puesto y faltar otros.</summary>
+        public static string SealPlacedLine(SaveData s, SealId justPlaced)
+        {
+            int placed = SealGate.PlacedCount(s);
+            if (placed <= 1) return SealName(justPlaced) + ", en su lugar. Faltan dos.";
+            return "Dos sellos puestos. Me falta uno solo.";
+        }
+
+        /// <summary>Kaito mira la puerta sin traer ningún sello nuevo: qué falta y dónde está.</summary>
+        public static List<DialogueLine> GateIncomplete(SaveData s)
+        {
+            var missing = new List<string>();
+            if (!s.HasSeal(SealId.Montana)) missing.Add("el de la Montaña Kodoyama, al oeste");
+            if (!s.HasSeal(SealId.Lago)) missing.Add("el del Lago Kohan, al este");
+            if (!s.HasSeal(SealId.Bambu)) missing.Add("el del Bosque de Bambú, al noreste");
+            if (missing.Count >= 3) return Dialogue("dojo_gate_incomplete");
+            string line = missing.Count == 2 ? $"Faltan dos sellos: {missing[0]}, y {missing[1]}."
+                : missing.Count == 1 ? $"Falta un solo sello: {missing[0]}." : "Los tres sellos ya están en su lugar.";
+            return new List<DialogueLine> { L(Kaito, line) };
+        }
+
+        /// <summary>
         /// Objetivo del HUD según lo que de verdad pasó y dónde está Kaito. Antes era un camino fijo: si la muralla no
         /// quedaba marcada como abierta (guardado viejo, o se llegó por otro lado) decía "seguí el rastro hacia el
         /// norte" en todas las zonas, aunque ya tuviera sellos. Ahora lo más avanzado manda (un sello implica la
@@ -347,9 +420,24 @@ namespace Nindo
             if (!s.HasFlag(Flags.Encounter("intro"))) return "Defendete";
             if (s.HasFlag(Flags.FinalBossDone)) return "";
             if (s.HasFlag(Flags.DojoOpen)) return "Entrá al dojo y rescatá al abuelo";
-            if (s.SealCount >= 3) return "Volvé a la puerta del dojo con los tres sellos";
             string zone = Zone.Current != null ? Zone.Current.id : "";
+            // los sellos se ponen de a uno, apenas se tienen (World/SealGate): en la tierra de un guardián que falta
+            // vencer manda ese guardián (no se obliga a volver), en cualquier otro lado, ir a ponerlo
+            int pending = SealGate.PendingCount(s);
+            if (pending > 0 && !GuardianPending(s, zone))
+            {
+                // frente a la puerta (el patio del dojo y el jardín) ya no es "volvé"
+                bool atGate = zone == "dojo" || zone == "jardin";
+                // "Llevá" y no "Volvé a la puerta del dojo a colocar el Sello de la Montaña": esa no entraba en un renglón
+                // y cortaba el nombre del sello ("Montaña" sola abajo)
+                if (pending > 1) return atGate ? "Colocá los sellos en la puerta del dojo" : "Llevá los sellos a la puerta del dojo";
+                string seal = SealName((SealId)SealGate.FirstPending(s));
+                return atGate ? "Colocá el " + seal + " en la puerta del dojo" : "Llevá el " + seal + " a la puerta del dojo";
+            }
+            if (s.SealCount >= 3) return "Abrí la puerta del dojo";
             bool pastWall = s.HasFlag(Flags.WallGateOpen) || s.HasFlag(Flags.DojoGateSeen) || s.SealCount > 0 || PastTheWall(zone);
+            // guardias vencidos y el portón con su sello de sombra (WallSeal)
+            if (!pastWall && s.HasFlag(Flags.Encounter("wall"))) return "Abrí el portón de la muralla con la bandana";
             if (!pastWall)
                 return s.HasFlag(Flags.ForestSeen) ? "Cruzá la muralla del clan Kurokage" : "Seguí el rastro de los secuestradores hacia el bosque";
             // en la tierra de un guardián: qué falta ahí
@@ -367,6 +455,11 @@ namespace Nindo
             if (!s.HasSeal(SealId.Bambu)) missing.Add("Bambú (noreste)");
             return $"Conseguí los sellos ({s.SealCount}/3): " + string.Join(", ", missing);
         }
+
+        // en la tierra de un guardián cuyo sello todavía no tiene
+        static bool GuardianPending(SaveData s, string zone) =>
+            (zone == "montana" && !s.HasSeal(SealId.Montana)) || ((zone == "lago" || zone == "lago_cascada") && !s.HasSeal(SealId.Lago)) ||
+            (zone == "bambu" && !s.HasSeal(SealId.Bambu));
 
         // las zonas que quedan del otro lado de la muralla (llegar a cualquiera ya es haberla cruzado)
         static bool PastTheWall(string zone) =>

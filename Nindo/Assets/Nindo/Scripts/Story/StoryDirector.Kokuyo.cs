@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Nindo
 {
     /// <summary>
-    /// La presentación de Kokuyō y el final del juego. La presentación genérica (PlayBossIntroShot desde 6 m, FOV 34)
+    /// La presentación de Kokuyō (el final del juego está en StoryDirector.Ending). La presentación genérica (PlayBossIntroShot desde 6 m, FOV 34)
     /// le cortaba la cabeza a un jefe de 4.5 m y no mostraba lo que hay que mirar: su sombra en el piso.
     /// </summary>
     public partial class StoryDirector
@@ -92,63 +92,5 @@ namespace Nindo
             foreach (var a in Game.World.Arenas) if (a != null && a.Boss is KokuyoBoss k) return k;
             return null;
         }
-
-        /// <summary>
-        /// El final: Kaito, el abuelo (las cuerdas de sombra se deshacen: está libre) y Kokuyō arrodillado y sin
-        /// máscara, los tres en un plano de perfil (Kaito en el medio: es el lazo). En negro se los ubica: la pelea
-        /// pudo terminar en cualquier punto del patio. Kaito le devuelve su media cinta y Kokuyō se inclina en seiza,
-        /// la misma pose en la que lo esperaba. Después, a casa.
-        /// </summary>
-        IEnumerator EndingScene()
-        {
-            var gp = Game.World.Point("npc_grandpa_dojo");
-            NPC grandpa = gp != null ? gp.GetComponent<NPC>() : null;
-            if (grandpa == null) grandpa = NPC.Spawn("grandpa", P.transform.position + P.transform.forward * 3f, Quaternion.identity, null);
-            var k = FinalBoss();
-            var fx = k != null ? k.ArenaFX : KageArenaFX.Current;
-            // la línea abuelo - Kaito - Kokuyō, perpendicular a la cámara (que mira desde el sudeste, como antes)
-            Vector3 camOff = new Vector3(3.5f, 0f, -4.5f).normalized;
-            Vector3 dir = Vector3.Cross(Vector3.up, camOff);
-            Vector3 g = grandpa.transform.position;
-            Vector3 kaitoSpot = OnNavMesh(g + dir * 2.4f);
-            Vector3 kokuyoSpot = OnNavMesh(g + dir * 5.0f);
-            yield return Game.UI.Fade(1f, 0.6f);
-            P.Teleport(kaitoSpot, Quaternion.LookRotation(-dir));
-            if (k != null) k.KneelAt(kokuyoSpot, Quaternion.LookRotation(-dir));
-            Game.Camera?.Snap();
-            P.ScriptedFace(g);
-            Vector3 mid = k != null ? (g + kokuyoSpot) * 0.5f : (P.transform.position + g) * 0.5f;
-            float back = k != null ? 1.35f : 1f;
-            int shot = Game.Camera.PlayStaticShot(mid + new Vector3(3.5f, 2.6f, -4.5f) * back, mid + Vector3.up * 1.2f, 34f, 0f, 0f, 1f);
-            yield return Game.UI.Fade(0f, 0.8f);
-            // las cuerdas se deshacen (y su zumbido se apaga): recién libre, el abuelo se da vuelta hacia su nieto
-            if (fx != null && fx.Ropes != null && fx.Ropes.Bound) { fx.Ropes.Dissolve(1.6f); yield return Wait(1.5f); }
-            // se da vuelta con pasitos (los primeros 0.45 s de Freed), se frota las muñecas, se endereza, le hace una
-            // reverencia a Kaito y vuelve a respirar en Idle
-            grandpa.TurnTo(P.transform.position, 0.45f);
-            grandpa.PlayThen("Freed", "Locomotion", 0.25f);
-            Game.FX.Petals(mid + Vector3.up * 2f, 2f);
-            yield return Wait(0.4f);
-            yield return Say("ending");
-            if (k != null)
-            {
-                // se da vuelta hacia él ANTES de hablarle: la media cinta se la da mirándolo, y él se inclina
-                P.ScriptedFace(k.transform.position);
-                yield return Wait(0.4f);
-                yield return Say("ending_ribbon");
-                k.Bow();
-                yield return Wait(2.2f);
-                P.ScriptedFace(g);
-            }
-            else yield return Say("ending_ribbon");
-            yield return Say("ending_final");
-            Game.Camera.CancelShot(shot);
-            Game.Save.SetFlag(Flags.Ending);
-            SaveSystem.Save();
-            yield return Game.UI.Fade(1f, 2f);
-        }
-
-        static Vector3 OnNavMesh(Vector3 p) =>
-            UnityEngine.AI.NavMesh.SamplePosition(p, out var hit, 2f, UnityEngine.AI.NavMesh.AllAreas) ? hit.position : p;
     }
 }

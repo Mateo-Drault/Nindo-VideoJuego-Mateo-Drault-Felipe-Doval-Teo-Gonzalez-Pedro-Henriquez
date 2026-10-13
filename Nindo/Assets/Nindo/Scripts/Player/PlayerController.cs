@@ -637,7 +637,8 @@ namespace Nindo
                 input.Consume(Act.Finisher);
                 var it = nearInteractable;
                 it.Interact(this);
-                string gesture = it is Checkpoint ? "Pray" : it is KeyPickup ? "Interact" : null;
+                // rezar en un santuario ya no es un gesto: es la escena del incienso (StoryDirector.PrayAt)
+                string gesture = it is KeyPickup ? "Interact" : null;
                 if (gesture != null && State == PlayerState.Locomotion && !Game.InCutscene && anim.HasState(gesture))
                 {
                     anim.Play(gesture, 0.12f);

@@ -309,6 +309,24 @@
   "tags": [],
   "tris": 196
  },
+ "incense_stick": {
+  "collider": {
+   "type": "none"
+  },
+  "module": "props_misc",
+  "size": [
+   0.046538010239601135,
+   0.25059300661087036,
+   0.023273538798093796
+  ],
+  "slots": [
+   0
+  ],
+  "tags": [
+   "nonstatic"
+  ],
+  "tris": 36
+ },
  "key_seal_bamboo": {
   "collider": {
    "type": "none"
@@ -735,38 +753,30 @@
  "shrine_checkpoint": {
   "collider": {
    "center": [
-    0,
+    -0.0,
     0.9,
-    0
+    0.11
    ],
    "size": [
     1.2,
     1.8,
-    1.0
+    1.22
    ],
    "type": "box"
   },
-  "light_offset": [
-   -0.0,
-   0.9,
-   0.45
-  ],
   "module": "props_misc",
   "size": [
    1.180953860282898,
    1.8143975734710693,
-   1.1019494533538818
+   1.4709346294403076
   ],
   "slots": [
-   0,
-   1
+   0
   ],
   "tags": [
-   "light_warm",
-   "smoke",
    "nonstatic"
   ],
-  "tris": 284
+  "tris": 642
  },
  "signpost": {
   "collider": {
