@@ -43,7 +43,8 @@
   * Si cambiás scripts durante el Play, Unity queda "compilando" hasta que salís del Play, y RunCommand se niega a correr.
 * **La partida del usuario**: `%USERPROFILE%\AppData\LocalLow\DefaultCompany\Nindo\nindo_save.json`. **Respaldala antes de cada prueba y restaurala después**: al salir del Play el juego guarda.
   * La última del usuario está copiada en `Docs/handoff/partidas/usuario_actual_cp_home.json`: es una partida nueva, en la casa.
-  * `Docs/handoff/partidas/prueba_juego_completo_cp_lake_falls.json` es una partida de prueba con todo desbloqueado.
+  * Partidas de prueba en `Docs/handoff/partidas/` (qué es cada una y cómo cargarla: su `README.md`): una antes de cada jefe (`prueba_goro`, `prueba_mizuchi`, `prueba_bambu`, `prueba_kokuyo`) y `prueba_tarde_cp_lake_falls` (el final del juego antes de Kokuyō).
+  * `prueba_juego_completo_cp_lake_falls.json` tiene `final_boss_done` sin `ending`: al cargarla corre el final entero (`ResumeEnding`). Sirve para probar eso, no el lago.
 * **Descargas**: el usuario tiene que aprobar cada archivo que se baje de internet. Mostrale nombre, fuente, licencia y tamaño.
 * **Higgsfield** (MCP `4e3e7df2…`): sirve para hojas de concepto (`generate_image_batch`, `gpt_image_2_5`, ~0.25 créditos por imagen), con aprobación del usuario. **No sirve para música**: su modelo de música está reservado para otro uso.
 * **Herramientas disponibles**:
@@ -118,7 +119,7 @@
     * **bueno** y **promedio**: más lentos, a veces no ven el aviso, a veces confunden parry y dash, a veces atacan apurados. Usalos para balancear.
   * Ojo: `talk` se termina en la pausa entre dos diálogos y después `waitcontrol` queda esperando. Si `Game.InCutscene && !AutoPilot.Busy`, volvé a correr `talk 10; waitcontrol 20; bot on bueno`.
 * **Para probar**:
-  * Partida con el checkpoint deseado y los flags del jefe sacados (`boss_<id>`, `boss_seen_<id>`; para Kokuyō también `final_boss_done`).
+  * Partida con el checkpoint deseado y los flags del jefe sacados (`boss_<id>`, `boss_seen_<id>`; para Kokuyō también `final_boss_done`). Para cada jefe ya están hechas en `Docs/handoff/partidas/` (`prueba_goro.json`, etc.).
   * Play, después `AutoPilot.Run("wait 0.5; tap Submit")`, después teletransportar a Kaito (desactivar el CharacterController, mover, reactivar).
   * Capturas con `ScreenCapture.CaptureScreenshot(path, 3)` desde una clase estática colgada de `EditorApplication.update`, con un `Debug.Log` por captura. La carpeta de capturas va en el scratchpad.
   * `Game.Save.flags` se puede editar en vivo (por ejemplo `.Remove("falls_seen")`).
@@ -285,7 +286,9 @@ Están casi en sus palabras, con notas. Al final de cada uno, entre corchetes, *
 
 ## 5. Ramas de la fase C2
 
-Las ramas `c2/*` son locales (no están en origin) y están integradas en `c2/integration`, que es la que hay que probar en Unity y llevar a main (fast-forward, como siempre).
+Las ramas `c2/*` son locales (no están en origin) y están integradas en `c2/integration`, que ya está en main (`76be027`) y la probó el lead en Unity.
+
+**Los informes de cada frente** (contratos y APIs, chequeos y simulaciones, y la lista de pruebas en Play de cada uno, de la integración y de los arreglos de huecos) están en [`handoff/reportes/c2_reports.md`](handoff/reportes/c2_reports.md).
 
 | Rama | Qué trajo |
 |---|---|
@@ -303,7 +306,7 @@ Las ramas `c2/*` son locales (no están en origin) y están integradas en `c2/in
 | `c2/ui-controls` | Controles reasignables. |
 | `c2/integration` | Las doce integradas más los arreglos de la revisión final (reintentos de Gorō y Mizuchi, títulos de jefe en el tercio de abajo, PlayClock, partidas viejas, muñecas de Chikuō, nudo de la bandana, rugido de Gorō más cerca...). |
 
-Cada frente dejó su lista de pruebas en Play en su informe del workflow; las de la revisión final están en el informe de `c2/integration`. Los worktrees viejos de la fase C (`c-*`, `b4-*`) ya no hacen falta.
+Las listas de pruebas en Play de cada frente y de la revisión final están juntas en `handoff/reportes/c2_reports.md`. Los worktrees viejos de la fase C (`c-*`, `b4-*`) ya no hacen falta.
 
 **Memoria**: cuatro frentes con Blender a la vez más Unity ya es el límite de los 16 GB.
 
@@ -371,7 +374,7 @@ Si relanzás agentes: usá el script `Docs/handoff/fase_c_frentes_workflow.js` (
   * `judge_water.json`: diseño final de Mizuchi. `judge_final.json`: diseño final de Kokuyō (en los dos, la clave `final` tiene el moveset, las fases y la implementación).
   * `audit_*.json`: auditorías de animación (gramática de avisos ANIM-02 y plan), combate, gamefeel, modelos y UI.
   * `concept_*.json`: conceptos alternativos.
-* `reportes/b2_final_reports.md`, `reportes/b3_reports.md`: qué construyó cada frente, sus APIs, los pendientes y las pruebas en Play que proponían.
+* `reportes/b2_final_reports.md`, `reportes/b3_reports.md` y `reportes/c2_reports.md`: qué construyó cada frente, sus APIs, los pendientes y las pruebas en Play que proponían.
 * `conceptos/*.jpg`: arte conceptual (cascada, Mizuchi fase 1 y 2, Kokuyō, variantes).
 * `fase_c_frentes_workflow.js`: los nueve frentes de la fase C con todos los detalles; reusable.
-* `partidas/`: la partida actual del usuario y una de prueba con el juego completo.
+* `partidas/`: la partida actual del usuario y las de prueba (una antes de cada jefe, la tarde antes de Kokuyō y la del final a medias), con su `README.md`.
