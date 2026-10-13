@@ -1,0 +1,63 @@
+{
+    "version": 1,
+    "checkpoint": "cp_mountain_top",
+    "flags": [
+        "katana",
+        "tip_parry_done",
+        "tip_finisher",
+        "enc_intro",
+        "intro_done",
+        "pray_seen",
+        "tip_shrine",
+        "zone_hogar",
+        "zone_campos",
+        "tut_map",
+        "trig_fields",
+        "enc_fields1",
+        "zone_bosque",
+        "trig_forest_reveal",
+        "forest_seen",
+        "enc_forest1",
+        "zone_muralla",
+        "trig_wall_guards",
+        "enc_wall",
+        "wall_gate_open",
+        "zone_jardin",
+        "trig_garden",
+        "enc_garden1",
+        "enc_garden2",
+        "trig_sumo_intro",
+        "dash_unlocked",
+        "enc_sumo",
+        "abilities_unlocked",
+        "enc_dojo_guards",
+        "zone_dojo",
+        "trig_dojo_gate",
+        "dojo_gate_seen",
+        "zone_montana",
+        "enc_mountain1",
+        "enc_mountain2"
+    ],
+    "seals": [
+        false,
+        false,
+        false
+    ],
+    "playTime": 1260.0,
+    "deaths": 1,
+    "shrines": [
+        "cp_home",
+        "cp_forest",
+        "cp_wall",
+        "cp_garden",
+        "cp_dojo_gate",
+        "cp_mountain",
+        "cp_mountain_top"
+    ],
+    "sealsPlaced": [
+        false,
+        false,
+        false
+    ],
+    "mapFog": ""
+}
