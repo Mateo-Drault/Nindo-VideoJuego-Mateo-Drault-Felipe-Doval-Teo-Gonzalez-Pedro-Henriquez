@@ -67,15 +67,17 @@ namespace Nindo
         ///                          10.5), 1.4 muertes y 29 % sin morir, 1.0 de ellas en el eclipse (lo de hoy). Los actos duran
         ///                          ~72 / 87 / 80 s con el bueno; el eclipse sigue sirviendo el 99 % de los dúos. El promedio de verdad anduvo mejor que el calibrado (2:26 sin
         ///                          morir con lo de C2, contra 5 min y 2.2 muertes): puede que muera menos.
-        /// PROVISORIO: el factor sale de una pelea por bot; medirlo de nuevo (tres por bot) y ajustar acá. Más vida alarga la
+        /// Medido en Unity con eso (13 de octubre): bueno 4:41 y promedio 6:29, los dos sin morir (el promedio recibió 352
+        /// de daño). La vida sube a 7560 (x4.2: el jefe final queda el más largo), el daño a x0.37 y los tramos a 40 / 40 /
+        /// 35. Más vida alarga la
         /// pelea del bueno casi en proporción; más StageHeal le baja las muertes al promedio sin acortarla (la del eclipse es
         /// la que más pesa).
         /// </summary>
-        public const float HealthScale = 4f, DamageScale = 0.31f;
+        public const float HealthScale = 4.2f, DamageScale = 0.37f;
         public const float TransitionHeal = 40f, TransitionSpirit = 30f;
         /// <summary>La cura de cada corte de tramo, por acto (1..3): un poco menos en el eclipse, que es el final (con la
         /// misma en los tres el bot promedio ganaba de una más seguido que contra los otros jefes).</summary>
-        static readonly float[] StageHeal = { 0f, 50f, 50f, 45f };
+        static readonly float[] StageHeal = { 0f, 40f, 40f, 35f };
 
         public static float StageHealOf(int act) => StageHeal[Mathf.Clamp(act, 1, 3)];
         /// <summary>Ichimonji: dentro de este radio la hoja pasa por encima de la cabeza de Kaito (la empuñadura va a

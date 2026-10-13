@@ -29,6 +29,12 @@ de huecos), la simulación cruda del bueno da (mediana): Gorō 366 s (goro_fight
 tuning), Kokuyō 283 s (kk_fix_run largo), Chikuō 203 s (sim_bamboo_master --seed 3); y lo que se espera ver en Unity con
 los factores de hoy: el bueno 4.3 / 4.5 / 4.4 / 4.6 min, el promedio 6.5 / 7.3 / 6.9 / 7.3 min con ~1.6 / 1.25 / 1.4 / 1
 muertes.
+
+Medido después en Unity (13 de octubre, la fase C3 integrada, e085ad8; una pelea por bot): Gorō bueno 259 s y promedio 311 s,
+Mizuchi 209 s y 301 s, Kokuyō 281 s y 389 s, los seis sin morir. Contra esas simulaciones crudas el factor del bueno queda
+Gorō 0.71 (igual), Mizuchi 0.90 y Kokuyō 0.99, y el promedio de verdad muere bastante menos que el calibrado con los cuatro
+jefes (las curas por tramo y por postura lo sostienen). Con eso se subió el daño de los tres y la vida de Mizuchi y Kokuyō
+(GoroBoss, MizuchiBoss.Pacing, KokuyoMoves).
 """
 
 # jefe: el bot bueno y el promedio en Unity (segundos del PlayClock, muertes) y la simulación del mismo código (segundos:

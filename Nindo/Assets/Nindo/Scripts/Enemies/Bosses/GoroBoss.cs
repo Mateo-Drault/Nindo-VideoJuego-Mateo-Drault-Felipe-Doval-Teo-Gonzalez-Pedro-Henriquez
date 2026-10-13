@@ -36,8 +36,9 @@ namespace Nindo
         /// en 4:04 con 2 muertes; la simulación daba 3.4 y 5.2 min, así que con Gorō el bot real va 0.71x el modelo (se le
         /// pega y le corta las vueltas a la guardia; con los otros jefes es otro número: Tools/Dev/boss_sims/calibration.py).
         /// Objetivo: el bueno ~4.5 min reales, el promedio 1-2 muertes.
-        /// PROVISORIO: esa calibración sale de UNA pelea por bot con los clips de C2; hay que medir de nuevo en Unity
-        /// (3 peleas por bot, Core/PlayClock) con los clips de C3 antes de darlo por bueno.
+        /// Medido en Unity con los clips de C3 (13 de octubre, x0.30 / x0.25): bueno 4:19 sin morir, promedio 5:11 sin
+        /// morir con 197 de daño recibido (la simulación es pesimista con las muertes del promedio). El daño sube a x0.35 /
+        /// x0.30 para que el promedio vuelva a caer alguna vez sin tocar el largo de la pelea.
         /// Con 2000 + 3200 y el daño a x0.25 / x0.23 cada martillazo sacaba 5-7 de vida (un corte de ninja saca 12): el
         /// golpe de un oni de 3.4 m no pesaba. Ahora el daño sube a x0.30 / x0.25 (Combo1 6.6, el golpe sísmico 11.4, la
         /// onda 10), la vida baja un 5 % y cada tramo roto cura 55: lo más pesado que sigue en el objetivo
@@ -54,7 +55,7 @@ namespace Nindo
         ///    larga además de TransitionHeal.
         /// </summary>
         public const float FirstBarHealth = 1900f, ArmoredHealth = 3040f;
-        public const float FirstBarDamage = 0.30f, ArmoredDamage = 0.25f;
+        public const float FirstBarDamage = 0.35f, ArmoredDamage = 0.30f;
         public const float ShedHealAmount = 55f;
 
         /// <summary>Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth = FirstBarHealth).</summary>
