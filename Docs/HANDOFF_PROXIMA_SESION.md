@@ -20,7 +20,7 @@
   * Están Mizuchi (el koi), Kokuyō (el jefe final), Gorō con barra falsa y armadura de roca, y **Chikuō**, que reemplazó a Ōzeki (el arquetipo y el bossId siguen siendo `ozeki`: partidas, flags y sello del bambú no cambian).
   * Las variantes por zona tienen ataques propios; ninjas y sumos tienen idles de ambiente.
   * Kaito y los personajes del equipo tienen animaciones nuevas, con las muñecas medidas en el lint de cada pipeline.
-* **Lo pendiente**: la fase C2 hizo casi toda la lista de la sección 4 en la rama `c2/integration` (13 frentes `c2/*`, sección 5). Cada pedido dice ahí su estado; lo que quedó abierto está juntado en la sección 4b. **Falta probar C2 en Unity y llevarla a main.**
+* **Lo pendiente**: la fase C2 hizo casi toda la lista de la sección 4 en la rama `c2/integration` (13 frentes `c2/*`, sección 5). Cada pedido dice ahí su estado; lo que quedó abierto está juntado en la sección 4b. C2 ya está en main (`76be027`) y la probó el lead. La fase C3 (seis frentes `c3/*`, sección 5a) arregló lo abierto de C2 y está integrada en `c3/integration`: **falta probar C3 en Unity y llevarla a main.**
 * **El usuario pide**: calidad de juego publicado, autocrítica, respetar el estilo de arte, y que la partida dure cerca de **una hora**. Con la vida de C2 las simulaciones dan ~1 h para el bot "promedio"; `Core/PlayClock` la mide de verdad en la consola (por zona y por jefe) y el cartel del final la muestra.
 
 ---
@@ -277,10 +277,12 @@ Están casi en sus palabras, con notas. Al final de cada uno, entre corchetes, *
 ## 4b. Abierto después de la fase C2
 
 * **Música**: Amenoshita y Sakuya4 (PeriTune, `boss_lake` y `ending`) se usan como CC BY 4.0 por la cláusula general del autor; sus páginas no dicen licencia. Que el usuario lo apruebe (y quede anotado en `Audio/CREDITS.md`) o cambiarlas por pistas con CC BY o CC0 en su página.
-* **Kaito** (`Tools/Blender/anim/kaito`): `build_kaito.py` avisa tirones de un cuadro (manos, codos, piernas) en casi todos los golpes y en las escenas: BandanaPower f36-38 (la mano izquierda 117°, el húmero 94°), Death f32-35 (la pierna derecha 71°, el brazo izquierdo 112°), PrayQuick f45-46 (75°), EndingTurn f27-29 (el pie izquierdo 56°), WakeUp, Pray y PrayIncense (45-55°). El pedido era que en las escenas fallen arriba de 45° por cuadro: falta un tope de giro por cuadro en el camino de los brazos (`kaito_rig.arm_path`) y repartir la suelta de BandanaPower y el estirón de piernas de Death en 3-5 cuadros.
-* **Gorō** (`Tools/Blender/anim/build_team_anims.py -- goro`): no pasa el lint de la embestida que agregó c2/ninja-sumo (con el reloj del juego los pies apoyados patinan 6-16 cm en Combo1/2/3, Combo1B/2B/3B y SlamWave), así que GoroAnims.fbx no se puede re-exportar hasta arreglarlo. Pendientes del mismo pase: las manos se despegan del mango 2.9-5.2 cm (Combo1, Combo3, Heavy, Combo3B, AvalancheSummon), la cadera de FakeDefeat y ArmorRise 3 cm bajo el piso, el martillo 2.7 cm en el piso en Heavy. La armadura es parda con brasa más ancha; **más grande** (x1.3) choca con el mango y con el piso en 13 chequeos: hay que agrandarla junto con los caminos del martillo.
-* **Chikuō**: no es chibi como el resto (2.6 m, cabeza chica, manos de mitón): es decisión de Felipe. La pelea es mayormente rebotes (~0.9 por segundo con el bot bueno) y el Paso del Viento vuela poco; el saco sale en un cuadro (se podría deslizar en 6-8).
+* **Kaito** (`Tools/Blender/anim/kaito`): `build_kaito.py` avisa tirones de un cuadro (manos, codos, piernas) en casi todos los golpes y en las escenas: BandanaPower f36-38 (la mano izquierda 117°, el húmero 94°), Death f32-35 (la pierna derecha 71°, el brazo izquierdo 112°), PrayQuick f45-46 (75°), EndingTurn f27-29 (el pie izquierdo 56°), WakeUp, Pray y PrayIncense (45-55°). El pedido era que en las escenas fallen arriba de 45° por cuadro: falta un tope de giro por cuadro en el camino de los brazos (`kaito_rig.arm_path`) y repartir la suelta de BandanaPower y el estirón de piernas de Death en 3-5 cuadros. **[C3, c3/kaito-snaps: el lint falla arriba de 45° en escenas y 60° en golpes en cualquier hueso, a la velocidad del código; 0 FAIL. El Corte final pega con las dos manos y el chiburi del remate va a x1. Quedan avisos a x1.12 con la furia.]**
+* **Gorō** (`Tools/Blender/anim/build_team_anims.py -- goro`): no pasa el lint de la embestida que agregó c2/ninja-sumo (con el reloj del juego los pies apoyados patinan 6-16 cm en Combo1/2/3, Combo1B/2B/3B y SlamWave), así que GoroAnims.fbx no se puede re-exportar hasta arreglarlo. Pendientes del mismo pase: las manos se despegan del mango 2.9-5.2 cm (Combo1, Combo3, Heavy, Combo3B, AvalancheSummon), la cadera de FakeDefeat y ArmorRise 3 cm bajo el piso, el martillo 2.7 cm en el piso en Heavy. La armadura es parda con brasa más ancha; **más grande** (x1.3) choca con el mango y con el piso en 13 chequeos: hay que agrandarla junto con los caminos del martillo. **[C3, c3/goro-anim: la embestida va en cuadros del clip y es un paso de verdad (0 cm de patinaje en el lint), variantes en el lugar con Kaito contra la barrera, el agarre y el martillo arreglados, la armadura crece pareja y sin nieve; GoroAnims.fbx re-exportado con 5.2. Balance provisorio 1900 + 3040.]**
+* **Chikuō**: no es chibi como el resto (2.6 m, cabeza chica, manos de mitón): es decisión de Felipe. La pelea es mayormente rebotes (~0.9 por segundo con el bot bueno) y el Paso del Viento vuela poco; el saco sale en un cuadro (se podría deslizar en 6-8). **[C3, c3/chikuo-feel: desvía con la palma leyendo el corte, el paso del viento vuela, sigue a Kaito y pasa al costado, el saco se desliza. Sigue sin ser chibi. El desvío no encuentra la hoja del Corte final nuevo de Kaito: ver `reportes/c3_reports.md` 1.4.]**
 * **Ambiente**: el pase de Felipe sobre el mundo (lo que quedó del ítem de basaltos que se leen como hielo).
+
+Lo que quedó abierto después de C3 está en [`handoff/reportes/c3_reports.md`](handoff/reportes/c3_reports.md), sección 4.
 
 ---
 
@@ -309,6 +311,21 @@ Las ramas `c2/*` son locales (no están en origin) y están integradas en `c2/in
 Las listas de pruebas en Play de cada frente y de la revisión final están juntas en `handoff/reportes/c2_reports.md`. Los worktrees viejos de la fase C (`c-*`, `b4-*`) ya no hacen falta.
 
 **Memoria**: cuatro frentes con Blender a la vez más Unity ya es el límite de los 16 GB.
+
+---
+
+## 5a. Ramas de la fase C3
+
+Seis frentes `c3/*` (locales) sobre `76be027`, integrados con `--no-ff` y sin conflictos en `c3/integration`. Qué trajo cada uno, sus contratos, lo que re-midió la integración (FBX, GUID, generate_assets en seco, simulaciones) y la lista de pruebas en Play para el lead están en [`handoff/reportes/c3_reports.md`](handoff/reportes/c3_reports.md).
+
+| Rama | Qué trajo |
+|---|---|
+| `c3/goro-anim` | Gorō: embestida en cuadros del clip sin patinar, variantes en el lugar contra la barrera, armadura parda, balance recalibrado con el bot de Unity. |
+| `c3/kaito-snaps` | Kaito: sin tirones de un cuadro (lint de todo el cuerpo), el Corte final con las dos manos, el chiburi del remate a x1. |
+| `c3/chikuo-feel` | Chikuō: el desvío con la palma, el paso del viento que sigue a Kaito y pasa al costado, el saco que se desliza. |
+| `c3/kokuyo-act3` | Kokuyō y Mizuchi: sustento por etapa, el eclipse de la sombra, reintento por acto, la barra del acto, la luna sin cortes. |
+| `c3/culling-dyn` | `ZoneCulling.AddDynamic`: lo creado después del armado también se apaga y se pausa fuera de cuadro. |
+| `c3/docs-saves` | `reportes/c2_reports.md` y una partida de prueba antes de cada jefe. |
 
 ---
 
@@ -374,7 +391,7 @@ Si relanzás agentes: usá el script `Docs/handoff/fase_c_frentes_workflow.js` (
   * `judge_water.json`: diseño final de Mizuchi. `judge_final.json`: diseño final de Kokuyō (en los dos, la clave `final` tiene el moveset, las fases y la implementación).
   * `audit_*.json`: auditorías de animación (gramática de avisos ANIM-02 y plan), combate, gamefeel, modelos y UI.
   * `concept_*.json`: conceptos alternativos.
-* `reportes/b2_final_reports.md`, `reportes/b3_reports.md` y `reportes/c2_reports.md`: qué construyó cada frente, sus APIs, los pendientes y las pruebas en Play que proponían.
+* `reportes/b2_final_reports.md`, `reportes/b3_reports.md`, `reportes/c2_reports.md` y `reportes/c3_reports.md`: qué construyó cada frente, sus APIs, los pendientes y las pruebas en Play que proponían.
 * `conceptos/*.jpg`: arte conceptual (cascada, Mizuchi fase 1 y 2, Kokuyō, variantes).
 * `fase_c_frentes_workflow.js`: los nueve frentes de la fase C con todos los detalles; reusable.
 * `partidas/`: la partida actual del usuario y las de prueba (una antes de cada jefe, la tarde antes de Kokuyō y la del final a medias), con su `README.md`.
