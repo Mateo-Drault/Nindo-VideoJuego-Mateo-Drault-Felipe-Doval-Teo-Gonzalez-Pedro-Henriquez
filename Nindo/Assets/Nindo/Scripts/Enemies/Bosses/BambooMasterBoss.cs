@@ -65,18 +65,20 @@ namespace Nindo
         MasterClip clip;
         float travelDone, airStretch = 1f;
         bool landed, afterRecoil, dashFx;
-        // el golpe con paso adelante elige en la suelta la variante de paso que entra hasta Kaito (PickReach)
-        bool reachPicked;
+        // el golpe con paso adelante elige en la suelta la variante de paso que entra hasta Kaito (PickReach); cargándolo
+        // desvía el primer corte de Kaito (Bounce)
+        bool reachPicked, stepYielded;
         // la estela del miembro que pega (mano o pie; el bastón usa la de Enemy)
         bool limbTrailOn;
         string prevChainTo = "READY";
         Vector3 leapStart, leapDir;
         float leapTarget;
         bool leapFixed;
-        // embestida: carril fijo desde la suelta (del aviso 'laneTell')
+        // embestida: carril fijo desde la suelta (del aviso 'laneTell'; laneT0 = lo avanzado hasta ahí)
         bool laneFixed;
         int laneTell;
         Vector3 laneO, laneD;
+        float laneT0;
 
         // postura del bambú y la pausa en que llama a Kaito
         bool stance, taunt, stanceTaught, deflectToldOnce, waitToldOnce;
@@ -388,7 +390,7 @@ namespace Nindo
             airStretch = 1f;
             landed = leapFixed = laneFixed = dashFx = false;
             look.ClearTell();
-            reachPicked = false;
+            reachPicked = stepYielded = false;
             if (clip != null)
             {
                 // un primer cuadro que se aparta más de 2° de la pose con la que encadena salta con el fundido de 0.08 s
@@ -406,13 +408,14 @@ namespace Nindo
             limbTrailOn = false;
             look.StopLimbTrail();
             if (a.special == BambooMasterMoves.Qi) BeginQiStep(a);
+            if (a.special == BambooMasterMoves.Dash) { passRot = transform.rotation; passSide = Random.value < 0.5f ? -1f : 1f; }
         }
 
         protected override void TickSpecial(AttackDef a, float dt)
         {
             if (clip == null) { base.TickSpecial(a, dt); return; }
             if (a.special == BambooMasterMoves.Leap) TickLeap(a);
-            if (a.special == BambooMasterMoves.Dash) TickDash(a);
+            if (a.special == BambooMasterMoves.Dash) TickDash(a, dt);
             if (!reachPicked && stepClock >= tl.ReleaseTime) PickReach();
             Travel(a);
             TickLimbTrail(a);
@@ -428,8 +431,9 @@ namespace Nindo
         /// El cuerpo avanza lo que avanza el clip (travel_m) en el reloj del paso: los pies apoyados quedan clavados. La
         /// grulla voladora y el paso del viento escalan el tramo entre el despegue y la caída para caer donde está Kaito;
         /// el salto atrás, para no salirse de la arena; los golpes con paso adelante eligen en la suelta la variante cuyo
-        /// paso entra (PickReach). Nunca atraviesa a Kaito (salvo el salto, que cae sobre él): lo poco que no entra se
-        /// pierde.
+        /// paso entra (PickReach). Los golpes frenan contra Kaito (lo poco que no entra se pierde); el salto cae sobre él y
+        /// el paso del viento vuela lo que planeó en la suelta: si Kaito se le metió adelante, lo atraviesa (frenar contra
+        /// él dejaba el cuerpo flotando en el vuelo y el pie del frenado patinando).
         /// </summary>
         void Travel(AttackDef a)
         {
@@ -442,15 +446,12 @@ namespace Nindo
             // hacia atrás (el salto que toma distancia): el lugar ya lo midió HopScale
             if (d < 0f) { MoveBy(dir * d); return; }
             float room = d;
-            if (target != null && a.special != BambooMasterMoves.Leap)
+            if (target != null && a.special != BambooMasterMoves.Leap && a.special != BambooMasterMoves.Dash)
             {
-                // solo frena contra lo que tiene adelante: con Kaito al costado la embestida sigue entera. Al que la esquiva
-                // con el dash la embestida lo atraviesa, como la carrera de cualquier enemigo: frenar contra el que se le
-                // metía adelante dejaba el cuerpo flotando en el vuelo y el pie del frenado patinando
+                // solo frena contra lo que tiene adelante
                 Vector3 to = (target.transform.position - transform.position).Flat();
                 float along = Vector3.Dot(to, dir), lat = Mathf.Abs(Vector3.Dot(to, Vector3.Cross(Vector3.up, dir)));
-                bool dodgedThrough = a.special == BambooMasterMoves.Dash && target.State == PlayerState.Dash;
-                if (along > 0f && lat < Radius + target.Radius && !dodgedThrough) room = along - StopShort;
+                if (along > 0f && lat < Radius + target.Radius) room = along - StopShort;
             }
             if (room > 0f) MoveBy(dir * Mathf.Min(d, room));
         }
@@ -486,6 +487,8 @@ namespace Nindo
         /// clip hasta la suelta, así que al soltarse pasa sin fundido a la más larga cuyo paso entra hasta Kaito (con 5 cm
         /// de gracia). Antes el paso entero (~0.95 m) chocaba contra Kaito pegado, se perdía el 60-80 % del avance y el
         /// pie apoyado patinaba lo mismo. Mezclarlas en un blend tree no sirve: la mezcla de giros hundía el pie de atrás.
+        /// Si la que entra no llega a Kaito en el contacto (entre ~1.9 y 2 m la del medio frenaba corta y pegaba al aire),
+        /// va la de paso más largo aunque frene hasta ReachOverrun antes de terminarlo.
         /// </summary>
         void PickReach()
         {
@@ -499,16 +502,29 @@ namespace Nindo
             if (along <= 0f || lat >= Radius + target.Radius) return;
             float room = along - StopShort + travelDone + 0.05f;
             if (clip.TravelAt(1f) <= room) return;
-            MasterClip pick = null;
+            MasterClip longer = clip, pick = null;
             for (int i = 0; i < vs.Length; i++)
             {
-                pick = BambooMasterTimings.Get(vs[i]);
-                if (pick != null && pick.TravelAt(1f) <= room) break;
+                var v = BambooMasterTimings.Get(vs[i]);
+                if (v == null) continue;
+                pick = v;
+                if (v.TravelAt(1f) <= room) break;
+                longer = v;
             }
-            if (pick == null || !anim.HasState(pick.State)) return;
+            if (pick == null) return;
+            if (pick != longer && !ReachesAtContact(pick, along) && longer.TravelAt(1f) - room <= ReachOverrun) pick = longer;
+            if (pick == clip || !anim.HasState(pick.State)) return;
             clip = pick;
             anim.Play(pick.State, 0f, stepNorm);
         }
+
+        /// <summary>Lo más que una variante de paso puede frenar antes de terminarlo (el pie apoyado patina eso).</summary>
+        const float ReachOverrun = 0.15f;
+
+        /// <summary>¿Con lo que le falta avanzar hasta el contacto, la mano de esta variante llega a Kaito? (HitArc, con 2 cm de
+        /// margen)</summary>
+        bool ReachesAtContact(MasterClip c, float along) =>
+            along - Mathf.Max(0f, c.TravelToContact - travelDone) - target.Radius <= c.Reach + 0.08f;
 
         /// <summary>Golpe dorado: el alcance del miembro (o del bastón) desde donde está en el impacto, más el grosor (con
         /// +0.3 un dorado que se paraba pegaba 30-40 cm antes de que llegara la palma).</summary>
@@ -627,15 +643,18 @@ namespace Nindo
         /// <summary>
         /// Embestida: en la suelta el carril queda fijo hacia donde mira (el que dibujó el aviso: no gira) y salen las
         /// imágenes residuales (DashStart → DashEnd del clip, en jade pálido: la estela de alguien rápido, no un aviso).
-        /// Siempre de frente: frena con la mano sobre Kaito y pega en el contacto, cuando lo dice el aviso.
+        /// Pega en el contacto, cuando lo dice el aviso: de frente, con la mano sobre Kaito; si Kaito estaba demasiado
+        /// cerca para frenar (o se le metió adelante), el viento ya lo atravesó y el corte le llega por el carril que barrió.
         /// </summary>
-        void TickDash(AttackDef a)
+        void TickDash(AttackDef a, float dt)
         {
+            if (!laneFixed) AimPass(dt);
             if (!laneFixed && stepClock >= tl.ReleaseTime)
             {
                 laneFixed = true;
                 laneTell = TellId;
                 laneO = transform.position;
+                laneT0 = travelDone;
                 laneD = transform.forward.Flat().normalized;
                 // en la suelta cuenta lo que Kaito sigue corriendo hasta el contacto
                 airStretch = PlanDash(laneO, laneD, Mathf.Max(0f, tl.T - stepClock));
@@ -657,12 +676,56 @@ namespace Nindo
             if (stepHit || target == null || stepNorm < a.activeStart || stepNorm > a.activeEnd) return;
             Vector3 tp = target.transform.position;
             if (!InLane(tp, target.Radius * 0.5f)) return;
-            float along = Vector3.Dot((tp - transform.position).Flat(), laneD) - target.Radius;
-            // la mano apunta adelante: ni el que quedó lejos ni el que se metió en el carril por detrás
-            if (along > clip.Reach + 0.3f || along < -target.Radius) return;
+            // sobre el carril desde la salida: adelante, hasta la mano; atrás, hasta donde arrancó (el que se metió por
+            // detrás de la salida no). El que el viento ya pasó también: lo atravesó en el camino
+            float s = Vector3.Dot((tp - laneO).Flat(), laneD), flown = travelDone - laneT0;
+            if (s < -target.Radius || s - target.Radius > flown + clip.Reach + 0.3f) return;
             stepHit = true;
-            HitPlayer(a, transform.position);
+            // el empujón va por el carril (el viento lo arrastra hacia donde iba), no hacia atrás desde el jefe que ya pasó
+            var r = HitPlayer(a, tp - laneD);
+            if (s < flown && (r == HitResult.Hit || r == HitResult.Killed)) WindCut(tp);
         }
+
+        /// <summary>
+        /// De cerca el viento le pasa al costado y no por adentro del cuerpo: hasta la suelta apunta al lado de Kaito
+        /// (PassBeside, un lado al azar por embestida), con el mismo giro amortiguado que la puntería de Enemy (que este
+        /// paso reemplaza) y quieto en los últimos TrackingStopLead s. El carril del aviso ya es el que va a tomar (girarlo
+        /// en la suelta lo hacía saltar) y Kaito sigue adentro: sale corriéndose ~0.4 m hacia afuera o con el dash. De lejos
+        /// frena de frente: el corrimiento crece al acercarse, sin saltos.
+        /// </summary>
+        void AimPass(float dt)
+        {
+            if (target == null) return;
+            if (StrikeEta > TrackingStopLead)
+            {
+                Vector3 to = (target.transform.position - transform.position).Flat();
+                float d = to.magnitude;
+                if (d > 0.5f)
+                {
+                    float w = Mathf.InverseLerp(BambooMasterMoves.DashFrom, PassFullAt, d);
+                    Vector3 aim = to + Vector3.Cross(Vector3.up, to / d) * (passSide * PassBeside * w);
+                    passRot = CombatMath.Damp(passRot, Quaternion.LookRotation(aim), config.turnSpeed * 1.3f, dt);
+                }
+            }
+            transform.rotation = passRot;
+        }
+
+        /// <summary>Cuánto le pasa al costado (m, de centro a centro: los dos radios) y desde qué distancia del todo.</summary>
+        const float PassBeside = 0.85f, PassFullAt = 3.4f;
+        Quaternion passRot;
+        float passSide = 1f;
+
+        /// <summary>El corte que llega después del viento: un tajo de jade por el carril, a la altura del pecho de Kaito
+        /// (sin él, el golpe con el jefe ya un metro más allá se leía como un error).</summary>
+        void WindCut(Vector3 at)
+        {
+            Vector3 c = at + Vector3.up * 1.0f, side = Vector3.Cross(Vector3.up, laneD) * 0.25f;
+            SlashLineFX.Spawn(c - laneD * 1.1f - side, c + laneD * 1.1f + side, WindCutJade, 0.42f, 0.32f);
+            SlashLineFX.Spawn(c - laneD * 0.8f - side, c + laneD * 0.8f + side, WindCutCore, 0.14f, 0.22f);
+            Game.Audio?.Play("ability_wind", at, 0.8f, 0.08f);
+        }
+
+        static readonly Color WindCutJade = new Color(0.55f, 1f, 0.85f, 0.9f), WindCutCore = new Color(1f, 1f, 0.95f, 1f);
 
         float LaneWidth => 2f * (Radius + 0.6f);
         /// <summary>El carril llega hasta donde de verdad termina la embestida (con su tramo en el aire ya ajustado) más
@@ -680,19 +743,21 @@ namespace Nindo
         /// <summary>El carril fijo o, antes de la suelta, hacia donde mira (el que va a tomar).</summary>
         Vector3 LaneDir => LaneLive ? laneD : transform.forward.Flat().normalized;
 
-        /// <summary>Lo más largo que estira el vuelo, y el vuelo más corto (fracción de la suelta autorada) cuando Kaito
-        /// está cerca: más corto que ~0.1 s es un salto de cuadro sin imágenes residuales.</summary>
-        const float DashMaxStretch = 1.4f, DashMinFlight = 0.25f;
-        /// <summary>Lo más corto que se escala el vuelo (0.57 m de los 5.7 autorados): de ahí para abajo frena contra él.</summary>
-        const float DashMinStretch = 0.1f;
+        /// <summary>Lo más largo que estira el vuelo, y el vuelo más corto (fracción de la suelta autorada): con 0.25 el
+        /// vuelo corto era un empujón de ~1.4 m que se leía como un saltito con fantasmas.</summary>
+        const float DashMaxStretch = 1.4f, DashMinFlight = 0.5f;
+        /// <summary>Lo más corto que se escala el vuelo (2.85 m de los 5.7 autorados, ~3.65 m con el empuje y la llegada):
+        /// con Kaito más cerca no frena, lo atraviesa. Con 0.1 cada embestida contra el bot "bueno" volaba x0.10.</summary>
+        const float DashMinStretch = 0.5f;
 
         /// <summary>
         /// El paso del viento está autorado con 6.5 m: se escala el vuelo entero (StretchSpan) para que la mano frene sobre
         /// donde va a estar Kaito en el contacto ('lead' s después: si viene corriendo sigue durante el vuelo, pero nunca más
-        /// acá del cuerpo del jefe). El carril es el que dibujó el aviso. Antes un vuelo corto se hacía en cámara lenta (o
-        /// frenaba contra él en el aire: el cuerpo flotaba quieto con los fantasmas), y después el carril giraba hasta 35°
-        /// para pasarle al costado: con Kaito corriendo hacia él la cuenta lo ponía detrás del jefe, el carril daba la vuelta
-        /// (~140°) y la embestida se iba lejos (Tools/Dev/sim_bamboo_master.py).
+        /// acá del cuerpo del jefe), como poco a la mitad (DashMinStretch): más cerca lo atraviesa (Travel no frena la
+        /// embestida y TickDash pega por el carril barrido). El carril es el que dibujó el aviso. Antes un vuelo corto se
+        /// hacía en cámara lenta (o frenaba contra él en el aire: el cuerpo flotaba quieto con los fantasmas), y después el
+        /// carril giraba hasta 35° para pasarle al costado: con Kaito corriendo hacia él la cuenta lo ponía detrás del jefe,
+        /// el carril daba la vuelta (~140°) y la embestida se iba lejos (Tools/Dev/sim_bamboo_master.py).
         /// </summary>
         float PlanDash(Vector3 from, Vector3 dir, float lead)
         {
@@ -704,7 +769,9 @@ namespace Nindo
             // lo que se acerca corriendo, a lo sumo a la carrera (en su dash va a 25 m/s y la cuenta se iría lejos)
             float closing = Mathf.Clamp(-Vector3.Dot(target.Velocity.Flat(), dir), 0f, target.config.runSpeed);
             along = Mathf.Max(along - closing * lead, StopShort);
-            return Mathf.Clamp((along - StopShort - before - after) / span, DashMinStretch, DashMaxStretch);
+            float k = Mathf.Clamp((along - StopShort - before - after) / span, DashMinStretch, DashMaxStretch);
+            // al atravesarlo sigue de largo: que no se salga de la arena (el agente frenaría en el borde con el cuerpo en el aire)
+            return Mathf.Min(k, Mathf.Max(0.1f, (ArenaRoom(from, dir) - 0.5f - before - after) / span));
         }
 
         /// <summary>
@@ -787,9 +854,9 @@ namespace Nindo
         // ================================================================== recibir golpes
         /// <summary>
         /// Un maestro no se deja pegar fuera de sus huecos: lo que le entra a la guardia, en neutral, en el contragolpe o en
-        /// sus golpes (los dorados enteros, los rojos hasta que pegan) rebota con un manotazo y no le suma postura (la
+        /// sus golpes (los dorados enteros, los rojos hasta que pegan) lo desvía o rebota (Bounce) y no le suma postura (la
         /// barra se llena solo con parries: los golpes de relleno no la gastaban de a 0.25 y el que machacaba lo ponía de
-        /// rodillas sin desviar nada). El segundo rebote seguido se contragolpea, y la postura del bambú desvía al primero.
+        /// rodillas sin desviar nada). El segundo seguido se contragolpea, y la postura del bambú contragolpea al primero.
         /// Los huecos: el contraataque del parry (Recoil), de rodillas, llamando a Kaito (esperó la postura) y la vuelta de
         /// un rojo que no pegó. Con la regla común (aguante 2 en neutral, cambio de golpes en el amague) el bot "bueno" lo
         /// terminaba en ~1 min (Tools/Dev/sim_bamboo_master.py).
@@ -941,9 +1008,12 @@ namespace Nindo
         int bounces;
 
         /// <summary>
-        /// Rebote: clang del lado de Kaito (PlayerController con Blocked). Parado se cubre con el manotazo de GuardHit; en
-        /// pleno golpe o contragolpe sigue su movimiento (la mano libre aparta la hoja). El segundo seguido en la guardia
-        /// o en neutral se le devuelve con el contragolpe, como a cualquier guardia del juego.
+        /// Un corte fuera de sus huecos. Parado (en neutral o en la guardia) el primero no rebota: lo desvía con el
+        /// manotazo de GuardHit, aparta a Kaito hasta YieldTo y le contesta con su combo (Yield). El segundo dentro de
+        /// BounceWindow (el combo que insiste) se le devuelve con el contragolpe, como a cualquier guardia del juego. Cargando
+        /// un dorado, la mano libre desvía el primer corte y lo aparta hasta donde ese golpe todavía llega con el paso
+        /// entero; en lo demás de sus golpes (la suelta, los rojos, el contragolpe) rebota: clang del lado de Kaito
+        /// (PlayerController con Blocked). Con el clang en todo, contra el bot "bueno" eran ~220 rebotes por pelea: una pared.
         /// </summary>
         HitResult Bounce()
         {
@@ -952,15 +1022,67 @@ namespace Nindo
             {
                 if (Time.time - lastBounce > BounceWindow) bounces = 0;
                 if (++bounces >= 2) { bounces = 0; lastBounce = -99f; return Deflect(false); }
-                if (State != EnemyState.Guard) { ReleaseToken(); EnterGuard(); }
+                bool guarding = State == EnemyState.Guard;
+                if (!guarding) { ReleaseToken(); EnterGuard(); }
                 stateDuration = Mathf.Max(stateDuration, stateTime + 0.5f);
                 if (target != null) transform.rotation = Quaternion.LookRotation((target.transform.position - transform.position).Flat().normalized + transform.forward * 0.001f);
-                anim.Play("GuardHit" + suffix, 0.03f);
+                // GuardHit arranca en la guardia: desde la pose de la locomoción el fundido de 0.03 s cruzaba el brazo en un cuadro
+                anim.Play("GuardHit" + suffix, guarding ? 0.03f : 0.08f);
                 Game.UI?.ShowGuardMark(this);
+                // el maestro toma la palabra: pasada la ventana del segundo corte sale con su combo (antes rondaba la
+                // pausa entera y cada toque suelto era otro clang)
+                nextAttackTime = Mathf.Min(nextAttackTime, Time.time + AnswerDelay);
+                lastBounce = Time.time;
+                TellPatience();
+                return Yield(YieldTo);
             }
             lastBounce = Time.time;
-            if (!deflectToldOnce) { deflectToldOnce = true; Bark(StoryText.ChikuoLine("paciencia")); ShowTip(StoryText.Hint("bamboo_guard")); }
+            TellPatience();
+            var a = CurrentAttack;
+            if (State == EnemyState.Attack && !stepYielded && a != null && a.damage > 0f && a.kind != AttackKind.Unblockable && stepClock < tl.ReleaseTime && target != null)
+            {
+                stepYielded = true;
+                return Yield(a.range + target.Radius - YieldMargin);
+            }
             return HitResult.Blocked;
+        }
+
+        /// <summary>Hasta dónde aparta a Kaito el desvío en neutral (m de centro a centro: su paso entero entra, ~2.0 m),
+        /// cuánto espera para contestar (pasada la ventana del segundo corte) y cuánto más acá del alcance de su golpe lo
+        /// deja si lo desvía cargando.</summary>
+        const float YieldTo = 2.4f, AnswerDelay = 0.6f, YieldMargin = 0.05f;
+        /// <summary>PlayerController.Push(dir, m) lo lanza a 10·m m/s y frena a 30 m/s²: recorre (10·m)²/60 m. Para recorrer
+        /// d metros, m = √(0.6·d).</summary>
+        const float PushPerMeter = 0.6f;
+        static readonly Color YieldJade = new Color(0.62f, 1f, 0.86f, 0.85f);
+
+        /// <summary>
+        /// El desvío: la palma (o la mano libre) acompaña la hoja hacia afuera y Kaito sigue de largo un paso atrás, sin
+        /// clang ni castigo (HitResult.Ignored: el corte no cuenta y el combo de Kaito sigue). Lo que se ve es un barrido de
+        /// jade donde se cruzan, un roce y el resbalón de Kaito; el aviso de que el segundo se paga es el GuardHit y la marca
+        /// de guardia.
+        /// </summary>
+        HitResult Yield(float to)
+        {
+            var p = target;
+            if (p == null) return HitResult.Ignored;
+            Vector3 d = (p.transform.position - transform.position).Flat();
+            float dist = d.magnitude;
+            Vector3 dir = dist > 0.01f ? d / dist : transform.forward;
+            if (to > dist) p.Push(dir, Mathf.Sqrt((to - dist) * PushPerMeter));
+            Vector3 c = Vector3.Lerp(AimPoint, p.AimPoint, 0.55f), side = Vector3.Cross(Vector3.up, dir);
+            SlashLineFX.Spawn(c + side * 0.55f + Vector3.up * 0.35f, c - side * 0.45f - Vector3.up * 0.2f, YieldJade, 0.24f, 0.24f);
+            Game.FX?.DodgeSpark(c);
+            Game.Audio?.Play("fin_whoosh", c, 0.5f, 0.12f);
+            return HitResult.Ignored;
+        }
+
+        void TellPatience()
+        {
+            if (deflectToldOnce) return;
+            deflectToldOnce = true;
+            Bark(StoryText.ChikuoLine("paciencia"));
+            ShowTip(StoryText.Hint("bamboo_guard"));
         }
 
         protected override int ExhaustedHitCap => taunt ? TauntHitCap : KneelHitCap;
