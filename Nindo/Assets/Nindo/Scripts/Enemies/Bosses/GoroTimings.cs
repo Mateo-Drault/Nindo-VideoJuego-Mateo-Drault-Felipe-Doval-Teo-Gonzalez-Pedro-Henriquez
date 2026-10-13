@@ -9,10 +9,10 @@ namespace Nindo
         // FakeDefeat: de rodilla, suelta el martillo, el martillo pega el piso, la espalda pega el piso, quieto
         public const float FakeLength = 2.6f, FakeKnee = 0.5333f, FakeDrop = 1.4333f, FakeHammerLand = 1.9667f, FakeBackHit = 2.0f, FakeStill = 2.4333f;
         // ArmorRise: agarra el mango, se sienta, de rodilla, de pie, arranca el martillo, ruge, abre los brazos
-        public const float RiseLength = 7.0f, RiseGrab = 2.8667f, RiseSit = 3.9333f, RiseKneel = 4.2f, RiseStand = 4.9333f, RisePull = 5.6667f,
+        public const float RiseLength = 7.0f, RiseGrab = 2.8667f, RiseSit = 3.9667f, RiseKneel = 4.2f, RiseStand = 4.9333f, RisePull = 5.6667f,
             RiseRoar = 6.1333f, RisePeak = 6.3333f;
         // AvalancheSummon: los dos martillazos al piso, la llamada a la montaña, el fin del rugido y el de la armadura
-        public const float AvalLength = 2.8f, AvalStrike1 = 0.4667f, AvalStrike2 = 1.0333f, AvalCall = 1.6f, AvalRoarEnd = 2.1f, AvalArmorEnd = 2.2f;
+        public const float AvalLength = 3.0f, AvalStrike1 = 0.8f, AvalStrike2 = 1.2333f, AvalCall = 2.0f, AvalRoarEnd = 2.5f, AvalArmorEnd = 2.6f;
         // Intro: el martillazo al piso y el cuadro en que el martillo ya está en el hombro (arranque de la re-presentación)
         public const float IntroLength = 2.8f, IntroSlam = 0.4333f, IntroRiseNorm = 0.3095f;
 
@@ -28,9 +28,9 @@ namespace Nindo
         {
             switch (state)
             {
-                case "Combo1B": from = 0.1111f; to = 0.6852f; return true;
+                case "Combo1B": from = 0.1017f; to = 0.6271f; return true;
                 case "Combo2B": from = 0.087f; to = 0.5435f; return true;
-                case "Combo3B": from = 0.0926f; to = 0.6852f; return true;
+                case "Combo3B": from = 0.0877f; to = 0.6491f; return true;
                 case "SlamWave": from = 0.0781f; to = 0.5625f; return true;
                 default: from = to = 0f; return false;
             }

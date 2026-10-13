@@ -2,11 +2,13 @@
 
   "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --python Tools/Blender/bosses/goro/goro_rise_review.py -- OUT
 
-Las rocas salen de la pared del cráter de la cumbre (radio 17.5 m alrededor del centro de la arena; acá Gorō está a
-4.5 m del centro), las que vendrían del lado de la cámara se espejan al otro lado, vuelan a ~12 m/s (0.9-1.6 s) con
-arco 2.2 + 0.3 d, 2.2 veces más grandes al salir, y llegan pegadas en el cuadro 'slam_<Pieza>' de ArmorRise. La cámara
+Las rocas que se pegan mientras está tirado (antes de 'kneel') salen del piso a 4.6-5.2 m de él, a un costado del plano
+(perpendicular a la cámara, un poco hacia atrás) y vuelan bajas (arco 1.3-1.5 m): cruzan la pantalla. Las demás salen
+de la pared del cráter de la cumbre (radio 17.5 m alrededor del centro de la arena; acá Gorō está a 4.5 m del centro) a
+6.5-9 m, las que vendrían del lado de la cámara espejadas al otro lado, con arco 2.2 + 0.3 d. Vuelan 0.8-1.2 s, 2.2
+veces más grandes al salir, y llegan pegadas en el cuadro 'slam_<Pieza>' de ArmorRise. La cámara
 es el plano de costado del juego (GoroBoss.PlayRiseShot: por su IZQUIERDA, el lado contrario al martillo clavado, 85 % de
-costado y 45 % de frente; de 8.5 a 6.8 m mientras está tirado y desde que se arrodilla hasta el rugido se aleja a 12.5 m
+costado y 45 % de frente; de 7.2 a 6 m mientras está tirado y desde que se arrodilla hasta el rugido se aleja a 12.5 m
 mirando a 3.4 m de altura; FOV 42). Hoja: OUT/goro_ArmorRise_juego.png
 """
 import bpy, os, sys, math, json
@@ -21,7 +23,8 @@ import nindo_anim as NA      # noqa: E402
 
 FPS = 30.0
 RIM = 17.5
-SHOT_NEAR, SHOT_FAR = 6.8, 12.5
+SHOT_START, SHOT_NEAR, SHOT_FAR = 7.2, 6.0, 12.5
+SIDE_DIST, SIDE_BACK, SIDE_ARC = 4.6, 0.38, 1.3   # GoroArmor: las que se tiran de costado
 FLIGHT_SCALE = 1.2                 # GoroArmor.FlightScale
 # GoroArmor.Specs: giro (grados), eje y dirección de salida en el marco de Gorō de Unity (+Z adelante, +X derecha)
 SPECS = {
@@ -41,8 +44,8 @@ def u2b(x, y, z):
     return Vector((-x, -z, y))
 
 
-def plan(center):
-    """GoroArmor.PlanAssembly con Gorō en el origen mirando a -Y."""
+def plan(center, side_until):
+    """GoroArmor.PlanAssembly con Gorō en el origen mirando a -Y ('side_until': s de ArmorRise, el 'kneel')."""
     c = Vector((0.0, 0.0, 0.0))
     fwd, right = u2b(0, 0, 1), u2b(1, 0, 0)
     to_c = (center - c); to_c.z = 0
@@ -57,23 +60,31 @@ def plan(center):
         cam_dir.z = 0
         cam_dir.normalize()
     out = {}
-    for p in GA.PIECES:
+    cs = cam_dir.copy(); cs.z = 0; cs.normalize()
+    # Vector3.Cross(up, camSide) de Unity llevado a esta escena (u2b invierte la mano)
+    across = -Vector((0.0, 0.0, 1.0)).cross(cs)
+    for i, p in enumerate(GA.PIECES):
         spin, axis, frm = SPECS[p["name"]]
         d = u2b(frm[0], 0, frm[1]); d.z = 0; d.normalize()
-        cs = cam_dir.copy(); cs.z = 0; cs.normalize()
-        k = d.dot(cs)
-        if k > 0.15:
-            d = (d - cs * (2 * k)).normalized()
-        o = c - center; o.z = 0
-        b = o.dot(d)
-        disc = b * b - (o.length_squared - RIM * RIM)
-        dist = min(9.0, max(6.5, -b + math.sqrt(disc) if disc > 0 else 9.0))
+        side_throw = p["slam"] / FPS < side_until
+        if side_throw:
+            d = (across * (1.0 if d.dot(across) >= 0 else -1.0) - cs * SIDE_BACK).normalized()
+            dist = SIDE_DIST + 0.3 * (i % 3)
+        else:
+            k = d.dot(cs)
+            if k > 0.15:
+                d = (d - cs * (2 * k)).normalized()
+            o = c - center; o.z = 0
+            b = o.dot(d)
+            disc = b * b - (o.length_squared - RIM * RIM)
+            dist = min(9.0, max(6.5, -b + math.sqrt(disc) if disc > 0 else 9.0))
         q = c + d * dist
         q.z = 0.2                      # el piso de la cumbre (la escena es plana)
         real = (q - Vector((0, 0, 1.6))).length
         flight = min(1.2, max(0.8, real / 10.0))
         slam = p["slam"] / FPS
-        out[p["name"]] = dict(start=q, flight=flight, launch=slam - flight, slam=slam, arc=2.2 + 0.3 * real,
+        out[p["name"]] = dict(start=q, flight=flight, launch=slam - flight, slam=slam,
+                              arc=SIDE_ARC + 0.1 * (i % 3) if side_throw else 2.2 + 0.3 * real,
                               spin=spin * 1.6, axis=u2b(*axis).normalized())
     return out, cam_dir
 
@@ -113,7 +124,7 @@ def side_camera(cam, cam_dir, ts, kneel, roar):
     """GoroBoss.PlayRiseShot: cerca y bajo mientras está tirado; desde que se arrodilla se aleja y sube hasta el rugido."""
     a, b = ss(ts / kneel), ss((ts - kneel) / max(0.1, roar - kneel))
     c = Vector((0.0, 0.0, 0.0))
-    pos = c + cam_dir * lerp(lerp(8.5, SHOT_NEAR, a), SHOT_FAR, b) + Vector((0, 0, lerp(lerp(1.7, 2.1, a), 3.0, b)))
+    pos = c + cam_dir * lerp(lerp(SHOT_START, SHOT_NEAR, a), SHOT_FAR, b) + Vector((0, 0, lerp(lerp(1.7, 2.1, a), 3.0, b)))
     look = c + Vector((0, 0, lerp(lerp(0.7, 1.3, a), 3.4, b)))
     cd = cam.data
     cd.type = 'PERSP'
@@ -128,20 +139,20 @@ def main():
     out = sys.argv[sys.argv.index("--") + 1]
     os.makedirs(out, exist_ok=True)
     v = GV.GoroView(out, clips=("ArmorRise",), armor=True, res=(1280, 720))
-    plans, cam_dir = plan(Vector((-3.2, -3.2, 0.0)))
+    side = os.path.join(HERE, "..", "..", "..", "..", "Nindo", "Assets", "Nindo", "Art", "Characters", "TeamAnims", "GoroAnims.fbx.json")
+    ev = json.load(open(side, encoding="utf-8"))["clips"]["ArmorRise"]["timing"]["events"]
+    plans, cam_dir = plan(Vector((-3.2, -3.2, 0.0)), ev["kneel"] / FPS)
     lead = max(-p["launch"] for p in plans.values())
     print("piezas:", {n: (round(p["launch"], 2), round(p["flight"], 2), round((p["start"] - Vector((0, 0, 0))).length, 1)) for n, p in plans.items()})
     print(f"la primera sale {lead:.2f} s antes del clip")
     obj = v.armor["object"]
     obj.hide_render = False
     # los cuadros del clip exportado (GoroAnims.fbx.json): el plano se aleja desde 'kneel' hasta 'roar'
-    side = os.path.join(HERE, "..", "..", "..", "..", "Nindo", "Assets", "Nindo", "Art", "Characters", "TeamAnims", "GoroAnims.fbx.json")
-    ev = json.load(open(side, encoding="utf-8"))["clips"]["ArmorRise"]["timing"]["events"]
     kneel = 0.6 + lead + ev["kneel"] / FPS
     roar = 0.6 + lead + ev["roar"] / FPS
     tiles = []
     # las grandes (f112-f170: hombreras y cumbres) con más cuadros: el martillo clavado no puede taparlas
-    for t in (-0.45, 0.55, 1.25, 2.2, 3.0, 3.73, 3.93, 4.27, 4.6, 4.87, 5.07, 5.4, 5.75, 6.13, 6.4, 6.9):
+    for t in (0.2, 0.45, 0.65, 0.95, 1.15, 1.4, 1.65, 2.1, 2.45, 2.85, 3.2, 3.73, 4.27, 4.87, 5.4, 6.13):
         f = max(0, min(210, int(round(t * FPS))))
         v.set_frame("ArmorRise", f, moving=False)
         apply(v, plans, t, f)

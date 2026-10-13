@@ -80,6 +80,10 @@ namespace Nindo
         const float FlightScale = 1.2f;
         // la estela de polvo y nieve de cada roca en el aire (s entre soplos)
         const float DustEvery = 0.05f;
+        // las que se pegan mientras está tirado salen del piso a un costado del plano y vuelan bajas: cruzan la pantalla a
+        // la distancia de Gorō (desde 6.5-9 m del otro lado y con 4-5 m de arco eran puntos arriba del cuadro y no se veía
+        // qué pierna pateaban)
+        const float SideDist = 4.6f, SideBack = 0.38f, SideArc = 1.3f;
 
         public void HideAll()
         {
@@ -101,33 +105,50 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Prepara el vuelo: cada pieza sale de la pared de la cumbre (radio 'rimRadius' alrededor de 'rimCenter', a la
-        /// altura del suelo que encuentra ahí) en la dirección de su 'start_unity', espejada hacia el lado contrario de
-        /// 'camSide' (las que salían del lado de la cámara pasaban por delante del lente). 'tScale' = velocidad del clip.
-        /// El reloj del vuelo es el del clip ArmorRise: t = 0 cuando arranca; las primeras piezas salen antes (t &lt; 0).
+        /// Prepara el vuelo. Las piezas que se pegan antes de 'sideUntil' (s del clip: mientras está tirado, hasta que se
+        /// arrodilla) salen del piso a SideDist m de él, a un costado del plano (perpendicular a 'camSide', del lado de su
+        /// 'start_unity', un poco hacia atrás: no pasan por delante del lente) y vuelan bajas (SideArc): cruzan la pantalla.
+        /// Las demás salen de la pared de la cumbre (radio 'rimRadius' alrededor de 'rimCenter', a 6.5-9 m) en la dirección
+        /// de su 'start_unity', espejada hacia el lado contrario de 'camSide', con un arco alto: llegan cuando el plano ya
+        /// se alejó. 'tScale' = velocidad del clip. El reloj del vuelo es el del clip ArmorRise: t = 0 cuando arranca; las
+        /// primeras piezas salen antes (t &lt; 0).
         /// </summary>
-        public void PlanAssembly(Vector3 rimCenter, float rimRadius, Vector3 camSide, float tScale, int groundMask)
+        public void PlanAssembly(Vector3 rimCenter, float rimRadius, Vector3 camSide, float tScale, int groundMask, float sideUntil)
         {
             if (!Valid) return;
             Vector3 c = root.position;
             camSide = camSide.Flat().normalized;
+            Vector3 across = Vector3.Cross(Vector3.up, camSide).normalized;
             for (int i = 0; i < Count; i++)
             {
                 var s = Specs[i];
                 var p = pieces[i];
                 Vector3 d = root.TransformDirection(s.from).Flat().normalized;
-                float k = Vector3.Dot(d, camSide);
-                if (k > 0.15f) d = (d - camSide * (2f * k)).normalized;
-                // hasta la pared de la cumbre en esa dirección, pero a 6.5-9 m: desde la pared (13-17 m) las piezas de
-                // 0.2-0.75 m eran puntos en el plano de costado; así se arrancan de la roca de la cumbre (o de la pared, si
-                // Gorō cayó cerca del borde) y se ven volar enteras
-                Vector3 o = (c - rimCenter).Flat();
-                float b = Vector3.Dot(o, d), disc = b * b - (o.sqrMagnitude - rimRadius * rimRadius);
-                float dist = Mathf.Clamp(disc > 0f ? -b + Mathf.Sqrt(disc) : 9f, 6.5f, 9f);
+                bool sideThrow = s.slam < sideUntil;
+                float dist;
+                if (sideThrow)
+                {
+                    float side = Vector3.Dot(d, across) >= 0f ? 1f : -1f;
+                    d = (across * side - camSide * SideBack).normalized;
+                    dist = SideDist + 0.3f * (i % 3);
+                }
+                else
+                {
+                    float k = Vector3.Dot(d, camSide);
+                    if (k > 0.15f) d = (d - camSide * (2f * k)).normalized;
+                    // hasta la pared de la cumbre en esa dirección, pero a 6.5-9 m: desde la pared (13-17 m) las piezas
+                    // eran puntos en el plano; así se arrancan de la roca de la cumbre (o de la pared, si Gorō cayó cerca
+                    // del borde) y se ven volar enteras
+                    Vector3 o = (c - rimCenter).Flat();
+                    float b = Vector3.Dot(o, d), disc = b * b - (o.sqrMagnitude - rimRadius * rimRadius);
+                    dist = Mathf.Clamp(disc > 0f ? -b + Mathf.Sqrt(disc) : 9f, 6.5f, 9f);
+                }
                 Vector3 q = c + d * dist;
                 q.y = c.y;
                 if (Physics.Raycast(q + Vector3.up * 30f, Vector3.down, out var hit, 60f, groundMask, QueryTriggerInteraction.Ignore))
                     q.y = hit.point.y;
+                // (las bajas no arrancan de lo alto de una pared cercana: saldrían de arriba del cuadro otra vez)
+                if (sideThrow) q.y = Mathf.Min(q.y, c.y + 0.8f);
                 q.y += 0.2f;
                 p.start = q;
                 p.axis = root.TransformDirection(s.axis);
@@ -135,7 +156,7 @@ namespace Nindo
                 float realDist = Vector3.Distance(q, c + Vector3.up * 1.6f);
                 p.flight = Mathf.Clamp(realDist / 10f, 0.8f, 1.2f) / Mathf.Max(0.5f, tScale);
                 p.launch = s.slam / Mathf.Max(0.5f, tScale) - p.flight;
-                p.arc = 2.2f + 0.3f * realDist;
+                p.arc = sideThrow ? SideArc + 0.1f * (i % 3) : 2.2f + 0.3f * realDist;
                 // vuela más que en la autoría (0.55-0.8 s): más vueltas para que siga leyéndose como roca suelta
                 p.spin = s.spin * 1.6f;
                 p.launched = p.slammed = false;

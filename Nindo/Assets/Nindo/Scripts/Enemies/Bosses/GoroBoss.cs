@@ -27,13 +27,21 @@ namespace Nindo
         /// <summary>Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth).</summary>
         public float armoredHealth = 520f;
         /// <summary>
-        /// Daño de Gorō armado respecto de la fase 1 (golpes, onda y avalancha). Perilla de balance: con más vida en las
+        /// Daño de Gorō armado respecto del arquetipo (golpes, onda y avalancha). Perilla de balance: con más vida en las
         /// barras el daño tiene que bajar, si no la pelea larga se vuelve desgaste (Tools/Dev/goro_fight_sim.py --p2dmg).
+        /// Los valores por omisión de las tres perillas salen de goro_fight_sim.py con las barras de 520 + 520: el bot
+        /// promedio muere ~1.3 veces por pelea (antes 6, dos tercios en la primera barra) y el bueno casi nunca.
         /// </summary>
-        public float armoredDamageScale = 0.8f;
+        public float armoredDamageScale = 0.7f;
+        /// <summary>
+        /// Daño de Gorō en la primera barra respecto de EnemyArchetypes.Goro (la otra perilla de balance: con la barra
+        /// falsa más larga, dos tercios de las muertes del bot promedio eran en la fase 1, que armoredDamageScale no toca).
+        /// Las dos perillas son respecto del arquetipo, no una de la otra.
+        /// </summary>
+        public float firstBarDamageScale = 0.7f;
         /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (66 % y 33 % de la segunda barra):
         /// la única cura de una pelea de varios minutos (goro_fight_sim.py --shed-heal).</summary>
-        public float shedHeal = 15f;
+        public float shedHeal = 30f;
         /// <summary>
         /// Kaito no se cura en la pelea (solo +8 por "matar" la barra falsa): sin esto llegaba a la fase 2 con lo que le
         /// quedó de la 1 y moría ahí, volviendo a empezar de cero. Como los cambios de acto de Kokuyō (KokuyoBoss.RewardKaito).
@@ -52,12 +60,17 @@ namespace Nindo
         const float RumbleTime = 0.6f;
         // StoryDirector.BossReintro devuelve el control a los 1.2 s: la re-presentación llega a la guardia justo ahí
         const float ReintroTime = 1.2f;
-        // el plano de costado: tirado cerca y bajo; desde que se arrodilla se aleja para que entren las cumbres de la
-        // espalda y el martillo del rugido
-        const float ShotNear = 6.8f, ShotFar = 12.5f, ShotFov = 42f;
+        // el plano de costado: tirado cerca y bajo (de 7.2 a 6 m: Gorō tirado ocupa dos tercios del ancho y las rocas que se
+        // tiran de costado entran por los bordes, GoroArmor.PlanAssembly); desde que se arrodilla se aleja para que entren
+        // las cumbres de la espalda y el martillo del rugido
+        const float ShotStart = 7.2f, ShotNear = 6f, ShotFar = 12.5f, ShotFov = 42f;
 
         public bool Armored => armored;
         bool armored, inCinematic, assembling, wideFrame;
+        // la escala de daño ya aplicada a los pasos de config (ScaleDamage): Boss.ResetEnemy restaura la config del
+        // arquetipo y la vuelve a 1
+        float appliedDamageScale = 1f;
+        bool started;
         float assemblyClock;
         bool holdingCutscene, holdingLetterbox;
         int shot = -1;
@@ -112,6 +125,8 @@ namespace Nindo
             baseTitle = title;
             baseSubtitle = subtitle;
             baseFinisherHealth = config.finisherHealth;
+            started = true;
+            SetDamageScale(firstBarDamageScale);
             ApplyFinisherGate();
             if (!Defeated) avalanche = GoroAvalanche.Create(this);
         }
@@ -129,6 +144,9 @@ namespace Nindo
             if (shot >= 0) { Game.Camera?.CancelShot(shot); shot = -1; }
             avalanche?.Clear(false);
             base.ResetEnemy();
+            // (antes de Start no hay config guardada que restaurar: la escala que había sigue puesta)
+            if (started) appliedDamageScale = 1f;
+            SetDamageScale(firstBarDamageScale);
             armored = inCinematic = assembling = wideFrame = false;
             held = forceAvalanche = avalOpen = avalPause = barkPending = false;
             slamLive = false;
@@ -367,7 +385,7 @@ namespace Nindo
                 Game.FX?.Dust(arenaCenter + d * (RimRadius - 1f) + Vector3.up * 2f, 1.8f);
             }
             Vector3 camDir = riseCamDir;
-            armor.PlanAssembly(arenaCenter, RimRadius, camDir, sp, GroundMask);
+            armor.PlanAssembly(arenaCenter, RimRadius, camDir, sp, GroundMask, GoroTimings.RiseKneel);
             float lead = armor.Lead;
             // el plano arranca con el retumbe (RumbleTime antes de la primera roca) y dura hasta el rugido y un poco más
             shot = PlayRiseShot(camDir, RumbleTime + lead + (GoroTimings.RiseLength + 0.5f) / sp,
@@ -473,7 +491,7 @@ namespace Nindo
             {
                 float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / kneel));
                 float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - kneel) / Mathf.Max(0.1f, roar - kneel)));
-                float dist = Mathf.Lerp(Mathf.Lerp(8.5f, ShotNear, a), ShotFar, b);
+                float dist = Mathf.Lerp(Mathf.Lerp(ShotStart, ShotNear, a), ShotFar, b);
                 Vector3 pos = c + dir * dist + Vector3.up * Mathf.Lerp(Mathf.Lerp(1.7f, 2.1f, a), 3.0f, b);
                 Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, 1.3f, a), 3.4f, b);
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
@@ -493,7 +511,7 @@ namespace Nindo
             // más agresivo y con ventanas un poco más cortas (Boss.ResetEnemy vuelve a la config original)
             config.attackCooldown *= 0.8f;
             config.exhaustedTime = 3.4f;
-            ScaleArmoredDamage();
+            SetDamageScale(armoredDamageScale);
             ApplyFinisherGate();
             // la barra como la de la fase 1: el nombre y el epíteto abajo (el cartel ya salió al pararse)
             title = StoryText.Goro;
@@ -520,10 +538,13 @@ namespace Nindo
             }
         }
 
-        /// <summary>El daño armado (perilla armoredDamageScale) en cada paso una sola vez (los combos comparten pasos).</summary>
-        void ScaleArmoredDamage()
+        /// <summary>Deja el daño de los pasos en 'scale' veces el del arquetipo (firstBarDamageScale, armoredDamageScale):
+        /// multiplica cada paso una sola vez (los combos comparten pasos) por lo que falta desde la escala ya aplicada.</summary>
+        void SetDamageScale(float scale)
         {
-            if (Mathf.Approximately(armoredDamageScale, 1f) || config.patterns == null) return;
+            float k = scale / Mathf.Max(0.01f, appliedDamageScale);
+            appliedDamageScale = scale;
+            if (Mathf.Approximately(k, 1f) || config.patterns == null) return;
             var done = new HashSet<AttackDef>();
             foreach (var pt in config.patterns)
             {
@@ -531,9 +552,9 @@ namespace Nindo
                 foreach (var s in pt.steps)
                 {
                     if (s == null || !done.Add(s)) continue;
-                    s.damage *= armoredDamageScale;
+                    s.damage *= k;
                     // la avalancha no pega con el martillo: su daño por roca va en specialParam
-                    if (s.special == "avalanche") s.specialParam *= armoredDamageScale;
+                    if (s.special == "avalanche") s.specialParam *= k;
                 }
             }
         }

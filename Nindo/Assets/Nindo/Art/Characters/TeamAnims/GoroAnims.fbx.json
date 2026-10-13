@@ -71,7 +71,9 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 21.3,
     "hammer_turn_max_deg": 0.1,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.009,
+    "hammer_head_step_max_m": 0.003
    }
   },
   "Walk": {
@@ -140,7 +142,9 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 16.1,
     "hammer_turn_max_deg": 0.8,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.191,
+    "hammer_head_step_max_m": 0.074
    },
    "root_velocity_mps": 2.0
   },
@@ -216,15 +220,17 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 17.5,
     "hammer_turn_max_deg": 0.7,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.112,
+    "hammer_head_step_max_m": 0.021
    },
    "root_velocity_mps": 3.8
   },
   "Combo1": {
    "first": 171,
-   "last": 213,
-   "frames": 42,
-   "seconds": 1.4,
+   "last": 219,
+   "frames": 48,
+   "seconds": 1.6,
    "loop": false,
    "timing": {
     "kind": "heavy",
@@ -242,67 +248,61 @@
     "windup": 0.85,
     "state": "Combo1",
     "reach": 2.5,
-    "clip_ok": [
-     [
-      36,
-      36
-     ]
-    ],
     "armored": true
    },
    "normalized": {
-    "apex": 0.5,
-    "contact": 0.5714,
+    "apex": 0.4375,
+    "contact": 0.5,
     "hold": [
-     0.2857,
-     0.5
+     0.25,
+     0.4375
     ],
     "active": [
-     0.5714,
-     0.6667
+     0.5,
+     0.5833
     ]
    },
    "notes": "martillazo en diagonal; aviso: martillo arriba a la derecha",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.8,
+     "hands": 2.9,
      "legs": 0.0
     },
-    "hip_drop_cm": 1.5,
+    "hip_drop_cm": 1.0,
     "wrists": {
      "r": {
       "excess": 0.97,
-      "twist": 27.6,
-      "fore": 104.3,
-      "swivel": 87.0,
-      "clamp": 30.8,
-      "swing": 39.4,
-      "pinned": 0.02,
+      "twist": 21.8,
+      "fore": 100.1,
+      "swivel": 91.0,
+      "clamp": 27.6,
+      "swing": 36.9,
+      "pinned": 0.0,
       "pron": [
-       -62.6,
-       88.7
+       -64.3,
+       84.5
       ],
       "clamp_tell": 0.0
      },
      "l": {
-      "excess": 0.64,
+      "excess": 0.58,
       "twist": 29.4,
       "fore": 103.1,
       "swivel": 61.0,
       "clamp": 0.0,
       "asked_over": 0.0,
-      "swing": 27.0,
+      "swing": 31.2,
       "pinned": 0.18,
       "pron": [
-       1.1,
+       0.9,
        90.0
       ],
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 39.6,
+    "solver_jump_deg": 43.4,
     "local_pop_deg": 0.0,
-    "local_max_deg": 48.3,
+    "local_max_deg": 47.6,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
@@ -315,14 +315,14 @@
       "max": 14.2
      }
     },
-    "hold_tip_mps": 0.98,
+    "hold_tip_mps": 0.94,
     "peak_frame": 22,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.886,
     "game_hold_s": 0.0,
     "contact_tip_m": [
      0.75,
-     -4.2,
+     -4.16,
      0.9
     ],
     "floor_skate_cm": {
@@ -334,14 +334,16 @@
     "weapon_in_body_cm": 1.8,
     "weapon_in_body_frame": 22,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 9.1,
-    "hammer_turn_max_deg": 19.9,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 8.0,
+    "hammer_turn_max_deg": 25.2,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.485,
+    "hammer_head_step_max_m": 1.25
    }
   },
   "Combo2": {
-   "first": 223,
-   "last": 265,
+   "first": 229,
+   "last": 271,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -354,20 +356,26 @@
      24
     ],
     "hold": [
-     11,
+     13,
      18
     ],
     "lunge": 1.2,
     "windup": 0.5,
     "state": "Combo2",
     "reach": 2.7,
+    "regrip": [
+     [
+      1,
+      3
+     ]
+    ],
     "armored": true
    },
    "normalized": {
     "apex": 0.4286,
     "contact": 0.5,
     "hold": [
-     0.2619,
+     0.3095,
      0.4286
     ],
     "active": [
@@ -401,11 +409,11 @@
       "excess": 0.85,
       "twist": 43.2,
       "fore": 103.1,
-      "swivel": 65.2,
-      "clamp": 0.0,
+      "swivel": 62.2,
+      "clamp": 3.0,
       "asked_over": 0.0,
       "swing": 54.5,
-      "pinned": 0.29,
+      "pinned": 0.28,
       "pron": [
        19.2,
        90.0
@@ -413,9 +421,9 @@
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 51.1,
+    "solver_jump_deg": 50.7,
     "local_pop_deg": 0.0,
-    "local_max_deg": 39.1,
+    "local_max_deg": 41.6,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
@@ -428,7 +436,7 @@
       "max": 15.7
      }
     },
-    "hold_tip_mps": 0.99,
+    "hold_tip_mps": 0.79,
     "peak_frame": 19,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.768,
@@ -444,31 +452,33 @@
     },
     "lowest_body_cm": 0.0,
     "lowest_weapon_cm": -0.9,
-    "weapon_in_body_cm": 0.7,
-    "weapon_in_body_frame": 7,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 17.5,
-    "hammer_turn_max_deg": 36.8,
-    "arm_pop_deg": 0.0
+    "hammer_turn_max_deg": 27.2,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.489,
+    "hammer_head_step_max_m": 1.584
    }
   },
   "Combo3": {
-   "first": 275,
-   "last": 313,
-   "frames": 38,
-   "seconds": 1.2667,
+   "first": 281,
+   "last": 328,
+   "frames": 47,
+   "seconds": 1.5667,
    "loop": false,
    "timing": {
     "kind": "heavy",
-    "apex": 16,
-    "contact": 19,
+    "apex": 22,
+    "contact": 25,
     "active": [
-     19,
-     22
+     25,
+     28
     ],
     "hold": [
-     9,
-     16
+     17,
+     22
     ],
     "lunge": 1.0,
     "windup": 0.5,
@@ -477,62 +487,62 @@
     "armored": true
    },
    "normalized": {
-    "apex": 0.4211,
-    "contact": 0.5,
+    "apex": 0.4681,
+    "contact": 0.5319,
     "hold": [
-     0.2368,
-     0.4211
+     0.3617,
+     0.4681
     ],
     "active": [
-     0.5,
-     0.5789
+     0.5319,
+     0.5957
     ]
    },
    "notes": "martillazo de arriba; aviso: martillo atrás de la cabeza",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 3.3,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.97,
-      "twist": 28.9,
+      "excess": 0.96,
+      "twist": 26.2,
       "fore": 105.6,
-      "swivel": 87.0,
-      "clamp": 29.2,
-      "swing": 40.2,
-      "pinned": 0.05,
+      "swivel": 88.0,
+      "clamp": 24.2,
+      "swing": 36.7,
+      "pinned": 0.08,
       "pron": [
-       -62.5,
+       -62.8,
        90.0
       ],
       "clamp_tell": 0.0
      },
      "l": {
-      "excess": 0.64,
-      "twist": 27.8,
+      "excess": 0.62,
+      "twist": 27.9,
       "fore": 103.1,
       "swivel": 70.0,
       "clamp": 0.0,
       "asked_over": 0.0,
-      "swing": 24.9,
-      "pinned": 0.2,
+      "swing": 33.0,
+      "pinned": 0.19,
       "pron": [
-       20.4,
+       16.1,
        90.0
       ],
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 30.4,
+    "solver_jump_deg": 39.4,
     "local_pop_deg": 0.0,
-    "local_max_deg": 42.6,
+    "local_max_deg": 38.6,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
-      "min": 9.3,
+      "min": 9.2,
       "max": 14.6
      },
      "l": {
@@ -541,14 +551,14 @@
       "max": 15.7
      }
     },
-    "hold_tip_mps": 1.82,
-    "peak_frame": 17,
+    "hold_tip_mps": 1.33,
+    "peak_frame": 23,
     "prerelease_glide_cm": 0.0,
-    "game_T_s": 0.69,
+    "game_T_s": 0.925,
     "game_hold_s": 0.0,
     "contact_tip_m": [
      0.05,
-     -4.38,
+     -4.34,
      0.92
     ],
     "floor_skate_cm": {
@@ -556,20 +566,22 @@
      "l": []
     },
     "lowest_body_cm": 0.0,
-    "lowest_weapon_cm": 0.2,
-    "weapon_in_body_cm": 0.6,
-    "weapon_in_body_frame": 5,
+    "lowest_weapon_cm": 0.7,
+    "weapon_in_body_cm": 0.3,
+    "weapon_in_body_frame": 7,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 4.6,
-    "hammer_turn_max_deg": 40.6,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 4.2,
+    "hammer_turn_max_deg": 18.4,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.48,
+    "hammer_head_step_max_m": 0.96
    }
   },
   "Heavy": {
-   "first": 323,
-   "last": 383,
-   "frames": 60,
-   "seconds": 2.0,
+   "first": 338,
+   "last": 402,
+   "frames": 64,
+   "seconds": 2.1333,
    "loop": false,
    "timing": {
     "kind": "unblockable",
@@ -580,8 +592,8 @@
      42
     ],
     "hold": [
-     12,
-     22
+     21,
+     23
     ],
     "lunge": 0.5,
     "windup": 1.1,
@@ -596,58 +608,58 @@
     "armored": true
    },
    "normalized": {
-    "apex": 0.5333,
-    "contact": 0.6667,
+    "apex": 0.5,
+    "contact": 0.625,
     "hold": [
-     0.2,
-     0.3667
+     0.3281,
+     0.3594
     ],
     "active": [
-     0.6667,
-     0.7
+     0.625,
+     0.6562
     ]
    },
    "notes": "golpe sísmico: salta y pega al aterrizar",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 3.9,
      "legs": 0.0
     },
     "hip_drop_cm": 20.8,
     "wrists": {
      "r": {
-      "excess": 0.97,
-      "twist": 27.6,
-      "fore": 100.4,
-      "swivel": 87.0,
-      "clamp": 27.7,
-      "swing": 38.1,
+      "excess": 0.96,
+      "twist": 21.3,
+      "fore": 100.1,
+      "swivel": 88.0,
+      "clamp": 25.1,
+      "swing": 36.7,
       "pinned": 0.0,
       "pron": [
-       -62.5,
-       84.8
+       -62.8,
+       84.5
       ],
       "clamp_tell": 0.0
      },
      "l": {
-      "excess": 0.6,
-      "twist": 13.0,
-      "fore": 58.9,
+      "excess": 0.61,
+      "twist": 13.1,
+      "fore": 58.6,
       "swivel": 68.0,
       "clamp": 0.0,
       "asked_over": 0.0,
-      "swing": 26.6,
+      "swing": 35.1,
       "pinned": 0.0,
       "pron": [
-       17.1,
-       45.7
+       16.4,
+       45.5
       ],
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 37.9,
+    "solver_jump_deg": 38.5,
     "local_pop_deg": 0.0,
-    "local_max_deg": 55.9,
+    "local_max_deg": 40.4,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
@@ -660,14 +672,14 @@
       "max": 13.0
      }
     },
-    "hold_tip_mps": 1.61,
+    "hold_tip_mps": 2.3,
     "peak_frame": 40,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 1.422,
     "game_hold_s": 0.0,
     "contact_tip_m": [
      0.05,
-     -4.01,
+     -4.0,
      0.92
     ],
     "floor_skate_cm": {
@@ -679,14 +691,16 @@
     "weapon_in_body_cm": 5.8,
     "weapon_in_body_frame": 38,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 4.6,
-    "hammer_turn_max_deg": 30.9,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 4.7,
+    "hammer_turn_max_deg": 14.4,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.49,
+    "hammer_head_step_max_m": 0.769
    }
   },
   "Spin": {
-   "first": 393,
-   "last": 459,
+   "first": 412,
+   "last": 478,
    "frames": 66,
    "seconds": 2.2,
    "loop": false,
@@ -699,7 +713,7 @@
      56
     ],
     "hold": [
-     10,
+     12,
      16
     ],
     "lunge": 0.0,
@@ -709,8 +723,14 @@
     "reach": 3.0,
     "swing_ok": [
      [
-      6,
-      10
+      7,
+      12
+     ]
+    ],
+    "regrip": [
+     [
+      1,
+      5
      ]
     ],
     "armored": true
@@ -719,7 +739,7 @@
     "apex": 0.2424,
     "contact": 0.2879,
     "hold": [
-     0.1515,
+     0.1818,
      0.2424
     ],
     "active": [
@@ -737,9 +757,9 @@
     "wrists": {
      "r": {
       "excess": 0.93,
-      "twist": 24.0,
+      "twist": 24.3,
       "fore": 105.6,
-      "swivel": 99.0,
+      "swivel": 97.0,
       "clamp": 9.1,
       "swing": 36.0,
       "pinned": 0.1,
@@ -759,7 +779,7 @@
       "swing": 47.0,
       "pinned": 0.0,
       "pron": [
-       -22.8,
+       -11.8,
        67.3
       ],
       "clamp_tell": 0.0
@@ -767,7 +787,7 @@
     },
     "solver_jump_deg": 48.0,
     "local_pop_deg": 0.0,
-    "local_max_deg": 81.3,
+    "local_max_deg": 61.1,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
@@ -776,11 +796,11 @@
      },
      "l": {
       "ref": 15.1,
-      "min": 9.8,
+      "min": 10.0,
       "max": 11.7
      }
     },
-    "hold_tip_mps": 1.04,
+    "hold_tip_mps": 1.42,
     "peak_frame": 19,
     "game_T_s": 0.95,
     "game_hold_s": 0.26,
@@ -800,12 +820,14 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 12.8,
     "hammer_turn_max_deg": 10.0,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.429,
+    "hammer_head_step_max_m": 0.679
    }
   },
   "StunSpin": {
-   "first": 469,
-   "last": 529,
+   "first": 488,
+   "last": 548,
    "frames": 60,
    "seconds": 2.0,
    "loop": true,
@@ -869,12 +891,14 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 8.2,
     "hammer_turn_max_deg": 0.0,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.03,
+    "hammer_head_step_max_m": 0.005
    }
   },
   "ExhaustedHit": {
-   "first": 539,
-   "last": 551,
+   "first": 558,
+   "last": 570,
    "frames": 12,
    "seconds": 0.4,
    "loop": false,
@@ -945,12 +969,14 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 11.4,
     "hammer_turn_max_deg": 0.0,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.062,
+    "hammer_head_step_max_m": 0.012
    }
   },
   "Parried": {
-   "first": 561,
-   "last": 577,
+   "first": 580,
+   "last": 596,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -960,8 +986,9 @@
      1,
      2,
      4,
-     6,
-     9,
+     4,
+     7,
+     10,
      15
     ],
     "chain": [
@@ -970,6 +997,12 @@
       "Combo1",
       0,
       0.12
+     ]
+    ],
+    "swing_ok": [
+     [
+      1,
+      4
      ]
     ],
     "armored": true
@@ -984,7 +1017,7 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.6,
+      "excess": 0.61,
       "twist": 15.8,
       "fore": 86.1,
       "swivel": 78.0,
@@ -997,28 +1030,28 @@
       ]
      },
      "l": {
-      "excess": 0.73,
-      "twist": 17.3,
-      "fore": 82.2,
+      "excess": 0.99,
+      "twist": 23.7,
+      "fore": 91.9,
       "swivel": 45.8,
-      "clamp": 0.0,
+      "clamp": 1.3,
       "asked_over": 0.0,
-      "swing": 27.9,
+      "swing": 41.2,
       "pinned": 0.0,
       "pron": [
        39.8,
-       69.1
+       78.8
       ]
      }
     },
-    "solver_jump_deg": 16.9,
+    "solver_jump_deg": 17.0,
     "local_pop_deg": 0.0,
-    "local_max_deg": 62.0,
+    "local_max_deg": 45.0,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
       "min": 9.8,
-      "max": 14.2
+      "max": 13.3
      },
      "l": {
       "ref": 15.1,
@@ -1036,13 +1069,15 @@
     "weapon_in_body_frame": -1,
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 9.3,
-    "hammer_turn_max_deg": 36.4,
-    "arm_pop_deg": 0.0
+    "hammer_turn_max_deg": 37.6,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.437,
+    "hammer_head_step_max_m": 1.208
    }
   },
   "ParriedPerfect": {
-   "first": 587,
-   "last": 610,
+   "first": 606,
+   "last": 629,
    "frames": 23,
    "seconds": 0.7667,
    "loop": false,
@@ -1052,8 +1087,9 @@
      1,
      2,
      6,
-     8,
-     13,
+     7,
+     11,
+     16,
      22
     ],
     "chain": [
@@ -1062,6 +1098,12 @@
       "Combo1",
       0,
       0.12
+     ]
+    ],
+    "swing_ok": [
+     [
+      1,
+      6
      ]
     ],
     "armored": true
@@ -1077,35 +1119,35 @@
     "wrists": {
      "r": {
       "excess": 0.69,
-      "twist": 25.1,
+      "twist": 15.9,
       "fore": 86.1,
       "swivel": 76.7,
-      "clamp": 0.5,
-      "swing": 26.5,
+      "clamp": 0.0,
+      "swing": 27.0,
       "pinned": 0.0,
       "pron": [
-       -52.3,
+       -52.5,
        70.5
       ]
      },
      "l": {
       "excess": 0.99,
-      "twist": 18.2,
-      "fore": 82.2,
+      "twist": 29.7,
+      "fore": 103.1,
       "swivel": 51.0,
-      "clamp": 1.7,
+      "clamp": 3.8,
       "asked_over": 0.0,
-      "swing": 37.8,
-      "pinned": 0.0,
+      "swing": 39.7,
+      "pinned": 0.09,
       "pron": [
        18.2,
-       69.1
+       90.0
       ]
      }
     },
-    "solver_jump_deg": 24.3,
+    "solver_jump_deg": 23.8,
     "local_pop_deg": 0.0,
-    "local_max_deg": 60.5,
+    "local_max_deg": 45.4,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
@@ -1128,13 +1170,15 @@
     "weapon_in_body_frame": -1,
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 9.3,
-    "hammer_turn_max_deg": 29.8,
-    "arm_pop_deg": 0.0
+    "hammer_turn_max_deg": 33.4,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.404,
+    "hammer_head_step_max_m": 1.212
    }
   },
   "Hit": {
-   "first": 620,
-   "last": 635,
+   "first": 639,
+   "last": 654,
    "frames": 15,
    "seconds": 0.5,
    "loop": false,
@@ -1197,12 +1241,14 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 20.9,
     "hammer_turn_max_deg": 0.5,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.335,
+    "hammer_head_step_max_m": 0.147
    }
   },
   "HitHeavy": {
-   "first": 645,
-   "last": 660,
+   "first": 664,
+   "last": 679,
    "frames": 15,
    "seconds": 0.5,
    "loop": false,
@@ -1265,12 +1311,14 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 21.3,
     "hammer_turn_max_deg": 1.1,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.497,
+    "hammer_head_step_max_m": 0.281
    }
   },
   "Spotted": {
-   "first": 670,
-   "last": 712,
+   "first": 689,
+   "last": 731,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -1287,39 +1335,39 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.8,
-      "twist": 11.4,
-      "fore": 58.7,
-      "swivel": 83.0,
-      "clamp": 4.1,
-      "swing": 30.8,
+      "excess": 0.77,
+      "twist": 10.7,
+      "fore": 55.2,
+      "swivel": 79.0,
+      "clamp": 0.0,
+      "swing": 29.6,
       "pinned": 0.0,
       "pron": [
        -53.7,
-       43.1
+       39.6
       ]
      },
      "l": {
-      "excess": 0.54,
-      "twist": 17.3,
-      "fore": 70.2,
-      "swivel": 25.0,
+      "excess": 0.51,
+      "twist": 17.7,
+      "fore": 71.3,
+      "swivel": 23.0,
       "clamp": 0.0,
       "asked_over": 0.0,
       "pron": [
-       -7.7,
-       57.0
+       -7.4,
+       58.2
       ]
      }
     },
-    "solver_jump_deg": 13.9,
+    "solver_jump_deg": 18.8,
     "local_pop_deg": 0.0,
-    "local_max_deg": 42.4,
+    "local_max_deg": 28.1,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
       "min": 9.2,
-      "max": 11.7
+      "max": 11.5
      }
     },
     "floor_skate_cm": {
@@ -1331,14 +1379,16 @@
     "weapon_in_body_cm": 0.0,
     "weapon_in_body_frame": -1,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 16.6,
-    "hammer_turn_max_deg": 25.9,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 17.3,
+    "hammer_turn_max_deg": 20.4,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.404,
+    "hammer_head_step_max_m": 0.631
    }
   },
   "Death": {
-   "first": 722,
-   "last": 782,
+   "first": 741,
+   "last": 801,
    "frames": 60,
    "seconds": 2.0,
    "loop": false,
@@ -1419,12 +1469,14 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 14.6,
     "hammer_turn_max_deg": 40.5,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.482,
+    "hammer_head_step_max_m": 0.817
    }
   },
   "Intro": {
-   "first": 792,
-   "last": 876,
+   "first": 811,
+   "last": 895,
    "frames": 84,
    "seconds": 2.8,
    "loop": false,
@@ -1434,9 +1486,9 @@
      9,
      13,
      22,
-     30,
+     32,
      40,
-     59,
+     61,
      77,
      84
     ],
@@ -1444,6 +1496,10 @@
      [
       4,
       14
+     ],
+     [
+      19,
+      20
      ]
     ],
     "impacts": {
@@ -1455,8 +1511,8 @@
     "events": {
      "slam": 13,
      "rise": 26,
-     "roar": 30,
-     "taunt": 59
+     "roar": 32,
+     "taunt": 61
     },
     "armored": false
    },
@@ -1470,13 +1526,13 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.83,
-      "twist": 24.0,
+      "excess": 0.85,
+      "twist": 24.8,
       "fore": 105.6,
       "swivel": 78.0,
       "clamp": 0.2,
-      "swing": 38.8,
-      "pinned": 0.02,
+      "swing": 38.3,
+      "pinned": 0.05,
       "pron": [
        -53.7,
        90.0
@@ -1484,31 +1540,31 @@
      },
      "l": {
       "excess": 0.85,
-      "twist": 34.7,
-      "fore": 89.0,
+      "twist": 17.5,
+      "fore": 93.1,
       "swivel": 51.9,
       "clamp": 6.5,
       "asked_over": 34.9,
       "swing": 41.8,
-      "pinned": 0.05,
+      "pinned": 0.0,
       "pron": [
        2.4,
-       75.9
+       80.0
       ]
      }
     },
-    "solver_jump_deg": 31.8,
+    "solver_jump_deg": 32.5,
     "local_pop_deg": 0.0,
-    "local_max_deg": 67.6,
+    "local_max_deg": 64.9,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
       "min": 9.3,
-      "max": 16.1
+      "max": 15.9
      },
      "l": {
       "ref": 15.1,
-      "min": 13.1,
+      "min": 11.5,
       "max": 15.8
      }
     },
@@ -1517,17 +1573,19 @@
      "l": []
     },
     "lowest_body_cm": 0.0,
-    "lowest_weapon_cm": 0.3,
-    "weapon_in_body_cm": 0.3,
-    "weapon_in_body_frame": 69,
+    "lowest_weapon_cm": 1.3,
+    "weapon_in_body_cm": 2.2,
+    "weapon_in_body_frame": 19,
     "weapon_in_body_frames": [],
-    "hammer_turn_max_deg": 29.3,
-    "arm_pop_deg": 0.0
+    "hammer_turn_max_deg": 40.8,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.473,
+    "hammer_head_step_max_m": 1.255
    }
   },
   "FakeDefeat": {
-   "first": 886,
-   "last": 964,
+   "first": 905,
+   "last": 983,
    "frames": 78,
    "seconds": 2.6,
    "loop": false,
@@ -1549,7 +1607,7 @@
     "slide_ok": 4.0,
     "swing_ok": [
      [
-      44,
+      49,
       60
      ]
     ],
@@ -1572,13 +1630,13 @@
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
-      "excess": 0.81,
+      "excess": 0.93,
       "twist": 22.7,
       "fore": 92.9,
       "swivel": 72.4,
       "clamp": 0.0,
       "asked_over": 0.0,
-      "swing": 53.8,
+      "swing": 59.7,
       "pinned": 0.0,
       "pron": [
        -76.2,
@@ -1600,7 +1658,7 @@
     },
     "solver_jump_deg": 40.4,
     "local_pop_deg": 0.0,
-    "local_max_deg": 53.0,
+    "local_max_deg": 32.6,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
@@ -1619,6 +1677,8 @@
     "weapon_in_body_frames": [],
     "hammer_turn_max_deg": 34.7,
     "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.48,
+    "hammer_head_step_max_m": 0.384,
     "head_drop_max_m": 0.248,
     "hammer_land_frame": 59,
     "head_height_m": [
@@ -1662,17 +1722,17 @@
      2.1,
      2.13,
      2.18,
-     2.25,
-     2.45,
+     2.26,
+     2.46,
+     2.52,
+     2.52,
      2.52,
      2.52,
      2.51,
-     2.51,
-     2.5,
-     2.47,
+     2.49,
+     2.46,
      2.44,
-     2.42,
-     2.38,
+     2.4,
      2.33,
      2.25,
      2.14,
@@ -1705,8 +1765,8 @@
    }
   },
   "ArmorRise": {
-   "first": 974,
-   "last": 1184,
+   "first": 993,
+   "last": 1203,
    "frames": 210,
    "seconds": 7.0,
    "loop": false,
@@ -1718,9 +1778,9 @@
      62,
      102,
      106,
-     110,
-     114,
-     118,
+     109,
+     115,
+     119,
      126,
      140,
      152,
@@ -1766,7 +1826,7 @@
      "slam_Horn_R": 174,
      "breath": 62,
      "grab": 86,
-     "sit": 118,
+     "sit": 119,
      "kneel": 126,
      "stand": 148,
      "pull": 170,
@@ -1806,7 +1866,7 @@
       "clamp": 12.2,
       "asked_over": 4.0,
       "pron": [
-       -6.3,
+       -7.3,
        90.0
       ]
      }
@@ -1827,20 +1887,22 @@
     },
     "lowest_body_cm": -2.9,
     "lowest_weapon_cm": 1.3,
-    "weapon_in_body_cm": 0.9,
-    "weapon_in_body_frame": 105,
+    "weapon_in_body_cm": 0.5,
+    "weapon_in_body_frame": 159,
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 1.6,
     "hammer_turn_max_deg": 36.7,
     "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.465,
+    "hammer_head_step_max_m": 0.865,
     "chain_from_fakedefeat_deg": 17.6
    }
   },
   "Combo1B": {
-   "first": 1194,
-   "last": 1248,
-   "frames": 54,
-   "seconds": 1.8,
+   "first": 1213,
+   "last": 1272,
+   "frames": 59,
+   "seconds": 1.9667,
    "loop": false,
    "timing": {
     "kind": "heavy",
@@ -1868,7 +1930,7 @@
     ],
     "punish": [
      41,
-     54
+     59
     ],
     "swing_ok": [
      [
@@ -1879,47 +1941,47 @@
     "armored": true
    },
    "normalized": {
-    "apex": 0.5926,
-    "contact": 0.6481,
+    "apex": 0.5424,
+    "contact": 0.5932,
     "hold": [
-     0.4815,
-     0.5926
+     0.4407,
+     0.5424
     ],
     "active": [
-     0.6481,
-     0.7222
+     0.5932,
+     0.661
     ]
    },
    "notes": "fase 2: martillazo en diagonal con amague; el golpe sale tarde",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.8,
+     "hands": 1.3,
      "legs": 0.0
     },
     "hip_drop_cm": 9.0,
     "wrists": {
      "r": {
       "excess": 0.97,
-      "twist": 27.6,
-      "fore": 104.3,
-      "swivel": 87.0,
-      "clamp": 30.8,
-      "swing": 39.4,
-      "pinned": 0.02,
+      "twist": 21.8,
+      "fore": 100.8,
+      "swivel": 91.0,
+      "clamp": 27.6,
+      "swing": 36.9,
+      "pinned": 0.0,
       "pron": [
-       -62.6,
-       88.7
+       -64.3,
+       85.2
       ],
       "clamp_tell": 0.0
      },
      "l": {
-      "excess": 0.64,
+      "excess": 0.58,
       "twist": 32.2,
       "fore": 103.1,
       "swivel": 61.0,
       "clamp": 0.0,
       "asked_over": 0.0,
-      "swing": 27.0,
+      "swing": 25.1,
       "pinned": 0.14,
       "pron": [
        1.1,
@@ -1928,13 +1990,13 @@
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 39.4,
+    "solver_jump_deg": 43.4,
     "local_pop_deg": 0.0,
-    "local_max_deg": 49.5,
+    "local_max_deg": 47.6,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
-      "min": 9.3,
+      "min": 9.2,
       "max": 15.6
      },
      "l": {
@@ -1950,7 +2012,7 @@
     "game_hold_s": 0.0,
     "contact_tip_m": [
      0.75,
-     -4.23,
+     -4.2,
      0.9
     ],
     "floor_skate_cm": {
@@ -1962,14 +2024,16 @@
     "weapon_in_body_cm": 1.8,
     "weapon_in_body_frame": 33,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 9.1,
-    "hammer_turn_max_deg": 19.9,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 8.0,
+    "hammer_turn_max_deg": 26.0,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.484,
+    "hammer_head_step_max_m": 1.337
    }
   },
   "Combo2B": {
-   "first": 1258,
-   "last": 1304,
+   "first": 1282,
+   "last": 1328,
    "frames": 46,
    "seconds": 1.5333,
    "loop": false,
@@ -1982,7 +2046,7 @@
      26
     ],
     "hold": [
-     10,
+     14,
      18
     ],
     "lunge": 1.0,
@@ -1997,13 +2061,19 @@
      29,
      46
     ],
+    "regrip": [
+     [
+      1,
+      3
+     ]
+    ],
     "armored": true
    },
    "normalized": {
     "apex": 0.3913,
     "contact": 0.4783,
     "hold": [
-     0.2174,
+     0.3043,
      0.3913
     ],
     "active": [
@@ -2021,7 +2091,7 @@
     "wrists": {
      "r": {
       "excess": 0.96,
-      "twist": 24.5,
+      "twist": 24.9,
       "fore": 105.6,
       "swivel": 91.0,
       "clamp": 25.6,
@@ -2034,14 +2104,14 @@
       "clamp_tell": 0.0
      },
      "l": {
-      "excess": 0.61,
+      "excess": 0.69,
       "twist": 40.6,
       "fore": 103.1,
-      "swivel": 62.5,
-      "clamp": 0.0,
+      "swivel": 75.0,
+      "clamp": 3.0,
       "asked_over": 0.0,
-      "swing": 26.9,
-      "pinned": 0.22,
+      "swing": 30.2,
+      "pinned": 0.18,
       "pron": [
        15.4,
        90.0
@@ -2064,7 +2134,7 @@
       "max": 15.6
      }
     },
-    "hold_tip_mps": 0.84,
+    "hold_tip_mps": 0.99,
     "peak_frame": 20,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.789,
@@ -2083,16 +2153,18 @@
     "weapon_in_body_cm": 0.0,
     "weapon_in_body_frame": -1,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 14.7,
-    "hammer_turn_max_deg": 23.0,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 14.9,
+    "hammer_turn_max_deg": 20.7,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.466,
+    "hammer_head_step_max_m": 0.95
    }
   },
   "Combo3B": {
-   "first": 1314,
-   "last": 1368,
-   "frames": 54,
-   "seconds": 1.8,
+   "first": 1338,
+   "last": 1395,
+   "frames": 57,
+   "seconds": 1.9,
    "loop": false,
    "timing": {
     "kind": "heavy",
@@ -2111,7 +2183,7 @@
     "state": "Combo3B",
     "reach": 3.0,
     "pump": [
-     9,
+     18,
      26
     ],
     "armor_window": [
@@ -2120,67 +2192,67 @@
     ],
     "punish": [
      41,
-     54
+     57
     ],
     "armored": true
    },
    "normalized": {
-    "apex": 0.5926,
-    "contact": 0.6481,
+    "apex": 0.5614,
+    "contact": 0.614,
     "hold": [
-     0.4815,
-     0.5926
+     0.4561,
+     0.5614
     ],
     "active": [
-     0.6481,
-     0.7037
+     0.614,
+     0.6667
     ]
    },
    "notes": "fase 2: martillazo de arriba con bombeo; el golpe sale tarde",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.2,
+     "hands": 3.1,
      "legs": 0.0
     },
     "hip_drop_cm": 0.1,
     "wrists": {
      "r": {
-      "excess": 0.97,
-      "twist": 28.9,
+      "excess": 0.96,
+      "twist": 26.2,
       "fore": 105.6,
-      "swivel": 87.0,
-      "clamp": 28.3,
-      "swing": 40.1,
-      "pinned": 0.15,
+      "swivel": 88.0,
+      "clamp": 24.6,
+      "swing": 36.8,
+      "pinned": 0.21,
       "pron": [
-       -62.5,
+       -62.9,
        90.0
       ],
       "clamp_tell": 0.0
      },
      "l": {
-      "excess": 0.64,
+      "excess": 0.62,
       "twist": 33.0,
       "fore": 103.1,
       "swivel": 66.8,
       "clamp": 0.0,
       "asked_over": 0.0,
-      "swing": 24.9,
+      "swing": 32.1,
       "pinned": 0.21,
       "pron": [
-       17.2,
+       16.6,
        90.0
       ],
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 32.3,
+    "solver_jump_deg": 46.8,
     "local_pop_deg": 0.0,
-    "local_max_deg": 42.3,
+    "local_max_deg": 45.7,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
-      "min": 9.3,
+      "min": 9.2,
       "max": 14.6
      },
      "l": {
@@ -2196,7 +2268,7 @@
     "game_hold_s": 0.0,
     "contact_tip_m": [
      0.05,
-     -4.51,
+     -4.49,
      0.92
     ],
     "floor_skate_cm": {
@@ -2205,17 +2277,19 @@
     },
     "lowest_body_cm": 0.0,
     "lowest_weapon_cm": 0.1,
-    "weapon_in_body_cm": 1.2,
-    "weapon_in_body_frame": 5,
+    "weapon_in_body_cm": 1.0,
+    "weapon_in_body_frame": 7,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 3.9,
-    "hammer_turn_max_deg": 30.9,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 3.5,
+    "hammer_turn_max_deg": 18.0,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.5,
+    "hammer_head_step_max_m": 0.98
    }
   },
   "SlamWave": {
-   "first": 1378,
-   "last": 1442,
+   "first": 1405,
+   "last": 1469,
    "frames": 64,
    "seconds": 2.1333,
    "loop": false,
@@ -2233,6 +2307,7 @@
     ],
     "lunge": 1.0,
     "windup": 1.25,
+    "release_rate": 1.2,
     "state": "SlamWave",
     "reach": 3.0,
     "armor_window": [
@@ -2281,14 +2356,14 @@
     "wrists": {
      "r": {
       "excess": 0.97,
-      "twist": 28.9,
+      "twist": 26.9,
       "fore": 105.6,
       "swivel": 87.0,
-      "clamp": 33.6,
-      "swing": 38.8,
-      "pinned": 0.25,
+      "clamp": 28.1,
+      "swing": 37.4,
+      "pinned": 0.32,
       "pron": [
-       -63.0,
+       -60.9,
        90.0
       ],
       "clamp_tell": 0.0
@@ -2297,21 +2372,21 @@
       "excess": 0.94,
       "twist": 40.5,
       "fore": 103.1,
-      "swivel": 75.0,
+      "swivel": 73.0,
       "clamp": 15.2,
       "asked_over": 0.0,
       "swing": 54.6,
       "pinned": 0.31,
       "pron": [
-       14.9,
+       15.1,
        90.0
       ],
       "clamp_tell": 0.0
      }
     },
-    "solver_jump_deg": 49.7,
+    "solver_jump_deg": 43.7,
     "local_pop_deg": 0.0,
-    "local_max_deg": 44.5,
+    "local_max_deg": 47.1,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
@@ -2320,7 +2395,7 @@
      },
      "l": {
       "ref": 15.1,
-      "min": 11.8,
+      "min": 12.0,
       "max": 14.4
      }
     },
@@ -2345,44 +2420,46 @@
     "weapon_in_body_frames": [],
     "armor_lowest_cm": 13.0,
     "hammer_turn_max_deg": 30.9,
-    "arm_pop_deg": 0.0
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.476,
+    "hammer_head_step_max_m": 1.368
    }
   },
   "AvalancheSummon": {
-   "first": 1452,
-   "last": 1536,
-   "frames": 84,
-   "seconds": 2.8,
+   "first": 1479,
+   "last": 1569,
+   "frames": 90,
+   "seconds": 3.0,
    "loop": false,
    "timing": {
     "sheet": [
      6,
-     10,
-     14,
-     27,
-     31,
-     41,
-     48,
-     57,
-     66,
-     84
+     12,
+     24,
+     34,
+     37,
+     47,
+     60,
+     69,
+     78,
+     90
     ],
     "armor_window": [
      0,
-     66
+     78
     ],
     "swing_ok": [
      [
-      7,
-      15
+      22,
+      25
      ],
      [
-      24,
-      32
+      35,
+      38
      ],
      [
-      44,
-      49
+      56,
+      61
      ]
     ],
     "impacts": {
@@ -2395,11 +2472,17 @@
       -3.82
      ]
     },
+    "clock": {
+     "apex": 56,
+     "contact": 60,
+     "windup": 0.0,
+     "release_rate": 1.0
+    },
     "events": {
-     "strike1": 14,
-     "strike2": 31,
-     "call": 48,
-     "roar_end": 63
+     "strike1": 24,
+     "strike2": 37,
+     "call": 60,
+     "roar_end": 75
     },
     "armored": true
    },
@@ -2407,19 +2490,19 @@
    "notes": "fase 2: clava el martillo dos veces y ruge al cielo: la avalancha",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 3.9,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
     "wrists": {
      "r": {
       "excess": 0.97,
-      "twist": 28.8,
+      "twist": 26.5,
       "fore": 105.6,
-      "swivel": 87.0,
-      "clamp": 34.1,
-      "swing": 42.2,
-      "pinned": 0.07,
+      "swivel": 84.6,
+      "clamp": 25.0,
+      "swing": 37.0,
+      "pinned": 0.1,
       "pron": [
        -78.7,
        90.0
@@ -2429,30 +2512,30 @@
       "excess": 0.85,
       "twist": 36.3,
       "fore": 103.1,
-      "swivel": 69.0,
+      "swivel": 70.0,
       "clamp": 15.9,
       "asked_over": 0.0,
-      "swing": 25.8,
-      "pinned": 0.23,
+      "swing": 35.2,
+      "pinned": 0.18,
       "pron": [
        -4.6,
        90.0
       ]
      }
     },
-    "solver_jump_deg": 34.5,
+    "solver_jump_deg": 48.4,
     "local_pop_deg": 0.0,
-    "local_max_deg": 66.2,
+    "local_max_deg": 67.6,
     "grip_gap_cm": {
      "r": {
       "ref": 15.1,
-      "min": 9.3,
+      "min": 9.2,
       "max": 14.2
      },
      "l": {
       "ref": 15.1,
-      "min": 11.5,
-      "max": 14.2
+      "min": 11.7,
+      "max": 14.3
      }
     },
     "floor_skate_cm": {
@@ -2460,13 +2543,15 @@
      "l": []
     },
     "lowest_body_cm": 0.0,
-    "lowest_weapon_cm": -1.0,
-    "weapon_in_body_cm": 0.3,
-    "weapon_in_body_frame": 5,
+    "lowest_weapon_cm": 1.3,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
     "weapon_in_body_frames": [],
-    "armor_lowest_cm": 2.8,
-    "hammer_turn_max_deg": 30.9,
-    "arm_pop_deg": 0.0
+    "armor_lowest_cm": 3.3,
+    "hammer_turn_max_deg": 26.1,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.497,
+    "hammer_head_step_max_m": 1.644
    }
   }
  },

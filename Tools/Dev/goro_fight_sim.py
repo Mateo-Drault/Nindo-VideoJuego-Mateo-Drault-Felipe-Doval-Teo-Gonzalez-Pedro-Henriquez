@@ -1,7 +1,8 @@
 """Simulación offline de la pelea con Gorō (barra falsa + fase armada) contra los bots de AutoPilot.
 
     python Tools/Dev/goro_fight_sim.py [--runs 400] [--bot bueno|promedio|experto] [--p1 520] [--p2 520] [--dmg 1.0]
-                                       [--p2dmg 0.8] [--shed-heal 15]
+                                       [--p1dmg 0.7] [--p2dmg 0.7] [--shed-heal 30]
+    python Tools/Dev/goro_fight_sim.py --grid [--runs 150]   (barre las perillas de GoroBoss contra el objetivo)
 
 Modelo a nivel de golpe (no de cuadro), con los números del código:
   * Gorō (EnemyArchetypes.Goro / GoroPhase2): patrones con su peso, enfriamiento y fase; cada paso con su clip
@@ -18,7 +19,8 @@ Modelo a nivel de golpe (no de cuadro), con los números del código:
   * Kaito tiene 100 de vida y no se cura salvo: +8 al "matar" la barra falsa, +40 al terminar la cinemática de la
     armadura (GoroBoss.TransitionHeal) y 'shed-heal' cada vez que se le rompe un tramo de la armadura (al 66 % y al 33 %
     de la segunda barra: GoroBoss.shedHeal). Si muere, vuelve a la fase 1 (re-presentación 1.2 s y 3.6 s de muerte).
-  * 'p2dmg' escala el daño de Gorō armado (GoroBoss.armoredDamageScale: golpes, onda y avalancha).
+  * 'p1dmg' escala el daño de Gorō en la primera barra (GoroBoss.firstBarDamageScale) y 'p2dmg' el de Gorō armado
+    (GoroBoss.armoredDamageScale: golpes, onda y avalancha); los dos respecto de EnemyArchetypes.Goro.
   * No modela al bot que camina: el bot de verdad se le pega a Gorō, y antes del arreglo de la avalancha (las rocas
     saltan por encima de Gorō, la armadura aguanta toda la llamada) ese lugar era inmune; ahora no.
 Es un modelo: sirve para comparar vidas y ver órdenes de magnitud; el número final sale del bot en Unity.
@@ -32,14 +34,19 @@ BOTS = {
 }
 
 H, U = "heavy", "unblockable"
-# paso: (estado, tipo, daño, segundos hasta el golpe (T), segundos que dura el paso, ventana de armadura antes del golpe)
+# paso: (estado, tipo, daño, segundos hasta el golpe (T), segundos que dura el paso, ventana de armadura antes del golpe).
+# T es StepTimeline.T con el apex, el contacto y el windup de cada clip (GoroAnims.fbx.json; c1f/c2f/c3f a 1.1/1.1/1.05x).
+# Combo1, Combo3, Heavy, Combo1B y Combo3B se alargaron (las subidas del martillo y las vueltas a la guardia: las manos
+# iban a 0.6-1.4 m por cuadro)
 STEPS = {
-    "c1": ("Combo1", H, 22, 0.89, 1.40, 0.75), "c2": ("Combo2", H, 24, 0.74, 1.40, 0.65), "c3": ("Combo3", H, 28, 0.72, 1.27, 0.62),
-    "slam": ("Heavy", U, 38, 1.40, 2.00, 1.2), "slam2": ("Heavy", U, 42, 1.40, 2.00, 1.2), "spin": ("Spin", U, 20, 0.95, 2.20, 0.8),
-    "c1f": ("Combo1", H, 22, 0.81, 1.27, 0.7), "c2f": ("Combo2", H, 24, 0.67, 1.27, 0.6), "c3f": ("Combo3", H, 28, 0.69, 1.21, 0.6),
-    "c1b": ("Combo1B", H, 26, 1.32, 1.80, 1.1), "c2b": ("Combo2B", H, 24, 0.72, 1.53, 0.6), "c3b": ("Combo3B", H, 30, 1.32, 1.80, 1.1),
+    "c1": ("Combo1", H, 22, 0.89, 1.60, 0.75), "c2": ("Combo2", H, 24, 0.74, 1.40, 0.65), "c3": ("Combo3", H, 28, 0.93, 1.57, 0.80),
+    "slam": ("Heavy", U, 38, 1.42, 2.13, 1.2), "slam2": ("Heavy", U, 42, 1.42, 2.13, 1.2), "spin": ("Spin", U, 20, 0.95, 2.20, 0.8),
+    "c1f": ("Combo1", H, 22, 0.81, 1.45, 0.7), "c2f": ("Combo2", H, 24, 0.67, 1.27, 0.6), "c3f": ("Combo3", H, 28, 0.88, 1.49, 0.75),
+    "c1b": ("Combo1B", H, 26, 1.32, 1.97, 1.1), "c2b": ("Combo2B", H, 24, 0.72, 1.53, 0.6), "c3b": ("Combo3B", H, 30, 1.32, 1.90, 1.1),
     "wave": ("SlamWave", U, 40, 1.25, 3.00, 1.05), "spin2": ("Spin", U, 24, 0.95, 2.20, 0.8),
 }
+# AvalancheSummon: de que empieza el paso a la llamada (StepTimeline.T: apex f56, contacto f60 de 90)
+AVAL_CALL = 2.33
 # (nombre, pasos, peso, enfriamiento, fase mínima, fase máxima, agotado al final)
 PATTERNS = [
     ("Martillazo", ["c1"], 1.2, 0, 0, 1, False), ("Doble", ["c1", "c2"], 1.5, 0, 0, 1, False),
@@ -60,9 +67,9 @@ TAP = 0.32
 
 
 class Sim:
-    def __init__(self, bot, rng, p1, p2, dmg_mul, heal, p2dmg=1.0, shed_heal=0.0):
+    def __init__(self, bot, rng, p1, p2, dmg_mul, heal, p2dmg=1.0, shed_heal=0.0, p1dmg=1.0):
         self.b, self.rng, self.p1, self.p2, self.dmg_mul, self.heal = bot, rng, p1, p2, dmg_mul, heal
-        self.p2dmg, self.shed_heal = p2dmg, shed_heal
+        self.p1dmg, self.p2dmg, self.shed_heal = p1dmg, p2dmg, shed_heal
         self.combo_i = 0
 
     def kaito_hit(self, mul=1.0):
@@ -140,7 +147,7 @@ class Sim:
             for si, sk in enumerate(pat[1]):
                 if sk == "aval":
                     # dos martillazos, la llamada, tres olas: ~0.55 rocas al bueno (más al promedio) y la pausa abierta
-                    t += 1.6 + 4.6
+                    t += AVAL_CALL + 4.6
                     expected = {"experto": 0.05, "bueno": 0.55, "promedio": 1.1}[self.bname]
                     k = sum(1 for _ in range(6) if r.random() < expected / 6)
                     hp -= 24 * k * self.dmg_mul * self.p2dmg
@@ -163,10 +170,10 @@ class Sim:
                 res = self.defend(kind)
                 t += T
                 if res == "hit":
-                    hp -= dmg * self.dmg_mul * (self.p2dmg if armored else 1.0)
+                    hp -= dmg * self.dmg_mul * (self.p2dmg if armored else self.p1dmg)
                     t += 0.65                    # aturdido
                 elif res == "imperfect":
-                    hp -= dmg * 0.35 * self.dmg_mul * (self.p2dmg if armored else 1.0)
+                    hp -= dmg * 0.35 * self.dmg_mul * (self.p2dmg if armored else self.p1dmg)
                     imb += 0.34
                 elif res in ("parry", "perfect"):
                     imb += 1.5 if res == "perfect" else 1.0
@@ -232,27 +239,32 @@ def main():
     ap.add_argument("--p2", type=float, default=520)
     ap.add_argument("--dmg", type=float, default=1.0, help="multiplicador del daño de Gorō")
     ap.add_argument("--heal", type=float, default=40)
-    ap.add_argument("--p2dmg", type=float, default=0.8, help="multiplicador del daño de Gorō armado (GoroBoss.armoredDamageScale)")
-    ap.add_argument("--shed-heal", type=float, default=15.0, help="vida que recupera Kaito con cada tramo de armadura roto (GoroBoss.shedHeal)")
+    ap.add_argument("--p1dmg", type=float, default=0.7, help="multiplicador del daño de Gorō en la primera barra (GoroBoss.firstBarDamageScale)")
+    ap.add_argument("--p2dmg", type=float, default=0.7, help="multiplicador del daño de Gorō armado (GoroBoss.armoredDamageScale)")
+    ap.add_argument("--shed-heal", type=float, default=30.0, help="vida que recupera Kaito con cada tramo de armadura roto (GoroBoss.shedHeal)")
     ap.add_argument("--seed", type=int, default=3)
+    ap.add_argument("--grid", action="store_true", help="barre vidas y perillas y lista las que más se acercan al objetivo")
     a = ap.parse_args()
+    if a.grid:
+        return grid(a)
     rng = random.Random(a.seed)
     times, deaths, first_try, p2_deaths = [], [], 0, 0
     one = []
     for _ in range(a.runs):
-        s = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal)
+        s = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal, a.p1dmg)
         tt, d, ph = s.fight(a.bot)
         times.append(tt); deaths.append(d)
         first_try += d == 0
         p2_deaths += sum(1 for p in ph[:-1] if p == 2)
-        s2 = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal)
+        s2 = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal, a.p1dmg)
         s2.bname = a.bot
         won, secs, _ = s2.attempt()
         if won:
             one.append(secs)
     times.sort()
     med = times[len(times) // 2]
-    print(f"bot {a.bot}, barras {a.p1:.0f} + {a.p2:.0f}, daño x{a.dmg} (armado x{a.p2dmg}), cura de transición {a.heal:.0f}, "
+    print(f"bot {a.bot}, barras {a.p1:.0f} + {a.p2:.0f}, daño x{a.dmg} (primera barra x{a.p1dmg}, armado x{a.p2dmg}), "
+          f"cura de transición {a.heal:.0f}, "
           f"cura por tramo roto {a.shed_heal:.0f}")
     print(f"  pelea hasta ganar (con reintentos): mediana {med / 60:.1f} min, p10 {times[len(times) // 10] / 60:.1f}, p90 {times[len(times) * 9 // 10] / 60:.1f}")
     print(f"  muertes por pelea: media {sum(deaths) / len(deaths):.2f}, gana al primer intento {first_try / len(deaths) * 100:.0f} %, "
@@ -260,6 +272,43 @@ def main():
     if one:
         one.sort()
         print(f"  un intento ganado: mediana {one[len(one) // 2] / 60:.1f} min")
+
+
+def stats(bot, p1, p2, p1dmg, p2dmg, shed, runs, seed, heal=40.0):
+    """(mediana en min, muertes medias, % que gana al primer intento, % de las muertes que son en la primera barra)."""
+    rng = random.Random(seed)
+    times, deaths, first, p1_deaths = [], [], 0, 0
+    for _ in range(runs):
+        s = Sim(BOTS[bot], rng, p1, p2, 1.0, heal, p2dmg, shed, p1dmg)
+        tt, d, ph = s.fight(bot)
+        times.append(tt)
+        deaths.append(d)
+        first += d == 0
+        p1_deaths += sum(1 for p in ph[:-1] if p != 2)
+    times.sort()
+    return times[len(times) // 2] / 60.0, sum(deaths) / runs, first * 100.0 / runs, p1_deaths * 100.0 / max(1, sum(deaths))
+
+
+def grid(a):
+    """Objetivo del diseño: el bot bueno gana en 4-6 min casi sin morir y el promedio muere a veces (0.4-2 muertes por
+    pelea). Lista las 15 combinaciones que más se acercan (la distancia suma lo que falta o sobra de cada cosa)."""
+    rows = []
+    for p1 in (520, 700, 850, 1000, 1200):
+        for p2 in (520, 700, 850, 1000, 1200, 1400):
+            for p1d in (0.5, 0.6, 0.7, 0.85, 1.0):
+                for p2d in (0.4, 0.5, 0.6, 0.7, 0.8):
+                    for shed in (15, 30, 40):
+                        b = stats("bueno", p1, p2, p1d, p2d, shed, a.runs, a.seed)
+                        if b[1] > 0.3:
+                            continue
+                        pr = stats("promedio", p1, p2, p1d, p2d, shed, a.runs, a.seed + 1)
+                        miss = max(0.0, 4.0 - b[0]) + max(0.0, b[0] - 6.0) + 2.0 * max(0.0, 0.4 - pr[1]) + max(0.0, pr[1] - 2.0)
+                        rows.append((miss, p1, p2, p1d, p2d, shed, b, pr))
+    rows.sort(key=lambda r: r[0])
+    print("vida1 vida2 daño1 daño2 cura | bueno: min muertes 1er% | promedio: min muertes 1er% muertes en la barra 1 %")
+    for miss, p1, p2, p1d, p2d, shed, b, pr in rows[:15]:
+        print(f"{p1:5d} {p2:5d} {p1d:5.2f} {p2d:5.2f} {shed:4d} | {b[0]:4.1f} {b[1]:5.2f} {b[2]:4.0f} | "
+              f"{pr[0]:4.1f} {pr[1]:5.2f} {pr[2]:4.0f} {pr[3]:4.0f}   (distancia {miss:.2f})")
 
 
 if __name__ == "__main__":

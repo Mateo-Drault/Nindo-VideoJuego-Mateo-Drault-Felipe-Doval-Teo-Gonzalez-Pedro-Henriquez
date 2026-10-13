@@ -27,6 +27,11 @@ Además (motion_checks), sobre lo horneado:
     parry lo daba vuelta por encima en un cuadro (90-133°) y quedaba congelado;
   * brazos sin tics: un hueso del brazo que gira más de 45° en un cuadro, 30° más que sus vecinos, falla fuera de esas
     mismas ventanas (build_team_anims solo avisaba y los martillazos arrancaban con un sacudón de 55-110°);
+  * manos sin teletransporte: ninguna mano (la punta del hueso Mano, en el mundo: con el avance del transform) recorre
+    más de 0.5 m por cuadro del JUEGO fuera de esas ventanas. Los golpes se miden con el reloj de StepTimeline (la
+    anticipación arranca a 1.3x; timing['clock'] para los pasos de ataque que no son golpes, AvalancheSummon); el chequeo
+    por ángulo no veía un brazo estirado que giraba 26° y llevaba la mano 1.4 m. timing['regrip'] saltea los cuadros en
+    que la derecha cambia de agarre y el antebrazo rueda sobre el mango. La cabeza del martillo solo avisa (1.5 m);
   * FakeDefeat: la cabeza no cae más de 25 cm por cuadro (caía 91 cm en uno) y 'hammer_land' se mide en la malla: el
     primer cuadro, después de 'drop', en que el punto más bajo del mango (sin la cabeza, que ya estaba apoyada) llega a
     donde queda acostado (a 2 cm; la cabeza del martillo le levanta esa punta del piso);
@@ -247,6 +252,11 @@ ARM_BONES = ("Brazo.R", "Antebrazo.R", "Mano.R", "Brazo.L", "Antebrazo.L", "Mano
 SNAP_DEG = 45.0             # el mango, por cuadro, fuera del golpe
 POP_DEG, POP_SPIKE = 45.0, 30.0
 HEAD_DROP_M = 0.25          # FakeDefeat: lo más que cae la cabeza en un cuadro
+HANDS = ("Mano.R", "Mano.L")
+HAND_STEP_M = 0.5           # lo que recorre una mano en un cuadro fuera del golpe (a 30 fps: 15 m/s)
+# la cabeza del martillo, 2.8 m más afuera, gira más rápido que la mano: en los avisos que lo revolean (el revés de
+# Combo2) llega a 1.8 m por cuadro sin que se lea como salto, así que solo avisa
+HEAD_STEP_M = 1.5
 _LAST = {}                  # pose final de cada clip ya medido (FakeDefeat -> ArmorRise)
 
 
@@ -272,6 +282,29 @@ def _local_rots(ch):
     return out
 
 
+def _clock(clip):
+    """Cuántos cuadros de 1/30 s del juego dura cada tramo f-1 -> f del clip. Los golpes (timing con apex y contacto) se
+    tocan con el reloj de StepTimeline: la anticipación es un seno que arranca a 1.3x y frena en el apex, así que lo que
+    se ve en el juego al principio del aviso es más rápido que lo autorado; el resto del clip va a 1."""
+    import nindo_anim as NA
+    # timing['clock']: un clip que el juego toca como paso de ataque sin ser un golpe (AvalancheSummon: apex, contacto,
+    # windup y releaseRate de su AttackDef)
+    t = clip.timing.get("clock") or clip.timing
+    n = clip.frames
+    if "contact" not in t or "apex" not in t:
+        return [1.0] * (n + 1)
+    tl = NA.StepTimeline(n, t["apex"], t["contact"], release_rate=t.get("release_rate", 1.6), windup_min=t.get("windup", 0.65))
+
+    def time_of(f):
+        lo, hi = 0.0, tl.T + n / NA.FPS
+        for _ in range(48):
+            mid = 0.5 * (lo + hi)
+            lo, hi = (mid, hi) if tl.norm_at(mid) * n < f else (lo, mid)
+        return hi
+    ts = [time_of(f) for f in range(n + 1)]
+    return [1.0] + [max(1e-4, (ts[f] - ts[f - 1]) * NA.FPS) for f in range(1, n + 1)]
+
+
 def motion_checks(ch, clip, first, check):
     """Ver el docstring del módulo. Devuelve lo que va al sidecar (y en FakeDefeat ajusta el evento 'hammer_land')."""
     import math
@@ -281,13 +314,18 @@ def motion_checks(ch, clip, first, check):
     ham = bpy.data.objects[ch.spec["weapon"]["mesh"]]
     free = _free_frames(clip)
     loop = clip.loop
-    axes, rots, heads, handle_low = [], [], [], []
+    axes, rots, heads, handle_low, hands, hheads = [], [], [], [], [], []
     hm = ham.data
+    tt = getattr(clip, "travel_table", None)
     for f in range(clip.frames + 1):
         scn.frame_set(first + f)
         pb = ch.arm.pose.bones[B]
         axes.append((pb.matrix.to_3x3() @ Vector((0.0, 1.0, 0.0))).normalized())
         rots.append(_local_rots(ch))
+        # las manos y la cabeza del martillo en el mundo: el transform del juego avanza 'travel' hacia adelante (-Y)
+        sh = Vector((0.0, -(tt[min(f, len(tt) - 1)] if tt else 0.0), 0.0))
+        hands.append([ch.Pc(ch.arm.pose.bones[h].tail) + sh for h in HANDS])
+        hheads.append(ch.Pc(pb.matrix.translation + axes[-1] * (w["head_center"] * ch.u)) + sh)
         hb = ch.arm.pose.bones.get("Cabeza")
         heads.append(ch.Pc(hb.tail).z if hb else 0.0)
         if clip.name == "FakeDefeat":
@@ -327,6 +365,37 @@ def motion_checks(ch, clip, first, check):
                 bad, txt = spike, f"{bn} f{i - 1}-f{i}: {dl[i]:.0f}°, vecinos {', '.join(f'{x:.0f}' for x in nb)}°"
     out["arm_pop_deg"] = round(bad, 1)
     check(bad == 0.0, f"{clip.name}: brazos sin tics fuera del golpe ({txt or 'ok'})")
+    # lo que recorren las manos y la cabeza del martillo por cuadro (fuera de las mismas ventanas): un giro de 26° del
+    # brazo con el codo estirado ya lleva la mano 1.4 m, y el chequeo de tics (por ángulo y contra los vecinos) no lo veía
+    # (en cuadros del juego: un tramo de la anticipación que el juego toca en 0.75 cuadros cuenta 1.33 veces)
+    hand_m, hand_txt, head_m, head_txt = 0.0, "", 0.0, ""
+    clock = _clock(clip)
+    # timing['regrip']: la derecha cambia de agarre de la guardia a la punta del mango y el antebrazo rueda sobre él (el
+    # solver pasa ahí de una rama de la pronación a la otra; build_team_anims lo mide como salto del codo y avisa): los
+    # nudillos se mueven solos aunque el agarre casi no se mueva. Se saltea solo para este chequeo
+    regrip = {f for a, b in clip.timing.get("regrip", []) for f in range(a, b + 1)}
+    for f in range(1, len(hands)):
+        if f in free:
+            continue
+        for i, h in enumerate(HANDS if f not in regrip else ()):
+            d = (hands[f][i] - hands[f - 1][i]).length / clock[f]
+            if d > hand_m:
+                hand_m, hand_txt = d, f"{h} f{f - 1}-f{f}"
+        d = (hheads[f] - hheads[f - 1]).length / clock[f]
+        if d > head_m:
+            head_m, head_txt = d, f"f{f - 1}-f{f}"
+        if DEBUG:
+            g0, g1 = clip.controls(f - 1).get("grip"), clip.controls(f).get("grip")
+            gs = (Vector(g1) - Vector(g0)).length if g0 is not None and g1 is not None else -1.0
+            print(f"       {clip.name} f{f}: manos " + ", ".join(f"{(hands[f][i] - hands[f - 1][i]).length / clock[f]:.2f}" for i in range(2))
+                  + f" m, cabeza {d:.2f} m (x{1.0 / clock[f]:.2f}; agarre pedido {gs:.2f}; grip_l {clip.controls(f).get('grip_l') or 0.0:.2f}; grip_r {clip.controls(f).get('grip_r') or 0.0:.2f}; "
+                  + " ".join(f"{bn} {math.degrees(rots[f - 1][bn].rotation_difference(rots[f][bn]).angle):.0f}" for bn in ARM_BONES if bn in rots[f]) + ")")
+    out["hand_step_max_m"] = round(hand_m, 3)
+    out["hammer_head_step_max_m"] = round(head_m, 3)
+    check(hand_m <= HAND_STEP_M, f"{clip.name}: las manos no se teletransportan fuera del golpe ({hand_m:.2f} m en {hand_txt or '-'}, "
+                                 f"tope {HAND_STEP_M:.2f})")
+    check(head_m <= HEAD_STEP_M, f"{clip.name}: la cabeza del martillo no salta fuera del golpe ({head_m:.2f} m en {head_txt or '-'}, "
+                                 f"aviso desde {HEAD_STEP_M:.2f})", warn=True)
     if clip.name == "FakeDefeat":
         drop, df = 0.0, -1
         for f in range(1, len(heads)):
