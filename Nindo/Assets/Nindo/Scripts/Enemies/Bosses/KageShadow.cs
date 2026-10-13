@@ -103,6 +103,15 @@ namespace Nindo
         public bool CanStrike => IsAlive && owner != null && ink != null && mode == Mode.Hunt && !Busy && !mirrorPending
                                  && nobiW <= 0f && settleLeft <= 0f
                                  && !(Form == Shape.Hidden && (!ink.Detached || emerged || vanishAt > 0f || ink.Visibility > 0.02f));
+        /// <summary>
+        /// Todavía no puede (CanStrike) pero está por poder: termina el corte anterior, vuelve a la guardia o se apaga en
+        /// la oscuridad (~0.5 s suelta, ~1.3 s a oscuras después del golpe). Kokuyō le guarda el golpe del dúo que le
+        /// pidió en ese rato (KokuyoBoss.Shadow): si no, los dúos que arrancaban justo después de un turno de ella salían
+        /// sin la sombra. Pegada a sus pies no cuenta (él la espera quieto) ni clavada (no vuelve hasta dentro de 6 s).
+        /// </summary>
+        public bool Rearming => IsAlive && owner != null && ink != null && Form != Shape.Bound && mode == Mode.Hunt && !mirrorPending
+                                && (State == EnemyState.Attack && float.IsInfinity(StrikeEta) || State == EnemyState.Recoil || settleLeft > 0f
+                                    || Form == Shape.Hidden && (emerged || vanishAt > 0f || ink.Visibility > 0.02f));
         /// <summary>Pegada a sus pies y con la tinta ocupada en un golpe propio: el adelanto del Acto 1 espera.</summary>
         public bool DrivesInk => Form == Shape.Bound && ink != null
                                  && (State == EnemyState.Attack || State == EnemyState.Recoil || nobiW > 0f || mirrorPending || handingBack);
@@ -408,9 +417,13 @@ namespace Nindo
             Vector3 right = CameraRight();
             Vector3 up = Vector3.Cross(right, Vector3.up);
             Vector3 dest = ClampToArena(kp + (right * sideSign * 0.92f + up * 0.38f) * HuntDistance);
-            // a oscuras no se ve: espera en su lugar (sale de ahí cuando ataca). Mientras se apaga después de un corte
-            // sigue deslizándose: saltaba a su lugar de espera con la figura todavía visible
-            if (Form == Shape.Hidden && !emerged && (ink == null || ink.Visibility <= 0.02f)) transform.position = dest;
+            // a oscuras no se ve: espera en su lugar (sale de ahí cuando ataca). Después de un corte se apaga donde cortó y
+            // recién apagada pasa a su lugar de espera: saltando con la figura visible se teletransportaba, y deslizándose
+            // (7 m/s, ~5 m en la pose quieta) cruzaba patinando por delante de Kaito
+            if (Form == Shape.Hidden)
+            {
+                if (!emerged && (ink == null || ink.Visibility <= 0.02f)) transform.position = dest;
+            }
             else Glide(dest, GlideSpeed, dt);
             FaceFlat(kp, dt);
         }

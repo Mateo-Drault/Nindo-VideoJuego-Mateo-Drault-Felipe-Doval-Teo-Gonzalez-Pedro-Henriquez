@@ -16,9 +16,11 @@ PRESETS = {
 PRESETS["final"] = dict(PRESETS["retirada"], th=[0.68, 0.38], dmg=[0.85, 0.935, 0.935])
 # la corrección: una espera por especial, firmas de fase, mezcla de cerca más liviana y el daño de diseño (x1)
 PRESETS["fix"] = dict(PRESETS["final"], fix=True, dmg=[1.0, 1.1, 1.1])
-# lo de hoy (MizuchiBoss.Pacing: HealthScale 2.25, DamageScale 0.33 x1.1 corrompido, PostureHeal 14) con el reintento por
-# fase. Uso: python mz_run.py tuning bueno,promedio,humano 200 ['{"hp": 2880, "posture_heal": 10}']
-PRESETS["tuning"] = dict(PRESETS["fix"], hp=1440 * 2.25, dmg=[0.33, 0.363, 0.363], retry=True, posture_heal=14)
+# lo de hoy, leído del C# (cs_knobs: MizuchiBoss.Pacing HealthScale, DamageScale, PostureHeal, PhaseHeal, PhaseSpirit;
+# la vida base de EnemyArchetypes y el x1.1 corrompido de CorruptedStats) con el reintento por fase.
+# Uso: python mz_run.py tuning bueno,promedio,humano 200 ['{"hp": 2880, "posture_heal": 10}']
+import cs_knobs
+PRESETS["tuning"] = dict(PRESETS["fix"], retry=True, **cs_knobs.mizuchi())
 
 
 def cfg_of(name, extra=None):

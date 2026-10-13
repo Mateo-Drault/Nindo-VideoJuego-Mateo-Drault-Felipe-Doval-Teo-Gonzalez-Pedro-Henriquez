@@ -5,7 +5,7 @@ namespace Nindo
     /// <summary>
     /// El ritmo de la pelea larga: cada acto se parte en tramos. Con menos de ThirdsFrom de vida son dos mitades; con la
     /// de hoy (KokuyoMoves.HealthScale) son tres tercios, para que cada tramo no se vuelva la misma pelea dos veces. El
-    /// golpe que cruza cada corte le enciende las grietas y le devuelve aire a Kaito (KokuyoMoves.StageHeal: como los
+    /// golpe que cruza cada corte le saca un humo de tinta y le devuelve aire a Kaito (KokuyoMoves.StageHeal: como los
     /// tramos de la armadura de Gorō, la pelea larga no es puro desgaste). Al terminar su combo él se planta y ruge (un
     /// respiro de 1.3 s para los dos: los golpes rebotan, la sombra espera) y desde ahí:
     ///  * suma el patrón de ese tramo (KokuyoMoves.Escalation), que la primera vez pesa el triple para que se vea;
@@ -85,18 +85,22 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Cruzó un corte: se le encienden todas las grietas (el tramo se rompió) y la bandana le devuelve StageHeal a
-        /// Kaito en el mismo golpe, aunque esté de rodillas (el rugido llega después, al terminar su combo).
+        /// Cruzó un corte: se le escapa un humo de tinta del pecho (el tramo se rompió) y Kaito recupera la cura del tramo
+        /// en el mismo golpe, aunque él esté de rodillas (el rugido llega después, al terminar su combo). Heal ya muestra
+        /// la cura (solo si de verdad curó). Nada que se lea como otra cosa: todas las grietas encendidas son su postura
+        /// rota (de rodillas) y en el eclipse la bandana dorada es la sombra saliendo de la oscuridad; la bandana late
+        /// solo en los Actos 1 y 2, y solo si curó.
         /// </summary>
         void RewardStage()
         {
-            look?.FlareAll();
+            Game.FX?.SmokePuff(AimPoint, 1.4f);
             Game.Camera?.Shake(0.2f);
             var p = Game.Player;
-            if (p == null || !p.IsAlive || KokuyoMoves.StageHeal <= 0f) return;
-            p.Heal(KokuyoMoves.StageHeal);
-            Game.FX?.HealBurst(p.transform.position);
-            BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 0.8f);
+            float heal = KokuyoMoves.StageHealOf(Act);
+            if (p == null || !p.IsAlive || heal <= 0f) return;
+            bool hurt = p.Health < p.config.maxHealth - 0.5f;
+            p.Heal(heal);
+            if (hurt && Act < 3) BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 0.8f);
         }
 
         /// <summary>

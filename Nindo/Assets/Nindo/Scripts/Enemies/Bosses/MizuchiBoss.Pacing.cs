@@ -27,7 +27,8 @@ namespace Nindo
         /// <summary>
         /// Las perillas del balance final. HealthScale multiplica la vida pedida (1440, el doble de antes) y DamageScale
         /// el daño de diseño de todos sus golpes (perlas, saltos, ola y pilares incluidos); EnemyArchetypes.Mizuchi aplica
-        /// las dos. PostureHeal es lo que Kaito recupera en cada postura rota y PhaseHeal lo de cada cambio de fase.
+        /// las dos. PostureHeal es lo que Kaito recupera en cada postura rota y PhaseHeal lo de cada cambio de fase. Las
+        /// simulaciones leen estos números de acá (Tools/Dev/boss_sims/cs_knobs.py): cambiarlos acá alcanza.
         /// Simulado con los bots de AutoPilot, el reintento por fase y la cura por postura
         /// (Tools/Dev/boss_sims/mz_run.py tuning bueno,promedio,humano 200; minutos simulados hasta ganar con los reintentos):
         ///   vida 2160, daño 0.35, sin cura por postura: bueno 2.4 min; promedio 4.7 min, 1.9 muertes y 7 % gana sin morir
@@ -204,15 +205,16 @@ namespace Nindo
 
         /// <summary>
         /// Le rompió la postura (el koi queda varado por los 4 pips o por el peloteo fallado): la bandana le devuelve
-        /// PostureHeal. Los varados gratis (después de la zambullida y los pilares) no: esos no los ganó Kaito.
+        /// PostureHeal. Los varados gratis (después de la zambullida y los pilares) no: esos no los ganó Kaito. Heal ya
+        /// muestra la cura si de verdad curó (otra HealBurst acá la duplicaba); con la vida llena la bandana no late.
         /// </summary>
         void RewardPosture()
         {
             var p = Game.Player;
             if (p == null || !p.IsAlive || PostureHeal <= 0f) return;
+            bool hurt = p.Health < p.config.maxHealth - 0.5f;
             p.Heal(PostureHeal);
-            Game.FX?.HealBurst(p.transform.position);
-            BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 0.6f);
+            if (hurt) BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 0.6f);
         }
 
         /// <summary>

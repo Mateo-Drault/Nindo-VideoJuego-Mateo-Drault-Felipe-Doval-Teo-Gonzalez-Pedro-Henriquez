@@ -1,24 +1,40 @@
-"""Réplica fuera de Unity del plano al cielo de la pelea de Kokuyō (MoonEclipse.PlaySkyShot) para buscar rectángulos:
-el cielo (Nindo/Night Sky con la luna apagada de HideSky), el quad de la luna (Nindo/Moon, a 340 m, de frente a la
-cámara: la versión de hoy y la de antes de la fase C2), el terreno (world_terrain.height con la niebla de la zona del
-dojo o la del eclipse) y un tonemap ACES con bloom aproximado. Mide, en cada estado (luna llena, eclipse 0..1, destello
-de parry y de la luna que vuelve, nubes, aparición), cuánto suma la luna en la franja del borde del quad y el salto en
-8 bits al cruzarlo; y renderiza tiras de cuadros del cambio de luna con el mismo plano y la mezcla desde la cámara de
-juego (donde se ve el horizonte: el borde del mapa).
+"""Réplica fuera de Unity de los planos de la pelea de Kokuyō que ven el cielo, para buscar rectángulos y bordes de capa:
+el cielo (Nindo/Night Sky con la luna apagada de HideSky y, si se pide, llevado hacia el eclipse como MoonEclipse.DriveSky),
+el quad de la luna (Nindo/Moon, a 340 m, de frente a la cámara: la versión de hoy y la de antes de la fase C2), el terreno
+(world_terrain.height con la niebla exp2 del dojo o la del eclipse) y el post de URP en espacio de color Gamma (el del
+proyecto: el uber pasa a lineal, exposición 0.4, bloom, ACES y vuelve a sRGB).
+Mide:
+  1) en cada estado de la luna (llena, eclipse 0..1, destellos, nubes, aparición) cuánto suma la luna en la franja del borde
+     del quad y el salto en 8 bits al cruzarlo (el rectángulo de C2);
+  2) en las mezclas de la cámara al cielo con terreno (la transición al eclipse con sus tiempos reales, el plano de la muerte
+     y de la ejecución, que miran casi horizontal en plena oscuridad, y el final con la luna que vuelve) el salto en 8 bits
+     entre el borde de arriba del terreno y el cielo justo encima, con el cielo de siempre y con el que sigue a la niebla.
 Uso: python moon_sky_check.py CARPETA_DE_SALIDA     (escribe .png y un resumen .json; necesita numpy y PIL)
 """
-import os, sys, json, math
+import os, sys, json, math, re
 import numpy as np
 from PIL import Image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", "..", ".."))
 W, H = 640, 360
-FOV = 30.0
 ARENA = np.array([0.0, 8.0, 132.0])
 SKY_DIR = np.array([0.16, 0.5, 0.85]); SKY_DIR /= np.linalg.norm(SKY_DIR)
 MOON_DIST = 340.0
 HALF = MOON_DIST * math.tan(math.radians(3.4)) / 0.3
+
+
+def _gamma_project():
+    """ProjectSettings: m_ActiveColorSpace 0 = Gamma (el de Nindo), 1 = Linear."""
+    try:
+        txt = open(os.path.join(REPO, "Nindo", "ProjectSettings", "ProjectSettings.asset"), encoding="utf-8").read()
+        m = re.search(r"m_ActiveColorSpace:\s*(\d)", txt)
+        return m is None or m.group(1) == "0"
+    except OSError:
+        return True
+
+
+GAMMA = _gamma_project()
 
 
 # ---------------------------------------------------------------------------------------------- utilidades de shader
@@ -29,6 +45,11 @@ def frac(x):
 def smoothstep(e0, e1, x):
     t = np.clip((x - e0) / (e1 - e0), 0.0, 1.0)
     return t * t * (3 - 2 * t)
+
+
+def ss(x):
+    x = min(1.0, max(0.0, x))
+    return x * x * (3 - 2 * x)
 
 
 def hash21(p):   # NindoMoon.hash21
@@ -86,7 +107,7 @@ def sky_pose():
     flat = flat + (np.array([0.0, 0.0, 1.0]) - flat) * 0.4; flat /= np.linalg.norm(flat)
     pitch = math.asin(SKY_DIR[1]) - math.radians(8.0)
     d = flat * math.cos(pitch) + np.array([0.0, 1.0, 0.0]) * math.sin(pitch)
-    return pos, d
+    return pos, d, 30.0
 
 
 def game_pose():
@@ -94,7 +115,16 @@ def game_pose():
     kaito = ARENA + np.array([0.0, 0.0, -4.0])
     pitch, dist = math.radians(54.0), 21.0
     fwd = np.array([0.0, -math.sin(pitch), math.cos(pitch)])
-    return kaito + np.array([0.0, 1.2, 0.0]) - fwd * dist, fwd
+    return kaito + np.array([0.0, 1.2, 0.0]) - fwd * dist, fwd, 30.0
+
+
+def death_pose():
+    """Boss.Die de Kokuyō al final del plano (3.6 s): 8.5 m al sur de él, 3.6 m arriba, mirando a 2 m (FOV 34). La
+    ejecución (UpdateExecution) es parecida: ~9.4 m, 3 m arriba, mirando a 2.3 m (FOV 36). Las dos casi horizontales,
+    en pleno eclipse: ven el horizonte a los costados del dojo."""
+    boss = ARENA + np.array([0.0, 0.0, 2.0])
+    pos = boss + np.array([0.0, 3.6, -8.5])
+    return pos, (boss + np.array([0.0, 2.0, 0.0])) - pos, 34.0
 
 
 def slerp_dir(a, b, w):
@@ -105,9 +135,15 @@ def slerp_dir(a, b, w):
     return (math.sin((1 - w) * om) * a + math.sin(w * om) * b) / math.sin(om)
 
 
-def rays(pos, fwd):
+def blend_pose(p0, p1, w):
+    """CameraDirector: smoothstep del peso, Lerp de la posición, Slerp de la rotación y Lerp del FOV."""
+    k = ss(w)
+    return p0[0] + (p1[0] - p0[0]) * k, slerp_dir(p0[1], p1[1], k), p0[2] + (p1[2] - p0[2]) * k
+
+
+def rays(pos, fwd, fov):
     f, r, u = look_basis(fwd)
-    th = math.tan(math.radians(FOV) / 2)
+    th = math.tan(math.radians(fov) / 2)
     xs = (np.arange(W) + 0.5) / W * 2 - 1
     ys = 1 - (np.arange(H) + 0.5) / H * 2
     X, Y = np.meshgrid(xs * th * W / H, ys * th)
@@ -118,14 +154,45 @@ def rays(pos, fwd):
 # ---------------------------------------------------------------------------------------------- cielo
 SKY = dict(zen=np.array([0.015, 0.028, 0.08]), mid=np.array([0.045, 0.08, 0.16]), hor=np.array([0.13, 0.19, 0.27]),
            gnd=np.array([0.04, 0.055, 0.09]), cloud=np.array([0.1, 0.13, 0.2]), amount=0.35, density=0.9965, stars=1.6)
+DOJO_FOG = np.array([0.1, 0.06, 0.1])            # StoryText: la zona del dojo (densidad 0.010, exp2)
+ECLIPSE_FOG = np.array([0.118, 0.078, 0.188])    # MoonEclipse.EclipseFog (#1e1430), densidad x1.15
+# El terreno iluminado, ESTIMADO (no hay render de Unity): albedo ~0.25 por (luz de la luna 1.05, azulada, a ~0.45 de
+# coseno + el ambiente trilight del dojo); en el eclipse la luz a 0.35 y violeta y el ambiente apagado (MoonEclipse.Eclipse).
+# El salto del borde del terreno depende de esto: los números sirven para comparar cielos, no como valor absoluto
+TERRAIN_LIT = np.array([0.14, 0.137, 0.18])
+TERRAIN_ECLIPSE = np.array([0.062, 0.053, 0.089])
 
 
-def sky(dirs, t):
+def _knobs():
+    """Las perillas de MoonEclipse.DriveSky leídas del C# (si se cambian allá, la réplica las sigue)."""
+    src = open(os.path.join(REPO, "Nindo", "Assets", "Nindo", "Scripts", "FX", "MoonEclipse.cs"), encoding="utf-8").read()
+    out = {}
+    for name in ("SkyHorizonToFog", "SkyMidToFog", "SkyZenithDark", "SkyCloudDark", "SkyStarsBoost"):
+        m = re.search(r"\b%s\s*=\s*(-?[0-9.]+)f?" % name, src)
+        if not m:
+            raise SystemExit("moon_sky_check: falta %s en MoonEclipse.cs" % name)
+        out[name] = float(m.group(1))
+    return out
+
+
+DRIVE = _knobs()
+
+
+def sky_colors(k, fog):
+    """MoonEclipse.DriveSky: k = cuánto eclipse tiene la niebla (0..1), fog = el color de la niebla ahora."""
+    lerp = lambda a, b, t: a + (b - a) * t
+    return dict(hor=lerp(SKY["hor"], fog, k * DRIVE["SkyHorizonToFog"]), gnd=lerp(SKY["gnd"], fog, k * DRIVE["SkyHorizonToFog"]),
+                mid=lerp(SKY["mid"], fog, k * DRIVE["SkyMidToFog"]), zen=SKY["zen"] * lerp(1, DRIVE["SkyZenithDark"], k),
+                cloud=SKY["cloud"] * lerp(1, DRIVE["SkyCloudDark"], k), stars=SKY["stars"] * lerp(1, DRIVE["SkyStarsBoost"], k))
+
+
+def sky(dirs, t, sc=None):
+    sc = sc or dict(hor=SKY["hor"], gnd=SKY["gnd"], mid=SKY["mid"], zen=SKY["zen"], cloud=SKY["cloud"], stars=SKY["stars"])
     h = dirs[..., 1]
     t1 = np.clip(h * 3, 0, 1)[..., None]; t2 = np.clip((h - 0.25) * 1.6, 0, 1)[..., None]
-    up = SKY["hor"] + (SKY["mid"] - SKY["hor"]) * t1
-    up = up + (SKY["zen"] - up) * t2
-    dn = SKY["hor"] + (SKY["gnd"] - SKY["hor"]) * np.clip(-h * 6, 0, 1)[..., None]
+    up = sc["hor"] + (sc["mid"] - sc["hor"]) * t1
+    up = up + (sc["zen"] - up) * t2
+    dn = sc["hor"] + (sc["gnd"] - sc["hor"]) * np.clip(-h * 6, 0, 1)[..., None]
     col = np.where((h > 0)[..., None], up, dn)
     p = dirs * 260.0
     cell = np.floor(p)
@@ -136,12 +203,12 @@ def sky(dirs, t):
     tw = 0.65 + 0.35 * np.sin(t * (1.5 + rnd * 4.0) + rnd * 60.0)
     mask = (rnd > SKY["density"]) & (h > 0.02)
     tint = np.where((frac(rnd * 37.0) > 0.5)[..., None], [1.0, 0.92, 0.8], [0.8, 0.88, 1.0])
-    col = col + (mask * star * star * SKY["stars"] * tw * np.clip(h * 4, 0, 1))[..., None] * tint
+    col = col + (mask * star * star * sc["stars"] * tw * np.clip(h * 4, 0, 1))[..., None] * tint
     hp = np.maximum(h, 1e-3)
     uv = np.stack([dirs[..., 0], dirs[..., 2]], -1) / (hp + 0.25)[..., None] * 1.6 + [t * 0.004, t * 0.002]
     cl = smoothstep(0.55 - SKY["amount"] * 0.3, 0.95, fbm_sky(uv)) * np.clip(h * 5, 0, 1)
     cl = np.where(h > 0, cl, 0.0)
-    col = col + (SKY["cloud"] - col) * (cl * 0.75)[..., None]
+    col = col + (sc["cloud"] - col) * (cl * 0.75)[..., None]
     # HideSky: la luna del cielo con _MoonGlow 0 y _MoonSize 0.0001 (no aporta nada)
     return col
 
@@ -267,19 +334,32 @@ def blur(img, s):
     return out
 
 
-def post(lin, bloom=True):
-    lin = lin * 2 ** 0.4   # postExposure 0.4 (ScreenFX)
+def to_linear(c):
+    c = np.maximum(c, 0.0)
+    return np.where(c <= 0.04045, c / 12.92, np.power((c + 0.055) / 1.055, 2.4))
+
+
+def post(scene, bloom=True):
+    """URP en Gamma: lo que dibujaron los shaders (valores gamma) pasa a lineal en el uber; ahí exposición (ScreenFX 0.4),
+    bloom (umbral 0.95 en gamma), ACES y de vuelta a sRGB."""
+    lin = to_linear(scene) if GAMMA else scene
+    lin = lin * 2 ** 0.4
     if bloom:
-        br = np.maximum(lin - 0.95, 0.0)
+        br = np.maximum(lin - (to_linear(np.array(0.95)) if GAMMA else 0.95), 0.0)
         bl = sum(blur(br, s) * wgt for s, wgt in ((2, 0.45), (6, 0.3), (16, 0.25)))
         lin = lin + bl * 0.9 * np.array([1.0, 0.92, 0.8])
     c = aces(lin)
     return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1 / 2.4) - 0.055)
 
 
-def render(pos, fwd, st, grid=None, old=False, fog=("dojo", 1.0)):
-    dirs, f = rays(pos, fwd)
-    col = sky(dirs, st["t"])
+def render(pose, st, grid=None, old=False):
+    """st: t, eclipse (tinta de la luna), veil, flash, alpha, fog (0..1: de la niebla del dojo a la del eclipse) y
+    drive (el cielo sigue a la niebla como MoonEclipse.DriveSky)."""
+    pos, fwd, fov = pose
+    dirs, f = rays(pos, fwd, fov)
+    e = st.get("fog", 0.0)
+    fogc = DOJO_FOG * (1 - e) + ECLIPSE_FOG * e
+    col = sky(dirs, st["t"], sky_colors(e, fogc) if st.get("drive") else None)
     p, tt, inside = moon_hit(pos, dirs)
     d = np.linalg.norm(p, axis=-1)
     aa = np.maximum(np.maximum(np.abs(np.gradient(d, axis=0)), np.abs(np.gradient(d, axis=1))), 1e-4)
@@ -291,15 +371,13 @@ def render(pos, fwd, st, grid=None, old=False, fog=("dojo", 1.0)):
     col_sky = col.copy()
     col = np.where(occl[..., None], col, moon_add + col * (1 - moon_a)[..., None])
     if grid is not None:
-        e = st.get("fog", 0.0)
-        fogc = np.array([0.1, 0.06, 0.1]) * (1 - e) + np.array([0.118, 0.078, 0.188]) * e
         dens = 0.010 * (1 + 0.15 * e)
         vd = terr * (dirs @ f)
-        ground = np.array([0.045, 0.05, 0.055]) * (0.6 + 0.4 * (1 - e))
+        ground = TERRAIN_LIT * (1 - e) + TERRAIN_ECLIPSE * e
         fogf = np.exp(-(dens * vd) ** 2)[..., None]
         tc = fogc + (ground - fogc) * fogf
         col = np.where(np.isfinite(terr)[..., None], tc, col)
-    return col, col_sky, inside, p, occl
+    return col, col_sky, inside, p, occl, terr
 
 
 def edge_metrics(col, col_sky, inside, p, occl):
@@ -310,6 +388,26 @@ def edge_metrics(col, col_sky, inside, p, occl):
     ref8 = (post(col_sky, bloom=False) * 255).round()
     step = np.abs(out8 - ref8).max(-1)
     return float(diff[band].max()) if band.any() else 0.0, float(step[band].max()) if band.any() else 0.0
+
+
+def skyline_step(col, terr):
+    """El borde de arriba del terreno contra el cielo: en cada columna, el salto en 8 bits (canal que más cambia) entre
+    el terreno dos píxeles abajo del borde y el cielo dos arriba. Devuelve (mediana, p90, columnas) o None."""
+    img = (post(col, bloom=False) * 255).round()
+    hit = np.isfinite(terr)
+    steps = []
+    for x in range(hit.shape[1]):
+        rows = np.nonzero(hit[:, x])[0]
+        if len(rows) == 0:
+            continue
+        r = rows[0]
+        if r < 3 or r > hit.shape[0] - 4:
+            continue
+        steps.append(float(np.abs(img[r + 2, x] - img[r - 2, x]).max()))
+    if not steps:
+        return None
+    steps.sort()
+    return round(steps[len(steps) // 2], 1), round(steps[9 * len(steps) // 10], 1), len(steps)
 
 
 def save(img, path):
@@ -323,17 +421,57 @@ def label(img, text):
     return np.asarray(im).astype(float) / 255
 
 
+def timeline_frames(grid, summary, out):
+    """Las mezclas con terreno, con sus tiempos reales, con el cielo de siempre (antes) y el que sigue a la niebla (hoy)."""
+    sp, gp, dp = sky_pose(), game_pose(), death_pose()
+    seqs = []
+    # (a) KokuyoBoss.Eclipse: fx.Eclipse() (niebla, luz y tinta de la luna en 2 s, smoothstep) y PlaySkyShot(0.9, 0.5,
+    #     0.6) en el mismo instante: entra en 0.5 s, queda 0.9 y vuelve en 0.6 a la cámara de juego (que no ve el cielo)
+    ecl = []
+    for t in (0.15, 0.3, 0.45, 0.9, 1.4, 1.6, 1.75):
+        w = min(1.0, t / 0.5) if t <= 1.4 else max(0.0, 1 - (t - 1.4) / 0.6)
+        k = ss(t / 2.0)
+        ecl.append(("eclipse t=%.2f s" % t, blend_pose(gp, sp, w), dict(t=3 + t, eclipse=k, veil=0.0, flash=0.0, alpha=1.0, fog=k)))
+    seqs.append(("transicion_eclipse", ecl))
+    # (b) el plano de la muerte (y el de la ejecución, parecido) en pleno eclipse: casi horizontal, ve el horizonte
+    seqs.append(("muerte_ejecucion", [("muerte, eclipse", dp, dict(t=5.0, eclipse=1.0, veil=0.0, flash=0.0, alpha=1.0, fog=1.0))]))
+    # (c) el final: desde el plano de la muerte, PlaySkyShot(1.0, 0.6, 0.8); a los 0.6 s MoonReturn (la tinta se va en
+    #     0.35 s, destello 1.5 que baja 4/s, niebla de vuelta en 3 s)
+    fin = []
+    for t in (0.2, 0.4, 0.6, 0.8, 1.2, 1.6, 2.0):
+        w = min(1.0, t / 0.6) if t <= 1.6 else max(0.0, 1 - (t - 1.6) / 0.8)
+        r = max(0.0, t - 0.6)
+        ink = 1.0 - ss(r / 0.35) if t >= 0.6 else 1.0
+        flash = max(0.0, 1.5 - 4 * r) if t >= 0.6 else 0.0
+        fog = 1.0 - ss(r / 3.0) if t >= 0.6 else 1.0
+        fin.append(("final t=%.1f s" % t, blend_pose(dp, sp, w), dict(t=8 + t, eclipse=ink, veil=0.0, flash=flash, alpha=1.0, fog=fog)))
+    seqs.append(("final_luna_vuelve", fin))
+    summary["borde_terreno_cielo_8bit"] = {}
+    for name, frames in seqs:
+        rows, res = [], {}
+        for lab, pose, st in frames:
+            pair = []
+            for tag, drive in (("antes", False), ("hoy", True)):
+                col, cs, ins, p, oc, terr = render(pose, dict(st, drive=drive), grid)
+                m = skyline_step(col, terr)
+                res.setdefault(lab, {})[tag] = m
+                pair.append(label(post(col), "%s  %s  borde %s" % (tag, lab, "-" if m is None else "%.0f/%.0f" % m[:2])))
+            rows.append(np.concatenate(pair, 1))
+        summary["borde_terreno_cielo_8bit"][name] = res
+        save(np.concatenate(rows, 0), os.path.join(out, "cielo_%s.png" % name))
+
+
 def main(out):
     os.makedirs(out, exist_ok=True)
-    sp, sd = sky_pose()
-    summary = {"estados": []}
+    sp = sky_pose()
+    summary = {"espacio_de_color": "Gamma" if GAMMA else "Linear", "perillas_DriveSky": DRIVE, "estados": []}
     # 1) barrido de estados con el plano al cielo final (sin terreno: solo los planos del cielo)
     states = []
     for e in np.linspace(0, 1, 11):
-        states.append(dict(name="eclipse %.1f" % e, eclipse=float(e), veil=0.0, flash=0.0, alpha=1.0, t=3.0))
+        states.append(dict(name="eclipse %.1f" % e, eclipse=float(e), veil=0.0, flash=0.0, alpha=1.0, t=3.0, fog=float(e), drive=True))
     for fl in (0.6, 1.0, 1.5, 2.0):
-        states.append(dict(name="destello %.1f" % fl, eclipse=1.0, veil=0.0, flash=fl, alpha=1.0, t=5.0))
-        states.append(dict(name="vuelve la luna %.1f" % fl, eclipse=0.0, veil=0.0, flash=fl, alpha=1.0, t=5.0))
+        states.append(dict(name="destello %.1f" % fl, eclipse=1.0, veil=0.0, flash=fl, alpha=1.0, t=5.0, fog=1.0, drive=True))
+        states.append(dict(name="vuelve la luna %.1f" % fl, eclipse=0.0, veil=0.0, flash=fl, alpha=1.0, t=5.0, fog=1.0, drive=True))
     for v in (1.0, 0.5):
         states.append(dict(name="nubes %.1f" % v, eclipse=0.0, veil=v, flash=0.0, alpha=1.0, t=1.0))
     for al in (0.3, 0.7):
@@ -342,19 +480,20 @@ def main(out):
     for st in states:
         row = {"estado": st["name"]}
         for tag, old in (("hoy", False), ("antes", True)):
-            col, cs, ins, p, oc = render(sp, sd, st, None, old)
+            col, cs, ins, p, oc, _ = render(sp, st, None, old)
             m, s8 = edge_metrics(col, cs, ins, p, oc)
             row[tag] = {"luz_en_el_borde": round(m, 5), "salto_8bit": s8}
             worst[tag][0] = max(worst[tag][0], m); worst[tag][1] = max(worst[tag][1], s8)
         summary["estados"].append(row)
-    summary["peor"] = worst
-    # 2) tiras: el cambio de luna en el plano al cielo (antes / hoy) y la diferencia con el cielo solo x40
+    summary["peor_borde_del_quad"] = worst
+    # 2) tiras: el cambio de luna en el plano al cielo (quad de antes de C2 con el cielo de siempre / hoy con el cielo que
+    #    sigue a la niebla) y la luz de la luna sola x40 (un rectángulo se vería ahí)
     seq = [0.0, 0.25, 0.5, 0.75, 1.0]
     for tag, old in (("hoy", False), ("antes", True)):
         tiles, diffs = [], []
         for e in seq:
-            st = dict(eclipse=e, veil=0.0, flash=0.0, alpha=1.0, t=3.0)
-            col, cs, ins, p, oc = render(sp, sd, st, None, old)
+            st = dict(eclipse=e, veil=0.0, flash=0.0, alpha=1.0, t=3.0, fog=e, drive=not old)
+            col, cs, ins, p, oc, _ = render(sp, st, None, old)
             tiles.append(label(post(col), "%s  eclipse %.2f" % (tag, e)))
             diffs.append(label(np.clip(np.abs(col - cs).max(-1, keepdims=True) * 40, 0, 1).repeat(3, -1),
                                "luz de la luna x40 (borde del quad = rectangulo)"))
@@ -362,27 +501,15 @@ def main(out):
     # 3) la luna que vuelve (destello 1.5 que baja a 4/s) y un parry en el eclipse
     tiles = []
     for tag, old in (("antes", True), ("hoy", False)):
-        for st in (dict(eclipse=0.0, veil=0.0, flash=1.5, alpha=1.0, t=5.0), dict(eclipse=1.0, veil=0.0, flash=1.0, alpha=1.0, t=5.0)):
-            col, cs, ins, p, oc = render(sp, sd, st, None, old)
+        for st in (dict(eclipse=0.0, veil=0.0, flash=1.5, alpha=1.0, t=5.0, fog=1.0, drive=not old),
+                   dict(eclipse=1.0, veil=0.0, flash=1.0, alpha=1.0, t=5.0, fog=1.0, drive=not old)):
+            col, cs, ins, p, oc, _ = render(sp, st, None, old)
             tiles.append(label(post(col), "%s  %s" % (tag, "vuelve la luna" if st["eclipse"] == 0 else "parry en el eclipse")))
     save(np.concatenate([np.concatenate(tiles[:2], 1), np.concatenate(tiles[2:], 1)], 0), os.path.join(out, "cielo_destellos.png"))
-    # 4) la mezcla desde la cámara de juego hasta el cielo, con terreno y la niebla del eclipse (el horizonte y el borde
-    #    del mapa solo se ven acá)
-    grid = height_grid()
-    gp, gd = game_pose()
-    tiles = []
-    for w in (0.0, 0.25, 0.5, 0.75, 1.0):
-        k = w * w * (3 - 2 * w)
-        pos = gp + (sp - gp) * k
-        fwd = slerp_dir(gd, sd, k)
-        st = dict(eclipse=min(1.0, w), veil=0.0, flash=0.0, alpha=1.0, t=3.0, fog=min(1.0, w))
-        col, cs, ins, p, oc = render(pos, fwd, st, grid, False)
-        tiles.append(label(post(col), "mezcla %.2f (cámara de juego -> cielo)" % w))
-    save(np.concatenate(tiles, 0), os.path.join(out, "cielo_mezcla_terreno.png"))
+    # 4) los planos con terreno (horizonte y borde del mapa) con sus tiempos reales
+    timeline_frames(height_grid(), summary, out)
     json.dump(summary, open(os.path.join(out, "moon_sky_check.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
-    print(json.dumps(summary["peor"], ensure_ascii=False))
-    for r in summary["estados"]:
-        print(r["estado"], r["hoy"], r["antes"])
+    print(json.dumps({k: v for k, v in summary.items() if k != "estados"}, ensure_ascii=False, indent=1))
 
 
 if __name__ == "__main__":

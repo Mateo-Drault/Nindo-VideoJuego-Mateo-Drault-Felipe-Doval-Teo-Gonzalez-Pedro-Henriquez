@@ -9,7 +9,8 @@ namespace Nindo
     ///    de exploración llega del lado de la cámara y le da de frente a Kaito, a Kokuyō y a los braseros (girada al
     ///    norte los dejaba a contraluz toda la pelea); la sombra viva usa su propia luz (PlanarShadow.DefaultLight).
     ///  - Eclipse: Kokuyō cierra el puño sobre la luna: 1.05 -> 0.35 (nunca menos: la noche se tiene que seguir leyendo),
-    ///    niebla violeta #1e1430, ambiente apagado y la tinta tapa la luna del cielo... y la del piso.
+    ///    niebla violeta #1e1430, ambiente apagado, el cielo se apaga con la niebla (DriveSky) y la tinta tapa la luna del
+    ///    cielo... y la del piso.
     ///  - ParryPulse: cada parry del Acto 3 le devuelve un instante la luz a la escena ("el parry ilumina").
     ///  - MoonReturn: al caer Kokuyō la luna vuelve de golpe (1.4 -> 1.05 en 3 s) y caen pétalos sobre el patio.
     ///  - ExitArena / ResetAll: deja todo como lo encontró (reintentos y salida).
@@ -44,7 +45,16 @@ namespace Nindo
 
         static readonly int IdEclipse = Shader.PropertyToID("_Eclipse"), IdVeil = Shader.PropertyToID("_Veil"),
             IdFlash = Shader.PropertyToID("_Flash"), IdAlpha = Shader.PropertyToID("_Alpha"),
-            IdMoonGlow = Shader.PropertyToID("_MoonGlow"), IdMoonSize = Shader.PropertyToID("_MoonSize");
+            IdMoonGlow = Shader.PropertyToID("_MoonGlow"), IdMoonSize = Shader.PropertyToID("_MoonSize"),
+            IdZenith = Shader.PropertyToID("_ZenithColor"), IdMid = Shader.PropertyToID("_MidColor"),
+            IdHorizon = Shader.PropertyToID("_HorizonColor"), IdGround = Shader.PropertyToID("_GroundColor"),
+            IdCloud = Shader.PropertyToID("_CloudColor"), IdStars = Shader.PropertyToID("_StarBrightness");
+        /// <summary>
+        /// El cielo en el eclipse (DriveSky): el horizonte y el suelo del cielo toman el color de la niebla, el medio se tiñe
+        /// en parte, el cenit y las nubes se apagan y las estrellas brillan más (sin luna se ven más). Medido en
+        /// Tools/Dev/boss_sims/moon_sky_check.py (las mezclas de la cámara de juego al cielo).
+        /// </summary>
+        const float SkyHorizonToFog = 1f, SkyMidToFog = 0.45f, SkyZenithDark = 0.55f, SkyCloudDark = 0.6f, SkyStarsBoost = 1.3f;
         // media luna dorada del medallón (props_dojo.build_dojo_courtyard_floor): círculo A menos círculo B corrido
         // hacia el dojo, con la cara de arriba 7 cm sobre el origen del piso
         const float CrescentOuter = 2.55f, CrescentInner = 2.2f, CrescentOffset = 0.95f, CrescentHalo = 0.4f;
@@ -61,6 +71,9 @@ namespace Nindo
         float boost, boostLen = 0.25f;
         Transform disc;
         Material discMat, skyOriginal, skyCopy, floorMat;
+        // los colores del cielo de siempre (la copia los va llevando hacia el eclipse) y cuánto eclipse tiene puesto
+        Color skyZenith, skyMid, skyHorizon, skyGround, skyCloud;
+        float skyStars, skyK = -1f;
         MeshRenderer floorMoon;
         Mesh discMesh, floorMesh;
         float eclipse, eclipseFrom, eclipseTo, eclipseT = 1f, eclipseDur;
@@ -446,6 +459,39 @@ namespace Nindo
             if (skyCopy.HasProperty(IdMoonGlow)) skyCopy.SetFloat(IdMoonGlow, 0f);
             if (skyCopy.HasProperty(IdMoonSize)) skyCopy.SetFloat(IdMoonSize, 0.0001f);
             RenderSettings.skybox = skyCopy;
+            // solo con el cielo de Nindo (Nindo/Night Sky): otro skybox queda como está
+            skyK = skyCopy.HasProperty(IdHorizon) && skyCopy.HasProperty(IdStars) ? 0f : -1f;
+            if (skyK < 0f) return;
+            skyZenith = skyCopy.GetColor(IdZenith); skyMid = skyCopy.GetColor(IdMid);
+            skyHorizon = skyCopy.GetColor(IdHorizon); skyGround = skyCopy.GetColor(IdGround);
+            skyCloud = skyCopy.GetColor(IdCloud); skyStars = skyCopy.GetFloat(IdStars);
+        }
+
+        /// <summary>
+        /// El cielo acompaña al eclipse (en la copia sin luna: el asset nunca se toca). A medida que la niebla va hacia el
+        /// violeta del eclipse, el horizonte y el suelo del cielo toman su color, el medio se tiñe, el cenit y las nubes se
+        /// apagan y las estrellas se ven más. Con el cielo de siempre (azul y el doble de claro que la niebla) el terreno
+        /// lejano, pintado por la niebla, se recortaba contra el horizonte como el borde de una capa al subir la cámara al
+        /// cielo (las mezclas de PlaySkyShot), y el puño sobre la luna apagaba todo menos el cielo. Va con la niebla y no con
+        /// la tinta de la luna: en el final la luna vuelve en 0.35 s pero la niebla tarda 3 s, y un cielo azul sobre la
+        /// niebla violeta volvía a recortar.
+        /// </summary>
+        void DriveSky()
+        {
+            var a = new Vector3(arena.fog.r, arena.fog.g, arena.fog.b);
+            var span = new Vector3(EclipseFog.r, EclipseFog.g, EclipseFog.b) - a;
+            Color fog = RenderSettings.fogColor;
+            float k = span.sqrMagnitude > 1e-6f
+                ? Mathf.Clamp01(Vector3.Dot(new Vector3(fog.r, fog.g, fog.b) - a, span) / span.sqrMagnitude)
+                : Eclipsed ? 1f : 0f;
+            if (Mathf.Abs(k - skyK) < 0.002f) return;
+            skyK = k;
+            skyCopy.SetColor(IdHorizon, Color.Lerp(skyHorizon, fog, k * SkyHorizonToFog));
+            skyCopy.SetColor(IdGround, Color.Lerp(skyGround, fog, k * SkyHorizonToFog));
+            skyCopy.SetColor(IdMid, Color.Lerp(skyMid, fog, k * SkyMidToFog));
+            skyCopy.SetColor(IdZenith, skyZenith * Mathf.Lerp(1f, SkyZenithDark, k));
+            skyCopy.SetColor(IdCloud, skyCloud * Mathf.Lerp(1f, SkyCloudDark, k));
+            skyCopy.SetFloat(IdStars, skyStars * Mathf.Lerp(1f, SkyStarsBoost, k));
         }
 
         void RestoreSky()
@@ -468,6 +514,7 @@ namespace Nindo
             if (veilT < 1f) { veilT = Mathf.Clamp01(veilT + udt / veilDur); veil = Mathf.Lerp(veilFrom, veilTo, Mathf.SmoothStep(0f, 1f, veilT)); }
             flash = Mathf.Max(0f, flash - udt * 4f);
             discAlpha = Mathf.MoveTowards(discAlpha, discAlphaTarget, udt * 0.8f);
+            if (skyCopy != null && skyK >= 0f && InArena) DriveSky();
             if (floorMoon != null)
             {
                 bool lit = discAlpha > 0.001f;

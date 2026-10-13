@@ -13,12 +13,15 @@ namespace Nindo
     ///    El turno de la sombra le saca lugar a él (no se suma): él vuelve a atacar recién 0.6 s después del golpe de la
     ///    sombra (en el Acto 1 se queda quieto hasta que vuelve a sus pies).
     ///  * En el eclipse la sombra alterna de lado en cada turno (del lado opuesto a él, después de costado): si siempre
-    ///    salía de enfrente se aprendía el ritmo y dejaba de ser una amenaza. Y a veces (EncoreChance) vuelve a la
-    ///    oscuridad y sale otra vez del otro lado antes de que él vuelva a atacar: los turnos solos dependen de que él
-    ///    termine un combo, y en el eclipse (combos largos, el Desfile, más rodillas) eran ~4 por acto, una sombra cada
-    ///    9 s en el acto en que es la protagonista. Con la segunda salida pesa ~45 % de los golpes del acto, como en el 1.
+    ///    salía de enfrente se aprendía el ritmo y dejaba de ser una amenaza. Y a veces (EncoreChance) sale otra vez del
+    ///    otro lado apenas se apagó, metida entre los golpes del combo siguiente de él: los turnos solos dependen de que
+    ///    él termine un combo, y en el eclipse (combos largos, el Desfile, más rodillas) eran ~4 por acto, una sombra cada
+    ///    9 s en el acto en que es la protagonista.
     ///  * Dúos: los patrones DuetPattern de KokuyoMoves meten un golpe de la sombra en el combo del cuerpo (antes,
-    ///    mientras él carga; o entre dos de sus cortes, del otro lado de Kaito).
+    ///    mientras él carga; o entre dos de sus cortes, del otro lado de Kaito). Si la sombra todavía se está apagando
+    ///    del golpe anterior (el combo arranca 0.6 s después de un turno de ella, y a oscuras tarda ~1.3 s en poder
+    ///    salir), el golpe del dúo queda guardado y sale apenas puede dentro de ese paso: antes se perdía y el 45 % de
+    ///    los dúos del eclipse (el 92 % de Eclipse Cruzado) eran combos de él solo.
     ///  * La regla: el que arranca después pega después, a Gap(primero, segundo) del otro (0.9 / 1.05 / 1.1 s; 1.7 s
     ///    entre el Nobi y el golpe siguiente de él; 1.3 s entre un golpe de él y el corte desde la oscuridad, que sale
     ///    1.05 s antes). PlanWindup (cuerpo) y ShadowWindup (sombra) estiran el windup.
@@ -44,13 +47,17 @@ namespace Nindo
         /// más: el grito del abuelo aparece mientras tanto y el primer golpe no puede ser el que se lee y se come.</summary>
         const float TeachLeadMul = 1.5f, TeachDarkMul = 1.4f;
         /// <summary>
-        /// Eclipse: probabilidad de que un turno solo de la sombra tenga segunda salida (del otro lado, sin esperar
-        /// TurnMinGap). Mientras tanto él espera EncoreWait desde el primer corte: la tinta termina el corte y vuelve del
-        /// todo a la oscuridad (~1.3 s: KageShadow.CanStrike no la deja salir a medio apagar), sale 1.05 s antes del
-        /// segundo corte y él pega recién 0.6 s después de ese. Simulado (kk_fix_run.py actos): la sombra pasa de ~30 % a
-        /// ~45 % de los golpes del acto, sin dos anillos encimados y con 0.9 s o más entre atacantes distintos.
+        /// Eclipse: probabilidad de que un turno solo de la sombra tenga segunda salida: apenas vuelve del todo a la
+        /// oscuridad (~1.3 s después del corte: KageShadow.CanStrike no la deja salir a medio apagar) sale otra vez, del
+        /// otro lado, sin esperar TurnMinGap. Él no la espera: vuelve a atacar 0.6 s después del primer corte como
+        /// siempre y la segunda se mete entre sus golpes (la regla la acomoda como en los dúos). La primera versión lo
+        /// dejaba quieto 3 s esperándola y el acto final pasaba de 47 % a 35 % del tiempo con él atacando. Si en
+        /// EncoreWindow s desde el primer corte no pudo salir (él hundido o rugiendo), se pierde. Nunca en el corte que
+        /// enseña la salida de la oscuridad (el grito del abuelo está en pantalla). Simulado (kk_fix_run.py actos, bueno,
+        /// con los dúos enteros): ~2.1 segundas salidas por acto; la sombra pasa de 36 % a 41 % de los golpes del eclipse
+        /// (~11.5 cortes en ~66 s) y él sigue atacando el 48 % del acto. Con 1.0, 43 %: rinde poco más.
         /// </summary>
-        const float EncoreChance = 0.6f, EncoreWait = 3.0f;
+        const float EncoreChance = 0.6f, EncoreWindow = 3.2f;
 
         /// <summary>El modelo animado (la sombra pegada gira desde su rotación).</summary>
         public Transform Body => model;
@@ -62,14 +69,17 @@ namespace Nindo
         // turnos
         float actStart, lastShadowTurn = -99f;
         bool shadowTurnAsked, nobiTaught, darkTaught;
-        // eclipse: la sombra va a volver a salir del otro lado antes de que él ataque (EncoreChance)
-        bool darkEncore;
+        // eclipse: hasta cuándo puede salir la segunda vez (EncoreChance; -1 = no hay)
+        float encoreUntil = -1f;
+        // el golpe del dúo que la sombra no pudo dar al pedírselo (se estaba apagando): sale en ese paso de ese patrón
+        ShadowCue deferredCue;
+        AttackPattern deferredIn;
         // el lado del último corte desde la oscuridad (el próximo turno sale del otro)
         ShadowSide lastDarkSide = ShadowSide.Flank;
         AttackPattern duetTeach;
         // para el informe de cada acto (consola): cuántos golpes de cada uno, el par más junto y, en el eclipse, la
-        // salida de la oscuridad más pegada a un golpe de él
-        int statBody, statShadow, statShadowParried, statDuet;
+        // salida de la oscuridad más pegada a un golpe de él; segundas salidas y golpes de dúo que se perdieron
+        int statBody, statShadow, statShadowParried, statDuet, statEncore, statCueLost;
         float statMinGap = 99f, statEmergeClear = 99f, lastEmergeAt = -99f;
 
         /// <summary>Él está entre combos: ni atacando, ni comprometido con un ataque, ni de rodillas.</summary>
@@ -87,9 +97,9 @@ namespace Nindo
             shadowPendingMove = shadowLastMove = "";
             lastShadowTurn = -99f;
             shadowTurnAsked = false;
-            darkEncore = false;
+            DropQueuedShadow();
             actStart = Time.time;
-            statBody = statShadow = statShadowParried = statDuet = 0;
+            statBody = statShadow = statShadowParried = statDuet = statEncore = statCueLost = 0;
             statMinGap = statEmergeClear = 99f;
             lastEmergeAt = -99f;
         }
@@ -100,7 +110,7 @@ namespace Nindo
             actStart = Time.time;
             lastShadowTurn = -99f;
             shadowTurnAsked = false;
-            darkEncore = false;
+            DropQueuedShadow();
             lastDarkSide = ShadowSide.Flank;
             kage?.SetAct(Act);
             duetTeach = null;
@@ -164,8 +174,63 @@ namespace Nindo
             foreach (var c in dp.cues)
             {
                 if (c.step != step || c.before != before) continue;
-                if (kage.TryStrike(c.move, c.side, TeachMul(c.move))) { statDuet++; OnShadowTurn(c.move, c.side); }
+                if (kage.TryStrike(c.move, c.side, TeachMul(c.move))) OnDuetCue(c);
+                // se está apagando del golpe anterior: sale apenas pueda, en este paso (RunQueuedShadow)
+                else if (kage.Rearming) { deferredCue = c; deferredIn = pattern; }
+                else statCueLost++;
             }
+        }
+
+        void OnDuetCue(ShadowCue c)
+        {
+            statDuet++;
+            OnShadowTurn(c.move, c.side);
+            // la sombra ya salió otra vez, en el dúo: la segunda salida pendiente sobra
+            encoreUntil = -1f;
+        }
+
+        /// <summary>La sombra suelta lo que tenía pedido (de rodillas, clavada, cambio de acto, reintento).</summary>
+        void DropQueuedShadow()
+        {
+            encoreUntil = -1f;
+            deferredCue = null;
+            deferredIn = null;
+        }
+
+        /// <summary>
+        /// Lo que la sombra tiene guardado: el golpe del dúo (solo mientras él siga en ese paso de ese patrón) y la segunda
+        /// salida del eclipse (hasta encoreUntil). Sale apenas la sombra puede, esté él atacando o no: EarliestShadowImpact
+        /// lo acomoda contra su golpe en camino y el paso siguiente de él se estira contra el de ella (PlanWindup), como en
+        /// los dúos. Devuelve true mientras haya algo guardado (ese cuadro no se piden turnos nuevos).
+        /// </summary>
+        bool RunQueuedShadow(float now)
+        {
+            if (deferredCue != null && (State != EnemyState.Attack || pattern != deferredIn || step != deferredCue.step))
+            {
+                deferredCue = null;
+                statCueLost++;
+            }
+            if (encoreUntil > 0f && now > encoreUntil) encoreUntil = -1f;
+            if (deferredCue == null && encoreUntil < 0f) return false;
+            // rugiendo (el respiro es de los dos) o la tinta todavía apagándose: espera
+            if (Breathing || kage.Busy || !kage.CanStrike) return true;
+            if (deferredCue != null)
+            {
+                var c = deferredCue;
+                deferredCue = null;
+                if (kage.TryStrike(c.move, c.side, TeachMul(c.move))) OnDuetCue(c);
+                else statCueLost++;
+                return true;
+            }
+            encoreUntil = -1f;
+            var side = lastDarkSide == ShadowSide.Opposite ? ShadowSide.Flank : ShadowSide.Opposite;
+            if (!kage.TryStrike(KokuyoMoves.Giri, side, 1f)) return true;
+            statEncore++;
+            OnShadowTurn(KokuyoMoves.Giri, side);
+            // entre combos le saca el lugar a él, como un turno; en pleno combo la regla ya estiró sus golpes
+            float impact = kage.PendingImpactAt;
+            if (BodyFree && impact > 0f) nextAttackTime = Mathf.Max(nextAttackTime, impact + 0.6f);
+            return true;
         }
 
         /// <summary>Cuánto más carga la sombra la primera vez que hace esto (ver TeachLeadMul).</summary>
@@ -190,23 +255,16 @@ namespace Nindo
             float now = Time.time;
             if (Act == 1 && duetTeach != null) duetTeach.weight = nobiTaught ? 0.9f : 0f;
             // hundido en el Paso de Sombra no arranca nada nuevo (lo que ya venía sigue)
-            if (sinking || !BodyFree || kage.Busy || !kage.CanStrike) return;
-            // la segunda salida del eclipse: apenas la tinta volvió a la oscuridad, del otro lado (él la está esperando;
-            // si él vuelve a atacar o cae de rodillas antes, se pierde: OnStepStarted, BecomeExhausted)
-            if (darkEncore)
-            {
-                if (Act < 3 || TryShadowTurn(false)) darkEncore = false;
-                return;
-            }
+            if (sinking || RunQueuedShadow(now) || !BodyFree || kage.Busy || !kage.CanStrike) return;
             if (now < actStart + FirstTurnAfter[Act] || now < lastShadowTurn + TurnMinGap[Act] * ShadowPace) return;
             bool quiet = now >= Mathf.Max(lastShadowTurn, actStart) + MaxQuiet[Act] * ShadowPace;
             if (!shadowTurnAsked && !quiet && !(Act == 1 && !nobiTaught)) return;
-            if (TryShadowTurn(true)) shadowTurnAsked = false;
+            if (TryShadowTurn()) shadowTurnAsked = false;
         }
 
-        /// <summary>El turno de la sombra sola: Nobi (Acto 1); Giri, Nui o Watari (Acto 2); Giri desde la oscuridad (3).
-        /// 'mayEncore': en el eclipse puede quedar pedida la segunda salida (la segunda no pide una tercera).</summary>
-        bool TryShadowTurn(bool mayEncore)
+        /// <summary>El turno de la sombra sola: Nobi (Acto 1); Giri, Nui o Watari (Acto 2); Giri desde la oscuridad (3),
+        /// que a veces deja pedida la segunda salida (EncoreChance).</summary>
+        bool TryShadowTurn()
         {
             string move;
             ShadowSide side = ShadowSide.Any;
@@ -221,6 +279,8 @@ namespace Nindo
                 move = KokuyoMoves.Giri;
                 side = lastDarkSide == ShadowSide.Opposite ? ShadowSide.Flank : ShadowSide.Opposite;
             }
+            // el primer corte desde la oscuridad enseña (carga más y grita el abuelo): ese no tiene segunda salida
+            bool teaching = Act >= 3 && !darkTaught;
             bool ok = kage.TryStrike(move, side, TeachMul(move));
             // si no se pudo (lejos para el Nui, sin lugar para cruzar) corta como él
             if (!ok && move != KokuyoMoves.Giri && Act >= 2) ok = kage.TryStrike(move = KokuyoMoves.Giri, side, 1f);
@@ -230,11 +290,7 @@ namespace Nindo
             // él no le pisa el turno: en el Acto 1 se queda quieto hasta que la sombra vuelve (HoldsBody); en el 2 y el 3
             // vuelve a atacar 0.6 s después del golpe de la sombra (el turno de ella le saca lugar a él, no se suma)
             if (impact > 0f) nextAttackTime = Mathf.Max(nextAttackTime, impact + (Act == 1 ? 0.4f : 0.6f));
-            if (mayEncore && Act >= 3 && impact > 0f && Random.value < EncoreChance)
-            {
-                darkEncore = true;
-                nextAttackTime = Mathf.Max(nextAttackTime, impact + EncoreWait);
-            }
+            if (Act >= 3 && !teaching && impact > 0f && Random.value < EncoreChance) encoreUntil = impact + EncoreWindow;
             return true;
         }
 
@@ -290,19 +346,20 @@ namespace Nindo
             if (sp > 0f) { shadowPendingKind = kage.PendingKind; shadowPendingMove = kage.PendingMove; }
         }
 
-        /// <summary>Informe para probar con el bot: golpes de cada uno en el acto, el par más junto (nunca &lt; 0.9 s) y en
-        /// el eclipse la salida más pegada a un golpe de él (nunca &lt; 0.25 s). Solo en el editor y en las builds de
-        /// desarrollo: en la build final no escribe nada en el log del jugador.</summary>
+        /// <summary>Informe para probar con el bot: golpes de cada uno en el acto, el par más junto (nunca &lt; 0.9 s), en
+        /// el eclipse la salida más pegada a un golpe de él (nunca &lt; 0.25 s) y las segundas salidas, y los golpes de
+        /// dúo que no salieron (tendría que ser ~0). Solo en el editor y en las builds de desarrollo: en la build final no
+        /// escribe nada en el log del jugador.</summary>
         void LogShadowStats(string why)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             var inv = System.Globalization.CultureInfo.InvariantCulture;
-            string dark = Act >= 3 && statEmergeClear < 98f ? $", salida más pegada a un golpe de él {statEmergeClear.ToString("0.00", inv)} s" : "";
+            string dark = Act >= 3 && statEmergeClear < 98f ? $", salida más pegada a un golpe de él {statEmergeClear.ToString("0.00", inv)} s, {statEncore} segundas salidas" : "";
             Debug.Log($"[Nindo] Kokuyō acto {Act} ({why}): {(Time.time - actStart).ToString("0", inv)} s, " +
-                      $"{statBody} golpes de él, {statShadow} de la sombra ({statDuet} en dúos, {statShadowParried} desviados), " +
-                      $"par más junto {statMinGap.ToString("0.00", inv)} s{dark}");
+                      $"{statBody} golpes de él, {statShadow} de la sombra ({statDuet} en dúos, {statShadowParried} desviados, " +
+                      $"{statCueLost} de dúo perdidos), par más junto {statMinGap.ToString("0.00", inv)} s{dark}");
 #endif
-            statBody = statShadow = statShadowParried = statDuet = 0;
+            statBody = statShadow = statShadowParried = statDuet = statEncore = statCueLost = 0;
             statMinGap = statEmergeClear = 99f;
         }
 
@@ -319,8 +376,7 @@ namespace Nindo
             Game.Camera?.Shake(perfect ? 0.3f : 0.2f);
             if (Act >= 3 && fx != null && Game.Player != null)
                 fx.ParryLight(Game.Player.transform.position + (at - Game.Player.transform.position).Flat().normalized * 0.8f, perfect);
-            float need = Act == 1 ? KneelThresholdFirst : KneelThreshold;
-            if (State != EnemyState.Exhausted && BodyFree && Imbalance >= need - 0.01f) BecomeExhausted();
+            if (State != EnemyState.Exhausted && BodyFree && Imbalance >= KneelNeed - 0.01f) BecomeExhausted();
         }
 
         /// <summary>Salió de la oscuridad (eclipse). La primera vez, el abuelo avisa.</summary>
