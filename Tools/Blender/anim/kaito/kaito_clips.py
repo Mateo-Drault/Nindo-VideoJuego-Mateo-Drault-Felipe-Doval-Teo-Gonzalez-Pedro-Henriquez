@@ -402,15 +402,24 @@ _a1_cock = feet(mod(READY, hips=(0.0, 0.08, -0.1), hips_rot=(0.0, 0.0, -20.0), s
                     elbow_r=(-0.6, 0.5, 0.5), hand_l=(0.48, -0.42, 1.32), hand_l_dir=(0.1, -0.9, 0.1), hand_l_up=(0.3, 0.0, 1.0),
                     fingers_l=0.15),
                 r=fr("R", R_FOOT[0], R_FOOT[1], T1[2], R_FOOT[2], 22.0), l=fr("L", L_FOOT[0], L_FOOT[1], T1[2], L_FOOT[2], 30.0))
+# la mano libre se va atrás con el tajo (el contrapeso): un tercio en el barrido y el resto en el impacto. Entera en el
+# impacto daba vuelta 69° en un cuadro que la estela no tapa (la estela es de la katana)
+_A1_ARM_L = dict(hand_l=(0.55, 0.05, 1.25), hand_l_dir=(0.6, 0.6, -0.3), hand_l_up=(0.0, 0.0, 1.0))
+
+
+def _a1_arm_l(u):
+    """La mano libre a la fracción u de su vuelta atrás, de la carga al impacto."""
+    return {k: v for k, v in inter(_a1_cock, mod(_a1_cock, **_A1_ARM_L), u).items() if k in _A1_ARM_L}
+
+
 # (el pie de atrás despega en dos cuadros: subiendo entero en f3 la pierna giraba 77° en un cuadro)
 _a1_sweep = feet(mod(_a1_cock, lift=0.08, hips=(0.0, -0.02, -0.06), hips_rot=(10.0, 0.0, -4.0), spine=(9.0, 0.0, -6.0),
                      head=(-8.0, 0.0, 6.0), grip=(-0.6, -0.36, 1.28), blade=(-0.8, -0.35, 0.48), edge=(-0.37, -0.34, -0.86),
-                     elbow_r=(-0.6, 0.4, -0.3)),
+                     elbow_r=(-0.6, 0.4, -0.3), **_a1_arm_l(0.35)),
                  r=fa(-0.24, -0.42, 0.44, T1[3], -10.0, 6.0), l=fa(0.3, 0.25, 0.3, T1[3], 8.0, 30.0))
 _a1_hit = feet(mod(READY, lift=0.06, hips=(0.0, -0.1, -0.12), hips_rot=(14.0, 0.0, 16.0), spine=(12.0, 0.0, 10.0),
                    head=(-14.0, 0.0, -10.0), clav_r=(0.0, 0.0, 8.0), grip=(-0.11, -0.65, 1.13), blade=(0.08, -1.0, 0.0),
-                   edge=(0.77, 0.03, -0.64), elbow_r=(-0.5, 0.1, -0.9), hand_l=(0.55, 0.05, 1.25), hand_l_dir=(0.6, 0.6, -0.3),
-                   hand_l_up=(0.0, 0.0, 1.0), fingers_l=0.3),
+                   edge=(0.77, 0.03, -0.64), elbow_r=(-0.5, 0.1, -0.9), fingers_l=0.3, **_A1_ARM_L),
                r=fa(-0.24, -0.4, 0.36, T1[4], -12.0, 4.0), l=fa(0.3, 0.3, 0.46, T1[4], 18.0, 30.0))
 _a1_cross = feet(mod(_a1_hit, lift=0.0, hips_rot=(14.0, 0.0, 26.0), spine=(12.0, 0.0, 18.0), head=(-13.0, 0.0, -16.0),
                      grip=(0.08, -0.53, 1.05), blade=(0.75, -0.61, -0.26), edge=(0.4, 0.73, -0.55), elbow_r=(-0.3, -0.1, -0.9)),
@@ -418,18 +427,15 @@ _a1_cross = feet(mod(_a1_hit, lift=0.0, hips_rot=(14.0, 0.0, 26.0), spine=(12.0,
 _a1_over = feet(mod(_a1_cross, hips=(0.02, -0.06, -0.15), hips_rot=(12.0, 0.0, 34.0), spine=(10.0, 0.0, 22.0), head=(-12.0, 0.0, -20.0),
                     grip=(0.29, -0.28, 0.9), blade=(0.94, 0.24, -0.24), edge=(-0.32, 0.85, -0.41), elbow_r=(-0.2, -0.2, -0.9)),
                 r=fr("R", -0.24, -0.2, T1[6], 2.0), l=fr("L", 0.3, 0.3, T1[6], 30.0))
-# El final del Corte 1 (y principio del Corte 2) con la hoja ya a mitad de camino de la carga del revés: la hoja sigue
-# envolviéndolo a su izquierda y hacia atrás, como el follow-through que la lleva (A1_COIL es la carga, _a2_coil). Con la
-# hoja adelante, el Corte 2 se enroscaba entero en su primer cuadro y la mano de la katana daba 127°
-A1_COIL = dict(grip=(0.38, -0.14, 0.88), blade=(0.6, 0.6, -0.5), edge=(-0.07, -0.52, -0.85), elbow_r=(-0.1, 0.2, -0.95))
-_A1_WRAP = inter(dict(grip=(0.2, -0.39, 0.91), blade=(0.76, -0.53, -0.37), edge=(0.29, 0.79, -0.55), elbow_r=(-0.3, 0.0, -0.9)),
-                 A1_COIL, 0.6)
+# El final del Corte 1 (y principio del Corte 2): la hoja termina adelante a su izquierda, baja y afuera de la silueta, y
+# de ahí vuelve a la guardia si no encadena (envuelta hacia la carga del revés quedaba con la punta a 3 cm del piso, escondida
+# detrás de él desde la cámara del juego, y el fundido a la guardia le hacía dar media vuelta, 141°)
 A1_END = feet(mod(READY, hips=(0.0, 0.0, -0.11), hips_rot=(6.0, 0.0, 26.0), spine=(8.0, 0.0, 14.0), head=(-8.0, 0.0, -16.0),
-                  hand_l=(0.5, 0.0, 1.15), hand_l_dir=(0.4, 0.5, -0.7), hand_l_up=(0.3, 0.0, 1.0), fingers_l=0.5, **_A1_WRAP),
+                  grip=(0.2, -0.39, 0.91), blade=(0.76, -0.53, -0.37), edge=(0.29, 0.79, -0.55), elbow_r=(-0.3, 0.0, -0.9),
+                  hand_l=(0.5, 0.0, 1.15), hand_l_dir=(0.4, 0.5, -0.7), hand_l_up=(0.3, 0.0, 1.0), fingers_l=0.5),
               r=flat("R", -0.24, -0.2, 2.0), l=flat("L", 0.3, 0.3, 30.0))
 # a f8 ya está en la pose de empalme (el combo se puede encadenar desde f7: el crossfade de 0.03 s no salta)
-_a1_settle = feet(mod(A1_END, hips=(0.0, 0.0, -0.14), grip=(A1_END["grip"][0] - 0.01, A1_END["grip"][1], A1_END["grip"][2] + 0.03)),
-                  r=fr("R", -0.24, -0.2, T1[8], 2.0),
+_a1_settle = feet(mod(A1_END, hips=(0.0, 0.0, -0.14), grip=(0.19, -0.39, 0.94), blade=(0.78, -0.51, -0.37)), r=fr("R", -0.24, -0.2, T1[8], 2.0),
                   l=fr("L", 0.3, 0.3, T1[8], 30.0))
 add("Attack1", A1_N, [
     # (la carga con curva pareja: con "out" el 88 % entraba en el primer cuadro y la mano giraba 75°)
@@ -441,44 +447,64 @@ add("Attack1", A1_N, [
     notes="tajo de derecha a izquierda con salto corto (en el aire mientras avanza); el pie derecho apoya al terminar el avance")
 
 # =========================================================================== corte 2 (revés ascendente)
-# desde A1_END: la muñeca se enrosca atrás a su izquierda (los dos talones arriba: empuja), salta y la hoja sube
-# cruzando por delante (impacto) hasta arriba a su derecha; el pie izquierdo (el de atrás) pasa adelante en el
-# aire y apoya al terminar el avance (f4), el derecho tres cuadros después
+# desde A1_END: la muñeca se enrosca atrás a su izquierda en dos cuadros (los dos talones arriba: empuja; en f2 ya salta
+# con la cadera que empieza a desenroscarse y la hoja todavía atrás), la hoja sube cruzando por delante en un cuadro, debajo
+# de la estela (impacto), hasta arriba a su derecha; el pie izquierdo (el de atrás) pasa adelante en el aire y apoya al
+# terminar el avance (f4), el derecho tres cuadros después. La carga es corta (un 60 % de A2_COIL_ARM, la de antes) y la
+# hoja se enrosca con el filo casi como lo dejó el Corte 1: se da vuelta en el tajo, debajo de la estela (empieza en f2.1).
+# Con la carga entera y el filo dado vuelta en f1 la mano de la katana daba 131° en un cuadro que la estela no tapa, y con
+# la carga entera en f2 la muñeca quedaba 40° pasada
 A2_N = 11
 A2_TR = lunge_travel(A2_N, 1, 4, 1.0)
 T2 = A2_TR
-_a2_coil = feet(mod(A1_END, hips=(0.0, 0.0, -0.14), hips_rot=(8.0, 0.0, 32.0), spine=(10.0, 0.0, 22.0), head=(-8.0, 0.0, -22.0),
-                    **A1_COIL),
+A2_COIL_ARM = dict(grip=(0.38, -0.14, 0.88), blade=(0.6, 0.6, -0.5), edge=(-0.780, 0.343, -0.524), elbow_r=(-0.1, 0.2, -0.95))
+_a2_coil = feet(mod(A1_END, hips=(0.0, 0.0, -0.14), hips_rot=(8.0, 0.0, 29.0), spine=(10.0, 0.0, 18.0), head=(-8.0, 0.0, -22.0),
+                    **{k: v for k, v in inter(A1_END, mod(A1_END, **A2_COIL_ARM), 0.3).items() if k in A2_COIL_ARM}),
                 r=fr("R", -0.24, -0.2, T2[1], 2.0, 24.0), l=fr("L", 0.3, 0.3, T2[1], 30.0, 34.0))
 # (los pies se cruzan en el aire en dos cuadros, f2-f4: cruzándolos en el primero la pierna derecha giraba 98° en un cuadro)
-_a2_low = feet(mod(_a2_coil, lift=0.06, hips=(0.0, -0.06, -0.14), hips_rot=(10.0, 0.0, 18.0), spine=(11.0, 0.0, 10.0),
-                   head=(-11.0, 0.0, -8.0), grip=(0.2, -0.56, 0.95), blade=(0.65, -0.74, -0.19), edge=(0.47, 0.57, -0.67)),
+_a2_low = feet(mod(_a2_coil, lift=0.06, hips=(0.0, -0.06, -0.14), hips_rot=(10.0, 0.0, 24.0), spine=(11.0, 0.0, 15.0),
+                   head=(-11.0, 0.0, -8.0), hand_l=(0.58, -0.15, 1.2),
+                   **{k: v for k, v in inter(A1_END, mod(A1_END, **A2_COIL_ARM), 0.6).items() if k in A2_COIL_ARM}),
                r=fa(-0.25, -0.08, 0.36, T2[2], 4.0, 2.0), l=fa(0.25, 0.06, 0.38, T2[2], 6.0, 20.0))
 _a2_hit = feet(mod(READY, lift=0.05, hips=(0.0, -0.1, -0.12), hips_rot=(10.0, 0.0, -4.0), spine=(10.0, 4.0, -8.0),
                    head=(-12.0, -4.0, 6.0), clav_r=(0.0, 6.0, 0.0), grip=(-0.28, -0.71, 1.28), blade=(0.38, -0.88, 0.27),
-                   edge=(-0.8, -0.46, -0.39), elbow_r=(-0.5, 0.3, -0.8), hand_l=(0.5, 0.15, 1.15), hand_l_dir=(0.5, 0.5, -0.7),
+                   edge=(-0.8, -0.46, -0.39), elbow_r=(-0.5, 0.3, -0.8), hand_l=(0.55, -0.25, 1.18), hand_l_dir=(0.5, 0.5, -0.7),
                    hand_l_up=(0.2, 0.0, 1.0), fingers_l=0.4),
                r=fa(-0.28, 0.18, 0.42, T2[3], 16.0, 0.0), l=fa(0.22, -0.18, 0.36, T2[3], -8.0, 12.0))
+A2_END = feet(mod(READY, hips=(0.0, 0.04, -0.09), hips_rot=(2.0, 0.0, -22.0), spine=(2.0, 4.0, -20.0), head=(-6.0, -4.0, 18.0),
+                  clav_r=(0.0, 10.0, 0.0), grip=(-0.42, -0.03, 1.69), blade=(-0.06, 0.56, 0.83), edge=(-0.13, -0.82, 0.56),
+                  elbow_r=(-0.7, 0.4, 0.3), hand_l=(0.2, -0.55, 1.42), hand_l_dir=(-0.4, -0.5, 0.6), hand_l_up=(0.5, -0.5, 0.5),
+                  fingers_l=0.35),
+              r=flat("R", -0.3, 0.18, 0.0), l=flat("L", 0.22, -0.3, 10.0))
+# el brazo libre, abierto a su izquierda por el tajo, vuelve parejo por el costado a adelante del pecho (A2_END: la mano que va
+# a tomar la empuñadura en el Corte final) de f3 a f7, floja mientras viaja (sigue al antebrazo) y siempre a más de medio
+# brazo del hombro. En dos cuadros (f5-f7) la mano daba vuelta 144° y el brazo iba de la cadera a la horizontal y se plegaba
+# entero contra el hombro (la mano a 6 cm); la estela tapa la katana, no esta mano
+_A2_ARM_L = ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l")
+_A2_BACK = {ch: "lin" for ch in _A2_ARM_L + ("hand_l_relax",)}
+
+
+def _a2_arm(u, hand, relax):
+    """El brazo izquierdo a la fracción u de su vuelta del tajo (f3) a adelante del pecho (A2_END), la muñeca en 'hand' y la
+    mano floja 'relax'."""
+    return dict({k: v for k, v in inter(_a2_hit, A2_END, u).items() if k in _A2_ARM_L}, hand_l=hand, hand_l_relax=relax)
+
+
 _a2_rise = feet(mod(_a2_hit, lift=0.0, hips_rot=(8.0, 0.0, -16.0), spine=(7.0, 5.0, -16.0), head=(-11.0, -5.0, 14.0),
                     clav_r=(0.0, 12.0, 0.0), grip=(-0.49, -0.53, 1.54), blade=(-0.31, -0.6, 0.73), edge=(-0.29, -0.67, -0.68),
-                    elbow_r=(-0.6, 0.3, -0.2)),
+                    elbow_r=(-0.6, 0.3, -0.2), **_a2_arm(0.25, (0.55, -0.42, 1.25), 0.6)),
                 r=fa(-0.3, 0.14, 0.37, T2[4], 12.0, 0.0), l=fr("L", 0.22, -0.3, T2[4], 10.0))
 _a2_over = feet(mod(_a2_rise, hips=(0.0, -0.06, -0.1), hips_rot=(6.0, 0.0, -26.0), spine=(4.0, 6.0, -24.0), head=(-10.0, -6.0, 20.0),
                     clav_r=(0.0, 14.0, 0.0), grip=(-0.46, -0.2, 1.72), blade=(-0.21, 0.35, 0.91), edge=(-0.19, -0.93, 0.32),
-                    elbow_r=(-0.7, 0.4, 0.2)),
+                    elbow_r=(-0.7, 0.4, 0.2), **_a2_arm(0.5, (0.5, -0.55, 1.32), 1.0)),
                 r=fa(-0.3, 0.17, 0.33, T2[5], 2.0, 0.0), l=fr("L", 0.22, -0.3, T2[5], 10.0))
-A2_END = feet(mod(READY, hips=(0.0, 0.04, -0.09), hips_rot=(2.0, 0.0, -22.0), spine=(2.0, 4.0, -20.0), head=(-6.0, -4.0, 18.0),
-                  clav_r=(0.0, 10.0, 0.0), grip=(-0.42, -0.03, 1.69), blade=(-0.06, 0.56, 0.83), edge=(-0.13, -0.82, 0.56),
-                  elbow_r=(-0.7, 0.4, 0.3), hand_l=(0.25, -0.3, 1.45), hand_l_dir=(-0.4, -0.5, 0.6), hand_l_up=(0.5, -0.5, 0.5),
-                  fingers_l=0.35),
-              r=flat("R", -0.3, 0.18, 0.0), l=flat("L", 0.22, -0.3, 10.0))
 add("Attack2", A2_N, [
-    (0, A1_END, "sine"), (1, _a2_coil, "out"), (2, _a2_low, "in2"), (3, _a2_hit, "lin"), (4, _a2_rise, "out2"),
-    (5, _a2_over, "out"), (7, feet(mod(A2_END, hips=(0.0, 0.03, -0.12)), r=fr("R", -0.3, 0.18, T2[7], 0.0),
-                                   l=fr("L", 0.22, -0.3, T2[7], 10.0)), "sine"),
+    (0, A1_END, "sine"), (1, _a2_coil, "out"), (2, _a2_low, "in2"), (3, _a2_hit, "lin"), (4, _a2_rise, "out2", _A2_BACK),
+    (5, _a2_over, "out", _A2_BACK), (7, feet(mod(A2_END, hips=(0.0, 0.03, -0.12), hand_l_relax=0.0), r=fr("R", -0.3, 0.18, T2[7], 0.0),
+                                                l=fr("L", 0.22, -0.3, T2[7], 10.0)), "sine", _A2_BACK),
     (11, at_travel(A2_END, T2[11]), "sine")],
     travel=A2_TR,
-    timing={"apex": 1, "contact": 3, "active": [3, 6], "combo": 6, "lunge": [1, 4, 1.0], "chain_from": "A1_END", "chain_to": "A2_END"},
+    timing={"apex": 2, "contact": 3, "active": [3, 6], "combo": 6, "lunge": [1, 4, 1.0], "chain_from": "A1_END", "chain_to": "A2_END"},
     events=[{"frame": 3, "fn": "Strike"}, {"frame": 4, "fn": "FootL"}, {"frame": 7, "fn": "FootR"}],
     notes="revés ascendente con un salto; el pie izquierdo pasa adelante en el aire y apoya al terminar el avance")
 
@@ -493,7 +519,10 @@ A3_TR = lunge_travel(A3_N, 3, 7, 1.6)
 T3 = A3_TR
 _a3_raise = feet(mod(A2_END, hips=(0.0, 0.1, -0.22), hips_rot=(-4.0, 0.0, -26.0), spine=(-8.0, 4.0, -18.0), head=(-2.0, -4.0, 20.0),
                      clav_r=(0.0, 14.0, 0.0), clav_l=(0.0, -10.0, 0.0), grip=(-0.34, -0.18, 1.86), blade=(-0.95, -0.25, -0.17),
-                     edge=(-0.03, -0.46, 0.88), elbow_r=(-0.8, 0.2, 0.4), grip_l=1.0, elbow_l=(0.8, 0.2, 0.2), fingers_l=1.0),
+                     edge=(-0.03, -0.46, 0.88), elbow_r=(-0.8, 0.2, 0.4), grip_l=1.0, elbow_l=(0.8, 0.2, 0.2), fingers_l=1.0,
+                     # (la mano izquierda suelta, donde va a quedar en la empuñadura: mientras la toma de a poco, f3-f5, la
+                     # mezcla no la hace volver adelante del pecho)
+                     hand_l=(-0.04, -0.1, 1.88), hand_l_dir=(-0.434, -0.399, 0.808), hand_l_up=(-0.163, 0.917, 0.365)),
                  r=fr("R", -0.3, 0.18, T3[3], 0.0, 26.0), l=fr("L", 0.22, -0.3, T3[3], 10.0, 26.0))
 # (los pies cambian de lado en el aire en cuatro cuadros, f3-f7: recogidos y cruzados ya en f5 la pierna izquierda giraba
 # 127° en el despegue)
@@ -508,12 +537,14 @@ _a3_hit = feet(mod(READY, lift=0.0, hips=(0.0, -0.12, -0.15), hips_rot=(18.0, 0.
                    edge=(0.85, -0.26, 0.45), elbow_r=(-0.8, 0.3, -0.3), grip_l=0.2, elbow_l=(0.6, 0.3, -0.7), fingers_l=1.0,
                    hand_l=(0.5, -0.12, 1.3), hand_l_dir=(0.6, 0.3, -0.4), hand_l_up=(0.0, 0.3, 1.0)),
                r=fr("R", -0.27, -0.42, T3[7], 4.0), l=fr("L", 0.3, 0.38, T3[7], 26.0, 34.0))
+# la mano izquierda suelta la empuñadura en el impacto y se abre a su izquierda: a medio camino al caer (f8) y del todo en la
+# pose quieta (f11, menos de 20° por cuadro). Abierta entera en f8 el brazo daba 70-77° en el cuadro que sigue al tajo
 A3_LOW = feet(mod(_a3_hit, hips=(0.0, -0.16, -0.27), hips_rot=(22.0, 0.0, 18.0), spine=(22.0, 0.0, 10.0), head=(-26.0, 0.0, -10.0),
                   grip=(0.2, -0.49, 0.5), blade=(0.98, 0.07, 0.19), edge=(0.17, 0.22, -0.96), grip_l=0.0, fingers_l=0.3,
-                  hand_l=(0.62, 0.12, 1.22), hand_l_dir=(0.75, 0.4, -0.3), hand_l_up=(0.0, 0.2, 1.0), elbow_l=(0.6, 0.6, -0.4)),
+                  hand_l=(0.38, -0.05, 1.38), hand_l_dir=(0.64, 0.75, 0.17), hand_l_up=(-0.47, 0.16, 0.87), elbow_l=(0.6, 0.6, -0.4)),
               r=fr("R", -0.27, -0.42, T3[8], 4.0), l=fr("L", 0.3, 0.38, T3[8], 26.0, 34.0))
 _a3_hold = feet(mod(A3_LOW, hips=(0.0, -0.17, -0.29), grip=(0.21, -0.48, 0.51), blade=(0.98, 0.06, 0.17), head=(-27.0, 0.0, -10.0),
-                    hand_l=(0.6, 0.12, 1.18)),
+                    hand_l=(0.6, 0.12, 1.18), hand_l_dir=(0.75, 0.4, -0.3), hand_l_up=(0.0, 0.2, 1.0)),
                 r=fr("R", -0.27, -0.42, T3[11], 4.0), l=fr("L", 0.3, 0.38, T3[11], 26.0, 34.0))
 # (el brazo izquierdo, abierto por el tajo, vuelve último: entero ya en f15 el codo daba vuelta 75° en un cuadro)
 _a3_rec = feet(mod(READY, hips=(0.0, 0.0, -0.14), grip_l=0.0, fingers_l=0.8,
@@ -521,32 +552,44 @@ _a3_rec = feet(mod(READY, hips=(0.0, 0.0, -0.14), grip_l=0.0, fingers_l=0.8,
                r=fa(-0.24, -0.3, 0.3, T3[15], 0.0, 6.0), l=fr("L", 0.3, 0.38, T3[15], 30.0))
 # la mano izquierda gira libre hacia el agarre (el dorso pasa de adelante a atrás) ANTES de tomar la empuñadura: girando
 # a mitad de camino con el agarre a medias la muñeca se quebraba 30° y el antebrazo daba media vuelta
-# ...y la hoja pasa vertical (de la espalda a su derecha): ahí el antebrazo puede pronar los 120° que separan el final
-# del revés (supinado) de la carga a dos manos sin que la hoja cambie de dibujo; en línea recta la muñeca saltaba de
-# un tope al otro en el primer cuadro del Corte final
-_a3_reach = feet(mod(inter(A2_END, _a3_raise, 0.6), grip_l=0.0, hand_l=(0.02, -0.08, 1.62), hand_l_dir=(-0.4, -0.1, 0.9),
-                     hand_l_up=(0.4, 0.9, 0.15), fingers_l=0.6, grip=(-0.42, -0.1, 1.78), blade=(0.0, 0.02, 1.0),
-                     edge=(-0.96, 0.29, 0.0), elbow_r=(-0.7, 0.4, -0.3)),
+# ...y la hoja pasa vertical junto a la cabeza, el puño a la altura de la sien y el filo adelante y a su derecha (un hasso
+# alto): de ahí se acuesta afuera a su derecha con el filo arriba. Con el filo a su derecha en la vertical la mano tenía que
+# darse vuelta 177° en el despegue, y con el filo adelante el camino pasaba el codo por el otro lado del brazo
+_a3_reach = feet(mod(inter(A2_END, _a3_raise, 0.6), grip_l=0.0, hand_l=(0.06, -0.25, 1.62), hand_l_dir=(-0.43, -0.46, 0.77),
+                     hand_l_up=(0.38, 0.31, 0.87), fingers_l=0.6, grip=(-0.42, -0.1, 1.7), blade=(0.0, 0.02, 1.0),
+                     edge=(-0.643, -0.766, 0.0), elbow_r=(-0.7, 0.4, -0.3)),
                  r=fr("R", -0.3, 0.18, T3[2], 0.0, 17.0), l=fr("L", 0.22, -0.3, T3[2], 10.0, 17.0))
-# El despegue (f3-f4: el juego lo lanza 1.6 m entre f3 y f7) es donde la hoja termina de acostarse afuera a dos manos,
-# ya en el aire (timing 'burst': como el despegue del Corte del Viento, sin topes ni chequeo de tirones en ese cuadro). En
-# f3 todavía está a un 30 % y la izquierda llegando. Antes se acostaba en f2-f3, con los pies en el piso, y la mano de la
-# katana daba 166-178° de una vez; repartida en los cuadros de antes del despegue, la muñeca izquierda de la empuñadura
-# quedaba 30-57° fuera de lo cómodo. PENDIENTE: en el despegue la mano de la katana sigue girando ~170° en un cuadro (el
-# sidecar lo lista en snaps_waived); arreglarlo de verdad pide otra carga (la hoja arriba atrás, jodan, en lugar de acostada
-# a su derecha) o un cuadro más antes del impacto (cambia los tiempos del ataque en PlayerConfig)
-_a3_mid = feet(mod(inter(_a3_reach, _a3_raise, 0.3), grip_l=0.3, fingers_l=0.8),
+# El despegue (f0-f5: el juego lo lanza 1.6 m entre f3 y f7) pasa de A2_END, la mano supinada por el revés, a la pose a dos
+# manos con la hoja acostada a su derecha, la mano pronada: la mano de la katana se da vuelta ~140°. Va parejo en cinco
+# cuadros (la hoja, el filo, el puño y el codo en línea recta de la vertical en f2 a f5; tramo 'swing', ver kaito_rig.step_caps)
+# mientras la izquierda llega a la empuñadura de a poco (un 20 % en f3, un 60 % en f4, entera en f5). Antes el camino se
+# quedaba supinado hasta el despegue y se daba vuelta de un cuadro al otro (la mano 171°, sin estela: empieza en f5.4)
+_A3_ARM = ("grip", "blade", "edge", "elbow_r")
+_A3_LIFT = {ch: "lin" for ch in _A3_ARM}
+
+
+def _a3_takeoff(u):
+    """La katana a la fracción u del despegue (de _a3_reach en f2 a _a3_air en f5)."""
+    return {k: v for k, v in inter(_a3_reach, _a3_air, u).items() if k in _A3_ARM}
+
+
+_a3_mid = feet(mod(inter(_a3_reach, _a3_raise, 0.3), grip_l=0.2, fingers_l=0.8, **_a3_takeoff(0.4)),
                r=fr("R", -0.3, 0.18, T3[3], 0.0, 26.0), l=fr("L", 0.22, -0.3, T3[3], 10.0, 26.0))
-_a3_raise4 = feet(mod(_a3_raise, lift=0.16), r=fa(-0.3, 0.12, 0.42, T3[4], 0.0, 0.0), l=fa(0.23, -0.14, 0.46, T3[4], 12.0, 12.0))
+_a3_raise4 = feet(mod(_a3_raise, lift=0.16, grip_l=0.6, **_a3_takeoff(0.6)),
+                  # (el pie izquierdo, el que empuja, se va arrastrando atrás y abajo y recién se recoge en f5: recogido ya en
+                  # f4 la tibia giraba 78° en el despegue)
+                  r=fa(-0.3, 0.12, 0.42, T3[4], 0.0, 0.0), l=lifted("L", 0.23, -0.24 - T3[4], 0.05, 24.0, 12.0))
 add("Attack3", A3_N, [
-    (0, A2_END, "sine"), (2, _a3_reach, "out"), (3, _a3_mid, "inout"), (4, _a3_raise4, "out"), (5, _a3_air, "inout"), (6, _a3_over, "in2"), (7, _a3_hit, "lin"),
+    # (de A2_END a la carga parejo: con "out" el 87 % entraba en f1 y los dos codos se estiraban 70° de golpe)
+    (0, A2_END, "sine"), (2, _a3_reach, "sine"), (3, _a3_mid, "inout", _A3_LIFT), (4, _a3_raise4, "out", _A3_LIFT),
+    (5, _a3_air, "inout", _A3_LIFT), (6, _a3_over, "in2"), (7, _a3_hit, "lin"),
     (8, A3_LOW, "out"), (11, _a3_hold, "lin"), (15, _a3_rec, "sine"),
     (17, feet(mod(READY, hips=(0.0, 0.01, -0.09)), r=fr("R", R_FOOT[0], R_FOOT[1], T3[17], R_FOOT[2]), l=fa(L_FOOT[0], L_FOOT[1], 0.4, T3[17], 8.0, L_FOOT[2])),
      "sine"),
     (20, feet(READY, r=fr("R", R_FOOT[0], R_FOOT[1], T3[20], R_FOOT[2]), l=fr("L", L_FOOT[0], L_FOOT[1], T3[20], L_FOOT[2])), "sine")],
     travel=A3_TR,
     timing={"apex": 3, "contact": 7, "active": [7, 10], "hold": [8, 11], "lunge": [3, 7, 1.6], "chain_from": "A2_END",
-            "chain_to": "READY", "burst": [4]},
+            "chain_to": "READY", "swing": [[0, 6]]},
     events=[{"frame": 7, "fn": "Strike"}, {"frame": 7, "fn": "Land"}],
     notes="salto con las dos manos, la hoja pasa por arriba y cruza en diagonal; cae con la hoja baja y queda quieto 3 cuadros")
 
@@ -562,15 +605,21 @@ add("Attack3", A3_N, [
 # la huella de la guardia, el talón derecho adelante con la punta arriba y la punta izquierda atrás: lo que
 # todavía frena el juego se lee como un frenazo. Termina en la guardia (Dash -> Locomotion y Dash -> Corte 1 no
 # saltan: antes terminaba de costado con los pies cambiados)
-# los brazos van en el espacio del pecho (arm_space): con el cuerpo inclinado quedan atrás y arriba como alas
+# los brazos quedan atrás y abajo como alas con el cuerpo inclinado. Van en el espacio del transform, escritos como quedaban
+# en el del pecho (arm_space 1, pasados con Solver.body): de la carga del Corte del Viento (y a la caída del Dash), que van en
+# el del transform, la mezcla de los dos espacios ponía las manos en un punto que no era ninguno y los brazos daban vuelta
+# 110-170° en un cuadro. El izquierdo va al costado y un poco atrás (no del todo atrás): de ahí vuelve a la guardia en los
+# cinco cuadros de la caída sin pasar 40° por cuadro autorado (el juego lo toca a x1.4); bien atrás daba 94° por cuadro
+_DASH_ARMS = dict(grip=(-0.5, -0.283, 0.695), blade=(-0.505, -0.525, -0.685), edge=(0.201, 0.239, -0.95), elbow_r=(-0.667, 0.389, 0.636),
+                  hand_l=(0.44, -0.107, 0.923), hand_l_dir=(0.202, 0.898, -0.39), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.667, 0.389, 0.636))
 _dash = feet(mod(READY, hips=(0.0, -0.04, -0.2), hips_rot=(24.0, 0.0, 0.0), spine=(8.0, 0.0, 0.0), head=(-22.0, 0.0, 0.0),
-                 arm_space=1.0, grip=(-0.5, -0.15, 1.0), blade=(-0.5, -0.8, -0.3), edge=(0.2, -0.3, -0.93), elbow_r=(-0.6, 0.6, 0.3),
-                 hand_l=(0.42, 0.3, 1.12), hand_l_dir=(0.15, 0.9, -0.3), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.6, 0.6, 0.3),
-                 fingers_l=0.1, knee_r=(-0.1, -1.0, 0.2), hand_l_relax=1.0),
+                 fingers_l=0.1, knee_r=(-0.1, -1.0, 0.2), hand_l_relax=1.0, **_DASH_ARMS),
              r=air(-0.2, -0.26, 0.44, -6.0, -4.0), l=air(0.22, 0.44, 0.52, 34.0, 8.0))
-_dash_launch = feet(mod(_dash, hips=(0.0, -0.02, -0.18), hips_rot=(16.0, 0.0, 0.0)),
+_dash_launch = feet(mod(_dash, hips=(0.0, -0.02, -0.18), hips_rot=(16.0, 0.0, 0.0), grip=(-0.5, -0.237, 0.747), blade=(-0.505, -0.615, -0.606),
+                        edge=(0.201, 0.104, -0.974), elbow_r=(-0.667, 0.473, 0.576), hand_l=(0.44, -0.031, 0.948),
+                        hand_l_dir=(0.202, 0.835, -0.512), elbow_l=(0.667, 0.473, 0.576)),
                     r=air(-0.2, -0.18, 0.38, -4.0, -4.0), l=air(0.22, 0.34, 0.46, 30.0, 8.0))
-_dash_b = feet(mod(_dash, hips=(0.0, -0.04, -0.18), grip=(-0.51, -0.14, 1.02), hand_l=(0.43, 0.32, 1.14), head=(-21.0, 0.0, 0.0)),
+_dash_b = feet(mod(_dash, hips=(0.0, -0.04, -0.18), grip=(-0.51, -0.285, 0.737), hand_l=(0.45, -0.101, 0.97), head=(-21.0, 0.0, 0.0)),
                r=air(-0.2, -0.28, 0.46, -8.0, -4.0), l=air(0.22, 0.46, 0.54, 36.0, 8.0))
 # la caída es la guardia frenando (cadera apenas atrás, talón derecho adelante con la punta arriba) con los brazos
 # y la hoja YA en la guardia: un corte buffereado arranca desde acá con 0.1 s de fundido. Con el tronco más echado
@@ -583,20 +632,24 @@ _dash_land = feet(mod(READY, hips=(0.0, 0.03, -0.085), hips_rot=(2.5, 0.0, 14.0)
 DASH_END = feet(mod(READY, hips=(0.0, 0.04, -0.1)), r=flat("R", *R_FOOT), l=flat("L", *L_FOOT))
 # al caer (f11) la mano izquierda y la cabeza ya están en la guardia, sin atraso: con el atraso de LEAD todavía
 # venían de las "alas" y un corte buffereado (TickDash: Attack1 con 0.05 s de fundido desde f11) los hacía saltar
-# (f9-f10: del vuelo a la caída en tres tiempos, con los pies todavía en el aire bajando a sus huellas: de la flecha a la
-# guardia en un cuadro los brazos y las piernas daban vuelta 65-104°)
-_dash_pre = feet(inter(_dash, _dash_land, 0.3), r=lifted("R", R_FOOT[0], R_FOOT[1] - 0.06, 0.12, -4.0, R_FOOT[2]),
+# (f6-f11: del vuelo a la caída en cinco tiempos parejos, con los pies todavía en el aire bajando a sus huellas: de la
+# flecha a la guardia en un cuadro los brazos y las piernas daban vuelta 65-104°, en tres el brazo izquierdo 80-94° por
+# cuadro del juego)
+_dash_pre00 = feet(inter(_dash, _dash_land, 0.12), r=air(-0.2, -0.26, 0.42, -6.0, -4.0), l=air(0.22, 0.4, 0.48, 32.0, 8.0))
+_dash_pre0 = feet(inter(_dash, _dash_land, 0.3), r=lifted("R", R_FOOT[0], R_FOOT[1] - 0.12, 0.18, -5.0, R_FOOT[2]),
+                  l=lifted("L", L_FOOT[0], L_FOOT[1] + 0.22, 0.2, 26.0, L_FOOT[2]))
+_dash_pre = feet(inter(_dash, _dash_land, 0.52), r=lifted("R", R_FOOT[0], R_FOOT[1] - 0.06, 0.12, -4.0, R_FOOT[2]),
                  l=lifted("L", L_FOOT[0], L_FOOT[1] + 0.12, 0.14, 20.0, L_FOOT[2]))
-_dash_pre2 = feet(inter(_dash, _dash_land, 0.65), r=lifted("R", R_FOOT[0], R_FOOT[1], 0.06, -3.0, R_FOOT[2]),
+_dash_pre2 = feet(inter(_dash, _dash_land, 0.76), r=lifted("R", R_FOOT[0], R_FOOT[1], 0.06, -3.0, R_FOOT[2]),
                   l=lifted("L", L_FOOT[0], L_FOOT[1] + 0.04, 0.07, 10.0, L_FOOT[2]))
-add("Dash", 14, [(0, _dash_launch, "lin"), (2, _dash, "out"), (6, _dash_b, "sine"), (8, _dash, "sine"), (9, _dash_pre, "inout"), (10, _dash_pre2, "lin"),
-                 (11, _dash_land, "in2"), (14, DASH_END, "sine")], lag=mod(LEAD, hand_l=0.0, head=0.0),
+add("Dash", 14, [(0, _dash_launch, "lin"), (2, _dash, "out"), (4, _dash_b, "sine"), (6, _dash, "sine"), (7, _dash_pre00, "sine"), (8, _dash_pre0, "lin"), (9, _dash_pre, "lin"), (10, _dash_pre2, "lin"),
+                 (11, _dash_land, "lin"), (14, DASH_END, "sine")], lag=mod(LEAD, hand_l=0.0, head=0.0),
     timing={"travel_frames": [0, 11], "airborne": [0, 10], "play_speed": 1.4},
     notes="se toca a 1.4x: f0-f10 en el aire mientras viaja (0.26 s), cae en f11 en la guardia y frena (el juego lo desliza 0.6 m)")
 
 # =========================================================================== parry
 # GUARDIA: la hoja cruzada adelante a la altura del mentón, la punta a su izquierda y el filo hacia afuera, la
-# palma izquierda apoyada en el lomo: desde arriba es una barra que cruza adelante de la cabeza. Sale en 3
+# palma izquierda apoyada en el lomo: desde arriba es una barra que cruza adelante de la cabeza. Sale en 2
 # cuadros (la ventana del parry ya corre) y espera temblando; si no llegó nada, en 0.28 s vuelve a la guardia
 GUARD = feet(mod(READY, hips=(0.0, 0.04, -0.13), hips_rot=(6.0, 0.0, 10.0), spine=(6.0, 0.0, -10.0), head=(-8.0, 0.0, 0.0),
                  clav_r=(0.0, 6.0, 0.0), grip=(-0.32, -0.32, 1.42), blade=(0.92, -0.2, 0.34), edge=(0.0, -0.95, 0.3),
@@ -604,16 +657,18 @@ GUARD = feet(mod(READY, hips=(0.0, 0.04, -0.13), hips_rot=(6.0, 0.0, 10.0), spin
                  elbow_l=(0.8, 0.3, -0.5), fingers_l=0.0),
              r=flat("R", *R_FOOT), l=flat("L", *L_FOOT))
 _guard_hold = mod(GUARD, hips=(0.0, 0.05, -0.15), tremble=1.0, grip=(-0.32, -0.33, 1.41), head=(-9.0, 0.0, 0.0))
-# (la hoja sube parejo en 3 cuadros y el cuerpo se cierra en el primero: con la guardia entera en f1 la mano de la katana
-# daba 125° en un cuadro; la ventana del parry la corre el código desde que se aprieta, no el clip)
-_GUARD_ARMS = {ch: "lin" for ch in ("grip", "blade", "edge", "elbow_r", "clav_r", "hand_l", "hand_l_dir", "hand_l_up", "elbow_l")}
-add("ParryStance", 16, [(0, READY, "lin"), (3, GUARD, "out", _GUARD_ARMS), (5, mod(_guard_hold, tremble=0.4), "sine"),
+# La guardia sube de un golpe: el 85 % en el primer cuadro (33 ms) y se asienta en el segundo. El parry perfecto dura 0.11 s
+# y el desvío (ParrySuccessR/L, PerfectParry) arranca de la guardia con 0.02 s de fundido: repartida en 3 cuadros, en f1 la
+# hoja todavía iba baja y horizontal (se leía como un tajo, no como una guardia) y un desvío temprano la levantaba 90° de
+# golpe. Ese primer cuadro es un tirón a propósito ('snap_ok', como el cuadro del golpe recibido)
+_guard_up = feet(inter(READY, GUARD, 0.85), r=flat("R", *R_FOOT), l=flat("L", *L_FOOT))
+add("ParryStance", 16, [(0, READY, "lin"), (1, _guard_up, "out"), (2, GUARD, "sine"), (5, mod(_guard_hold, tremble=0.4), "sine"),
                         (9, _guard_hold, "sine"), (16, READY, "sine")],
-    # (sin atrasos: con la hoja subiendo pareja, en f3 la palma todavía no llegaba al lomo y la cadera adelantada ya iba
-    # hacia la espera, y el desvío que arranca ahí los hacía saltar 3-10°)
+    # (sin atrasos: la palma tiene que llegar al lomo con la hoja y el desvío que arranca en la guardia no salta)
     lag={},
-    timing={"guard": 3, "hold": [3, 9], "recover": [9, 16]},
-    notes="guardia en 3 cuadros, espera que tiembla hasta 0.3 s (ventana 0.24 s), vuelve a la guardia (ParryRecover 0.28 s)")
+    timing={"guard": 2, "hold": [2, 9], "recover": [9, 16], "snap_ok": [[0, 1]]},
+    notes="guardia en 2 cuadros (el 85 % en el primero), espera que tiembla hasta 0.3 s (ventana 0.24 s), vuelve a la "
+          "guardia (ParryRecover 0.28 s)")
 
 # contraataque listo: EXACTAMENTE la carga del Corte 1 (su f2, RIPOSTE_FRAME): la hoja atrás de su hombro derecho y
 # los talones arriba. El contraataque (TickParrySuccess) arranca el Corte 1 en ese cuadro: sale del desvío sin
@@ -627,7 +682,12 @@ _defl_r2 = mod(_defl_r, hips=(0.0, 0.11, -0.13), grip=(-0.46, -0.41, 1.48), blad
 # Los desvíos llegan a la carga en 'counter_ready' (f5; el perfecto en f8) y ahí respiran: la réplica pedida sale desde
 # ese cuadro (PlayerController.RiposteReady acelera el desvío hasta ahí) y tiene que pegar con el desviado todavía aturdido
 # (Enemy.parriedRecoil 0.32 s). Con la carga en f7 / f13 la réplica llegaba cuando el enemigo ya se recuperaba
-add("ParrySuccessR", 12, [(0, GUARD, "lin"), (1, _defl_r, "snap"), (2, _defl_r2, "lin"), (5, COUNTER, "sine"),
+# (de la hoja abierta arriba a su derecha a la carga, un tercio en f3 con la cabeza y la mano libre a mitad de camino, como
+# en el desvío a la izquierda: en un solo tramo el codo se doblaba 63° en el cuadro del medio)
+_defl_r3 = feet(mod(inter(_defl_r2, COUNTER, 0.3),
+                    **{k: v for k, v in inter(_defl_r2, COUNTER, 0.5).items() if k in ("head", "hand_l", "hand_l_dir", "hand_l_up", "elbow_l")}),
+                r=toe("R", *R_FOOT, 7.0), l=toe("L", *L_FOOT, 9.0))
+add("ParrySuccessR", 12, [(0, GUARD, "lin"), (1, _defl_r, "snap"), (2, _defl_r2, "lin"), (3, _defl_r3, "inout"), (5, COUNTER, "sine"),
                           (9, mod(COUNTER, hips=(0.0, 0.1, -0.14)), "sine"), (12, COUNTER, "sine")],
     timing={"impact": 1, "hold": [1, 2], "counter_ready": 5, "chain_to": "COUNTER"},
     notes="desvía hacia su derecha: la hoja se abre afuera y arriba, la palma empuja; un cuadro quieto y en f5 queda cargado")
@@ -693,11 +753,14 @@ _knock_air = feet(mod(_knock, hips=(0.0, 0.12, -0.04), lift=0.12,
                       **{k: v for k, v in inter(_knock, _knock_land, 0.3).items() if k in _KN_ARMS}),
                   r=air(-0.24, -0.25, 0.42, -16.0, 6.0), l=air(0.3, 0.2, 0.36, 10.0, 30.0))
 _knock_touch = mod(_knock_land, **{k: v for k, v in inter(_knock_air, _knock_land, 0.85).items() if k in _KN_CHEST})
-add("Blocked", 14, [(0, READY, "lin"), (1, _knock, "snap"), (4, _knock_air, "out"),
-                    (6, feet(inter(_knock_air, _knock_land, 0.7), r=hover("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 0.04),
+# (después del golpe la hoja sigue subiendo y el pecho se va atrás parejos hasta el saltito: con "out" el 70 % del tramo entraba en
+# f1-f2 y el codo derecho se doblaba 105° por cuadro del juego, y cayendo con el 70 % en f6 el húmero daba 62°)
+add("Blocked", 14, [(0, READY, "lin"), (1, _knock, "snap"), (4, _knock_air, "lin"),
+                    (6, feet(inter(_knock_air, _knock_land, 0.5), r=hover("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 0.04),
                              l=hover("L", L_FOOT[0], L_FOOT[1], L_FOOT[2], 0.06)), "sine"),
                     (7, _knock_touch, "in2"), (9, _knock_land, "out"), (14, READY, "sine")],
-    timing={"impact": 1, "slide_ok": True},
+    # (la guardia imperfecta lo toca a x1.3: PlayerController.ImperfectGuard)
+    timing={"impact": 1, "slide_ok": True, "play_speed": 1.3},
     notes="rebote contra la guardia: la hoja sale despedida arriba-atrás, saltito hacia atrás, cae agachado en la guardia")
 
 # =========================================================================== recibir daño
@@ -784,10 +847,14 @@ _hh_air = feet(mod(_hh, lift=0.16, hips=(0.0, 0.14, -0.06),
                    **{k: v for k, v in inter(mod(_hh, hips_rot=(-14.0, 0.0, 6.0)), _hh_land, 0.3).items() if k in _KN_CHEST},
                    **{k: v for k, v in inter(_hh, _hh_land, 0.35).items() if k in _KN_ARMS}),
                r=air(-0.24, -0.3, 0.45, -20.0, 6.0), l=air(0.3, 0.05, 0.4, -8.0, 30.0))
+# (la mano izquierda baja al piso por delante, sin atraso: el cuerpo cae adelante más rápido que ella y con la mano
+# detrás el hombro le caía encima, el codo se plegaba entero en f4 y se volvía a estirar en f5, 89° por cuadro)
 add("HitHeavy", 20, [(0, READY, "lin"), (1, _hh, "snap"), (3, _hh_air, "out"),
+                     (4, mod(inter(_hh_air, _hh_land, 0.4), hand_l=(0.48, -0.25, 0.9)), "inout"),
                      (5, feet(inter(_hh_air, _hh_land, 0.75), r=hover("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 0.05),
                               l=hover("L", L_FOOT[0], L_FOOT[1], L_FOOT[2], 0.07)), "sine"),
                      (6, _hh_land, "in2"), (11, _hh_land2, "sine"), (20, READY, "sine")],
+    lag=mod(LEAD, hand_l=0.0),
     timing={"impact": 1, "slide_ok": True},
     notes="golpe pesado: lo levanta, cae en tres apoyos con la mano en el piso y se para (0.65 s)")
 
@@ -801,9 +868,10 @@ add("HitHeavy", 20, [(0, READY, "lin"), (1, _hh, "snap"), (3, _hh_air, "out"),
 # f36, rebote en f38); queda tendido. Ningún pie se arrastra. Die lo arranca en cámara lenta (x0.25 1.6 s): el
 # golpe y el paso se ven lentos, la caída a velocidad normal
 # (el brazo libre se abre un tercio de lo que se abre en el golpe pesado: entero, la mano daba 97° en el primer cuadro de
-# la muerte, que se ve de cerca)
-_d_snap = mod(_hh, hips=(0.0, 0.14, -0.06), head=(16.0, 6.0, 12.0), kat_free=0.0,
-              **{k: v for k, v in inter(READY, _hh, 0.35).items() if k in ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l", "fingers_l")})
+# la muerte, que se ve de cerca. La mano queda cerca del pecho que se echa atrás: donde la dejaba el tercio, el brazo se
+# estiraba entero, no llegaba por 3 cm y el codo se volvía a doblar de golpe al volver el peso adelante)
+_d_snap = mod(_hh, hips=(0.0, 0.14, -0.06), head=(16.0, 6.0, 12.0), kat_free=0.0, hand_l=(0.4, -0.05, 1.18),
+              **{k: v for k, v in inter(READY, _hh, 0.35).items() if k in ("hand_l_dir", "hand_l_up", "elbow_l", "fingers_l")})
 _d_stag = feet(mod(READY, hips=(0.0, 0.08, -0.16), hips_rot=(16.0, 0.0, -6.0), spine=(20.0, 0.0, -4.0), head=(14.0, -4.0, -6.0),
                    clav_r=(0.0, -6.0, 0.0), clav_l=(0.0, 6.0, 0.0), grip=(-0.5, -0.22, 0.86), blade=(-0.45, -0.78, -0.42),
                    edge=(0.1, -0.45, -0.89), elbow_r=(-0.6, 0.3, -0.7), hand_l=(0.3, -0.25, 0.95), hand_l_dir=(0.0, -0.4, -0.9),
@@ -878,6 +946,7 @@ def _d_knees(kr, kl, pole_r=None, guide_r=0.0):
 
 # (las piernas a ritmo parejo mientras el cuerpo cae acelerando: con la curva del cuerpo se juntaba todo en un cuadro)
 _D_LEGS_LIN = {ch: "lin" for ch in ("foot_r", "foot_l", "foot_r_rot", "foot_l_rot", "knee_at_r", "knee_at_l")}
+_D_HAND_LIN = {ch: "lin" for ch in ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l")}
 
 
 add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "out2"),
@@ -893,12 +962,13 @@ add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "out2"),
                   # ya en f33 el tobillo tenía que subir 8 cm para que la suela no entre en el piso, la pierna se plegaba y la
                   # rodilla saltaba arriba y abajo, 71° de tibia en un cuadro. La mano izquierda se va adelante y afuera por
                   # el piso mientras el brazo cede, floja: sigue al antebrazo como una mano muerta y recién en f39 apoya de
-                  # canto; con su orientación autorada daba 48-52° en un cuadro)
-                  (33, feet(mod(inter(_d_sink, _d_fall, 0.38), hand_l=(0.5, -0.5, 0.16), hand_l_relax=0.5, **_d_knees((-0.3, -0.2, 0.44), (0.44, -0.06, 0.22),
+                  # canto; con su orientación autorada daba 48-52° en un cuadro. Se desliza a ritmo parejo, no con la caída
+                  # del pecho: con su curva viajaba 33 cm en f32-f33 y el codo se plegaba 57° en ese cuadro)
+                  (33, feet(mod(inter(_d_sink, _d_fall, 0.38), hand_l=(0.46, -0.36, 0.16), hand_l_relax=0.5, **_d_knees((-0.3, -0.2, 0.44), (0.44, -0.06, 0.22),
                                                                                                      (-0.12, -0.95, -0.2), 0.4),
                                 **{k: v for k, v in inter(_d_sink, _d_fall, 0.35).items() if k in ("hand_l_dir", "hand_l_up", "elbow_l")}),
                             r=swung("R", -0.3, -0.24, 0.2, (2.0, 14.0, -14.0)), l=swung("L", 0.42, 0.1, 0.47, (78.0, 0.0, 20.0))),
-                  "in2", _D_LEGS_LIN),
+                  "in2", {**_D_LEGS_LIN, **_D_HAND_LIN}),
                   (35, feet(mod(_d_fall, **_d_knees((-0.34, -0.06, 0.3), (0.34, 0.08, 0.18), (-0.15, -0.8, -0.6)), hand_l=(0.53, -0.76, 0.18), hand_l_relax=0.5,
                                 **{k: v for k, v in inter(_d_sink, _d_fall, 0.55).items() if k in ("hand_l_dir", "hand_l_up", "elbow_l")}),
                             r=swung("R", -0.38, -0.1, 0.2, (5.0, 42.0, -45.0)), l=swung("L", 0.3, 0.34, 0.36, (110.0, 0.0, 12.0))),
@@ -908,7 +978,7 @@ add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "out2"),
                                 hand_l=(0.55, -1.06, 0.17), hand_l_relax=0.25,
                                 **{k: v for k, v in inter(_d_sink, _d_fall, 0.82).items() if k in ("hand_l_dir", "hand_l_up", "elbow_l")}),
                             r=swung("R", -0.43, 0.08, 0.2, (9.0, 84.0, -92.0)), l=swung("L", 0.24, 0.46, 0.23, (140.0, 0.0, 7.0))),
-                  "out", _D_LEGS_LIN),
+                  "out", {**_D_LEGS_LIN, **_D_HAND_LIN}),
                   (39, feet(mod(_d_bounce, **_d_knees((-0.25, 0.16, 0.22), (0.23, 0.24, 0.14), (-0.1, 0.0, -1.0))),
                             r=swung("R", -0.38, 0.28, 0.17, (13.0, 125.0, -130.0)), l=((0.22, 0.53, 0.16), (155.0, 0.0, 6.0))),
                   "sine", _D_LEGS_LIN),
@@ -916,7 +986,12 @@ add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "out2"),
                             r=((-0.3, 0.42, 0.15), (17.0, 158.0, -164.0))), "sine", _D_LEGS_LIN),
                   (44, mod(_d_rest, hips=(0.05, 0.62 + _D_DY, -0.3)), "sine", _D_LEGS_LIN),
                   (48, _d_rest, "sine")],
-    timing={"impact": 2, "knee": 17, "release": 29, "ground": 35, "slide_ok": True, "slow": True},
+    # (la mano libre sin atraso y el giro de la cadera sin adelanto, como en el golpe pesado: el pecho se iba adelante antes
+    # que la mano y el hombro le caía encima, el codo se plegaba 54° en f5-f6. La cadera sí se adelanta: sin eso, al caer
+    # la tibia derecha giraba 46° en f33-f34)
+    lag=mod(LEAD, hand_l=0.0, hips_rot=0.0),
+    # (el golpe entra en f1, como en Hit y HitHeavy: el sacudón de f0-f1 es el impacto)
+    timing={"impact": 1, "knee": 17, "release": 29, "ground": 35, "slide_ok": True, "slow": True},
     notes="el golpe lo echa atrás, un paso, cae de golpe sobre una rodilla con el puño en el piso, respira; se le cae "
           "la katana, los brazos ceden y queda tendido boca abajo con la cabeza de costado (1.6 s; la cámara lenta de Die lo estira)")
 
@@ -937,7 +1012,7 @@ add("Death", 48, [(0, mod(READY, kat_free=0.0), "lin"), (2, _d_snap, "out2"),
 # un ataque cortan: chiburi, el pie derecho vuelve con un paso y en f98 está en la guardia. El pie izquierdo no se
 # mueve de su huella de la guardia en todo el clip (gira sobre la punta)
 IAI = feet(mod(READY, hips=(0.0, 0.1, -0.3), hips_rot=(12.0, 0.0, -28.0), spine=(10.0, 0.0, -8.0), head=(-14.0, 0.0, 30.0),
-               clav_r=(0.0, 4.0, 0.0), grip=(-0.4, 0.1, 1.04), blade=(-0.46, 0.87, -0.16), edge=perp((-0.46, 0.87, -0.16), (0.0, 0.35, -0.94)),
+               clav_r=(0.0, 4.0, 0.0), grip=(-0.44, 0.2, 0.9), blade=(-0.46, 0.87, -0.16), edge=perp((-0.46, 0.87, -0.16), (0.0, 0.35, -0.94)),
                elbow_r=(-0.2, 0.5, 0.8), hand_l=(0.22, -0.48, 1.3), hand_l_dir=(-0.1, -0.5, 0.86), hand_l_up=(0.0, 1.0, 0.3),
                elbow_l=(0.8, 0.2, -0.5), fingers_l=0.0, knee_l=(0.6, -0.8, 0.0)),
            r=flat("R", -0.3, -0.35, 10.0), l=flat("L", *L_FOOT))
@@ -949,21 +1024,22 @@ _step_mid = inter(READY, IAI, 0.5)
 _step_in = feet(mod(_step_mid, grip=(-0.38, -0.16, 1.04), blade=(-0.96, -0.2, -0.08), edge=perp((-0.96, -0.2, -0.08), _step_mid["edge"]),
                     elbow_r=(-0.2, 0.5, 0.8)),
                 r=lifted("R", -0.27, -0.27, 0.08, -6.0, 8.0), l=flat("L", *L_FOOT))
-_step_back = feet(mod(inter(READY, IAI, 0.8), grip=(-0.34, -0.06, 0.99), blade=(-0.78, 0.47, -0.42),
+_step_back = feet(mod(inter(READY, IAI, 0.8), grip=(-0.38, 0.04, 0.92), blade=(-0.78, 0.47, -0.42),
                       edge=perp((-0.78, 0.47, -0.42), IAI["edge"]), elbow_r=(-0.2, 0.5, 0.8)),
                   r=hover("R", -0.3, -0.35, 10.0, 0.04), l=flat("L", *L_FOOT))
 _iai_b = mod(IAI, breath=1.0, hips=(0.0, 0.1, -0.31), head=(-15.0, 0.0, 30.0), tremble=0.3)
 _iai_deep = mod(IAI, hips=(0.0, 0.12, -0.35), hips_rot=(18.0, 0.0, -30.0), head=(-18.0, 0.0, 30.0), tremble=1.0,
-                grip=(-0.42, 0.08, 0.98), blade=(-0.44, 0.88, -0.2))
+                grip=(-0.46, 0.18, 0.84), blade=(-0.44, 0.88, -0.2))
 _iai_cmp = mod(IAI, hips=(0.0, 0.11, -0.36), hips_rot=(20.0, 0.0, -30.0), spine=(16.0, 0.0, -10.0), head=(-22.0, 0.0, 30.0),
-               tremble=1.6, grip=(-0.41, 0.08, 1.0), blade=(-0.5, 0.85, -0.17), edge=perp((-0.5, 0.85, -0.17), (0.59, 0.51, -0.63)),
+               tremble=1.6, grip=(-0.45, 0.18, 0.86), blade=(-0.5, 0.85, -0.17), edge=perp((-0.5, 0.85, -0.17), (0.59, 0.51, -0.63)),
                hand_l=(0.2, -0.52, 1.24))
 # llega: la hoja recién pasó y sigue arriba y afuera a su derecha (el final del arco); el brazo izquierdo todavía
 # abierto atrás por el envión, con la mano floja (sigue al antebrazo: el puño se arma recién en la cadera, f58-f64; con
 # la mano autorada abierta atrás y el puño adelante en la cadera, la muñeca daba 80° en un cuadro dentro del zanshin)
 AFTER_CUT = feet(mod(READY, hips=(0.0, -0.25, -0.32), hips_rot=(16.0, 0.0, -32.0), spine=(12.0, 0.0, -18.0), head=(-8.0, 0.0, 14.0),
                      clav_r=(0.0, 12.0, 0.0), grip=(-1.02, 0.0, 1.14), blade=(-0.88, -0.4, -0.25),
-                     edge=perp((-0.88, -0.4, -0.25), (0.2, 1.0, 0.4)), elbow_r=(-0.7, 0.6, 0.3), hand_l=(0.36, 0.05, 1.08),
+                     # (la mano libre atrás a casi todo el brazo: más lejos el brazo se estiraba de golpe al llegar)
+                     edge=perp((-0.88, -0.4, -0.25), (0.2, 1.0, 0.4)), elbow_r=(-0.7, 0.6, 0.3), hand_l=(0.36, -0.08, 1.0),
                      hand_l_dir=(0.6, 0.75, -0.2), hand_l_up=(0.0, 0.0, 1.0), elbow_l=(0.6, 0.6, -0.3), fingers_l=0.05,
                      hand_l_relax=1.0),
                  r=flat("R", -0.28, -0.64, 4.0), l=toe("L", *L_FOOT, 30.0))
@@ -976,9 +1052,10 @@ _zan_over = mod(AFTER_CUT, hips=(0.0, -0.27, -0.36), hips_rot=(18.0, 0.0, -28.0)
 # asentado: el brazo derecho estirado a su costado, la hoja baja y atrás (desde arriba, una raya larga que sale de la
 # silueta por la derecha y hacia atrás), el puño izquierdo cerrado en la cadera, el pecho abierto y la vista adelante. El
 # puño flojo (sigue al antebrazo): el puño autorado no entra en lo cómodo con el codo del zanshin y el recorte lo
-# pasaba de un tope de doblez al otro (80° en un cuadro, dos veces en la pose quieta)
+# pasaba de un tope de doblez al otro (80° en un cuadro, dos veces en la pose quieta). El brazo derecho casi entero: con
+# la mano a -1.0 el codo llegaba al tope de la IK suave y al girar el pecho la mano quedaba 2 cm corta
 ZANSHIN = mod(_zan_over, hips=(0.0, -0.26, -0.35), hips_rot=(16.0, 0.0, -26.0), spine=(11.0, 0.0, -14.0), head=(-10.0, 0.0, 16.0),
-              clav_r=(0.0, 10.0, 0.0), grip=(-1.0, 0.16, 1.04), blade=(-0.86, -0.12, -0.5),
+              clav_r=(0.0, 10.0, 0.0), grip=(-0.97, 0.16, 1.04), blade=(-0.86, -0.12, -0.5),
               edge=perp((-0.86, -0.12, -0.5), (0.3, 1.0, 0.3)), elbow_r=(-0.7, 0.6, 0.3), hand_l=(0.33, 0.02, 0.77), hand_l_dir=(0.0, -1.0, 0.05),
               hand_l_up=(0.15, 0.0, -1.0), elbow_l=(0.6, 0.8, -0.2), fingers_l=1.0, hand_l_relax=1.0)
 _zan_in = mod(ZANSHIN, breath=1.0, hips=(0.0, -0.26, -0.345), head=(-11.0, 0.0, 15.0))
@@ -991,23 +1068,31 @@ ZAN_END = mod(_zan_look, breath=0.0, spine=(11.0, 0.0, -14.0), head=(-10.0, 0.0,
 _chi_up = mod(ZAN_END, head=(-8.0, 0.0, 6.0), grip=(-0.74, -0.36, 1.3), blade=(-0.53, -0.2, 0.82), edge=(-0.25, -0.88, -0.38))
 _chi_snap = mod(ZAN_END, hips=(0.0, -0.24, -0.34), head=(-9.0, 0.0, 8.0), grip=(-0.75, -0.25, 0.89), blade=(-0.64, -0.73, -0.24),
                 edge=(0.2, 0.14, -0.97))
+_CHI_RISE = {ch: "lin" for ch in ("grip", "blade", "edge", "elbow_r")}
 # vuelta a la guardia: el pie derecho se levanta de la zancada y apoya en su huella; el izquierdo baja el talón
 _step_out = feet(inter(_chi_snap, READY, 0.45), r=lifted("R", -0.25, -0.4, 0.08, -8.0, 5.0), l=toe("L", *L_FOOT, 18.0))
 FINISHER_HOLD_END = 86          # PlayerController.FinisherHoldEndFrame
 FINISHER_SKIP_FROM = 71         # el corto salta de acá a FINISHER_HOLD_END (0.2 s después del tajo a x2.8)
 add("Finisher", 106, [
-    (0, READY, "sine"), (4, _step_in, "out"), (8, _step_back, "inout"), (12, IAI, "inout"), (22, _iai_b, "sine"), (36, mod(IAI, tremble=0.6), "sine"),
+    (0, READY, "sine"), (4, _step_in, "inout"), (8, _step_back, "inout"), (12, IAI, "inout"), (22, _iai_b, "sine"), (36, mod(IAI, tremble=0.6), "sine"),
     # (el puño izquierdo se cierra parejo de f55 a f64: en la pose quieta, cerrándose en 6 cuadros con curva, la punta
-    # de los dedos giraba 27° por cuadro y se veía como un tic)
-    (50, _iai_deep, "sine"), (54, _iai_cmp, "in2"), (55, AFTER_CUT, "hold"), (58, _zan_over, "out", {"fingers_l": "lin"}),
+    # de los dedos giraba 27° por cuadro y se veía como un tic. El brazo izquierdo baja parejo a la cadera en f55-f58: con
+    # la curva del cuerpo la mitad del viaje caía en el primer cuadro después del corte y el codo se daba vuelta, la mano
+    # 35° en un cuadro con la cámara encima)
+    (50, _iai_deep, "sine"), (54, _iai_cmp, "in2"), (55, AFTER_CUT, "hold"),
+    (58, _zan_over, "out", {k: "lin" for k in ("fingers_l", "hand_l", "hand_l_dir", "hand_l_up", "elbow_l", "hand_l_relax")}),
     (64, ZANSHIN, "sine", {"fingers_l": "lin"}),
     (72, _zan_in, "sine"), (77, _zan_look, "inout"), (81, mod(_zan_look, head=(-6.0, -4.0, -31.0)), "sine"),
-    # (el latigazo del chiburi con "out2": con "snap" el 97 % entraba en un cuadro y la mano giraba 72°)
-    (FINISHER_HOLD_END, ZAN_END, "inout"), (89, _chi_up, "inout"),
-    (91, _chi_snap, "out2"), (92, mod(_chi_snap, grip=(-0.75, -0.26, 0.9)), "lin"), (95, _step_out, "inout"),
+    # chiburi: la hoja sube parejo (con "inout" el codo se doblaba 66° en el cuadro del medio) y baja de un latigazo seco en
+    # un cuadro (f89-f90: el tirón es el gesto, 'snap_ok'; repartido en tres se volvía un barrido sin golpe)
+    (FINISHER_HOLD_END, ZAN_END, "inout"), (89, _chi_up, "inout", _CHI_RISE),
+    (91, _chi_snap, "snap"), (92, mod(_chi_snap, grip=(-0.75, -0.26, 0.9)), "lin"), (95, _step_out, "inout"),
     (98, READY, "in2"), (102, _breath, "sine"), (106, READY, "sine")],
     timing={"strike": 54, "zanshin": [55, FINISHER_HOLD_END], "hold": [55, FINISHER_HOLD_END], "skip": [FINISHER_SKIP_FROM, FINISHER_HOLD_END],
-            "chiburi": [FINISHER_HOLD_END, 92], "guard": 98, "skid": [[54, 55]], "cut": [54.5]},
+            "chiburi": [FINISHER_HOLD_END, 92], "guard": 98, "skid": [[54, 55]], "cut": [54.5], "snap_ok": [[89, 90]],
+            # el cinemático toca la carga a x1.7 y el zanshin a x1; el corto (el de casi todos los enemigos) toca a x2.8 hasta
+            # que salta del zanshin al chiburi (PlayerController.TryFinisher / TickFinisher). Desde el chiburi es un gesto a x1
+            "play_speed": [[0, 55, 1.7]], "play_speed_fast": [[0, FINISHER_SKIP_FROM, 2.8]]},
     events=[{"frame": 54, "fn": "Strike"}],
     notes="iai: cargado y temblando hasta f54, en f55 ya cortó y está del otro lado; zanshin hasta f86 (el cinemático lo "
           "toca a x1 con la cámara encima), chiburi, un paso y en f98 está en la guardia")
@@ -1022,21 +1107,47 @@ add("Finisher", 106, [
 _ws_cmp = mod(_iai_cmp, tremble=1.2)
 # llega en dos tiempos (f14 con los pies todavía en el aire arriba de sus huellas, f15 el zanshin): del vuelo a la zancada
 # en un cuadro las manos daban 73° y las puntas de los pies barrían 24 cm junto al piso
-_ws_arrive = feet(inter(_dash_b, AFTER_CUT, 0.4), r=lifted("R", -0.28, -0.6, 0.07, 0.0, 4.0),
-                  l=lifted("L", L_FOOT[0], L_FOOT[1] + 0.04, 0.07, 24.0, L_FOOT[2]))
+# (la katana ya a un 60 % de su pose de llegada y la mano libre a un 25 %: con las dos al 40 % la katana daba 63° en el último
+# cuadro y el codo izquierdo se estiraba 61° en el anterior)
+_WS_ARM_R = ("grip", "blade", "edge", "elbow_r")
+_WS_ARM_L = ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l", "hand_l_relax", "fingers_l")
+_ws_arrive = feet(mod(inter(_dash_b, AFTER_CUT, 0.4), **{k: v for k, v in inter(_dash_b, AFTER_CUT, 0.6).items() if k in _WS_ARM_R},
+                      **{k: v for k, v in inter(_dash_b, AFTER_CUT, 0.25).items() if k in _WS_ARM_L}),
+                  r=lifted("R", -0.28, -0.6, 0.07, 0.0, 4.0), l=lifted("L", L_FOOT[0], L_FOOT[1] + 0.04, 0.07, 24.0, L_FOOT[2]))
+# Sale disparado en tres cuadros (f10-f12, ya en el aire): el cuerpo y los brazos pasan parejos de la carga del iai al vuelo
+# del dash. En uno, la hoja barría 110-170° (el juego lo mueve a 56 m/s, pero los brazos se ven). La mano libre da la vuelta
+# por afuera, a su izquierda, floja: derecho de adelante del pecho a atrás pasaba por el hombro, el brazo se plegaba entero y
+# el codo daba vuelta 120° en un cuadro
+
+
+def _ws_launch(u, hand):
+    """Cuadro del arranque: la fracción u de la carga al vuelo, la mano libre en 'hand'; la cadera, las rodillas y los pies
+    ya en el vuelo. Con la cadera todavía baja en la carga y los pies ya arriba, las piernas se desplegaban en el aire de
+    un cuadro al otro (90° de muslo en f10-f11): el salto del cuerpo queda en el cuadro del arranque ('burst') y las dos
+    manos, escritas respecto de la cadera que pasa, suben con ella lo que le falta a la cadera recorrer."""
+    d = [(1.0 - u) * (a - b) for a, b in zip(_dash["hips"], _ws_cmp["hips"])]
+    q = inter(_ws_cmp, _dash, u)
+    return feet(mod(q, hand_l_relax=1.0, hand_l=tuple(h + x for h, x in zip(hand, d)), grip=tuple(h + x for h, x in zip(q["grip"], d)),
+                    **{k: _dash[k] for k in ("hips", "knee_r", "knee_l")}),
+                r=(_dash["foot_r"], _dash["foot_r_rot"]), l=(_dash["foot_l"], _dash["foot_l_rot"]))
+
 add("WindSlash", 58, [
-    (0, READY, "sine"), (2, _step_in, "out"), (4, _step_back, "sine"), (6, IAI, "inout"), (8, _iai_deep, "sine"), (9, _ws_cmp, "in2"),
-    (10, _dash, "lin"),
+    (0, READY, "sine"), (2, _step_in, "sine"), (4, _step_back, "sine"), (6, IAI, "inout"), (8, _iai_deep, "sine"), (9, _ws_cmp, "in2"),
+    (10, _ws_launch(0.25, (0.4, -0.52, 1.18)), "lin"), (11, _ws_launch(0.5, (0.5, -0.38, 1.08)), "lin"),
+    (12, _ws_launch(0.75, (0.5, -0.22, 0.98)), "lin"), (13, _dash, "lin"),
     # (el puño izquierdo se cierra parejo de f15 a f24, como en el remate: con la curva de la cadera los dedos giraban
     # 24-38° por cuadro en la pose quieta)
     (14, _ws_arrive, "sine"), (15, AFTER_CUT, "out"), (18, _zan_over, "out", {"fingers_l": "lin"}),
     (24, ZANSHIN, "sine", {"fingers_l": "lin"}), (30, _zan_in, "sine"),
-    (35, _zan_look, "inout"), (40, mod(_zan_look, head=(-6.0, -4.0, -31.0)), "sine"), (45, ZAN_END, "inout"), (49, _chi_up, "inout"), (51, _chi_snap, "out2"),
-    (52, mod(_chi_snap, grip=(-0.75, -0.26, 0.9)), "lin"), (54, _step_out, "inout"), (57, READY, "in2"), (58, READY, "sine")],
-    # (la mano libre sin atraso: el arranque, f9-f10, es un cuadro sin topes y con el atraso la mitad del cambio caía en f10-f11)
+    (35, _zan_look, "inout"), (40, mod(_zan_look, head=(-6.0, -4.0, -31.0)), "sine"), (45, ZAN_END, "inout"), (48, _chi_up, "inout", _CHI_RISE),
+    (50, _chi_snap, "snap"), (51, mod(_chi_snap, grip=(-0.75, -0.26, 0.9)), "lin"), (54, _step_out, "inout"),
+    # (a la guardia parejo, salvo el pie que apoya: con la curva del pie todo el cuerpo llegaba en el último cuadro y el
+    # brazo izquierdo daba 62° ahí)
+    (57, READY, "lin", {ch: "in2" for ch in ("foot_r", "foot_r_rot", "foot_l", "foot_l_rot")}), (58, READY, "sine")],
+    # (la mano libre sin atraso: cada cuadro del arranque la deja donde va)
     lag=mod(LEAD, hips=0.0, hips_rot=0.0, hand_l=0.0),
     timing={"phases": {"prep": [0, 9.6], "travel": [9.6, 14.4], "slashes": 16.2, "hold": [15, 45], "end": 58},
-            "hold": [15, 45], "airborne": [10, 14], "burst": [10]},
+            "hold": [15, 45], "airborne": [10, 14], "burst": [10], "snap_ok": [[48, 49]]},
     notes="prepara (iai) 0.32 s, viaja 0.16 s en el aire en la pose del dash, llega de espaldas en zanshin y queda 1 s "
           "mientras aparecen los cortes; chiburi, un paso y guardia")
 
@@ -1049,9 +1160,11 @@ add("WindSlash", 58, [
 # hacia atrás) y el brazo izquierdo abierto; baja casi vertical sobre las huellas de la guardia cuando ya no gira y cae
 # en la pose del final (f24): agachado y girado a su derecha, la hoja sigue el giro afuera y atrás a su derecha y la mano
 # izquierda abierta adelante, como quien frena las hojas que caen. Se hunde (f27), levanta la vista (f33) y queda hasta
-# f54 (WhirlwindHoldEnd 1.8 s, la órbita baja frenando); después se para en la guardia como un gesto que se corta
+# f54 (WhirlwindHoldEnd 1.8 s, la órbita baja frenando); después se para en la guardia como un gesto que se corta.
+# El enrosque lleva la hoja atrás de la cadera izquierda con la punta hacia abajo y el codo pegado al cuerpo: con la
+# hoja apuntando arriba, el brazo pasaba de un lado al otro del hombro al desenroscarse (166° de giro en un cuadro)
 _wh_coil = feet(mod(READY, hips=(0.0, 0.04, -0.2), hips_rot=(10.0, 0.0, 30.0), spine=(10.0, 0.0, 24.0), head=(-12.0, 0.0, -20.0),
-                    grip=(0.1, -0.32, 1.0), blade=(0.8, 0.3, -0.25), edge=(0.24, -0.91, -0.34), elbow_r=(-0.3, -0.3, -0.9),
+                    grip=(-0.05, -0.52, 1.04), blade=(0.8, -0.3, -0.25), edge=(0.24, -0.91, -0.34), elbow_r=(-0.2, -0.5, -0.8),
                     hand_l=(0.6, 0.12, 0.98), fingers_l=0.6),
                 r=toe("R", *R_FOOT, 26.0), l=toe("L", *L_FOOT, 26.0))
 _wh_spin = feet(mod(READY, hips=(0.0, 0.0, -0.06), lift=0.2, hips_rot=(6.0, 6.0, 0.0), spine=(4.0, 6.0, -6.0), head=(-6.0, 0.0, 4.0),
@@ -1072,16 +1185,25 @@ WH_FINISH = mod(WH_LAND, hips=(0.0, 0.02, -0.32), head=(-11.0, 0.0, 14.0))
 _wh_fin_b = mod(WH_FINISH, breath=1.0, hips=(0.0, 0.02, -0.315), head=(-12.0, 0.0, 13.0))
 WH_FIN_END = mod(WH_FINISH, breath=0.3, hips=(0.0, 0.02, -0.325), head=(-10.0, 0.0, 11.0))
 WHIRL_HOLD_END = 54             # PlayerController.WhirlwindHoldEnd (1.8 s)
+def _wh_arms(u):
+    """Los brazos a la fracción u del desenrosque (el cuerpo va por su lado): la katana sale del enrosque en cuatro
+    cuadros parejos (f4-f7) en vez de uno solo, donde el modelo además gira 77°."""
+    return {k: v for k, v in inter(_wh_coil, _wh_spin, u).items() if k in ("grip", "blade", "edge", "elbow_r", "clav_r", "clav_l", "hand_l", "hand_l_dir", "hand_l_up", "elbow_l", "fingers_l", "arm_space", "hand_l_relax")}
+
+
 add("Whirlwind", 66, [
     # (la katana se enrosca a ritmo parejo, el cuerpo con su curva: con "out" la mano daba el 70 % del giro en el primer
     # cuadro, 78°, y con "sine" la mitad en el del medio)
-    (0, READY, "sine"), (3, _wh_coil, "sine", {"grip": "lin", "blade": "lin", "edge": "lin", "elbow_r": "lin"}), (5, _wh_spin, "out"), (13, _wh_spin2, "sine"), (21, _wh_spin, "sine"),
+    (0, READY, "sine"), (3, _wh_coil, "sine", {"grip": "lin", "blade": "lin", "edge": "lin", "elbow_r": "lin"}), (4, feet(mod(inter(_wh_coil, _wh_spin, 0.75), **_wh_arms(0.25)), r=air(-0.14, -0.05, 0.4, 20.0, 0.0), l=air(0.18, 0.055, 0.46, 30.0, 0.0)), "out"),
+    (5, mod(_wh_spin, **_wh_arms(0.5)), "out"), (6, mod(inter(_wh_spin, _wh_spin2, 0.04), **_wh_arms(0.75)), "lin"),
+    (7, mod(inter(_wh_spin, _wh_spin2, 0.15), **_wh_arms(1.0)), "lin"), (13, _wh_spin2, "sine"), (21, _wh_spin, "sine"),
     (23, feet(inter(_wh_spin, WH_LAND, 0.6), r=hover("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 0.05),
               l=hover("L", L_FOOT[0], L_FOOT[1], L_FOOT[2], 0.05)), "sine"),
     (24, WH_LAND, "in2"), (27, _wh_over, "out"), (33, WH_FINISH, "sine"), (43, _wh_fin_b, "sine"), (WHIRL_HOLD_END, WH_FIN_END, "sine"),
     (60, inter(WH_FIN_END, READY, 0.6), "inout"), (66, READY, "sine")],
-    # (la mano libre sin atraso: con él terminaba de caer en f24-f25, ya en la pose quieta)
-    lag=mod(LEAD, hand_l=0.0),
+    # (la mano libre sin atraso: con él terminaba de caer en f24-f25, ya en la pose quieta; la cadera y el tronco
+    # tampoco se adelantan: con el adelanto el cuerpo ya giraba en f3 y el brazo enroscado se retorcía contra él)
+    lag=mod(LEAD, hand_l=0.0, hips=0.0, hips_rot=0.0, spine=0.0),
     timing={"phases": {"coil": [0, 3.6], "spin": [3.6, 22.2], "land": 24, "hold": [24, WHIRL_HOLD_END], "end": 66},
             "hold": [24, WHIRL_HOLD_END], "spin": [3.6, 22.2, -720.0], "airborne": [4, 22],
             # f3-f4 es el arranque del trompo: el código gira el modelo 77° por cuadro en ese momento y el brazo de la katana
@@ -1401,14 +1523,18 @@ _pi_carry = mod(KIZA, hips=(0.0, 0.16, -0.360), hips_rot=(16.0, 0.0, 0.0), spine
 _pi_place = mod(_pi_carry, hips=(0.0, 0.12, -0.360), hips_rot=(22.0, 0.0, 0.0), spine=(18.0, 0.0, 0.0), head=(22.0, 0.0, 0.0),
                 hand_r=(-0.03, -0.9, 0.5), hand_l=(0.07, -0.74, 0.46))
 _pi_after = mod(_pi_place, fingers_r=0.3, hand_r=(-0.07, -0.82, 0.7))
-# gassho: las palmas juntas delante del pecho, los dedos arriba
+# gassho: las palmas juntas delante del pecho, los dedos arriba y los codos doblados (más adelante los brazos quedaban
+# estirados del todo y se plegaban de golpe al soltarlas)
 _pi_palms = mod(KIZA, hips=(0.0, 0.22, -0.385), hips_rot=(2.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(10.0, 0.0, 0.0),
-                hand_r=(-0.05, -0.5, 0.98), hand_r_dir=(0.0, -0.15, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0,
-                hand_l=(0.05, -0.5, 0.98), hand_l_dir=(0.0, -0.15, 1.0), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.5),
+                hand_r=(-0.05, -0.42, 1.0), hand_r_dir=(0.0, -0.15, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0,
+                hand_l=(0.05, -0.42, 1.0), hand_l_dir=(0.0, -0.15, 1.0), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.5),
                 fingers_l=0.0)
 _pi_bow = mod(_pi_palms, breath=1.0, hips=(0.0, 0.2, -0.390), hips_rot=(10.0, 0.0, 0.0), spine=(16.0, 0.0, 0.0), head=(24.0, 0.0, 0.0))
 _pi_bow2 = mod(_pi_bow, breath=0.2, head=(27.0, 0.0, 0.0), hips=(0.0, 0.2, -0.395))
 _pi_lift = mod(_pi_palms, head=(4.0, 0.0, 0.0))
+# (la mano izquierda baja de las palmas al muslo por delante del cuerpo y pareja: con la curva del tramo el codo se doblaba 46°
+# en el cuadro del medio)
+_PQ_ARM_L = {ch: "lin" for ch in ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l")}
 # vuelve a tomar la katana: se inclina, la mano derecha va al puño, la toma y la levanta
 _pi_grab = feet(mod(_pi_lean, hips=(-0.05, 0.2, -0.37), kat_free=1.0, fingers_r=0.2, hand_r=(-0.64, -0.36, 0.25),
                    hand_l=(0.3, -0.24, 0.6), grip=PI_KAT_UP, blade=PI_KAT_BLADE, edge=PI_KAT_EDGE, knee_r=(-0.15, -1.0, -0.3),
@@ -1422,6 +1548,7 @@ _pi_lift_k = feet(mod(_pi_k1, hips=(0.0, 0.2, -0.35), hips_rot=(10.0, 0.0, -4.0)
                       hand_l=(0.3, -0.24, 0.62)),
                   r=lifted("R", -0.24, 0.2, 0.12, 30.0, 0.0), l=_PI_L)
 _pi_k2 = feet(mod(_pi_k1, hips=(0.0, 0.1, -0.34), hand_l=(0.36, -0.3, 0.74)), r=flat("R", *R_FOOT), l=_PI_L)
+_pi_down = mod(inter(_pi_lift, _pi_grab, 0.45), hand_l=(0.2, -0.4, 0.8))
 # la rodilla derecha baja al piso (y vuelve a subir): levanta el talón, la rodilla sale hacia afuera (a su derecha) y baja
 # por el costado mientras el pie da la vuelta por atrás hasta quedar con el empeine en el piso. Lento (13 cuadros). La
 # rodilla va guiada (knee_at): el muslo y la tibia giran por afuera, de la rodilla arriba al kiza (u, rodilla, tobillo y
@@ -1463,7 +1590,7 @@ add("PrayIncense", 188, [
     (110, _pi_carry, "inout"), (116, _pi_place, "inout"), (120, _pi_after, "sine"),
     # (de las palmas juntas a la mano en el muslo en 8 cuadros: en 6 el brazo izquierdo giraba 51° en un cuadro)
     (128, _pi_palms, "inout"), (138, _pi_bow, "sine"), (145, _pi_bow2, "sine"), (149, _pi_lift, "sine"),
-    (157, _pi_grab, "inout"), (159, _pi_grip, "sine"), (162, _pi_raise, "inout"), (165, _pi_hold, "inout", _KAT_HAND),
+    (153, _pi_down, "sine", _PQ_ARM_L), (157, _pi_grab, "inout", _PQ_ARM_L), (159, _pi_grip, "sine"), (162, _pi_raise, "inout"), (165, _pi_hold, "inout", _KAT_HAND),
 ] + pi_knee_keys((177, 175, 172, 169, 167), _pi_lift_k, _pi_hold, hover("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 0.06)) + [
     (178, _pi_k2, "in2"),
     (180, feet(inter(_pi_k2, READY, 0.3), l=knee_up(0.24, 0.36, 12.0)), "inout", LIN_L),
@@ -1488,9 +1615,11 @@ add("PrayIncense", 188, [
 # el rezo largo (PI_KAT: el puño junto al pie, la hoja adelante y abierta), se endereza y junta las palmas delante del
 # pecho (gassho: con la katana en la mano rezaba con una sola), reverencia; vuelve a tomar la katana y se para con otro
 # paso. 2.3 s
+# (las palmas junto al pecho, los codos doblados: a 30 cm del pecho los dos brazos quedaban estirados del todo y el codo
+# izquierdo se doblaba 66° en un cuadro al soltarlas)
 _pq_palms = mod(_pi_up, hips=(0.0, 0.1, -0.345), hips_rot=(4.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(10.0, 0.0, 0.0),
-                hand_r=(-0.05, -0.6, 1.03), hand_r_dir=(0.0, -0.15, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0,
-                hand_l=(0.05, -0.6, 1.03), hand_l_dir=(0.0, -0.15, 1.0), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.5),
+                hand_r=(-0.05, -0.45, 1.05), hand_r_dir=(0.0, -0.15, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0,
+                hand_l=(0.05, -0.45, 1.05), hand_l_dir=(0.0, -0.15, 1.0), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.5),
                 fingers_l=0.0)
 _pq_bow = mod(_pq_palms, breath=1.0, hips=(0.0, 0.1, -0.35), hips_rot=(10.0, 0.0, 0.0), spine=(14.0, 0.0, 0.0), head=(24.0, 0.0, 0.0))
 _pq_bow2 = mod(_pq_bow, breath=0.3, hips=(0.0, 0.1, -0.355), head=(27.0, 0.0, 0.0))
@@ -1498,13 +1627,21 @@ _pq_lift = mod(_pq_palms, head=(6.0, 0.0, 0.0))
 # vuelve a la katana (inclinado como al dejarla) y la levanta
 # (la katana se da vuelta en el aire antes de apoyarla y después de levantarla, como en el rezo largo)
 _pq_grab = mod(_pi_let, fingers_r=0.2)
+# La mano izquierda va y viene de las palmas al muslo pareja (y la espalda se endereza pareja): con la curva de cada tramo el
+# brazo giraba 50-57° en el cuadro del medio. Arranca a subir apenas suelta la katana (un 20 % en f23) y baja por delante del
+# cuerpo (f43) mientras se inclina a buscarla
+_PQ_UP = dict(_PQ_ARM_L, hips="lin", hips_rot="lin", spine="lin")
+_pq_let = mod(_pi_let, **{k: v for k, v in inter(_pi_let, _pq_palms, 0.2).items() if k in _PQ_ARM_L})
+_pq_down = mod(inter(_pq_lift, _pq_grab, 0.4), hand_l=(0.18, -0.45, 0.92))
 add("PrayQuick", 70, [
     (0, READY, "sine"), (5, feet(inter(READY, _pi_k1, 0.45), l=lifted("L", 0.27, 0.4, 0.07, 62.0, 12.0)), "inout"),
     (8, feet(inter(READY, _pi_k1, 0.75), l=knee_up(0.24, 0.37, 10.0)), "inout"), (11, _pi_k1, "in2"),
-    (15, _pi_lean, "inout"), (18, _pi_roll, "inout", _KAT_HAND), (21, _pi_set, "inout"), (23, _pi_let, "sine"), (28, _pq_palms, "inout"),
+    (15, _pi_lean, "inout"), (18, _pi_roll, "inout", _KAT_HAND), (21, _pi_set, "inout"), (23, _pq_let, "sine"),
+    (28, _pq_palms, "inout", _PQ_UP),
     # (la reverencia más corta y la mano izquierda baja de las palmas al muslo en 7 cuadros: en 4 giraba 75° en uno)
     (33, _pq_bow, "sine"), (37, _pq_bow2, "sine"), (40, _pq_lift, "sine"),
-    (47, _pq_grab, "inout"), (49, _pi_set, "sine"), (51, _pi_roll, "inout"), (54, _pi_lean, "inout"), (57, _pi_k2, "inout"),
+    (43, _pq_down, "sine", _PQ_ARM_L), (47, _pq_grab, "inout", _PQ_ARM_L), (49, _pi_set, "sine"), (51, _pi_roll, "inout"),
+    (54, _pi_lean, "inout", _KAT_HAND), (57, _pi_k2, "inout"),
     # (el pie izquierdo pasa de la punta abajo a plano en dos tiempos con la punta lejos del piso: de una vez giraba 58° en
     # un cuadro y, parejo sin la clave del medio, la punta rozaba el piso)
     (60, feet(inter(_pi_k2, READY, 0.3), l=knee_up(0.24, 0.36, 12.0)), "inout", LIN_L),
@@ -1534,6 +1671,10 @@ _bp_wind = feet(mod(READY, hips=(0.0, 0.06, -0.2), hips_rot=(4.0, 0.0, 22.0), sp
                     hand_l=(0.4, 0.1, 0.96), hand_l_dir=(0.0, -1.0, 0.05), hand_l_up=(0.15, 0.0, -1.0), elbow_l=(0.6, 0.8, -0.2),
                     fingers_l=0.6, wrist_l_open=0.0, **_bp_k),
                 r=flat("R", *R_FOOT), l=flat("L", *L_FOOT))
+# la mano baja de la bandana a la cadera por delante del cuerpo, lejos del hombro: derecho, pasaba a 15 cm de él y el brazo
+# se plegaba entero y se volvía a abrir (el codo 54° en un cuadro)
+_bp_from_head = mod(inter(_bp_focus, _bp_wind, 0.3), hand_l=(0.5, -0.32, 1.6))
+_bp_to_hip = mod(inter(_bp_focus, _bp_wind, 0.7), hand_l=(0.5, -0.18, 1.2))
 _BP_LF = (0.24, -0.5, 10.0)
 # el empujón con el brazo ESTIRADO (la palma a un 90 % del largo del brazo delante del hombro): antes el cuerpo avanzaba 43
 # cm con el paso y la mano solo 52, así que el brazo se doblaba a mitad de camino (la muñeca pasaba a 8 cm del hombro, f38)
@@ -1559,7 +1700,7 @@ _bp_ease = mod(_bp_push, hips=(0.0, -0.18, -0.16), hand_l=(0.2, -0.86, 1.28), ha
                wrist_l_open=0.3, head=(-4.0, 0.0, 10.0))
 add("BandanaPower", 75, [
     (0, READY, "sine"), (8, _bp_touch, "inout"), (14, mod(_bp_touch, hips=(0.0, 0.03, -0.14)), "sine"), (26, _bp_focus, "sine"),
-    (32, _bp_wind, "inout"), (35, _bp_drive, "in2"), (37, _bp_thrust, "lin"), (39, _bp_reach, "lin"),
+    (28, _bp_from_head, "inout"), (30, _bp_to_hip, "lin"), (32, _bp_wind, "inout"), (35, _bp_drive, "in2"), (37, _bp_thrust, "lin"), (39, _bp_reach, "lin"),
     (40, _bp_push, "out"), (48, _bp_hold, "sine"), (56, mod(_bp_hold, hips=(0.0, -0.21, -0.18)), "sine"), (61, _bp_ease, "sine"),
     (66, feet(inter(_bp_ease, READY, 0.5), r=flat("R", *R_FOOT), l=lifted("L", 0.26, -0.1, 0.07, -4.0, 22.0)), "inout"),
     (70, feet(mod(READY, hips=(0.0, 0.02, -0.09)), r=flat("R", *R_FOOT), l=flat("L", *L_FOOT)), "in2"), (75, READY, "sine")],
@@ -1697,18 +1838,21 @@ add("WakeUp", 108, [
     (55, _wk_push2, "sine"),
     # (el pie derecho da la vuelta de empeine en el piso a plano en 14 cuadros, ~20° por cuadro: en 11 la punta barría 12-14
     # cm por cuadro junto al piso)
+    # (la mano izquierda sube del piso a la sien pareja, ~11 cm por cuadro: con la mezcla de las poses subía 38 cm en dos
+    # cuadros mientras el hombro subía la mitad y el codo, estirado empujando el piso, se doblaba 52° en uno)
     (59, _wk_knees, "inout"), (62, _wk_fours, "in2"),
-    (64, feet(mod(inter(_wk_fours, _wk_step_r, 0.5), knee_at_r=(-0.33, 0.55, 0.18), knee_guide_r=1.0),
+    (64, feet(mod(inter(_wk_fours, _wk_step_r, 0.5), hand_l=(0.486, -0.306, 0.4), knee_at_r=(-0.33, 0.55, 0.18), knee_guide_r=1.0),
               r=swung("R", -0.41, 0.8, 0.2, (18.0, 140.0, -150.0))), "inout", LIN_R),
-    (67, feet(mod(_wk_step_r, knee_at_r=(-0.39, 0.42, 0.25), knee_guide_r=1.0), r=swung("R", -0.5, 0.62, 0.2, (15.0, 90.0, -115.0), 0.08)),
+    (67, feet(mod(_wk_step_r, hand_l=(0.464, -0.284, 0.73), knee_at_r=(-0.39, 0.42, 0.25), knee_guide_r=1.0), r=swung("R", -0.5, 0.62, 0.2, (15.0, 90.0, -115.0), 0.08)),
      "inout", LIN_R),
-    (71, feet(mod(inter(_wk_step_r, _wk_one, 0.25), knee_at_r=(-0.33, 0.3, 0.31), knee_guide_r=1.0),
+    (71, feet(mod(inter(_wk_step_r, _wk_one, 0.25), hand_l=(0.436, -0.256, 1.17), knee_at_r=(-0.33, 0.3, 0.31), knee_guide_r=1.0),
               r=swung("R", -0.44, 0.48, 0.25, (12.0, 52.0, -68.0), 0.08)), "inout", LIN_R),
-    (74, feet(mod(inter(_wk_step_r, _wk_one, 0.5), knee_at_r=(-0.28, 0.2, 0.38), knee_guide_r=1.0),
+    (74, feet(mod(inter(_wk_step_r, _wk_one, 0.5), hand_l=(0.414, -0.234, 1.5), knee_at_r=(-0.28, 0.2, 0.38), knee_guide_r=1.0),
               r=swung("R", -0.32, 0.34, 0.23, (8.0, 16.0, -22.0), 0.08)), "inout", LIN_R),
     (76, mod(_wk_one, knee_at_r=(-0.21, 0.12, 0.44), knee_guide_r=1.0), "sine", LIN_R), (78, _wk_daze, "sine"),
-    # (la cabeza se levanta de golpe; la mano que baja de la sien, no: con la misma curva giraba 51° en un cuadro)
-    (80, _wk_see, "snap", {"hand_l": "out2", "hand_l_dir": "out2", "hand_l_up": "out2"}), (84, _wk_see2, "sine"),
+    # (la cabeza se levanta de golpe; la mano que baja de la sien y el cuerpo, no: con la misma curva la mano giraba 51° en un
+    # cuadro y la cadera, que va adelantada, ya pegaba el salto en f77-f78 y estiraba el brazo derecho 47°)
+    (80, _wk_see, "snap", {"hand_l": "inout", "hand_l_dir": "inout", "hand_l_up": "inout", "hips": "inout", "hips_rot": "inout", "spine": "inout"}), (84, _wk_see2, "sine"),
     # (el pie izquierdo del envión gira parejo, ~20° por cuadro)
     (86, feet(mod(inter(_wk_see2, _wk_rise, 0.4), knee_at_l=(0.33, 0.46, 0.25), knee_guide_l=1.0),
               r=flat("R", *_WK_RF), l=swung("L", 0.41, 0.7, 0.2, (18.0, -140.0, 150.0))), "inout", LIN_L),
@@ -1738,7 +1882,7 @@ CHAINS = [
     ("Attack1", -1, "Attack2", 0, 1.0), ("Attack2", -1, "Attack3", 0, 1.0), ("Attack3", -1, "Attack1", 0, 1.0),
     ("Attack3", -1, "Idle", 0, 1.0),
     ("ParrySuccessR", -1, "Attack1", RIPOSTE_FRAME, 6.0), ("ParrySuccessL", -1, "Attack1", RIPOSTE_FRAME, 6.0),
-    ("PerfectParry", -1, "Attack1", RIPOSTE_FRAME, 6.0), ("ParryStance", 3, "ParrySuccessR", 0, 1.0),
+    ("PerfectParry", -1, "Attack1", RIPOSTE_FRAME, 6.0), ("ParryStance", 2, "ParrySuccessR", 0, 1.0),
     # la réplica pedida sale en la carga (PlayerController.RiposteReady: el desvío se acelera hasta ahí) con 0.06 s de
     # fundido: f5 de los desvíos, f8 del perfecto ('counter_ready')
     ("ParrySuccessR", 5, "Attack1", RIPOSTE_FRAME, 8.0), ("ParrySuccessL", 5, "Attack1", RIPOSTE_FRAME, 8.0),
@@ -1751,3 +1895,6 @@ CHAINS = [
     ("PrayQuick", -1, "Idle", 0, 1.0), ("PrayIncense", -1, "Idle", 0, 1.0),
     ("BandanaPower", -1, "Idle", 0, 1.0), ("WakeUp", -1, "Idle", 0, 1.0),
 ] + [(st, -1, "Idle", 0, 1.0) for st in RUN_STOP_PHASE] + [("Run", ph, st, 0, 2.0) for st, ph in RUN_STOP_PHASE.items()]
+# vueltas a la guardia sin empalme (clip, guardia, tope en grados de la katana): un corte que no encadena espera en su pose
+# final y Locomotion entra con 0.12 s de fundido (PlayerController.TickAttack). Se miden en build_kaito (return_report)
+RETURNS = [("Attack1", "Idle", 110.0), ("Attack2", "Idle", 150.0)]

@@ -138,6 +138,11 @@ def cutting(clip, f):
 # el brazo casi recto es lo único que cambia (la silueta no) y es la forma de enderezar la muñeca de un brazo que
 # cuelga, pero más de ~45° retuerce la malla del hombro como un caramelo
 SHOULDER_COMFORT, SHOULDER_LIMIT = (-45.0, 45.0), (-90.0, 90.0)
+# ...pero con el húmero a más de 90° de su reposo (el brazo cruzado delante del pecho o de la cara, o arriba) la parte de giro
+# de la descomposición deja de decir cuánto se retuerce la manga: depende del camino por el que llegó (la paradoja de
+# Codman: el Corte final con las manos delante de la cara medía 142° y la manga no se tuerce). Ahí build_kaito no lo cuenta;
+# el giro del húmero de un cuadro al otro (spin_deg, snap_report) sí
+SHOULDER_SWING_MAX = 90.0
 # grilla de la búsqueda (build_kaito elige el camino en ella y lo suaviza): giro de la hoja sobre su eje, diagonal
 # del agarre y giro del codo alrededor de la recta hombro-muñeca (el de la mano izquierda, aparte)
 ROLLS = tuple(-180.0 + 20.0 * k for k in range(18))
@@ -552,11 +557,37 @@ def floor_raise(H, floor=0.03):
     return max(0.0, floor - min((H @ p).z for p in HAND_FLOOR_PTS))
 
 
+# IK SUAVE de los brazos. Con el tope duro (la muñeca a 0.999 del largo del brazo) el codo cerca de estirarse cambia casi
+# sin límite con un cambio chico de la distancia hombro-muñeca: una mano autorada que cruza el 98 % del largo plegaba o
+# estiraba el codo 50-80° en un cuadro (la muerte, el rezo corto, el empujón de la muralla, el prólogo). Pasando SOFT_REACH
+# del largo, la distancia que se le pide a la IK se acerca al largo de a poco (exponencial: a 0.95 del largo la mano queda
+# a 0.1 cm, estirada del todo a 0.8 cm) y lo que falta cuenta como mano que no llega. Solo los brazos de Kaito (las
+# piernas y los otros personajes siguen con la IK de nindo_anim)
+SOFT_REACH = 0.93
+
+
+def soft_dist(d, L):
+    """Distancia hombro-muñeca que se le pide a la IK para una muñeca a 'd' de un brazo de largo L (escalares o arrays)."""
+    ds = SOFT_REACH * L
+    w = L - ds
+    return np.where(d < ds, d, ds + w * (1.0 - np.exp(-(np.maximum(d, ds) - ds) / w)))
+
+
+def soft_target(S, T, L):
+    """(muñeca para la IK, cuánto le falta a T) con la IK suave: T acercado al hombro S sobre su recta."""
+    v = V(T) - V(S)
+    d = v.length
+    if d < 1e-6:
+        return V(T), 0.0
+    ds = float(soft_dist(d, L))
+    return V(S) + v * (ds / d), d - ds
+
+
 def ik_mid(S, T, a, b, pole, reach=0.999):
     """Articulación del medio (codo) de una IK de dos huesos, con la misma cuenta que Pose.two_bone pero sin escribir
-    la pose."""
+    la pose (con la IK suave de los brazos)."""
     d_vec = T - S
-    d = max(abs(a - b) + 1e-4, min(d_vec.length, (a + b) * reach))
+    d = max(abs(a - b) + 1e-4, min(float(soft_dist(d_vec.length, a + b)), (a + b) * reach))
     nd = d_vec.normalized() if d_vec.length > 1e-6 else Vector((0.0, 0.0, -1.0))
     cosA = max(-1.0, min(1.0, (a * a + d * d - b * b) / (2.0 * a * d)))
     sinA = math.sqrt(max(0.0, 1.0 - cosA * cosA))
@@ -594,7 +625,7 @@ class ArmFrame:
         dv = W - self.S
         dist = np.linalg.norm(dv, axis=-1, keepdims=True)
         nd = dv / np.maximum(dist, 1e-9)
-        d = np.clip(dist, abs(a - b) + 1e-4, (a + b) * 0.999)
+        d = np.clip(soft_dist(dist, a + b), abs(a - b) + 1e-4, (a + b) * 0.999)
         cosA = np.clip((a * a + d * d - b * b) / (2.0 * a * d), -1.0, 1.0)
         sinA = np.sqrt(np.maximum(0.0, 1.0 - cosA * cosA))
         P = _norm(poles - nd * np.sum(poles * nd, axis=-1, keepdims=True))
@@ -744,6 +775,13 @@ class Solver:
             M = pose.get(B["clav"])
             pose.place(B["clav"], compose(ch, Quaternion(ax.normalized(), ang).to_matrix() @ rot3(M)))
 
+    def arm_ik(self, pose, B, target, pole):
+        """IK del brazo con la muñeca suave (soft_target): devuelve cuánto no llegó la muñeca a 'target'."""
+        R = self.rig
+        S = (pose.get(B["clav"]) @ R.rel[B["ua"]]).translation
+        T, short = soft_target(S, target, R.length[B["ua"]] + R.length[B["fa"]])
+        return short + pose.two_bone(B["ua"], B["fa"], T, pole)
+
     def fingers(self, pose, side, amount):
         for n, q in self.fist[side].items():
             Q = Quaternion().slerp(q, max(0.0, min(1.0, amount)))
@@ -760,6 +798,12 @@ class Solver:
         Rs = np.array(rot3(pose.get(B["clav"]) @ self.rig.rel[B["ua"]]).transposed() @ rot3(pose.get(B["ua"])))
         tw = math.degrees(2.0 * math.atan2(Rs[0, 2] - Rs[2, 0], 1.0 + Rs[0, 0] + Rs[1, 1] + Rs[2, 2]))
         return (tw + 180.0) % 360.0 - 180.0
+
+    def shoulder_swing_deg(self, pose, B):
+        """Grados entre el húmero y su reposo colgado de la clavícula (el brazo en cruz): pasando SHOULDER_SWING_MAX el giro de
+        shoulder_twist ya no dice cuánto se retuerce la manga."""
+        a = rot3(pose.get(B["clav"]) @ self.rig.rel[B["ua"]]).col[1]
+        return math.degrees(a.angle(rot3(pose.get(B["ua"])).col[1], 0.0))
 
     def clamp_hand(self, F3, H3, side, amount=1.0, limits=WRIST_LIMIT):
         """La mano dentro de 'limits' (por lado): si pasa un tope, vuelve hacia la neutra lo justo (giro aparte del
@@ -1058,7 +1102,7 @@ class Solver:
         Bd = rot3(K_auth).col[1]
         K = compose(K_auth.translation, Matrix.Rotation(math.radians(roll), 3, Bd) @ rot3(K_auth))
         hfk = self.hand_from_K(tilt)
-        Hr = K @ hfk
+        Hr = Hr0 = K @ hfk
         free = c.get("kat_free") or 0.0
         if free > 1e-3:
             # suelta la katana: la mano va de donde la tenía a su pose libre (como la izquierda)
@@ -1068,7 +1112,7 @@ class Solver:
         # la suelta iba con el codo autorado y la muñeca quedaba en el recorte todo el rezo (radial 20°, dorso 50°)
         pole_r = self.swivel_pole(pose, R_BONES, Hr.translation, c["elbow_r"], sw_r, "R")
         self.reach_with_clavicle(pose, R_BONES, Hr.translation)
-        miss_r = pose.two_bone("Brazo.R", "Antebrazo.R", Hr.translation, pole_r)
+        miss_r = self.arm_ik(pose, R_BONES, Hr.translation, pole_r)
         F_r = rot3(pose.get("Antebrazo.R"))
         self.wrist_raw = self.wrist_angles(F_r, rot3(Hr), "R")
         # suelta, la derecha se recorta como la izquierda libre (a lo cómodo, o más con wrist_r_open): con los topes de la
@@ -1085,6 +1129,12 @@ class Solver:
         fr = c["fingers_r"]
         self.fingers(pose, "R", (1.0 - free) + free * (fr if fr >= 0.0 else 0.4))
         Kc = pose.get("Mando.R") @ hfk.inverted()
+        if 1e-3 < free < 0.999:
+            # mientras la suelta o la toma, la katana va pareja de la mano que la sostenía (la autorada con la muñeca de
+            # este antebrazo) a su propia pose. Atada a la mano que ya iba camino a su pose libre y mezclada además con la
+            # suya, el giro crecía al cuadrado: el 55 % entraba en el primer tercio (PrayQuick f15-f16: la hoja 52°)
+            Hk = compose(Hr0.translation, self.clamp_hand(F_r, rot3(Hr0), "R", 1.0, limits))
+            Kc = compose(Hr0.translation, self.lift_tip(Hk, hfk)) @ hfk.inverted()
         # (suelta, la hoja autorada ya no dice nada: no cuenta)
         self.blade_fix = math.degrees(rot3(Kc).col[1].angle(Bd, 0.0)) if free < 0.5 else 0.0
         if free > 1e-3:
@@ -1104,7 +1154,7 @@ class Solver:
             sw_l = SWIVELS_L[int(np.argmin(self.eval_left(self.context(pose, c, Kc), Hl, np.array(SWIVELS_L))))]
         pole_l = self.swivel_pole(pose, L_BONES, Hl.translation, c["elbow_l"], sw_l, "L")
         self.reach_with_clavicle(pose, L_BONES, Hl.translation)
-        miss_l = pose.two_bone("Brazo.L", "Antebrazo.L", Hl.translation, pole_l)
+        miss_l = self.arm_ik(pose, L_BONES, Hl.translation, pole_l)
         F_l = rot3(pose.get("Antebrazo.L"))
         relax = (c.get("hand_l_relax") or 0.0) * (1.0 - gl)
         Hl3 = rot3(Hl)
@@ -1119,6 +1169,7 @@ class Solver:
         self.fingers(pose, "L", max(c["fingers_l"], gl))
         self.wrist = {"R": wr, "L": wl}
         self.shoulder = {"R": self.shoulder_twist(pose, R_BONES), "L": self.shoulder_twist(pose, L_BONES)}
+        self.shoulder_swing = {"R": self.shoulder_swing_deg(pose, R_BONES), "L": self.shoulder_swing_deg(pose, L_BONES)}
         self.state = (roll, tilt, sw_r, sw_l)
         self.misses = {"hand_r": miss_r, "hand_l": miss_l}
 
@@ -1149,9 +1200,15 @@ class Solver:
         self.misses["legs"] = miss_legs
 
 
+def in_swing(clip, f):
+    """¿El cuadro f está en un tramo 'swing' del clip ([[desde, hasta], ...], ver step_caps)?"""
+    return any(a <= f <= b for a, b in clip.timing.get("swing", ()))
+
+
 def frame_limits(clip, f):
-    """Topes de la mano de la katana en el cuadro f del clip (ver SOFT_MARGIN)."""
-    return WRIST_LIMIT if cutting(clip, f) else SOFT_LIMIT
+    """Topes de la mano de la katana en el cuadro f del clip (ver SOFT_MARGIN; en un 'swing' la mano prona o supina de punta a
+    punta y recortada a lo cómodo la hoja se corría 75° de su camino)."""
+    return WRIST_LIMIT if cutting(clip, f) or in_swing(clip, f) else SOFT_LIMIT
 
 
 def roll_cost(weight):
@@ -1196,13 +1253,34 @@ def step_caps(clip):
     if "impact" in clip.timing:
         cuts.append(clip.timing["impact"])
     # ...y el cuadro en que sale disparado ('burst': el Corte del Viento pasa de la carga del iai al vuelo del dash, que el
-    # juego mueve a 56 m/s): los brazos cambian de pose de golpe y con tope el hombro izquierdo se retorcía 125°
-    cuts += list(clip.timing.get("burst", ()))
+    # juego mueve a 56 m/s; el trompo del Torbellino arranca) se estira como un tajo: sin tope el camino tiraba ahí todo el
+    # cambio de los brazos (la mano 150-176° en un cuadro), y los brazos se ven aunque el cuerpo salga despedido
+    bursts = list(clip.timing.get("burst", ()))
+    # ...y en los tirones marcados a propósito ('snap_ok': la guardia del parry que sale en un cuadro, el latigazo del
+    # chiburi) tampoco hay tope: con él el camino repartía el giro en los cuadros de al lado, que no están exentos
+    snaps = [tuple(r) for r in clip.timing.get("snap_ok", ())]
+    # ...y en los tramos 'swing' ([[desde, hasta], ...]: el despegue del Corte final, donde la mano de la katana se da vuelta
+    # de supinada a pronada mientras los dos brazos pasan a la empuñadura) el tope se estira como en un tajo: con el de
+    # siempre el camino se quedaba en la mano supinada hasta el último cuadro y daba la vuelta entera ahí. Además ahí el filo
+    # autorado pesa como en un tajo (arm_path), la muñeca va hasta su tope (frame_limits) y la mano de la katana se reparte
+    # cuadro a cuadro como la libre (hand_steps); build_kaito los mide igual que el resto
+    swings = [tuple(r) for r in clip.timing.get("swing", ())]
     for f in range(1, n + 1):
-        if any(f - 1 < c <= f + 1e-6 for c in cuts):
+        if any(f - 1 < c <= f + 1e-6 for c in cuts) or any(a <= f - 1 < b for a, b in snaps):
             out[f] = np.inf
-        elif cutting(clip, f) or cutting(clip, f - 1):
+        elif cutting(clip, f) or cutting(clip, f - 1) or f in bursts or any(a < f <= b for a, b in swings):
             out[f] = CAP_SMEAR
+    return out
+
+
+def left_caps(caps, grips):
+    """Topes del brazo izquierdo: los de step_caps, salvo en los tajos con la mano izquierda suelta (grip_l <= 0.5 a los dos
+    lados del cuadro), que van con el tope de siempre. La estela tapa la katana, no la mano libre: estirado como el de la
+    katana, en el Corte 2 el brazo izquierdo volaba de la cadera a la horizontal y volvía al pecho en dos cuadros (144°)."""
+    out = np.array(caps, float)
+    for f in range(1, len(out)):
+        if out[f] == CAP_SMEAR and max(grips[f - 1], grips[f]) <= 0.5:
+            out[f] = 1.0
     return out
 
 
@@ -1459,7 +1537,9 @@ def arm_path(rig, solver, clip):
     for f in range(n + 1):
         a, b = max(0, f - 1), min(n, f + 1)
         v = (tips[b] - tips[a]).length * M_PER_U * NA.FPS * ts / max(1, b - a)
-        weight.append((1.0 + min(1.0, v / 8.0)) * (1.0 if cutting(clip, f) else ROLL_FREE))
+        # (en un tramo 'swing' el filo autorado pesa como en un tajo: ahí el giro de la mano está escrito cuadro a cuadro y
+        # suelto el camino se quedaba con el giro de la carga hasta que la empuñadura a dos manos lo daba vuelta de golpe)
+        weight.append((1.0 + min(1.0, v / 8.0)) * (1.0 if cutting(clip, f) or in_swing(clip, f) else ROLL_FREE))
     local = base + np.array([roll_cost(w) for w in weight])[:, :, None, None]
     pins = {f: int(np.argmin(base[f] + roll_cost(1.0)[:, None, None])) for f in pinned_frames(clip)}
     targets = chain_targets(clip)
@@ -1509,13 +1589,15 @@ def arm_path(rig, solver, clip):
         return solver.eval_right(ctxs[f], cand[:, 0], cand[:, 1], cand[:, 2]) + weight[f] * (cand[:, 0] / ROLL_SCALE) ** 2
     path = refine_path(ev, path, pins, axes, ts, ease, caps=caps, rho=(2, rho_cont))
     # el codo izquierdo con la mano ya decidida (en la empuñadura depende de la katana)
-    ctx_l, hands_l = [], []
+    ctx_l, hands_l, grips = [], [], []
     for f in range(n + 1):
         pose = NA.Pose(rig)
         solver.solve(pose, clip.controls(f), (*path[f], 0.0), frame_limits(clip, f))
         c = solver.c
         hands_l.append(solver.left_hand(solver.katana, solver.free_left(c), c["grip_l"], path[f][1]))
         ctx_l.append(solver.context(pose, c, solver.katana))
+        grips.append(c["grip_l"])
+    caps_l = left_caps(caps, grips)
     # el costo de cada giro de codo y, como en el derecho, la muñeca y el hombro que resultan (el tope de cambio por cuadro
     # de dp_path: sin él el húmero izquierdo giraba 55-160° de un cuadro al otro aunque el codo fuera suave, con el brazo
     # casi recto el mismo codo es otro giro de hombro)
@@ -1541,14 +1623,14 @@ def arm_path(rig, solver, clip):
     # (la mano izquierda ya está decidida: la referencia de su codo gira lo mismo para todos los giros)
     refs_l = [ctx_l[f]["afl"].refs(np.array(hands_l[f].translation), ctx_l[f]["pole_l"], "L") for f in range(n + 1)]
     rho_l = [0.0] + [float(transport_deg(*refs_l[f - 1], *refs_l[f])) for f in range(1, n + 1)]
-    rho_lc = [r if caps[f] != CAP_SMEAR else 0.0 for f, r in enumerate(rho_l)]
-    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l, caps, wr_l, rho=(0, lambda f: rho_lc[f]), spin=spin_l)
+    rho_lc = [r if caps_l[f] != CAP_SMEAR else 0.0 for f, r in enumerate(rho_l)]
+    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l, caps_l, wr_l, rho=(0, lambda f: rho_lc[f]), spin=spin_l)
     for f, st in follow.items():
         path_l[f] = st[3:4]
     path_l = refine_path(lambda f, cand: solver.eval_left(ctx_l[f], hands_l[f], cand[:, 0]), path_l, pins_l, axes_l, ts,
-                         ease_l, caps=caps, rho=(0, lambda fa, a, fb, b: np.full(max(len(a), len(b)), rho_lc[fb])))
+                         ease_l, caps=caps_l, rho=(0, lambda fa, a, fb, b: np.full(max(len(a), len(b)), rho_lc[fb])))
     solver.path_ease = (ease, ease_l)          # build_kaito: los tirones que cuentan son los que el gesto no tapa
-    solver.path_caps = caps
+    solver.path_caps = (caps, caps_l)
     # ...y el codo de verdad: lo que giró la referencia de cada codo en el camino elegido (el giro del camino solo no dice)
     solver.path_rho = ([0.0] + [float(rho_true(f - 1, path[f - 1][None, :], f, path[f][None, :])[0]) for f in range(1, n + 1)],
                        rho_l)
@@ -1569,6 +1651,16 @@ def arm_path(rig, solver, clip):
 # mientras tiene la katana (ahí manda la hoja autorada); en los cortes de cámara, los golpes recibidos y los arranques
 # ('cut', 'impact', 'burst') no hay tope, y en los cuadros que cortan se estira como el del camino (CAP_SMEAR)
 REL_STEP_CAP = 35.0
+
+
+def play_speed(t, f, key="play_speed"):
+    """Velocidad a la que el código toca el cuadro f de un clip (timing 'play_speed': un número o tramos [[desde, hasta,
+    velocidad], ...]): el Dash a x1.4, el Blocked a x1.3, la carga del remate a x1.7. Un giro de 40° por cuadro autorado es
+    uno de 56° en el juego (build_kaito mide los tirones con ella)."""
+    ps = t.get(key, 1.0)
+    if isinstance(ps, (int, float)):
+        return float(ps)
+    return next((float(s) for a, b, s in ps if a <= f < b), 1.0)
 
 
 def limit_steps(qs, caps, fixed, iters=300, tol=0.05):
@@ -1612,21 +1704,31 @@ def hand_steps(rig, solver, clip, states, follow=()):
     solver.rel_override = None
     rels = {"L": [], "R": []}
     lock = {"L": set(), "R": set()}
+    grips = []
     for f in range(n + 1):
         solver.solve(NA.Pose(rig), clip.controls(f), states[f], frame_limits(clip, f))
         for S in "LR":
             rels[S].append(solver.rel[S])
+        grips.append(solver.c["grip_l"])
         if solver.c["grip_l"] > 0.05:
             lock["L"].add(f)
         # la mano de la katana la dibuja la hoja autorada (el camino ya topa su muñeca, WRIST_STEP_CAP): corriéndola, la
         # hoja se apartaba 25-90° de su arco entre cortes (la guardia del parry llegaba un cuadro tarde, el Corte final
-        # dejaba la izquierda de la empuñadura en una muñeca imposible). Solo la derecha suelta (rezos, prólogo, muerte)
-        if (solver.c.get("kat_free") or 0.0) < 0.5:
+        # dejaba la izquierda de la empuñadura en una muñeca imposible). Solo la derecha suelta del todo (rezos, prólogo,
+        # muerte): mientras la deja o la toma la sigue sosteniendo y corrida se separaba de la empuñadura. En un tramo
+        # 'swing' (la mano que se da vuelta, step_caps) sí se reparte, y la hoja la sigue
+        if (solver.c.get("kat_free") or 0.0) < 0.999 and not any(a < f < b for a, b in clip.timing.get("swing", ())):
             lock["R"].add(f)
-    caps = REL_STEP_CAP / ts * step_caps(clip)
+    # (por cuadro del juego: el código toca algunos clips más rápido, timing 'play_speed')
+    speed = np.array([ts * play_speed(clip.timing, max(0, f - 1)) for f in range(n + 1)])
+    # (en un tramo 'swing' la mano de la katana, que ahí sí se corre, va con el tope de siempre: estirado como en un tajo
+    # la media vuelta del despegue se repartía en dos cuadros de 80-110°)
+    swing = np.array([any(a < f <= b for a, b in clip.timing.get("swing", ())) for f in range(n + 1)])
+    caps = {"R": REL_STEP_CAP / speed * np.where(swing, 1.0, step_caps(clip))}
+    caps["L"] = REL_STEP_CAP / speed * left_caps(step_caps(clip), grips)
     fixed = set(pinned_frames(clip)) | set(follow)
     out = {}
     for S in "LR":
-        q = limit_steps(rels[S], caps, fixed | lock[S])
+        q = limit_steps(rels[S], caps[S], fixed | lock[S])
         out.update({(f, S): q[f] for f in range(n + 1) if NA.quat_angle_deg(q[f], rels[S][f]) > 0.05})
     return out
