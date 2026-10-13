@@ -1,0 +1,515 @@
+{
+ "_nota": "Generado por Tools/Audio/build_boss_music.py. Por fase: su loop y la frase de entrada que se toca una vez antes (desde el próximo tiempo hasta el compás de la sección; desde el silencio, desde 'intro_muestra'); 'golpe_muestra' es donde cae lo que la frase anuncia.",
+ "jefes": {
+  "boss_goro": {
+   "1": {
+    "clip": "boss_goro",
+    "intro": "boss_goro_intro",
+    "golpe_muestra": 700942,
+    "cierre": "boss_goro_out_1"
+   },
+   "2": {
+    "clip": "boss_goro_2",
+    "intro": "boss_goro_2_in",
+    "golpe_muestra": 584677,
+    "intro_compases_antes_del_final": 6,
+    "intro_muestra": 277311,
+    "corte_s": 0.04
+   }
+  },
+  "boss_lake": {
+   "1": {
+    "clip": "boss_lake",
+    "intro": "boss_lake_intro",
+    "golpe_muestra": 607652
+   },
+   "2": {
+    "clip": "boss_lake_2",
+    "intro": "boss_lake_2_in",
+    "golpe_muestra": 179389
+   },
+   "3": {
+    "clip": "boss_lake_3",
+    "intro": "boss_lake_3_in",
+    "golpe_muestra": 169260,
+    "corte_s": 0.04,
+    "cierre": "boss_lake_out_3"
+   }
+  },
+  "boss_bamboo": {
+   "1": {
+    "clip": "boss_bamboo",
+    "intro": "boss_bamboo_intro",
+    "golpe_muestra": 53231
+   },
+   "2": {
+    "clip": "boss_bamboo_2",
+    "intro": "boss_bamboo_2_in",
+    "golpe_muestra": 155647
+   },
+   "3": {
+    "clip": "boss_bamboo_3",
+    "intro": "boss_bamboo_3_in",
+    "golpe_muestra": 146832,
+    "corte_s": 0.04,
+    "cierre": "boss_bamboo_out_3"
+   }
+  },
+  "boss_final": {
+   "1": {
+    "clip": "boss_final",
+    "intro": "boss_final_intro",
+    "golpe_muestra": 477666
+   },
+   "2": {
+    "clip": "boss_final_2",
+    "intro": "boss_final_2_in",
+    "golpe_muestra": 201600
+   },
+   "3": {
+    "clip": "boss_final_3",
+    "intro": "boss_final_3_in",
+    "golpe_muestra": 190260,
+    "corte_s": 0.05
+   },
+   "4": {
+    "clip": "boss_final_4",
+    "intro": "boss_final_4_in",
+    "golpe_muestra": 179585,
+    "corte_s": 0.05,
+    "cierre": "boss_final_out_4"
+   }
+  },
+  "ending": {
+   "1": {
+    "clip": "ending"
+   }
+  }
+ },
+ "clips": {
+  "boss_goro_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 700942,
+   "segundos": 15.8944,
+   "sr": 44100,
+   "bpm": 130.0,
+   "compas_s": 1.846154,
+   "tambores_s": 13.851,
+   "golpe_muestra": 700942,
+   "LUFS": -22.22,
+   "agudos_5k_dB": -17.3
+  },
+  "boss_goro": {
+   "tipo": "loop",
+   "muestras": 5861908,
+   "segundos": 132.9231,
+   "sr": 44100,
+   "bpm": 130.0,
+   "compas_s": 1.846154,
+   "tramos": [
+    "c8-c47",
+    "c8-c39"
+   ],
+   "LUFS": -14.0,
+   "agudos_5k_dB": -21.4
+  },
+  "boss_goro_out_1": {
+   "tipo": "outro (una vez)",
+   "muestras": 165654,
+   "segundos": 3.7563,
+   "sr": 44100,
+   "bpm": 130.0,
+   "compas_s": 1.846154,
+   "golpe_s": 0.008,
+   "LUFS": -18.38,
+   "agudos_5k_dB": -8.2
+  },
+  "boss_goro_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 738360,
+   "segundos": 16.7429,
+   "sr": 44100,
+   "bpm": 137.738,
+   "compas_s": 1.742437,
+   "tambores_s": 13.072,
+   "golpe_muestra": 584677,
+   "LUFS": -19.17,
+   "agudos_5k_dB": -18.9
+  },
+  "boss_goro_2": {
+   "tipo": "loop",
+   "muestras": 5225220,
+   "segundos": 118.4857,
+   "sr": 44100,
+   "bpm": 137.738,
+   "compas_s": 1.742437,
+   "tramos": [
+    "c9-c47",
+    "c8-c36"
+   ],
+   "LUFS": -12.9,
+   "agudos_5k_dB": -20.8
+  },
+  "boss_goro_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 156348,
+   "segundos": 3.5453,
+   "sr": 44100,
+   "bpm": 137.738,
+   "compas_s": 1.742437,
+   "golpe_s": 0.008,
+   "LUFS": -17.31,
+   "agudos_5k_dB": -7.8
+  },
+  "ending": {
+   "tipo": "tema entero (una vez)",
+   "muestras": 6177093,
+   "segundos": 140.0701,
+   "sr": 44100,
+   "bpm": 80.0,
+   "compas_s": 3.0,
+   "LUFS": -16.0,
+   "agudos_5k_dB": -20.0
+  },
+  "boss_lake_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 607652,
+   "segundos": 13.779,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "golpe_muestra": 607652,
+   "LUFS": -13.1,
+   "agudos_5k_dB": -20.4
+  },
+  "boss_lake": {
+   "tipo": "loop",
+   "muestras": 2870237,
+   "segundos": 65.0847,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "tramos": [
+    "c6-c36",
+    "c21"
+   ],
+   "LUFS": -14.0,
+   "agudos_5k_dB": -22.1
+  },
+  "boss_lake_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 179389,
+   "segundos": 4.0678,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "golpe_muestra": 179389,
+   "LUFS": -13.01,
+   "agudos_5k_dB": -21.9
+  },
+  "boss_lake_2": {
+   "tipo": "loop",
+   "muestras": 2332068,
+   "segundos": 52.8814,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "tramos": [
+    "c37-c62"
+   ],
+   "LUFS": -13.14,
+   "agudos_5k_dB": -21.6
+  },
+  "boss_lake_3_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 169260,
+   "segundos": 3.8381,
+   "sr": 44100,
+   "bpm": 125.024,
+   "compas_s": 1.919634,
+   "golpe_muestra": 169260,
+   "LUFS": -12.45,
+   "agudos_5k_dB": -21.5
+  },
+  "boss_lake_3": {
+   "tipo": "loop",
+   "muestras": 1523760,
+   "segundos": 34.5524,
+   "sr": 44100,
+   "bpm": 125.024,
+   "compas_s": 1.919634,
+   "tramos": [
+    "c47-c54",
+    "c37-c46"
+   ],
+   "LUFS": -11.98,
+   "agudos_5k_dB": -21.3
+  },
+  "boss_lake_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 134943,
+   "segundos": 3.0599,
+   "sr": 44100,
+   "bpm": 118.0,
+   "compas_s": 2.033898,
+   "golpe_s": 0.516,
+   "LUFS": -16.7,
+   "agudos_5k_dB": -19.2
+  },
+  "boss_lake_out_3": {
+   "tipo": "outro (una vez)",
+   "muestras": 127362,
+   "segundos": 2.888,
+   "sr": 44100,
+   "bpm": 125.024,
+   "compas_s": 1.919634,
+   "golpe_s": 0.488,
+   "LUFS": -16.63,
+   "agudos_5k_dB": -19.0
+  },
+  "boss_final_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 477666,
+   "segundos": 10.8314,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "golpe_muestra": 477666,
+   "LUFS": -19.76,
+   "agudos_5k_dB": -24.5
+  },
+  "boss_final": {
+   "tipo": "loop",
+   "muestras": 3225600,
+   "segundos": 73.1429,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "tramos": [
+    "c4-c19",
+    "c40-c55"
+   ],
+   "LUFS": -14.07,
+   "agudos_5k_dB": -25.7
+  },
+  "boss_final_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 201600,
+   "segundos": 4.5714,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "golpe_muestra": 201600,
+   "LUFS": -14.24,
+   "agudos_5k_dB": -27.6
+  },
+  "boss_final_2": {
+   "tipo": "loop",
+   "muestras": 2822400,
+   "segundos": 64.0,
+   "sr": 44100,
+   "bpm": 105.0,
+   "compas_s": 2.285714,
+   "tramos": [
+    "c20-c39",
+    "c48-c55"
+   ],
+   "LUFS": -13.53,
+   "agudos_5k_dB": -25.2
+  },
+  "boss_final_3_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 190260,
+   "segundos": 4.3143,
+   "sr": 44100,
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "golpe_muestra": 190260,
+   "LUFS": -14.7,
+   "agudos_5k_dB": -19.4
+  },
+  "boss_final_3": {
+   "tipo": "loop",
+   "muestras": 1902684,
+   "segundos": 43.1448,
+   "sr": 44100,
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "tramos": [
+    "c56-c70",
+    "c35-c39"
+   ],
+   "LUFS": -12.44,
+   "agudos_5k_dB": -24.6
+  },
+  "boss_final_4_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 179585,
+   "segundos": 4.0722,
+   "sr": 44100,
+   "bpm": 117.857,
+   "compas_s": 2.036364,
+   "golpe_muestra": 179585,
+   "LUFS": -12.9,
+   "agudos_5k_dB": -24.2
+  },
+  "boss_final_4": {
+   "tipo": "loop",
+   "muestras": 1436827,
+   "segundos": 32.5811,
+   "sr": 44100,
+   "bpm": 117.857,
+   "compas_s": 2.036364,
+   "tramos": [
+    "c61-c70",
+    "c63-c68"
+   ],
+   "LUFS": -10.95,
+   "agudos_5k_dB": -26.4
+  },
+  "boss_final_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 216195,
+   "segundos": 4.9024,
+   "sr": 44100,
+   "bpm": 111.25,
+   "compas_s": 2.157303,
+   "golpe_s": 0.008,
+   "LUFS": -18.83,
+   "agudos_5k_dB": -25.0
+  },
+  "boss_final_out_4": {
+   "tipo": "outro (una vez)",
+   "muestras": 204281,
+   "segundos": 4.6322,
+   "sr": 44100,
+   "bpm": 117.857,
+   "compas_s": 2.036364,
+   "golpe_s": 0.008,
+   "LUFS": -18.35,
+   "agudos_5k_dB": -24.1
+  },
+  "boss_bamboo_intro": {
+   "tipo": "intro (una vez)",
+   "muestras": 53231,
+   "segundos": 1.2071,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_muestra": 53231,
+   "LUFS": -22.73,
+   "agudos_5k_dB": -15.0
+  },
+  "boss_bamboo": {
+   "tipo": "loop",
+   "muestras": 3112942,
+   "segundos": 70.5883,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "tramos": [
+    "c0-c39"
+   ],
+   "LUFS": -14.0,
+   "agudos_5k_dB": -24.3
+  },
+  "boss_bamboo_2_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 155647,
+   "segundos": 3.5294,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_muestra": 155647,
+   "LUFS": -12.55,
+   "agudos_5k_dB": -23.0
+  },
+  "boss_bamboo_2": {
+   "tipo": "loop",
+   "muestras": 3190764,
+   "segundos": 72.3529,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "tramos": [
+    "c40-c80"
+   ],
+   "LUFS": -13.84,
+   "agudos_5k_dB": -21.6
+  },
+  "boss_bamboo_3_in": {
+   "tipo": "intro (una vez)",
+   "muestras": 146832,
+   "segundos": 3.3295,
+   "sr": 44100,
+   "bpm": 144.095,
+   "compas_s": 1.665565,
+   "golpe_muestra": 146832,
+   "LUFS": -14.81,
+   "agudos_5k_dB": -23.3
+  },
+  "boss_bamboo_3": {
+   "tipo": "loop",
+   "muestras": 2350404,
+   "segundos": 53.2971,
+   "sr": 44100,
+   "bpm": 144.095,
+   "compas_s": 1.665565,
+   "tramos": [
+    "c24-c39",
+    "c48-c63"
+   ],
+   "LUFS": -12.95,
+   "agudos_5k_dB": -22.4
+  },
+  "boss_bamboo_out": {
+   "tipo": "outro (una vez)",
+   "muestras": 132300,
+   "segundos": 3.0,
+   "sr": 44100,
+   "bpm": 136.0,
+   "compas_s": 1.764706,
+   "golpe_s": 0.008,
+   "LUFS": -17.02,
+   "agudos_5k_dB": -20.0
+  },
+  "boss_bamboo_out_3": {
+   "tipo": "outro (una vez)",
+   "muestras": 124868,
+   "segundos": 2.8315,
+   "sr": 44100,
+   "bpm": 144.095,
+   "compas_s": 1.665565,
+   "golpe_s": 0.008,
+   "LUFS": -16.9,
+   "agudos_5k_dB": -19.4
+  }
+ },
+ "finales": {
+  "boss_goro": {
+   "clip": "boss_goro_out",
+   "fundido_s": 0.0,
+   "vuelve_exploracion": true
+  },
+  "boss_lake": {
+   "clip": "boss_lake_out",
+   "fundido_s": 0.0,
+   "vuelve_exploracion": true
+  },
+  "boss_bamboo": {
+   "clip": "boss_bamboo_out",
+   "fundido_s": 0.0,
+   "vuelve_exploracion": true
+  },
+  "boss_final": {
+   "clip": "boss_final_out",
+   "fundido_s": 0.0,
+   "vuelve_exploracion": false
+  },
+  "ending": {
+   "clip": null,
+   "fundido_s": 2.0,
+   "vuelve_exploracion": false
+  }
+ }
+}

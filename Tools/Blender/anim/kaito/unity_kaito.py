@@ -1,5 +1,5 @@
 """Escribe SOLO lo de Kaito en Unity, sin correr el generador completo (que re-escribe assets de otros):
-el .meta de kaitooo.fbx con los clips, Animation/Kaito.controller y las filas 'kaito' y 'kage' de
+el .meta de kaitooo.fbx con los clips, Animation/Kaito.controller y la fila 'kaito' de
 NindoContent.asset (los nombres y duraciones de los estados). Usa las mismas funciones que
 Tools/Unity/generate_assets.py, así que el resultado es idéntico al del generador.
 
@@ -20,12 +20,13 @@ st.update({a: st[t] for a, t in G.KAITO_ALIASES.items() if t in st})
 ths = [0] + [round(info["clips"][n]["timing"]["ground_speed_mps"] / G.KAITO_RUN_SPEED, 4) for n in G.KAITO_LOCO[1:]]
 cg, lens = G.controller(os.path.join(G.P_ANIM, "Kaito.controller"), "Kaito", st, [st[n] for n in G.KAITO_LOCO], ths)
 
-# filas de NindoContent: mismos bloques que content_asset().chars() para 'kaito' y 'kage' (el mismo controller)
+# la fila de NindoContent: el mismo bloque que content_asset().chars() para 'kaito' (la de 'kage' ya no existe: Kokuyō
+# es su propio personaje y esa fila solo copiaba el controller de Kaito sin que nadie la leyera)
 path = os.path.join(G.P_RES, "NindoContent.asset")
 text = open(path, encoding="utf-8").read()
 names = "".join(f"\n    - {n}" for n in lens)
 secs = "".join(f"\n    - {lens[n]}" for n in lens)
-for cid in ("kaito", "kage"):
+for cid in ("kaito",):
     pat = re.compile(r"(  - id: " + cid + r"\n(?:    .*\n)*?    stateNames:)(?:\n    - .*)*(\n    stateLengths:)(?:\n    - .*)*")
     text, n = pat.subn(lambda m: m.group(1) + names + m.group(2) + secs, text, count=1)
     assert n == 1, cid

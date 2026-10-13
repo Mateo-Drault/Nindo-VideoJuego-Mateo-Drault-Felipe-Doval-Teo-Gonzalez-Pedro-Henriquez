@@ -27,10 +27,6 @@ namespace Nindo
         /// <summary>Bambú: agazapado y nervioso, la cabeza salta de un lado a otro buscando a Kaito.</summary>
         public static readonly MotionFlavor Bamboo = new MotionFlavor
         { idleSpeed = 1.18f, lean = 9f, headPitch = -6f, breathe = 1f, breatheHz = 0.6f, scan = 24f, scanEvery = 1.5f };
-
-        /// <summary>Ōzeki: el campeón saca pecho y respira lento; nada de apuro.</summary>
-        public static readonly MotionFlavor Champion = new MotionFlavor
-        { idleSpeed = 0.85f, lean = -5f, hunch = -4f, headPitch = 3f, breathe = 2f, breatheHz = 0.24f };
     }
 
     /// <summary>
@@ -102,7 +98,8 @@ namespace Nindo
             nextScan = Time.time + Random.Range(0.3f, flavor.scanEvery);
         }
 
-        bool InLocomotion => enemy.IsAlive && enemy.State != EnemyState.Scripted && enemy.Anim.Current == enemy.config.animLocomotion;
+        // en el blend tree (caminar, rodear, retroceder: Enemy.Locomotion.cs) y en el Idle que respira cuando se queda quieto
+        bool InLocomotion => enemy.IsAlive && enemy.State != EnemyState.Scripted && enemy.InLocomotionPose;
 
         float Speed01 => hasSpeed ? Mathf.Clamp01(animator.GetFloat(SpeedParam)) : 0f;
 
@@ -181,7 +178,8 @@ namespace Nindo
 
         void Write(bool rotation)
         {
-            transform.localPosition = basePos + Vector3.up * (curLift / Mathf.Max(0.01f, transform.parent != null ? transform.parent.lossyScale.y : 1f));
+            // + el adelanto de una embestida que el imán cortó (Enemy.ModelNudge): si no, el salto lo borraba
+            transform.localPosition = basePos + enemy.ModelNudge + Vector3.up * (curLift / Mathf.Max(0.01f, transform.parent != null ? transform.parent.lossyScale.y : 1f));
             if (!rotation) return;
             transform.localRotation = baseRot * Quaternion.Euler(0f, curYaw, 0f);
             rotDirty = Mathf.Abs(Mathf.DeltaAngle(curYaw, 0f)) > 0.01f;
@@ -199,23 +197,27 @@ namespace Nindo
             switch (a.name)
             {
                 case "Salto":
-                    // en el aire desde que arranca la embestida hasta que cae con el golpe (1.2 m de alto)
-                    lift = 1.2f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((t - (T - 0.42f)) / 0.47f));
+                    // en el aire desde que arranca la embestida hasta que cae con el golpe (1.2 m de alto); el clip propio
+                    // (Leap) ya salta en su arco, solo el de respaldo (Attack3) se levanta acá
+                    if (a.state != LeapState) lift = 1.2f * Mathf.Sin(Mathf.PI * Mathf.Clamp01((t - (T - 0.42f)) / 0.47f));
                     if (struck) Game.FX?.Dust(enemy.transform.position, 1.1f);
                     break;
                 case "Repliegue":
                 case "Finta":
                 {
-                    // en el aire mientras recorre el salto (Enemy lo mueve entre activeStart y activeEnd del clip)
+                    // en el aire mientras recorre el salto (Enemy lo mueve entre activeStart y activeEnd del clip); los clips
+                    // propios (HopBack, HopSideR y su espejo HopSideL) ya saltan agachándose, despegando y cayendo: solo el de
+                    // respaldo (Spotted) se levanta
                     float k = Mathf.InverseLerp(a.activeStart, a.activeEnd, tl.NormAt(t));
-                    lift = (a.name == "Finta" ? 0.45f : 0.7f) * Mathf.Sin(Mathf.PI * k);
+                    if (a.state != HopBackState && a.state != HopSideRState && a.state != HopSideLState) lift = (a.name == "Finta" ? 0.45f : 0.7f) * Mathf.Sin(Mathf.PI * k);
                     break;
                 }
                 case "Remolino":
                 {
-                    // un giro entero desde la suelta hasta un poco después del golpe (pega en 360°)
+                    // un giro entero desde la suelta hasta un poco después del golpe (pega en 360°); el clip propio (Whirl)
+                    // gira en el aire con los pies, solo el de respaldo (Attack2) se gira entero acá
                     float k = Mathf.Clamp01((t - tl.ReleaseTime) / Mathf.Max(0.05f, T - tl.ReleaseTime + 0.22f));
-                    yaw = 360f * k * k * (3f - 2f * k);
+                    if (a.state != WhirlState) yaw = 360f * k * k * (3f - 2f * k);
                     if (struck) Game.FX?.Splash(enemy.transform.position + Vector3.up * 0.6f);
                     break;
                 }
@@ -236,12 +238,16 @@ namespace Nindo
                     break;
                 case "Shiko D":
                 case "Shiko I":
-                    // el shiko de la montaña levanta nieve (el del Ōzeki ya tiene su onda)
+                    // el shiko de la montaña levanta nieve
                     if (struck && flavor == MotionFlavor.Mountain) Game.FX?.SmokePuff(enemy.transform.position + enemy.transform.forward * 1.3f, 2.2f);
                     break;
             }
             return lift > 0.001f || Mathf.Abs(yaw) > 0.01f;
         }
+
+        // golpes de zona con clip propio (EnemyArchetypes: el salto y el giro ya están en el clip)
+        const string LeapState = "Leap", WhirlState = "Whirl", HopBackState = "HopBack",
+            HopSideRState = "HopSideR", HopSideLState = "HopSideL";
 
         static void Restore(Bone b)
         {

@@ -95,6 +95,16 @@ if C.count(body, "Motoyui") == 0:
     geo.prism((0, -0.27, 4.86), (0, -0.19, 4.915), 0.125, 0.13, "Motoyui", seg=6, up=(1, 0, 0), sy=0.8)
     print("chonmage", C.attach(body, geo, ("bone", "Cabeza")), "tris")
 
-# sin tomas: el sumo anima con los .anim de Characters/Sumo (Sumo.controller) y ningún controller usa los
-# clips del FBX; sus 8 tomas (casi estáticas) eran 2.4 MB del archivo. La pose por defecto sí se conserva.
-C.finish(arm, src, REL, o, pose=pose, export_kw=dict(bake_anim=False))
+# ------------------------------------------------------------------ esqueleto de juego
+# las manos y los pies colgaban de TargetBrazo/TargetPie en la raíz: pasan a hijos del antebrazo y la tibia (Unity mezcla
+# cada hueso por separado y en los cruces la muñeca y el tobillo se despegaban). Los pesos de los controles van a la mano
+# y al pie, y los de las rodillas (PolePie, que el solver llevaba rígido con la tibia) a la tibia: la malla se deforma
+# igual. SumoPoser sigue andando (resuelve el brazo y la pierna como FK si la mano/el pie cuelgan del antebrazo/tibia)
+SUMO_LIMBS = [("Palma.L", "Antebrazo.L"), ("Palma.R", "Antebrazo.R"), ("pie.L", "Tibia.L"), ("pie.R", "Tibia.R")]
+print("esqueleto de juego", C.game_limbs(arm, SUMO_LIMBS, merge={
+    "TargetBrazo.L": "Palma.L", "TargetBrazo.R": "Palma.R", "TargetPie.L": "pie.L", "TargetPie.R": "pie.R",
+    "PolePie.L": "Tibia.L", "PolePie.R": "Tibia.R"}))
+
+# sin tomas: el sumo anima con TeamAnims/SumoAnims.fbx (Sumo.controller) y ningún controller usa los clips del FBX; sus 8
+# tomas (casi estáticas) eran 2.4 MB del archivo. La pose por defecto sí se conserva.
+C.finish(arm, src, REL, o, pose=pose, export_kw=dict(bake_anim=False), reparented=dict(SUMO_LIMBS))

@@ -75,7 +75,8 @@ namespace Nindo
 
         public static string SealIconName(SealId s) => s == SealId.Montana ? "ZoneMountain" : s == SealId.Lago ? "ZoneLake" : "ZoneBamboo";
 
-        public static string SealName(SealId s) => s == SealId.Montana ? "Sello de la Montaña" : s == SealId.Lago ? "Sello del Lago" : "Sello del Bambú";
+        // un solo nombre por sello: el HUD decía "Sello del Lago" y Kaito, los objetivos y la puerta, "Sello del Agua"
+        public static string SealName(SealId s) => StoryText.SealName(s);
 
         /// <summary>Sello rojo (hanko) con el pictograma calado: "Hanko_" + nombre del ícono.</summary>
         public static Sprite Hanko(string iconName) => string.IsNullOrEmpty(iconName) ? null : Get("Hanko_" + iconName);

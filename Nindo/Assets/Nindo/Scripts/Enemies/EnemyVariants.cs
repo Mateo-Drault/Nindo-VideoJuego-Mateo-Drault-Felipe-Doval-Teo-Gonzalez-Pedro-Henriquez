@@ -13,7 +13,7 @@ namespace Nindo
     ///  * un kit de accesorios (CharacterKits, Tools/Blender/characters/kits/build_kits.py) con lo que se mueve solo;
     ///  * el color de algunos materiales del cuerpo (el traje con el matiz de la zona, el mawashi de cada sumo);
     ///  * un "sabor" de movimiento sin clips nuevos (VariantMotion): la montaña pesada y lenta, el lago fluido, el
-    ///    bambú rápido y alerta, el Ōzeki orgulloso;
+    ///    bambú rápido y alerta;
     ///  * retoques chicos de números que NO tocan los tiempos de los golpes (el aviso de parry sigue igual);
     ///  * golpes propios de la zona (EnemyArchetypes.*Moves): la montaña cierra con un tajo imparable, el lago gira
     ///    y tira el arpón, el bambú entra de un salto y se repliega; sus sumos pisan, empujan o fintean.
@@ -66,12 +66,11 @@ namespace Nindo
         static readonly KeyValuePair<string, Color>[] SumoMountain = Colors(("Pollera", "#44474d"), ("PolleraCinto", "#2c2f35"), ("Sagari", "#6b7079"));
         static readonly KeyValuePair<string, Color>[] SumoLake = Colors(("Pollera", "#1f4a5e"), ("PolleraCinto", "#173544"), ("Sagari", "#9fd0d6"));
         static readonly KeyValuePair<string, Color>[] SumoBamboo = Colors(("Pollera", "#2f4a2a"), ("PolleraCinto", "#1f3320"), ("Sagari", "#b8a35a"));
-        static readonly KeyValuePair<string, Color>[] OzekiColors = Colors(("Pollera", "#5b3a6b"), ("PolleraCinto", "#3a2446"), ("Sagari", "#d9a93a"));
 
         /// <summary>
         /// La variante de un arquetipo en una región (null = no se viste: jefes con modelo propio, clones de Kage).
         /// sumo_mountain ya ES el sumo de la montaña (con su vida y daño en EnemyArchetypes): lleva el kit sin los
-        /// retoques de números; el Ōzeki lleva el suyo en cualquier lado.
+        /// retoques de números.
         /// </summary>
         public static Variant For(string archetype, Region region)
         {
@@ -99,8 +98,6 @@ namespace Nindo
                     }
                 case "sumo_mountain":
                     return new Variant { kit = "sumo_mountain", colors = SumoMountain, motion = MotionFlavor.Mountain };
-                case "ozeki":
-                    return new Variant { kit = "ozeki", colors = OzekiColors, motion = MotionFlavor.Champion };
                 default:
                     return null;
             }
@@ -163,13 +160,13 @@ namespace Nindo
 
         /// <summary>
         /// Viste al enemigo recién armado (EnemyFactory.Spawn, antes del tinte y de agregar Enemy). Con el kit puesto
-        /// el tinte de EnemyArchetypes se apaga: el rojo del élite, el azul del sumo de la montaña y el del Ōzeki
-        /// ahora son piezas del kit (la máscara oni, las hombreras laqueadas, el delantal violeta).
+        /// el tinte de EnemyArchetypes se apaga: el rojo del élite y el azul del sumo de la montaña ahora son piezas
+        /// del kit (la máscara oni, las hombreras laqueadas).
         /// </summary>
         public static void Apply(string archetype, EnemyConfig cfg, Animator anim, Vector3 pos)
         {
             if (anim == null || cfg == null) return;
-            // todos los sumos (el común, los de zona y el Ōzeki) cargan y pegan con poses que se leen desde arriba
+            // todos los sumos (el común y los de zona) cargan y pegan con poses que se leen desde arriba
             if (EnemyFactory.CharacterFor(archetype) == "sumo") anim.gameObject.AddComponent<SumoPoser>();
             var v = For(archetype, RegionAt(pos));
             if (v == null || CharacterKits.Attach(anim.transform, v.kit) == null) return;

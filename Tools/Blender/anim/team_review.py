@@ -27,8 +27,13 @@ def base_color(m):
     return col, emi
 
 
+def root_vec(r):
+    """Avance del transform en un cuadro: un vector del marco de autoría o, como antes, los metros hacia adelante."""
+    return r.copy() if isinstance(r, Vector) else Vector((0.0, -r, 0.0))
+
+
 class Review:
-    def __init__(self, ch, out_dir, kaito=True):
+    def __init__(self, ch, out_dir, kaito=True, partner=False):
         self.ch = ch
         self.out = out_dir
         os.makedirs(out_dir, exist_ok=True)
@@ -48,9 +53,9 @@ class Review:
                         c = tuple(x / mx * BLACK_FLOOR for x in c) if mx > 0.005 else (0.11, 0.115, 0.13)
                     done[m.name] = self.look.build("rv_" + m.name, albedo_rgb=c, emission_rgb=e)
                 s.material = done[m.name]
-        # el kidnapper del FBX del abuelo no se ve en el NPC 'grandpa'
+        # el kidnapper del FBX del abuelo no se ve en el NPC 'grandpa' (sí en los clips que lo animan: 'partner')
         for o in ch.meshes:
-            if ch.name == "grandpa" and o.name.startswith("Cube"):
+            if ch.name == "grandpa" and o.name.startswith("Cube") and not partner:
                 o.hide_render = True
         # pivote: el personaje en metros, parado en el origen y mirando a -Y del mundo (hacia la cámara del juego)
         self.piv = bpy.data.objects.new("CharPivot", None)
@@ -195,7 +200,7 @@ class Review:
 
             def setter(f, yaw=yaw, moving=moving):
                 scn.frame_set(first + f)
-                self.face(yaw, Vector((0.0, -roots_m[f], 0.0)) if moving else Vector())
+                self.face(yaw, root_vec(roots_m[f]) if moving else Vector())
             self.face(yaw)
             if view.startswith("juego"):
                 self.show_kaito(True)
@@ -224,8 +229,8 @@ class Review:
         tiles = []
         for f, lab in zip(frames, labels):
             scn.frame_set(first + f)
-            self.face(0.0, Vector((0.0, -roots_m[f], 0.0)))
-            c = Vector((0.0, -roots_m[f], h * 0.5))
+            self.face(0.0, root_vec(roots_m[f]))
+            c = root_vec(roots_m[f]) + Vector((0.0, 0.0, h * 0.5))
             NA.game_camera(self.cam, (c.x, c.y, 0.8), pitch=52.0, dist=24.0, fov=30.0)
             bpy.context.view_layer.update()
             u = world_to_camera_view(scn, self.cam, c)

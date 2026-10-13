@@ -12,7 +12,7 @@
 Orden con export_kaito.py (malla, materiales y katana del pulido B2): primero export_kaito.py, después este.
 
 Falla (código 1) si un chequeo no pasa: alcance de manos y pies, deriva de los pies apoyados (< 2 cm en el
-juego), suelas que rozan el piso y se corren (< 2 cm por cuadro del juego y < 3 cm por tramo, con el avance y el
+juego), suelas que rozan el piso y se corren (< 2 cm por cuadro del juego y < 2 cm por tramo, con el avance y el
 giro del modelo que pone el código, entre cuadros en los ciclos, y también con el avance del corte cortado por el
 imán), pies en el aire donde el juego mueve el cuerpo ('airborne'), empalmes de los crossfades cortos
 (kaito_clips.CHAINS), costura de los loops (< 1°), velocidad de los ciclos contra la autorada, el impacto dentro de
@@ -28,6 +28,7 @@ for p in (HERE, os.path.join(ROOT, "Tools", "Blender", "anim"), os.path.join(ROO
 sys.dont_write_bytecode = True
 
 import bpy
+import numpy as np
 from mathutils import Vector, Matrix
 import nindo_anim as NA
 import charlib as C
@@ -72,7 +73,9 @@ def sole_pivots():
 # arrastrada en un tajo, la punta que roza al despegar en el trote) no lo ve. Acá cuenta cualquier punto de la
 # suela a menos de CONTACT del piso en dos muestras seguidas, con el avance del juego aplicado
 CONTACT_U = 0.012 * KR.U_PER_M
-SKATE_STEP_CM, SKATE_RUN_CM = 2.0, 3.0      # por cuadro del juego / acumulado en un tramo
+# por cuadro del juego / acumulado en un tramo (el tope del pie apoyado del pedido es 2 cm: con 3, WakeUp y PrayIncense
+# se corrían 2.9 y 2.8 cm al levantar el talón)
+SKATE_STEP_CM, SKATE_RUN_CM = 2.0, 2.0
 SKATE_NOISE_CM = 0.5                        # cm por cuadro del juego (15 cm/s) que no se ven: no suman
 
 
@@ -219,7 +222,8 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
     check(not bad, f"{clip.name}: ninguna suela patina rozando el piso (peor {bad[:3]})")
     # el imán del ataque corta el avance contra un enemigo pegado: un pie clavado en el mundo mientras el clip
     # descuenta el avance patina hacia atrás. Mientras el juego mueve el cuerpo, los pies van en el aire
-    if not clip.loop and any((roots[i + 1] - roots[i]).length > 1e-6 for i in range(n)):
+    # (timing 'travel_fixed': el avance no lo corta nada, p. ej. el frenado de RunStop)
+    if not clip.loop and not t.get("travel_fixed") and any((roots[i + 1] - roots[i]).length > 1e-6 for i in range(n)):
         sk0 = skate_report(rig, frames, roots, 1, False, skid)
         rep["skate_no_lunge"] = sk0
         bad0 = [(fb, r) for fb, v in sk0.items() for r in v if r[2] > SKATE_RUN_CM or r[3] > SKATE_STEP_CM]
@@ -281,6 +285,63 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
     return rep
 
 
+# =============================================================================== muñecas
+BLADE_FIX_OK, BLADE_FIX_MAX = 12.0, 25.0    # grados que la hoja se puede correr de la autorada por el tope de la muñeca
+# ...en los cuadros que no cortan (kaito_rig.cutting) la hoja autorada solo dice más o menos dónde va: ahí manda la
+# muñeca (SOFT_LIMIT) y se tolera más. El peor es la carga del Corte final (f1: la hoja interpolada de arriba-atrás a
+# afuera pide dar vuelta el codo; la muñeca la corre 50° en un cuadro de 33 ms a mitad de la carga)
+BLADE_FIX_SOFT_OK, BLADE_FIX_SOFT_MAX = 20.0, 55.0
+STEP_JUMP_DEG = 35.0                        # giro de la hoja o del codo entre dos cuadros del juego que ya se ve como tirón
+SHOULDER_FAIL = 120.0                       # giro del húmero (respecto del brazo en cruz) que ya no pasa nunca
+
+
+def wrist_report(clip, wrists, states, fixes, ease):
+    """Muñecas del clip horneado: cuánto pasan de lo cómodo (WRIST_COMFORT), la hoja corrida por el tope y los
+    tirones del giro de la hoja y del codo entre cuadros."""
+    out = {}
+    ts = clip.timing.get("time_scale", 1.0)
+    for k, S in ((0, "R"), (1, "L")):
+        ex = []
+        for w in wrists:
+            e = 0.0
+            for v, key in zip(w[k], ("flex", "rad", "twist")):
+                lo, hi = KR.WRIST_COMFORT[S][key]
+                e = max(e, lo - v, v - hi)
+            ex.append(e)
+        f = max(range(len(ex)), key=lambda i: ex[i])
+        out["wrist_" + S] = {"over_comfort_max": round(max(0.0, ex[f]), 1), "at": f,
+                             "frames_over": sum(1 for e in ex if e > 5.0), "pose": [round(v, 1) for v in wrists[f][k]]}
+        check(ex[f] <= 15.0, f"{clip.name}: muñeca {S} cómoda (pasa {max(0.0, ex[f]):.0f}° en f{f}: flex/rad/giro "
+                             f"{tuple(round(v) for v in wrists[f][k])}; {out['wrist_' + S]['frames_over']} cuadros > 5°)",
+              warn=ex[f] <= 25.0)
+    for k, S in ((2, "R"), (3, "L")):
+        sh = [abs(w[k]) for w in wrists]
+        f = max(range(len(sh)), key=lambda i: sh[i])
+        out["shoulder_" + S] = round(sh[f], 1)
+        # (el giro se mide respecto del brazo en cruz: con el brazo atrás o adelante, 70-90° de rotación interna es
+        # natural; recién pasando SHOULDER_FAIL la manga del gi se retuerce)
+        check(sh[f] <= KR.SHOULDER_COMFORT[1] + 15.0, f"{clip.name}: hombro {S} sin retorcer ({sh[f]:.0f}° en f{f})",
+              warn=sh[f] <= SHOULDER_FAIL)
+    for cut, ok, mx, nm in ((True, BLADE_FIX_OK, BLADE_FIX_MAX, "cortando"), (False, BLADE_FIX_SOFT_OK, BLADE_FIX_SOFT_MAX, "entre cortes")):
+        fs = [f for f in range(len(fixes)) if KR.cutting(clip, f) == cut]
+        if not fs:
+            continue
+        fx = max(fs, key=lambda i: fixes[i])
+        out["blade_fix_deg" + ("" if cut else "_soft")] = round(fixes[fx], 1)
+        check(fixes[fx] <= ok, f"{clip.name}: la hoja autorada entra en la mano {nm} (se corrió {fixes[fx]:.0f}° en f{fx})",
+              warn=fixes[fx] <= mx)
+    # tirones: el cambio por cuadro del juego que el gesto autorado no tapa (KR.step_ease: en un golpe que sacude la
+    # mano, un giro grande no se ve)
+    for j, nm, e in ((0, "giro de la hoja", ease[0]), (2, "codo derecho", ease[0]), (3, "codo izquierdo", ease[1])):
+        d = [abs(KR._wrap(b[j] - a[j])) * ts * math.sqrt(e[f + 1]) for f, (a, b) in enumerate(zip(states, states[1:]))]
+        i = max(range(len(d)), key=lambda q: d[q]) if d else 0
+        out["step_" + str(j)] = round(d[i], 1) if d else 0.0
+        check(not d or d[i] <= STEP_JUMP_DEG, f"{clip.name}: {nm} sin tirones ({d[i] if d else 0:.0f}° por cuadro en f{i}-f{i + 1})",
+              warn=True)
+    out["arm_states"] = [[round(v, 1) for v in s] for s in states]
+    return out
+
+
 def chain_report(rig, baked):
     """Empalmes que el código hace con crossfades cortos (kaito_clips.CHAINS): el giro local más grande entre
     el cuadro que termina y el que arranca, y cuánto se corre un pie. Un empalme de combo tiene que dar 0; uno
@@ -308,6 +369,158 @@ def chain_report(rig, baked):
                                           f"articulaciones {joint[0]:.1f} cm ({joint[1]})"
                                           + ("" if ang <= lim else f"; siguen {[(n, round(d)) for d, n in worst[1:4]]}"))
     return out
+
+
+# =============================================================================== tirones de un cuadro
+# Lo que las hojas de revisión no ven porque cae entre dos cuadros dibujados: una pierna que pasa de una rodilla arriba a
+# kiza de un cuadro al otro (PrayIncense f40-41: 132° y la rodilla 22 cm), la muerte que estira las dos piernas en un
+# cuadro, la mano libre que da 80° al entrar al zanshin. Se mide en el mundo del clip (con el avance del juego), por
+# cuadro del juego. 'snap_ok' = [[a, b], ...] tramos de cuadros (f -> f+1 con a <= f < b) donde el tirón es a propósito
+# y lo tapa el gesto (el sacudón del golpe recibido, el tajo); los cortes ('cut', el teletransporte) no cuentan
+SNAP_LEG_DEG = 45.0          # un hueso de la pierna que gira más que esto en un cuadro
+# una articulación a menos de 20 cm del piso que se corre más de 12 cm en un cuadro (3.6 m/s: un paso rápido de Kaito
+# lleva el pie a 2-3 m/s; una pierna que se reacomoda de golpe, a 6-20)
+SNAP_LOW_Z_CM, SNAP_LOW_CM = 20.0, 12.0
+SNAP_HAND_DEG = 45.0         # una mano (o un dedo) que gira más que esto
+SNAP_HOLD_DEG = 20.0         # ...y durante la pose quieta ('hold': el zanshin con la cámara encima)
+SNAP_ELBOW_DEG = 60.0        # el codo que gira alrededor de la recta hombro-muñeca (con el codo a más de 3 cm de ella)
+SNAP_TWIST_DEG = 60.0        # el húmero que gira sobre su eje (la manga se retuerce de golpe)
+SNAP_LEGS = ("Pierna.l", "Pierna.r", "Tibia.L", "Tibia.R", "Pie.L", "Pie.R")
+
+
+def _twist_y(q):
+    """Giro (grados) de un cuaternión local sobre el eje Y del hueso (su largo)."""
+    return math.degrees(2.0 * math.atan2(q.y, q.w))
+
+
+def snap_report(rig, clip, frames, roots):
+    t = clip.timing
+    ts = t.get("time_scale", 1.0)
+    n = clip.frames
+    if clip.loop:
+        return {}            # los ciclos tienen su costura y su patinada; el pie en vuelo va rápido a propósito
+    ok_rng = [tuple(r) for r in t.get("snap_ok", ())]
+    cuts = list(t.get("cut", ()))
+    # el cuadro en que lo golpean es un sacudón a propósito (el solver tampoco pone topes ahí)
+    if "impact" in t:
+        ok_rng.append((t["impact"] - 1, t["impact"]))
+    ok_rng += [(b - 1, b) for b in t.get("burst", ())]
+    hold = t.get("hold")
+    fingers = {S: [b for b in rig.subtree("Mando." + S) if not b.endswith("_end")] for S in "LR"}
+    W = frames
+    loc = [rig.to_local(w) for w in W]
+    hits = []
+
+    def jp(f, b, tail):
+        m = W[f][b]
+        p = (m @ Vector((0.0, rig.length[b], 0.0))) if tail else m.translation
+        return p + roots[f]
+
+    def elbow(f, S):
+        sh, el, wr = (W[f][b].translation for b in ("Brazo." + S, "Antebrazo." + S, "Mando." + S))
+        ax = wr - sh
+        if ax.length < 1e-6:
+            return None
+        ax.normalize()
+        v = el - sh
+        v = v - ax * v.dot(ax)
+        return v.normalized() if v.length * M * 100 >= 3.0 else None
+
+    for f in range(n):
+        if any(f < c < f + 1 for c in cuts) or any(a <= f < b for a, b in ok_rng):
+            continue
+        A, B = W[f], W[f + 1]
+        rot = lambda b: NA.quat_angle_deg(A[b].to_quaternion(), B[b].to_quaternion()) * ts
+        in_hold = hold is not None and hold[0] <= f < hold[1]
+        # en el tajo la estela tapa la mano y el codo (KR.cutting); las piernas y lo que roza el piso, siempre
+        smear = KR.cutting(clip, f) or KR.cutting(clip, f + 1)
+        still = (roots[f + 1] - roots[f]).length < 1e-6
+        # los cuadros de una frenada que siguen la carrera ('lead') mueven las piernas como Run a 30 fps (50-60° por cuadro:
+        # el ciclo dura 0.4 s); run_stop_report mide que sean los de Run
+        for b in (() if "run_phase" in t and f < t.get("lead", 2) - 1 else SNAP_LEGS):
+            r = rot(b)
+            if r > SNAP_LEG_DEG:
+                hits.append((round(r), f, b, "gira"))
+            for tail in (False, True):
+                pa, pb = jp(f, b, tail), jp(f + 1, b, tail)
+                # (con el cuerpo quieto: en un avance del juego el pie en el aire va con el cuerpo)
+                if still and min(pa.z, pb.z) * M * 100 < SNAP_LOW_Z_CM:
+                    d = (pb - pa).length * M * 100 * ts
+                    if d > SNAP_LOW_CM:
+                        hits.append((round(d), f, b + (" punta" if tail else ""), "cm junto al piso"))
+        if smear:
+            continue
+        for S in "LR":
+            bones = fingers[S] if in_hold else ["Mando." + S]
+            lim = SNAP_HOLD_DEG if in_hold else SNAP_HAND_DEG
+            r, b = max((rot(b), b) for b in bones)
+            if r > lim:
+                hits.append((round(r), f, b, "gira" + (" en la pose quieta" if in_hold else "")))
+            ea, eb = elbow(f, S), elbow(f + 1, S)
+            if ea is not None and eb is not None:
+                sw = math.degrees(math.acos(max(-1.0, min(1.0, ea.dot(eb))))) * ts
+                if sw > SNAP_ELBOW_DEG:
+                    hits.append((round(sw), f, "codo " + S, "gira"))
+            tw = abs(KR._wrap(_twist_y(loc[f + 1]["Brazo." + S][1]) - _twist_y(loc[f]["Brazo." + S][1]))) * ts
+            if tw > SNAP_TWIST_DEG:
+                hits.append((round(tw), f, "Brazo." + S, "se retuerce"))
+    hits.sort(key=lambda h: (h[1], -h[0]))
+    rows = [f"f{f}-{f + 1} {b} {v}{'°' if u != 'cm junto al piso' else ' cm'}{'' if u in ('gira', 'cm junto al piso') else ' ' + u}"
+            for v, f, b, u in hits]
+    check(not hits, f"{clip.name}: sin tirones de un cuadro ({len(hits)}: {', '.join(rows[:10])}{' ...' if len(rows) > 10 else ''})",
+          warn="--strict-snaps" not in argv)
+    return {"snaps": rows}
+
+
+def run_stop_report(rig, baked):
+    """Las frenadas arrancan en un cuadro de Run ('run_phase') y lo siguen hasta que apoyan ('lead'): el fundido de 0.1 s
+    mezcla Run, que sigue, con el clip, que también sigue. El cuadro j de la frenada contra Run 2j cuadros horneados más
+    (Run va a 60 fps), todo el cuerpo (giro local del hueso que más difiere); y desde el arranque hasta un cuadro después
+    de la carga, nada salta: la cadera, el tronco y la cabeza giran como mucho RUN_STOP_BODY_STEP por cuadro y los brazos
+    RUN_STOP_ARM_STEP (antes la pose de frenada entraba entera en un cuadro)."""
+    by = {c.name: (c, fr) for c, fr in baked}
+    if "Run" not in by:
+        return {}
+    run_c, run_f = by["Run"]
+    body = ("Root", "tronco", "cabeza")
+    arms = ("Hombro.L", "Hombro.R", "Brazo.L", "Brazo.R", "Antebrazo.L", "Antebrazo.R", "Mando.L", "Mando.R")
+    bones = [n for n in rig.names if n not in KR.LEGACY]
+    out = {}
+    for c, fr in baked:
+        ph = c.timing.get("run_phase")
+        if ph is None:
+            continue
+        k0, P = round(ph * run_c.frames), c.timing.get("lead", 2)
+        lead = []
+        for j in range(P):
+            la, lb = rig.to_local(run_f[(k0 + 2 * j) % run_c.frames]), rig.to_local(fr[j])
+            d, b = max((NA.quat_angle_deg(la[n][1], lb[n][1]), n) for n in bones)
+            lead.append((j, round(d, 1), b))
+        steps = []
+        for f in range(P + 2):
+            la, lb = rig.to_local(fr[f]), rig.to_local(fr[f + 1])
+            db = max((NA.quat_angle_deg(la[n][1], lb[n][1]), n) for n in body)
+            da = max((NA.quat_angle_deg(la[n][1], lb[n][1]), n) for n in arms)
+            # mientras sigue la carrera, lo que el brazo de Run ya se mueve en ese cuadro (casi estirado, el izquierdo gira
+            # 40-50° por cuadro en algunas fases) es el tope
+            lim = RUN_STOP_ARM_STEP
+            if f + 1 < P:
+                ra = rig.to_local(run_f[(k0 + 2 * f) % run_c.frames])
+                rb = rig.to_local(run_f[(k0 + 2 * f + 2) % run_c.frames])
+                lim = max(lim, max(NA.quat_angle_deg(ra[n][1], rb[n][1]) for n in arms) + 5.0)
+            steps.append((f, round(db[0], 1), db[1], round(da[0], 1), da[1], round(lim, 1)))
+        out[c.name] = {"lead": lead, "steps": steps}
+        wl = max(lead, key=lambda r: r[1])
+        wb = max(steps, key=lambda r: r[1])
+        wa = max(steps, key=lambda r: r[3] - r[5])
+        check(wl[1] <= RUN_STOP_LEAD_DEG and wb[1] <= RUN_STOP_BODY_STEP and wa[3] <= wa[5],
+              f"{c.name}: sigue a Run desde la fase {k0}/{run_c.frames} ({', '.join(f'f{j} {d:.0f}° {b}' for j, d, b in lead)}; "
+              f"por cuadro hasta f{P + 2}: cuerpo {wb[1]:.0f}° ({wb[2]} f{wb[0]}), brazos {wa[3]:.0f}° ({wa[4]} f{wa[0]}, tope {wa[5]:.0f}°))")
+    return out
+
+
+# (en el cuadro del apoyo el brazo izquierdo pasa del vaivén de la carrera al del pecho: 35-40° es el sacudón del frenazo)
+RUN_STOP_LEAD_DEG, RUN_STOP_BODY_STEP, RUN_STOP_ARM_STEP = 15.0, 15.0, 40.0
 
 
 def mesh_floor(meshes, rng):
@@ -365,6 +578,8 @@ def main():
         bpy.data.actions.remove(a)
     C.rest(arm, True)
     print("esqueleto de juego:", KR.game_skeleton(arm, body))
+    print("nudo de la bandana (caras borradas, caras del moño):", KR.bandana_knot(body))
+    print("bandana entera a la cabeza (vértices con peso de otro hueso):", KR.bandana_weights(body))
     C.limit_weights(body)
     C.flat_normals(body)
     C.flat_normals(kat)
@@ -382,15 +597,24 @@ def main():
         clips = [c for c in clips if c.name in names]
     baked, reports, rootsd = [], {}, {}
     for clip in clips:
-        misses = []
+        states = KR.arm_path(rig, solver, clip)
+        misses, wrists, fixes = [], [], []
+        it = iter(states)
+
+        fr_ = iter(range(clip.frames + 1))
 
         def solve(pose, c):
-            misses.append(dict(solver.solve(pose, c)))
+            misses.append(dict(solver.solve(pose, c, next(it), KR.frame_limits(clip, next(fr_)))))
+            wrists.append((solver.wrist["R"], solver.wrist["L"], solver.shoulder["R"], solver.shoulder["L"]))
+            fixes.append(solver.blade_fix)
         frames, ctrls, roots = NA.bake_clip(rig, clip, solve, ())
         reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses)
+        reports[clip.name].update(wrist_report(clip, wrists, states, fixes, solver.path_ease))
+        reports[clip.name].update(snap_report(rig, clip, frames, roots))
         baked.append((clip, frames))
         rootsd[clip.name] = roots
     reports["_chains"] = chain_report(rig, baked)
+    reports["_run_stop"] = run_stop_report(rig, baked)
     act, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP, name="KaitoB3")
     last = max(b for a, b in ranges.values())
     # nada atraviesa el piso (la armadura en el espacio C para medir; el FBX se exporta con la original)
@@ -544,7 +768,7 @@ def write_sidecar(baked, ranges, reports, fbx_summary):
             "timing": t, "normalized": norm,
             "events": [{"frame": e["frame"], "t": round(e["frame"] / n, 4), "fn": e["fn"]} for e in clip.events],
             "notes": clip.notes,
-            "lint": {k: v for k, v in rep.items() if k not in ("plants", "tip_speed_mps", "summary")},
+            "lint": {k: v for k, v in rep.items() if k not in ("plants", "tip_speed_mps", "summary", "arm_states")},
         }
     info = {"fps": NA.FPS, "take": "Scene", "units_per_meter": round(KR.U_PER_M, 4),
             "facing": "frente +Y de la armadura (Blender +X): modelYaw 90 en NindoContent, como siempre",
@@ -552,6 +776,18 @@ def write_sidecar(baked, ranges, reports, fbx_summary):
             "chains": reports.get("_chains", {}), "clips": clipd}
     with open(FBX + ".json", "w", encoding="utf-8", newline="\n") as fh:
         json.dump(info, fh, indent=1, ensure_ascii=False)
+    write_events_cs(clipd)
+
+
+# los momentos con nombre de los clips (eventos del sidecar) también van al código: el sidecar está fuera de Resources y
+# el FBX no trae AnimationEvents, así que las escenas (santuario, prólogo, final) tenían que copiar cuadros a mano y un
+# clip re-tomado las dejaba esperando un número viejo. La tabla la escribe un solo generador, Tools/Unity/kaito_timings.py
+# (Story/KaitoTimings.cs, lo que leen las escenas): antes este script escribía otra igual (KaitoClipEvents.cs) que no leía
+# nadie, y una re-toma regenerada por uno solo de los dos las desincronizaba sin aviso
+def write_events_cs(clipd):
+    sys.path.insert(0, os.path.join(ROOT, "Tools", "Unity"))
+    import kaito_timings
+    kaito_timings.main(FBX + ".json")
 
 
 main()

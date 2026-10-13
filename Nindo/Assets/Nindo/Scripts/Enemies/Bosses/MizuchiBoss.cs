@@ -145,12 +145,14 @@ namespace Nindo
         {
             if (Game.Combat != null && Health > 0) Game.Combat.Register(this);
             GameEvents.BossStarted += OnBossStarted;
+            GameEvents.PlayerDied += OnPlayerDied;
         }
 
         void OnDisable()
         {
             Game.Combat?.Unregister(this);
             GameEvents.BossStarted -= OnBossStarted;
+            GameEvents.PlayerDied -= OnPlayerDied;
             HoldCutscene(false);
         }
 
@@ -164,6 +166,8 @@ namespace Nindo
         void OnBossStarted(Boss b)
         {
             if (b != this) return;
+            // el reintento retoma la fase a la que había llegado Kaito (MizuchiBoss.Pacing)
+            if (retryPhase > 0) { ResumeRetryPhase(); return; }
             // los especiales grandes no abren la pelea: primero se aprende el ritmo de la mordida y las aletas
             StaggerCooldowns(0, 0.5f);
         }
@@ -240,11 +244,13 @@ namespace Nindo
             katanaTip = StrikePoint(a);
             trail = TrailFor(a);
             ResetStepState(a);
+            PaceStep(a);
             switch (a.special)
             {
                 case "dive": Run(DiveRoutine(a)); break;
                 case "greatwave": Run(WaveRoutine(a)); break;
                 case "pillars": Run(PillarRoutine(a)); break;
+                case "retreat": Run(RetreatRoutine(a)); break;
             }
             // BeginStep deja el clip quieto un frame; los pasos que maneja una rutina van a su ritmo
             if (held) anim.SetSpeed(1f);
@@ -400,7 +406,10 @@ namespace Nindo
             beachLoopAt = 0f; freeBeach = false;
             lurking = false;
             base.ResetEnemy();
-            if (body != null) { body.SetPhase(0); body.SetHidden(false); }
+            // los patrones son otros (la config de fábrica): las firmas de la fase anterior no se restauran sobre ellos
+            for (int n = 0; n < signature.Length; n++) signature[n] = null;
+            // el reintento desde la fase 2 o 3 espera ya corrompido: la re-presentación lo muestra como va a pelear
+            if (body != null) { body.SetPhase(retryPhase >= 1 ? 1 : 0); body.SetHidden(false); }
             baseFinisherHealth = config.finisherHealth;
             Game.Camera?.SetFocusBias(Vector3.zero);
             // Kaito murió en otro lado antes de conocerlo: vuelve a esperar en el pozo
@@ -486,8 +495,9 @@ namespace Nindo
 
         // ================================================================== fases
         /// <summary>
-        /// 55 %: la transición de 5.5 s (el sello lo corrompe en la cascada). 25 %: el cambio corto genérico, con la
-        /// cascada a pleno y el arcoíris de luna doble. La base hace la cuenta de la fase, el ritmo, el rugido y el empujón.
+        /// 68 %: la transición de 5.5 s (el sello lo corrompe en la cascada). 38 %: el cambio corto genérico, con la
+        /// cascada a pleno y el arcoíris de luna doble. La base hace la cuenta de la fase, el ritmo, el rugido y el empujón;
+        /// MizuchiBoss.Pacing, las esperas de los especiales de la fase y la cura de Kaito.
         /// </summary>
         protected override void PhaseChange(int newPhase)
         {
@@ -497,23 +507,29 @@ namespace Nindo
             newPhase = Mathf.Min(newPhase, CurrentPhase + 1);
             CancelMoves();
             base.PhaseChange(newPhase);
+            ApplyPhasePacing(newPhase);
             if (newPhase == 1)
             {
                 Imbalance = 0f;
-                // corrompido: más rápido para girar, menos tiempo agotado, golpes 10 % más fuertes y 12 % más rápidos
-                config.turnSpeed = 6f;
-                config.exhaustedTime = 2.8f;
-                config.ScaleSteps(1.1f, 1.12f / (1f + phaseSpeedBonus));
+                CorruptedStats();
                 Run(CorruptionRoutine());
             }
             else
             {
                 if (Falls != null) { Falls.Intensity = 1.6f; Falls.Surge(2f, 2f); Falls.MoonbowBoost = 2f; }
                 Game.UI?.ShowToast(StoryText.MizuchiPhase3, UIFactory.Gold, 2.2f);
-                var pil = FindPattern("Pilares");
-                if (pil != null) pil.cooldown = 12f;
+                RewardKaito(2);
                 StaggerCooldowns(2, 0.6f);
+                QueueSignatures(2);
             }
+        }
+
+        /// <summary>Corrompido: más rápido para girar, menos tiempo agotado, golpes 10 % más fuertes y 12 % más rápidos.</summary>
+        void CorruptedStats()
+        {
+            config.turnSpeed = 6f;
+            config.exhaustedTime = 2.8f;
+            config.ScaleSteps(1.1f, 1.12f / (1f + phaseSpeedBonus));
         }
 
         AttackPattern FindPattern(string name)
@@ -608,6 +624,7 @@ namespace Nindo
             body?.FlareSeal(2.5f, 1f);
             Game.UI?.ShowToast(StoryText.MizuchiPhase2, UIFactory.Crimson, 2.4f);
             Game.UI?.BossEnraged(this);
+            RewardKaito(1);
             yield return new WaitForSeconds(1.1f);
             inCinematic = false;
             move = null;
@@ -617,8 +634,10 @@ namespace Nindo
             SetState(EnemyState.Chase);
             IsAggro = true;
             nextAttackTime = Time.time + 0.8f;
-            // los especiales nuevos entran de a uno en los próximos segundos (no todos juntos al volver)
+            // los especiales nuevos entran de a uno en los próximos segundos (no todos juntos al volver), la ola y los
+            // pilares primero (MizuchiBoss.Pacing)
             StaggerCooldowns(1, 0.6f);
+            QueueSignatures(1);
         }
 
         /// <summary>Cámara baja por detrás de Kaito (mirando hacia la cascada): Kaito en primer plano, el koi y el agua atrás.</summary>
@@ -699,7 +718,7 @@ namespace Nindo
             Game.Audio?.Play("koi_roar", transform.position, 0.9f);
             Game.Camera?.Shake(0.35f);
             body?.FlareSeal(2.5f, 1.2f);
-            Game.UI?.ShowAreaTitle(title, subtitle);
+            Game.UI?.ShowBossTitle(title, subtitle);
             yield return new WaitForSeconds((90f - 76f) / 30f + 0.9f);
             // la toma sigue en el koi durante el título y el diálogo: cortada antes, el título y la charla salían con la
             // cámara de juego y el koi afuera del cuadro, arriba

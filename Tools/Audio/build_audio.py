@@ -19,6 +19,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from dsp import *  # noqa
+from build_boss_music import credits_md
 
 REPO = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(REPO, "Nindo", "Assets", "Nindo", "Audio")
@@ -41,12 +42,12 @@ MUSIC = {
     "explore_lake": ("https://opengameart.org/sites/default/files/hot_spring_town_1.ogg", "Kistol", "https://opengameart.org/content/hot-springs-town"),
     "combat": ("https://opengameart.org/sites/default/files/BeepBox-Song_0.wav", "Pepsidog", "https://opengameart.org/content/looping-japanese-fight-track"),
     "boss": ("https://opengameart.org/sites/default/files/boss_koto_0.mp3", "G_P", "https://opengameart.org/content/bosskoto"),
-    "boss_final": ("https://opengameart.org/sites/default/files/Great%20Boss_0.ogg", "Spring Spring", "https://opengameart.org/content/great-boss"),
     "gameover": ("https://opengameart.org/sites/default/files/Death%20of%20a%20Ninja%20%28Game%20Over%29.mp3", "Joth", "https://opengameart.org/content/death-of-a-ninja-game-over"),
-    "ending": ("https://opengameart.org/sites/default/files/The_fallen_samurai.mp3", "Pro Sensory", "https://opengameart.org/content/the-last-samurai"),
 }
+# "boss_final", "ending" y la música por fases de cada jefe los arma Tools/Audio/build_boss_music.py (cortes por compás,
+# loops y transiciones): si estuvieran acá, correr este script los pisaría con el tema entero
 # sonoridad objetivo (LUFS): la exploración más suave que el combate
-LOUDNESS = {"combat": -15, "boss": -14, "boss_final": -14, "gameover": -16, "ending": -16}
+LOUDNESS = {"combat": -15, "boss": -14, "gameover": -16}
 
 
 def fetch(url, name):
@@ -427,6 +428,49 @@ def _ui_close(i):
     return K("close_001", 0.8)
 
 
+# ---------------------------------------------------------------- mapa del mundo (UI/UIMap.cs)
+def _paper_crinkle(dur, seed, density, lo=1800, hi=7500):
+    """El papel que se dobla: chasquidos sueltos y finos (densidad por segundo a lo largo de 'dur', una curva)."""
+    r = rng(seed)
+    n = secs(dur)
+    p = np.interp(np.arange(n) / SR, np.linspace(0, dur, len(density)), density) / SR
+    clicks = (r.random(n) < p) * r.uniform(0.3, 1.0, n) * np.sign(r.standard_normal(n))
+    return filt(clicks, lo, hi)
+
+
+@sfx("map_unroll")
+def _map_unroll(i):
+    """El pergamino que se abre (0.42 s entre las varillas): el roce del papel que se desliza, que sube y se apaga,
+    con el crujido del washi y, al final, el toc de la varilla de laca que llega a su lugar."""
+    d = 0.62
+    slide = sweep(noise(d, 900), 900, 3800, q=1.1) * env_points(d, [(0, 0), (0.05, 0.7), (0.3, 1.0), (0.46, 0.35), (d, 0)]) ** 1.3
+    crinkle = _paper_crinkle(d, 901, [40, 260, 380, 120, 0])
+    tok = partials(520, [1, 2.76, 5.4], [1, 0.4, 0.15], [0.06, 0.035, 0.02], 0.2, seed=902) * 0.9
+    knock = thump(240, 160, 0.12, 0.03, seed=903)
+    return reverb(mix((slide, 0, 0.55), (crinkle, 0, 0.9), (tok, 0.43, 0.45), (knock, 0.43, 0.35)), 0.16, 0.9, 0.3)
+
+
+@sfx("map_roll")
+def _map_roll(i):
+    """El pergamino que se enrolla (0.24 s): más corto y hacia abajo, y el toc de las dos varillas que se juntan."""
+    d = 0.4
+    slide = sweep(noise(d, 910), 3200, 1000, q=1.1) * env_points(d, [(0, 0), (0.03, 1.0), (0.2, 0.5), (d, 0)]) ** 1.3
+    crinkle = _paper_crinkle(d, 911, [300, 200, 40, 0])
+    tok = partials(470, [1, 2.76, 5.4], [1, 0.4, 0.15], [0.05, 0.03, 0.02], 0.18, seed=912) * 0.9
+    return reverb(mix((slide, 0, 0.55), (crinkle, 0, 0.8), (tok, 0.24, 0.5)), 0.14, 0.8, 0.3)
+
+
+@sfx("map_reveal")
+def _map_reveal(i):
+    """La niebla de tinta que se abre sobre lo recién descubierto (0.9 s): un soplo que se hincha y se va, y dos notas
+    de cristal bajitas (re y la, las del título de zona) muy atrás."""
+    d = 1.6
+    breath = filt(noise(d, 920), 250, 1800) * env_points(d, [(0, 0), (0.45, 1.0), (1.0, 0.4), (d, 0)]) ** 1.5
+    a = partials(1174.7, [1, 2.0, 3.01], [1, 0.3, 0.1], [0.9, 0.4, 0.25], 1.4, seed=921)
+    b = partials(1760, [1, 2.0], [1, 0.25], [0.8, 0.35], 1.2, seed=922)
+    return reverb(mix((breath, 0, 0.5), (a, 0.18, 0.16), (b, 0.38, 0.12)), 0.4, 2.0, 0.7)
+
+
 @sfx("ui_start")
 def _ui_start(i):
     notes = [293.7, 440, 587.3]
@@ -591,9 +635,76 @@ def _temple_bell(i):
 
 
 # pico de normalización por clave (los clips cortos de interfaz no deben sonar como un golpe)
+# ---------------------------------------------------------------------------- Gorō armado (fase 2)
+# Sintetizados del todo (sin Kenney): la armadura que se le clava, las rocas de la avalancha que caen, ruedan y se
+# rompen, y el retumbe de la montaña. Granito: graves cortos con crujido de grava encima, nada metálico.
+def _gravel(dur, seed, density, lo=300, hi=3500, decay=0.025):
+    """granos de grava: chasquidos filtrados con tiempos al azar (más densos al principio)."""
+    r = rng(seed)
+    out = np.zeros(secs(dur))
+    for k in range(int(density * dur)):
+        t0 = dur * r.random() ** 1.8
+        g = filt(noise(0.06, seed * 31 + k), lo * r.uniform(0.7, 1.3), hi * r.uniform(0.7, 1.2)) * env_exp(0.06, decay * r.uniform(0.5, 1.5), 0.0005)
+        i = secs(t0)
+        n = min(len(g), len(out) - i)
+        if n > 0:
+            out[i:i + n] += g[:n] * r.uniform(0.3, 1.0)
+    return out
+
+
+@sfx("rock_impact", 2)
+def _rock_impact(i):
+    """una roca grande que pega (las piezas de la armadura, las rocas de la avalancha al caer): golpe sordo y grava."""
+    sub = thump(120 - 15 * i, 38, 0.6, 0.16, seed=600 + i)
+    knock = filt(noise(0.12, 602 + i), 150, 900) * env_exp(0.12, 0.03)
+    grit = _gravel(0.45, 604 + i, 40, 300, 2600)
+    # cola corta: en el armado suenan 16 seguidas y no pueden empastarse
+    return reverb(distort(mix((sub, 0, 1.0), (knock, 0, 0.7), (grit, 0.01, 0.3)), 1.6), 0.2, 0.9, 0.25)
+
+
+@sfx("boulder_break", 2)
+def _boulder_break(i):
+    """la roca se parte contra la barrera (o contra Gorō): crack seco, crujido medio y los pedazos que caen."""
+    crack = filt(noise(0.03, 610 + i), 1500, 9000) * env_exp(0.03, 0.006, 0.0005)
+    crunch = filt(noise(0.25, 612 + i), 250, 2400) * env_exp(0.25, 0.06)
+    low = thump(95, 40, 0.4, 0.12, seed=614 + i)
+    debris = _gravel(0.8, 616 + i, 28, 400, 3200, 0.03)
+    return reverb(mix((crack, 0, 0.7), (crunch, 0.005, 0.9), (low, 0, 0.9), (debris, 0.04, 0.45)), 0.2, 1.0, 0.3)
+
+
+@sfx("boulder_roll")
+def _boulder_roll(i):
+    """una roca que rueda por la nieve dura: tumbos graves cada vez más seguidos que se alejan, con grava."""
+    d = 1.9
+    out = np.zeros(secs(d))
+    t, gap, k = 0.0, 0.24, 0
+    while t < d - 0.3:
+        b = thump(85 + 10 * (k % 3), 45, 0.3, 0.07, seed=620 + k) * (1 - t / d) ** 1.2
+        j = secs(t)
+        out[j:j + len(b)] += b[:len(out) - j]
+        t += gap * (0.85 + 0.3 * rng(621 + k).random())
+        gap = max(0.13, gap * 0.93)
+        k += 1
+    grit = _gravel(d, 625, 40, 300, 2600) * env_points(d, [(0, 0.2), (0.3, 1), (d, 0)])
+    return reverb(mix((out, 0, 1.0), (grit, 0, 0.25)), 0.2, 1.0, 0.3)
+
+
+@sfx("avalanche_rumble")
+def _avalanche_rumble(i):
+    """la montaña retumba: grave que crece y se va, con la nieve y la grava que bajan lejos."""
+    d = 3.2
+    rum = filt(noise(d, 630), 22, 140) * (0.75 + 0.25 * osc(np.full(secs(d), 0.0) + 2.3, d)) * env_points(d, [(0, 0), (0.7, 1), (2.0, 0.8), (d, 0)])
+    sub = thump(48, 30, d, 1.2, seed=631) * 0.6
+    hiss = filt(noise(d, 632), 600, 2500) * env_points(d, [(0, 0), (1.0, 0.5), (2.4, 0.4), (d, 0)])
+    grit = _gravel(d, 633, 22, 300, 2400, 0.04) * env_points(d, [(0, 0), (0.8, 1), (d, 0.2)])
+    return reverb(distort(mix((rum, 0, 1.0), (sub, 0, 0.8), (hiss, 0, 0.12), (grit, 0.2, 0.2)), 1.2), 0.3, 1.8, 0.6)
+
+
 PEAK = {"ui_move": -10, "ui_open": -7, "ui_close": -7, "dialogue": -12, "denied": -8, "lock": -8,
         "step": -4, "step_snow": -4, "step_wood": -4, "step_stone": -4, "parry_ready": -6, "area_title": -4,
         "parry_whiff": -6, "brazier_crackle": -8, "brazier_out": -3}
+# el pergamino del mapa: papel, por debajo de los clics de los menús
+PEAK.update({"map_unroll": -9, "map_roll": -10, "map_reveal": -13})
 
 
 # ============================================================================ CASCADA KOHAN
@@ -1080,10 +1191,12 @@ def build_music(only_key=None):
 
 def write_credits(music_credits):
     lines = ["# Créditos de audio", "",
-             "Todo el audio nuevo de Nindō es CC0 (dominio público) o sintetizado por `Tools/Audio/build_audio.py`.", "",
+             "El audio nuevo de Nindō es CC0 (dominio público), CC BY 4.0 con su crédito (música de jefes y del final,",
+             "abajo) o sintetizado por `Tools/Audio/build_audio.py`.", "",
              "## Música (OpenGameArt, CC0)", "", "| Clave | Tema | Autor | Licencia |", "|---|---|---|---|"]
     lines += music_credits
-    lines += ["", "## Efectos", "",
+    lines += [""] + credits_md()
+    lines += ["## Efectos", "",
               "* Impactos, pasos, crujidos e interfaz: packs *Impact Sounds*, *RPG Audio* e *Interface Sounds* de Kenney (www.kenney.nl), CC0.",
               "* Capas de acero, silbidos, campanas, magia y todos los ambientes: síntesis propia (numpy).",
               "* Clips originales del equipo (Assets/Audios): SwordSwing, SwordClash, Hurt, Dash, Finisher, Boton, Footsteps.", "",

@@ -74,10 +74,11 @@ namespace Nindo
             Game.Story.Begin(SceneFlow.NewGameRequested);
         }
 
-        void Update()
-        {
-            if (Game.Save != null) Game.Save.playTime += Time.unscaledDeltaTime;
-        }
+        // el reloj de la partida (sin la pausa ni el mapa) y su registro por zona y por jefe (Core/PlayClock)
+        void OnEnable() => PlayClock.Attach();
+        void OnDisable() => PlayClock.Detach();
+
+        void Update() => PlayClock.Tick(Time.unscaledDeltaTime);
 
         void OnApplicationQuit() => SaveSystem.Save();
     }

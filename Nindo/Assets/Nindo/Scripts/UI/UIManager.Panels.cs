@@ -90,6 +90,7 @@ namespace Nindo
             BuildDeath();
             BuildPause();
             BuildOptions();
+            BuildControls();
             BuildEnd();
         }
 
@@ -241,11 +242,25 @@ namespace Nindo
         public void ShowAreaTitle(string title, string subtitle) => ShowAreaTitle(title, subtitle, ResolveStamp(title));
 
         /// <param name="stampIcon">Nombre del pictograma del sello rojo (ZoneLake, IconBoss...); null = sin sello.</param>
-        public void ShowAreaTitle(string title, string subtitle, string stampIcon)
+        /// <param name="lowerThird">Abajo, sobre la franja de cine (el nombre de un jefe: ShowBossTitle).</param>
+        public void ShowAreaTitle(string title, string subtitle, string stampIcon, bool lowerThird = false)
         {
             if (titleRoutine != null) StopCoroutine(titleRoutine);
-            titleRoutine = StartCoroutine(AreaTitle(title, subtitle, UISprites.Hanko(stampIcon)));
+            // arriba, el lugar; abajo, el jefe. En las presentaciones la cámara se acerca de frente y sube con el jefe:
+            // arriba el nombre le caía encima de la cabeza (Gorō, de 3.2 m: la cabeza del 27 al 15 % de la pantalla con
+            // el título del 16 al 40 %). Abajo tapa las piernas, como en las peleas de jefe de siempre
+            var anchor = new Vector2(0.5f, lowerThird ? 0f : 1f);
+            titleRoot.anchorMin = titleRoot.anchorMax = anchor;
+            titleRoot.anchoredPosition = new Vector2(0f, lowerThird ? BossTitleY : -300f);
+            titleRoutine = StartCoroutine(AreaTitle(title, subtitle, UISprites.Hanko(stampIcon), lowerThird));
         }
+
+        /// <summary>El nombre de un jefe en su presentación, en el tercio de abajo y con el sello del jefe.</summary>
+        public void ShowBossTitle(string title, string subtitle) => ShowAreaTitle(title, subtitle, "IconBoss", true);
+
+        /// <summary>Centro del título de jefe desde abajo (px de 1080): el trazo termina justo encima de la franja de cine
+        /// (120 px) y el subtítulo queda entero adentro.</summary>
+        const float BossTitleY = 255f;
 
         static string ResolveStamp(string title)
         {
@@ -257,7 +272,7 @@ namespace Nindo
             return title == "..." ? null : "ZoneMoon";
         }
 
-        IEnumerator AreaTitle(string title, string subtitle, Sprite stamp)
+        IEnumerator AreaTitle(string title, string subtitle, Sprite stamp, bool low)
         {
             titleText.text = title; titleSub.text = subtitle;
             // el ancho se mide con el espaciado final (4): antes se medía con el que tuviera el texto (0 en el
@@ -275,14 +290,17 @@ namespace Nindo
             titleStamp.enabled = false;
             titleRule.fillAmount = 0f; titleSub.alpha = 0f; titleText.alpha = 0f; titleSwash.fillAmount = 0f;
             Game.Audio?.Play("area_title", null, 0.7f);
-            float t = 0f;
+            float t = 0f, fadeFrom = 3.6f, fadeLen = 0.6f;
             bool thumped = false;
-            while (t < 4.2f)
+            while (t < fadeFrom + fadeLen)
             {
                 // en pausa el título espera escondido (seguía pintándose debajo del panel)
                 if (PauseOpen) { titleGroup.alpha = 0f; yield return null; continue; }
                 t += Time.unscaledDeltaTime;
-                titleGroup.alpha = t > 3.6f ? 1f - (t - 3.6f) / 0.6f : 1f;
+                // el de un jefe va donde después salen el diálogo y la barra del jefe: cuando entra uno de los dos, el
+                // nombre se va en 0.25 s (en la fase 2 de Gorō la barra vuelve 2 s después del cartel)
+                if (low && (DialogueOpen || BossBarAlpha > 0.05f) && t < fadeFrom) { fadeFrom = t; fadeLen = 0.25f; }
+                titleGroup.alpha = t > fadeFrom ? 1f - (t - fadeFrom) / fadeLen : 1f;
                 // el trazo se pinta de izquierda a derecha, el nombre aparece y se junta
                 titleSwash.fillAmount = UIAnim.OutCubic(t / 0.35f);
                 titleText.alpha = Mathf.Clamp01((t - 0.1f) / 0.5f);
@@ -566,8 +584,8 @@ namespace Nindo
             bg.raycastTarget = true;
             pausePanel = bg.gameObject;
             pauseColumn = MenuColumn(bg.transform, "Pausa", out _);
-            string[] labels = { "Continuar", "Opciones", "Volver al menú", "Salir del juego" };
-            UnityEngine.Events.UnityAction[] actions = { () => SetPaused(false), () => OpenOptions(true), () => { SetPaused(false); SaveSystem.Save(); SceneFlow.LoadMenu(); }, Application.Quit };
+            string[] labels = { "Continuar", "Mapa", "Opciones", "Volver al menú", "Salir del juego" };
+            UnityEngine.Events.UnityAction[] actions = { () => SetPaused(false), () => OpenMap(true), () => OpenOptions(true), () => { SetPaused(false); SaveSystem.Save(); SceneFlow.LoadMenu(); }, Application.Quit };
             pauseItemGroups = new CanvasGroup[labels.Length];
             for (int i = 0; i < labels.Length; i++)
             {
@@ -587,16 +605,20 @@ namespace Nindo
             (string label, Act act)[] rows =
             {
                 ("Moverse", Act.Submit), ("Atacar", Act.Attack), ("Parry", Act.Parry), ("Esquivar (dash)", Act.Dash), ("Fijar objetivo", Act.Lock),
-                ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact),
+                ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact), ("Mapa", Act.Map),
             };
+            rows = WithTargetSwitch(rows);   // UIControls.cs: "Cambiar objetivo" también se reasigna
             for (int i = 0; i < rows.Length; i++)
             {
-                float y = -136f - i * 56f;
+                // diez renglones de 50 con "Cambiar objetivo" (el último en -586); la tarjeta crece hasta la nota de abajo
+                // (FitPauseRows)
+                float y = -136f - i * 50f;
                 UIFactory.Text("Row", pauseCard, rows[i].label, 28, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(100f, y + 20f), new Vector2(300, 40), TextAlignmentOptions.Left);
                 if (i == 0) { moveKey = UIFactory.KeyCap(pauseCard, "WASD", 44f, new Vector2(0f, 1f), new Vector2(420f, y)); continue; }
                 controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(420f, y)), rows[i].act, false));
-                controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(520f, y)), rows[i].act == Act.Ability1 ? Act.Ability2 : rows[i].act, rows[i].act != Act.Ability1));
+                controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(520f, y)), PauseSecondAct(rows[i].act), PauseSecondIsAlt(rows[i].act)));
             }
+            UIFactory.Text("Hint", pauseCard, "Se cambian en Opciones › Controles", 22, UIFactory.PaperDim, new Vector2(0f, 1f), new Vector2(100f, FitPauseRows()), new Vector2(660, 30), TextAlignmentOptions.Left);
             pausePanel.SetActive(false);
         }
 
@@ -621,11 +643,12 @@ namespace Nindo
                 key.anchoredPosition = new Vector2(x + w * 0.5f, key.anchoredPosition.y);
                 x += w + 14f;
             }
-            UIFactory.SetKeyCap(moveKey, input.GlyphFamily == 0 ? "WASD" : "Stick izq.");
+            UIFactory.SetKeyCap(moveKey, input.MoveGlyph);
             moveKey.anchoredPosition = new Vector2(400f + moveKey.sizeDelta.x * 0.5f, moveKey.anchoredPosition.y);
         }
 
-        public bool PauseOpen => pausePanel.activeSelf || optionsPanel.activeSelf;
+        // el mapa también es una pausa: el HUD, los avisos y el título de zona esperan detrás
+        public bool PauseOpen => pausePanel.activeSelf || optionsPanel.activeSelf || MapOpen;
 
         public void SetPaused(bool p)
         {
@@ -647,6 +670,7 @@ namespace Nindo
                 pauseOpenT = 0f;
                 SizeColumn(pauseColumn);
                 RefreshControls();
+                RefreshPauseMapItem();
                 Select(pauseFirst);
             }
             Cursor.visible = p; Cursor.lockState = CursorLockMode.None;
@@ -675,7 +699,8 @@ namespace Nindo
                 rt.anchoredPosition = new Vector2(106f - 24f * (1f - k), rt.anchoredPosition.y);
             }
             float ck = UIAnim.OutCubic((pauseOpenT - 0.1f) / 0.2f);
-            pauseCard.anchoredPosition = new Vector2(370f + 120f * (1f - ck), -20f);
+            var at = FitCard(pauseCard, new Vector2(370f, -20f));   // UIControls.cs: que entre en 21:9, 32:9 y 4:3
+            pauseCard.anchoredPosition = new Vector2(at.x + 120f * (1f - ck), at.y);
             pauseCardImg.color = new Color(1f, 1f, 1f, ck);
             RefreshControls();
         }
@@ -692,7 +717,7 @@ namespace Nindo
             optionsCard = card.rectTransform;
             optionsCardImg = card;
             card.pixelsPerUnitMultiplier = 1f;
-            Place(optionsCard, new Vector2(0.5f, 0.5f), new Vector2(330f, -10f), new Vector2(1060, 860));
+            Place(optionsCard, new Vector2(0.5f, 0.5f), new Vector2(330f, -10f), new Vector2(1060, 930));
             optionsCard.pivot = new Vector2(0.5f, 0.5f);
             var rows = new List<Selectable>();
             var size = new Vector2(860, 62);
@@ -708,6 +733,8 @@ namespace Nindo
             Row(UIFactory.OptionSelector("Aids", optionsCard, "Avisos de combate", new[] { "Ninguno", "Solo imparables", "Todos" }, Settings.CombatAids, i => Settings.CombatAids = i, size));
             Row(UIFactory.OptionSelector("Fullscreen", optionsCard, "Pantalla completa", new[] { "No", "Sí" }, Screen.fullScreen ? 1 : 0, i => Settings.Fullscreen = i == 1, size));
             Row(UIFactory.OptionSelector("Quality", optionsCard, "Calidad", QualitySettings.names, QualitySettings.GetQualityLevel(), i => { QualitySettings.SetQualityLevel(i, true); Settings.Quality = i; }, size));
+            // las teclas y botones de cada acción (UIControls.cs)
+            Row(controlsEntry = ControlsEntry(optionsCard, size));
             var back = UIFactory.MenuItem("Back", optionsCard, "Volver", new Vector2(300, 66), CloseOptions, 36f);
             rows.Add(back);
             for (int i = 0; i < rows.Count; i++)
@@ -754,7 +781,8 @@ namespace Nindo
             optionsOpenT += dt;
             optionsColumn.fillAmount = UIAnim.OutCubic(optionsOpenT / 0.18f);
             float ck = UIAnim.OutCubic((optionsOpenT - 0.05f) / 0.2f);
-            optionsCard.anchoredPosition = new Vector2(330f + 120f * (1f - ck), -10f);
+            var at = FitCard(optionsCard, new Vector2(330f, -10f));
+            optionsCard.anchoredPosition = new Vector2(at.x + 120f * (1f - ck), at.y);
             optionsCardImg.color = new Color(1f, 1f, 1f, ck);
         }
 
@@ -819,10 +847,14 @@ namespace Nindo
                 "El verdadero poder nace del lazo que nos une a los nuestros.",
                 "<size=30><color=#e8c870>Un juego de</color></size>\nFelipe Doval  ·  Teo González  ·  Mateo Drault  ·  Pedro Henríquez",
                 "<size=28>Gracias por jugar.</size>",
+                // lo completa ShowEnding con el reloj de la partida (Core/PlayClock)
+                "",
                 // la OFL pide nombrar las fuentes (modificadas) y su licencia en lo que se distribuye
                 "<size=20><color=#8a8070>Fuentes: Shippori Mincho B1 y Zen Maru Gothic (con macrones agregados) · SIL Open Font License 1.1</color></size>",
+                // la CC BY 4.0 pide autor, licencia y aviso de cambios en lo que se distribuye (Audio/CREDITS.md no viaja en la build)
+                "<size=20><color=#8a8070>Música: Amenoshita, Wuxia y Sakuya4 de PeriTune (peritune.com) · Revenge de TAD (opengameart.org)\nCC BY 4.0 (creativecommons.org/licenses/by/4.0), cortadas y editadas para Nindō · Boss_Koto de G_P (CC0)</color></size>",
             };
-            float[] ys = { 90f, 30f, -70f, -160f, -215f };
+            float[] ys = { 90f, 30f, -70f, -150f, -190f, -232f, -277f };
             endLines = new CanvasGroup[lines.Length];
             for (int i = 0; i < lines.Length; i++)
             {
@@ -830,14 +862,21 @@ namespace Nindo
                 t.rectTransform.pivot = new Vector2(0.5f, 0.5f);
                 endLines[i] = t.gameObject.AddComponent<CanvasGroup>();
             }
+            endTime = endLines[EndTimeLine].GetComponent<TMPro.TextMeshProUGUI>();
             var b = UIFactory.MenuItem("Menu", bg.transform, "Volver al menú", new Vector2(420, 70), () => SceneFlow.LoadMenu(), 36f, TextAlignmentOptions.Center);
             ((RectTransform)b.transform).anchoredPosition = new Vector2(0, -360);
             endButton = b;
             endPanel.SetActive(false);
         }
 
+        const int EndTimeLine = 4;
+        TMPro.TextMeshProUGUI endTime;
+
         public void ShowEnding()
         {
+            // cuánto duró el camino (sin la pausa ni el mapa): el diseño pide cerca de una hora
+            if (endTime != null && Game.Save != null)
+                endTime.text = "<size=26><color=#e8c870>Tiempo de juego:</color> " + PlayClock.Spoken(Game.Save.playTime) + "</size>";
             endPanel.SetActive(true);
             // la cinemática del final ya devolvió el control: el clic o la A que adelantan los renglones hacían
             // atacar o esquivar a Kaito detrás del panel (con su sonido). El botón del menú no usa el buffer
@@ -876,8 +915,10 @@ namespace Nindo
             UpdateDialogue(dt);
             UpdatePause(dt);
             UpdateOptions(dt);
+            UpdateControls(dt);
 
             var input = Game.Input;
+            if (ControlsTakeBack(input)) return;
             if (input != null && input.Pressed(Act.Pause) && SceneManager.GetActiveScene().name != "Menu")
             {
                 if (optionsPanel.activeSelf) CloseOptions();

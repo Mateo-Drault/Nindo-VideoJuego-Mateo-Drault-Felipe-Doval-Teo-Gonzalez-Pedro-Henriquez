@@ -5,7 +5,7 @@ namespace Nindo
 {
     /// <summary>
     /// Pose del sumo para un momento de un golpe, en el espacio del personaje y en unidades del modelo (u: la altura
-    /// de la columna mide 1.435 u; el sumo mide ~5.1 u, así sirve igual para el común y para el Ōzeki x1.35).
+    /// de la columna mide 1.435 u; el sumo mide ~5.1 u, así sirve igual para cualquier escala del sumo).
     /// Manos y pies son puntos a los que llega cada extremidad con IK: x hacia afuera de ese lado, y desde el piso,
     /// z hacia adelante. Peso 0 = lo que hace el clip.
     /// </summary>
@@ -63,7 +63,8 @@ namespace Nindo
     /// al costado (shiko), agachado con los puños en el piso (tachiai), los brazos abiertos (agarre).
     /// Brazos y piernas se resuelven con IK de dos huesos hacia puntos del espacio del personaje: no dependen del clip
     /// de abajo (si llegan clips nuevos la pose sigue valiendo; 'weight' la baja). Sirve para el esqueleto del equipo
-    /// (manos y pies cuelgan de controles IK, no del antebrazo: se mueve el control) y para uno FK.
+    /// viejo (manos y pies colgaban de controles IK, no del antebrazo: se mueve el control) y para el de juego de la fase C
+    /// (FK: la mano sigue al antebrazo y el pie conserva el giro que le dio el clip).
     /// Las manos que van a pegar se encienden en el último tramo (dorado / rojo), como el filo de la katana.
     /// Corre después del Animator y antes de VariantMotion (110) y SpringChain (120: la tsuna y el delantal cuelgan
     /// de esta pose). En su propio archivo: DefaultExecutionOrder es del script.
@@ -73,8 +74,6 @@ namespace Nindo
     {
         [Tooltip("Cuánto manda la pose procedural sobre el clip (1 = todo; con clips de golpes propios se puede bajar)")]
         [Range(0, 1)] public float weight = 1f;
-        /// <summary>Después de posar, este frame (la tsuna encendida del Ōzeki se dibuja sobre la pose final).</summary>
-        public event System.Action Posed;
 
         /// <summary>Un golpe: carga, golpe, cuánto sostiene el golpe y cuánto tarda en volver al clip.</summary>
         public class Move
@@ -91,7 +90,7 @@ namespace Nindo
         static Vector3 V(float x, float y, float z) => new Vector3(x, y, z);
 
         /// <summary>
-        /// Poses por nombre de golpe (AttackDef.name). Los del sumo común (Attack1...) usan las del Ōzeki.
+        /// Poses por nombre de golpe (AttackDef.name): las bofetadas, el shiko y la embestida del sumo común (Attack1...).
         /// Medidas en Blender sobre el esqueleto del sumo (Tools/Blender/characters/sumo_poses.py las renderiza):
         /// hombro en (0.81, 3.34, -0.26), brazo de 1.47 u, cadera a 1.69 u, tobillo a 0.39 u del piso.
         /// </summary>
@@ -130,27 +129,12 @@ namespace Nindo
                     strike = SumoPose.Of(0.35f, 30f, 0f, 0f, V(0.5f, 2.75f, 2.2f), 1f, V(0.5f, 2.75f, 2.2f), 1f),
                     holdAfter = 0.1f, recover = 0.4f, run = true, tremble = true, glowR = true, glowL = true,
                 };
-                // agarre: los brazos bien abiertos y el pecho afuera (la silueta en T desde arriba); golpe: se cierran adelante
-                var grab = new Move
-                {
-                    wind = SumoPose.Of(0.3f, -6f, 0f, 0f, V(2.05f, 3.3f, 0.55f), 1f, V(2.05f, 3.3f, 0.55f), 1f,
-                                       V(1.0f, 0.39f, 0f), 0.8f, V(1.0f, 0.39f, 0f), 0.8f),
-                    strike = SumoPose.Of(0.45f, 22f, 0f, 0f, V(0.2f, 2.6f, 1.95f), 1f, V(0.2f, 2.6f, 1.95f), 1f),
-                    holdAfter = 0.2f, recover = 0.4f, tremble = true, glowR = true, glowL = true,
-                };
                 // morote (empujón a dos manos del sumo del lago): carga con las dos manos atrás a la cadera
                 var morote = new Move
                 {
                     wind = SumoPose.Of(0.35f, 2f, 0f, 0f, V(1.2f, 2.5f, -0.5f), 1f, V(1.2f, 2.5f, -0.5f), 1f),
                     strike = SumoPose.Of(0.4f, 24f, 0f, 0f, V(0.55f, 3.0f, 2.25f), 1f, V(0.55f, 3.0f, 2.25f), 1f),
                     holdAfter = 0.12f, recover = 0.35f, glowR = true, glowL = true,
-                };
-                // shio: la sal en alto atrás de la cabeza y la tira adelante y arriba (el ritual: no pega)
-                var salt = new Move
-                {
-                    wind = SumoPose.Of(0.05f, -8f, -12f, 0f, V(0.65f, 4.75f, -0.25f), 1f, V(1.0f, 2.05f, 0.15f), 0.6f),
-                    strike = SumoPose.Of(0.15f, 8f, 16f, 0f, V(0.35f, 4.2f, 1.7f), 1f, V(1.0f, 2.05f, 0.15f), 0.6f),
-                    holdAfter = 0.35f, recover = 0.5f,
                 };
                 // finta / salto de costado: se agacha para impulsarse y cae abierto
                 var hop = new Move
@@ -159,17 +143,8 @@ namespace Nindo
                     strike = SumoPose.Of(0.15f, 8f, 0f, 0f, V(1.6f, 3.0f, 0.4f), 0.7f, V(1.6f, 3.0f, 0.4f), 0.7f),
                     holdAfter = 0.15f, recover = 0.3f,
                 };
-                // tropiezo (la embestida contra el bambú): echado atrás con los brazos sueltos
-                var stumble = new Move
-                {
-                    wind = SumoPose.Of(0.25f, -16f, 8f, 6f, V(1.7f, 3.9f, 0.35f), 0.8f, V(1.5f, 3.6f, 0.6f), 0.8f),
-                    strike = SumoPose.Of(0.45f, -10f, -6f, -4f, V(1.4f, 2.4f, 0.8f), 0.6f, V(1.4f, 2.4f, 0.8f), 0.6f),
-                    holdAfter = 0.2f, recover = 0.5f,
-                };
-                moves["Harite D"] = hariteR; moves["Harite I"] = hariteL;
                 moves["Shiko D"] = shikoR; moves["Shiko I"] = shikoL;
-                moves["Tachiai"] = tachiai; moves["Agarre"] = grab; moves["Morote"] = morote;
-                moves["Shio"] = salt; moves["Finta"] = hop; moves["Tropiezo"] = stumble;
+                moves["Morote"] = morote; moves["Finta"] = hop;
                 // el sumo común: bofetadas, pisotón y embestida con las mismas poses
                 moves["Attack1"] = hariteR; moves["Attack2"] = hariteL; moves["Attack3"] = shikoR; moves["Special"] = tachiai;
                 return moves;
@@ -202,6 +177,7 @@ namespace Nindo
         class Limb
         {
             public Bone upper, lower, control;  // control: el control IK del que cuelga la mano/el pie (null si es FK)
+            public Bone endFK;                  // el pie hijo de la tibia (esqueleto de juego): se le devuelve su giro
             public Transform end;
             public float lowerLen, side;
         }
@@ -219,44 +195,12 @@ namespace Nindo
         AttackDef curAttack;
         int curTell = -1;
         float lastClock;
-        // pose suelta, fuera de un golpe (presentación, cambio de fase, tropiezo): su propio reloj
-        Move beat;
-        float beatStart, beatWindup;
-        bool beatSnap;
 
         // manos/pies que se encienden en el último tramo del golpe
         Transform glowA, glowB;
         MeshRenderer glowRA, glowRB;
         MaterialPropertyBlock mpb;
         static Mesh glowQuad;
-
-        /// <summary>Unidades del modelo a metros (para el que quiera ubicar cosas sobre el cuerpo: la tsuna).</summary>
-        public float Unit => unit;
-        public Transform Torso => torso?.t;
-        public Transform Head => head?.t;
-        public bool Ready => ready;
-        /// <summary>Dónde está la mano derecha (la de la sal) en este frame.</summary>
-        public Vector3 HandR => ready ? armR.end.position : transform.position;
-        /// <summary>Cuánto brillan ahora las manos/el pie del golpe (0..1): lo demás que brilla en el cuerpo (la tsuna
-        /// del Ōzeki) se apaga mientras tanto para no competir con el aviso.</summary>
-        public float GlowK { get; private set; }
-
-        /// <summary>
-        /// Una pose fuera de un golpe (sin daño ni aviso): carga 'windup' segundos, suelta en ~0.1 s y vuelve.
-        /// La presentación y el cambio de fase del Ōzeki (el shiko), el tropiezo contra el bambú.
-        /// </summary>
-        public void PlayBeat(string move, float windup)
-        {
-            if (!Moves.TryGetValue(move, out var m)) return;
-            beat = m;
-            beatStart = Time.time;
-            beatWindup = Mathf.Max(0.05f, windup);
-            beatSnap = true;
-        }
-
-        /// <summary>Segundos que faltan para que la pose suelta llegue al golpe (infinito si no hay una).</summary>
-        public float BeatEta => beat != null ? beatStart + beatWindup + BeatRelease - Time.time : float.PositiveInfinity;
-        const float BeatRelease = 0.1f;
 
         void Start()
         {
@@ -292,6 +236,7 @@ namespace Nindo
             if (upper == null || lower == null || end == null) return null;
             var l = new Limb { upper = AddBone(upper), lower = AddBone(lower), end = end };
             if (!end.IsChildOf(lower) && end.parent != null) l.control = AddBone(end.parent);
+            else l.endFK = AddBone(end);
             return l;
         }
 
@@ -327,26 +272,25 @@ namespace Nindo
                 foreach (var b in bones) b.Mark();
             }
             UpdateGlow(glowMove, glowEta, danger);   // después de posar: la luz va donde quedó la mano
-            Posed?.Invoke();
         }
 
-        /// <summary>La pose de este frame: la del golpe en curso, la pose suelta o volviendo al clip.</summary>
+        /// <summary>La pose de este frame: la del golpe en curso o volviendo al clip.</summary>
         SumoPose Desired(float dt, out Move glowMove, out float glowEta, out bool danger)
         {
             glowMove = null; glowEta = float.PositiveInfinity; danger = false;
             var a = enemy.State == EnemyState.Attack ? enemy.CurrentAttack : null;
             if (a != null && Moves.TryGetValue(a.name, out var m))
             {
-                beat = null;
                 float clock = enemy.StepClock;
                 // paso nuevo (otro golpe, o el mismo repetido: el reloj vuelve a cero): arranca desde la pose que había
                 if (a != curAttack || enemy.TellId != curTell || clock < lastClock) { snapshot = output; curAttack = a; curTell = enemy.TellId; }
                 lastClock = clock;
                 var tl = enemy.Timeline;
-                // el pie del shiko se enciende para el pisotón (después el golpe es la onda, que viaja sola)
                 glowMove = m; danger = a.kind == AttackKind.Unblockable;
-                glowEta = a.special == "shiko" ? (clock < tl.T ? tl.T - clock : float.PositiveInfinity) : enemy.StrikeEta;
-                if (clipOwned.Contains(a.name)) return SumoPose.Lerp(output, default, 1f - Mathf.Exp(-dt / 0.09f));
+                glowEta = enemy.StrikeEta;
+                // el golpe con su propio clip (el nombre es el estado): solo la luz. Un golpe con nombre propio sobre el clip
+                // de otro (Shiko D en Attack3, o el Morote que volvió al Attack2 sin su clip) sigue posando las manos
+                if (a.name == a.state && clipOwned.Contains(a.name)) return SumoPose.Lerp(output, default, 1f - Mathf.Exp(-dt / 0.09f));
                 var p = Evaluate(m, clock, tl.ReleaseTime, tl.T, tl.sustain, snapshot);
                 // sobre un estado con clip nuevo (los golpes con nombre propio reusan Attack1..Special) el cuerpo ya viene
                 // agachado, inclinado y girado: la cadera y el torso del poser son ADITIVOS y lo doblaban (el tachiai
@@ -355,14 +299,6 @@ namespace Nindo
                 return p;
             }
             curAttack = null;
-            if (beat != null && enemy.IsAlive)
-            {
-                if (beatSnap) { snapshot = output; beatSnap = false; }
-                float clock = Time.time - beatStart;
-                float T = beatWindup + BeatRelease;
-                if (clock > T + beat.holdAfter + beat.recover) beat = null;
-                else return Evaluate(beat, clock, beatWindup, T, 0f, snapshot);
-            }
             // vuelve al clip (cortado por un parry, un golpe, la muerte): rápido pero sin saltos
             return SumoPose.Lerp(output, default, 1f - Mathf.Exp(-dt / 0.09f));
         }
@@ -371,11 +307,11 @@ namespace Nindo
 
         /// <summary>
         /// Estados con clip propio (TeamAnims/SumoAnims.fbx) que ya trae la carga y el golpe atados al mismo reloj. Por
-        /// nombre de golpe (el sumo común): solo se enciende la mano o el pie que pega. Por estado (los golpes con nombre
-        /// propio del Ōzeki y las variantes que los reusan: Harite D, Shiko D, Tachiai, Agarre, Morote): el poser sigue
+        /// nombre de golpe igual al estado (el sumo común, el Morote del lago): solo se enciende la mano o el pie que pega. Por estado (los golpes con nombre
+        /// propio de las variantes que reusan esos estados: Shiko D, Morote, Finta): el poser sigue
         /// llevando manos y pies a su pose, pero no le suma cadera ni torso al clip.
         /// </summary>
-        static readonly HashSet<string> clipOwned = new HashSet<string> { "Attack1", "Attack2", "Attack3", "Special" };
+        static readonly HashSet<string> clipOwned = new HashSet<string> { "Attack1", "Attack2", "Attack3", "Special", "Morote" };
 
         SumoPose Evaluate(Move m, float clock, float release, float T, float sustain, in SumoPose from)
         {
@@ -431,6 +367,8 @@ namespace Nindo
             Vector3 handRA = armR.end.position, handLA = armL.end.position, footRA = legR.end.position, footLA = legL.end.position;
             Quaternion handRRot = armR.control != null ? armR.control.t.rotation : Quaternion.identity;
             Quaternion handLRot = armL.control != null ? armL.control.t.rotation : Quaternion.identity;
+            // un pie FK gira con la tibia al doblar la rodilla: se guarda cómo lo dejó el clip (plano en el piso)
+            Quaternion footRRot = legR.end.rotation, footLRot = legL.end.rotation;
 
             // cadera abajo y torso inclinado / girado / de costado (sobre su pivote)
             Vector3 drop = -up * (p.drop * u * w);
@@ -444,8 +382,8 @@ namespace Nindo
             head.t.rotation = Quaternion.AngleAxis(-p.lean * 0.45f * w, Vector3.Cross(up, fwd)) * head.t.rotation;
 
             // piernas: los pies donde los puso el clip (la cadera bajó: se doblan) o donde pide la pose
-            Leg(legR, footRA, p.footR, p.wFootR * w, rt, up, fwd, right, u);
-            Leg(legL, footLA, p.footL, p.wFootL * w, rt, up, fwd, right, u);
+            Leg(legR, footRA, footRRot, p.footR, p.wFootR * w, rt, up, fwd, right, u);
+            Leg(legL, footLA, footLRot, p.footL, p.wFootL * w, rt, up, fwd, right, u);
             // brazos: la mano del clip acompaña al torso; la de la pose es un punto del personaje
             Arm(armR, pivot + q * (handRA + drop - pivot), q * handRRot, p.handR, p.wHandR * w, rt, up, fwd, right, u);
             Arm(armL, pivot + q * (handLA + drop - pivot), q * handLRot, p.handL, p.wHandL * w, rt, up, fwd, right, u);
@@ -454,13 +392,18 @@ namespace Nindo
         Vector3 CharPoint(Vector3 c, float side, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
             => rt.position + (right * (c.x * side) + up * c.y + fwd * c.z) * u;
 
-        void Leg(Limb l, Vector3 animTip, Vector3 pose, float w, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
+        void Leg(Limb l, Vector3 animTip, Quaternion animRot, Vector3 pose, float w, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
         {
             Vector3 target = w > 0.001f ? Vector3.Lerp(animTip, CharPoint(pose, l.side, rt, up, fwd, right, u), w) : animTip;
             // rodilla adelante y bien afuera (cuclillas de sumo)
             Vector3 hint = l.upper.t.position + (fwd * 1.0f + right * (l.side * 0.7f)) * u;
-            Vector3 reach = SolveTwoBone(l.upper.t, l.lower.t, l.lowerLen, animTip, target, hint);
+            // la punta de la que parte el IK es el tobillo de ahora: con el pie FK la cadera que bajó ya se lo llevó (el
+            // del clip, de antes de bajar, torcía la tibia y el pie quedaba hasta 40 cm en el aire en el shiko); con el
+            // control en la raíz el pie no se movió y son el mismo punto
+            Vector3 tip = l.control != null ? animTip : l.end.position;
+            Vector3 reach = SolveTwoBone(l.upper.t, l.lower.t, l.lowerLen, tip, target, hint);
             if (l.control != null) l.control.t.position += reach - l.end.position;
+            else l.end.rotation = animRot;
         }
 
         void Arm(Limb l, Vector3 animTip, Quaternion animRot, Vector3 pose, float w, Transform rt, Vector3 up, Vector3 fwd, Vector3 right, float u)
@@ -522,7 +465,6 @@ namespace Nindo
             Color c = (danger ? TellStyle.Crimson : TellStyle.Gold) * Mathf.Lerp(1.2f, 3.5f, k * k);
             Glow(ref glowA, ref glowRA, a, c, k);
             Glow(ref glowB, ref glowRB, b, c, k);
-            GlowK = a != null || b != null ? Mathf.Lerp(0.6f, 1f, k) : 0f;
         }
 
         void Glow(ref Transform g, ref MeshRenderer r, Transform at, Color c, float k)
@@ -568,7 +510,6 @@ namespace Nindo
         {
             if (glowRA != null) glowRA.enabled = false;
             if (glowRB != null) glowRB.enabled = false;
-            GlowK = 0f;
         }
     }
 }

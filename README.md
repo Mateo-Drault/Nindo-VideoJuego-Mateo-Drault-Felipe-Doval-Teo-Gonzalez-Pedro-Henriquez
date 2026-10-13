@@ -6,7 +6,7 @@ Felipe Doval, Teo González, Mateo Drault y Pedro Henríquez.
 > Una noche, el clan Kurokage secuestra al abuelo de Kaito. La bandana del abuelo se le ata
 > sola a la frente y la guadaña se convierte en katana: Kaito hereda todo lo que su abuelo
 > sabía. Para abrir las puertas del Dojo Kurokage tiene que vencer a los tres guardianes
-> —Goro en la Montaña Kodoyama, Mizuchi en el Lago Kohan y Ozeki en el Bosque de Bambú—,
+> —Goro en la Montaña Kodoyama, Mizuchi en el Lago Kohan y Chikuō en el Bosque de Bambú—,
 > recuperar sus tres sellos y enfrentar a Kokuyō, el Señor del Clan Kurokage.
 
 ![Mapa de Nindō](Docs/img/mapa.jpg)
@@ -71,12 +71,26 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
 | Moverse | WASD / flechas | Stick izq. |
 | Atacar (combo de 3) | J / clic izq. | □ / X · R1 / RB |
 | Parry (un toque justo antes del golpe; no hay guardia sostenida) | K / clic der. | L1 / LB |
-| Esquiva (dash) | Espacio / Shift / L | ○ / B  ·  ✕ / A |
-| Fijar objetivo (cambiar: stick der.) | Q / Tab / rueda | R3 |
+| Esquiva (dash) | Espacio / Shift | ○ / B  ·  ✕ / A |
+| Fijar objetivo (cambiar: rueda o stick der.) | Q / Tab | R3 |
 | Remate / interactuar | F (E interactúa) | △ / Y |
 | Corte del Viento (habilidad 1) | 1 / U | RT |
 | Torbellino (habilidad 2) | 2 / I | LT |
 | Pausa | Esc / P | Start |
+| Mapa del mundo (pausa el juego; la rueda, + / - o los gatillos acercan, fijar objetivo centra en Kaito) | M | Vista / panel táctil |
+
+Todo se cambia en **Opciones › Controles** (teclado y mouse, y mando, con dos teclas por acción). Si la
+tecla nueva ya era de otra acción se intercambian (si a la otra le queda una tecla y lo que recibiría es de
+otra clase, como un botón del mouse para moverse, solo pierde la suya). Esc y Start pausan siempre y no se
+asignan a nada. Enter / A y Esc / B confirman y vuelven en los menús: se pueden dar a acciones del juego (atacar
+con Enter), pero no a la pausa ni al mapa, que también se leen con un menú abierto; esas dos tampoco toman lo que
+usan los menús (el clic, la rueda, WASD y las flechas, Supr, X del mando, los gatillos y el stick derecho del
+mapa). Así nunca se pierde el menú. Con el mapa abierto también se leen fijar (centra en Kaito) y moverse
+(corre el cursor): no toman lo que usa el mapa (el clic arrastra; la rueda, + y - y los gatillos acercan) ni la B
+del mando, que lo cierra. Shift, Ctrl y Alt se toman al soltarlos (Ctrl+K toma la K; Alt+Tab no toma nada). De
+fábrica cada acción tiene las dos teclas que mostraba la tarjeta de la pausa: la L del dash y el clic de la rueda
+para fijar, que antes andaban sin verse, ahora se asignan a mano. Las reglas y cómo se guarda están en
+`Input/BindingTable.cs`; `python Tools/Dev/bindings_test.py` las prueba sin Unity.
 
 ## Sistema de combate (se mantuvo el formato original, pulido)
 
@@ -115,11 +129,17 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
 * **Sumos**: sus clips casi no se mueven desde arriba, así que cada golpe lleva una pose
   procedural atada al aviso (`Enemies/SumoPoser`): la mano atrás antes de la bofetada, la
   pierna arriba en el shiko, agachado con los puños en el piso antes de embestir.
-* **Ōzeki** (jefe del bambú, `Enemies/Bosses/OzekiBoss`): bofetadas doradas en ritmo, agarre
-  rojo (los brazos abiertos), shiko rojo cuya onda se abre por el piso hasta 8 m (dash cuando
-  llega o salir del disco) y tachiai rojo; las matas de bambú joven del claro frenan la
-  embestida y lo dejan abierto. A la mitad se le enciende la tsuna, tira sal (no pega: es un
-  respiro para castigarlo) y alarga los combos.
+* **Chikuō, el Maestro del Bambú** (jefe del bambú, `Enemies/Bosses/BambooMasterBoss`; el
+  arquetipo y el bossId siguen siendo `ozeki`): un viejo maestro de kung fu que enseña paciencia.
+  Fuera de sus huecos los cortes rebotan y el combo que insiste se contragolpea; se le pega en el
+  contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
+  (esperó la postura del bambú: hundido con las palmas cruzadas y un aro de jade en el piso), en la
+  vuelta de un rojo que no pegó y al final del último golpe de un combo. Fase 1
+  con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca y,
+  con Kaito pegado, primero salta hacia atrás), fase 2 sin el saco (palmas gemelas, patada
+  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: de cerca el vuelo es
+  más corto y sale después, siempre pega cuando lo dice el aviso), fase 3 con el bastón. Vencido se sienta a meditar, saluda y deja el sello.
+  Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair]`.
 * **Cámara de combate**: baja a 45° y fijada nunca queda a menos de 19 m ni gira (los controles
   no cambian de dirección); con Kaito casi centrado se ven ~5 m detrás de él. Lo que tapa a
   Kaito, al fijado, al jefe o a quien está por pegar se disuelve con una trama (hueco en cono,
@@ -128,7 +148,7 @@ Debug.Log(Nindo.AutoPilot.Stats);   // parries, daño recibido, ejecuciones...
   (dorado = parry, rojo doble = dash). El sonido se oye desde Kaito; avisos y parry no cambian
   de tono con la cámara lenta.
 * **Reintentos**: pasar a menos de 6 m de un santuario ya lo deja como punto de reaparición
-  (rezar además cura y guarda). Hay santuarios a la entrada de las arenas de Mizuchi y Ōzeki,
+  (rezar además cura y guarda). Hay santuarios a la entrada de las arenas de Mizuchi y Chikuō,
   morir devuelve al juego en ~3,6 s y la presentación completa de cada jefe sale solo la
   primera vez.
 
@@ -170,16 +190,19 @@ El HUD es **solo** el arte del equipo: la **bandana roja** (vida) y el **dragón
 Nindo/Assets/Nindo/
   Scripts/        todo el código nuevo (namespace Nindo)
     Core/         Game (service locator), GameBootstrap, eventos, guardado, NindoContent, fábricas
-    Input/        InputReader (teclado + mando, buffer de inputs)
+    Input/        InputReader (teclado + mando, buffer de inputs), InputBindings + BindingTable + BindingCatalog
+                  (controles reasignables: UI/UIControls.cs es su página en Opciones)
     Combat/       tipos de ataque, CombatDirector (tokens), CharacterAnimator (CrossFade por código)
     Player/       PlayerController (+ .Combat), PlayerConfig
     Enemies/      Enemy, Boss, arquetipos (ninja, sumo, goro, mizuchi, ozeki, kage…), variantes de zona,
                   poses del sumo (SumoPoser)
-      Bosses/     jefes con pelea propia: MizuchiBoss (el Gran Koi: KoiBody, perlas, saltos, ola, pilares), OzekiBoss (yokozuna), KokuyoBoss (jefe final: actos, sombra adelantada, Kage, eclipse)
+      Bosses/     jefes con pelea propia: MizuchiBoss (el Gran Koi: KoiBody, perlas, saltos, ola, pilares), BambooMasterBoss (Chikuō: postura del bambú, onda de qi, fases con saco y bastón), KokuyoBoss (jefe final: actos, sombra adelantada, Kage, eclipse)
     Camera/       CameraDirector (tomas mezclables, fijado, perfiles de jefe, golpe de FOV, oído sobre
                   Kaito), CameraOcclusion (disolución de lo que tapa, shader Nindo/Occluder Fade)
     FX/           partículas, hit-stop, post-proceso en runtime (URP Volume)
-    Audio/        AudioManager: música por zona/combate/jefe, ambientes, efectos con pool
+    Audio/        AudioManager: música por zona/combate/jefe, ambientes, efectos con pool;
+                  MusicDirector: música de jefe por fases y el final, encadenada a la muestra
+                  (MusicPlan.cs: su tabla, la genera build_boss_music.py)
     UI/           HUD, menús, diálogos (todo creado por código)
     World/        WorldBuilder (arma el mapa desde los FBX), áreas, interactuables
     Story/        StoryDirector (cinemáticas, objetivos), StoryText (TODOS los textos), NPC
@@ -204,6 +227,17 @@ Tools/            pipelines en Python (Blender, audio, generación de assets de 
   `PROPS`. Se exporta solo, con collider y tags (luz, oclusor…) en el manifest.
 * *Cambiar el mapa*: `Tools/Blender/world/world_plan.py` (áreas, caminos, edificios,
   santuarios, encuentros, jefes) y volver a correr el generador.
+* *Un tema de jefe por fases*: en `Tools/Audio/build_boss_music.py`, la fuente en `SOURCES`, una función
+  que arme en compases de la grilla medida la intro, un loop por fase (`arrange`: tramos del tema en orden,
+  cada salto a un compás parecido al que seguiría), la frase de entrada de cada fase (`pickup`) y el cierre
+  (`outro` o `stinger`), la fila en `PHASES` y en `OUTROS`, y correr los pasos del encabezado: `install`
+  copia los .ogg, escribe `boss_music.json` y `Scripts/Audio/MusicPlan.cs`. Las claves nuevas van a
+  `NindoContent` (lista `music`); si el tema es CC BY, su crédito va en el cartel del final. En el jefe:
+  `musicKey` y `Game.Audio.SetBossMusicPhase(n)` en cada cambio (`Boss.PhaseChange` ya lo hace): entra en el
+  próximo tiempo con la frase de entrada y la sección nueva cae en un compás. Antes de un silencio de la
+  pelea, `SilenceBossMusic(fade, withOutro)` (con el golpe final, para una victoria falsa); después del
+  silencio `SetBossMusicPhase(n, leadIn)` elige cuántos segundos tarda en caer lo que la frase anuncia.
+  `Tools/Audio/sim_music_director.py` renderiza cada pelea como la tocaría el juego, para oírla sin Unity.
 
 ## Pipelines (Tools/)
 
@@ -217,8 +251,15 @@ $B -b --python Tools/Blender/world/build_world.py -- --export [--map] [--preview
 # Kaito: esqueleto de juego + todos sus clips (chequeos de pies, loops e impactos; hojas con --renders DIR)
 $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --export [--only Run,Attack1] [--renders DIR]
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
+# Chikuō, el Maestro del Bambú: modelo, esqueleto, clips, chequeos y FBX (hojas con --renders DIR [--detail] [--lineup])
+$B -b --factory-startup --python Tools/Blender/bosses/bamboo_master/build_bamboo_master.py -- --export [--renders DIR]
+python3 Tools/Blender/bosses/bamboo_master/check_master_fbx.py   # lo que Unity va a ligar: raíz, curvas, huesos, materiales
+# iterar clips sin exportar: --only 'Palm*,Defeat' --renders DIR --sheets Palm_P3 ; poses sueltas: --lab 'sentado 3' --renders DIR
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
+# música de jefes por fases y del final: pasos (fuentes, Vorbis, recorte, verificación) en su encabezado
+python3 Tools/Audio/build_boss_music.py build|trim|verify|install|plan [claves] --out CARPETA
+python3 Tools/Audio/sim_music_director.py Tools/Audio/boss_music.json CARPETA/enc/check SALIDA   # cada pelea, para oírla
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)
 python3 Tools/UI/build_ui_art.py [--preview carpeta]
 # metas, materiales, controllers, NindoContent, escenas  (correr después de cualquiera de los anteriores)
@@ -227,6 +268,10 @@ python3 Tools/Unity/generate_assets.py
 python3 Tools/Fonts/add_macrons.py
 # tiempos de los golpes de Kokuyō (KokuyoTimings.cs) desde el .fbx.json de su build de Blender
 python3 Tools/Unity/kokuyo_timings.py
+# momentos de los clips de Kaito que usan las escenas de la historia (KaitoTimings.cs) desde su kaitooo.fbx.json
+python3 Tools/Unity/kaito_timings.py
+# efectos del rezo con incienso y del sello de la muralla (síntesis pura, sin descargas)
+python3 Tools/Audio/sfx_world_story.py
 # clips del ninja, el sumo, Gorō y el abuelo (Art/Characters/TeamAnims/<Personaje>Anims.fbx + .json): falla si un
 # pie patina, un loop salta o el contacto no coincide con EnemyArchetypes; después metas, controllers y NindoContent
 $B -b --factory-startup --python Tools/Blender/anim/build_team_anims.py -- ninja|sumo|goro|grandpa --export [--renders carpeta]
@@ -249,6 +294,22 @@ determinística, así que re-generar no rompe referencias.
 
 Después se hace *static batching*, se construye el NavMesh en runtime y se reparten las
 luces puntuales con un pool (solo se encienden las más cercanas).
+
+Al final, `World/ZoneCulling` deja de dibujar lo que ninguna cámara prendida ve ni le tira sombra en ese frame
+(celdas de 32 m, `forceRenderingOff`: no toca colliders ni el batching), pausa las partículas del mundo que
+quedan escondidas, congela la cascada de Kohan fuera de cuadro (`KohanFalls.SetOffscreen`) y duerme por campamento
+a los enemigos quietos a más de 55 m y fuera de cuadro: sin dibujarse y, los comunes, sin Update ni Animator, todos
+en el mismo frame. Los idles de ambiente (`EnemyAmbient`) corren en Idle, así que se duermen con su campamento y
+mientras duermen no siguen el reloj de su pareja; `SetState` y `ScriptedPlay` lo despiertan en el acto. Kokuyō (arrodillado) y Mizuchi
+(escondido en el lago) esperan en Scripted y no se duermen nunca. En el editor también cuenta lo que mira cada
+vista Scene que se está dibujando (`Nindo.ZoneCulling.IncludeSceneView = false` para medir solo la cámara de juego).
+Para depurar: `Nindo.ZoneCulling.ShowHud = true`, `Debug.Log(Nindo.ZoneCulling.Stats)`,
+`Nindo.ZoneCulling.Benchmark()` (30 s alternando con y sin en el mismo lugar, sin tope de fps ni vsync mientras
+mide; en un Development Build, Ctrl + Shift + F9 o arrancar con `-zcbench`, y el informe va a `Player.log`),
+`Nindo.ZoneCulling.CheckFrame(carpeta)` (el mismo cuadro dibujado dos veces en el mismo frame, con y sin:
+tiene que dar 0 píxeles distintos; `CheckEvery(intervalo, carpeta)` lo repite jugando y `StopCheck()` da el
+resumen), `Nindo.ZoneCulling.HideBatched = false` (no esconder nada del lote estático, por si eso suma draws de
+sombra) y `Nindo.ZoneCulling.On = false` para verlo todo como antes.
 
 ---
 
@@ -292,7 +353,8 @@ Pendiente / para decidir:
 
 Código, diseño y modelos originales de personajes/enemigos: el equipo de Nindō.
 Entornos low‑poly, terreno y efectos sintetizados: generados con los scripts de `Tools/`.
-Música y efectos de terceros: todo CC0, detallado en `Nindo/Assets/Nindo/Audio/CREDITS.md`.
+Música y efectos de terceros: CC0, salvo la música de jefes y del final (PeriTune y TAD, CC BY 4.0: hay que
+darles crédito), detallado en `Nindo/Assets/Nindo/Audio/CREDITS.md`.
 Fuentes: Shippori Mincho B1 y Zen Maru Gothic (SIL Open Font License 1.1), con las vocales con
 macrón agregadas por `Tools/Fonts/add_macrons.py`; copyright y licencia en
 `Nindo/Assets/Nindo/Art/Fonts/OFL.txt`.

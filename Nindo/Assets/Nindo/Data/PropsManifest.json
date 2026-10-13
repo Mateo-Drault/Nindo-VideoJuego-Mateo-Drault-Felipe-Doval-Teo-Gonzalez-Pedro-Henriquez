@@ -920,6 +920,20 @@
    ]
   },
   {
+   "id": "incense_stick",
+   "collider": {
+    "type": "none"
+   },
+   "tags": [
+    "nonstatic"
+   ],
+   "size": [
+    0.046538010239601135,
+    0.25059300661087036,
+    0.023273538798093796
+   ]
+  },
+  {
    "id": "key_seal_bamboo",
    "collider": {
     "type": "none"
@@ -2025,31 +2039,24 @@
    "id": "shrine_checkpoint",
    "collider": {
     "center": [
-     0,
+     -0.0,
      0.9,
-     0
+     0.11
     ],
     "size": [
      1.2,
      1.8,
-     1.0
+     1.22
     ],
     "type": "box"
    },
    "tags": [
-    "light_warm",
-    "smoke",
     "nonstatic"
    ],
    "size": [
     1.180953860282898,
     1.8143975734710693,
-    1.1019494533538818
-   ],
-   "light_offset": [
-    -0.0,
-    0.9,
-    0.45
+    1.4709346294403076
    ]
   },
   {

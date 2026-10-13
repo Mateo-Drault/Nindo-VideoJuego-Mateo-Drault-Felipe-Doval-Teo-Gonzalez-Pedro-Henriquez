@@ -69,6 +69,7 @@ namespace Nindo
             BuildOverlay();
             BuildPanels();
             BuildSaveIndicator();
+            BuildMap();
         }
 
         void OnEnable() => GameEvents.Saved += OnGameSaved;
@@ -157,6 +158,17 @@ namespace Nindo
             bossFlash = 1f;
             bossSub.text = "¡Enfurecido!";
             bossSub.color = UIFactory.Crimson;
+        }
+
+        /// <summary>El jefe cambia de título en plena pelea (Chikuō al sacarse el saco o tomar el bastón): la barra destella
+        /// y el subtítulo pasa al nuevo (Boss.subtitle) sin el "¡Enfurecido!", que no le va a un maestro tranquilo.</summary>
+        public void BossRetitled(Boss b)
+        {
+            if (b == null || b != boss) return;
+            bossFlash = 1f;
+            bossEnrage = 0f;
+            bossSub.text = b.subtitle;
+            bossSub.color = UIFactory.Gold;
         }
 
         static readonly Color PipEmpty = new Color(0.27f, 0.26f, 0.29f, 1f);
@@ -278,6 +290,7 @@ namespace Nindo
             UpdateHUD(dt);
             UpdateBossBar(dt);
             UpdateOverlay(dt);
+            UpdateMap(dt);   // antes que los paneles: con el mapa abierto Esc lo cierra y no abre la pausa
             UpdatePanels(dt);
             UpdateSaveIndicator(dt);
         }

@@ -322,7 +322,9 @@ namespace Nindo
         {
             switch (archetype)
             {
-                case "sumo": case "sumo_mountain": case "ozeki": return "sumo";
+                case "sumo": case "sumo_mountain": return "sumo";
+                // el jefe del bambú: Chikuō (el arquetipo sigue siendo "ozeki" por las partidas y el sello)
+                case "ozeki": return "bamboo_master";
                 case "goro": return "goro";
                 case "kage": return "kokuyo";
                 case "mizuchi": return "mizuchi_koi";
@@ -342,6 +344,9 @@ namespace Nindo
 
             var anim = CharacterFactory.BuildModel(CharacterFor(archetype), root.transform, cfg.scale);
             EnemyVariants.Apply(archetype, cfg, anim, pos);     // kit de la zona (apaga el tinte si lo viste)
+            // la armadura de roca de la fase 2 se viste ya (escondida: GoroArmor la arma pieza por pieza), así el destello
+            // de golpe y la silueta de rayos X la incluyen
+            if (archetype == "goro" && anim != null) CharacterKits.Attach(anim.transform, "goro_armor");
             if (cfg.tintStrength > 0f) CharacterFactory.Tint(anim.transform, cfg.id, cfg.tint, cfg.tintStrength, archetype.StartsWith("kage"));
             if (layer >= 0) foreach (var t in root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
 
@@ -359,7 +364,9 @@ namespace Nindo
             {
                 Boss b = archetype switch
                 {
-                    "ozeki" => root.AddComponent<OzekiBoss>(),
+                    "ozeki" => root.AddComponent<BambooMasterBoss>(),
+                    // barra falsa, armadura de roca y avalancha (fase 2)
+                    "goro" => root.AddComponent<GoroBoss>(),
                     "kage" => root.AddComponent<KokuyoBoss>(),
                     // Mizuchi es un koi de 7.5 m: su propia IA de jefe (zambullidas, perlas, cascada)
                     "mizuchi" => root.AddComponent<MizuchiBoss>(),
@@ -382,23 +389,27 @@ namespace Nindo
             {
                 case "goro":
                     b.bossId = "goro"; b.title = "Gorō"; b.subtitle = "El Martillo de Kodoyama";
-                    b.introAnim = "Intro"; b.phaseAnim = "Spotted"; b.musicKey = "boss"; b.phaseThresholds = new[] { 0.5f };
+                    // sin el enfurecido genérico al 50 %: la fase 2 es la armadura, después de la barra falsa (GoroBoss)
+                    b.introAnim = "Intro"; b.phaseAnim = "Spotted"; b.musicKey = "boss_goro"; b.phaseThresholds = new float[0];
                     break;
                 case "mizuchi":
                     b.bossId = "mizuchi"; b.title = "Mizuchi"; b.subtitle = "El Gran Koi del Lago Kohan";
                     // "Roar" también en el reintento corto; la presentación entera (sale del pozo) es de MizuchiBoss
-                    // fase 3 al 33 %: al 25 %, con el remate habilitado al 12 %, la cascada desatada duraba unos segundos
-                    b.introAnim = "Roar"; b.phaseAnim = "Roar"; b.musicKey = "boss_lake"; b.phaseThresholds = new[] { 0.55f, 0.33f };
+                    // fase 2 al 68 % y 3 al 38 %: con la vida doble (1440) y el remate al 12 %, las tres fases duran parecido
+                    // (simulado con el bot "bueno": ~28 / 28 / 22 s sin la corrupción; con 55/33 la fase 1 duraba 37 s y la 3, 15)
+                    b.introAnim = "Roar"; b.phaseAnim = "Roar"; b.musicKey = "boss_lake"; b.phaseThresholds = new[] { 0.68f, 0.38f };
                     b.phaseSpeedBonus = 0.08f;
                     break;
                 case "ozeki":
-                    b.bossId = "ozeki"; b.title = "Ōzeki"; b.subtitle = "El Gran Campeón del Bambú";
-                    b.introAnim = "Spotted"; b.phaseAnim = "Spotted"; b.musicKey = "boss"; b.phaseThresholds = new[] { 0.5f };
+                    // Chikuō: las fases (66 % y 33 %), sus escenas y su ritmo los maneja BambooMasterBoss
+                    b.bossId = "ozeki"; b.title = "Chikuō"; b.subtitle = "El Maestro del Bambú";
+                    b.introAnim = "Intro"; b.phaseAnim = "PhaseCoat"; b.musicKey = "boss_bamboo"; b.phaseThresholds = new[] { 0.66f, 0.33f };
+                    b.phaseSpeedBonus = 0f;
                     break;
                 case "kage":
-                    // Kokuyō: los actos (65 % y 30 %) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica
+                    // Kokuyō: los actos (70 % y 36 %, KokuyoBoss.Gates) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica
                     b.bossId = "kage"; b.title = "Kokuyō"; b.subtitle = "Señor del Clan Kurokage";
-                    b.introAnim = "Intro"; b.phaseAnim = "Roar"; b.musicKey = "boss_final"; b.phaseThresholds = new[] { 0.65f, 0.30f };
+                    b.introAnim = "Intro"; b.phaseAnim = "Roar"; b.musicKey = "boss_final"; b.phaseThresholds = new[] { 0.70f, 0.36f };
                     b.phaseSpeedBonus = 0f;
                     break;
             }

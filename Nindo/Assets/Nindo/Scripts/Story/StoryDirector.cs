@@ -45,10 +45,14 @@ namespace Nindo
         // ================================================================== inicio
         public void Begin(bool newGame)
         {
+            SetupWallSeal();   // el sello de sombra del portón de la muralla, si sigue cerrado (StoryDirector.Wall)
             var s = Game.Save;
             P.SetKatanaVisible(s.HasFlag(Flags.KatanaObtained));
             UpdateObjective();
             if (!s.HasFlag(Flags.IntroDone)) StartCoroutine(Intro());
+            // se salió entre el último golpe a Kokuyō y la salida con el abuelo (FinalBossDone se guarda al caer él y
+            // Ending recién al irse): sin esto esa partida nunca volvía a ver el reencuentro ni el cartel del final
+            else if (s.HasFlag(Flags.FinalBossDone) && !s.HasFlag(Flags.Ending)) StartCoroutine(ResumeEnding());
             else
             {
                 StartCoroutine(Game.UI.Fade(0f, 1.2f));
@@ -59,17 +63,29 @@ namespace Nindo
         public void UpdateObjective() => Game.UI?.SetObjective(StoryText.Objective(Game.Save));
 
         // ================================================================== cinemáticas
+        // cinemáticas abiertas y cuántas pidieron franjas: dos que se pisan (el diálogo de una derrota mientras corre otra)
+        // no se devuelven el control una a la otra. Antes la primera en terminar sacaba las franjas, soltaba a Kaito y
+        // apagaba InCutscene con la otra todavía en el medio
+        int cutsceneDepth, letterboxDepth;
+
         IEnumerator Cutscene(IEnumerator body, bool letterbox = true)
         {
             // si justo estaba en pausa (p. ej. Esc durante la cámara lenta de la muerte de un jefe) la
-            // cinemática espera: si no, corría detrás del panel y el diálogo avanzaba con los clics del menú
-            while (Game.IsPaused) yield return null;
+            // cinemática espera: si no, corría detrás del panel y el diálogo avanzaba con los clics del menú.
+            // El rezo corto no es una cinemática: una que arrancaba en el medio (el diálogo de la derrota de Chikuō, la
+            // cascada) pasaba a Kaito de rodillas a la guardia con la katana del piso a la mano y, al terminar, lo
+            // dejaba congelado con el controlador apagado hasta que el rezo terminaba. Espera a que se levante (≤ 2.3 s);
+            // el rezo entero corre adentro de su propia cinemática, así que no se espera a sí mismo
+            while (Game.IsPaused || praying) yield return null;
+            bool first = cutsceneDepth++ == 0;
             Game.InCutscene = true;
             if (Game.Input != null) Game.Input.GameplayBlocked = true;
-            if (letterbox) Game.UI?.Letterbox(true);
-            P?.EnterScripted();
+            if (letterbox && letterboxDepth++ == 0) Game.UI?.Letterbox(true);
+            // la de adentro no vuelve a tomar a Kaito: EnterScripted lo pasa a la guardia y le cortaba la pose a la de afuera
+            if (first) P?.EnterScripted();
             yield return body;
-            if (letterbox) Game.UI?.Letterbox(false);
+            if (letterbox && --letterboxDepth == 0) Game.UI?.Letterbox(false);
+            if (--cutsceneDepth > 0) yield break;
             Game.Camera?.CancelAllShots();
             P?.ExitScripted();
             Game.InCutscene = false;
@@ -118,11 +134,12 @@ namespace Nindo
             bandana.radius = 2.5f;
             bandana.enabled = false;
 
-            // abuelo y su secuestrador (animación "inicio" del equipo: el ninja lo tacklea y lo arrastra)
+            // abuelo y su secuestrador (GrandpaAnims Kidnap/Dragged). El NPC 'kidnap' mira hacia donde se lo llevan: el
+            // abuelo, de cara a Kaito, y el ninja entre los dos, de espaldas a Kaito
             Vector3 kidPos = PointPos("kidnap_a", P.transform.position + new Vector3(6, 0, 8));
             Vector3 exit = PointPos("kidnap_exit", kidPos + new Vector3(0, 0, 25));
-            var grandpa = NPC.Spawn("kidnap", kidPos, Quaternion.LookRotation((P.transform.position - kidPos).Flat().normalized + Vector3.forward * 0.001f), null);
-            grandpa.Play("Idle", 0f);
+            var grandpa = NPC.Spawn("kidnap", kidPos, Quaternion.LookRotation((exit - kidPos).Flat().normalized + Vector3.forward * 0.001f), null);
+            grandpa.AwaitKidnap();
             Enemy kidnapper = null;
 
             // texto de apertura sobre negro
@@ -134,24 +151,25 @@ namespace Nindo
             Game.Camera?.Shake(0.6f);
             yield return new WaitForSecondsRealtime(4.2f);
 
-            // Kaito tirado en el piso
-            var lie = StartCoroutine(LieDown(true));
-            int shot = Game.Camera.PlayFollowShot(P.transform, new Vector3(2.2f, 2.2f, 2.6f), 0.3f, 32f, 0f, 0f, 1f, false);
-            yield return Game.UI.Fade(0f, 2.5f);
-            yield return new WaitForSecondsRealtime(0.8f);
-            yield return LieDown(false);
-            Game.Camera.CancelShot(shot);
+            // Kaito vuelve en sí en el piso; vuelve al cortar por encima de su hombro hacia el abuelo (StoryDirector.Prologue)
+            yield return KaitoComesTo(kidPos);
 
             // ve al abuelo siendo llevado
-            int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(-3.5f, 3.2f, -6f), 1.0f, 32f, 0f, 0.9f, 0.9f, false);
-            grandpa.Play("Kidnap", 0.1f);
-            Game.Audio?.Play("hit_heavy", grandpa.transform.position, 0.8f);
-            yield return new WaitForSecondsRealtime(2.4f);
+            // de costado al arrastre y del lado del ninja (offset local: el transform mira a 'exit'): se ven los dos brazos
+            // tirantes y las muñecas agarradas. Desde atrás, el abuelo sentado tapaba al ninja y no se leía el tirón
+            int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(4.6f, 2.4f, -3.4f), 0.7f, 32f, 0f, 0.9f, 0.9f, true);
+            // el ninja le agarra la muñeca, lo tira al piso (el golpe y el polvo, de NPC) y se lo lleva hacia el bosque. Arranca
+            // kidnapLead después del corte: el contraplano de Kaito (StoryDirector.Prologue) se sostiene 0.8 s encima de
+            // este plano y se mezcla en 0.5 s, así el agarre (0.57 s después de arrancar: a los 1.97 s) y la caída (0.9 s:
+            // a los 2.3 s) caen con este plano ya quieto. Con 1.2 s y el contraplano de 1.4 + 0.8 s pasaban a mitad de la
+            // mezcla; arrancando en el corte, el secuestro entero pasaba en el contraplano a 17 m. Mientras, se miran
+            // (KidnapWait: el ninja agazapado, el abuelo respira). Lo que falta hasta el diálogo no cambia (3.2 s)
+            const float kidnapLead = 1.4f;
+            yield return new WaitForSecondsRealtime(kidnapLead);
+            grandpa.Kidnap(exit);
+            yield return new WaitForSecondsRealtime(2.4f - kidnapLead + 0.8f);
             yield return Say("intro_wake");
             Game.Camera.CancelShot(shot2);
-            // lo arrastran lentamente hacia el bosque
-            grandpa.FaceTo(grandpa.transform.position - (exit - grandpa.transform.position));
-            grandpa.SlideTo(exit, 1.1f);
 
             // control al jugador: tiene que desatar la cinta
             Game.UI.Letterbox(false);
@@ -219,9 +237,12 @@ namespace Nindo
             Game.Camera.CancelShot(shot);
             yield return Say("intro_bandana");
             // el secuestrador se lleva al abuelo entre el humo
-            if (grandpa != null) { Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.6f); Destroy(grandpa.gameObject); }
+            // (si ya llegó a kidnap_exit, NPC.Arrive lo esfumó: no hay una segunda nube ni otro sonido)
+            bool vanish = grandpa != null && grandpa.gameObject.activeSelf;
+            if (vanish) Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.6f);
+            if (grandpa != null) Destroy(grandpa.gameObject);
             if (kidnapper != null) Destroy(kidnapper.gameObject);
-            Game.Audio?.Play("teleport", P.transform.position, 0.8f);
+            if (vanish) Game.Audio?.Play("teleport", P.transform.position, 0.8f);
             P.AddSpirit(60f);
         }
 
@@ -411,6 +432,13 @@ namespace Nindo
         }
 
         // ================================================================== triggers del mapa
+        /// <summary>
+        /// Encuentros que la historia necesita ganados para seguir: la muralla (WallSeal pide enc_wall para abrir el sello)
+        /// y el sumo (enc_done_sumo da el dash y las habilidades). Encounter los arranca con su radio entero aunque
+        /// estén en su idle ambiental: el resto de los campamentos son de paso y esperan a que uno note a Kaito.
+        /// </summary>
+        public static bool GatesProgress(string encounterId) => encounterId == "wall" || encounterId == "sumo";
+
         public void OnTrigger(string id, StoryTrigger t)
         {
             if (!id.StartsWith("enc_done_")) Game.Save.SetFlag("trig_" + id);
@@ -422,7 +450,8 @@ namespace Nindo
                 case "wall_guards":
                     StartCoroutine(Cutscene(Say("wall_guards"), false));
                     break;
-                case "enc_done_wall": StartCoroutine(Cutscene(WallOpens())); break;
+                // el portón ya no se abre solo: tiene un sello de sombra que Kaito abre con la bandana (StoryDirector.Wall)
+                case "enc_done_wall": StartCoroutine(Cutscene(WallGuardsDown())); break;
                 case "garden": StartCoroutine(Cutscene(Say("garden"), false)); break;
                 case "sumo_intro":
                 {
@@ -448,30 +477,18 @@ namespace Nindo
         {
             Vector3 a = PointPos("forest_kidnap_a", P.transform.position + new Vector3(0, 0, 18));
             Vector3 b = PointPos("forest_kidnap_b", a + new Vector3(0, 0, 14));
-            // el ninja arrastra al abuelo (último frame de la animación del secuestro)
-            var grandpa = NPC.Spawn("kidnap", a, Quaternion.LookRotation(-(b - a).Flat().normalized + Vector3.forward * 0.001f), null);
-            grandpa.Play("Kidnap", 0f);
-            grandpa.SkipToEnd();
-            yield return null;
-            grandpa.SlideTo(b, 1.3f);
-            int shot = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(-5f, 4.5f, -7f), 1f, 34f, 0f, 1.2f, 1.2f, false);
+            // el ninja sigue arrastrando al abuelo (Dragged), de costado y del lado del ninja como en el prólogo
+            var grandpa = NPC.Spawn("kidnap", a, Quaternion.LookRotation((b - a).Flat().normalized + Vector3.forward * 0.001f), null);
+            grandpa.Drag(b);
+            int shot = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(5.5f, 3.6f, -5f), 0.7f, 34f, 0f, 1.2f, 1.2f, true);
             yield return new WaitForSecondsRealtime(1.5f);
             yield return Say("forest_reveal");
             yield return new WaitForSecondsRealtime(1.2f);
-            Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.5f);
+            // (si llegó a 'b' antes, NPC.Arrive ya lo esfumó)
+            if (grandpa.gameObject.activeSelf) Game.FX.SmokePuff(grandpa.transform.position + Vector3.up, 1.5f);
             Destroy(grandpa.gameObject);
             Game.Camera.CancelShot(shot);
             Game.Save.SetFlag(Flags.ForestSeen);
-        }
-
-        IEnumerator WallOpens()
-        {
-            Game.Save.SetFlag(Flags.WallGateOpen);
-            Vector3 gate = PointPos("wall_gate", P.transform.position + P.transform.forward * 8f);
-            int shot = Game.Camera.PlayStaticShot(gate + new Vector3(4f, 6f, -12f), gate + Vector3.up * 2f, 34f, 3.2f, 1f, 1f);
-            yield return new WaitForSecondsRealtime(3.4f);
-            yield return Say("wall_open");
-            Game.Camera.CancelShot(shot);
         }
 
         IEnumerator SumoIntro()
@@ -506,16 +523,6 @@ namespace Nindo
             Game.Camera.CancelShot(shot);
             Game.UI.ShowTutorial($"{{Ability1}} Corte del Viento (35)   ·   {{Ability2}} Torbellino de Hojas (30)");
             StartCoroutine(HideTutorialLater(6f));
-        }
-
-        IEnumerator DojoGateFirstLook()
-        {
-            var gate = Game.World.Point("seal_gate");
-            int shot = -1;
-            if (gate != null) shot = Game.Camera.PlayStaticShot(gate.position + gate.forward * -16f + Vector3.up * 7f, gate.position + Vector3.up * 5f, 36f, 6f, 1.2f, 1f);
-            yield return new WaitForSecondsRealtime(1.4f);
-            yield return Say("dojo_gate");
-            if (shot >= 0) Game.Camera.CancelShot(shot);
         }
 
         // ================================================================== presentación de la cascada
@@ -573,6 +580,19 @@ namespace Nindo
             b.ScriptedFace(P.transform.position);
             // Kokuyō tiene su propia presentación (y su versión corta para los reintentos)
             if (b is KokuyoBoss k) { yield return KokuyoIntro(k); yield break; }
+            // Chikuō también (espera con las manos en la espalda; en los reintentos, el saludo corto con una frase)
+            if (b is BambooMasterBoss master)
+            {
+                // bandera propia: el bossId sigue siendo "ozeki" (partidas, sello) y una partida que vio al sumo de antes
+                // tenía boss_seen_ozeki, así que nunca veía la presentación ni la historia de Chikuō
+                bool first = !Game.Save.HasFlag(BossSeenFlag("chikuo"));
+                yield return master.Presentation(P, first);
+                if (first) { Game.Save.SetFlag(BossSeenFlag("chikuo")); SaveSystem.Save(); }
+                yield return new WaitForSecondsRealtime(0.3f);
+                b.ExitScripted(false);
+                b.BeginFight();
+                yield break;
+            }
             // reintento: la presentación entera (~6 s más el diálogo) solo la primera vez
             if (Game.Save.HasFlag(BossSeenFlag(b.bossId))) { yield return BossReintro(b); yield break; }
             // Mizuchi tiene su propia presentación (sale del pozo de la cascada): la toma, el título y el diálogo son suyos
@@ -593,7 +613,7 @@ namespace Nindo
             b.ScriptedPlay(b.introAnim, 0.2f);
             Game.Audio?.Play("boss_roar", b.transform.position, 1f);
             Game.Camera.Shake(0.35f);
-            Game.UI.ShowAreaTitle(b.title, b.subtitle);
+            Game.UI.ShowBossTitle(b.title, b.subtitle);
             yield return new WaitForSecondsRealtime(2.6f);
             yield return Say(b.bossId + "_intro");
             Game.Camera.CancelShot(shot);
@@ -652,38 +672,6 @@ namespace Nindo
             yield return Say(id);
             if (Game.Save.SealCount >= 3) Game.UI.ShowToast("¡Los tres sellos! Volvé a la puerta del dojo", UIFactory.Gold, 3f);
             SaveSystem.Save();
-        }
-
-        public void OpenSealGate(SealGate gate)
-        {
-            if (Game.Save.SealCount < 3) { StartCoroutine(Cutscene(Say("dojo_gate_incomplete"), false)); return; }
-            if (Game.Save.HasFlag(Flags.DojoOpen)) return;
-            StartCoroutine(Cutscene(SealGateRoutine(gate)));
-        }
-
-        IEnumerator SealGateRoutine(SealGate gate)
-        {
-            // cámara frente al portón (forward del marcador = hacia afuera), mirando los huecos
-            int shot = Game.Camera.PlayStaticShot(gate.transform.position + gate.transform.forward * 13f + Vector3.up * 4f, gate.SocketPosition(1), 34f, 7f, 1f, 1f);
-            yield return new WaitForSecondsRealtime(1f);
-            for (int i = 0; i < 3; i++) { gate.LightSocket(i); yield return new WaitForSecondsRealtime(0.8f); }
-            Game.Camera.Shake(0.5f);
-            Game.Save.SetFlag(Flags.DojoOpen);
-            SaveSystem.Save();
-            yield return new WaitForSecondsRealtime(2.2f);
-            yield return Say("dojo_gate_open");
-            Game.Camera.CancelShot(shot);
-        }
-
-        IEnumerator Ending()
-        {
-            Game.Save.SetFlag(Flags.FinalBossDone);
-            SaveSystem.Save();
-            // Kokuyō suelta la espada, pierde la máscara y la luna vuelve antes del fundido (KokuyoBoss.FinaleSeconds)
-            yield return new WaitForSecondsRealtime(FinalBoss() != null ? KokuyoBoss.FinaleSeconds : 3.5f);
-            yield return Cutscene(EndingScene());
-            Game.Audio?.PlayMusic("ending", 3f);
-            Game.UI.ShowEnding();
         }
 
         // ================================================================== muerte / viaje
@@ -762,73 +750,6 @@ namespace Nindo
         {
             Game.Save.SetFlag(Flags.KatanaObtained);
             enabled = false;
-        }
-    }
-
-    /// <summary>Puerta del dojo con los tres huecos para los sellos.</summary>
-    /// <summary>
-    /// Portón del dojo con los tres huecos para los sellos (modelados en dojo_gate). El marcador
-    /// está en el centro del portón y su forward mira hacia afuera (hacia el jugador que llega).
-    /// </summary>
-    public class SealGate : Interactable
-    {
-        readonly GameObject[] sockets = new GameObject[3];
-        // centro de cada hueco en coordenadas locales del portón (ver build_dojo_gate: x ±1.15,
-        // altura 4.5+0.57, cara frontal en z 1.59); el medallón tiene el origen en su base (-0.25)
-        static readonly Vector3[] offsets = { new Vector3(-1.15f, 4.82f, 1.64f), new Vector3(0f, 4.82f, 1.64f), new Vector3(1.15f, 4.82f, 1.64f) };
-        static readonly string[] sealProps = { "key_seal_mountain", "key_seal_lake", "key_seal_bamboo" };
-
-        void Awake()
-        {
-            prompt = "Colocar los sellos";
-            radius = 4.5f;
-            promptHeight = 2.2f;
-        }
-
-        void Start()
-        {
-            if (Game.Save.HasFlag(Flags.DojoOpen))
-                for (int i = 0; i < 3; i++) Place(i);
-        }
-
-        public override bool CanInteract => !Game.Save.HasFlag(Flags.DojoOpen);
-
-        public override void Interact(PlayerController p) => Game.Story?.OpenSealGate(this);
-
-        /// <summary>Punto donde va el sello i (en el mundo).</summary>
-        public Vector3 SocketPosition(int i) => transform.TransformPoint(offsets[i] + Vector3.up * 0.25f);
-
-        GameObject Place(int i)
-        {
-            if (sockets[i] != null) return sockets[i];
-            GameObject go;
-            var model = Game.Content != null ? Game.Content.Prop(sealProps[i]) : null;
-            if (model != null) go = Instantiate(model, transform);
-            else
-            {
-                go = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                Destroy(go.GetComponent<Collider>());
-                go.transform.SetParent(transform, false);
-                go.transform.localScale = new Vector3(0.5f, 0.05f, 0.5f);
-                go.GetComponent<MeshRenderer>().sharedMaterial = FXMaterials.Flash;
-            }
-            go.name = sealProps[i];
-            go.transform.localPosition = offsets[i];
-            go.transform.localRotation = model != null ? Quaternion.identity : Quaternion.Euler(90f, 0f, 0f);
-            var lg = new GameObject("Glow");
-            lg.transform.SetParent(go.transform, false);
-            lg.transform.localPosition = new Vector3(0f, 0.25f, 0.6f);
-            var l = lg.AddComponent<Light>();
-            l.type = LightType.Point; l.range = 3.5f; l.intensity = 1.6f; l.color = new Color(1f, 0.82f, 0.4f); l.shadows = LightShadows.None;
-            sockets[i] = go;
-            return go;
-        }
-
-        public void LightSocket(int i)
-        {
-            var go = Place(i);
-            Game.FX?.SealGlow(go.transform.position + go.transform.up * 0.25f);
-            Game.Audio?.Play("seal", go.transform.position, 1f);
         }
     }
 }

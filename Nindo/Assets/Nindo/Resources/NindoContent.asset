@@ -59,13 +59,25 @@ MonoBehaviour:
     - PerfectParry
     - Blocked
     - Hit
+    - HitBack
+    - HitLeft
+    - HitRight
     - HitHeavy
     - Death
     - Finisher
     - WindSlash
     - Whirlwind
+    - RunStop
+    - RunStopL
+    - RunStopReach
+    - RunStopLReach
     - Pray
     - Interact
+    - PrayIncense
+    - PrayQuick
+    - BandanaPower
+    - EndingTurn
+    - WakeUp
     - ParrySuccess
     stateLengths:
     - 2.4
@@ -82,65 +94,25 @@ MonoBehaviour:
     - 0.4667
     - 0.4667
     - 0.3667
-    - 0.6667
-    - 1.4
-    - 2.6667
-    - 1.0333
-    - 1.0
-    - 1.3333
-    - 0.6667
-    - 0.4
-  - id: kage
-    model: {fileID: 919132149155446097, guid: 9f86c988b73612547b0ed90211033b12, type: 3}
-    controller: {fileID: 9100000, guid: 5d89081a528ccd6f698c0a20385b0e53, type: 2}
-    height: 1.6
-    modelYaw: 90
-    materialSwaps: []
-    stateNames:
-    - Idle
-    - Walk
-    - Jog
-    - Run
-    - Attack1
-    - Attack2
-    - Attack3
-    - Dash
-    - ParryStance
-    - ParrySuccessR
-    - ParrySuccessL
-    - PerfectParry
-    - Blocked
-    - Hit
-    - HitHeavy
-    - Death
-    - Finisher
-    - WindSlash
-    - Whirlwind
-    - Pray
-    - Interact
-    - ParrySuccess
-    stateLengths:
-    - 2.4
-    - 0.6
-    - 0.4667
-    - 0.4
-    - 0.4333
+    - 0.3667
+    - 0.3667
     - 0.3667
     - 0.6667
-    - 0.4667
+    - 1.6
+    - 3.5333
+    - 1.9333
+    - 2.2
     - 0.5333
-    - 0.4
-    - 0.4
-    - 0.4667
-    - 0.4667
-    - 0.3667
-    - 0.6667
-    - 1.4
-    - 2.6667
-    - 1.0333
-    - 1.0
+    - 0.5333
+    - 0.5667
+    - 0.5667
     - 1.3333
     - 0.6667
+    - 6.2667
+    - 2.3333
+    - 2.5
+    - 2.8
+    - 3.6
     - 0.4
   - id: ninja
     model: {fileID: 919132149155446097, guid: 642c39cca7e4c9040ae0e8ba3072ec24, type: 3}
@@ -168,6 +140,11 @@ MonoBehaviour:
       smoothness: 0.3
       emission: {r: 0.3, g: 0.36, b: 0.46, a: 1}
       clearBaseMap: 0
+    - material: Lomo
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.35
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
     stateNames:
     - Attack1
     - Attack2
@@ -184,10 +161,19 @@ MonoBehaviour:
     - Parried
     - ParriedPerfect
     - ExhaustedHit
+    - IdleMeditate
+    - AmbientAlert
+    - IdleSparA
+    - IdleSparB
+    - IdleInspect
+    - IdleStretch
+    - Leap
+    - Whirl
+    - HopBack
     stateLengths:
     - 0.8
     - 0.7333
-    - 1.1333
+    - 1.2
     - 0.3
     - 1.6
     - 1.2
@@ -200,6 +186,15 @@ MonoBehaviour:
     - 0.3333
     - 0.5
     - 0.4
+    - 4.0
+    - 1.4667
+    - 3.2
+    - 3.2
+    - 4.0
+    - 4.0
+    - 1.6
+    - 1.2
+    - 1.0667
   - id: sumo
     model: {fileID: 919132149155446097, guid: 6e6d595635ec9544d83855ca6d060fbb, type: 3}
     controller: {fileID: 9100000, guid: 2034372f887e01ef4d7d283612f2c20a, type: 2}
@@ -230,6 +225,12 @@ MonoBehaviour:
     - ParriedPerfect
     - ExhaustedHit
     - Death
+    - IdleSleep
+    - AmbientAlert
+    - IdleShiko
+    - Morote
+    - HopSideR
+    - HopSideL
     stateLengths:
     - 0.9
     - 0.9
@@ -244,6 +245,12 @@ MonoBehaviour:
     - 0.5
     - 0.4
     - 1.5
+    - 4.0
+    - 2.4
+    - 5.0
+    - 1.2
+    - 1.2
+    - 1.2
   - id: goro
     model: {fileID: 919132149155446097, guid: dbac39bfe9be5fd41a31f29a324081f6, type: 3}
     controller: {fileID: 9100000, guid: 9670f8c607c12d6033d22ad74703b944, type: 2}
@@ -295,22 +302,36 @@ MonoBehaviour:
     - Hit
     - HitHeavy
     - Death
+    - FakeDefeat
+    - ArmorRise
+    - Combo1B
+    - Combo2B
+    - Combo3B
+    - SlamWave
+    - AvalancheSummon
     stateLengths:
-    - 2.6667
-    - 1.2
-    - 1.2
-    - 1.0
-    - 2.0
+    - 3.2
+    - 1.6
+    - 1.4
+    - 1.5667
+    - 2.1333
     - 2.2
     - 2.0
-    - 0.3333
+    - 0.5333
     - 1.4
-    - 2.5667
+    - 2.8
     - 0.4
-    - 0.5
+    - 0.7667
     - 0.5
     - 0.5
     - 2.0
+    - 2.6
+    - 7.0
+    - 1.9667
+    - 1.5333
+    - 1.9
+    - 2.1333
+    - 3.0
   - id: grandpa
     model: {fileID: 919132149155446097, guid: 1b406ff4438a21ba4c45f9adbb20ea7d, type: 3}
     controller: {fileID: 9100000, guid: be45274efe33497904d9a5dacd0d55a7, type: 2}
@@ -320,13 +341,21 @@ MonoBehaviour:
     stateNames:
     - Idle
     - Kidnap
+    - Walk
+    - KidnapWait
+    - Dragged
     - Bound
+    - BoundStruggle
     - Freed
     stateLengths:
     - 2.5
-    - 2.4667
-    - 3.0
-    - 3.0
+    - 1.9
+    - 0.8
+    - 2.5
+    - 2.6667
+    - 6.0
+    - 2.2
+    - 3.6
   - id: kidnap
     model: {fileID: 919132149155446097, guid: 1b406ff4438a21ba4c45f9adbb20ea7d, type: 3}
     controller: {fileID: 9100000, guid: be45274efe33497904d9a5dacd0d55a7, type: 2}
@@ -336,13 +365,21 @@ MonoBehaviour:
     stateNames:
     - Idle
     - Kidnap
+    - Walk
+    - KidnapWait
+    - Dragged
     - Bound
+    - BoundStruggle
     - Freed
     stateLengths:
     - 2.5
-    - 2.4667
-    - 3.0
-    - 3.0
+    - 1.9
+    - 0.8
+    - 2.5
+    - 2.6667
+    - 6.0
+    - 2.2
+    - 3.6
   - id: mizuchi_koi
     model: {fileID: 919132149155446097, guid: 6139008ced08c9004d9add9a1249ff10, type: 3}
     controller: {fileID: 9100000, guid: 9df10ea5ced26eedabce2179ffaf66a1, type: 2}
@@ -465,7 +502,266 @@ MonoBehaviour:
     - 1.0
     - 1.2
     - 1.2
+  - id: bamboo_master
+    model: {fileID: 919132149155446097, guid: 191c5633648e5611746e668f0421a7c7, type: 3}
+    controller: {fileID: 9100000, guid: 00038a893675a4c699be298472f4a7fd, type: 2}
+    height: 2.67
+    modelYaw: 0
+    materialSwaps:
+    - material: Master_GlintHandR
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.1
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintHandL
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.1
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintFootR
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintFootL
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_Eyes
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.45
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_GlintStaff
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.3
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Master_Skin
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.14
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    stateNames:
+    - Idle
+    - Walk
+    - Run
+    - StrafeL
+    - StrafeR
+    - WalkBack
+    - Idle_P2
+    - Walk_P2
+    - Run_P2
+    - StrafeL_P2
+    - StrafeR_P2
+    - WalkBack_P2
+    - Idle_P3
+    - Walk_P3
+    - Run_P3
+    - StrafeL_P3
+    - StrafeR_P3
+    - WalkBack_P3
+    - Palm
+    - Palm_Mid
+    - Palm_Close
+    - ChopPalm
+    - ChopPalm_Mid
+    - ChopPalm_Close
+    - CraneKick
+    - LeapKick
+    - Palm_P2
+    - Palm_Mid_P2
+    - Palm_Close_P2
+    - ChopPalm_P2
+    - ChopPalm_Mid_P2
+    - ChopPalm_Close_P2
+    - CraneKick_P2
+    - LeapKick_P2
+    - Guard
+    - GuardHit
+    - Counter
+    - CounterStrike
+    - CounterStrike_Mid
+    - CounterStrike_Close
+    - Taunt
+    - Stance
+    - Hit
+    - HitHeavy
+    - Parried
+    - ParriedPerfect
+    - Exhausted
+    - ExhaustedHit
+    - ExhaustedRise
+    - Guard_P2
+    - GuardHit_P2
+    - Counter_P2
+    - CounterStrike_P2
+    - CounterStrike_Mid_P2
+    - CounterStrike_Close_P2
+    - Taunt_P2
+    - Stance_P2
+    - Hit_P2
+    - HitHeavy_P2
+    - Parried_P2
+    - ParriedPerfect_P2
+    - Exhausted_P2
+    - ExhaustedHit_P2
+    - ExhaustedRise_P2
+    - Guard_P3
+    - GuardHit_P3
+    - Counter_P3
+    - CounterStrike_P3
+    - CounterStrike_Mid_P3
+    - CounterStrike_Close_P3
+    - Taunt_P3
+    - Stance_P3
+    - Hit_P3
+    - HitHeavy_P3
+    - Parried_P3
+    - ParriedPerfect_P3
+    - Exhausted_P3
+    - ExhaustedHit_P3
+    - ExhaustedRise_P3
+    - Intro
+    - PhaseCoat
+    - TwinPalm
+    - TwinPalm_Mid
+    - TwinPalm_Close
+    - SpinKick
+    - Sweep
+    - QiWave
+    - DashStrike
+    - BackHop
+    - BackHop_P2
+    - BackHop_P3
+    - Palm_P3
+    - Palm_Mid_P3
+    - Palm_Close_P3
+    - ChopPalm_P3
+    - ChopPalm_Mid_P3
+    - ChopPalm_Close_P3
+    - CraneKick_P3
+    - LeapKick_P3
+    - Sweep_P3
+    - QiWave_P3
+    - DashStrike_P3
+    - PhaseStaff
+    - Defeat
+    - Meditate
+    - SeatedBow
+    - PoseTest
+    stateLengths:
+    - 3.2
+    - 1.2
+    - 0.7333
+    - 0.8
+    - 0.8
+    - 1.2
+    - 3.2
+    - 1.2
+    - 0.7333
+    - 0.8
+    - 0.8
+    - 1.2
+    - 3.2
+    - 1.2
+    - 0.7333
+    - 0.8
+    - 0.8
+    - 1.2
+    - 1.1333
+    - 1.1333
+    - 1.1333
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.4
+    - 1.8667
+    - 1.1333
+    - 1.1333
+    - 1.1333
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.4
+    - 1.8667
+    - 0.6667
+    - 0.5
+    - 0.5333
+    - 0.8667
+    - 0.8667
+    - 0.8667
+    - 2.0
+    - 0.6667
+    - 0.6
+    - 0.9
+    - 1.0
+    - 1.2
+    - 4.0
+    - 0.5333
+    - 0.7333
+    - 0.6667
+    - 0.5
+    - 0.5333
+    - 0.8667
+    - 0.8667
+    - 0.8667
+    - 2.0
+    - 0.6667
+    - 0.6
+    - 0.9
+    - 1.0
+    - 1.2
+    - 4.0
+    - 0.5333
+    - 0.7333
+    - 0.6667
+    - 0.5
+    - 0.5333
+    - 0.8667
+    - 0.8667
+    - 0.8667
+    - 2.0
+    - 0.6667
+    - 0.6
+    - 0.9
+    - 1.0
+    - 1.2
+    - 4.0
+    - 0.5333
+    - 0.7333
+    - 4.0
+    - 3.6667
+    - 1.2667
+    - 1.2667
+    - 1.2667
+    - 1.4667
+    - 1.6
+    - 1.8667
+    - 1.2
+    - 0.7333
+    - 0.7333
+    - 0.7333
+    - 1.1333
+    - 1.1333
+    - 1.1333
+    - 1.2
+    - 1.2
+    - 1.2
+    - 1.4
+    - 1.8667
+    - 1.6
+    - 1.8667
+    - 1.2
+    - 3.0
+    - 5.0
+    - 3.2
+    - 2.3333
+    - 7.7333
   kits:
+  - id: goro_armor
+    model: {fileID: 919132149155446097, guid: d9163b055f46bf9cf1a218a4e55a6dee, type: 3}
   - id: kaito_bandana
     model: {fileID: 919132149155446097, guid: ca9a3f83c9c07ac24716e40606d17627, type: 3}
   - id: ninja_bamboo
@@ -589,6 +885,8 @@ MonoBehaviour:
     model: {fileID: 919132149155446097, guid: 71c2bd7e8d522e04e6dfcdfc61e01c96, type: 3}
   - id: flowers_yellow
     model: {fileID: 919132149155446097, guid: 2f3890aebaca33488d56367c91385e40, type: 3}
+  - id: goro_boulders
+    model: {fileID: 919132149155446097, guid: afcbb327b9d774f38057e5a65376c362, type: 3}
   - id: grass_tuft_a
     model: {fileID: 919132149155446097, guid: 3cad8d6c73e57e7be1959fd37db3737c, type: 3}
   - id: grass_tuft_b
@@ -609,6 +907,8 @@ MonoBehaviour:
     model: {fileID: 919132149155446097, guid: 27feedbc56d5e069cb88a1dcca15e296, type: 3}
   - id: house_village_b
     model: {fileID: 919132149155446097, guid: d6f08043f6b9c7e62c7602e31e03df3b, type: 3}
+  - id: incense_stick
+    model: {fileID: 919132149155446097, guid: 5357bda64a4ccbf284cf555b406b6820, type: 3}
   - id: key_seal_bamboo
     model: {fileID: 919132149155446097, guid: 96a8969abcf7e91896c81858a9ec018b, type: 3}
   - id: key_seal_lake
@@ -810,6 +1110,24 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: avalanche_rumble
+    clips:
+    - {fileID: 8300000, guid: d415913873d7688d980da564fad8d6a2, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bandana_charge
+    clips:
+    - {fileID: 8300000, guid: a5b14aa03a37c453ebfee56e43c51569, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bandana_release
+    clips:
+    - {fileID: 8300000, guid: 6b4e98a09c17c430004b3f588e7f3f86, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: barrier
     clips:
     - {fileID: 8300000, guid: 5fb8c1e3693a57dfca9c95ef5dfd0a77, type: 3}
@@ -825,6 +1143,19 @@ MonoBehaviour:
   - key: boss_roar
     clips:
     - {fileID: 8300000, guid: 39dbb987b8dda93575d881bb7c4a40ba, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: boulder_break
+    clips:
+    - {fileID: 8300000, guid: 1bf4951081b5b41352b9dc574c8ff506, type: 3}
+    - {fileID: 8300000, guid: b52541aff6e6c7a11dc19eeaf262c0ff, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: boulder_roll
+    clips:
+    - {fileID: 8300000, guid: 0807b7562bdec6bebcad54372c7a0777, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
@@ -995,6 +1326,12 @@ MonoBehaviour:
     volume: 0.9
     pitchVariance: 0.06
     spatial: 1
+  - key: incense_light
+    clips:
+    - {fileID: 8300000, guid: 0cd3a16833eb68a8c0b8746d58924f16, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: jet_charge
     clips:
     - {fileID: 8300000, guid: c5b2a74187815f8e12e0cfa5d21eebcb, type: 3}
@@ -1050,6 +1387,24 @@ MonoBehaviour:
   - key: lock
     clips:
     - {fileID: 8300000, guid: 9f7eb6e0495e0979b11f707648f13f04, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 0
+  - key: map_reveal
+    clips:
+    - {fileID: 8300000, guid: 2b4fbe97ce0f21a4f3bbd1df54480a2c, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 0
+  - key: map_roll
+    clips:
+    - {fileID: 8300000, guid: f8cf41f910f2e4f6c4611169118be0d7, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 0
+  - key: map_unroll
+    clips:
+    - {fileID: 8300000, guid: ddbd9059e3622569dbc808332b3911b4, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
@@ -1131,6 +1486,13 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
+  - key: rock_impact
+    clips:
+    - {fileID: 8300000, guid: 117d75471280e27aee4969e9d6dba4fb, type: 3}
+    - {fileID: 8300000, guid: b3626f92980a41df9fc35ff96a48e6a1, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: seal
     clips:
     - {fileID: 8300000, guid: 1e3a8903f35ae18a0f1d2d19f6e0dccf, type: 3}
@@ -1159,6 +1521,16 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: 08ec9399fe8c59bfcebccdea91ce1bf9, type: 3}
     volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: spar_clash
+    clips:
+    - {fileID: 8300000, guid: 3996a0f0dbc6cce48be0e5ec2f1e88a3, type: 3}
+    - {fileID: 8300000, guid: 2289a6ee92042e453ce5c8a79e2b0377, type: 3}
+    - {fileID: 8300000, guid: 317f624b5fec37391168d0d2ec1de452, type: 3}
+    - {fileID: 8300000, guid: 2367ab108a61ecceded493e41e4c1910, type: 3}
+    - {fileID: 8300000, guid: 539534ecc7516d52a81b18b3656da882, type: 3}
+    volume: 0.5
     pitchVariance: 0.06
     spatial: 1
   - key: step
@@ -1292,6 +1664,12 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: wall_seal_break
+    clips:
+    - {fileID: 8300000, guid: 6248cb0e91cd5049a6bcf13348c2048d, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: water_splash
     clips:
     - {fileID: 8300000, guid: fd10c1eb65c74f6c86e42c7abd1e13af, type: 3}
@@ -1319,9 +1697,195 @@ MonoBehaviour:
     volume: 0.8
     pitchVariance: 0
     spatial: 0
+  - key: boss_bamboo
+    clips:
+    - {fileID: 8300000, guid: 7337ffe86dd885deb10899af24239027, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_2
+    clips:
+    - {fileID: 8300000, guid: 456fd0be231aa01696d264e6aa2fef37, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_2_in
+    clips:
+    - {fileID: 8300000, guid: ac855e8d9d9277adb96f4da6e037ea82, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_3
+    clips:
+    - {fileID: 8300000, guid: dda04df644af3f25a37ba5bfe84780a4, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_3_in
+    clips:
+    - {fileID: 8300000, guid: 83684cfc42d35e8784a2590cf5a3551c, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_intro
+    clips:
+    - {fileID: 8300000, guid: d5e7fb611fe7335b71c77fe09a0248f2, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_out
+    clips:
+    - {fileID: 8300000, guid: 77ba32eb148be17ef3dbb5135bf3aa44, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_bamboo_out_3
+    clips:
+    - {fileID: 8300000, guid: ebe9caa223471f4e3c0b1fefc4770bc9, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
   - key: boss_final
     clips:
     - {fileID: 8300000, guid: 8d8bc8f6cdb29c63ea162ba4c9716418, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_2
+    clips:
+    - {fileID: 8300000, guid: 92353fd4efc4b3a737b2ba57475c7dd0, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_2_in
+    clips:
+    - {fileID: 8300000, guid: 77440aed0e0d27cdcdf88615fa5d2517, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_3
+    clips:
+    - {fileID: 8300000, guid: ff8575d0576283db202300931e533cf2, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_3_in
+    clips:
+    - {fileID: 8300000, guid: d30406fc1a0a5428abbe5adb530aa3ec, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_4
+    clips:
+    - {fileID: 8300000, guid: ab59932bba3df7eb4ec5ad82dc6860dc, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_4_in
+    clips:
+    - {fileID: 8300000, guid: 30038f32f3fcaddd41c60f9ebcd351f1, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_intro
+    clips:
+    - {fileID: 8300000, guid: aa914516683c56dd0bdf67a2efa3544e, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_out
+    clips:
+    - {fileID: 8300000, guid: fb8b0fcde0ae679404ebaf54fd417483, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_final_out_4
+    clips:
+    - {fileID: 8300000, guid: e9737a0cfee1b420181d47a1de7e5d28, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro
+    clips:
+    - {fileID: 8300000, guid: e71ff91b1e703b5756fc87469db0f2bd, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_2
+    clips:
+    - {fileID: 8300000, guid: 7383f7d15bfafc23984b9413fb735892, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_2_in
+    clips:
+    - {fileID: 8300000, guid: 3220d3e4c1cdc27c4a1108883540b480, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_intro
+    clips:
+    - {fileID: 8300000, guid: 82173183461c6fb04d028ece0620551b, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_out
+    clips:
+    - {fileID: 8300000, guid: 54986982ea5db4fa30362547375860e7, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_goro_out_1
+    clips:
+    - {fileID: 8300000, guid: 260e10cf754dbe093f4394a129da69ca, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake
+    clips:
+    - {fileID: 8300000, guid: 85cc18ccd693cbeb67140b2002517329, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_2
+    clips:
+    - {fileID: 8300000, guid: b9b8c11b205194af56dc94a2609bf6c9, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_2_in
+    clips:
+    - {fileID: 8300000, guid: c46d08a170424f398ac045715c97e8db, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_3
+    clips:
+    - {fileID: 8300000, guid: 316922e1f9c9e8637737355c7256f488, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_3_in
+    clips:
+    - {fileID: 8300000, guid: 93865d0d54435bb3785f9152a8bd796b, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_intro
+    clips:
+    - {fileID: 8300000, guid: b8baa24f9ddf81c2bab852aaf491fd7b, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_out
+    clips:
+    - {fileID: 8300000, guid: 0571f10bd2faafa256149d4ce0dded71, type: 3}
+    volume: 0.8
+    pitchVariance: 0
+    spatial: 0
+  - key: boss_lake_out_3
+    clips:
+    - {fileID: 8300000, guid: f72672ad464e2197f23a3c95797fba3d, type: 3}
     volume: 0.8
     pitchVariance: 0
     spatial: 0

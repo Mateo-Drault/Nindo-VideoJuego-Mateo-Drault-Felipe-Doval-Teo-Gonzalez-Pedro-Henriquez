@@ -20,12 +20,18 @@ la mano/pie y las rodillas (que pesan vértices en los polos) rígidas con la ti
 golpes que estos clips ya traen (Attack1..Special) y sigue posando los propios del Ōzeki y de las variantes.
 """
 import math
+import sys
 import nindo_anim as NA
 import team_rig as T
+import team_ambient
+import team_moves
 
 Key = NA.Key
 RUN_SPEED, WALK_SPEED = 3.4, 1.6          # EnemyArchetypes.Sumo(): runSpeed, walkSpeed
-LOCOMOTION = (("Idle", 0.0), ("Walk", WALK_SPEED / RUN_SPEED), ("Run", 1.0))
+# blend tree 2D de locomoción (Enemy.Locomotion.cs): VelX/VelZ = la velocidad en el marco del enemigo, en m/s del clip.
+# El centro quieto (LocoIdle) y el anillo de caminar tienen el largo de Walk (team_moves.SUMO_CYCLE)
+LOCOMOTION = (("LocoIdle", (0.0, 0.0)), ("Walk", (0.0, WALK_SPEED)), ("StrafeR", (WALK_SPEED, 0.0)), ("WalkBack", (0.0, -WALK_SPEED)),
+              ("StrafeL", (-WALK_SPEED, 0.0)), ("Run", (0.0, RUN_SPEED)))
 
 # ------------------------------------------------------------------ guardia
 # piernas abiertas con las puntas afuera y las rodillas sobre los pies, la cadera baja, la panza adelante, los brazos
@@ -35,7 +41,8 @@ STANCE = dict(
     knee_r=(-0.8, -0.6, 0.0), knee_l=(0.8, -0.6, 0.0),
     hand_r=(-0.62, -0.20, 1.05), hand_r_dir=(-0.1, -0.35, -0.9), hand_r_palm=(1.0, 0.0, 0.0), elbow_r=(-1.0, 0.3, -0.3),
     hand_l=(0.62, -0.20, 1.05), hand_l_dir=(0.1, -0.35, -0.9), hand_l_palm=(-1.0, 0.0, 0.0), elbow_l=(1.0, 0.3, -0.3),
-    fist_r=0.3, fist_l=0.3, breath=0.0, travel=0.0,
+    # los dedos curvados como una mano suelta (con 0.3 se veían rectos, de paleta, desde que la mano dejó de salir doblada)
+    fist_r=0.45, fist_l=0.45, breath=0.0, travel=0.0,
 )
 R0, L0 = (-0.42, 0.02, -22.0), (0.42, 0.02, 22.0)
 
@@ -55,6 +62,10 @@ def FL(f, dy=0.0, dx=0.0, yaw=None, pitch=0.0, z=0.0, ease="inout", lift=None, r
 
 
 PLANTED = {"r": [FR(0)], "l": [FL(0)]}
+
+# cuadro del clip en que arranca la embestida del juego (AttackDef.lungeFrom, EnemyArchetypes: el builder lo compara): el
+# primero de la suelta (el apex queda quieto); desde ahí el transform recorre cuadro a cuadro team_moves.clip_lunge_travel
+LUNGE_FROM = {"Attack1": 16, "Attack2": 12, "Attack3": 25}
 
 
 # empujones del juego (Enemy): parry 0.4 m (perfecto 0.8; el parry no descuenta knockbackResist), los golpes de Kaito
@@ -84,6 +95,10 @@ def clips(ch):
     out += locomotion(ch)
     out += [attack1(), attack2(), attack3(), special()]
     out += [hit(), hit_heavy(), parried(), parried_perfect(), exhausted(), exhausted_hit(), spotted(), death()]
+    # idles ambientales (team_ambient): duerme sentado o hace el shiko antes de la pelea
+    out += team_ambient.sumo_clips(ch, sys.modules[__name__])
+    # rodeo y retroceso, el empujón a dos manos del lago (team_moves)
+    out += team_moves.sumo_clips(ch, sys.modules[__name__])
     return out
 
 
@@ -124,44 +139,68 @@ def locomotion(ch):
         return c
     out.append(NA.ProcClip("Walk", n, walk, loop=True, root_vel=(0, -WALK_SPEED, 0), notes="caminata abierta a 1.6 m/s"))
 
+    # carrera erguida y pesada (3.4 m/s): el pecho arriba y la panza adelante, no agachado; las rodillas suben, cada
+    # pisada hunde la cadera y la rebota (el peso se ve), los brazos bombean doblados delante del pecho con los puños
+    # cerrados y los hombros acompañan cada brazo. 14 cuadros, 0.8 m por paso
     n = 14
-    g2 = T.gait2(ch, n, RUN_SPEED, 0.42, {"r": (-0.36, -0.02, -12.0), "l": (0.36, -0.02, 12.0)}, lift=0.14, toe_off=26.0, heel=-10.0)
+    g2 = T.gait2(ch, n, RUN_SPEED, 0.44, {"r": (-0.36, -0.02, -12.0), "l": (0.36, -0.02, 12.0)}, lift=0.20, toe_off=30.0, heel=-12.0)
 
     def run(f):
         a = 2.0 * math.pi * f / n
         c = dict(STANCE)
         c.update(g2(f))
-        c["hips"] = (-0.05 * math.sin(a), 0.0, -0.10 - 0.035 * math.cos(2 * a - 0.8))
-        c["hips_rot"] = (12.0, 4.0 * math.sin(a), 8.0 * math.sin(a))
-        c["spine"] = (10.0, -3.0 * math.sin(a), -6.0 * math.sin(a))
-        c["head"] = (-16.0, 0.0, 3.0 * math.sin(a))
-        c["hand_r"] = (-0.58, -0.10 + 0.22 * math.sin(a + math.pi), 1.18 + 0.04 * math.cos(a))
-        c["hand_l"] = (0.58, -0.10 + 0.22 * math.sin(a), 1.18 - 0.04 * math.cos(a))
-        c["hand_r_dir"] = (0.0, -0.6, -0.8)
-        c["hand_l_dir"] = (0.0, -0.6, -0.8)
-        c["fist_r"] = c["fist_l"] = 0.8
+        # la cadera baja justo después de cada apoyo (el golpe del peso) y sube en el empuje
+        c["hips"] = (-0.05 * math.sin(a), -0.02, -0.05 - 0.045 * math.cos(2 * a - 0.9))
+        c["hips_rot"] = (5.0, 4.0 * math.sin(a), 9.0 * math.sin(a))
+        c["spine"] = (2.0, -3.0 * math.sin(a), -7.0 * math.sin(a))
+        c["head"] = (-6.0 + 2.0 * math.cos(2 * a - 0.9), 0.0, 4.0 * math.sin(a))
+        c["knee_r"] = (-0.6, -1.0, 0.1)
+        c["knee_l"] = (0.6, -1.0, 0.1)
+        # cada brazo va con la pierna contraria: adelante y arriba cuando su pierna va atrás
+        sr, sl = math.sin(a + math.pi), math.sin(a)
+        c["hand_r"] = (-0.50, -0.30 + 0.30 * sr, 1.30 + 0.10 * max(0.0, -sr) + 0.05 * math.cos(2 * a))
+        c["hand_l"] = (0.50, -0.30 + 0.30 * sl, 1.30 + 0.10 * max(0.0, -sl) + 0.05 * math.cos(2 * a))
+        c["hand_r_dir"] = (0.1, -0.7, 0.7)
+        c["hand_l_dir"] = (-0.1, -0.7, 0.7)
+        c.pop("hand_r_palm", None)
+        c.pop("hand_l_palm", None)
+        c["elbow_r"] = (-0.8, 0.5, -0.4)
+        c["elbow_l"] = (0.8, 0.5, -0.4)
+        c["fist_r"] = c["fist_l"] = 0.9
         return c
-    out.append(NA.ProcClip("Run", n, run, loop=True, root_vel=(0, -RUN_SPEED, 0), notes="trote pesado a 3.4 m/s"))
+    out.append(NA.ProcClip("Run", n, run, loop=True, root_vel=(0, -RUN_SPEED, 0), notes="carrera erguida y pesada a 3.4 m/s"))
     return out
 
 
 # ================================================================== golpes
 def harite_r(n, apex, contact, lunge, windup, name, state):
-    """Bofetada de la mano derecha (se espeja para la izquierda)."""
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
-    TELL = P(hips=(0.05, 0.08, -0.16), hips_rot=(2.0, 0.0, -24.0), spine=(2.0, 3.0, -12.0), head=(-8.0, 0.0, 26.0),
-             hand_r=(-0.74, 0.34, 1.62), hand_r_dir=(-0.25, 0.35, 0.9), hand_r_palm=(0.0, -1.0, 0.0), elbow_r=(-0.9, 0.1, -0.6),
-             hand_l=(0.30, -0.55, 1.44), hand_l_dir=(0.0, -0.45, 0.9), hand_l_palm=(-0.3, -1.0, 0.0), elbow_l=(1.0, -0.1, -0.5),
+    """Bofetada de la mano derecha (se espeja para la izquierda): un tsuppari largo. Aviso: el peso atrás sobre el pie
+    izquierdo, el hombro derecho girado hacia atrás y la mano abierta junto a la oreja con la palma adelante (desde arriba,
+    una mano que sale del contorno para atrás y afuera); la izquierda estirada adelante mide la distancia. Suelta: la
+    cadera entra primero, el pie derecho da un paso largo y el brazo sale DERECHO a la altura del hombro con la palma
+    abierta adelante (la muñeca extendida, los dedos arriba): en el contacto el brazo está estirado del todo y la palma
+    pasa ~1 m por delante de la panza, la línea más larga que el sumo puede dibujar desde la cámara del juego. Se sostiene
+    estirado 4 cuadros (el golpe empuja), la izquierda tira para atrás a la cadera (contrapeso) y vuelve a la guardia
+    arrimando el pie izquierdo."""
+    tr, _ = team_moves.clip_lunge_travel(n, apex, contact, lunge, windup, LUNGE_FROM[state])
+    TELL = P(hips=(0.06, 0.10, -0.17), hips_rot=(-2.0, 0.0, -28.0), spine=(0.0, 3.0, -14.0), head=(-8.0, 0.0, 30.0),
+             hand_r=(-0.88, 0.24, 2.00), hand_r_dir=(-0.20, 0.10, 1.0), hand_r_palm=(0.0, -1.0, 0.15), elbow_r=(-0.8, 0.75, -0.4),
+             hand_l=(0.30, -0.62, 1.48), hand_l_dir=(0.0, -0.5, 0.85), hand_l_palm=(-0.2, -1.0, -0.3), elbow_l=(1.0, -0.1, -0.5),
              fist_r=0.0, fist_l=0.1)
-    HOLD = dict(TELL, hips=(0.05, 0.09, -0.17), hand_r=(-0.75, 0.38, 1.63), hips_rot=(2.0, 0.0, -26.0))
-    SMEAR = dict(HOLD, hips=(0.0, 0.0, -0.17), hips_rot=(8.0, 0.0, 0.0), spine=(8.0, 0.0, 2.0), head=(-10.0, 0.0, 8.0),
-                 hand_r=(-0.48, -0.55, 1.62), hand_r_dir=(0.0, -0.3, 0.95))
-    CONTACT = dict(SMEAR, hips=(0.0, -0.10, -0.19), hips_rot=(12.0, 0.0, 22.0), spine=(14.0, -2.0, 14.0), head=(-14.0, 0.0, -14.0),
-                   hand_r=(-0.12, -1.02, 1.55), hand_r_dir=(0.05, -0.15, 1.0), hand_r_palm=(0.0, -1.0, 0.1), elbow_r=(-1.0, 0.2, -0.4),
-                   hand_l=(0.62, 0.05, 1.20), hand_l_dir=(0.2, 0.3, -0.9), hand_l_palm=(-1.0, 0.0, 0.0), elbow_l=(1.0, 0.4, -0.2))
-    FOLLOW = dict(CONTACT, hips_rot=(12.0, 0.0, 28.0), spine=(14.0, -2.0, 18.0), hand_r=(0.02, -1.00, 1.48))
-    PUNISH = dict(FOLLOW, hips=(0.0, -0.08, -0.15), hips_rot=(8.0, 0.0, 16.0), spine=(10.0, 0.0, 8.0), head=(-12.0, 0.0, -6.0),
-                  hand_r=(-0.30, -0.70, 1.30), hand_r_dir=(0.0, -0.6, 0.6), elbow_r=(-1.0, 0.3, -0.4))
+    HOLD = dict(TELL, hips=(0.065, 0.11, -0.18), hand_r=(-0.89, 0.26, 2.01), hips_rot=(-2.0, 0.0, -30.0))
+    # la cadera ya giró y avanzó; la mano todavía atrás del hombro (el brazo llega último: látigo)
+    SMEAR = dict(HOLD, hips=(0.0, -0.04, -0.18), hips_rot=(8.0, 0.0, 2.0), spine=(8.0, 0.0, 0.0), head=(-12.0, 0.0, 8.0),
+                 hand_r=(-0.64, -0.20, 1.84), hand_r_dir=(0.0, -0.3, 0.95), hand_r_palm=(0.0, -1.0, -0.3), elbow_r=(-0.85, 0.55, -0.5),
+                 hand_l=(0.42, -0.46, 1.44), hand_l_dir=(0.05, -0.45, 0.40), hand_l_palm=(-0.6, -0.7, -0.3))
+    CONTACT = dict(SMEAR, hips=(-0.02, -0.17, -0.19), hips_rot=(14.0, 0.0, 28.0), spine=(14.0, -2.0, 30.0), head=(-18.0, 0.0, -30.0),
+                   hand_r=HARITE_REACH, hand_r_dir=(0.0, -0.42, 0.91), hand_r_palm=(0.0, -0.91, -0.42), elbow_r=(-0.9, 0.3, -0.6),
+                   hand_l=(0.52, -0.22, 1.36), hand_l_dir=(0.1, -0.2, -0.97), hand_l_palm=(-1.0, 0.0, 0.0), elbow_l=(1.0, 0.1, -0.4))
+    FOLLOW = dict(CONTACT, hips=(-0.02, -0.19, -0.20), hips_rot=(15.0, 0.0, 30.0), spine=(15.0, -2.0, 30.0),
+                  hand_r=V3(HARITE_REACH, 0.03, -0.04, -0.03), hand_l=(0.62, 0.06, 1.25), hand_l_dir=(0.2, 0.3, -0.9),
+                  elbow_l=(1.0, 0.3, -0.3))
+    STAY = dict(FOLLOW, hips=(-0.02, -0.16, -0.19), hips_rot=(13.0, 0.0, 27.0), spine=(14.0, -2.0, 26.0), hand_r=V3(HARITE_REACH, 0.01, 0.0, -0.06))
+    PUNISH = dict(STAY, hips=(0.0, -0.08, -0.15), hips_rot=(8.0, 0.0, 12.0), spine=(9.0, 0.0, 6.0), head=(-12.0, 0.0, -6.0),
+                  hand_r=(-0.40, -0.66, 1.34), hand_r_dir=(0.0, -0.6, 0.6), hand_r_palm=(0.0, -0.7, -0.7), elbow_r=(-1.0, 0.3, -0.4))
     keys = [
         Key(0, P()),
         Key(8, TELL, "inout"),
@@ -169,16 +208,36 @@ def harite_r(n, apex, contact, lunge, windup, name, state):
         Key(apex + 1, SMEAR, "in"),
         Key(contact, CONTACT, "lin"),
         Key(contact + 2, FOLLOW, "out"),
-        Key(contact + 5, PUNISH, "out"),
+        Key(contact + 4, STAY, "sine"),
+        Key(contact + 7, PUNISH, "inout"),
         Key(n, P(), "sine"),
     ]
-    # el pie derecho entra con la mano (medio paso), el izquierdo se arrima después: la guardia queda 'lunge' más adelante
-    feet = {"r": [FR(0), FR(apex), FR(contact + 2, lunge * 0.85, pitch=-10.0), FR(contact + 4, lunge * 0.85),
-                  FR(contact + 8, lunge)],
-            "l": [FL(0), FL(8), FL(apex, pitch=14.0), FL(contact + 6, lunge, ease="out")]}
-    return T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="harite; aviso: la mano atrás a la altura del hombro",
+    # el pie derecho entra con la mano (un paso largo, 0.12 m más allá de la embestida), el izquierdo queda clavado
+    # mientras el transform avanza y se arrima después; el derecho vuelve a la guardia al final
+    # (despegar el de atrás con el transform todavía andando lo hacía resbalar al soltarse: se arrima cuando ya llegó)
+    done = next(f for f in range(n + 1) if tr[f] >= lunge - 1e-4)
+    # mientras el transform avanza, los pies se apoyan y se despegan en vertical (un cuadro antes ya están sobre su lugar,
+    # a 2 cm; un cuadro después del despegue todavía ahí): Unity interpola el clip con curvas suaves entre cuadros y un pie
+    # que llegaba todavía yendo se corría ~2 cm después de apoyar
+    # el pie que da el paso despega primero para ARRIBA (apex + 1: el talón sube, la punta 4-5 cm y apenas 3 cm adelante):
+    # yendo derecho del apex al contacto salía 2.7 veces más rápido adelante que arriba y, en la curva que Unity pone entre
+    # el apex y el cuadro siguiente, la punta se arrastraba 3 cm antes de dejar el piso (más con una pausa del director)
+    feet = {"r": [FR(0), FR(apex), FR(apex + 1, 0.03, pitch=18.0, z=0.045, ease="in", lift=0.0),
+                  FR(contact, lunge + 0.11, pitch=-6.0, z=0.02, lift=0.08), FR(contact + 1, lunge + 0.12, pitch=-10.0, lift=0.0),
+                  FR(contact + 3, lunge + 0.12), FR(n - 1, lunge, lift=0.04)],
+            "l": [FL(0), FL(8), FL(apex, pitch=14.0), FL(done, pitch=22.0), FL(min(n, done + 4), lunge)]}
+    return T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="harite largo; aviso: la mano abierta junto a la oreja",
                       timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 4], hold=[8, apex],
-                                  lunge=lunge, windup=windup, state=state, striker="r", reach=2.2))
+                                  lunge=lunge, windup=windup, state=state, striker="r", reach=2.2, lunge_from=LUNGE_FROM[state]))
+
+
+# la palma del harite en el contacto: el brazo derecho estirado del todo desde el hombro girado e inclinado (medido con
+# el hombro del clip en el cuadro del golpe; team_limbs no estira un brazo libre más del 95 %)
+HARITE_REACH = (-0.24, -1.30, 1.60)
+
+
+def V3(p, dx, dy, dz):
+    return (p[0] + dx, p[1] + dy, p[2] + dz)
 
 
 def attack1():
@@ -208,7 +267,7 @@ def attack3():
     sostiene arriba (aviso: desde arriba, una pierna que sale del contorno), baja de golpe y queda en cuclillas."""
     n, apex, contact = 42, 24, 27
     lunge, windup = 0.2, 0.65
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    tr, _ = team_moves.clip_lunge_travel(n, apex, contact, lunge, windup, LUNGE_FROM["Attack3"])
     SHIFT = P(hips=(0.16, 0.02, -0.12), hips_rot=(4.0, 8.0, 0.0), spine=(4.0, 6.0, 0.0), head=(-10.0, -6.0, 0.0),
               hand_r=(-0.60, -0.24, 1.06), hand_l=(0.56, -0.32, 0.92), hand_l_dir=(0.0, -0.5, -0.8), hand_l_palm=(0.0, 1.0, 0.0))
     UP = P(hips=(0.20, 0.04, -0.06), hips_rot=(2.0, 14.0, 0.0), spine=(6.0, -6.0, 0.0), head=(-10.0, -8.0, 0.0),
@@ -241,7 +300,7 @@ def attack3():
             "l": [FL(0), FL(contact + 3), FL(36, lunge, ease="inout")]}
     return T.TeamClip("Attack3", n, keys, travel=tr, feet=feet, notes="shiko; aviso: la pierna derecha arriba al costado",
                       timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 31], hold=[14, apex],
-                                  lunge=lunge, windup=windup, state="Attack3", striker="foot_r", reach=1.2))
+                                  lunge=lunge, windup=windup, state="Attack3", striker="foot_r", reach=1.2, lunge_from=LUNGE_FROM["Attack3"]))
 
 
 def special():
@@ -253,8 +312,10 @@ def special():
     n, apex, contact, end = 60, 14, 18, 42
     CROUCH = P(hips=(0.0, 0.14, -0.40), hips_rot=(36.0, 0.0, 0.0), spine=(10.0, 0.0, 0.0), head=(-44.0, 0.0, 0.0),
                knee_r=(-1.0, -0.5, 0.0), knee_l=(1.0, -0.5, 0.0),
-               hand_r=(-0.30, -0.58, 0.24), hand_r_dir=(0.0, -0.3, -0.95), hand_r_palm=(0.0, 1.0, 0.0), elbow_r=(-1.0, 0.0, 0.0),
-               hand_l=(0.30, -0.58, 0.24), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(0.0, 1.0, 0.0), elbow_l=(1.0, 0.0, 0.0),
+               # la muñeca a 0.38 m: con la mano entera (antes la exportaba doblada sobre el antebrazo) los nudillos del puño
+               # quedan apoyados en el piso; a 0.24 m el puño se hundía 14 cm
+               hand_r=(-0.30, -0.58, 0.38), hand_r_dir=(0.0, -0.3, -0.95), hand_r_palm=(0.0, 1.0, 0.0), elbow_r=(-1.0, 0.0, 0.0),
+               hand_l=(0.30, -0.58, 0.38), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(0.0, 1.0, 0.0), elbow_l=(1.0, 0.0, 0.0),
                fist_r=1.0, fist_l=1.0)
     HOLD = dict(CROUCH, hips=(0.0, 0.15, -0.42))
     LAUNCH = P(hips=(0.0, -0.10, -0.24), hips_rot=(32.0, 0.0, 0.0), spine=(14.0, 0.0, 0.0), head=(-40.0, 0.0, 0.0),
@@ -427,10 +488,12 @@ def death():
             hand_r=(-0.82, 0.10, 0.62), hand_r_dir=(-0.4, 0.2, -0.9), hand_r_palm=(0.0, 0.0, -1.0), elbow_r=(-1.0, 0.3, 0.2),
             hand_l=(0.82, 0.10, 0.62), hand_l_dir=(0.4, 0.2, -0.9), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(1.0, 0.3, 0.2),
             fist_r=0.0, fist_l=0.0)
+    # de espaldas con los brazos abiertos y las palmas al piso, como cuando estaba sentado: con las palmas arriba el
+    # antebrazo daba media vuelta en los 5 cuadros de la caída (73° en uno)
     LIE = P(hips=(0.0, 0.22, -0.22), hips_rot=(-72.0, 0.0, 0.0), spine=(-6.0, 0.0, 0.0), head=(16.0, 0.0, 12.0),
             knee_r=(-0.6, -0.5, 0.6), knee_l=(0.6, -0.5, 0.6),
-            hand_r=(-0.95, 0.80, 0.36), hand_r_dir=(-0.8, 0.5, 0.0), hand_r_palm=(0.0, 0.0, 1.0), elbow_r=(-1.0, 0.0, 0.3),
-            hand_l=(0.95, 0.80, 0.36), hand_l_dir=(0.8, 0.5, 0.0), hand_l_palm=(0.0, 0.0, 1.0), elbow_l=(1.0, 0.0, 0.3),
+            hand_r=(-0.95, 0.80, 0.36), hand_r_dir=(-0.8, 0.5, 0.0), hand_r_palm=(0.0, 0.0, -1.0), elbow_r=(-1.0, 0.0, 0.3),
+            hand_l=(0.95, 0.80, 0.36), hand_l_dir=(0.8, 0.5, 0.0), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(1.0, 0.0, 0.3),
             fist_r=0.2, fist_l=0.2)
     keys = [Key(0, P()), Key(3, REC, "snap"), Key(10, dict(REC, hips=(0.0, 0.14, -0.14)), "out"),
             Key(20, SIT, "in2"), Key(23, dict(SIT, hips=(0.0, 0.10, -0.58), spine=(4.0, 0.0, 0.0)), "out"),

@@ -5,12 +5,15 @@ using UnityEngine;
 namespace Nindo
 {
     /// <summary>
-    /// Las "cuerdas de sombra" con que Kokuyō ata al abuelo al poste (prop binding_post). Tres vueltas que abrazan
-    /// el poste y al abuelo (muslos, cintura y pecho) más una cruz sobre el pecho y dos cabos colgando del nudo,
-    /// en tubos facetados con Nindo/ShadowRope: violeta oscuro con hebras que brillan y pulsos que corren.
-    /// Una luz violeta tenue lo baña (se lee desde la arena: "ahí está el abuelo"). Dissolve las deshace con un
-    /// borde encendido y motas que suben cuando Kokuyō cae; Restore las vuelve a atar (reintentos).
-    /// Las medidas salen de los bounds del abuelo, así sirven con su modelo actual y con el pulido.
+    /// Las "cuerdas de sombra" con que Kokuyō ata al abuelo al poste (prop binding_post). Tres vueltas tirantes que
+    /// abrazan el poste y al abuelo arrodillado (a la altura de las muñecas cruzadas, de los codos y del pecho), dos
+    /// vueltas chicas que le atan las muñecas, una cruz sobre el pecho y dos cabos colgando del nudo, en tubos facetados
+    /// con Nindo/ShadowRope: violeta oscuro con hebras que brillan y pulsos que corren. Una luz violeta tenue lo baña (se
+    /// lee desde la arena: "ahí está el abuelo"). Dissolve las deshace con un borde encendido y motas que suben cuando
+    /// Kokuyō cae; Restore las vuelve a atar (reintentos).
+    /// Las medidas salen de los huesos del abuelo en la pose de Bound (NPC.KneelBound la evalúa antes): cada vuelta es la
+    /// envolvente del poste y del cuerpo a esa altura, así va pegada al pecho y a los brazos y de ahí tirante al poste.
+    /// Antes salían de los bounds de la pose de bind (los brazos en cruz) y las vueltas flotaban 15-27 cm afuera.
     /// </summary>
     public class ShadowRopes : MonoBehaviour
     {
@@ -26,7 +29,9 @@ namespace Nindo
         ParticleSystem motes;
         readonly List<Vector3> path = new List<Vector3>();   // puntos de las cuerdas (para las motas al deshacerse)
         float dissolve, glowBase = 1.2f;
-        Coroutine routine;
+        Coroutine routine, dropRoutine;
+        Vector3 pivot;                                         // el pie del abuelo: alrededor de él caen las cuerdas (Drop)
+        const float FloorSquash = 0.04f, FloorSpread = 1.15f;
 
         /// <summary>Ata a 'captive' (el NPC del abuelo) contra 'post' (el binding_post). Devuelve null si falta algo.</summary>
         public static ShadowRopes Bind(Transform post, Transform captive, Transform parent)
@@ -47,7 +52,7 @@ namespace Nindo
 
         void Build(Transform post, Transform captive, Shader sh)
         {
-            // medidas del abuelo: alto y medio ancho (los renderers apagados, como el ninja del FBX, no cuentan)
+            // alto del abuelo, para la luz (los renderers apagados, como el ninja del FBX, no cuentan)
             Bounds b = new Bounds(captive.position + Vector3.up * 0.7f, new Vector3(0.5f, 1.4f, 0.4f));
             bool any = false;
             foreach (var r in captive.GetComponentsInChildren<Renderer>())
@@ -57,43 +62,13 @@ namespace Nindo
             }
             float height = Mathf.Clamp(b.max.y - captive.position.y, 0.9f, 2.2f);
             Vector3 p = post.position, c = captive.position;
+            pivot = c;
             Vector3 axis = (c - p); axis.y = 0f;
             float dist = axis.magnitude;
             axis = dist > 0.01f ? axis / dist : Vector3.back;
             Vector3 side = Vector3.Cross(Vector3.up, axis);
-            float halfW = Mathf.Clamp(Mathf.Abs(Vector3.Dot(b.extents, new Vector3(Mathf.Abs(side.x), 0f, Mathf.Abs(side.z)))), 0.18f, 0.4f);
-            // las vueltas abrazan poste + abuelo: centro entre los dos, largo hasta la espalda del poste y el pecho del abuelo
-            Vector3 mid = (p + c) * 0.5f + axis * 0.04f;
-            float along = dist * 0.5f + 0.27f;
-
             var v = new List<Vector3>(); var uv = new List<Vector2>(); var t = new List<int>();
-            var loops = new[] { 0.38f, 0.6f, 0.8f };
-            for (int k = 0; k < loops.Length; k++)
-            {
-                float y = c.y + height * loops[k];
-                float across = halfW * (k == 2 ? 1.05f : k == 1 ? 1.12f : 0.95f) + 0.05f;
-                var pts = new List<Vector3>();
-                const int N = 26;
-                for (int i = 0; i < N; i++)
-                {
-                    float a = i * Mathf.PI * 2f / N;
-                    // adelante (sobre el abuelo) la cuerda baja un poco: tensa contra el poste, floja al frente
-                    float front = Mathf.Max(0f, Mathf.Cos(a));
-                    Vector3 q = mid + axis * Mathf.Cos(a) * along + side * Mathf.Sin(a) * across;
-                    q.y = y - 0.05f * front + 0.012f * Mathf.Sin(a * 3f + k);
-                    pts.Add(q);
-                }
-                Tube(v, uv, t, pts, 0.027f, 6, true);
-            }
-            // cruz sobre el pecho (de la vuelta de arriba a la del medio) y dos cabos colgando del nudo
-            Vector3 chestL = mid + axis * along * 0.97f + side * halfW * 0.85f, chestR = mid + axis * along * 0.97f - side * halfW * 0.85f;
-            float y2 = c.y + height * 0.8f - 0.05f, y1 = c.y + height * 0.6f - 0.05f;
-            Tube(v, uv, t, Line(new Vector3(chestL.x, y2, chestL.z), new Vector3(chestR.x, y1, chestR.z), axis * 0.05f), 0.024f, 5, false);
-            Tube(v, uv, t, Line(new Vector3(chestR.x, y2, chestR.z), new Vector3(chestL.x, y1, chestL.z), axis * 0.06f), 0.024f, 5, false);
-            Vector3 knot = mid + axis * along + side * halfW * 0.5f;
-            knot.y = y1 - 0.04f;
-            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.05f + side * 0.04f + Vector3.down * 0.18f, knot + axis * 0.04f + side * 0.09f + Vector3.down * 0.42f }, 0.022f, 5, false);
-            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.06f - side * 0.02f + Vector3.down * 0.2f, knot + axis * 0.03f + side * 0.01f + Vector3.down * 0.5f }, 0.022f, 5, false);
+            BuildWraps(p, captive, axis, side, v, uv, t);
 
             ropeMesh = new Mesh { name = "CuerdasDeSombra" };
             ropeMesh.SetVertices(v); ropeMesh.SetUVs(0, uv); ropeMesh.SetTriangles(t, 0);
@@ -117,6 +92,184 @@ namespace Nindo
             glow.shadows = LightShadows.None;
             motes = MakeMotes();
             Bound = true;
+        }
+
+        // radio de la cuerda y lo que se separa de lo que envuelve; sección del poste (octógono de 0.3 m)
+        const float RopeR = 0.027f, RopeGap = 0.03f, PostR = 0.16f;
+        // medio fondo del tronco (del eje del cuerpo a la panza o al pecho) y grosor de un brazo
+        const float WaistHalfD = 0.12f, ChestHalfD = 0.12f, LimbR = 0.05f;
+        // lo mínimo entre dos vueltas (m): dos diámetros de cuerda y un poco de tela entre ellas
+        const float MinLoopGap = 0.08f;
+        readonly List<Vector2> pts2 = new List<Vector2>(), hull = new List<Vector2>();
+
+        /// <summary>
+        /// Las vueltas, las ataduras de las muñecas, la cruz y los cabos. Los huesos del abuelo (Mano, Antebrazo, Brazo,
+        /// Root) dicen dónde va cada cosa; sin ellos (otro modelo), las medidas de Bound en NPC.
+        /// </summary>
+        void BuildWraps(Vector3 p, Transform captive, Vector3 axis, Vector3 side, List<Vector3> v, List<Vector2> uv, List<int> t)
+        {
+            Vector3 c = captive.position;
+            Transform hl = NPC.FindDeep(captive, "Mano.L"), hr = NPC.FindDeep(captive, "Mano.R");
+            Transform el = NPC.FindDeep(captive, "Antebrazo.L"), er = NPC.FindDeep(captive, "Antebrazo.R");
+            Transform sl = NPC.FindDeep(captive, "Brazo.L"), sr = NPC.FindDeep(captive, "Brazo.R");
+            Transform root = NPC.FindDeep(captive, "Root");
+            if (!LooksKneeling(c, hl, hr, sl, sr, root))
+            {
+                // los huesos están pero no en Bound (el Animator no llegó a evaluar: el GameObject apagado, otro
+                // controller): las medidas de NPC, que son las de Bound, antes que vueltas sobre el sombrero
+                Debug.LogWarning("[Nindo] El abuelo no está en la pose de Bound al atarlo: las cuerdas usan las medidas de NPC.");
+                hl = hr = el = er = sl = sr = root = null;
+            }
+            Vector3 up = Vector3.up, back = -axis;
+            var loops = NPC.BoundRopeLoops;
+            float hw = NPC.BoundRopeHalfWidth;
+            Vector3 handL = hl != null ? hl.position : c + up * loops[0] + back * 0.13f + side * 0.02f;
+            Vector3 handR = hr != null ? hr.position : c + up * loops[0] + back * 0.13f - side * 0.02f;
+            Vector3 elbL = el != null ? el.position : c + up * loops[1] + back * 0.10f + side * (hw - LimbR);
+            Vector3 elbR = er != null ? er.position : c + up * loops[1] + back * 0.10f - side * (hw - LimbR);
+            Vector3 shL = sl != null ? sl.position : c + up * (loops[2] + 0.05f) + side * (hw - 0.04f);
+            Vector3 shR = sr != null ? sr.position : c + up * (loops[2] + 0.05f) - side * (hw - 0.04f);
+            Vector3 hip = root != null ? root.position : c + up * 0.16f + axis * 0.05f;
+            Vector3 wrist = (handL + handR) * 0.5f, shoulders = (shL + shR) * 0.5f;
+            float yW = wrist.y, yE = (elbL.y + elbR.y) * 0.5f, yC = shoulders.y - 0.05f;
+            // de rodillas con los hombros tirados atrás los codos quedan casi a la altura del pecho (0.53 y 0.56 m): las
+            // dos vueltas se pisaban y se veían dos cuerdas en vez de tres. Entonces la del medio va a mitad de los
+            // antebrazos, entre la de las muñecas y la del pecho
+            if (yC - yE < MinLoopGap) yE = (yW + yC) * 0.5f;
+            float shoulderHalf = Mathf.Abs(Vector3.Dot(shL - shR, side)) * 0.5f;
+
+            // cada vuelta: la envolvente (vista desde arriba) del poste, del tronco a esa altura y de lo que sobresale (los
+            // codos atrás, las manos cruzadas) con la holgura de la cuerda: pegada al cuerpo y tirante hasta el poste
+            for (int k = 0; k < 3; k++)
+            {
+                float y = k == 0 ? yW : k == 1 ? yE : yC;
+                Vector3 trunk = AxisAt(hip, shoulders, y);
+                pts2.Clear();
+                Circle(pts2, p, PostR + RopeGap, 12);
+                float halfW = k == 2 ? shoulderHalf + LimbR + 0.02f : Mathf.Min(hw, shoulderHalf);
+                Ellipse(pts2, trunk, side, axis, halfW + RopeGap, (k == 0 ? WaistHalfD : ChestHalfD) + RopeGap, 16);
+                if (k == 0) Circle(pts2, wrist, LimbR + RopeGap, 8);
+                if (k == 1) { Circle(pts2, elbL, LimbR + RopeGap, 8); Circle(pts2, elbR, LimbR + RopeGap, 8); }
+                Hull(pts2, hull);
+                var ring = Resample(hull, 44);
+                var loop = new List<Vector3>(ring.Count);
+                for (int i = 0; i < ring.Count; i++)
+                    loop.Add(new Vector3(ring[i].x, y + 0.008f * Mathf.Sin(i * 0.9f + k), ring[i].y));
+                Tube(v, uv, t, loop, RopeR, 6, true);
+            }
+            // las muñecas cruzadas atadas entre sí: dos vueltas chicas alrededor del cruce, de canto a los antebrazos
+            Vector3 across = (handL - handR).sqrMagnitude > 1e-4f ? (handL - handR).normalized : side;
+            Vector3 a1 = Vector3.Cross(across, up).normalized, a2 = Vector3.Cross(across, a1);
+            for (int w = 0; w < 2; w++)
+            {
+                var ring = new List<Vector3>();
+                Vector3 o = wrist + across * (w == 0 ? 0.02f : -0.02f);
+                for (int i = 0; i < 10; i++)
+                {
+                    float a = i * Mathf.PI * 2f / 10f;
+                    ring.Add(o + (a1 * Mathf.Cos(a) + a2 * Mathf.Sin(a)) * (LimbR + 0.005f));
+                }
+                Tube(v, uv, t, ring, 0.02f, 5, true);
+            }
+            // cruz sobre el pecho (de la vuelta de arriba a la del medio, por delante) y dos cabos colgando del nudo hasta
+            // arriba de los muslos
+            Vector3 chest = AxisAt(hip, shoulders, yC), mid = AxisAt(hip, shoulders, yE);
+            float fC = ChestHalfD + RopeGap, w2 = shoulderHalf * 0.75f;
+            Vector3 cl = chest + axis * fC + side * w2, cr = chest + axis * fC - side * w2;
+            Vector3 ml = mid + axis * fC + side * w2, mr = mid + axis * fC - side * w2;
+            Tube(v, uv, t, Line(cl, mr, axis * 0.03f), 0.024f, 5, false);
+            Tube(v, uv, t, Line(cr, ml, axis * 0.035f), 0.024f, 5, false);
+            Vector3 knot = (chest + mid) * 0.5f + axis * (fC + 0.02f) + side * 0.03f;
+            float hang = Mathf.Max(0.05f, knot.y - (c.y + 0.26f));
+            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.04f + side * 0.03f + Vector3.down * (0.4f * hang), knot + axis * 0.05f + side * 0.07f + Vector3.down * hang }, 0.022f, 5, false);
+            Tube(v, uv, t, new List<Vector3> { knot, knot + axis * 0.05f - side * 0.02f + Vector3.down * (0.45f * hang), knot + axis * 0.03f + side * 0.01f + Vector3.down * (0.9f * hang) }, 0.022f, 5, false);
+        }
+
+        // la pose de Bound y BoundStruggle con margen (m sobre los pies del transform): manos a 0.40-0.44 y 0.13 atrás,
+        // hombros a 0.57-0.66, cadera a 0.18. Bind: las manos a 0.8 a los costados; Idle: manos a 0.70, hombros a 0.92
+        const float MaxHandOut = 0.35f, MaxHandUp = 0.6f, MaxShoulderUp = 0.78f, MaxHipUp = 0.35f;
+
+        /// <summary>Los huesos que hay están en la pose de Bound (de rodillas, las manos juntas atrás).</summary>
+        static bool LooksKneeling(Vector3 c, Transform hl, Transform hr, Transform sl, Transform sr, Transform root)
+        {
+            foreach (var h in new[] { hl, hr })
+            {
+                if (h == null) continue;
+                Vector3 d = h.position - c;
+                if (d.y > MaxHandUp || new Vector2(d.x, d.z).magnitude > MaxHandOut) return false;
+            }
+            if (sl != null && sl.position.y - c.y > MaxShoulderUp) return false;
+            if (sr != null && sr.position.y - c.y > MaxShoulderUp) return false;
+            return root == null || root.position.y - c.y <= MaxHipUp;
+        }
+
+        /// <summary>El eje del tronco (de la cadera al medio de los hombros) a la altura y.</summary>
+        static Vector3 AxisAt(Vector3 hip, Vector3 shoulders, float y)
+        {
+            float k = Mathf.Abs(shoulders.y - hip.y) > 1e-3f ? (y - hip.y) / (shoulders.y - hip.y) : 0f;
+            return Vector3.LerpUnclamped(hip, shoulders, k);
+        }
+
+        static void Circle(List<Vector2> o, Vector3 c, float r, int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                float a = i * Mathf.PI * 2f / n;
+                o.Add(new Vector2(c.x + Mathf.Cos(a) * r, c.z + Mathf.Sin(a) * r));
+            }
+        }
+
+        static void Ellipse(List<Vector2> o, Vector3 c, Vector3 side, Vector3 fwd, float hw, float hd, int n)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                float a = i * Mathf.PI * 2f / n;
+                Vector3 q = c + side * (Mathf.Cos(a) * hw) + fwd * (Mathf.Sin(a) * hd);
+                o.Add(new Vector2(q.x, q.z));
+            }
+        }
+
+        /// <summary>Envolvente convexa de 'pts' (cadena monótona) en 'h', en sentido antihorario.</summary>
+        static void Hull(List<Vector2> pts, List<Vector2> h)
+        {
+            pts.Sort((a, b) => a.x != b.x ? a.x.CompareTo(b.x) : a.y.CompareTo(b.y));
+            h.Clear();
+            for (int pass = 0; pass < 2; pass++)
+            {
+                int start = h.Count;
+                for (int i = 0; i < pts.Count; i++)
+                {
+                    var q = pts[pass == 0 ? i : pts.Count - 1 - i];
+                    while (h.Count >= start + 2 && Cross(h[h.Count - 2], h[h.Count - 1], q) <= 0f) h.RemoveAt(h.Count - 1);
+                    h.Add(q);
+                }
+                h.RemoveAt(h.Count - 1);
+            }
+        }
+
+        static float Cross(Vector2 o, Vector2 a, Vector2 b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+
+        /// <summary>n puntos parejos sobre el perímetro de un polígono cerrado (las facetas del tubo quedan del mismo largo).</summary>
+        static List<Vector2> Resample(List<Vector2> poly, int n)
+        {
+            float per = 0f;
+            for (int i = 0; i < poly.Count; i++) per += Vector2.Distance(poly[i], poly[(i + 1) % poly.Count]);
+            var o = new List<Vector2>(n);
+            int seg = 0;
+            float acc = 0f;
+            for (int k = 0; k < n; k++)
+            {
+                float d = per * k / n;
+                while (seg < poly.Count - 1 && acc + Vector2.Distance(poly[seg], poly[seg + 1]) < d)
+                {
+                    acc += Vector2.Distance(poly[seg], poly[seg + 1]);
+                    seg++;
+                }
+                Vector2 a = poly[seg], b = poly[(seg + 1) % poly.Count];
+                float l = Vector2.Distance(a, b);
+                o.Add(l > 1e-6f ? Vector2.Lerp(a, b, (d - acc) / l) : a);
+            }
+            return o;
         }
 
         static List<Vector3> Line(Vector3 a, Vector3 b, Vector3 bulge)
@@ -204,7 +357,8 @@ namespace Nindo
                 var ep = new ParticleSystem.EmitParams();
                 for (int i = 0; i < path.Count; i += 2)
                 {
-                    ep.position = path[i];
+                    // donde está la cuerda ahora (si cayó con Drop, en el piso)
+                    ep.position = rope != null ? rope.transform.TransformPoint(path[i]) : path[i];
                     ep.applyShapeToPosition = false;
                     motes.Emit(ep, 2);
                 }
@@ -227,10 +381,44 @@ namespace Nindo
             routine = null;
         }
 
+        /// <summary>
+        /// Las cuerdas se aflojan y caen al piso en 'seconds', como algo suelto (lentas al principio): las vueltas se abren
+        /// un poco y quedan tiradas alrededor del abuelo. El final las hace caer y después las deshace (Dissolve) en el piso.
+        /// </summary>
+        public void Drop(float seconds = 0.55f)
+        {
+            if (!Bound || rope == null) return;
+            if (dropRoutine != null) StopCoroutine(dropRoutine);
+            dropRoutine = StartCoroutine(DropRoutine(seconds));
+        }
+
+        IEnumerator DropRoutine(float seconds)
+        {
+            float k = 0f;
+            while (k < 1f)
+            {
+                k = Mathf.Min(1f, k + Time.unscaledDeltaTime / Mathf.Max(0.05f, seconds));
+                float g = k * k;
+                SetDrop(Mathf.Lerp(1f, FloorSquash, g), Mathf.Lerp(1f, FloorSpread, g));
+                yield return null;
+            }
+            dropRoutine = null;
+        }
+
+        /// <summary>La malla está en coordenadas de mundo (su objeto en el origen): se escala alrededor del pie del abuelo.</summary>
+        void SetDrop(float sy, float sxz)
+        {
+            var t = rope.transform;
+            t.localScale = new Vector3(sxz, sy, sxz);
+            t.position = pivot - Vector3.Scale(t.localScale, pivot);
+        }
+
         /// <summary>Atado de nuevo, ya (reintento antes de vencer a Kokuyō).</summary>
         public void Restore()
         {
             if (routine != null) { StopCoroutine(routine); routine = null; }
+            if (dropRoutine != null) { StopCoroutine(dropRoutine); dropRoutine = null; }
+            if (rope != null) SetDrop(1f, 1f);
             dissolve = 0f;
             Bound = true;
             if (rope != null) rope.enabled = true;

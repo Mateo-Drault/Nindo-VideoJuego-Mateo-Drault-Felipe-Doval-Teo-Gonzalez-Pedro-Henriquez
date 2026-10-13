@@ -15,6 +15,9 @@ namespace Nindo
     ///    más adelante en el clip con SampleAhead: la sombra actúa el golpe 0.36 s antes que el cuerpo.
     ///  - Suelta (Detach): deja de seguir al cuerpo y Root se mueve libre (Kage, la sombra arrancada); RiseTo la
     ///    despega del piso y la para como figura de humo de tinta.
+    ///  - Viva (los golpes propios de la sombra, KageShadow): su luz puede apuntar a otro lado (SetLightDirection) y su
+    ///    raíz girar sola (AimRoot), así se estira por el piso hacia Kaito aunque el cuerpo no se mueva; Flash es el
+    ///    "¡ahora!" en dorado y ReturnToBody vuelve a copiar al cuerpo con un fundido (sin salto de pose).
     /// El cuerpo no proyecta su sombra real mientras tanto (si no, se ven dos sombras distintas).
     /// </summary>
     [DefaultExecutionOrder(900)]
@@ -28,7 +31,10 @@ namespace Nindo
         static readonly int IdLight = Shader.PropertyToID("_LightDir"), IdGround = Shader.PropertyToID("_GroundY"),
             IdOrigin = Shader.PropertyToID("_Origin"), IdArena = Shader.PropertyToID("_ArenaCenter"), IdHole = Shader.PropertyToID("_Hole"),
             IdPulse = Shader.PropertyToID("_Pulse"), IdRise = Shader.PropertyToID("_Rise"), IdFade = Shader.PropertyToID("_Fade"),
-            IdColor = Shader.PropertyToID("_Color"), IdPulseColor = Shader.PropertyToID("_PulseColor"), IdStretch = Shader.PropertyToID("_Stretch");
+            IdColor = Shader.PropertyToID("_Color"), IdPulseColor = Shader.PropertyToID("_PulseColor"), IdStretch = Shader.PropertyToID("_Stretch"),
+            IdRim = Shader.PropertyToID("_RimColor");
+        /// <summary>Filo de la figura parada (el _RimColor del shader).</summary>
+        static readonly Color RimColor = new Color(0.753f, 0.541f, 1f);
         static readonly string[] WeaponNames = { "Katana", "katana", "Isan", "Nodachi", "Martillo", "Arma" };
 
         /// <summary>El Animator del doble (mismo controller que el cuerpo): lo maneja quien adelanta la sombra.</summary>
@@ -44,9 +50,11 @@ namespace Nindo
         public bool HoleFollowsPlayer = true;
         /// <summary>Multiplicador del largo de la sombra (1 = el que da la luz).</summary>
         public float Stretch = 1f;
+        /// <summary>Multiplicador del filo violeta de la figura parada (a oscuras, KageShadow lo sube).</summary>
+        public float RimGain = 1f;
 
-        Transform body, holder, doubleRoot, bladeTip;
-        Animator doubleAnim;
+        Transform body, holder, doubleRoot, bladeTip, bladeBase;
+        Animator doubleAnim, bodyAnim;
         Material mat;
         readonly List<(Transform src, Transform dst)> bones = new List<(Transform, Transform)>();
         readonly List<(GameObject src, GameObject dst)> parts = new List<(GameObject, GameObject)>();
@@ -60,6 +68,14 @@ namespace Nindo
         float rise, riseFrom, riseTo, riseT = 1f, riseDur;
         float fade = 1f, fadeFrom = 1f, fadeTo = 1f, fadeT = 1f, fadeDur;
         bool lead;
+        // el color del pulso vuelve al violeta cuando se apaga un Flash dorado
+        Color pulseColor = PulseColor;
+        // raíz girada a mano (la sombra viva se da vuelta hacia Kaito sin que el cuerpo gire)
+        bool rootAimed;
+        Quaternion rootAim = Quaternion.identity;
+        // vuelta al espejo: el doble anima el estado del cuerpo con un fundido y recién ahí lo copia hueso a hueso
+        float returnLeft;
+        static readonly int SpeedParam = Animator.StringToHash("Speed");
 
         // ================================================================== creación
         /// <summary>
@@ -99,6 +115,7 @@ namespace Nindo
         void Build(Animator src, Transform holderT, GameObject clone, Shader sh, Vector3 center, float radius, float bladeWidth)
         {
             body = src.transform;
+            bodyAnim = src;
             holder = holderT;
             doubleRoot = clone.transform;
             // ya en su lugar: si se crea después de este LateUpdate, el primer cuadro no la dibuja en el origen
@@ -201,6 +218,7 @@ namespace Nindo
             Transform basePt = Find(root, "KatanaBase"), tipPt = Find(root, "KatanaTip");
             if ((basePt == null || tipPt == null) && !KatanaRig.Find(root, WeaponNames, out basePt, out tipPt)) return null;
             bladeTip = tipPt;
+            bladeBase = basePt;
             Transform w = basePt.parent;
             Vector3 a = basePt.localPosition, b = tipPt.localPosition;
             Vector3 axis = b - a;
@@ -299,6 +317,8 @@ namespace Nindo
         {
             if (doubleAnim == null) return;
             Lead = true;
+            returnLeft = 0f;
+            doubleAnim.speed = 0f;
             doubleAnim.Play(stateHash, layer, normalizedTime);
             doubleAnim.Update(0f);
         }
@@ -313,6 +333,7 @@ namespace Nindo
             {
                 if (lead == value || doubleAnim == null) return;
                 lead = value;
+                returnLeft = 0f;
                 doubleAnim.enabled = value;
                 if (value)
                 {
@@ -330,6 +351,7 @@ namespace Nindo
         {
             pulse = 1f;
             pulseLen = Mathf.Max(0.04f, seconds);
+            pulseColor = PulseColor;
             Vector3 tip = bladeTip != null ? ProjectToGround(bladeTip.position) : ProjectToGround(doubleRoot.position + Vector3.up * BodyHeight * 0.6f);
             if (splash != null)
             {
@@ -338,6 +360,57 @@ namespace Nindo
             }
             Game.Audio?.Play("kokuyo_whisper", tip, 0.9f);
         }
+
+        /// <summary>
+        /// El "¡ahora!" de un golpe de la sombra: un destello de 'seconds' en 'color' (dorado = se desvía), sin
+        /// salpicón ni susurro (eso es Strike, el golpe en sí). Después el pulso vuelve a ser violeta.
+        /// </summary>
+        public void Flash(Color color, float seconds)
+        {
+            pulse = 1f;
+            pulseLen = Mathf.Max(0.04f, seconds);
+            pulseColor = color;
+        }
+
+        /// <summary>
+        /// Vuelve a copiar al cuerpo sin salto de pose: el doble anima el estado actual del cuerpo (mismo tiempo,
+        /// misma velocidad) con un fundido de 'seconds' y al terminar pasa al espejo hueso a hueso.
+        /// </summary>
+        public void ReturnToBody(float seconds)
+        {
+            if (!lead || doubleAnim == null) return;
+            if (bodyAnim == null || bodyAnim.runtimeAnimatorController == null || seconds <= 0f) { Lead = false; return; }
+            var st = bodyAnim.GetCurrentAnimatorStateInfo(0);
+            float len = Mathf.Max(0.01f, st.length);
+            float t = st.loop ? Mathf.Repeat(st.normalizedTime, 1f) * len : Mathf.Min(st.normalizedTime, 1f) * len;
+            doubleAnim.speed = bodyAnim.speed;
+            doubleAnim.CrossFadeInFixedTime(st.fullPathHash, seconds, 0, t);
+            returnLeft = seconds;
+        }
+
+        /// <summary>Volviendo al espejo (ReturnToBody en curso).</summary>
+        public bool Returning => returnLeft > 0f;
+
+        /// <summary>Gira la raíz del doble aunque esté pegado al cuerpo (null = vuelve a girar con él).</summary>
+        public void AimRoot(Quaternion? rotation)
+        {
+            rootAimed = rotation.HasValue;
+            if (rootAimed) rootAim = rotation.Value;
+        }
+
+        /// <summary>Luz de la luna de la sombra (la de siempre, desde el norte).</summary>
+        public void ResetLight() => lightDir = DefaultLight;
+
+        /// <summary>Hacia dónde viaja ahora la luz de la sombra (normalizada, nunca rasante).</summary>
+        public Vector3 LightTravel => LightNormalized();
+
+        /// <summary>Qué tan visible está (0..1, FadeTo).</summary>
+        public float Visibility => fade;
+
+        /// <summary>Punta de la hoja del doble (en el aire si está parada; null si el arma no se encontró).</summary>
+        public Transform BladeTip => bladeTip;
+        /// <summary>Base de la hoja del doble (la guarda), con BladeTip el filo entero.</summary>
+        public Transform BladeBase => bladeBase;
 
         /// <summary>Dónde cae en el piso, según la luz de la sombra, un punto del cuerpo (p. ej. la punta de la espada).</summary>
         public Vector3 ProjectToGround(Vector3 p)
@@ -422,8 +495,19 @@ namespace Nindo
             if (body == null) { if (!Detached) { Release(); return; } }
             else if (!Detached)
             {
-                doubleRoot.SetPositionAndRotation(body.position, body.rotation);
+                doubleRoot.SetPositionAndRotation(body.position, rootAimed ? rootAim : body.rotation);
                 doubleRoot.localScale = body.lossyScale;
+            }
+            if (returnLeft > 0f && doubleAnim != null)
+            {
+                // el fundido corre con el reloj del cuerpo (hit-stop, cámara lenta) y con su velocidad de locomoción
+                returnLeft -= Time.deltaTime;
+                if (bodyAnim != null)
+                {
+                    doubleAnim.speed = bodyAnim.speed;
+                    doubleAnim.SetFloat(SpeedParam, bodyAnim.GetFloat(SpeedParam));
+                }
+                if (returnLeft <= 0f) Lead = false;
             }
             if (body != null)
             {
@@ -474,6 +558,8 @@ namespace Nindo
             mat.SetVector(IdArena, new Vector4(arenaCenter.x, arenaCenter.y, arenaCenter.z, arenaRadius));
             mat.SetVector(IdHole, new Vector4(holePos.x, holePos.y, holePos.z, HoleRadius));
             mat.SetFloat(IdPulse, pulse * pulse);
+            mat.SetColor(IdPulseColor, pulseColor);
+            mat.SetColor(IdRim, RimColor * RimGain);
             mat.SetFloat(IdRise, rise);
             mat.SetFloat(IdFade, fade);
         }

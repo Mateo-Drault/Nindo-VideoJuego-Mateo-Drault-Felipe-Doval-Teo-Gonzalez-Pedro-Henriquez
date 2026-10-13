@@ -4,6 +4,9 @@
 //  _Eclipse: un disco de tinta entra desde _EclipseDir y la cubre; al final queda una corona violeta con hilos
 //  de tinta (Kokuyō cierra el puño sobre la luna). _Flash: destello (cada parry del Acto 3 le devuelve la luz).
 // Alfa premultiplicado: el disco tapa las estrellas; el halo se suma.
+// Todo lo que brilla afuera del disco (halo, corona, destello) se apaga del todo antes del círculo inscripto en el
+// quad: las colas exponenciales llegaban al borde con ~2 % de luz (y con el destello de la luna que vuelve, con
+// ~40 %) y el quad se cortaba en seco: en el plano del cielo se veía un rectángulo más claro alrededor de la luna.
 Shader "Nindo/Moon"
 {
     Properties
@@ -65,6 +68,13 @@ Shader "Nindo/Moon"
                 return vnoise(p) * 0.55 + vnoise(p * 2.07 + 3.1) * 0.28 + vnoise(p * 4.13 + 7.7) * 0.17;
             }
 
+            // Brillo que cae desde el borde del disco: exp(-k x) menos lo que valdría en el borde del quad (x = 1 - r,
+            // el círculo inscripto), así llega a cero justo ahí sin cambiar la forma cerca de la luna.
+            float Glow(float x, float k, float r)
+            {
+                return max(exp(-k * x) - exp(-k * (1.0 - r)), 0.0);
+            }
+
             V vert(A i)
             {
                 V o;
@@ -98,9 +108,12 @@ Shader "Nindo/Moon"
                 half3 col = lerp(face, _Ink.rgb, covered) * disc;
                 float a = disc;
 
-                // halo: se apaga a medida que la tinta tapa la luna
+                // halo: se apaga a medida que la tinta tapa la luna. 'edge' lo termina de bajar a cero con derivada
+                // nula antes del borde del quad (la resta de Glow sola dejaba un quiebre de pendiente apenas visible)
+                float x = max(d - r, 0.0);
+                float edge = 1.0 - smoothstep(0.62, 0.98, d);
                 float lit = 1.0 - _Eclipse * 0.92;
-                float halo = exp(-max(d - r, 0.0) * 9.0) * 0.55 + exp(-max(d - r, 0.0) * 3.0) * 0.18;
+                float halo = (Glow(x, 9.0, r) * 0.55 + Glow(x, 3.0, r) * 0.18) * edge;
                 col += _HaloColor.rgb * halo * lit * (1.0 - disc);
 
                 // corona del eclipse: anillo violeta con hilos de tinta que se mueven
@@ -108,7 +121,7 @@ Shader "Nindo/Moon"
                 float pa = atan2(i.p.y, i.p.x);
                 float rays = 0.55 + 0.45 * vnoise(float2(pa * 5.0 + t * 0.15, t * 0.3));
                 // el resplandor con rayos solo afuera del disco (adentro dibujaba rayas sobre la tinta)
-                float corona = exp(-abs(d - r * 1.02) * 40.0) + exp(-max(d - r, 0.0) * 7.0) * 0.5 * rays * (1.0 - disc);
+                float corona = (exp(-abs(d - r * 1.02) * 40.0) + Glow(x, 7.0, r) * 0.5 * rays * (1.0 - disc)) * edge;
                 col += _CoronaColor.rgb * corona * full * (1.0 - disc * 0.85);
 
                 // nubes que pasan por delante
@@ -116,8 +129,13 @@ Shader "Nindo/Moon"
                 col *= 1.0 - _Veil * (0.35 + 0.6 * cl);
                 a *= 1.0 - _Veil * 0.5 * cl;
 
-                col *= 1.0 + _Flash * 2.5;
-                col += _HaloColor.rgb * _Flash * exp(-max(d - r, 0.0) * 2.0) * (1.0 - disc);
+                // destello: se enciende la cara; el halo del destello satura despacio (1 - exp) y se apaga desde 0.45
+                // del quad. Antes todo (halo incluido) se multiplicaba x3.5 y el halo lineal pasaba el blanco: la luna que
+                // vuelve era un disco blanco de borde duro del doble de su radio (réplica: brillo > 0.5 hasta 2.3 radios;
+                // ahora 1.8, con caída suave)
+                col *= 1.0 + _Flash * 2.5 * disc;
+                float flashEdge = 1.0 - smoothstep(0.45, 0.98, d);
+                col += _HaloColor.rgb * 0.7 * (1.0 - exp(-_Flash * Glow(x, 4.0, r) * 1.5)) * flashEdge * (1.0 - disc);
                 return half4(col * _Alpha, saturate(a) * _Alpha);
             }
             ENDHLSL

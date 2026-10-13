@@ -15,7 +15,7 @@ namespace Nindo
     ///  * en GUARDIA el primer golpe rebota (suma postura) y el segundo te lo DESVÍA con un contraataque.
     /// Reemplaza a EnemyMovement + EnemyCombat + EnemyBeingDamaged + versiones del luchador.
     /// </summary>
-    public class Enemy : MonoBehaviour, IHittable
+    public partial class Enemy : MonoBehaviour, IHittable
     {
         public EnemyConfig config = new EnemyConfig();
         [Tooltip("Encuentro al que pertenece (se reinicia si Kaito muere)")] public Encounter encounter;
@@ -36,8 +36,10 @@ namespace Nindo
         /// <summary>Punto del cuerpo más cercano a 'from', donde le entran los golpes de Kaito (se le resta Radius como a
         /// la posición). Un cuerpo largo lo cambia por el de su silueta: con el centro solo, la cabeza y la cola del koi
         /// de 7.5 m quedaban fuera del alcance de la katana.</summary>
-        public virtual Vector3 HurtCenter(Vector3 from) => transform.position;
+        public virtual Vector3 HurtCenter(Vector3 from) => Ambient != null ? Ambient.HurtPoint : transform.position;
         public CharacterAnimator Anim => anim;
+        /// <summary>Lo que hace antes de la pelea (meditar, practicar, dormir...: EnemyAmbient), o null.</summary>
+        public EnemyAmbient Ambient { get; internal set; }
         public bool IsTelegraphingUnblockable { get; private set; }
         public bool IsExhausted => State == EnemyState.Exhausted;
         /// <summary>Agotado con la postura llena (parries o golpes a la guardia): la ejecución está disponible.</summary>
@@ -195,6 +197,7 @@ namespace Nindo
             if (katanaBase != null && katanaTip != null)
                 trail = BladeTrail.Create(transform, katanaBase, katanaTip, Game.Content != null ? Game.Content.trailMaterial : null, TellStyle.TrailParry);
             Game.Combat?.Register(this);
+            ResolveClipVariants();   // golpes de zona con clip propio: el de siempre si el controller no lo tiene
             anim.Play(config.animLocomotion, 0f);
             nextAttackTime = Time.time + Random.Range(0.4f, 1.2f);
             if (startAggro) Alert();
@@ -226,6 +229,8 @@ namespace Nindo
             anim.Play(config.animLocomotion, 0f);
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = true;
             Game.Combat?.Register(this);
+            ResetLocomotionAnim();
+            Ambient?.Restart();     // vuelve a meditar, practicar, dormir... en su lugar
         }
 
         void Warp(Vector3 pos, Quaternion rot)
@@ -236,16 +241,21 @@ namespace Nindo
         }
 
         // =============================================================== API
-        public void Alert()
+        public void Alert() => Alert(false);
+
+        /// <summary>'hit': lo despertó un golpe (sin la demora con que reacciona el grupo).</summary>
+        void Alert(bool hit)
         {
             if (!IsAlive || IsAggro || State == EnemyState.Scripted) return;
             IsAggro = true;
             target = Game.Player;
             SetState(EnemyState.Alert);
-            anim.Play(config.animSpotted, 0.1f);
+            // desde un idle ambiental se sobresalta con su clip y el Alert dura lo que tarda en ponerse en guardia
+            float wake = Ambient != null ? Ambient.Wake(hit) : -1f;
+            if (wake < 0f) anim.Play(config.animSpotted, 0.1f);
             Game.UI?.ShowAlertMark(this);
             Game.Audio?.Play("alert", transform.position, 0.6f, 0.1f);
-            stateDuration = Mathf.Clamp(anim.Length(config.animSpotted, 0.6f), 0.4f, 0.9f);
+            stateDuration = wake >= 0f ? wake : Mathf.Clamp(anim.Length(config.animSpotted, 0.6f), 0.4f, 0.9f);
             // alerta a los compañeros del mismo encuentro
             encounter?.OnMemberAlerted(this);
         }
@@ -311,17 +321,16 @@ namespace Nindo
                 case EnemyState.Chase: TickChase(dt); break;
                 case EnemyState.Strafe: TickStrafe(dt); break;
                 case EnemyState.Attack: TickAttack(dt); break;
-                case EnemyState.Recoil: TickTimed(dt, () => ContinueCombo()); break;
+                // los estados con duración fija, sin delegados: una lambda que captura 'this' se creaba en cada frame
+                case EnemyState.Recoil: if (stateTime >= stateDuration) ContinueCombo(); break;
                 case EnemyState.Guard: TickGuard(dt); break;
-                case EnemyState.Counter: TickTimed(dt, () => StartAttack(true)); break;
+                case EnemyState.Counter: if (stateTime >= stateDuration) StartAttack(true); break;
                 case EnemyState.Exhausted: TickExhausted(dt); break;
-                case EnemyState.Stagger: TickTimed(dt, () => SetState(EnemyState.Chase)); break;
+                case EnemyState.Stagger: if (stateTime >= stateDuration) SetState(EnemyState.Chase); break;
             }
-            // los controllers no tienen transiciones (todo es CrossFade por código): al volver a moverse
-            // hay que reentrar al blend tree de locomoción, si no se desliza congelado en la última pose
-            // (fin de Spotted, Guard, Hit, Counter, intro de jefe...)
-            if ((State == EnemyState.Chase || State == EnemyState.Strafe || State == EnemyState.Idle) && stateTime > 0.02f && anim.Current != config.animLocomotion)
-                anim.Play(config.animLocomotion, 0.15f);
+            // reentra a la locomoción y elige el ciclo (de frente, de costado o para atrás): Enemy.Locomotion.cs
+            TickLocomotionAnim(dt);
+            TickLungeWarp(dt);
 
             // el empujón del golpe espera a que termine el hit-stop local (si no, se desliza congelado)
             if (knock.sqrMagnitude > 0.0001f && !anim.Frozen)
@@ -341,6 +350,9 @@ namespace Nindo
 
         protected void SetState(EnemyState s)
         {
+            // dormido por ZoneCulling: un Alert, un guion o un reinicio lo despiertan en el acto (Animator, Update y
+            // renderers), antes de que pidan nada al Animator apagado
+            if (Asleep) SetAsleep(false);
             // al salir del ataque (fin, stagger, cambio de fase...) el modelo vuelve a su rotación (p. ej. el giro de Gorō)
             // y el aviso que quedaba a medias se borra (no puede quedar un anillo de un golpe que ya no va a salir)
             if (State == EnemyState.Attack && s != EnemyState.Attack)
@@ -358,11 +370,6 @@ namespace Nindo
             stateTime = 0f;
             anim.SetSpeed(1f);
             if (useAgent && s != EnemyState.Chase && s != EnemyState.Strafe) Stop();
-        }
-
-        void TickTimed(float dt, System.Action onDone)
-        {
-            if (stateTime >= stateDuration) onDone();
         }
 
         protected void RestoreModelRotation()
@@ -418,12 +425,16 @@ namespace Nindo
         protected virtual void TickIdle(float dt)
         {
             if (target == null || !target.IsAlive || Game.InCutscene) return;
-            if (DistToTarget < config.detectRadius && Mathf.Abs(target.transform.position.y - transform.position.y) < 4f) Alert();
+            // meditando, practicando o dormido mira lo suyo: lo nota recién de cerca (antes se sobresaltaba a 10 m, al borde de
+            // la pantalla, y lo que hacía no llegaba a verse)
+            float r = Ambient != null && Ambient.HoldsPose ? Mathf.Min(config.detectRadius, Ambient.NoticeRadius) : config.detectRadius;
+            if (DistToTarget < r && Mathf.Abs(target.transform.position.y - transform.position.y) < 4f) Alert();
         }
 
         void TickAlert(float dt)
         {
-            if (target != null) Face(target.transform.position, 1f, dt);
+            // sentado en la roca o en el piso no gira hasta pararse (el giro lo sacaría de su lugar)
+            if (target != null && (Ambient == null || Ambient.CanTurn)) Face(target.transform.position, 1f, dt);
             if (stateTime >= stateDuration) SetState(EnemyState.Chase);
         }
 
@@ -561,7 +572,7 @@ namespace Nindo
         {
             var a = pattern.steps[step];
             EndTell(TellOutcome.Struck);   // (el paso anterior ya pegó; por las dudas no queda un anillo colgado)
-            clipLen = anim.Length(a.state, 0.8f);
+            clipLen = StepClipLength(a);
             stepNorm = 0f;
             stepClock = 0f;
             stepHit = specialFired = released = armored = false;
@@ -575,7 +586,7 @@ namespace Nindo
             // windup mínimo solo para lo que pega: teletransporte, invocaciones... van a su ritmo natural.
             // "Encadenado" = viene después de otro golpe (el jugador ya está en ritmo); tras un teletransporte no
             float windup = a.damage > 0f
-                ? StepTimeline.MinWindup(a, step > 0 && pattern.steps[step - 1].damage > 0f, counterAttack && step == 0, CurrentPhase, config.windupScale)
+                ? PlanWindup(a, StepTimeline.MinWindup(a, step > 0 && pattern.steps[step - 1].damage > 0f, counterAttack && step == 0, CurrentPhase, config.windupScale))
                 : a.telegraph;
             tl = StepTimeline.Build(a, clipLen, windup, 0f);
             tellActive = StepHasTell(a);
@@ -607,15 +618,24 @@ namespace Nindo
             // suelta para no superar ~12 m/s (si no, el ninja se teletransporta en la estocada)
             lungeEndT = tl.T + 0.05f * tl.stepLen;
             lungeStartT = Mathf.Max(0f, lungeEndT - Mathf.Max(lungeEndT - tl.ReleaseTime, a.lunge / 12f));
+            SetupLunge(a);   // con lungeFrom, en cuadros del clip desde ese cuadro (Enemy.Locomotion.cs)
             // ETA real desde este mismo frame: con el infinito del reset, un aviso que arranca ya (tellStart 0) se
             // dibujaba un frame cerrado del todo, con el destello de "¡ahora!"
             strikeEta = ComputeStrikeEta(a);
-            anim.Play(a.state, 0.08f);
+            anim.Play(stepState, 0.08f);
             anim.SetSpeed(0f);   // este frame el clip no avanza: el reloj del paso arranca en el próximo
             OnStepStarted(a);
         }
 
         protected virtual void OnStepStarted(AttackDef a) { }
+
+        /// <summary>Duración del clip del paso (s). Quien no tiene Animator propio (la sombra de Kokuyō imita los clips
+        /// del cuerpo) da la del clip que imita: con el respaldo de 0.8 s su golpe no caía cuando lo muestra.</summary>
+        protected virtual float StepClipLength(AttackDef a) => anim.Length(a.state, 0.8f);
+
+        /// <summary>Windup de un paso que pega, antes de armar su línea de tiempo: un jefe con dos atacantes lo estira
+        /// para que sus golpes nunca caigan pegados (Kokuyō y su sombra). Por defecto, el mínimo de su tipo.</summary>
+        protected virtual float PlanWindup(AttackDef a, float windup) => windup;
 
         /// <summary>Lo que tarda el golpe en llegar a Kaito después de soltarse (embestidas, ondas): el aviso arranca
         /// antes por eso y la agenda de golpes lo reserva para cuando de verdad llega.</summary>
@@ -657,7 +677,7 @@ namespace Nindo
             // el Animator avanza este frame exactamente lo que avanzó el reloj del paso; si se despegó (transición
             // larga, clip cambiado) se lo empuja de a poco hacia donde tiene que estar
             float speed = (stepNorm - prevNorm) / dt * clipLen;
-            if (anim.TryNormalizedTime(a.state, out float shown) && Mathf.Abs(prevNorm - shown) > 0.04f)
+            if (anim.TryNormalizedTime(stepState, out float shown) && Mathf.Abs(prevNorm - shown) > 0.04f)
                 speed += 6f * (prevNorm - shown) * clipLen;
             anim.SetSpeed(Mathf.Clamp(speed, 0f, 8f));
 
@@ -672,17 +692,8 @@ namespace Nindo
             if (!released && stepClock >= tl.ReleaseTime) Release(a);
             TickTell(a);
 
-            float lungeLeft = 0f;
-            if (a.lunge > 0f && stepClock < lungeEndT)
-            {
-                float span = Mathf.Max(0.01f, lungeEndT - lungeStartT);
-                lungeLeft = a.lunge * Mathf.Clamp01((lungeEndT - Mathf.Max(stepClock, lungeStartT)) / span);
-                if (stepClock >= lungeStartT && !anim.Frozen)
-                {
-                    float room = DistToTarget - Radius - target.Radius - 0.3f;
-                    if (room > 0f) MoveBy(transform.forward * Mathf.Min(a.lunge / span * dt, room));
-                }
-            }
+            // la embestida (lineal, o en cuadros del clip) y el imán que la corta con Kaito pegado: Enemy.Locomotion.cs
+            float lungeLeft = TickLunge(a, dt);
             StrikeReach = a.range * Mathf.Max(1f, config.scale * 0.85f) + lungeLeft;
 
             TickSpecial(a, dt);
@@ -824,7 +835,8 @@ namespace Nindo
         }
 
         // ---------------------------------------------------------------- especiales comunes
-        Vector3 SlamCenter(AttackDef a) => transform.position + transform.forward * Mathf.Max(0.5f, a.range * 0.4f);
+        /// <summary>Centro del pisotón (los jefes con un arma larga lo ponen donde pega: el martillo de Gorō cae a 3.7 m).</summary>
+        protected virtual Vector3 SlamCenter(AttackDef a) => transform.position + transform.forward * Mathf.Max(0.5f, a.range * 0.4f);
         static float SlamRadius(AttackDef a) => a.specialParam > 0f ? a.specialParam : 4f;
         static float ChargeSpeed(AttackDef a) => a.specialParam > 0f ? a.specialParam : 14f;
         float ChargeContact => Radius + (target != null ? target.Radius : 0.35f) + 0.6f;
@@ -883,8 +895,9 @@ namespace Nindo
                 case "hop_back":
                 case "hop_side":
                     // salto sin daño (el repliegue del ninja del bambú, la finta de su sumo): recorre 'specialParam'
-                    // metros entre activeStart y activeEnd, de espaldas a Kaito o de costado (al azar)
-                    if (!anim.Frozen)
+                    // metros entre activeStart y activeEnd, de espaldas a Kaito o de costado (al azar). Con su clip
+                    // (HopBack, HopSide: lungeFrom) lo lleva TickLunge, en los cuadros del vuelo
+                    if (!clipLunge && !anim.Frozen)
                     {
                         float n = Mathf.Clamp(stepNorm, a.activeStart, a.activeEnd);
                         if (n > hopNorm)
@@ -988,7 +1001,7 @@ namespace Nindo
         }
 
         /// <summary>¿Este agotamiento se muestra como postura quebrada (clip mareado, chispas, sonido)? Una pausa que el
-        /// jefe se da solo (el ritual de la sal del Ōzeki) queda abierta sin mentir que Kaito le quebró la guardia.</summary>
+        /// jefe se da solo (Chikuō bajando la guardia para llamar a Kaito) queda abierta sin mentir que Kaito le quebró la guardia.</summary>
         protected virtual bool ExhaustedFeedback => true;
 
         void TickExhausted(float dt)
@@ -1058,12 +1071,29 @@ namespace Nindo
             anim.Play(config.animHit, 0.03f);
         }
 
+        /// <summary>No vuelve a atacar hasta 't' (Time.time), sin cortar lo que está haciendo: el zanshin de las habilidades
+        /// de Kaito (él es invulnerable; GiveRoom aturdía como un golpe a los que estaban atacando).</summary>
+        public void HoldAttacksUntil(float t)
+        {
+            if (!IsAlive) return;
+            if (committed) CancelCommit();
+            nextAttackTime = Mathf.Max(nextAttackTime, t);
+        }
+
         // ---------------------------------------------------------------- recibir golpes
         public virtual HitResult ReceiveHit(in DamageInfo info)
         {
             if (!IsAlive || info.sourceFaction == Faction.Enemy || State == EnemyState.Scripted) return HitResult.Ignored;
-            if (!IsAggro) Alert();
+            if (!IsAggro) Alert(true);
             LastHitTime = Time.time;
+            // sorprendido en un idle ambiental: el sobresalto es la reacción (ni el Hit, ni el empujón, ni la guardia lo cortan
+            // a mitad) y se apura, así los golpes gratis son los de un combo (antes el 4º golpe lo sacaba sentado a la guardia)
+            bool startled = Ambient != null && Ambient.Waking;
+            if (startled)
+            {
+                float left = Ambient.Hurry();
+                if (left >= 0f) stateDuration = Mathf.Min(stateDuration, stateTime + left);
+            }
 
             // en guardia (solo golpes normales): el primero rebota, el segundo lo desvía y contraataca
             bool guardable = info.kind == AttackKind.Light || info.kind == AttackKind.Heavy;
@@ -1071,7 +1101,7 @@ namespace Nindo
             // en neutral aguanta pocos golpes seguidos; el siguiente lo frena con la guardia (rebota: es el aviso)
             // y recién si Kaito insiste contraataca. Antes el 3er corte del combo se devolvía siempre, sin aviso
             bool neutral = State == EnemyState.Chase || State == EnemyState.Strafe || State == EnemyState.Idle || State == EnemyState.Alert || State == EnemyState.Stagger;
-            if (neutral && guardable)
+            if (neutral && guardable && !startled)
             {
                 if (Time.time - lastNeutralHit > 2.2f) neutralHits = 0;
                 lastNeutralHit = Time.time;
@@ -1102,21 +1132,21 @@ namespace Nindo
                 return HitResult.Killed;
             }
 
-            float kb = info.knockback * (1f - config.knockbackResist);
+            float kb = startled ? 0f : KnockMeters(info, info.knockback * (1f - config.knockbackResist));
             if (kb > 0f) knock += info.direction.Flat().normalized * kb;
 
             if (State == EnemyState.Exhausted)
             {
                 if (exhaustedHits >= ExhaustedHitCap) EndExhaustion();
                 // el sacudón propio de la postura quebrada (si el controller lo tiene): Hit lo paraba en guardia. Una pausa
-                // que no es postura quebrada (la sal del Ōzeki) no se agacha
+                // que no es postura quebrada (Chikuō llamando a Kaito) no se agacha
                 else anim.Play(ExhaustedFeedback && anim.HasState(ExhaustedHitState) ? ExhaustedHitState : config.animHit, 0.03f);
             }
             else if (State == EnemyState.Attack && (config.hyperArmor && info.kind != AttackKind.Ability || armored && info.kind == AttackKind.Light && !info.riposte))
             {
                 // aguanta el golpe sin interrumpirse (armadura propia, o ya comprometido con el golpe: cambian golpes)
             }
-            else if (State != EnemyState.Counter)
+            else if (State != EnemyState.Counter && !startled)
             {
                 ReleaseToken();
                 SetState(EnemyState.Stagger);
@@ -1130,6 +1160,13 @@ namespace Nindo
         }
 
         protected virtual void OnDamaged(in DamageInfo info) { }
+
+        /// <summary>Metros que lo empuja un golpe que entró ('kb' ya con su resistencia). Un jefe con clips autorados lo
+        /// ajusta a lo que dice su reacción (de rodillas o en pleno golpe no se desliza por el piso).</summary>
+        protected virtual float KnockMeters(in DamageInfo info, float kb) => kb;
+
+        /// <summary>El estallido y el sonido de muerte comunes (un jefe que no muere, como Chikuō, no los usa).</summary>
+        protected virtual bool DeathBurst => true;
 
         const float HeavyKnockback = 1f;
         const string HitHeavyState = "HitHeavy", ParriedPerfectState = "ParriedPerfect";
@@ -1210,18 +1247,26 @@ namespace Nindo
             IsAggro = false;
             Game.Combat?.Unregister(this);
             foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
-            anim.Play(config.animDeath, 0.06f);
-            Game.FX?.EnemyDeath(AimPoint, info.direction, finisher);
-            Game.Audio?.Play("kill", transform.position, 0.9f);
+            // muerto sentado (meditando, dormido): queda en la pose y se esfuma; el Death de pie entraba cruzando desde el piso
+            deathSeated = Ambient != null && Ambient.SeatedNow;
+            if (deathSeated) anim.SetSpeed(0f);
+            else anim.Play(config.animDeath, 0.06f);
+            if (DeathBurst)
+            {
+                Game.FX?.EnemyDeath(AimPoint, info.direction, finisher);
+                Game.Audio?.Play("kill", transform.position, 0.9f);
+            }
             GameEvents.RaiseEnemyKilled(this);
             encounter?.OnMemberDied(this);
             StartCoroutine(DeathRoutine(info.direction));
         }
 
+        bool deathSeated;
+
         protected virtual IEnumerator DeathRoutine(Vector3 dir)
         {
             // cae hacia atrás y se desvanece en humo (sin ragdoll: barato y legible)
-            float t = 0f;
+            float t = deathSeated ? 1f : 0f;   // sentado no cae ni se corre: solo el humo
             Quaternion from = model.localRotation;
             Quaternion to = from * Quaternion.Euler(-75f, 0f, 0f);
             Vector3 fromPos = transform.position;
@@ -1235,7 +1280,7 @@ namespace Nindo
             }
             // con un clip que cae solo, el humo espera a que termine de caer (+0.25 s en el piso): la muerte de Gorō
             // (2 s) se desplomaba mientras se encogía
-            yield return new WaitForSeconds(config.deathClipFalls ? Mathf.Max(0.9f, anim.Length(config.animDeath, 1f) - 1f / 1.8f + 0.25f) : 0.9f);
+            yield return new WaitForSeconds(deathSeated ? 0.35f : config.deathClipFalls ? Mathf.Max(0.9f, anim.Length(config.animDeath, 1f) - 1f / 1.8f + 0.25f) : 0.9f);
             Game.FX?.SmokePuff(transform.position + Vector3.up * 0.4f, 1.2f * config.scale);
             float s = 1f;
             Vector3 baseScale = model.localScale;
@@ -1260,6 +1305,7 @@ namespace Nindo
         {
             if (!IsAlive) return;   // un muerto en Scripted cuenta como vivo y el encuentro no termina nunca
             ReleaseToken(); Stop();
+            Ambient?.Release();
             SetState(EnemyState.Scripted);
             anim.Play(config.animLocomotion, 0.15f);
         }
@@ -1272,9 +1318,85 @@ namespace Nindo
             if (aggro) { IsAggro = false; Alert(); }
         }
 
-        public void ScriptedPlay(string state, float fade = 0.1f) => anim.Play(state, fade);
+        public void ScriptedPlay(string state, float fade = 0.1f) { if (Asleep) SetAsleep(false); anim.Play(state, fade); }
         public void ScriptedMoveTo(Vector3 p, float speed) { useAgent = agent != null && agent.isOnNavMesh; MoveTo(p, speed); }
         public void ScriptedFace(Vector3 p) { Vector3 d = (p - transform.position).Flat(); if (d.sqrMagnitude > 0.01f) transform.rotation = Quaternion.LookRotation(d); }
         public void ScriptedStop() => Stop();
+
+        // ---------------------------------------------------------------- sueño lejos de Kaito (World/ZoneCulling)
+        /// <summary>Lo durmió ZoneCulling: lejos de Kaito y fuera de cuadro, sin dibujarse ni correr su Update.</summary>
+        public bool Asleep { get; private set; }
+
+        /// <summary>
+        /// ¿Se puede dormir? Solo quieto en su puesto (Idle): vivo y ya arrancado (Start le dio la vida y el lugar al que
+        /// vuelve si se reinicia el encuentro), sin aggro (un jefe en pelea lo tiene) ni guion, sin moverse (si volvía a su
+        /// lugar después de perder a Kaito, primero termina de llegar). Los idles de ambiente (EnemyAmbient:
+        /// meditar, el sparring en el lugar, dormir) corren en Idle (HoldsPose), así que se duermen con su campamento; el
+        /// sobresalto ya es Alert y los despierta.
+        /// </summary>
+        public virtual bool CanSleep => State == EnemyState.Idle
+                                        && !IsAggro && Health > 0f && knock.sqrMagnitude < 0.0001f
+                                        && (agent == null || !agent.enabled || agent.velocity.sqrMagnitude < 0.01f);
+
+        /// <summary>Lo que escondió la siesta (lo que otro ya tenía escondido no se toca ni se devuelve).</summary>
+        internal IReadOnlyList<Renderer> SleepHidden => sleepHidden;
+        readonly List<Renderer> sleepHidden = new List<Renderer>();
+        readonly List<SkinnedMeshRenderer> sleepSkins = new List<SkinnedMeshRenderer>();
+        AnimatorCullingMode awakeCulling;
+        bool sleepDisabled, sleepAnimator, sleepKeepState;
+
+        /// <summary>
+        /// Dormido no se dibuja (forceRenderingOff, sin tocar 'enabled', que Boss usa) y una piel con
+        /// updateWhenOffscreen deja de calcularse. Los comunes apagan su Update y su Animator: el campamento entero se
+        /// duerme en el mismo frame y se despierta en el mismo frame, así que los del sparring quedan congelados juntos
+        /// y no se desfasan (keepAnimatorStateOnDisable conserva estado y tiempo). Solo se enciende al despertar lo que
+        /// apagó la siesta: si un guion había apagado el componente, queda apagado. Los jefes siguen con su Update y su
+        /// Animator (lo consultan en cada frame y sus subclases hacen cosas al apagarse: MizuchiBoss suelta la
+        /// cinemática en OnDisable); a uno con AlwaysAnimate (el koi de Mizuchi) se le baja a CullUpdateTransforms.
+        /// </summary>
+        public void SetAsleep(bool on)
+        {
+            if (on == Asleep) return;
+            Asleep = on;
+            var a = anim.Animator;
+            if (on)
+            {
+                GetComponentsInChildren(true, sleepHidden);
+                for (int i = sleepHidden.Count - 1; i >= 0; i--)
+                {
+                    var r = sleepHidden[i];
+                    if (r.forceRenderingOff) { sleepHidden.RemoveAt(i); continue; }
+                    r.forceRenderingOff = true;
+                    if (r is SkinnedMeshRenderer smr && smr.updateWhenOffscreen) { smr.updateWhenOffscreen = false; sleepSkins.Add(smr); }
+                }
+                sleepDisabled = enabled && !(this is Boss);
+                if (sleepDisabled) enabled = false;
+                sleepAnimator = sleepDisabled && a != null && a.enabled;
+                if (sleepAnimator)
+                {
+                    sleepKeepState = a.keepAnimatorStateOnDisable;
+                    a.keepAnimatorStateOnDisable = true;
+                    a.enabled = false;
+                }
+                else if (a != null)
+                {
+                    awakeCulling = a.cullingMode;
+                    if (awakeCulling == AnimatorCullingMode.AlwaysAnimate) a.cullingMode = AnimatorCullingMode.CullUpdateTransforms;
+                }
+                return;
+            }
+            // lo que otro sistema destruyó mientras dormía se saltea (el == de Unity)
+            foreach (var r in sleepHidden) if (r != null) r.forceRenderingOff = false;
+            foreach (var smr in sleepSkins) if (smr != null) smr.updateWhenOffscreen = true;
+            sleepHidden.Clear();
+            sleepSkins.Clear();
+            if (a != null)
+            {
+                if (sleepAnimator) { a.enabled = true; a.keepAnimatorStateOnDisable = sleepKeepState; }
+                else a.cullingMode = awakeCulling;
+            }
+            if (sleepDisabled) enabled = true;
+            sleepDisabled = sleepAnimator = false;
+        }
     }
 }

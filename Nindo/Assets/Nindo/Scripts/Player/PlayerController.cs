@@ -172,18 +172,26 @@ namespace Nindo
 
         void TickLocomotion(InputReader input, float dt)
         {
-            // gesto de exploración (rezar en el santuario, juntar una llave): quieto hasta que termina el clip; el stick
-            // o una acción de combate lo cortan (y cualquier otro Play, p. ej. una cinemática que lo pone en Locomotion)
+            // soltó el stick corriendo: frena con su clip (un gesto más)
+            if (Time.time >= gestureUntil && !Game.InCutscene) TryRunStop(InputToWorld(MoveInput));
+            // gesto de exploración (rezar en el santuario, juntar una llave) o la frenada: quieto hasta que termina el
+            // clip; el stick o una acción de combate lo cortan (y cualquier otro Play, p. ej. una cinemática que lo pone
+            // en Locomotion)
             if (Time.time < gestureUntil && anim.Current == gestureState && MoveInput.sqrMagnitude < 0.04f)
             {
-                velocity = Vector3.zero;
+                // la frenada sigue el frenado del juego (RunStop lo descuenta de los pies); los otros paran en seco
+                bool brake = InRunStop;
+                velocity = brake ? Vector3.MoveTowards(velocity, Vector3.zero, config.acceleration * dt) : Vector3.zero;
                 anim.SetLocomotion(0f, dt);
-                if (input != null && !Game.InCutscene) TryCombatActions(input, allowAttack: true);
+                anim.SetSpeed(1f);
+                if (input != null && !Game.InCutscene && !TryCombatActions(input, allowAttack: true) && brake)
+                    TryInteract(input);   // la frenada es como se llega a un santuario o a una llave: no se come el botón
                 return;
             }
             gestureUntil = 0f;
             Vector3 wish = InputToWorld(MoveInput) * config.runSpeed;
-            velocity = Vector3.MoveTowards(velocity, wish, config.acceleration * dt);
+            // (soltó corriendo y espera la fase de su frenada: sigue a la velocidad que traía, ver TryRunStop)
+            if (!RunStopWaiting) velocity = Vector3.MoveTowards(velocity, wish, config.acceleration * dt);
             float speed01 = velocity.magnitude / config.runSpeed;
 
             if (wish.sqrMagnitude > 0.01f)
@@ -191,8 +199,9 @@ namespace Nindo
             else if (lockTarget != null)
                 FaceTowards(lockTarget.transform.position - transform.position, config.turnSpeed * 0.6f, dt);
 
-            anim.SetLocomotion(speed01, dt);
+            anim.SetLocomotion(GaitSpeed(velocity.magnitude) / config.runSpeed, dt);
             if (anim.Current != "Locomotion" && stateTime > 0.02f) anim.Play("Locomotion", 0.12f);
+            ApplyLocomotionCadence();
 
             // pasos
             if (speed01 > 0.3f && IsGrounded)
@@ -268,6 +277,21 @@ namespace Nindo
         {
             dir.y = 0f;
             externalPush += dir.normalized * meters * 10f;
+        }
+
+        /// <summary>Lo corre ya, con colisiones (un sumo que embiste con Kaito pegado lo arrastra con la panza en vez de
+        /// patinar en el lugar). No mueve a Kaito esquivando, rematando ni muerto: devuelve lo que se movió (m).</summary>
+        public float Shove(Vector3 delta)
+        {
+            delta.y = 0f;
+            // la panza lo arrastra aunque esté invulnerable: después de un golpe (0.7 s) el segundo cachetazo de las
+            // Bofetadas no lo podía mover, el imán cortaba la embestida y el pie de atrás del sumo patinaba hasta 25 cm
+            // (build_team_anims, magnet_curve_cm). En el dash, el remate, la muerte o una escena no se lo mueve
+            if (cc == null || !cc.enabled || State == PlayerState.Dash || State == PlayerState.Finisher || State == PlayerState.Dead
+                || Game.InCutscene || delta.sqrMagnitude < 1e-8f) return 0f;
+            Vector3 before = transform.position;
+            cc.Move(delta);
+            return CombatMath.FlatDistance(before, transform.position);
         }
 
         /// <summary>Teletransporte seguro (desactiva el CharacterController un frame).</summary>
@@ -505,6 +529,9 @@ namespace Nindo
 
             Vector3 dir = info.direction.sqrMagnitude > 0.01f ? info.direction.Flat().normalized : -transform.forward;
             bool heavy = info.kind == AttackKind.Heavy || info.kind == AttackKind.Unblockable || dmg >= 20f;
+            // el pesado (0.65 s) tiene su clip: lo levanta y cae en tres apoyos, de frente al golpe; el liviano reacciona
+            // según de dónde viene (HitFrom, con la orientación de antes del golpe) y solo el de frente lo da vuelta
+            string hitClip = heavy && anim.HasState("HitHeavy") ? "HitHeavy" : HitFrom(dir);
             // Kaito destella en rojo (los enemigos en blanco): se ve al instante que el golpe fue a él
             hurtFlash?.Flash(heavy ? 0.12f : 0.08f, FXMaterials.HurtFlash);
             Game.FX?.PlayerHurt(AimPoint, dir, heavy);
@@ -519,12 +546,11 @@ namespace Nindo
 
             CancelAbilityCamera();
             trail?.Stop();
-            FaceInstant(-dir);
+            if (hitClip == "Hit" || hitClip == "HitHeavy") FaceInstant(-dir);
             Push(dir, info.knockback + (heavy ? 1.2f : 0.5f));
             SetState(PlayerState.Hurt);
             hurtDuration = heavy ? config.heavyHurtTime : config.hurtTime;
-            // el pesado (0.65 s) tiene su clip: lo levanta y cae en tres apoyos; el liviano dura lo que el aturdimiento
-            anim.Play(heavy && anim.HasState("HitHeavy") ? "HitHeavy" : "Hit", 0.04f);
+            anim.Play(hitClip, 0.04f);
         }
 
         float hurtDuration;
@@ -557,7 +583,11 @@ namespace Nindo
             // con clip de muerte (cae de rodillas y de costado) no hace falta voltear el modelo entero como una tabla
             bool deathClip = anim.HasState("Death");
             anim.Play(deathClip ? "Death" : "Hit", 0.05f);
-            Game.Time?.SlowMotion(0.25f, 1.6f, 0.02f, 0.5f);
+            // el golpe y el paso en cámara lenta, la caída casi a velocidad normal: con 0.25 durante 1.6 s la rodilla
+            // (Death f17) llegaba a los 1.9 s reales y el pecho al piso (f35) a los 2.6 s, debajo del panel de muerte y
+            // del fundido a negro (StoryDirector: el panel entra a los 0.8 s, el negro de 2.2 a 2.8 s). Así la rodilla
+            // pega a ~1.1 s, el pecho a ~1.7 s y queda tendido a ~1.9 s
+            Game.Time?.SlowMotion(0.35f, 1.0f, 0.02f, 0.5f);
             Game.Audio?.Play("death", transform.position, 1f);
             if (!deathClip) StartCoroutine(DeathFall());
             Game.Save.deaths++;
@@ -611,7 +641,8 @@ namespace Nindo
                 input.Consume(Act.Finisher);
                 var it = nearInteractable;
                 it.Interact(this);
-                string gesture = it is Checkpoint ? "Pray" : it is KeyPickup ? "Interact" : null;
+                // rezar en un santuario ya no es un gesto: es la escena del incienso (StoryDirector.PrayAt)
+                string gesture = it is KeyPickup ? "Interact" : null;
                 if (gesture != null && State == PlayerState.Locomotion && !Game.InCutscene && anim.HasState(gesture))
                 {
                     anim.Play(gesture, 0.12f);
@@ -671,8 +702,9 @@ namespace Nindo
                 }
             }
             else velocity = Vector3.MoveTowards(velocity, Vector3.zero, 20f * dt);
-            anim.SetLocomotion(velocity.magnitude / config.runSpeed, dt);
+            anim.SetLocomotion(GaitSpeed(velocity.magnitude) / config.runSpeed, dt);
             if (anim.Current != "Locomotion" && scriptedMoving) anim.Play("Locomotion", 0.15f);
+            ApplyLocomotionCadence();
         }
     }
 
@@ -686,7 +718,6 @@ namespace Nindo
         public const string AbilitiesUnlocked = "abilities_unlocked";
         public const string WallGateOpen = "wall_gate_open";
         public const string ForestSeen = "forest_seen";
-        public const string SumoIntro = "sumo_intro";
         public const string DojoGateSeen = "dojo_gate_seen";
         public const string DojoOpen = "dojo_open";
         public const string FinalBossDone = "final_boss_done";

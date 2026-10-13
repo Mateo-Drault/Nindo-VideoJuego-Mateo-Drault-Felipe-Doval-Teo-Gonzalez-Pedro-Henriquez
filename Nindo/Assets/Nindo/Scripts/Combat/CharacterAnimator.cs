@@ -17,7 +17,8 @@ namespace Nindo
         readonly Dictionary<string, float> lengths = new Dictionary<string, float>();
         readonly Dictionary<string, int> hashes = new Dictionary<string, int>();
         static readonly int SpeedParam = Animator.StringToHash("Speed");
-        bool hasSpeedParam;
+        static readonly int VelXParam = Animator.StringToHash("VelX"), VelZParam = Animator.StringToHash("VelZ");
+        bool hasSpeedParam, hasDirParams;
 
         float freezeUntil;
         float speedMul = 1f;   // global: SetSpeed (curvas de timing, furia)
@@ -41,6 +42,7 @@ namespace Nindo
                     if (clip != null && !lengths.ContainsKey(clip.name)) lengths[clip.name] = clip.length;
                 foreach (var p in a.parameters)
                     if (p.nameHash == SpeedParam && p.type == AnimatorControllerParameterType.Float) hasSpeedParam = true;
+                    else if (p.nameHash == VelXParam && p.type == AnimatorControllerParameterType.Float) hasDirParams = true;
                 var entry = Game.LoadContent().CharacterByController(a.runtimeAnimatorController);
                 if (entry != null && entry.stateNames != null && entry.stateLengths != null)
                     for (int i = 0; i < entry.stateNames.Length && i < entry.stateLengths.Length; i++)
@@ -91,10 +93,28 @@ namespace Nindo
 
         static readonly HashSet<string> warned = new HashSet<string>();
 
+        /// <summary>Cambia el multiplicador del estado actual sin volver a entrar (el ritmo de un ciclo que sigue a la
+        /// velocidad real).</summary>
+        public void SetStateSpeed(float speed) { stateMul = speed; }
+
         public void SetLocomotion(float normalizedSpeed, float dt)
         {
             if (!Valid || !hasSpeedParam) return;
             Animator.SetFloat(SpeedParam, normalizedSpeed, 0.08f, dt);
+        }
+
+        /// <summary>El Speed que está usando el blend tree de locomoción (con su amortiguación), 0 si no tiene.</summary>
+        public float LocomotionParam => Valid && hasSpeedParam ? Animator.GetFloat(SpeedParam) : 0f;
+
+        /// <summary>El controller tiene la locomoción en un blend tree 2D (VelX/VelZ: velocidad en el marco del personaje, m/s
+        /// a la escala del clip): caminar, rodear de costado y retroceder se mezclan solos según la dirección.</summary>
+        public bool HasDirectional => Valid && hasDirParams;
+
+        public void SetDirectional(Vector2 local, float dt)
+        {
+            if (!Valid || !hasDirParams) return;
+            Animator.SetFloat(VelXParam, local.x, 0.1f, dt);
+            Animator.SetFloat(VelZParam, local.y, 0.1f, dt);
         }
 
         /// <summary>Multiplicador de velocidad global (curvas de timing, furia, etc.).</summary>
