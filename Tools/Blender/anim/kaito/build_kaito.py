@@ -16,7 +16,8 @@ juego), suelas que rozan el piso y se corren (< 2 cm por cuadro del juego y < 2 
 giro del modelo que pone el código, entre cuadros en los ciclos, y también con el avance del corte cortado por el
 imán), pies en el aire donde el juego mueve el cuerpo ('airborne'), empalmes de los crossfades cortos
 (kaito_clips.CHAINS), costura de los loops (< 1°), velocidad de los ciclos contra la autorada, el impacto dentro de
-la ventana que pega, nada bajo el piso, y la re-importación del FBX igual a lo horneado.
+la ventana que pega, tirones de un cuadro (ningún hueso gira más de 45° por cuadro en las escenas ni más de 60° en los
+golpes: snap_report), nada bajo el piso, y la re-importación del FBX igual a lo horneado.
     --detail A,B      imprime, muestra por muestra, la altura y el corrimiento de las suelas de esos clips
 """
 import sys, os, json, math, time, shutil, tempfile
@@ -295,9 +296,10 @@ STEP_JUMP_DEG = 35.0                        # giro de la hoja o del codo entre d
 SHOULDER_FAIL = 120.0                       # giro del húmero (respecto del brazo en cruz) que ya no pasa nunca
 
 
-def wrist_report(clip, wrists, states, fixes, ease):
+def wrist_report(clip, wrists, states, fixes, ease, rho):
     """Muñecas del clip horneado: cuánto pasan de lo cómodo (WRIST_COMFORT), la hoja corrida por el tope y los
-    tirones del giro de la hoja y del codo entre cuadros."""
+    tirones del giro de la hoja y del codo entre cuadros (el del codo de verdad: el del camino más lo que giró su
+    referencia, kaito_rig.transport_deg)."""
     out = {}
     ts = clip.timing.get("time_scale", 1.0)
     for k, S in ((0, "R"), (1, "L")):
@@ -332,8 +334,10 @@ def wrist_report(clip, wrists, states, fixes, ease):
               warn=fixes[fx] <= mx)
     # tirones: el cambio por cuadro del juego que el gesto autorado no tapa (KR.step_ease: en un golpe que sacude la
     # mano, un giro grande no se ve)
-    for j, nm, e in ((0, "giro de la hoja", ease[0]), (2, "codo derecho", ease[0]), (3, "codo izquierdo", ease[1])):
-        d = [abs(KR._wrap(b[j] - a[j])) * ts * math.sqrt(e[f + 1]) for f, (a, b) in enumerate(zip(states, states[1:]))]
+    for j, nm, e, r in ((0, "giro de la hoja", ease[0], None), (2, "codo derecho", ease[0], rho[0]),
+                        (3, "codo izquierdo", ease[1], rho[1])):
+        d = [abs(KR._wrap(b[j] - a[j] + (r[f + 1] if r else 0.0))) * ts * math.sqrt(e[f + 1])
+             for f, (a, b) in enumerate(zip(states, states[1:]))]
         i = max(range(len(d)), key=lambda q: d[q]) if d else 0
         out["step_" + str(j)] = round(d[i], 1) if d else 0.0
         check(not d or d[i] <= STEP_JUMP_DEG, f"{clip.name}: {nm} sin tirones ({d[i] if d else 0:.0f}° por cuadro en f{i}-f{i + 1})",
@@ -379,18 +383,34 @@ def chain_report(rig, baked):
 # y lo tapa el gesto (el sacudón del golpe recibido, el tajo); los cortes ('cut', el teletransporte) no cuentan
 SNAP_LEG_DEG = 45.0          # un hueso de la pierna que gira más que esto en un cuadro
 # una articulación a menos de 20 cm del piso que se corre más de 12 cm en un cuadro (3.6 m/s: un paso rápido de Kaito
-# lleva el pie a 2-3 m/s; una pierna que se reacomoda de golpe, a 6-20)
-SNAP_LOW_Z_CM, SNAP_LOW_CM = 20.0, 12.0
+# lleva el pie a 2-3 m/s; una pierna que se reacomoda de golpe, a 6-20). En las escenas falla pasando SNAP_LOW_FAIL_CM
+# (4.5 m/s: el envión del prólogo y la pierna que se estira al caer muerto llevan la punta del pie a 4 m/s)
+SNAP_LOW_Z_CM, SNAP_LOW_CM, SNAP_LOW_FAIL_CM = 20.0, 12.0, 15.0
 SNAP_HAND_DEG = 45.0         # una mano (o un dedo) que gira más que esto
 SNAP_HOLD_DEG = 20.0         # ...y durante la pose quieta ('hold': el zanshin con la cámara encima)
 SNAP_ELBOW_DEG = 60.0        # el codo que gira alrededor de la recta hombro-muñeca (con el codo a más de 3 cm de ella)
 SNAP_TWIST_DEG = 60.0        # el húmero que gira sobre su eje (la manga se retuerce de golpe)
 SNAP_LEGS = ("Pierna.l", "Pierna.r", "Tibia.L", "Tibia.R", "Pie.L", "Pie.R")
+# Lo que FALLA (los de arriba avisan): las escenas y los gestos lentos ('story' o 'slow': el santuario, el prólogo, la
+# muralla, el final, la muerte, rezar y juntar algo) se ven de cerca y sin estela: ningún hueso gira más de 45° por
+# cuadro ni algo junto al piso se corre más de SNAP_LOW_FAIL_CM, y en la pose quieta los dedos no pasan SNAP_HOLD_DEG. En los
+# golpes, nada pasa de 60° (salvo lo que tapa la estela, el impacto recibido, los cortes y los arranques, como siempre)
+SNAP_FAIL_SLOW, SNAP_FAIL_FAST = 45.0, 60.0
 
 
-def _twist_y(q):
-    """Giro (grados) de un cuaternión local sobre el eje Y del hueso (su largo)."""
-    return math.degrees(2.0 * math.atan2(q.y, q.w))
+def slow_clip(clip):
+    """¿Escena o gesto lento (el tope de los tirones es SNAP_FAIL_SLOW)?"""
+    return bool(clip.timing.get("story") or clip.timing.get("slow"))
+
+
+def _spin(qa, qb):
+    """Grados que el hueso gira sobre su propio eje (Y, su largo) de qa a qb (giros locales): la parte de giro del cambio,
+    que nunca pasa el giro total. La diferencia de los giros respecto del reposo no está definida con el brazo apuntando al
+    revés de su reposo (cruzado delante del pecho) y daba 140° con el húmero girando 44° en total."""
+    d = qa.inverted() @ qb
+    if d.w < 0.0:
+        d.negate()
+    return abs(math.degrees(2.0 * math.atan2(d.y, d.w)))
 
 
 def snap_report(rig, clip, frames, roots):
@@ -406,6 +426,10 @@ def snap_report(rig, clip, frames, roots):
         ok_rng.append((t["impact"] - 1, t["impact"]))
     ok_rng += [(b - 1, b) for b in t.get("burst", ())]
     hold = t.get("hold")
+    slow = slow_clip(clip)
+    lim = SNAP_FAIL_SLOW if slow else SNAP_FAIL_FAST
+    # (en las escenas el codo y el húmero también se cuentan desde 45°)
+    lim_elbow, lim_twist = min(SNAP_ELBOW_DEG, lim), min(SNAP_TWIST_DEG, lim)
     fingers = {S: [b for b in rig.subtree("Mando." + S) if not b.endswith("_end")] for S in "LR"}
     W = frames
     loc = [rig.to_local(w) for w in W]
@@ -427,7 +451,7 @@ def snap_report(rig, clip, frames, roots):
         return v.normalized() if v.length * M * 100 >= 3.0 else None
 
     for f in range(n):
-        if any(f < c < f + 1 for c in cuts) or any(a <= f < b for a, b in ok_rng):
+        if any(f < c < f + 1 for c in cuts):
             continue
         A, B = W[f], W[f + 1]
         rot = lambda b: NA.quat_angle_deg(A[b].to_quaternion(), B[b].to_quaternion()) * ts
@@ -452,24 +476,35 @@ def snap_report(rig, clip, frames, roots):
             continue
         for S in "LR":
             bones = fingers[S] if in_hold else ["Mando." + S]
-            lim = SNAP_HOLD_DEG if in_hold else SNAP_HAND_DEG
+            lim_hand = SNAP_HOLD_DEG if in_hold else SNAP_HAND_DEG
             r, b = max((rot(b), b) for b in bones)
-            if r > lim:
+            if r > lim_hand:
                 hits.append((round(r), f, b, "gira" + (" en la pose quieta" if in_hold else "")))
             ea, eb = elbow(f, S), elbow(f + 1, S)
             if ea is not None and eb is not None:
                 sw = math.degrees(math.acos(max(-1.0, min(1.0, ea.dot(eb))))) * ts
-                if sw > SNAP_ELBOW_DEG:
+                if sw > lim_elbow:
                     hits.append((round(sw), f, "codo " + S, "gira"))
-            tw = abs(KR._wrap(_twist_y(loc[f + 1]["Brazo." + S][1]) - _twist_y(loc[f]["Brazo." + S][1]))) * ts
-            if tw > SNAP_TWIST_DEG:
+            tw = _spin(loc[f]["Brazo." + S][1], loc[f + 1]["Brazo." + S][1]) * ts
+            if tw > lim_twist:
                 hits.append((round(tw), f, "Brazo." + S, "se retuerce"))
     hits.sort(key=lambda h: (h[1], -h[0]))
-    rows = [f"f{f}-{f + 1} {b} {v}{'°' if u != 'cm junto al piso' else ' cm'}{'' if u in ('gira', 'cm junto al piso') else ' ' + u}"
-            for v, f, b, u in hits]
+    # los tirones de los cuadros exentos (el impacto recibido, los arranques 'burst', 'snap_ok') no cuentan, pero quedan a la
+    # vista en el sidecar: un arranque marcado no es un tirón arreglado
+    waived = [h for h in hits if any(a <= h[1] < b for a, b in ok_rng)]
+    hits = [h for h in hits if h not in waived]
+    row = lambda v, f, b, u: f"f{f}-{f + 1} {b} {v}{'°' if u != 'cm junto al piso' else ' cm'}{'' if u in ('gira', 'cm junto al piso') else ' ' + u}"
+    rows = [row(*h) for h in hits]
+    bad = [h for h in hits if (h[3] == "cm junto al piso" and slow and h[0] > SNAP_LOW_FAIL_CM) or "pose quieta" in h[3]
+           or (h[3] != "cm junto al piso" and h[0] > lim)]
+    check(not bad, f"{clip.name}: ningún tirón de un cuadro pasa {lim:.0f}°{' ni ' + str(int(SNAP_LOW_FAIL_CM)) + ' cm junto al piso' if slow else ''} "
+                   f"({len(bad)}: {', '.join(row(*h) for h in bad[:8])}{' ...' if len(bad) > 8 else ''})")
     check(not hits, f"{clip.name}: sin tirones de un cuadro ({len(hits)}: {', '.join(rows[:10])}{' ...' if len(rows) > 10 else ''})",
           warn="--strict-snaps" not in argv)
-    return {"snaps": rows}
+    big = [row(*h) for h in waived if h[3] != "cm junto al piso" and h[0] > lim]
+    check(not big, f"{clip.name}: tirones en cuadros exentos (impacto, arranque) que pasan {lim:.0f}°: {', '.join(big[:6])}", warn=True)
+    deg = [h[0] for h in hits if h[3] != "cm junto al piso"]
+    return {"snaps": rows, "snap_max_deg": max(deg, default=0), "snap_fail_deg": lim, "snaps_waived": big}
 
 
 def run_stop_report(rig, baked):
@@ -604,12 +639,13 @@ def main():
         fr_ = iter(range(clip.frames + 1))
 
         def solve(pose, c):
-            misses.append(dict(solver.solve(pose, c, next(it), KR.frame_limits(clip, next(fr_)))))
+            f = next(fr_)
+            misses.append(dict(solver.solve(pose, c, next(it), KR.frame_limits(clip, f), f)))
             wrists.append((solver.wrist["R"], solver.wrist["L"], solver.shoulder["R"], solver.shoulder["L"]))
             fixes.append(solver.blade_fix)
         frames, ctrls, roots = NA.bake_clip(rig, clip, solve, ())
         reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses)
-        reports[clip.name].update(wrist_report(clip, wrists, states, fixes, solver.path_ease))
+        reports[clip.name].update(wrist_report(clip, wrists, states, fixes, solver.path_ease, solver.path_rho))
         reports[clip.name].update(snap_report(rig, clip, frames, roots))
         baked.append((clip, frames))
         rootsd[clip.name] = roots
