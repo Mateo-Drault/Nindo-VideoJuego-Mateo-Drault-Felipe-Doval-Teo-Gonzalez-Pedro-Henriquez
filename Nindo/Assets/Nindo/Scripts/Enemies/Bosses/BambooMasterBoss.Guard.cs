@@ -59,13 +59,39 @@ namespace Nindo
             bool guarding = State == EnemyState.Guard;
             if (!guarding) { ReleaseToken(); EnterGuard(); }
             transform.rotation = Quaternion.LookRotation(-to.normalized + transform.forward * 0.001f);
-            PlaySwat(CutGoesLeft(target.CutName), guarding);
+            string cut = target.CutName;
+            PlaySwat(CutGoesLeft(cut), guarding, cut);
         }
 
-        /// <summary>GuardHit (o GuardHitL para el revés) desde la guardia; desde la pose de la locomoción el fundido de 0.03 s
-        /// cruzaba el brazo en un cuadro.</summary>
-        void PlaySwat(bool left, bool guarding) =>
-            anim.Play(left && anim.HasState(guardHitLName) ? guardHitLName : guardHitName, guarding ? 0.03f : 0.08f);
+        /// <summary>GuardHit (GuardHitL para el revés, GuardHitLow para el Corte final) desde la guardia; desde la pose de la
+        /// locomoción el fundido de 0.03 s cruzaba el brazo en un cuadro. La hoja del Corte final cruza a 0.59 m del piso (las
+        /// dos manos en la empuñadura, la punta abajo): la palma de GuardHit, autorada para los otros dos cortes, paraba
+        /// 15-24 cm arriba de ella (swat2.py); GuardHitLow baja a encontrarla. Sin ese estado en el controller, GuardHit.</summary>
+        void PlaySwat(bool left, bool guarding, string cut)
+        {
+            string st = left ? guardHitLName : cut == KaitoFinal ? guardHitLowName : guardHitName;
+            anim.Play(anim.HasState(st) ? st : guardHitName, guarding ? 0.03f : 0.08f);
+        }
+
+        /// <summary>
+        /// El primero de una tanda que aparta con la palma igual lo roza: GrazeShare del daño, sin reacción (la palma sigue
+        /// apartando la hoja) y con un destello corto. Sin eso, el que corta apenas lo ve tenía rechazados seis de cada diez
+        /// cortes (sim_bamboo_master --human 0.5: 59 %, con el roce 36 %) y el maestro se sentía una pared. El segundo seguido
+        /// ya no roza (lo hace contestar) y el tercero se contragolpea: insistir sigue costando. Nunca cruza el piso de la fase
+        /// ni lo deja vencido: eso es de los huecos.
+        /// </summary>
+        void Graze(in DamageInfo info)
+        {
+            float top = phaseIdx < 2 ? Health - Gates[phaseIdx + 1] * config.maxHealth - 1f : Health - 1f;
+            float g = Mathf.Min(info.damage * GrazeShare, top);
+            if (g <= 0f) return;
+            Health -= g;
+            grazeFlash?.Flash(GrazeFlash);
+        }
+
+        /// <summary>La parte del daño que roza el primer corte apartado y lo que dura su destello (el de un golpe, 0.07 s).</summary>
+        const float GrazeShare = 0.25f, GrazeFlash = 0.04f;
+        HitFlash grazeFlash;
 
         /// <summary>¿El manotazo de este corte ya salió a su encuentro? (ReadCut)</summary>
         bool SwatRead => Time.time - swatReadAt < SwatReadKeep;

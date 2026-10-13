@@ -152,8 +152,8 @@ namespace Nindo
         /// 5-7 / 7-11 / 9-13 el bot "promedio" moría ~9 veces y el "bueno" ninguna: el daño castigaba solo al que juega peor
         /// (Tools/Dev/sim_bamboo_master.py con el daño escalado por fase). Ahora 4-5 / 4-5 / 4-5.5: cada fase pega por lo
         /// menos lo que la anterior (con 3-3.5 en la fase 3 el bastón dolía menos que la palma de una mano) y lo que más
-        /// sube es el ritmo (pausas de 0.16 s, cadenas que terminan en rojo). Con 2200 de vida el "promedio" muere ~0.7 veces
-        /// (37 % sin morir) y el "bueno" tarda ~4 min de simulación.
+        /// sube es el ritmo (pausas de 0.16 s, cadenas que terminan en rojo). Con 1900 de vida, en minutos de juego (la
+        /// simulación calibrada con el bot de Unity, ver Config) el "promedio" muere ~1 vez y el "bueno" tarda ~4.6 min.
         /// </summary>
         public static AttackPattern[] Phase(int phase)
         {
@@ -248,10 +248,13 @@ namespace Nindo
         public static readonly Vector2[] Cooldown = { new Vector2(1.8f, 2.6f), new Vector2(1.4f, 2.2f), new Vector2(1.1f, 1.8f) };
 
         /// <summary>
-        /// Chikuō, el Maestro del Bambú. 2200 de vida: con 1400 (el doble del jefe de antes) y los huecos que pagan lo que
-        /// tienen que pagar (dos o tres cortes por parry, el final de los combos, las habilidades que rebotan) el bot "bueno"
-        /// lo terminaba en ~2 min 50 s; con el desvío que contesta, el descanso cubierto y 2200, ~4 min 10 s de simulación
-        /// (Tools/Dev/sim_bamboo_master.py: en Unity tarda más, se ajusta con el PlayClock de 'bot on bueno'). No se lo
+        /// Chikuō, el Maestro del Bambú. 1900 de vida. En Unity el bot tarda 1.42 veces lo que dice la simulación con Chikuō
+        /// (medido con el PlayClock en main 76be027: 'bot on bueno' 6:01 contra 254 s simulados; con Gorō es al revés,
+        /// 0.71x): Tools/Dev/boss_sims/calibration.py, y sim_bamboo_master.py --calib da los segundos de juego. Con el roce
+        /// del primer corte apartado, el paso del viento que sigue volando después del cruce y la palma que a veces entra
+        /// con el paso largo: con 2200, el bueno 5.4 min de juego y el promedio 8.8 min con 1.6 muertes (7 % sin morir); con
+        /// 1900, el bueno ~4.6 min (p90 5.0) sin morir y el promedio ~7.3 min con ~1 muerte (21 % sin morir). PROVISORIO
+        /// hasta medirlo con los cambios de C3 (el factor salió de una pelea por bot con los rebotes de C2). No se lo
         /// ejecuta: termina sentado a meditar (BambooMasterBoss). Postura de 8 (parry 1, perfecto 1.5, unos seis parries):
         /// solo de rodillas con la barra llena, y de rodillas aguanta tres cortes a x1.15. Con 5 y x1.3 se arrodillaba
         /// cada 15 s y la pelea duraba la mitad. Los golpes fuera de sus huecos los desvía o rebotan (BambooMasterBoss.Bounce): poiseHits
@@ -263,7 +266,7 @@ namespace Nindo
         {
             return new EnemyConfig
             {
-                id = "ozeki", displayName = "Chikuō", maxHealth = 2200, runSpeed = 4.0f, walkSpeed = 1.6f, turnSpeed = 7f,
+                id = "ozeki", displayName = "Chikuō", maxHealth = 1900, runSpeed = 4.0f, walkSpeed = 1.6f, turnSpeed = 7f,
                 radius = 0.5f, height = 2.4f, scale = 1f, tintStrength = 0f,
                 maxImbalance = 8, exhaustedTime = BambooMasterTimings.Exhausted.Seconds, exhaustedDamageMul = 1.15f, guardTime = 0.7f,
                 poiseHits = 99, hyperArmor = true, knockbackResist = 0.7f, staggerTime = 0.35f,

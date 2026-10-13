@@ -133,22 +133,31 @@ para fijar, que antes andaban sin verse, ahora se asignan a mano. Las reglas y c
   arquetipo y el bossId siguen siendo `ozeki`): un viejo maestro de kung fu que enseña paciencia.
   Fuera de sus huecos desvía el corte con la palma: lee el corte de Kaito y le sale al encuentro,
   la palma (o el bastón) encuentra la hoja en el contacto y la acompaña para donde va
-  (`GuardHit` / `GuardHitL` para el revés), sin empujarlo; contesta con su combo, enseguida si
-  Kaito insiste con el segundo, y recién el tercero seguido se contragolpea (entre combo y combo
-  descansa cubierto). Se le pega en el
+  (`GuardHit` / `GuardHitL` para el revés / `GuardHitLow` para el Corte final, que llega bajo),
+  sin empujarlo; el primero de una tanda igual lo roza (un cuarto del daño), contesta con su
+  combo, enseguida si Kaito insiste con el segundo, y recién el tercero seguido se contragolpea
+  (entre combo y combo descansa cubierto). El golpe que abre un combo a veces entra con el paso
+  largo y corre a Kaito con el pecho, si hay lugar detrás. Se le pega en el
   contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
   (esperó la postura del bambú: hundido con las palmas cruzadas y un aro de jade en el piso), en la
   vuelta de un rojo que no pegó y al final del último golpe de un combo. Fase 1
   con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca y,
   con Kaito pegado, primero salta hacia atrás), fase 2 sin el saco (palmas gemelas, patada
-  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: vuela como poco la
-  mitad del autorado y, si Kaito está cerca, pasa a su costado (`DashStrike_Pass`): el carril
-  rojo lo sigue hasta que despega, en el aire se abre de costado en vez de frenar, le sostiene
-  la mano encima al cruzarlo y cae dado vuelta, mirándolo; siempre pega cuando lo dice el aviso),
+  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: de frente vuela como
+  poco la mitad del autorado y, si Kaito está cerca, pasa a su costado (`DashStrike_Pass`): el
+  carril rojo lo sigue hasta que despega, en el aire se abre de costado en vez de frenar, le
+  sostiene la mano encima al cruzarlo, sigue volando lo autorado después del cruce y cae ~2.4 m
+  detrás de él, mirándolo; siempre pega cuando lo dice el aviso),
   fase 3 con el bastón. Antes de tirar el saco se lo desliza por la espalda y los brazos (formas
   `CoatSlip1..4` de `Master_Robe`); el que vuela, `Master_RobeThrown`, sale igual al saco puesto
   y se aplana al caer (`Collapse`). Vencido se sienta a meditar, saluda y deja el sello.
-  Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair]`.
+  Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair] [--calib]`.
+* **Balance de los jefes en minutos de juego**: las simulaciones (`goro_fight_sim.py`,
+  `sim_bamboo_master.py`, `boss_sims/mz_run.py`, `boss_sims/kk_fix_run.py`) se pasan a tiempo
+  de Unity con el factor real/simulado de cada jefe, medido con `bot on bueno` y el PlayClock
+  (`Tools/Dev/boss_sims/calibration.py`: Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92, Chikuō 1.42).
+  Con `--calib` (o `'{"calib": true}'`) el daño de Kaito va a 1/F y dicen segundos y muertes del
+  juego. Al medir de nuevo se pegan las líneas del PlayClock en ese archivo.
 * **Cámara de combate**: baja a 45° y fijada nunca queda a menos de 19 m ni gira (los controles
   no cambian de dirección); con Kaito casi centrado se ven ~5 m detrás de él. Lo que tapa a
   Kaito, al fijado, al jefe o a quien está por pegar se disuelve con una trama (hueco en cono,

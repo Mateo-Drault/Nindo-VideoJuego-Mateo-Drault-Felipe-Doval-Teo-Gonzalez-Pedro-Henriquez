@@ -23,10 +23,11 @@ namespace Nindo
         // lo que se acortó el vuelo en el tiempo (CompressFlight): el vuelo que se vuelve a planear al despegar va a esa
         // velocidad, con margen
         float flightRate = 1f;
-        // la que pasa al costado: cuánto apunta al costado antes de la suelta (0..1), si salió esa variante, y cuánto corrige
-        // el giro en el aire para caer mirando a Kaito (grados, una vez en el contacto)
+        // la que pasa al costado: cuánto apunta al costado antes de la suelta (0..1), si salió esa variante, cuánto corrige
+        // el giro en el aire para caer mirando a Kaito (grados, una vez en el contacto) y cuánto vuela después del cruce
+        // (PassTailFor: la escala del tramo del cruce al apoyo)
         Quaternion passRot;
-        float passW, passDelta;
+        float passW, passDelta, passTail = 1f;
         bool passing, passDeltaSet;
         // el golpe ya se probó una vez en la ventana (el primer cuadro que llega a activeStart siempre prueba)
         bool dashTested;
@@ -63,8 +64,17 @@ namespace Nindo
         const float PassCutRate = 2f, PassTrackMax = 45f;
 
         /// <summary>Lo más largo que estira el vuelo y lo más corto que se escala el de frente (2.85 m de los 5.7 autorados:
-        /// más cerca le pasa al costado) y el que pasa. Con 0.1 cada embestida contra el bot "bueno" volaba x0.10.</summary>
+        /// más cerca le pasa al costado) y el que pasa hasta el cruce. Con 0.1 cada embestida contra el bot "bueno" volaba
+        /// x0.10. La que pasa casi siempre sale con Kaito a ~2 m (corre hacia él durante el salto atrás): hasta el cruce
+        /// vuela x0.3, y después del cruce sigue lo autorado (PassTail).</summary>
         const float DashMaxStretch = 1.4f, DashMinStretch = 0.5f, PassMinStretch = 0.2f;
+        /// <summary>
+        /// Lo que vuela la que pasa al costado después del cruce (el tramo del contacto al apoyo, DashEnd), contra lo autorado.
+        /// Antes ese tramo se escalaba con el vuelo hasta el cruce (x0.28 contra el bot): a 9.5 m/s hasta Kaito y a 2.6 m/s
+        /// después, frenaba en seco justo al cortarlo y recorría 2.5-2.8 m de los 6.35 autorados. Siguiendo de largo le pasa
+        /// por al lado y cae ~2.4 m detrás de él, mirándolo: 3.4-3.8 m de vuelo, más de la mitad del autorado.
+        /// </summary>
+        const float PassTail = 1f;
         /// <summary>El vuelo más corto en tiempo: con el borde de la arena encima el de frente puede quedar en x0.1, y con el
         /// tiempo frenado en la mitad volaba a la quinta parte de su velocidad (cámara lenta con fantasmas).</summary>
         const float DashMinFlight = 0.1f;
@@ -76,6 +86,7 @@ namespace Nindo
         {
             passRot = transform.rotation;
             passW = passDelta = 0f;
+            passTail = 1f;
             passing = passDeltaSet = dashPlanned = dashTested = false;
             flightRate = 1f;
         }
@@ -147,10 +158,11 @@ namespace Nindo
             var pc = PassClip;
             if (pc != null && passW > 0.5f && target != null)
             {
-                float k = PlanPass(pc, o, d, lead);
-                if (Stretched(pc, 1f, k) - travelDone <= ArenaRoom(o, d) - 0.5f)
+                float k = PlanPass(pc, o, d, lead), tail = PassTailFor(pc, o, d, k);
+                if (Stretched(pc, 1f, k, tail) - travelDone <= ArenaRoom(o, d) - 0.5f)
                 {
                     passing = true;
+                    passTail = tail;
                     clip = pc;
                     // mismos cuadros hasta la suelta: se cambia sin fundido (como las variantes de paso de PickReach)
                     anim.Play(pc.State, 0f, stepNorm);
@@ -180,6 +192,7 @@ namespace Nindo
             float k = passing ? PlanPass(clip, laneO, laneD, lead) : PlanDash(laneO, laneD, lead);
             airStretch = Mathf.Clamp(k, flightRate * ReplanSlow, flightRate * ReplanFast);
             if (!passing) return;
+            passTail = PassTailFor(clip, laneO, laneD, airStretch);
             float from = tl.creepIn ? tl.apex : tl.apex + tl.creep;
             float r0 = Mathf.Max(1f, 2f * (tl.activeStart - from) / Mathf.Max(1e-4f, tl.tR) * tl.stepLen);
             tl.sustain = (tl.activeEnd - tl.activeStart) * tl.stepLen / Mathf.Min(r0, PassCutRate);
@@ -290,7 +303,7 @@ namespace Nindo
         {
             passDeltaSet = true;
             if (target == null) return;
-            Vector3 end = laneO + laneD * (Stretched(clip, 1f, airStretch) - laneT0);
+            Vector3 end = laneO + laneD * (Stretched(clip, 1f, airStretch, passTail) - laneT0);
             Vector3 face = Quaternion.LookRotation(laneD) * Quaternion.Euler(0f, -clip.TurnAt(1f), 0f) * Vector3.forward;
             Vector3 to = (target.transform.position - end).Flat();
             if (to.sqrMagnitude < 0.01f) return;
@@ -310,12 +323,31 @@ namespace Nindo
         static readonly Color WindCutJade = new Color(0.55f, 1f, 0.85f, 0.9f), WindCutCore = new Color(1f, 1f, 0.95f, 1f);
 
         /// <summary>El avance en 'n' de un clip con su tramo en el aire escalado por 'k' (StretchedTravel de otro clip).</summary>
-        static float Stretched(MasterClip c, float n, float k)
+        static float Stretched(MasterClip c, float n, float k) => Stretched(c, n, k, k);
+
+        /// <summary>Lo mismo, con el tramo en el aire que sigue al contacto escalado por 'tail' (la que pasa al costado vuela
+        /// después del cruce: PassTail). Con tail = k es el tramo entero por k.</summary>
+        static float Stretched(MasterClip c, float n, float k, float tail)
         {
             float x = c.TravelAt(n);
             StretchSpan(c, out float a0, out float a1);
-            if (k != 1f && a1 > a0) x += (k - 1f) * (c.TravelAt(Mathf.Clamp(n, a0, a1)) - c.TravelAt(a0));
+            if (a1 <= a0) return x;
+            float m = Mathf.Clamp(c.Contact, a0, a1);
+            if (k != 1f) x += (k - 1f) * (c.TravelAt(Mathf.Clamp(n, a0, m)) - c.TravelAt(a0));
+            if (tail != 1f && a1 > m) x += (tail - 1f) * (c.TravelAt(Mathf.Clamp(n, m, a1)) - c.TravelAt(m));
             return x;
+        }
+
+        /// <summary>Lo que vuela la que pasa después del cruce: PassTail sin salirse de la arena desde 'from' por 'dir' (el
+        /// agente frenaría en el borde con el cuerpo en el aire), nunca menos que el vuelo hasta el cruce ('k').</summary>
+        float PassTailFor(MasterClip c, Vector3 from, Vector3 dir, float k)
+        {
+            float room = ArenaRoom(from, dir) - 0.5f + travelDone;
+            float over = Stretched(c, 1f, k, PassTail) - room;
+            if (over <= 0f) return PassTail;
+            StretchSpan(c, out float _, out float a1);
+            float span = c.TravelAt(a1) - c.TravelAt(Mathf.Min(c.Contact, a1));
+            return span > 0.05f ? Mathf.Max(k, PassTail - over / span) : k;
         }
 
         /// <summary>

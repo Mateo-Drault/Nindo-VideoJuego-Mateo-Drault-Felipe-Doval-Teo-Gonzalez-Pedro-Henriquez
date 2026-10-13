@@ -93,7 +93,7 @@ namespace Nindo
         string locoName = "Locomotion", strafeLName = "StrafeL", strafeRName = "StrafeR", walkBackName = "WalkBack",
                exhaustedHitName = "ExhaustedHit", hitHeavyName = "HitHeavy", parriedPerfectName = "ParriedPerfect",
                riseName = "ExhaustedRise", tauntName = "Taunt", stanceName = "Stance", guardHitName = "GuardHit",
-               guardHitLName = "GuardHitL";
+               guardHitLName = "GuardHitL", guardHitLowName = "GuardHitLow";
 
         // contraataque de Kaito después de un parry: cuántos cortes más le entran y hasta cuándo (Bounces)
         float riposteUntil = -1f;
@@ -109,6 +109,7 @@ namespace Nindo
             if (Defeated) return;
             baseSubtitle = subtitle;
             look = new BambooMasterLook(model);
+            grazeFlash = model.GetComponent<HitFlash>();
             counterPattern = BambooMasterMoves.Counter(0);
             GameEvents.BossStarted += OnBossStarted;
             GameEvents.PlayerDied += OnPlayerDied;
@@ -243,6 +244,7 @@ namespace Nindo
             stanceName = "Stance" + suffix;
             guardHitName = "GuardHit" + suffix;
             guardHitLName = "GuardHitL" + suffix;
+            guardHitLowName = "GuardHitLow" + suffix;
         }
 
         static bool Has(AttackPattern p, string special)
@@ -391,7 +393,8 @@ namespace Nindo
             clip = BambooMasterTimings.Get(a.state);
             travelDone = 0f;
             airStretch = 1f;
-            landed = leapFixed = laneFixed = dashFx = false;
+            // (passing: el paso que sigue a la que pasa al costado no hereda su vuelo después del cruce)
+            landed = leapFixed = laneFixed = dashFx = passing = false;
             look.ClearTell();
             reachPicked = stepYielded = false;
             if (clip != null)
@@ -475,8 +478,9 @@ namespace Nindo
         float StopShort => Radius + (target != null ? target.Radius : 0.35f) + 0.25f;
 
         /// <summary>Lo que avanzó el cuerpo en 'n' con el tramo del despegue a la caída escalado por 'k' (el clip lleva ese
-        /// tramo en el espacio del personaje: escalarlo no mueve un pie apoyado).</summary>
-        float StretchedTravel(float n, float k) => Stretched(clip, n, k);
+        /// tramo en el espacio del personaje: escalarlo no mueve un pie apoyado). La que pasa al costado sigue volando después
+        /// del cruce lo que dice passTail.</summary>
+        float StretchedTravel(float n, float k) => Stretched(clip, n, k, passing ? passTail : k);
 
         /// <summary>
         /// El tramo del avance que se puede escalar (normalizado), con los dos pies en el aire: el vuelo del salto y del
@@ -514,7 +518,7 @@ namespace Nindo
             // donde va a estar en el contacto: lo que se viene acercando (su corte avanza ~1 m) hasta tocarlo, como poco
             float closing = Mathf.Clamp(-Vector3.Dot(target.Velocity.Flat(), dir), 0f, target.config.runSpeed);
             along -= Mathf.Min(closing * Mathf.Max(0f, tl.T - stepClock), Mathf.Max(0f, along - Radius - target.Radius));
-            float room = along - StopShort + travelDone + 0.05f;
+            float room = along - StopShort + travelDone + 0.05f + DriveRoom(dir);
             if (clip.TravelAt(1f) <= room) return;
             MasterClip longer = clip, pick = null;
             for (int i = 0; i < vs.Length; i++)
@@ -535,6 +539,22 @@ namespace Nindo
         /// <summary>Lo más que una variante de paso puede pasarse de Kaito (lo corre con el cuerpo: Travel). Con 0.15 el pie
         /// apoyado patinaba eso cada vez que el paso entero no entraba.</summary>
         const float ReachOverrun = 0.03f;
+
+        /// <summary>
+        /// El golpe que abre un combo a veces entra con el paso largo aunque Kaito esté pegado (DriveChance): el pecho lo corre
+        /// hasta StepShove m (Travel, con PlayerController.Shove), como la palma que empuja de un maestro. Solo si hay lugar
+        /// detrás de Kaito (ShoveRoom: contra la barrera o una pared no, y el pie apoyado no patina) y si no viene con su corte
+        /// ni en su dash. Contra el bot, que pelea pegado a 1.2 m (el imán de su corte), el paso corto salía 9 de cada 10
+        /// veces y la palma con el paso entero casi no se veía (sim_bamboo_master: 44 cortos contra 5 enteros por pelea).
+        /// Los encadenados y el contragolpe entran con el que cabe.
+        /// </summary>
+        float DriveRoom(Vector3 dir)
+        {
+            if (step != 0 || pattern == counterPattern || target.State == PlayerState.Attack || target.State == PlayerState.Dash) return 0f;
+            return Random.value < DriveChance ? target.ShoveRoom(dir, StepShove, transform) : 0f;
+        }
+
+        const float DriveChance = 0.2f, StepShove = 0.45f;
 
         /// <summary>¿Con lo que le falta avanzar hasta el contacto, la mano de esta variante llega a Kaito? (HitArc, con 2 cm de
         /// margen)</summary>
@@ -722,7 +742,7 @@ namespace Nindo
                 }
                 bool guardable = i.kind == AttackKind.Light || i.kind == AttackKind.Heavy;
                 if (stance && State == EnemyState.Guard && guardable) { LastHitTime = Time.time; return Deflect(true); }
-                if (guardable && Bounces()) { LastHitTime = Time.time; return Bounce(info.attackName); }
+                if (guardable && Bounces()) { LastHitTime = Time.time; return Bounce(info); }
             }
             // piso de vida de la fase: el que lo baja al umbral dispara el cambio; lo que sobra no se cuenta
             if (fromKaito && i.damage > 0f && IsAlive && look != null)
@@ -857,13 +877,15 @@ namespace Nindo
         /// <summary>
         /// Un corte fuera de sus huecos. Parado (en neutral o en la guardia) no rebota: lo aparta con el manotazo de
         /// GuardHit (Swat), queda cubierto y le contesta con su combo saliendo de la guardia (AnswerFromGuard): al primero,
-        /// pasada la ventana del segundo; al segundo dentro de BounceWindow (el combo que insiste), enseguida. Recién el
-        /// tercero se le devuelve con el contragolpe. Cargando un dorado, la mano libre aparta el primer corte y el golpe
-        /// sigue; en lo demás de sus golpes (la suelta, los rojos, el contragolpe) rebota: clang del lado de Kaito
-        /// (PlayerController con Blocked). Con el clang en todo, contra el bot "bueno" eran ~220 rebotes por pelea: una pared.
+        /// pasada la ventana del segundo (y ese primero igual lo roza: Graze); al segundo dentro de BounceWindow (el combo
+        /// que insiste), enseguida. Recién el tercero se le devuelve con el contragolpe. Cargando un dorado, la mano libre
+        /// aparta el primer corte y el golpe sigue; en lo demás de sus golpes (la suelta, los rojos, el contragolpe) rebota:
+        /// clang del lado de Kaito (PlayerController con Blocked). Con el clang en todo, contra el bot "bueno" eran ~220
+        /// rebotes por pelea: una pared.
         /// </summary>
-        HitResult Bounce(string attackName)
+        HitResult Bounce(in DamageInfo info)
         {
+            string attackName = info.attackName;
             bool left = CutGoesLeft(attackName);
             bool busy = State == EnemyState.Attack || State == EnemyState.Counter;
             if (!busy)
@@ -890,17 +912,18 @@ namespace Nindo
                     nextAttackTime = Mathf.Min(nextAttackTime, Mathf.Max(Time.time + AnswerDelay, restUntil));
                     // cubierto hasta que contesta: rondando entre el desvío y el golpe, el corte siguiente le caía en el aviso
                     stateDuration = Mathf.Max(stateDuration, stateTime + Mathf.Max(GuardHitHold, nextAttackTime - Time.time));
+                    Graze(info);
                 }
                 if (target != null) transform.rotation = Quaternion.LookRotation((target.transform.position - transform.position).Flat().normalized + transform.forward * 0.001f);
-                // la palma va con la hoja: hacia su izquierda y arriba para el revés, hacia su derecha y abajo para los otros.
-                // Si ReadCut ya salió al encuentro de este corte, el manotazo sigue (empezarlo de nuevo en el contacto lo
-                // dejaba lejos de la hoja)
-                if (!SwatRead) PlaySwat(left, guarding);
+                // la palma va con la hoja: hacia su izquierda y arriba para el revés, hacia su derecha y abajo para los otros
+                // (y abajo, a la altura de la rodilla, para el Corte final). Si ReadCut ya salió al encuentro de este corte, el
+                // manotazo sigue (empezarlo de nuevo en el contacto lo dejaba lejos de la hoja)
+                if (!SwatRead) PlaySwat(left, guarding, attackName);
                 swatReadAt = -9f;
                 Game.UI?.ShowGuardMark(this);
                 lastBounce = Time.time;
                 TellPatience();
-                return Swat(left);
+                return Swat(left, attackName);
             }
             lastBounce = Time.time;
             TellPatience();
@@ -908,7 +931,7 @@ namespace Nindo
             if (State == EnemyState.Attack && !stepYielded && a != null && a.damage > 0f && a.kind != AttackKind.Unblockable && stepClock < tl.ReleaseTime)
             {
                 stepYielded = true;
-                return Swat(left);
+                return Swat(left, attackName);
             }
             return HitResult.Blocked;
         }
@@ -921,7 +944,7 @@ namespace Nindo
         /// </summary>
         static bool CutGoesLeft(string attackName) => attackName == KaitoBackhand;
 
-        const string KaitoBackhand = "Corte 2";
+        const string KaitoBackhand = "Corte 2", KaitoFinal = "Corte final";
 
         /// <summary>Cuánto espera para contestar un desvío (pasada la ventana del segundo corte), lo menos que queda
         /// cubierto después del manotazo (el segundo corte del combo tiene que poder llegar a su guardia) y lo que tarda en
@@ -936,24 +959,28 @@ namespace Nindo
         /// meterse encima del paso del maestro. Lo que se ve es el barrido de jade donde se cruzan y el GuardHit; el aviso
         /// de que el segundo se paga es la marca de guardia.
         /// </summary>
-        HitResult Swat(bool left)
+        HitResult Swat(bool left, string attackName)
         {
             var p = target;
             if (p == null) return HitResult.Deflected;
             Vector3 d = (p.transform.position - transform.position).Flat();
             Vector3 dir = d.sqrMagnitude > 1e-4f ? d.normalized : transform.forward;
             // donde la palma encuentra la hoja (GuardHit f3) y hacia dónde la lleva: el trazo sigue a la mano. El sonido es
-            // la palma contra el plano de la hoja y lo pone Kaito (PlayerController con Deflected)
+            // la palma contra el plano de la hoja y lo pone Kaito (PlayerController con Deflected). La hoja del Corte final
+            // cruza más abajo (las dos manos en la empuñadura y la punta 17° abajo): con el trazo a la altura de los otros
+            // dos, flotaba ~13 cm arriba de la hoja
             Vector3 right = Vector3.Cross(Vector3.up, dir);
-            Vector3 c = transform.position + dir * SwatReach + Vector3.up * (left ? SwatHighL : SwatHigh);
+            float high = left ? SwatHighL : attackName == KaitoFinal ? SwatHighFinal : SwatHigh;
+            Vector3 c = transform.position + dir * SwatReach + Vector3.up * high;
             if (left) SlashLineFX.Spawn(c + right * 0.35f - Vector3.up * 0.12f, c - right * 0.55f + Vector3.up * 0.3f, SwatJade, 0.24f, 0.24f);
             else SlashLineFX.Spawn(c - right * 0.35f + Vector3.up * 0.12f, c + right * 0.55f - Vector3.up * 0.22f, SwatJade, 0.24f, 0.24f);
             Game.FX?.DodgeSpark(c);
             return HitResult.Deflected;
         }
 
-        /// <summary>Dónde la palma encuentra la hoja, delante de él (m) y a qué altura (el revés le llega más arriba).</summary>
-        const float SwatReach = 0.62f, SwatHigh = 0.72f, SwatHighL = 0.92f;
+        /// <summary>Dónde la palma encuentra la hoja, delante de él (m) y a qué altura: el revés le llega más arriba y el Corte
+        /// final, con la hoja adelante y abajo, a 0.59 m (kaitooo.fbx, Attack3 f7, el cuadro que congela el hit-stop).</summary>
+        const float SwatReach = 0.62f, SwatHigh = 0.72f, SwatHighL = 0.92f, SwatHighFinal = 0.59f;
 
         void TellPatience()
         {
