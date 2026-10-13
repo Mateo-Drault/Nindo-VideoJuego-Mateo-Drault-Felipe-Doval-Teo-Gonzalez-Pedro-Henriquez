@@ -112,16 +112,18 @@ def rock_color(seed, snow_z=0.90):
         u = rnd.random()
         if n.z < -0.3:
             return "rock_dark" if u < 0.6 else "rock_brown_dark"
-        # ~60 % oscuro (rock_dark, rock_brown_dark) en lo que ve la cámara: 52 % en las caras de arriba (que ganan granito
-        # claro, las que toma la luna) y 65 % en los costados. Toda oscura quedaba un 20 % más oscura que las rocas del
-        # mundo bajo la misma luz y se perdía contra la piel roja y el piso de noche
+        # ~60 % oscuro (rock_dark, rock_brown_dark) en lo que ve la cámara: 52 % en las caras de arriba y 65 % en los
+        # costados. Toda oscura quedaba un 20 % más oscura que las rocas del mundo bajo la misma luz y se perdía contra la
+        # piel roja y el piso de noche; las caras claras de arriba son pardas (rock_brown, con algo de granito medio): con
+        # el granito claro, gris azulado, bajo la luna la armadura se leía como esquirlas de hielo y no como la roca
+        # oscura del concepto
         if n.z > 0.5:
-            return "rock_dark" if u < 0.32 else ("rock_brown_dark" if u < 0.52 else ("rock_light" if u < 0.88 else "rock"))
-        if u < 0.45:
-            return "rock_dark"
-        if u < 0.65:
+            return "rock_dark" if u < 0.3 else ("rock_brown_dark" if u < 0.52 else ("rock_brown" if u < 0.86 else "rock"))
+        if u < 0.38:
             return "rock_brown_dark"
-        return "rock" if u < 0.9 else ("rock_light" if u < 0.98 else "rock_brown")
+        if u < 0.65:
+            return "rock_dark"
+        return "rock_brown" if u < 0.9 else "rock"
     return fn
 
 
@@ -201,9 +203,14 @@ def spire(rg, piece, base, tip, r, sides=5, seed=1, kink=0.25):
     rg.faces(piece, verts, faces, rock_color(seed + 7, snow_z=0.85))
 
 
+# cuánto más grueso que el autorado es cada núcleo de brasa: asoma más por las vetas (con el de antes la brasa era una
+# línea fina entre rocas grises; el concepto tiene grietas al rojo anchas)
+CORE_GROW = 1.3
+
+
 def core(rg, piece, center, radii, rot=(0, 0, 0), seed=1):
     """Núcleo de brasa: una roca más chica adentro de las de la pieza; asoma por las vetas entre ellas."""
-    rock(rg, piece, center, radii, rot, seed, pts=10, jitter=0.1, color=ember)
+    rock(rg, piece, center, tuple(r * CORE_GROW for r in radii), rot, seed, pts=10, jitter=0.1, color=ember)
 
 
 # ------------------------------------------------------------------ las piezas (marco de autoría, reposo)
