@@ -376,7 +376,7 @@ y el resumen del driver. Corrí las simulaciones de ese mismo código (las de `7
 
 | Jefe | Perillas | bueno | promedio |
 |---|---|---|---|
-| Gorō | 1900 + 3040, daño x0.30 / x0.25, tramo 55 (sin cambios) | ~4.3 min | ~6.1 min, ~1.3 muertes |
+| Gorō | 1900 + 3040, daño x0.30 / x0.25, tramo 55 (sin cambios) | ~4.3 min | ~6.5 min, ~1.6 muertes (goro_fight_sim, 400 peleas) |
 | Mizuchi | vida x2.5 (3600), daño 0.33, postura que cura 18 (antes x2.25 y 14) | 4.5 min (3.9-5.0) | 7.3 min, 1.25 muertes, 32 % sin morir |
 | Kokuyō | vida x4 (7200), daño 0.31, tramos 50 / 50 / 45 (antes x3, 0.33, 35 / 35 / 25) | 4.35 min (4.05-4.7) | 6.9 min (p90 10.5), 1.4 muertes, 29 % sin morir |
 | Chikuō | 1900 (antes 2200) | 4.6 min (p90 5.0) | 7.3 min (p90 9.9), 1.0 muertes, 21 % sin morir |

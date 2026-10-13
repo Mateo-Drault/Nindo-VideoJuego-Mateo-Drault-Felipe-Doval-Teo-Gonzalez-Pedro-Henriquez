@@ -217,7 +217,7 @@ Están casi en sus palabras, con notas. Al final de cada uno, entre corchetes, *
     * **Objetivo: que la partida dure ~1 hora** (hoy ~30 min).
     * Después balancear en Unity con `bot on bueno` / `bot on promedio`: el bueno gana en unos 4-6 min por jefe, el promedio muere alguna vez.
     * **[C2 hecho en simulación (`Tools/Dev/goro_fight_sim.py`, `sim_bamboo_master.py`, `boss_sims/`): Gorō 1000 + 1600, Mizuchi y Kokuyō x1.5 (2160 y 2700, con el daño que aguanta el promedio), Chikuō ~2000; el bot promedio se recalibró (falla 15 %, se confunde 7 %, ataca apurado 15 %). Falta medir en Unity con PlayClock.]**
-    * **[C3: con las ocho peleas del bot que el lead corrió sobre C2 el factor real/simulado es Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92 y Chikuō 1.42 (`boss_sims/calibration.py`); con eso Gorō 1900 + 3040, Mizuchi x2.5, Kokuyō x4 y Chikuō 1900 dan ~4.5 min de juego para el bueno y 1-1.4 muertes para el promedio en cada jefe. Provisorio: medir tres peleas por bot con lo de C3 (`reportes/c3_reports.md` 5.1).]**
+    * **[C3: con las ocho peleas del bot que el lead corrió sobre C2 el factor real/simulado es Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92 y Chikuō 1.42 (`boss_sims/calibration.py`); con eso Gorō 1900 + 3040, Mizuchi x2.5, Kokuyō x4 y Chikuō 1900 dan ~4.5 min de juego para el bueno y 1-1.6 muertes para el promedio en cada jefe. Provisorio: medir tres peleas por bot con lo de C3 (`reportes/c3_reports.md` 5.1).]**
 11. **Kokuyō**:
     * **La sombra viva casi nunca ataca.** El usuario la considera la mejor mecánica: tiene que estar en todos los actos.
     * En la fase de luna llena, donde la sombra no se ve, cuando ataca **tiene que hacerse visible un segundo antes y poder pararse** (difícil pero justo).
