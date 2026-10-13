@@ -28,8 +28,8 @@ namespace Nindo
         {
             switch (state)
             {
-                case "Combo1B": from = 0.0923f; to = 0.6615f; return true;
-                case "Combo2B": from = 0.0816f; to = 0.5714f; return true;
+                case "Combo1B": from = 0.0896f; to = 0.6418f; return true;
+                case "Combo2B": from = 0.0784f; to = 0.549f; return true;
                 case "Combo3B": from = 0.0781f; to = 0.6875f; return true;
                 case "SlamWave": from = 0.0781f; to = 0.5625f; return true;
                 default: from = to = 0f; return false;

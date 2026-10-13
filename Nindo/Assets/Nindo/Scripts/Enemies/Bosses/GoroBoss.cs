@@ -89,6 +89,10 @@ namespace Nindo
         // armadura recién armada es lo que se tiene que ver; Tools/Blender/bosses/goro/goro_rise_review)
         const float ShotStart = 7.2f, ShotNear = 6f, ShotFar = 10f, ShotFov = 42f;
         const float ShotFarUp = 2.6f, ShotFarLook = 2.9f;
+        // el alejamiento arranca ShotKneelLead s antes de que se arrodille y al arrodillarse ya mira a ShotKneelLook m: con
+        // la armadura agrandada (C3) el casco y las cumbres salían por arriba del cuadro justo después de arrodillarse
+        // (a 6 m mirando a 1.3 m) hasta que el plano se alejaba
+        const float ShotKneelLead = 0.35f, ShotKneelLook = 1.7f;
 
         public bool Armored => armored;
         bool armored, inCinematic, assembling, wideFrame;
@@ -549,10 +553,11 @@ namespace Nindo
             return Game.Camera.PlayShot(t =>
             {
                 float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / kneel));
-                float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - kneel) / Mathf.Max(0.1f, roar - kneel)));
+                float from = kneel - ShotKneelLead;
+                float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - from) / Mathf.Max(0.1f, roar - from)));
                 float dist = Mathf.Lerp(Mathf.Lerp(ShotStart, ShotNear, a), ShotFar, b);
                 Vector3 pos = c + dir * dist + Vector3.up * Mathf.Lerp(Mathf.Lerp(1.7f, 2.1f, a), ShotFarUp, b);
-                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, 1.3f, a), ShotFarLook, b);
+                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, ShotKneelLook, a), ShotFarLook, b);
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
             }, () => ShotFov, 0.9f, duration, 0.8f);
         }

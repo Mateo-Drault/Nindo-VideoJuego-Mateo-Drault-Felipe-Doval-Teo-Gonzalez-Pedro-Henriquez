@@ -1,7 +1,8 @@
 """Clips nuevos de los personajes del equipo: autoría, chequeos, FBX de animación y hojas de revisión.
 
   blender -b --factory-startup --python Tools/Blender/anim/build_team_anims.py -- <ninja|sumo|goro|grandpa> [opciones]
-    --export        escribe Nindo/Assets/Nindo/Art/Characters/TeamAnims/<Personaje>Anims.fbx (+ .json)
+    --export        escribe Nindo/Assets/Nindo/Art/Characters/TeamAnims/<Personaje>Anims.fbx (+ .json), solo si pasan
+                    todos los chequeos (también los del FBX re-importado: hasta entonces queda en una carpeta temporal)
     --renders DIR   una hoja por clip (cámara del juego de frente y de perfil, perfil ortográfico)
     --only A,B      solo esos clips (para iterar; no exporta)
     --frames F      con --renders: cuadros de la hoja (si no, los del timing del clip)
@@ -55,39 +56,81 @@ def check(ok, msg, warn=False):
 
 
 # ------------------------------------------------------------------------------- golpes del juego
+class ArchHit(tuple):
+    """Un golpe de EnemyArchetypes.cs: (activeStart, activeEnd, apex, función, embestida, velocidad, lungeFrom, aire,
+    lungeTo), más 'rr' (AttackDef.releaseRate, 1.6 por omisión) y 'var' (la variable del C#)."""
+
+    def __new__(cls, items, rr=1.6, var=""):
+        o = tuple.__new__(cls, items)
+        o.rr, o.var = rr, var
+        return o
+
+
 def archetype_hits(func_names):
-    """Hit("Estado", ...) de las funciones dadas de EnemyArchetypes.cs:
-    {estado: [(activeStart, activeEnd, apex, función, embestida, velocidad, lungeFrom, aire, lungeTo), ...]}.
-    Los apex, lungeFrom y lungeTo con nombre (NinjaApex1 = 0.50f) se resuelven con las constantes del archivo; embestida y
-    velocidad, con los valores por omisión de Hit() (0.8 m, 1); lungeFrom None = sin 'from:' (embestida lineal); lungeTo
-    None = sin 'to:' (termina un poco después del golpe)."""
+    """Los golpes de las funciones dadas de EnemyArchetypes.cs: {estado: [ArchHit, ...]}. Cada 'var x = Hit("Estado",
+    ...)' con lo que se le cambia después ('x.speed = 1.1f', 'x.releaseRate = 1.2f', 'x.lunge = ...') y cada variante
+    'var y = x.Clone()' con sus cambios (c1f, c2f, c3f de Gorō: antes no se medían y tocan el clip a otra velocidad). Las
+    funciones comparten las variables en orden (GoroPhase2 clona los golpes que arma Goro). Los apex, lungeFrom y
+    lungeTo con nombre (NinjaApex1 = 0.50f) se resuelven con las constantes del archivo; embestida y velocidad, con los
+    valores por omisión de Hit() (0.8 m, 1); lungeFrom None = sin 'from:' (embestida lineal); lungeTo None = sin 'to:'
+    (termina un poco después del golpe)."""
     src = open(ARCHETYPES, encoding="utf-8").read()
     consts = {m.group(1): float(m.group(2)) for m in re.finditer(r"(\w+)\s*=\s*([\d.]+)f", src)}
-    out = {}
+    out, defs, order = {}, {}, []
     for fn in func_names:
         m = re.search(r"public static \w+ " + fn + r"\([^)]*\)\s*\{(.*?)\n        \}", src, re.S)
         if not m:
             continue
-        for h in re.finditer(r'Hit\("(\w+)",\s*[\d.]+,\s*([\d.]+)f,\s*([\d.]+)f(.*?)\);', m.group(1)):
-            st, a0, a1, rest = h.group(1), float(h.group(2)), float(h.group(3)), h.group(4)
-            am = re.search(r"apex:\s*([\w.]+)", rest)
-            apex = None
-            if am:
-                v = am.group(1).rstrip("f")
-                apex = consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
-            lm = re.search(r"lunge:\s*([\d.]+)f", rest)
-            sm = re.search(r"speed:\s*([\d.]+)f", rest)
-            air = bool(re.search(r"air:\s*true", rest))
+        body = m.group(1)
+        tok = re.compile(r'(?:var\s+(\w+)\s*=\s*)?Hit\("(\w+)",\s*[\d.]+,\s*([\d.]+)f,\s*([\d.]+)f(.*?)\);'
+                         r'|var\s+(\w+)\s*=\s*(\w+)\.Clone\(\);'
+                         r'|(\w+)\.(speed|releaseRate|lunge)\s*=\s*([\d.]+)f;', re.S)
+        for h in tok.finditer(body):
+            if h.group(2):
+                var, st, a0, a1, rest = h.group(1) or f"_{len(order)}", h.group(2), float(h.group(3)), float(h.group(4)), h.group(5)
+                am = re.search(r"apex:\s*([\w.]+)", rest)
+                apex = None
+                if am:
+                    v = am.group(1).rstrip("f")
+                    apex = consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
+                lm = re.search(r"lunge:\s*([\d.]+)f", rest)
+                sm = re.search(r"speed:\s*([\d.]+)f", rest)
+                air = bool(re.search(r"air:\s*true", rest))
 
-            def named(key):
-                fm = re.search(key + r":\s*([\w.]+)", rest)
-                if not fm:
-                    return None
-                v = fm.group(1).rstrip("f")
-                return consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
-            out.setdefault(st, []).append((a0, a1, apex, fn, float(lm.group(1)) if lm else 0.8, float(sm.group(1)) if sm else 1.0,
-                                           named("from"), air, named(r"\bto")))
+                def named(key):
+                    fm = re.search(key + r":\s*([\w.]+)", rest)
+                    if not fm:
+                        return None
+                    v = fm.group(1).rstrip("f")
+                    return consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
+                defs[var] = dict(st=st, var=var, items=[a0, a1, apex, fn, float(lm.group(1)) if lm else 0.8,
+                                                        float(sm.group(1)) if sm else 1.0, named("from"), air, named(r"\bto")], rr=1.6)
+                order.append(defs[var])
+            elif h.group(6):
+                var, base = h.group(6), h.group(7)
+                if base in defs:
+                    d = defs[base]
+                    defs[var] = dict(st=d["st"], var=var, items=list(d["items"]), rr=d["rr"])
+                    defs[var]["items"][3] = f"{fn}:{var}"
+                    order.append(defs[var])
+            elif h.group(8) in defs:
+                d, k, v = defs[h.group(8)], h.group(9), float(h.group(10))
+                if k == "releaseRate":
+                    d["rr"] = v
+                else:
+                    d["items"][5 if k == "speed" else 4] = v
+    for d in order:
+        out.setdefault(d["st"], []).append(ArchHit(d["items"], d["rr"], d["var"]))
     return out
+
+
+def config_lunge(fn):
+    """(lungeShove, lungeSlack) del EnemyConfig que arma la función 'fn' de EnemyArchetypes.cs (0 si no los pone)."""
+    src = open(ARCHETYPES, encoding="utf-8").read()
+    m = re.search(r"public static \w+ " + fn + r"\([^)]*\)\s*\{(.*?)\n        \}", src, re.S)
+    body = m.group(1) if m else ""
+    get = lambda k: float(next(iter(re.findall(k + r"\s*=\s*([\d.]+)f", body)), 0.0))
+    return get("lungeShove"), get("lungeSlack")
 
 
 # las variantes de zona reusan los clips con sus propios números: también tienen que coincidir
@@ -201,10 +244,25 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         lf = t.get("lunge_from")
         lt = t.get("lunge_to")
         rr = t.get("release_rate", 1.6)
-        for a0, a1, apex, fn, hl, hs, frm, air, to in hits.get(st, []):
+        for h in hits.get(st, []):
+            a0, a1, apex, fn, hl, hs, frm, air, to = h
             ok = abs(a0 - a / n) <= 1.0 / n + 1e-3 and (apex is None or abs(apex - ap / n) <= 1.0 / n + 1e-3)
             check(ok, f"{clip.name}: {fn}() Hit(\"{st}\") activo {a0:.2f}-{a1:.2f} apex {apex} vs clip contacto "
                       f"{a / n:.3f} apex {ap / n:.3f}")
+            # el reloj de la suelta: el clip se autoró (y sus embestidas se midieron) con este releaseRate
+            if lf is not None:
+                check(abs(h.rr - rr) <= 1e-3, f"{clip.name}: {fn}() Hit(\"{st}\") releaseRate {h.rr:g} vs clip {rr:g}")
+            # la embestida que termina en un cuadro (lungeTo) tiene que durar más que el tope de velocidad del juego
+            # (Enemy.SetupLunge: MaxClipLunge) a la velocidad de cada variante: si no, el tope la estira hasta después del
+            # golpe y la cabeza del martillo ya clavada se arrastra con el cuerpo (c1f a 1.1x quedaba a 4 ms)
+            if frm is not None and to is not None and hl > 0.0:
+                import team_moves as TM
+                tlv = NA.StepTimeline(n, ap, a, release_rate=h.rr, windup_min=t.get("windup", 0.55), speed=hs, creep_in=True)
+                span = TM.time_at(tlv, to) - TM.time_at(tlv, frm)
+                guard = hl * TM.lunge_peak(0.0 if air else TM.LUNGE_BRAKE) / TM.MAX_CLIP_LUNGE
+                rep.setdefault("lunge_span_s", {})[fn] = [round(span, 3), round(guard, 3)]
+                check(span >= guard + 0.01, f"{clip.name}: {fn}() Hit(\"{st}\") x{hs:g}: la embestida dura {span * 1000:.0f} ms, más "
+                                            f"que el tope de {TM.MAX_CLIP_LUNGE:g} m/s ({guard * 1000:.0f} ms + 10)")
             # la embestida en cuadros del clip arranca donde el clip la autoró (sin 'from:' es la lineal de siempre: se
             # mide abajo como variante, el Ōzeki que se reemplaza)
             if lf is not None and hl > 0.0:
@@ -228,11 +286,26 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         if t.get("lunge") and clip.travel_table is not None:
             rep["magnet_skate_cm"] = round(variant_skate(touch, clip.travel_table, [0.0] * len(clip.travel_table)) * 100.0, 1)
             # y si el transform alcanza a avanzar una parte (Kaito un poco más lejos): el corte cae al final de la embestida
-            # con lungeSlack (Enemy.Locomotion.cs) el modelo hace los últimos 'slack' m de lo que el imán cortó
+            # con lungeSlack (Enemy.Locomotion.cs) el modelo hace los últimos 'slack' m de lo que el imán cortó, y con
+            # lungeShove el cuerpo empuja a Kaito antes (agranda el lugar que hay)
             L = t["lunge"]
-            rep["magnet_curve_cm"] = {str(sl): [round(variant_skate(touch, clip.travel_table, [
-                min(x, L * q / 10.0) + max(0.0, x - max(L * q / 10.0, L - sl)) for x in clip.travel_table]) * 100.0, 1) for q in range(11)]
-                for sl in (0.0, 0.15, 0.35)}
+
+            def magnet(q, sl, sh=0.0):
+                room = min(L, L * q / 10.0 + sh)
+                return [min(x, room) + max(0.0, x - max(room, L - sl)) for x in clip.travel_table]
+            rep["magnet_curve_cm"] = {str(sl): [round(variant_skate(touch, clip.travel_table, magnet(q, sl)) * 100.0, 1) for q in range(11)]
+                                      for sl in (0.0, 0.15, 0.35)}
+            # con lo que tiene el personaje (EnemyConfig): un pie apoyado que se corre más de 3 cm con Kaito en cualquier
+            # lugar de la embestida (el SlamWave de Gorō arrastraba 45 cm y solo lo decía el informe). Falla en los personajes
+            # cuyo módulo de clips lo pide (MAGNET_STRICT: Gorō); en los demás avisa (sus clips se autoraron antes de esta
+            # regla). Sin poder empujarlo (Kaito en el dash o contra una pared) queda en el informe
+            sh, sl = MAGNET
+            mc = max(variant_skate(touch, clip.travel_table, magnet(q, sl, sh)) for q in range(11)) * 100.0
+            rep["magnet_config_cm"] = round(mc, 1)
+            rep["magnet_noshove_cm"] = round(max(variant_skate(touch, clip.travel_table, magnet(q, sl)) for q in range(11)) * 100.0, 1)
+            check(mc <= 3.0, f"{clip.name}: con Kaito pegado (el imán corta la embestida; empuja {sh:g} m y el modelo sigue {sl:g} m) "
+                             f"los pies apoyados no patinan ({mc:.1f} cm; sin empujarlo {rep['magnet_noshove_cm']:.1f} cm)",
+                  warn=not getattr(mod, "MAGNET_STRICT", False))
         # la embestida del clip tiene que arrancar en la suelta: si arranca antes, con cualquier pausa del juego en el
         # apex (CombatDirector la estira hasta 0.6 s) el ninja se desliza con la pose quieta y los pies clavados. En
         # cuadros del clip (lunge_from) arranca después del apex por construcción
@@ -979,11 +1052,12 @@ def replay_checks(ch, clip, soles, hits):
     check(w <= 3.0 and p <= 2.0, f"{clip.name}: con el reloj del juego los pies apoyados no patinan en la embestida ({w:.1f} cm, peor "
                                  f"muestra {p:.1f} cm, {at})")
     out = {"clip": round(w, 1)}
-    for a0, a1, apex, fn, hl, hs, frm, air, to in hits.get(t.get("state", clip.name), []):
+    for h in hits.get(t.get("state", clip.name), []):
+        a0, a1, apex, fn, hl, hs, frm, air, to = h
         if hl <= 0.0:
             continue
         wv, pv, atv = replay_skate(clip, soles, roots, td, n, ap, a, t.get("windup", 0.55), hl, frm, speed=hs, air=air,
-                                   lunge_to=to, rr=rr)
+                                   lunge_to=to, rr=getattr(h, "rr", rr))
         out[fn] = round(wv, 1)
         check(wv <= 2.0, f"{clip.name}: {fn}() ({hl:.2f} m, velocidad {hs:g}{', lineal' if frm is None else ''}) con el reloj del "
                          f"juego: {wv:.1f} cm ({atv})", warn=True)
@@ -1078,6 +1152,8 @@ def main():
         clips = [c for c in clips if c.name in keep]
     solver = T.TeamSolver(ch)
     hits = archetype_hits(ARCH_FUNCS.get(CHAR, []))
+    global MAGNET
+    MAGNET = config_lunge(ARCH_FUNCS[CHAR][0]) if ARCH_FUNCS.get(CHAR) else (0.0, 0.0)
     baked, reports, rootsd, rootsa = [], {}, {}, {}
     blends = getattr(mod, "BLENDS", ())
     rows_by = {}
@@ -1130,16 +1206,20 @@ def main():
         locomotion_weapon(ch, by_name, [nm for nm, _ in lo], [th for _, th in lo])
     last = max(b for a, b in ranges.values())
     exported = False
+    # el FBX y su sidecar se escriben en una carpeta temporal y recién pasan a su lugar (TeamAnims o --fbx) cuando pasaron
+    # sus propios chequeos (verify_fbx y fbx_skate, al final): antes quedaban en Assets aunque fbx_skate fallara y, con el
+    # .meta todavía viejo, el worktree tuvo 20 minutos un FBX mal cortado que Unity o el resto podían tomar
+    import tempfile, shutil
     if EXPORT and (not ONLY or opt("--fbx")):
+        stage = os.path.join(tempfile.mkdtemp(prefix="nindo_" + CHAR + "_"), os.path.basename(FBX))
         if failures:
             print("NO SE EXPORTA: fallaron chequeos")
         else:
-            export_fbx(ch, FBX, 1, last)
+            export_fbx(ch, stage, 1, last)
             nfail = len(failures)
-            verify_fbx(ch, FBX, last)
+            verify_fbx(ch, stage, last)
             if len(failures) > nfail:
-                os.remove(FBX)
-                print("FBX BORRADO: no coincide con el modelo")
+                print("FBX DESCARTADO: no coincide con el modelo")
                 sys.exit(1)
             info = {"fps": T.FPS, "take": "Scene", "character": CHAR, "model": ch.spec["fbx"], "units_per_meter": round(ch.u, 5),
                     "clips": {}}
@@ -1164,9 +1244,9 @@ def main():
                 if clip.root_vel.length > 0:
                     rec["root_velocity_mps"] = round(clip.root_vel.length, 3)
                 info["clips"][clip.name] = rec
-            with open(FBX + ".json", "w", encoding="utf-8", newline="\n") as fh:
+            with open(stage + ".json", "w", encoding="utf-8", newline="\n") as fh:
                 json.dump(info, fh, indent=1, ensure_ascii=False)
-            print("EXPORTADO", FBX, "cuadros 1 ..", last, f"{os.path.getsize(FBX) / 1e6:.2f} MB")
+            print("ARMADO", stage, "cuadros 1 ..", last, f"{os.path.getsize(stage) / 1e6:.2f} MB")
             exported = True
     if RENDERS:
         import team_review as TR
@@ -1183,9 +1263,16 @@ def main():
         # al final porque vacía la escena: el FBX re-importado con sus curvas evaluadas entre cuadros (fbx_skate.py), la
         # medida que no se engaña con una cadera que gira mucho en un cuadro sobre un pie apoyado
         import fbx_skate as FS
-        fs_fail, fs_warn, _ = FS.run(CHAR, FBX, hits=hits)
+        fs_fail, fs_warn, _ = FS.run(CHAR, stage, hits=hits)
         failures.extend("FBX re-importado: " + m for m in fs_fail)
         warnings.extend(fs_warn)
+        if failures:
+            print("NO SE COPIA el FBX: fallaron chequeos (queda en", stage, "para mirarlo)")
+        else:
+            shutil.copyfile(stage, FBX)
+            shutil.copyfile(stage + ".json", FBX + ".json")
+            shutil.rmtree(os.path.dirname(stage), ignore_errors=True)
+            print("EXPORTADO", FBX)
     print(f"listo en {time.time() - t0:.1f} s; avisos {len(warnings)}")
     if failures:
         print("FALLARON", len(failures), "chequeos:")

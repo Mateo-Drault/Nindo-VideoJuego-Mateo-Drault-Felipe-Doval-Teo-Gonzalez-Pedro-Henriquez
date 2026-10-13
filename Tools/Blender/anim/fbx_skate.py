@@ -288,10 +288,13 @@ def cases(clip, hits=()):
     out = [("clip", dict(base, windup=w, speed=1.0), True), ("pausa", dict(base, windup=w + 0.35, speed=1.0), True)]
     if base["air"]:
         out.append(("corto", dict(base, windup=w, speed=1.0, decided=base["length"] * 0.35), True))
-    for a0, a1, apex, fn, hl, hs, frm, air, to in hits:
-        if frm is None or hl <= 0.0 or (abs(hs - 1.0) < 1e-3 and abs(hl - base["length"]) < 1e-3):
+    for h in hits:
+        a0, a1, apex, fn, hl, hs, frm, air, to = h
+        rr = getattr(h, "rr", base["release"])
+        if frm is None or hl <= 0.0 or (abs(hs - 1.0) < 1e-3 and abs(hl - base["length"]) < 1e-3 and abs(rr - base["release"]) < 1e-3):
             continue
-        out.append((f"{fn} {hl:g} m x{hs:g}", dict(base, windup=w, speed=hs, length=hl), abs(hl - base["length"]) < 1e-3))
+        # las variantes con la misma embestida a otra velocidad (c1f de Gorō a 1.1x) también fallan: son el clip mismo
+        out.append((f"{fn} {hl:g} m x{hs:g}", dict(base, windup=w, speed=hs, length=hl, release=rr), abs(hl - base["length"]) < 1e-3))
     return out
 
 

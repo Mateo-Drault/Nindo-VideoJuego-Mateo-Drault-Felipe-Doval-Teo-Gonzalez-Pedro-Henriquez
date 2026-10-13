@@ -158,6 +158,11 @@ namespace Nindo
                 // el martillo rebota, se le resbala en la mano y cae por su peso (GoroAnims Parried: 16 cuadros); con los
                 // 0.32 s de siempre daba la vuelta por encima en dos cuadros
                 parriedRecoil = 0.5f,
+                // con Kaito pegado el imán corta la embestida y el pie de atrás, clavado en la punta mientras el cuerpo pasa,
+                // se correría lo cortado: lo empuja con el cuerpo hasta 0.5 m y el modelo sigue 0.35 m más (build_team_anims,
+                // magnet_config_cm: 0 cm). Si no lo puede empujar (Kaito en el dash o contra una pared) el pie de atrás se
+                // corre lo que el modelo no alcanza (25-50 cm, magnet_noshove_cm)
+                lungeShove = 0.5f, lungeSlack = 0.35f,
                 animGuard = "Idle", animCounter = "Combo1", animExhausted = "StunSpin", animHit = "Hit",
                 animSpotted = "Spotted", animDeath = "Death", animParried = "Parried", deathClipFalls = true,
             };
@@ -165,9 +170,13 @@ namespace Nindo
             // cuadro; el golpe sísmico pega al aterrizar del salto, no al despegar. Alcance = dónde cae la cabeza del
             // martillo (GoroAnims.fbx.json, 3.66-3.90 m del centro) más medio ancho de la cabeza: con 3.4 el martillo se
             // veía pasar por encima de Kaito sin pegarle
-            var c1 = Hit("Combo1", 22, 0.5472f, 0.6226f, range: 3.8f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, telegraph: 0.2f, kb: 1.8f, apex: 0.3962f, from: 0.4151f, to: 0.5472f);
-            var c2 = Hit("Combo2", 24, 0.5532f, 0.617f, range: 3.9f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, kb: 1.8f, apex: 0.383f, from: 0.4043f, to: 0.5532f);
-            var c3 = Hit("Combo3", 28, 0.5686f, 0.6275f, range: 4.0f, arc: 160, kind: AttackKind.Heavy, lunge: 1.0f, kb: 2.4f, apex: 0.4314f, from: 0.451f, to: 0.5686f);
+            var c1 = Hit("Combo1", 22, 0.5273f, 0.6f, range: 3.8f, arc: 130, kind: AttackKind.Heavy, lunge: 0.75f, telegraph: 0.2f, kb: 1.8f, apex: 0.3818f, from: 0.4f, to: 0.5273f);
+            var c2 = Hit("Combo2", 24, 0.5f, 0.5577f, range: 3.9f, arc: 130, kind: AttackKind.Heavy, lunge: 0.6f, kb: 1.8f, apex: 0.3462f, from: 0.3654f, to: 0.5f);
+            var c3 = Hit("Combo3", 28, 0.5686f, 0.6275f, range: 4.0f, arc: 160, kind: AttackKind.Heavy, lunge: 0.6f, kb: 2.4f, apex: 0.4314f, from: 0.451f, to: 0.5686f);
+            // la suelta de los martillazos va a 1.2x y no a 1.6x: con la embestida de 0.6-0.85 m en un paso largo (el pie de
+            // atrás clavado en la punta, TeamAnims/GoroAnims lunge_step) la cadera llega a 7-9 m/s; con 1.2-1.5 m a 1.6x iba a
+            // 16-18 m/s con los dos pies en el aire y se leía como un patinazo. build_team_anims chequea que coincida con el clip
+            c1.releaseRate = 1.2f; c2.releaseRate = 1.2f; c3.releaseRate = 1.2f;
             var slam = Hit("Heavy", 38, 0.625f, 0.6563f, range: 3.4f, arc: 360, kind: AttackKind.Unblockable, lunge: 0.5f, telegraph: 0.3f, kb: 3f, apex: 0.5f, from: 0.5156f, to: 0.625f);
             slam.special = "slam"; slam.specialParam = 4.6f;
             // el giro barre con la cabeza a ~3.9 m del eje: 2.8 dejaba pasar el martillo por Kaito sin daño
@@ -198,16 +207,17 @@ namespace Nindo
         public static void GoroPhase2(EnemyConfig c, AttackDef c1, AttackDef c2, AttackDef c3, AttackDef slam, AttackDef slam2, AttackDef spin)
         {
             // normalizados de los clips de la fase 2 (apex / contacto-fin): la cabeza cae a 3.66-3.90 m
-            var c1b = Hit("Combo1B", 26, 0.6308f, 0.6923f, range: 3.8f, arc: 130, kind: AttackKind.Heavy, lunge: 1.4f, kb: 2f, apex: 0.4923f, from: 0.5077f, to: 0.6308f);
+            var c1b = Hit("Combo1B", 26, 0.6119f, 0.6716f, range: 3.8f, arc: 130, kind: AttackKind.Heavy, lunge: 0.85f, kb: 2f, apex: 0.4776f, from: 0.4925f, to: 0.6119f);
             c1b.windup = 1.2f;
-            var c2b = Hit("Combo2B", 24, 0.5102f, 0.5918f, range: 3.8f, arc: 170, kind: AttackKind.Heavy, lunge: 1.0f, kb: 2.2f, apex: 0.3673f, from: 0.3878f, to: 0.5102f);
+            var c2b = Hit("Combo2B", 24, 0.4902f, 0.5686f, range: 3.8f, arc: 170, kind: AttackKind.Heavy, lunge: 0.6f, kb: 2.2f, apex: 0.3529f, from: 0.3725f, to: 0.4902f);
             c2b.windup = 0.7f;
-            var c3b = Hit("Combo3B", 30, 0.6563f, 0.7031f, range: 4.0f, arc: 160, kind: AttackKind.Heavy, lunge: 1.5f, kb: 2.6f, apex: 0.5f, from: 0.5156f, to: 0.6563f);
+            var c3b = Hit("Combo3B", 30, 0.6563f, 0.7031f, range: 4.0f, arc: 160, kind: AttackKind.Heavy, lunge: 0.85f, kb: 2.6f, apex: 0.5f, from: 0.5156f, to: 0.6563f);
             c3b.windup = 1.2f;
+            c1b.releaseRate = 1.2f; c2b.releaseRate = 1.2f; c3b.releaseRate = 1.2f;
             // la onda: el martillo cae a 3.9 m y la onda sale por el piso hasta 'specialParam' m más (GoroBoss "slamwave").
             // La fase activa es la arada entera (f34-f43): GoroBoss la estira lo que tarda la onda en llegar al final. El
             // aviso es el martillo arrastrado en el piso (apex f24); la suelta es el molino por el costado (10 cuadros) a 1.2x
-            var wave = Hit("SlamWave", 40, 0.5312f, 0.6719f, range: 3.9f, arc: 60, kind: AttackKind.Unblockable, lunge: 1.0f, kb: 3f, apex: 0.375f, from: 0.3906f, to: 0.5312f);
+            var wave = Hit("SlamWave", 40, 0.5312f, 0.6719f, range: 3.9f, arc: 60, kind: AttackKind.Unblockable, lunge: 0.7f, kb: 3f, apex: 0.375f, from: 0.3906f, to: 0.5312f);
             wave.special = "slamwave"; wave.specialParam = 10f; wave.windup = 1.25f; wave.releaseRate = 1.2f;
             // la avalancha no pega con el martillo: el aviso y el golpe son de cada roca (GoroAvalanche). Contacto = "call"
             // (f60 de 90) y apex al final de la vuelta a la guardia (f56): con el apex en el segundo martillazo la vuelta
@@ -444,7 +454,7 @@ namespace Nindo
         /// <summary>El clip de siempre (estado y tiempos de un Hit) para un golpe con clip propio: Enemy lo usa si el
         /// controller no tiene el estado nuevo.</summary>
         static AttackClipFallback Fallback(AttackDef a) =>
-            new AttackClipFallback { state = a.state, activeStart = a.activeStart, activeEnd = a.activeEnd, apex = a.apex, lungeFrom = a.lungeFrom, lungeAir = a.lungeAir };
+            new AttackClipFallback { state = a.state, activeStart = a.activeStart, activeEnd = a.activeEnd, apex = a.apex, lungeFrom = a.lungeFrom, lungeTo = a.lungeTo, lungeAir = a.lungeAir };
 
         static void Add(EnemyConfig c, params AttackPattern[] add)
         {

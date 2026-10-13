@@ -378,7 +378,9 @@ namespace Nindo
     public class AttackClipFallback
     {
         public string state;
-        public float activeStart, activeEnd, apex, lungeFrom = -1f;
+        // lungeTo es de cada clip como lungeFrom: una variante con 'to:' que cae al clip de siempre se quedaba con el cuadro
+        // del suyo y terminaba la embestida en cualquier lado
+        public float activeStart, activeEnd, apex, lungeFrom = -1f, lungeTo = -1f;
         public bool lungeAir;
 
         public void ApplyTo(AttackDef a)
@@ -388,6 +390,7 @@ namespace Nindo
             a.activeEnd = activeEnd;
             a.apex = apex;
             a.lungeFrom = lungeFrom;
+            a.lungeTo = lungeTo;
             a.lungeAir = lungeAir;
             a.fallback = null;
         }
