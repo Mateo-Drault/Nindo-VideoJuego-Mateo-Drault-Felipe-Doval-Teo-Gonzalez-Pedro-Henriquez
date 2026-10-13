@@ -847,12 +847,14 @@ namespace Nindo
                 "El verdadero poder nace del lazo que nos une a los nuestros.",
                 "<size=30><color=#e8c870>Un juego de</color></size>\nFelipe Doval  ·  Teo González  ·  Mateo Drault  ·  Pedro Henríquez",
                 "<size=28>Gracias por jugar.</size>",
+                // lo completa ShowEnding con el reloj de la partida (Core/PlayClock)
+                "",
                 // la OFL pide nombrar las fuentes (modificadas) y su licencia en lo que se distribuye
                 "<size=20><color=#8a8070>Fuentes: Shippori Mincho B1 y Zen Maru Gothic (con macrones agregados) · SIL Open Font License 1.1</color></size>",
                 // la CC BY 4.0 pide autor, licencia y aviso de cambios en lo que se distribuye (Audio/CREDITS.md no viaja en la build)
                 "<size=20><color=#8a8070>Música: Amenoshita, Wuxia y Sakuya4 de PeriTune (peritune.com) · Revenge de TAD (opengameart.org)\nCC BY 4.0 (creativecommons.org/licenses/by/4.0), cortadas y editadas para Nindō · Boss_Koto de G_P (CC0)</color></size>",
             };
-            float[] ys = { 90f, 30f, -70f, -160f, -215f, -262f };
+            float[] ys = { 90f, 30f, -70f, -150f, -190f, -232f, -277f };
             endLines = new CanvasGroup[lines.Length];
             for (int i = 0; i < lines.Length; i++)
             {
@@ -860,14 +862,21 @@ namespace Nindo
                 t.rectTransform.pivot = new Vector2(0.5f, 0.5f);
                 endLines[i] = t.gameObject.AddComponent<CanvasGroup>();
             }
+            endTime = endLines[EndTimeLine].GetComponent<TMPro.TextMeshProUGUI>();
             var b = UIFactory.MenuItem("Menu", bg.transform, "Volver al menú", new Vector2(420, 70), () => SceneFlow.LoadMenu(), 36f, TextAlignmentOptions.Center);
             ((RectTransform)b.transform).anchoredPosition = new Vector2(0, -360);
             endButton = b;
             endPanel.SetActive(false);
         }
 
+        const int EndTimeLine = 4;
+        TMPro.TextMeshProUGUI endTime;
+
         public void ShowEnding()
         {
+            // cuánto duró el camino (sin la pausa ni el mapa): el diseño pide cerca de una hora
+            if (endTime != null && Game.Save != null)
+                endTime.text = "<size=26><color=#e8c870>Tiempo de juego:</color> " + PlayClock.Spoken(Game.Save.playTime) + "</size>";
             endPanel.SetActive(true);
             // la cinemática del final ya devolvió el control: el clic o la A que adelantan los renglones hacían
             // atacar o esquivar a Kaito detrás del panel (con su sonido). El botón del menú no usa el buffer
