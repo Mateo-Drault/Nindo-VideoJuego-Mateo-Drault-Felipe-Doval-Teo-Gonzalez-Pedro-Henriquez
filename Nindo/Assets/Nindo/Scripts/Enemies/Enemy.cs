@@ -321,11 +321,12 @@ namespace Nindo
                 case EnemyState.Chase: TickChase(dt); break;
                 case EnemyState.Strafe: TickStrafe(dt); break;
                 case EnemyState.Attack: TickAttack(dt); break;
-                case EnemyState.Recoil: TickTimed(dt, () => ContinueCombo()); break;
+                // los estados con duración fija, sin delegados: una lambda que captura 'this' se creaba en cada frame
+                case EnemyState.Recoil: if (stateTime >= stateDuration) ContinueCombo(); break;
                 case EnemyState.Guard: TickGuard(dt); break;
-                case EnemyState.Counter: TickTimed(dt, () => StartAttack(true)); break;
+                case EnemyState.Counter: if (stateTime >= stateDuration) StartAttack(true); break;
                 case EnemyState.Exhausted: TickExhausted(dt); break;
-                case EnemyState.Stagger: TickTimed(dt, () => SetState(EnemyState.Chase)); break;
+                case EnemyState.Stagger: if (stateTime >= stateDuration) SetState(EnemyState.Chase); break;
             }
             // reentra a la locomoción y elige el ciclo (de frente, de costado o para atrás): Enemy.Locomotion.cs
             TickLocomotionAnim(dt);
@@ -369,11 +370,6 @@ namespace Nindo
             stateTime = 0f;
             anim.SetSpeed(1f);
             if (useAgent && s != EnemyState.Chase && s != EnemyState.Strafe) Stop();
-        }
-
-        void TickTimed(float dt, System.Action onDone)
-        {
-            if (stateTime >= stateDuration) onDone();
         }
 
         protected void RestoreModelRotation()

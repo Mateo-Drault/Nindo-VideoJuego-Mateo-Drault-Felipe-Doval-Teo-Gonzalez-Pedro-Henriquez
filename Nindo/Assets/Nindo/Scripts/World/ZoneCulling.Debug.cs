@@ -17,7 +17,7 @@ namespace Nindo
     ///  * ZoneCulling.ShowHud = true: esa línea abajo a la izquierda y, en la vista Scene, las celdas (verde = prendida).
     ///  * ZoneCulling.Benchmark(segundos): alterna con y sin culling en el mismo lugar y escribe en la consola el promedio
     ///    de cada contador del Profiler (tiempo del hilo principal y de render, batches, SetPass, casters de sombra...).
-    ///    En un Development Build: F9, o arrancar el juego con -zcbench (el informe va a Player.log).
+    ///    En un Development Build: Ctrl + Shift + F9, o arrancar el juego con -zcbench (el informe va a Player.log).
     ///  * ZoneCulling.CheckFrame(carpeta): el mismo cuadro dibujado dos veces, con y sin culling: cuántos píxeles cambian.
     ///    ZoneCulling.CheckEvery(intervalo, carpeta) lo repite mientras se juega (presentaciones de jefe, planos al
     ///    cielo, la grúa de la cascada) y ZoneCulling.StopCheck() da el resumen.
@@ -68,15 +68,20 @@ namespace Nindo
             Benchmark(seconds);
         }
 
-        /// <summary>F9 en el editor o en un Development Build: Benchmark de 30 s donde está Kaito.</summary>
+        /// <summary>
+        /// Ctrl + Shift + F9 en el editor o en un Development Build: Benchmark de 30 s donde está Kaito. F9 sola se puede
+        /// asignar a una acción en Opciones › Controles (BindingCatalog.IsBindableKey) y el usuario juega en el editor: cada
+        /// golpe arrancaba un benchmark (sin vsync, con el culling prendiéndose y apagándose).
+        /// </summary>
         void PollDebugKeys()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
 #if ENABLE_INPUT_SYSTEM
             var kb = UnityEngine.InputSystem.Keyboard.current;
-            bool f9 = kb != null && kb.f9Key.wasPressedThisFrame;
+            bool f9 = kb != null && kb.f9Key.wasPressedThisFrame && kb.ctrlKey.isPressed && kb.shiftKey.isPressed;
 #elif ENABLE_LEGACY_INPUT_MANAGER
-            bool f9 = Input.GetKeyDown(KeyCode.F9);
+            bool f9 = Input.GetKeyDown(KeyCode.F9) && (Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl))
+                      && (Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift));
 #else
             bool f9 = false;
 #endif

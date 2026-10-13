@@ -351,16 +351,19 @@ namespace Nindo
             UpdateAutoFit(pos, rot, dt);
             float camFov = fov;
 
-            // planos cinemáticos mezclados encima
+            // planos cinemáticos mezclados encima. Su reloj se detiene en la pausa y en el mapa: fuera de las cinemáticas
+            // se puede pausar en medio de uno (el zanshin, el plano de la muerte de un jefe, el cielo del eclipse) y al
+            // volver ya se había vencido o se estaba yendo a mitad de la pose
+            float shotDt = Game.IsPaused ? 0f : dt;
             for (int i = 0; i < shots.Count; i++)
             {
                 var s = shots[i];
-                s.t += dt;
+                s.t += shotDt;
                 float w = s.blendIn > 0f ? Mathf.Clamp01(s.t / s.blendIn) : 1f;
                 if (!s.ending && s.duration > 0f && s.t >= s.duration) { s.ending = true; s.endT = 0f; }
                 if (s.ending)
                 {
-                    s.endT += dt;
+                    s.endT += shotDt;
                     w = Mathf.Min(w, 1f - Mathf.Clamp01(s.endT / Mathf.Max(0.01f, s.blendOut)));
                 }
                 w = w * w * (3f - 2f * w);

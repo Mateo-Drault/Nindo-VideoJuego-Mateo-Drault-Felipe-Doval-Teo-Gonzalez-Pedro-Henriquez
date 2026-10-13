@@ -216,8 +216,11 @@ namespace Nindo
             else if (focusing) { cam.SetFocusBias(Vector3.zero); focusing = false; }
         }
 
-        void OnDisable()
+        // override: sin él tapaba el de Interactable y la puerta nunca salía de su lista (en cada vuelta al menú quedaba
+        // una entrada destruida, y un reenable la agregaba dos veces)
+        protected override void OnDisable()
         {
+            base.OnDisable();
             if (focusing && Game.Camera != null) Game.Camera.SetFocusBias(Vector3.zero);
             focusing = false;
         }

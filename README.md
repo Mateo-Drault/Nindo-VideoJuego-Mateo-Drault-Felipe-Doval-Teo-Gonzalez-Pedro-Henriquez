@@ -306,7 +306,7 @@ mientras duermen no siguen el reloj de su pareja; un momento de guion de una sol
 vista Scene que se está dibujando (`Nindo.ZoneCulling.IncludeSceneView = false` para medir solo la cámara de juego).
 Para depurar: `Nindo.ZoneCulling.ShowHud = true`, `Debug.Log(Nindo.ZoneCulling.Stats)`,
 `Nindo.ZoneCulling.Benchmark()` (30 s alternando con y sin en el mismo lugar, sin tope de fps ni vsync mientras
-mide; en un Development Build, F9 o arrancar con `-zcbench`, y el informe va a `Player.log`),
+mide; en un Development Build, Ctrl + Shift + F9 o arrancar con `-zcbench`, y el informe va a `Player.log`),
 `Nindo.ZoneCulling.CheckFrame(carpeta)` (el mismo cuadro dibujado dos veces en el mismo frame, con y sin:
 tiene que dar 0 píxeles distintos; `CheckEvery(intervalo, carpeta)` lo repite jugando y `StopCheck()` da el
 resumen), `Nindo.ZoneCulling.HideBatched = false` (no esconder nada del lote estático, por si eso suma draws de
