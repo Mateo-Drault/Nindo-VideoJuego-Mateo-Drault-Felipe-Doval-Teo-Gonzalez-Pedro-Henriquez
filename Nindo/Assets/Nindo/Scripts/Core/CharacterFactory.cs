@@ -407,9 +407,9 @@ namespace Nindo
                     b.phaseSpeedBonus = 0f;
                     break;
                 case "kage":
-                    // Kokuyō: los actos (70 % y 36 %, KokuyoBoss.Gates) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica
+                    // Kokuyō: los actos (70 % y 40 %, KokuyoBoss.Gates) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica
                     b.bossId = "kage"; b.title = "Kokuyō"; b.subtitle = "Señor del Clan Kurokage";
-                    b.introAnim = "Intro"; b.phaseAnim = "Roar"; b.musicKey = "boss_final"; b.phaseThresholds = new[] { 0.70f, 0.36f };
+                    b.introAnim = "Intro"; b.phaseAnim = "Roar"; b.musicKey = "boss_final"; b.phaseThresholds = new[] { 0.70f, 0.40f };
                     b.phaseSpeedBonus = 0f;
                     break;
             }

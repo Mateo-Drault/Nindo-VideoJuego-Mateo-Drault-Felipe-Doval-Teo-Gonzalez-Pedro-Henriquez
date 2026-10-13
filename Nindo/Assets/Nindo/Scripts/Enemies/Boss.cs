@@ -33,6 +33,8 @@ namespace Nindo
         /// que le metiste antes de que se enfurezca siguen contando.
         /// </summary>
         public float Posture01 => Imbalance01;
+        /// <summary>Lo lleno de su barra de vida (0..1): la vida, salvo que el jefe muestre un tramo (Kokuyō, el acto).</summary>
+        public virtual float BarFill01 => Health01;
         /// <summary>Rugiendo al cambiar de fase: se lo puede fijar pero los golpes rebotan.</summary>
         public bool Roaring => IsAlive && Time.time < roarUntil;
         int phase, pendingPhase;

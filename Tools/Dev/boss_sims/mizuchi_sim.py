@@ -140,6 +140,7 @@ class Fight:
         self.counts = {}
         self.pending_phase = 0
         self.dmg_log = {"normal": 0.0, "exhausted": 0.0}
+        self.cut_i = 0
 
     # ------------------------------------------------------------ utilidades
     def speed(self):
@@ -177,6 +178,9 @@ class Fight:
     def exhaust(self, secs, free=False):
         if free:
             self.saved_posture = self.posture
+        elif self.cfg.get("posture_heal"):
+            # cfg 'posture_heal': cada postura rota (no los varados gratis de la zambullida y los pilares) cura a Kaito
+            self.k.heal(self.cfg["posture_heal"])
         self.free_beach = free
         self.state = "exhausted"; self.until = self.t + secs; self.exh_hits = 0
         self.events = [e for e in self.events if e[4] == "kaito"]
@@ -439,6 +443,11 @@ class Fight:
         self.check_phase()
 
     def check_phase(self):
+        # cfg 'cuts': fracciones de la vida en que Kaito se cura 'cut_heal' (como los tramos de la armadura de Gorō)
+        cuts = self.cfg.get("cuts")
+        while cuts and self.cut_i < len(cuts) and self.hp / self.maxhp <= cuts[self.cut_i]:
+            self.cut_i += 1
+            self.k.heal(self.cfg.get("cut_heal", 0.0))
         n = 0
         for i, th in enumerate(self.cfg["th"]):
             if self.hp / self.maxhp <= th:
@@ -558,6 +567,9 @@ def resume_at(f, n):
     f.k.hp, f.k.spirit = hp0, sp0
     f.state = "chase"; f.until = 0.6; f.next_attack = 0.6; f.scripted_until = -1
     f.hp = f.maxhp * f.cfg["th"][n - 1]
+    # los cortes de arriba del umbral ya no curan (se cobraron en el intento anterior)
+    cuts = f.cfg.get("cuts") or []
+    f.cut_i = sum(1 for c in cuts if c >= f.cfg["th"][n - 1] - 1e-6)
     return f
 
 
