@@ -68,12 +68,12 @@ namespace Nindo
         ///                          ~72 / 87 / 80 s con el bueno; el eclipse sigue sirviendo el 99 % de los dúos. El promedio de verdad anduvo mejor que el calibrado (2:26 sin
         ///                          morir con lo de C2, contra 5 min y 2.2 muertes): puede que muera menos.
         /// Medido en Unity con eso (13 de octubre): bueno 4:41 y promedio 6:29, los dos sin morir (el promedio recibió 352
-        /// de daño). La vida sube a 7560 (x4.2: el jefe final queda el más largo), el daño a x0.37 y los tramos a 40 / 40 /
-        /// 35. Más vida alarga la
+        /// de daño). Con vida 7560 (x4.2: el jefe final queda el más largo), daño x0.37 y tramos 40 / 40 / 35 el promedio
+        /// tardó 11:33 con 3 muertes: el daño queda en x0.35. Más vida alarga la
         /// pelea del bueno casi en proporción; más StageHeal le baja las muertes al promedio sin acortarla (la del eclipse es
         /// la que más pesa).
         /// </summary>
-        public const float HealthScale = 4.2f, DamageScale = 0.37f;
+        public const float HealthScale = 4.2f, DamageScale = 0.35f;
         public const float TransitionHeal = 40f, TransitionSpirit = 30f;
         /// <summary>La cura de cada corte de tramo, por acto (1..3): un poco menos en el eclipse, que es el final (con la
         /// misma en los tres el bot promedio ganaba de una más seguido que contra los otros jefes).</summary>

@@ -49,11 +49,11 @@ namespace Nindo
         ///                          con lo de C2, contra 7.1 min y 3.3 muertes): puede que muera menos.
         /// Medido en Unity con eso (13 de octubre): bueno 3:29 y promedio 5:01, los dos sin morir (el promedio recibió 320
         /// de daño: la cura por postura lo sostiene). Con vida x3.1, daño x0.39 y postura 15 el promedio se fue a 14:59 con 5
-        /// muertes: con Mizuchi el promedio es muy sensible al daño. Queda vida 4176 (x2.9, el bueno a ~4 min), daño x0.35 y
-        /// postura 17. Más vida alarga la pelea del bueno casi en proporción; más PostureHeal le baja las muertes al promedio
-        /// sin acortarla.
+        /// muertes, y con x2.9 / x0.35 / postura 17 en 4:53 sin morir: con Mizuchi el promedio es muy sensible al daño y
+        /// salta de una pelea a otra. Queda vida 4176 (x2.9, el bueno a ~4 min), daño x0.37 y postura 17. Más vida alarga la
+        /// pelea del bueno casi en proporción; más PostureHeal le baja las muertes al promedio sin acortarla.
         /// </summary>
-        public const float HealthScale = 2.9f, DamageScale = 0.35f, PostureHeal = 17f;
+        public const float HealthScale = 2.9f, DamageScale = 0.37f, PostureHeal = 17f;
         /// <summary>Cura y Espíritu a Kaito al entrar a la fase 2 (corrupción) y a la 3 (la cascada responde). Pesa menos
         /// que la de la postura: el reintento arranca en la fase y no la cobra.</summary>
         static readonly float[] PhaseHeal = { 0f, 25f, 20f };
