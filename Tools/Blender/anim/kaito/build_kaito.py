@@ -403,11 +403,18 @@ SNAP_ARMS = {S: ("Hombro." + S, "Brazo." + S, "Antebrazo." + S, "Mando." + S) fo
 # muralla, el final, la muerte, rezar y juntar algo) se ven de cerca y sin estela: ningún hueso (cadera, tronco, cabeza,
 # hombros, brazos, manos, la katana, piernas) gira más de 45° por cuadro del juego, ni se dobla o se estira el codo más
 # que eso, ni algo junto al piso se corre más de SNAP_LOW_FAIL_CM, y en la pose quieta la mano y los dedos no pasan
-# SNAP_HOLD_DEG. En los golpes, nada pasa de 60°. No cuentan el cuadro del golpe recibido ('impact'), los tramos marcados a
-# propósito ('snap_ok': el latigazo del chiburi, la guardia del parry), los cortes de cámara ('cut'), en el tajo el brazo
-# de la katana (lo tapa la estela; el izquierdo solo si está en la empuñadura) y en un arranque ('burst') las piernas y el
-# cuerpo que salen despedidos: los brazos, siempre
+# SNAP_HOLD_DEG (la izquierda que todavía se acomoda, 'settle_l', con los topes de siempre). En los golpes, nada pasa de 60°.
+# No cuentan el cuadro del golpe recibido ('impact'), los tramos marcados a propósito ('snap_ok': el latigazo del chiburi,
+# la guardia del parry), los cortes de cámara ('cut'), en el tajo el brazo de la katana (lo tapa la estela; el izquierdo solo
+# si está en la empuñadura a los dos lados del cuadro) y en un arranque ('burst') las piernas y el cuerpo que salen
+# despedidos: los brazos, siempre
 SNAP_FAIL_SLOW, SNAP_FAIL_FAST = 45.0, 60.0
+# 'Filo de Ira' (PlayerConfig.rageSpeedMul, 9 s) acelera estos clips: los cortes (TickAttack) y los estados que se quedan con
+# el multiplicador que pone SetState (dash, parry, desvíos, golpes recibidos). Las habilidades con clip propio, el remate y los
+# gestos fijan su velocidad ellos. Se miden también a esa velocidad, solo como aviso
+RAGE_SPEED = 1.12
+RAGE_CLIPS = ("Attack1", "Attack2", "Attack3", "Dash", "ParryStance", "ParrySuccessR", "ParrySuccessL", "PerfectParry", "Blocked",
+              "Hit", "HitBack", "HitLeft", "HitRight", "HitHeavy")
 
 
 def slow_clip(clip):
@@ -431,17 +438,17 @@ def elbow_flex(W, S):
     return math.degrees(math.acos(max(-1.0, min(1.0, u.dot(l)))))
 
 
-def snap_report(rig, clip, frames, roots, ctrls, speed_key="play_speed"):
+def snap_report(rig, clip, frames, roots, ctrls, speed_key="play_speed", extra=1.0):
     """Tirones de un cuadro: cada hueso en el mundo del clip, el codo que se dobla, el que gira alrededor de la recta
     hombro-muñeca, el húmero sobre su eje, lo que se corre junto al piso y la mano quieta en la pose quieta (ver arriba).
     speed_key: la velocidad del código con la que se mide ('play_speed'; 'play_speed_fast' = el camino rápido, que solo
-    avisa: el remate corto toca la carga a x2.8)."""
+    avisa: el remate corto toca la carga a x2.8). extra: un multiplicador más que también solo avisa (la furia, RAGE_SPEED)."""
     t = clip.timing
     ts = t.get("time_scale", 1.0)
     n = clip.frames
     if clip.loop:
         return {}            # los ciclos tienen su costura y su patinada; el pie en vuelo va rápido a propósito
-    fast = speed_key != "play_speed"
+    fast = speed_key != "play_speed" or extra != 1.0
     ok_rng = [tuple(r) for r in t.get("snap_ok", ())]
     cuts = list(t.get("cut", ()))
     # el cuadro en que lo golpean es un sacudón a propósito (el solver tampoco pone topes ahí)
@@ -449,6 +456,10 @@ def snap_report(rig, clip, frames, roots, ctrls, speed_key="play_speed"):
         ok_rng.append((t["impact"] - 1, t["impact"]))
     bursts = [(b - 1, b) for b in t.get("burst", ())]
     hold = t.get("hold")
+    # ('settle_l': cuadros de la pose quieta en que el brazo izquierdo, que acaba de soltar la empuñadura, todavía se acomoda,
+    # como en el Corte final: ahí la mano libre se mide con los topes de siempre y no con el de la pose quieta. Quieta del todo
+    # tenía que llegar desde la empuñadura en un solo cuadro)
+    settle_l = [tuple(r) for r in t.get("settle_l", ())]
     slow = slow_clip(clip)
     lim = SNAP_FAIL_SLOW if slow else SNAP_FAIL_FAST
     # (en las escenas el giro del codo y el del húmero también se cuentan desde 45°)
@@ -484,12 +495,15 @@ def snap_report(rig, clip, frames, roots, ctrls, speed_key="play_speed"):
         if any(f < c < f + 1 for c in cuts):
             continue
         A, B = W[f], W[f + 1]
-        mul = ts * KR.play_speed(t, f, speed_key)
+        mul = ts * KR.play_speed(t, f, speed_key) * extra
         rot = lambda b: NA.quat_angle_deg(A[b].to_quaternion(), B[b].to_quaternion()) * mul
         in_hold = hold is not None and hold[0] <= f < hold[1]
-        # en el tajo la estela tapa el brazo de la katana (KR.cutting); el izquierdo solo si la sostiene con las dos manos
+        quiet = {"R": in_hold, "L": in_hold and not any(a <= f < b for a, b in settle_l), None: in_hold}
+        # en el tajo la estela tapa el brazo de la katana (KR.cutting); el izquierdo solo si la sostiene con las dos manos a los
+        # dos lados del cuadro: la mano que suelta o toma la empuñadura sale de la estela (con max() se eximía el cuadro en que
+        # la soltaba, el peor: el puño saltaba al lado de la cabeza en el impacto del Corte final)
         smear = KR.cutting(clip, f) or KR.cutting(clip, f + 1)
-        hidden = {"R": smear, "L": smear and max(grip_l[f], grip_l[f + 1]) > 0.5}
+        hidden = {"R": smear, "L": smear and min(grip_l[f], grip_l[f + 1]) > 0.5}
         burst = any(a <= f < b for a, b in bursts)
         still = (roots[f + 1] - roots[f]).length < 1e-6
         # los cuadros de una frenada que siguen la carrera ('lead') mueven las piernas como Run a 30 fps (50-60° por cuadro:
@@ -506,14 +520,14 @@ def snap_report(rig, clip, frames, roots, ctrls, speed_key="play_speed"):
                     continue
             elif S is not None and hidden[S]:
                 continue
-            if S is not None and b in fingers[S] and not in_hold:
+            if S is not None and b in fingers[S] and not quiet[S]:
                 # (los dedos se miden respecto de su padre: la mano ya cuenta aparte)
                 r = NA.quat_angle_deg(loc[f][b][1], loc[f + 1][b][1]) * mul
                 if r > SNAP_FINGER_DEG:
                     hits.append((round(r), f, b, "dedo"))
                 continue
             r = rot(b)
-            if in_hold and (b in fingers.get(S, ()) or b == "Mando." + str(S)):
+            if quiet[S] and (b in fingers.get(S, ()) or b == "Mando." + str(S)):
                 if r > SNAP_HOLD_DEG:
                     hits.append((round(r), f, b, "gira en la pose quieta"))
                 continue
@@ -552,11 +566,12 @@ def snap_report(rig, clip, frames, roots, ctrls, speed_key="play_speed"):
     low = lambda h: h[3] == "cm junto al piso"
     bad = [h for h in hits if (low(h) and slow and h[0] > SNAP_LOW_FAIL_CM) or "pose quieta" in h[3]
            or (not low(h) and h[3] != "dedo" and h[0] > lim)]
-    tag = " (camino rápido)" if fast else ""
+    tag = " (camino rápido)" if speed_key != "play_speed" else f" (furia x{extra:g})" if extra != 1.0 else ""
     check(not bad, f"{clip.name}{tag}: ningún tirón de un cuadro pasa {lim:.0f}°{' ni ' + str(int(SNAP_LOW_FAIL_CM)) + ' cm junto al piso' if slow else ''} "
                    f"({len(bad)}: {', '.join(row(*h) for h in bad[:8])}{' ...' if len(bad) > 8 else ''})", warn=fast)
     if fast:
-        return {"snap_fast_max_deg": max((h[0] for h in hits if not low(h) and h[3] != "dedo"), default=0)}
+        return {"snap_fast_max_deg" if speed_key != "play_speed" else "snap_rage_max_deg":
+                max((h[0] for h in hits if not low(h) and h[3] != "dedo"), default=0)}
     check(not hits, f"{clip.name}: sin tirones de un cuadro ({len(hits)}: {', '.join(rows[:10])}{' ...' if len(rows) > 10 else ''})",
           warn="--strict-snaps" not in argv)
     big = [h for h in waived if not low(h) and h[0] > lim]
@@ -734,6 +749,8 @@ def main():
         reports[clip.name].update(snap_report(rig, clip, frames, roots, ctrls))
         if "play_speed_fast" in clip.timing:
             reports[clip.name].update(snap_report(rig, clip, frames, roots, ctrls, "play_speed_fast"))
+        if clip.name in RAGE_CLIPS:
+            reports[clip.name].update(snap_report(rig, clip, frames, roots, ctrls, extra=RAGE_SPEED))
         baked.append((clip, frames))
         rootsd[clip.name] = roots
     reports["_chains"] = chain_report(rig, baked)

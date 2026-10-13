@@ -532,24 +532,36 @@ _a3_air = feet(mod(_a3_raise, hips=(0.0, 0.02, -0.08), hips_rot=(4.0, 0.0, -22.0
 _a3_over = feet(mod(_a3_air, hips=(0.0, -0.04, -0.06), hips_rot=(10.0, 0.0, -8.0), spine=(6.0, 0.0, -6.0), head=(-12.0, 0.0, 6.0), lift=0.2,
                     grip=(-0.22, -0.36, 2.06), blade=(-0.99, -0.14, 0.02), edge=(0.07, -0.38, 0.92)),
                 r=fa(-0.3, -0.4, 0.42, T3[6], -14.0, 2.0), l=fa(0.26, 0.3, 0.45, T3[6], 20.0, 20.0))
+# El impacto, con las DOS manos en la empuñadura (el hit-stop lo congela 0.11 s): la hoja adelante y un poco abajo (17°), el
+# filo como lo pone el camino (ahí la mano derecha no lo puede llevar abajo: con la hoja acostada y el filo a su izquierda el
+# camino la giraba 88° en este cuadro). Con la hoja apuntando adelante a su derecha la izquierda no tenía cómo tomar la
+# empuñadura (la muñeca dada vuelta 110-120°) y se soltaba acá: el puño saltaba al lado de la cabeza (130° en un cuadro).
+# El codo izquierdo va abajo y atrás (timing 'pin_l': el camino lo dejaba de punta) y el derecho afuera, sin bajar (con el
+# polo abajo el camino del despegue giraba ese codo 60° por cuadro de f2 a f5 y el húmero daba 64° en f4-f5)
 _a3_hit = feet(mod(READY, lift=0.0, hips=(0.0, -0.12, -0.15), hips_rot=(18.0, 0.0, 10.0), spine=(18.0, 0.0, 6.0), head=(-22.0, 0.0, -6.0),
-                   clav_r=(0.0, -4.0, 4.0), clav_l=(0.0, 4.0, 4.0), grip=(-0.06, -0.68, 1.29), blade=(-0.27, -0.96, -0.05),
-                   edge=(0.85, -0.26, 0.45), elbow_r=(-0.8, 0.3, -0.3), grip_l=0.2, elbow_l=(0.6, 0.3, -0.7), fingers_l=1.0,
-                   hand_l=(0.5, -0.12, 1.3), hand_l_dir=(0.6, 0.3, -0.4), hand_l_up=(0.0, 0.3, 1.0)),
+                   clav_r=(0.0, -4.0, 4.0), clav_l=(0.0, 4.0, 4.0), grip=(-0.06, -0.68, 1.29), blade=(-0.01, -0.96, -0.29),
+                   edge=(-0.59, -0.23, 0.77), elbow_r=(-0.8, 0.3, 0.0), grip_l=1.0, elbow_l=(0.2, 0.7, -0.7), fingers_l=1.0),
                r=fr("R", -0.27, -0.42, T3[7], 4.0), l=fr("L", 0.3, 0.38, T3[7], 26.0, 34.0))
-# la mano izquierda suelta la empuñadura en el impacto y se abre a su izquierda: a medio camino al caer (f8) y del todo en la
-# pose quieta (f11, menos de 20° por cuadro). Abierta entera en f8 el brazo daba 70-77° en el cuadro que sigue al tajo
+# la mano izquierda suelta la empuñadura DESPUÉS del impacto, mientras la hoja sigue sola abajo a su izquierda, y cae floja
+# delante de la cadera izquierda: casi la mitad del camino en f8 y el resto, que el brazo termina de acomodar, en la pose
+# quieta (f8-f11, 'settle_l'). La muñeca se desenrosca de la empuñadura a recta de a poco (hand_l_relax 0.5 en f8, 1 en f11) y
+# sigue floja en la vuelta; los dedos se abren en los mismos cuadros (de golpe en f8 daban 74°). Abierta a su izquierda y
+# atrás, como antes, el brazo tenía que dar 150° desde la empuñadura (adelante y adentro) en esos cuatro cuadros; quieta
+# delante del pecho quedaba con el puño bajo el mentón y el codo atrás
 A3_LOW = feet(mod(_a3_hit, hips=(0.0, -0.16, -0.27), hips_rot=(22.0, 0.0, 18.0), spine=(22.0, 0.0, 10.0), head=(-26.0, 0.0, -10.0),
-                  grip=(0.2, -0.49, 0.5), blade=(0.98, 0.07, 0.19), edge=(0.17, 0.22, -0.96), grip_l=0.0, fingers_l=0.3,
-                  hand_l=(0.38, -0.05, 1.38), hand_l_dir=(0.64, 0.75, 0.17), hand_l_up=(-0.47, 0.16, 0.87), elbow_l=(0.6, 0.6, -0.4)),
+                  grip=(0.2, -0.49, 0.5), blade=(0.98, 0.07, 0.19), edge=(0.17, 0.22, -0.96), grip_l=0.0, fingers_l=0.65,
+                  hand_l=(0.178, -0.473, 1.029), hand_l_dir=(-0.521, -0.145, 0.841), hand_l_up=(-0.838, 0.272, -0.472), hand_l_relax=0.5,
+                  elbow_l=(0.4, 0.7, -0.6)),
               r=fr("R", -0.27, -0.42, T3[8], 4.0), l=fr("L", 0.3, 0.38, T3[8], 26.0, 34.0))
 _a3_hold = feet(mod(A3_LOW, hips=(0.0, -0.17, -0.29), grip=(0.21, -0.48, 0.51), blade=(0.98, 0.06, 0.17), head=(-27.0, 0.0, -10.0),
-                    hand_l=(0.6, 0.12, 1.18), hand_l_dir=(0.75, 0.4, -0.3), hand_l_up=(0.0, 0.2, 1.0)),
+                    hand_l=(0.368, -0.539, 0.816), hand_l_relax=1.0, fingers_l=0.3),
                 r=fr("R", -0.27, -0.42, T3[11], 4.0), l=fr("L", 0.3, 0.38, T3[11], 26.0, 34.0))
-# (el brazo izquierdo, abierto por el tajo, vuelve último: entero ya en f15 el codo daba vuelta 75° en un cuadro)
-_a3_rec = feet(mod(READY, hips=(0.0, 0.0, -0.14), grip_l=0.0, fingers_l=0.8,
-                   **{k: v for k, v in inter(_a3_hold, READY, 0.5).items() if k in ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l")}),
+# (floja también en la vuelta y recién en la guardia toma la suya: de la empuñadura a la de la guardia la mano gira 172°, y
+# con la dirección y el dorso autorados y mezclados por separado el dorso daba media vuelta en f16 y el húmero se retorcía 65°)
+_a3_rec = feet(mod(READY, hips=(0.0, 0.0, -0.14), grip_l=0.0, fingers_l=0.8, hand_l_relax=1.0,
+                   **{k: v for k, v in inter(_a3_hold, READY, 0.5).items() if k in ("hand_l", "elbow_l")}),
                r=fa(-0.24, -0.3, 0.3, T3[15], 0.0, 6.0), l=fr("L", 0.3, 0.38, T3[15], 30.0))
+_A3_FREE = ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l", "hand_l_relax", "fingers_l")
 # la mano izquierda gira libre hacia el agarre (el dorso pasa de adelante a atrás) ANTES de tomar la empuñadura: girando
 # a mitad de camino con el agarre a medias la muñeca se quebraba 30° y el antebrazo daba media vuelta
 # ...y la hoja pasa vertical junto a la cabeza, el puño a la altura de la sien y el filo adelante y a su derecha (un hasso
@@ -583,13 +595,15 @@ add("Attack3", A3_N, [
     # (de A2_END a la carga parejo: con "out" el 87 % entraba en f1 y los dos codos se estiraban 70° de golpe)
     (0, A2_END, "sine"), (2, _a3_reach, "sine"), (3, _a3_mid, "inout", _A3_LIFT), (4, _a3_raise4, "out", _A3_LIFT),
     (5, _a3_air, "inout", _A3_LIFT), (6, _a3_over, "in2"), (7, _a3_hit, "lin"),
-    (8, A3_LOW, "out"), (11, _a3_hold, "lin"), (15, _a3_rec, "sine"),
+    (8, A3_LOW, "out"), (11, _a3_hold, "lin", {ch: "lin" for ch in _A3_FREE}), (15, _a3_rec, "sine"),
     (17, feet(mod(READY, hips=(0.0, 0.01, -0.09)), r=fr("R", R_FOOT[0], R_FOOT[1], T3[17], R_FOOT[2]), l=fa(L_FOOT[0], L_FOOT[1], 0.4, T3[17], 8.0, L_FOOT[2])),
      "sine"),
     (20, feet(READY, r=fr("R", R_FOOT[0], R_FOOT[1], T3[20], R_FOOT[2]), l=fr("L", L_FOOT[0], L_FOOT[1], T3[20], L_FOOT[2])), "sine")],
     travel=A3_TR,
     timing={"apex": 3, "contact": 7, "active": [7, 10], "hold": [8, 11], "lunge": [3, 7, 1.6], "chain_from": "A2_END",
-            "chain_to": "READY", "swing": [[0, 6]]},
+            "chain_to": "READY", "swing": [[0, 6]], "pin_l": [7], "settle_l": [[8, 11]]},
+    # (la mano izquierda sin retraso: con el de LEAD, en el impacto la libre seguía 0.6 cuadros atrás, arriba de la cabeza)
+    lag=mod(LEAD, hand_l=0.0),
     events=[{"frame": 7, "fn": "Strike"}, {"frame": 7, "fn": "Land"}],
     notes="salto con las dos manos, la hoja pasa por arriba y cruza en diagonal; cae con la hoja baja y queda quieto 3 cuadros")
 
@@ -1091,8 +1105,10 @@ add("Finisher", 106, [
     timing={"strike": 54, "zanshin": [55, FINISHER_HOLD_END], "hold": [55, FINISHER_HOLD_END], "skip": [FINISHER_SKIP_FROM, FINISHER_HOLD_END],
             "chiburi": [FINISHER_HOLD_END, 92], "guard": 98, "skid": [[54, 55]], "cut": [54.5], "snap_ok": [[89, 90]],
             # el cinemático toca la carga a x1.7 y el zanshin a x1; el corto (el de casi todos los enemigos) toca a x2.8 hasta
-            # que salta del zanshin al chiburi (PlayerController.TryFinisher / TickFinisher). Desde el chiburi es un gesto a x1
-            "play_speed": [[0, 55, 1.7]], "play_speed_fast": [[0, FINISHER_SKIP_FROM, 2.8]]},
+            # que salta del zanshin al chiburi 0.2 s después del tajo (f71.2: el paso f71-f72 se ve en parte; PlayerController
+            # TryFinisher / TickFinisher). Desde el chiburi, en los dos, es un gesto a x1 (EndFinisher): a la velocidad del
+            # remate el latigazo daba 83-114° por cuadro (x1.7) y 137-188° (x2.8)
+            "play_speed": [[0, 55, 1.7]], "play_speed_fast": [[0, FINISHER_SKIP_FROM + 1, 2.8]]},
     events=[{"frame": 54, "fn": "Strike"}],
     notes="iai: cargado y temblando hasta f54, en f55 ya cortó y está del otro lado; zanshin hasta f86 (el cinemático lo "
           "toca a x1 con la cámara encima), chiburi, un paso y en f98 está en la guardia")

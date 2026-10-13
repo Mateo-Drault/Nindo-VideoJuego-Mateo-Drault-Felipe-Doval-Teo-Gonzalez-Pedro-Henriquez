@@ -1274,12 +1274,14 @@ def step_caps(clip):
 
 
 def left_caps(caps, grips):
-    """Topes del brazo izquierdo: los de step_caps, salvo en los tajos con la mano izquierda suelta (grip_l <= 0.5 a los dos
-    lados del cuadro), que van con el tope de siempre. La estela tapa la katana, no la mano libre: estirado como el de la
-    katana, en el Corte 2 el brazo izquierdo volaba de la cadera a la horizontal y volvía al pecho en dos cuadros (144°)."""
+    """Topes del brazo izquierdo: los de step_caps, salvo en los tajos en que la mano izquierda no va en la empuñadura a los
+    dos lados del cuadro (grip_l <= 0.5 en alguno: suelta, o la suelta o la toma en ese cuadro), que van con el tope de
+    siempre. La estela tapa la katana, no la mano libre: estirado como el de la katana, en el Corte 2 el brazo izquierdo
+    volaba de la cadera a la horizontal y volvía al pecho en dos cuadros (144°), y en el Corte final la mano que soltaba la
+    empuñadura en el impacto saltaba al lado de la cabeza (130°)."""
     out = np.array(caps, float)
     for f in range(1, len(out)):
-        if out[f] == CAP_SMEAR and max(grips[f - 1], grips[f]) <= 0.5:
+        if out[f] == CAP_SMEAR and min(grips[f - 1], grips[f]) <= 0.5:
             out[f] = 1.0
     return out
 
@@ -1619,16 +1621,25 @@ def arm_path(rig, solver, clip):
     axes_l = [(SWIVELS_L, STEP_COST["swivel_l"], True, STEP_CAP["swivel_l"])]
     for f, st in follow.items():
         pins_l[f] = _nearest(SWIVELS_L, st[3], True)
+    # (los cuadros 'pin_l' del timing llevan el codo izquierdo adonde la mano queda cómoda en la empuñadura: el impacto del
+    # Corte final, con las dos manos en la empuñadura, que el hit-stop congela. El costo del cuadro no sirve ahí: con el brazo
+    # adelante y adentro el húmero está a más de 90° de su reposo y el giro del hombro (SHOULDER_SWING_MAX) le cobraba 159° al
+    # codo abajo y atrás; el camino elegía el codo de punta, con la muñeca dada vuelta 110-140°)
+    for f in clip.timing.get("pin_l", ()):
+        solver.eval_left(ctx_l[f], hands_l[f], np.array(SWIVELS_L))
+        pins_l[f] = int(np.argmin(wrist_cost_np(*solver.last_ang_l[:3], "L")))
     ease_l = step_ease([np.array(rot3(h).col[1]) for h in hands_l], [np.array(h.translation) for h in hands_l], ts)
     # (la mano izquierda ya está decidida: la referencia de su codo gira lo mismo para todos los giros)
     refs_l = [ctx_l[f]["afl"].refs(np.array(hands_l[f].translation), ctx_l[f]["pole_l"], "L") for f in range(n + 1)]
+    # (el codo de verdad también en los tajos: con las dos manos en la empuñadura la referencia del codo izquierdo gira con la
+    # katana, y contando ahí solo el número del camino el codo más cercano en número era otro, de punta: el húmero daba
+    # 140-150° en el impacto del Corte final. El tope de esos cuadros sigue estirado, left_caps)
     rho_l = [0.0] + [float(transport_deg(*refs_l[f - 1], *refs_l[f])) for f in range(1, n + 1)]
-    rho_lc = [r if caps_l[f] != CAP_SMEAR else 0.0 for f, r in enumerate(rho_l)]
-    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l, caps_l, wr_l, rho=(0, lambda f: rho_lc[f]), spin=spin_l)
+    path_l = dp_path(loc_l, axes_l, pins_l, ts, ease_l, caps_l, wr_l, rho=(0, lambda f: rho_l[f]), spin=spin_l)
     for f, st in follow.items():
         path_l[f] = st[3:4]
     path_l = refine_path(lambda f, cand: solver.eval_left(ctx_l[f], hands_l[f], cand[:, 0]), path_l, pins_l, axes_l, ts,
-                         ease_l, caps=caps_l, rho=(0, lambda fa, a, fb, b: np.full(max(len(a), len(b)), rho_lc[fb])))
+                         ease_l, caps=caps_l, rho=(0, lambda fa, a, fb, b: np.full(max(len(a), len(b)), rho_l[fb])))
     solver.path_ease = (ease, ease_l)          # build_kaito: los tirones que cuentan son los que el gesto no tapa
     solver.path_caps = (caps, caps_l)
     # ...y el codo de verdad: lo que giró la referencia de cada codo en el camino elegido (el giro del camino solo no dice)
