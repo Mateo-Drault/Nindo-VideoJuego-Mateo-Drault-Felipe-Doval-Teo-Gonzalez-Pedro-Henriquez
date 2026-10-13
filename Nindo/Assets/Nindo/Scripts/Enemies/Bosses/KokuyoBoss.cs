@@ -10,15 +10,15 @@ namespace Nindo
     ///  * Acto 1 "El Maestro" (100-70 %): su sombra en el piso actúa cada golpe 0.36 s antes que el cuerpo (el doble
     ///    de PlanarShadow muestreado más adelante en el mismo clip). Una sola cosa por vez: parry, dash, castigo. Y a
     ///    veces la sombra ataca sola (Kage-nobi): él se queda quieto y ella se estira por el piso hasta Kaito.
-    ///  * Acto 2 "La Sombra Suelta" (70-36 %): se la arranca (Kage, un segundo cazador que no se puede cortar) y el cuerpo
+    ///  * Acto 2 "La Sombra Suelta" (70-40 %): se la arranca (Kage, un segundo cazador que no se puede cortar) y el cuerpo
     ///    queda sin sombra. Pelean de a dos (turnos y dúos, KokuyoBoss.Shadow), nunca a menos de 0.9 s uno del otro.
-    ///  * Acto 3 "Eclipse" (36-10 %): cierra el puño sobre la luna. Sin luz no hay sombra que avise: quedan el anillo, el
+    ///  * Acto 3 "Eclipse" (40-10 %): cierra el puño sobre la luna. Sin luz no hay sombra que avise: quedan el anillo, el
     ///    destello y el hyōshigi; cada parry devuelve la luz. La sombra sigue ahí: sale de la oscuridad un segundo antes
     ///    de cortar (dorado, se desvía). La bandana de Kaito alumbra.
     ///  * Última resistencia (10 %): el Último Desfile termina de rodillas sí o sí y solo ahí se lo puede ejecutar.
     /// Los cambios de acto son escenas cortas e invulnerables (los golpes rebotan) que curan a Kaito: no hay esbirros.
-    /// Los pisos de vida en cada umbral hacen que cada acto dure lo que tiene que durar; a mitad de cada acto cambia el
-    /// ritmo (KokuyoBoss.Pacing).
+    /// Los pisos de vida en cada umbral hacen que cada acto dure lo que tiene que durar; en cada tramo de un acto cambia
+    /// el ritmo y Kaito recupera aire (KokuyoBoss.Pacing).
     /// </summary>
     public partial class KokuyoBoss : Boss, ICameraProfile
     {
@@ -33,17 +33,16 @@ namespace Nindo
         public float CameraPitch => 54f;
         public float CameraExtraDistance => 2f;
 
-        /// <summary>Vida (fracción) en la que termina cada acto: 1 → 70 %, 2 → 36 %, 3 → 10 % (la última resistencia).
-        /// Con la vida doble el Acto 1 (el que enseña) pesa menos y el eclipse más: simulado con el bot "bueno", los
-        /// actos duran ~24 / 27 / 21 s (con 65/30 el eclipse quedaba en 16 s y el Acto 1 en 26).</summary>
-        static readonly float[] Gates = { 1f, 0.70f, 0.36f, 0.10f };
+        /// <summary>Vida (fracción) en la que termina cada acto: 1 → 70 %, 2 → 40 %, 3 → 10 % (la última resistencia). Un
+        /// 30 % de la barra para cada uno: con 70/36 el Acto 2 (sombra suelta, el que más tarda por punto de vida) se comía
+        /// el 34 % y el eclipse, que es el final, el 26 %. Simulado con el bot "bueno" y la vida de hoy, los actos duran
+        /// ~55 / 72 / 62 s (kk_fix_run.py actos).</summary>
+        static readonly float[] Gates = { 1f, 0.70f, 0.40f, 0.10f };
         /// <summary>Postura con la que queda de rodillas al terminar un combo: en el Acto 1 alcanza un parry (enseña);
         /// después hacen falta dos (los puntos se acumulan entre combos).</summary>
         const float KneelThresholdFirst = 1f, KneelThreshold = 2f;
         /// <summary>De rodillas aguanta 8 golpes (no 4): la ventana entera de 3.6 s vale la pena.</summary>
         const int KneelHitCap = 8;
-        // 40 de vida (antes 30): con la vida doble cada acto dura más y la cura tiene que alcanzar para el siguiente
-        const float TransitionHeal = 40f, TransitionSpirit = 30f;
         /// <summary>Paso de Sombra: si el charco no llega (borde de la malla, un brasero en el camino) sale igual.</summary>
         const float SinkTimeout = 1.8f;
         /// <summary>De rodillas los golpes lo devuelven a este punto del Kneel como mucho: después del último
@@ -304,6 +303,8 @@ namespace Nindo
                 prevChainTo = c.ChainTo;
             }
             afterRecoil = false;
+            // él vuelve a atacar: la segunda salida de la sombra que no llegó se pierde (no se le pega a su combo)
+            if (step == 0) darkEncore = false;
             OnPacingPatternStarted();
             if (a.special == KokuyoMoves.Sink) BeginSink(); else if (sinking) EndSink();
             if (a.state == KokuyoTimings.ShadowEmerge.State)
@@ -726,6 +727,7 @@ namespace Nindo
             base.BecomeExhausted();
             kneelStart = Time.time;
             kneelClock = 0f;
+            darkEncore = false;
             if (look == null) return;
             look.FlareAll();
             Game.FX?.Dust(transform.position + transform.forward * 0.8f, 1.6f);
@@ -900,13 +902,14 @@ namespace Nindo
                 p.Push(p.transform.position - transform.position, meters);
         }
 
-        /// <summary>No hay esbirros que curen: cada cambio de acto le devuelve vida y Espíritu, con la bandana.</summary>
+        /// <summary>No hay esbirros que curen: cada cambio de acto le devuelve vida y Espíritu, con la bandana (las perillas
+        /// están en KokuyoMoves, con la vida y el daño).</summary>
         void RewardKaito()
         {
             var p = Game.Player;
             if (p == null || !p.IsAlive) return;
-            p.Heal(TransitionHeal);
-            p.AddSpirit(TransitionSpirit);
+            p.Heal(KokuyoMoves.TransitionHeal);
+            p.AddSpirit(KokuyoMoves.TransitionSpirit);
             Game.FX?.HealBurst(p.transform.position);
             BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 1f);
         }

@@ -18,24 +18,34 @@ namespace Nindo
     ///  * cada especial tiene UNA espera aunque lo usen dos patrones (el de cerca y el "desde lejos"): antes la
     ///    retirada con tormenta podía seguir con otra tormenta enseguida. Y después de una retirada los especiales de
     ///    distancia esperan un poco (Kaito vuelve; no es una ráfaga de dos especiales).
-    /// Perillas del balance final: HealthScale (la vida) y DamageScale (lo que pega).
+    ///  * cada postura rota (el koi varado por los 4 pips, no los varados gratis de la zambullida y los pilares) le
+    ///    devuelve vida a Kaito: como los tramos de la armadura de Gorō, la pelea larga no es puro desgaste.
+    /// Todas las perillas del balance juntas acá abajo: vida, daño y sustento.
     /// </summary>
     public partial class MizuchiBoss
     {
         /// <summary>
-        /// Las dos perillas del balance final (EnemyArchetypes.Mizuchi las aplica): HealthScale multiplica la vida pedida
-        /// (1440, el doble de antes) y DamageScale el daño de diseño de todos sus golpes (perlas, saltos, ola y pilares
-        /// incluidos). Simulado con los bots de AutoPilot (el promedio recalibrado) y el reintento por fase
-        /// (Tools/Dev/boss_sims/mizuchi_sim.py, cfg 'retry'; minutos hasta ganar con los reintentos, 60 peleas):
-        ///   vida 1440, daño 0.7:  bueno 1.8 min y 0.5 muertes; promedio 4.4 min y 3.7 muertes (sin reintento por fase:
-        ///                          16 min y 10 muertes, no ganaba);
-        ///   vida 1800, daño 0.5:  bueno 2.1 min y 0.2 muertes; promedio 5.3 min y 3.2 muertes;
-        ///   vida 2160, daño 0.35: bueno 2.4 min y 0.05 muertes; promedio 4.8 min y 1.9 muertes; humano 2.7 min y 0.3
-        ///                          muertes (lo de hoy).
-        /// El bot promedio falla ~45 % de los golpes del koi (el bueno 25 %): con más daño no termina. El tiempo real es
-        /// ~1.4 veces el simulado: medirlo con "bot on bueno" y "bot on promedio" y ajustar acá.
+        /// Las perillas del balance final. HealthScale multiplica la vida pedida (1440, el doble de antes) y DamageScale
+        /// el daño de diseño de todos sus golpes (perlas, saltos, ola y pilares incluidos); EnemyArchetypes.Mizuchi aplica
+        /// las dos. PostureHeal es lo que Kaito recupera en cada postura rota y PhaseHeal lo de cada cambio de fase.
+        /// Simulado con los bots de AutoPilot, el reintento por fase y la cura por postura
+        /// (Tools/Dev/boss_sims/mz_run.py tuning bueno,promedio,humano 200; minutos simulados hasta ganar con los reintentos):
+        ///   vida 2160, daño 0.35, sin cura por postura: bueno 2.4 min; promedio 4.7 min, 1.9 muertes y 7 % gana sin morir
+        ///                          (lo de antes: el bueno muy corto y el promedio casi siempre muere);
+        ///   vida 3240, daño 0.33, sin cura por postura: bueno 3.6 min; promedio ~5 muertes (la pelea larga desgasta);
+        ///   vida 2880, daño 0.33, postura 14: bueno 3.2 min; promedio 4.4 min, 0.7 muertes y 50 % sin morir;
+        ///   vida 3240, daño 0.33, postura 10: bueno 3.6 min; promedio 6.1 min, 1.7 muertes;
+        ///   vida 3240, daño 0.33, postura 14: bueno 3.6 min; promedio 5.6 min, 1.1 muertes y 29 % sin morir; humano
+        ///                          3.8 min y 0.1 muertes (lo de hoy: ~11 posturas rotas por pelea el bueno, ~9 el promedio).
+        /// El bot promedio falla ~45 % de los golpes del koi (el bueno 25 %). El tiempo real es ~1.4 veces el simulado
+        /// (un solo dato): medirlo con "bot on bueno" y "bot on promedio" y ajustar acá. Más vida alarga la pelea del bueno
+        /// casi en proporción; más PostureHeal le baja las muertes al promedio sin acortarla.
         /// </summary>
-        public const float HealthScale = 1.5f, DamageScale = 0.35f;
+        public const float HealthScale = 2.25f, DamageScale = 0.33f, PostureHeal = 14f;
+        /// <summary>Cura y Espíritu a Kaito al entrar a la fase 2 (corrupción) y a la 3 (la cascada responde). Pesa menos
+        /// que la de la postura: el reintento arranca en la fase y no la cobra.</summary>
+        static readonly float[] PhaseHeal = { 0f, 25f, 20f };
+        const float PhaseSpirit = 20f;
 
         /// <summary>
         /// Reintento: la pelea vuelve en la fase más alta a la que llegó Kaito (como las fases de Chikuō y los actos de
@@ -105,10 +115,6 @@ namespace Nindo
         // las firmas de la fase en curso que todavía no salieron, con su peso de siempre (como mucho dos)
         readonly AttackPattern[] signature = new AttackPattern[2];
         readonly float[] signatureWeight = new float[2];
-
-        /// <summary>Cura y Espíritu a Kaito al entrar a la fase 2 (corrupción) y a la 3 (la cascada responde).</summary>
-        static readonly float[] PhaseHeal = { 0f, 25f, 20f };
-        const float PhaseSpirit = 20f;
 
         // la retirada: a esta distancia de Kaito (el chorro llega a 11 m, las perlas salen desde 6) y adentro de este radio
         const float RetreatDistance = 8f, RetreatMinDistance = 5.5f, RetreatDeck = 6.5f, RetreatTurn = 0.45f;
@@ -194,6 +200,19 @@ namespace Nindo
             p.Heal(heal);
             p.AddSpirit(PhaseSpirit);
             BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 1f);
+        }
+
+        /// <summary>
+        /// Le rompió la postura (el koi queda varado por los 4 pips o por el peloteo fallado): la bandana le devuelve
+        /// PostureHeal. Los varados gratis (después de la zambullida y los pilares) no: esos no los ganó Kaito.
+        /// </summary>
+        void RewardPosture()
+        {
+            var p = Game.Player;
+            if (p == null || !p.IsAlive || PostureHeal <= 0f) return;
+            p.Heal(PostureHeal);
+            Game.FX?.HealBurst(p.transform.position);
+            BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 0.6f);
         }
 
         /// <summary>

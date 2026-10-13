@@ -4,9 +4,12 @@ turnos y dúos de KokuyoBoss.Shadow, la regla del Gap) más lo que faltaba para 
     30 y dan 30 de Espíritu), la última resistencia (Último Desfile -> de rodillas -> ejecución);
   * el ataque del bot (kaito.py): solo pega si nadie amenaza (anillo a la vista) y él no está en guardia; en neutral
     aguanta 4 golpes (poiseHits) y el quinto rebota; de rodillas x1.3 y 8 golpes como mucho;
-  * la defensa del bot con su vida: si muere, la pelea vuelve a empezar (desde el 65 % si ya vio el eclipse) y se cobra
-    lo que tarda en volver (RESPAWN s).
-Uso: python fight_kokuyo.py [nivel] [corridas]   (variables: KHP, GATES="0.65,0.30,0.10", HEAL, ...)
+  * la defensa del bot con su vida: si muere, la pelea vuelve a empezar (desde el 70 % si ya vio el eclipse) y se cobra
+    lo que tarda en volver (RESPAWN s);
+  * el sustento y la segunda salida de la fase C3 (claves de cfg): 'stage_heal' (KokuyoMoves.StageHeal, en el golpe que
+    cruza cada corte de tramo), 'kneel_heal' (probado y descartado: premia al que ya no muere), 'encore' y 'encore_wait'
+    (KokuyoBoss.Shadow.EncoreChance / EncoreWait: en el eclipse la sombra vuelve a salir del otro lado y él espera).
+Uso: python fight_kokuyo.py [nivel] [corridas] con la config vieja (CFG); con la de hoy, kk_fix_run.py (TUNING).
 """
 import os, sys, json, random, statistics
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -55,6 +58,8 @@ class Fight(D.Sim):
         self.d = 4.6
         self.last_dark_side = "flank"
         self.nobi_log = []
+        self.encore_pending = False
+        self.encores = 0
         if start_act >= 2:
             # arranque rápido del reintento: la sombra ya arrancada
             self.begin_transition(2, quick=True)
@@ -62,6 +67,10 @@ class Fight(D.Sim):
     # ---------------------------------------------------------------- reglas nuevas
     def kneel(self, t):
         super().kneel(t)
+        self.encore_pending = False
+        # cfg 'kneel_heal': cada vez que cae de rodillas (postura rota) Kaito se cura
+        if self.cfg.get("kneel_heal") and not self.last_stand:
+            self.kaito.heal(self.cfg["kneel_heal"])
         self.kneel_until = t + self.cfg["kneel"]
         self.bnext = self.kneel_until + 0.3
         self.kneel_hits = 0
@@ -88,6 +97,9 @@ class Fight(D.Sim):
         self.stage += 1
         self.escalated = True
         self.roar_pending = True
+        # cfg 'stage_heal': cada corte del acto cura a Kaito en el golpe que lo cruza (KokuyoBoss.Pacing, como los
+        # tramos de la armadura de Gorō)
+        self.kaito.heal(self.cfg.get("stage_heal", 0.0))
         if self.stage >= 2:
             self.add_stage2(a)
             return
@@ -341,11 +353,20 @@ class Fight(D.Sim):
                         if "w0" in p:
                             p["w"] = p["w0"]
                         self.bpat = p; self.bsteps = p["steps"]; self.bi = 0; self.bstate = "attack"
+                        self.encore_pending = False
                         self.begin_body_step()
             # ---- director de la sombra (el del duet_sim)
             if self.shadow_allowed() and self.sstate == "hunt" and self.body_free() and self.bstate != "attack" and self.shadow_can():
                 a = self.act
-                if t >= self.act_start + D.FIRST_TURN[a] and t >= self.last_turn + self.tg[a] and t >= self.roar_until:
+                if a == 3 and self.encore_pending and t >= self.roar_until:
+                    # la segunda salida del eclipse (KokuyoBoss.Shadow.EncoreChance): del otro lado, sin esperar turno
+                    sd = "opp" if self.last_dark_side == "flank" else "flank"
+                    if self.shadow_try("giri", False, sd):
+                        self.last_dark_side = sd
+                        self.encore_pending = False
+                        self.encores += 1
+                        self.bnext = max(self.bnext, self.simpact + D.BODY_AFTER)
+                elif t >= self.act_start + D.FIRST_TURN[a] and t >= self.last_turn + self.tg[a] and t >= self.roar_until:
                     quiet = t >= max(self.last_turn, self.act_start) + self.mq[a]
                     if self.turn_asked or quiet or (a == 1 and not self.nobi_taught):
                         sd = "any"
@@ -359,6 +380,10 @@ class Fight(D.Sim):
                         ok = self.shadow_try(mv, False, sd) or (a >= 2 and self.shadow_try("giri", False, sd))
                         if ok and a == 3:
                             self.last_dark_side = sd
+                            if self.rng.random() < self.cfg.get("encore", 0.0):
+                                # el cuerpo espera: la sombra vuelve a la oscuridad y sale otra vez del otro lado
+                                self.encore_pending = True
+                                self.bnext = max(self.bnext, self.simpact + self.cfg.get("encore_wait", 3.0))
                         if ok:
                             self.turn_asked = False
                             self.bnext = max(self.bnext, self.simpact + (0.4 if a == 1 else D.BODY_AFTER))

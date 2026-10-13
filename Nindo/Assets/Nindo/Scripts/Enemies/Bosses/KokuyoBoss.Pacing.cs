@@ -3,10 +3,11 @@ using UnityEngine;
 namespace Nindo
 {
     /// <summary>
-    /// El ritmo de la pelea larga: cada acto se parte en tramos. Con la vida de hoy (1800) son dos mitades; si el balance
-    /// final sube la vida (KokuyoMoves.HealthScale) a ThirdsFrom o más, son tres tercios, para que cada tramo siga
-    /// durando lo mismo (~12-15 s) y no se vuelva la misma media pelea dos veces. Al cruzar cada corte, al terminar su
-    /// combo él se planta y ruge (un respiro de 1.3 s para los dos: los golpes rebotan, la sombra espera) y desde ahí:
+    /// El ritmo de la pelea larga: cada acto se parte en tramos. Con menos de ThirdsFrom de vida son dos mitades; con la
+    /// de hoy (KokuyoMoves.HealthScale) son tres tercios, para que cada tramo no se vuelva la misma pelea dos veces. El
+    /// golpe que cruza cada corte le enciende las grietas y le devuelve aire a Kaito (KokuyoMoves.StageHeal: como los
+    /// tramos de la armadura de Gorō, la pelea larga no es puro desgaste). Al terminar su combo él se planta y ruge (un
+    /// respiro de 1.3 s para los dos: los golpes rebotan, la sombra espera) y desde ahí:
     ///  * suma el patrón de ese tramo (KokuyoMoves.Escalation), que la primera vez pesa el triple para que se vea;
     ///  * sus especiales vuelven antes (x0.75 en cada corte) y el Paso de Sombra hierve menos bajo el piso (sale antes);
     ///  * su sombra toma turnos más seguido (esperas x0.8, después x0.65).
@@ -67,6 +68,7 @@ namespace Nindo
             if (stage >= StageCount || LastStand || transition != null || !IsAlive || Health > StageAt(stage + 1)) return;
             stage++;
             breatherPending = true;
+            RewardStage();
             // el anterior, si todavía no salió, deja de pesar el triple: el nuevo es el que se enseña ahora
             if (stagePattern != null) stagePattern.weight = stageBaseWeight;
             var extra = KokuyoMoves.Escalation(Mathf.Clamp(Act, 1, 3), stage);
@@ -80,6 +82,21 @@ namespace Nindo
             list[old.Length] = extra;
             config.patterns = list;
             stagePattern = extra;
+        }
+
+        /// <summary>
+        /// Cruzó un corte: se le encienden todas las grietas (el tramo se rompió) y la bandana le devuelve StageHeal a
+        /// Kaito en el mismo golpe, aunque esté de rodillas (el rugido llega después, al terminar su combo).
+        /// </summary>
+        void RewardStage()
+        {
+            look?.FlareAll();
+            Game.Camera?.Shake(0.2f);
+            var p = Game.Player;
+            if (p == null || !p.IsAlive || KokuyoMoves.StageHeal <= 0f) return;
+            p.Heal(KokuyoMoves.StageHeal);
+            Game.FX?.HealBurst(p.transform.position);
+            BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 0.8f);
         }
 
         /// <summary>

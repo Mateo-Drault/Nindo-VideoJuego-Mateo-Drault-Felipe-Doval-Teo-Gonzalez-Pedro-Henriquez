@@ -375,6 +375,8 @@ namespace Nindo
         {
             if (inCinematic) return;
             base.BecomeExhausted();
+            // la postura rota le devuelve vida a Kaito (MizuchiBoss.Pacing); el varado gratis de un salto no
+            if (!freeBeach && State == EnemyState.Exhausted) RewardPosture();
             config.animHit = "Exhausted";
             // de flotar a echado: cae de costado (BreachLand 3-12) y recién después el loop de varado
             anim.Play("BreachLand", 0.15f, beachLanding ? 0f : 0.06f);
