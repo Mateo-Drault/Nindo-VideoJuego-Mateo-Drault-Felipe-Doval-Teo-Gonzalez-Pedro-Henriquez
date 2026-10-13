@@ -34,7 +34,8 @@ namespace Nindo
         /// Tools/Dev/goro_fight_sim.py lee estos números de este archivo). Medido en Unity con el bot (main 76be027, barras
         /// 1000 + 1600, daño x0.5 / x0.4, cura por tramo 25): 'bot on bueno' ganó en 2:24 sin morir y 'bot on promedio'
         /// en 4:04 con 2 muertes; la simulación daba 3.4 y 5.2 min, así que con Gorō el bot real va 0.71x el modelo (se le
-        /// pega y le corta las vueltas a la guardia). Objetivo: el bueno ~4.5 min reales, el promedio 1-2 muertes.
+        /// pega y le corta las vueltas a la guardia; con los otros jefes es otro número: Tools/Dev/boss_sims/calibration.py).
+        /// Objetivo: el bueno ~4.5 min reales, el promedio 1-2 muertes.
         /// PROVISORIO: esa calibración sale de UNA pelea por bot con los clips de C2; hay que medir de nuevo en Unity
         /// (3 peleas por bot, Core/PlayClock) con los clips de C3 antes de darlo por bueno.
         /// Con 2000 + 3200 y el daño a x0.25 / x0.23 cada martillazo sacaba 5-7 de vida (un corte de ninja saca 12): el
@@ -755,6 +756,7 @@ namespace Nindo
             {
                 case "avalanche": TickAvalancheStep(a); break;
                 case "slamwave":
+                    ClearCrouch(dt);
                     if (!specialFired && stepNorm >= a.activeStart) { specialFired = true; FireSlamWave(a); }
                     // la onda ya no lo va a alcanzar (salió del carril, o el frente ya pasó): el aviso se deshace sin golpe
                     if (specialFired && !slamHit && float.IsInfinity(SlamWaveEta(a)))
@@ -766,6 +768,28 @@ namespace Nindo
                 default: base.TickSpecial(a, dt); break;
             }
         }
+
+        /// <summary>
+        /// El SlamWave agachado con la armadura es lo más adelante que llega el cuerpo de Gorō en la pelea: el pecho de roca a
+        /// 1.36 m del centro y la esquina de la hombrera izquierda, que baja con la mano que se apoya adelante, a 1.55 m
+        /// (GoroTimings.SlamWaveCrouchReach). Kaito pegado a la cápsula (1.35-1.45 m) quedaba con la hombrera en la cabeza.
+        /// Desde que se agacha (la pausa del aviso) hasta la suelta, si lo tiene enfrente el cuerpo lo corre lo justo, a lo
+        /// sumo a CrouchPushSpeed: como la panza del sumo, con PlayerController.Shove (contra la barrera no lo mueve; en el
+        /// dash tampoco). Lo que el paso hace después ya lo resuelven el imán y la variante en el lugar.
+        /// </summary>
+        void ClearCrouch(float dt)
+        {
+            if (target == null || stepNorm < GoroTimings.SlamWaveCrouchFrom || stepClock >= tl.ReleaseTime) return;
+            Vector3 fwd = transform.forward.Flat().normalized, to = (target.transform.position - transform.position).Flat();
+            float along = Vector3.Dot(to, fwd), lat = Mathf.Abs(Vector3.Dot(to, Vector3.Cross(Vector3.up, fwd)));
+            float need = GoroTimings.SlamWaveCrouchReach + CrouchPad - along;
+            if (along <= 0f || lat > CrouchHalfWidth || need <= 0f) return;
+            target.Shove(fwd * Mathf.Min(need, CrouchPushSpeed * dt));
+        }
+
+        /// <summary>El margen de ClearCrouch (los vértices rígidos con su hueso), el ancho de lo que tiene enfrente (de su
+        /// eje a la hombrera más el radio de Kaito) y lo más rápido que lo corre (m/s: 25 cm en ~0.2 s, mientras se agacha).</summary>
+        const float CrouchPad = 0.05f, CrouchHalfWidth = 0.65f, CrouchPushSpeed = 1.2f;
 
         /// <summary>Mientras ruedan rocas no arranca otro golpe (ni rondando ni persiguiendo): nunca carriles y martillazos a la vez.</summary>
         bool AvalancheBusy => avalanche != null && avalanche.Active;

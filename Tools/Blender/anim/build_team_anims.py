@@ -334,6 +334,25 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             rep["magnet_noshove_raw_cm"] = round(max(variant_skate(touch, clip.travel_table, magnet(q, sl)) for q in range(11)) * 100.0, 1)
             # en qué lugares de Kaito (décimos de la embestida libres) sale la variante en el lugar
             rep["magnet_planted_q"] = {"empuja": [q for q, x in enumerate(cfg) if x is None], "no": [q for q, x in enumerate(nos) if x is None]}
+
+            # Kaito que se mete con el dash derecho contra el cuerpo cuando el paso ya arrancó (después de DecidePlant): desde
+            # ahí se cruzan (Enemy.TickLunge, 'crossing') y el transform hace lo que queda del paso entero; antes de eso, el
+            # imán con lo que se lo pudo empujar. Antes el imán lo frenaba y el modelo solo seguía hasta 'near': el pie de
+            # atrás de Gorō patinaba 33-65 cm (magnet_noshove_raw_cm)
+            def dash_cross(q, j):
+                if planted and L * q / 10.0 + sh + sl < L - PLANT_SLACK:
+                    return None
+                m = magnet(q, sl, sh)
+                xj = L * j / 10.0
+                k = next((i for i, x in enumerate(clip.travel_table) if x >= xj), len(clip.travel_table))
+                base = m[k - 1] if k > 0 else 0.0
+                x0 = clip.travel_table[k - 1] if k > 0 else 0.0
+                trv = m[:k] + [base + (x - x0) for x in clip.travel_table[k:]]
+                return variant_skate(touch, clip.travel_table, trv)
+            dc = max((dash_cross(q, j) or 0.0) for q in range(11) for j in range(11)) * 100.0
+            rep["dash_into_body_cm"] = round(dc, 1)
+            check(dc <= 3.0, f"{clip.name}: con Kaito que se mete con el dash contra el cuerpo en medio del paso (se cruzan) los pies "
+                             f"apoyados no patinan ({dc:.1f} cm)", warn=not getattr(mod, "MAGNET_STRICT", False))
             strict = getattr(mod, "MAGNET_STRICT", False)
             check(mc <= 3.0, f"{clip.name}: con Kaito pegado (el imán corta la embestida; empuja {sh:g} m y el modelo sigue {sl:g} m) "
                              f"los pies apoyados no patinan ({mc:.1f} cm)", warn=not strict)
@@ -934,9 +953,12 @@ def planted_checks(ch, by_name, roots_by, reports):
         reports[name]["planted_fork_cm"] = round(dk * 100.0, 1)
         if radius > 0.0:
             reach, at, what = body_reach(ch, clip, frames, roots_by[name], f0=fork)
-            pre = body_reach(ch, clip, frames, roots_by[name], f1=fork)[0]
+            pre, pre_at, pre_what = body_reach(ch, clip, frames, roots_by[name], f1=fork)
             near = radius + KAITO_CC_R + MAGNET_GAP - MAGNET[1]
-            reports[name]["body_reach_m"] = {"golpe": round(reach, 3), "aviso": round(pre, 3), "kaito": round(near, 3)}
+            # (y dónde: el SlamWave agachado llega a 1.55 m con la esquina de la hombrera izquierda sobre la cabeza de Kaito,
+            # en el borde de su radio; el pecho de roca, a 1.36. GoroBoss.ClearCrouch lo corre ese tramo)
+            reports[name]["body_reach_m"] = {"golpe": round(reach, 3), "aviso": round(pre, 3), "kaito": round(near, 3),
+                                             "aviso_en": [pre_at, pre_what]}
             # (con REACH_MARGIN por los vértices rígidos con su hueso; lo que ya llega en el aviso no lo cambia la variante:
             # el SlamWave agachado con la armadura llega a 1.55 m)
             check(reach <= max(near - REACH_MARGIN, pre), f"{name}: con Kaito pegado a {near:.2f} m el cuerpo no se le mete más que en el aviso "

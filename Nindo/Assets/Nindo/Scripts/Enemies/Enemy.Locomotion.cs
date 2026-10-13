@@ -308,21 +308,24 @@ namespace Nindo
                 return 0f;
             }
             float room = DistToTarget - Radius - target.Radius - lungeGap;
-            if (room < want && config.lungeShove > shoved && !a.lungeAir)
+            // Kaito en el dash se cruza con el cuerpo, como con el Travel de Chikuō: el paso sigue entero. Frenarlo contra el
+            // que se metía derecho al cuerpo después de DecidePlant dejaba al modelo seguir solo hasta 'near' y el pie de
+            // atrás, clavado en la punta, patinaba lo cortado (33-65 cm contra Gorō; build_team_anims 'dash_into_body_cm')
+            bool crossing = target.State == PlayerState.Dash;
+            if (!crossing && room < want && config.lungeShove > shoved && !a.lungeAir)
             {
                 float push = Mathf.Min(want - Mathf.Max(0f, room), config.lungeShove - shoved);
                 float moved = target.Shove((target.transform.position - transform.position).Flat().normalized * push);
                 shoved += moved;
                 room += moved;
             }
-            float go = Mathf.Clamp(room, 0f, want), cut = want - go;
+            float go = crossing ? want : Mathf.Clamp(room, 0f, want), cut = want - go;
             if (go > 0f) MoveBy(transform.forward * go);
             if (cut > 0f && config.lungeShove > 0f && !a.lungeAir && !target.Shovable)
             {
-                // Kaito en el dash no se deja empujar: se va solo. Lo cortado lo sigue el modelo mientras no quede más cerca de
-                // Kaito que donde lo deja el imán con lungeSlack: de costado se abre lugar enseguida y el paso sale entero;
-                // metiéndose contra el cuerpo del enemigo es como una pared. Solo con lungeSlack, un dash en medio del paso le
-                // corría a Gorō el pie de atrás 7-34 cm, y un dash cerca del golpe es justo lo que hace el que esquiva
+                // Kaito que no se deja empujar (rematando, en una escena; el del dash ya se cruzó arriba). Lo cortado lo sigue
+                // el modelo mientras no quede más cerca de Kaito que donde lo deja el imán con lungeSlack: de costado se abre
+                // lugar enseguida y el paso sale entero; contra el cuerpo del enemigo es como una pared
                 float near = Radius + target.Radius + MagnetGap - config.lungeSlack * Mathf.Max(0.5f, config.scale);
                 lungeWarp += Mathf.Clamp(DistToTarget - lungeWarp - near, 0f, cut);
             }
