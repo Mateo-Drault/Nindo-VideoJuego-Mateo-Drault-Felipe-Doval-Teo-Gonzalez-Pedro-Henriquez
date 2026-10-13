@@ -135,8 +135,8 @@ namespace Nindo
             MapText("ExploredLabel", info, 24f, MapDim, new Vector2(112f, -632f), false).text = "Explorado";
             mapExplored = MapText("Explored", info, 32f, UIFactory.Gold, new Vector2(300f, -632f), true);
             // con la fila de "Sin rezar" se aprietan (en 1080 de alto no tienen que tocar las teclas de abajo, que son tres
-            // renglones). El de reaparición es el mismo torii que en la lámina, sobre su charco de tinta con la luz: puede
-            // no estar rezado (se registra al pasar cerca) y lo que lo distingue es la luz
+            // renglones). El de reaparición es el mismo torii que en la lámina, sobre la luz del farol: puede no estar
+            // rezado (se registra al pasar cerca) y lo que lo distingue es la luz
             float step = 34f, dy = 0f;
             MapLegendRow(info, dy, "MapKaito", Color.white, "Kaito", false);
             MapLegendRow(info, dy += step, "MapShrine", MapShrineRed, "Santuario", false);
@@ -211,13 +211,16 @@ namespace Nindo
         void MapLegendRow(Transform parent, float dy, string sprite, Color tint, string label, bool glow)
         {
             float y = -684f - dy;
+            float icon = 34f;
             if (glow)
             {
-                // como en la lámina (RefreshMap): el charco de tinta, la luz y el torii encima, a 0.7 de su tamaño
-                UIFactory.Centered("Pool", parent, MapGlowInk, new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(78f, 78f), UISprites.SoftDot);
-                UIFactory.Centered("Glow", parent, new Color(1f, 0.77f, 0.31f, 0.86f), new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(60f, 60f), UISprites.SoftDot);
+                // como en la lámina, un torii sobre la luz de un farol. El charco de tinta de la lámina es para el papel
+                // claro: sobre esta columna casi negra no se veía, y la luz de 60 quedaba debajo del torii de 34 (la
+                // fila se leía como otro "Santuario"). Acá la luz va entera (84, a pleno) y el torii un poco más chico
+                UIFactory.Centered("Glow", parent, new Color(1f, 0.77f, 0.31f, 1f), new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(84f, 84f), UISprites.SoftDot);
+                icon = 30f;
             }
-            if (sprite != null) UIFactory.Centered("Icon", parent, tint, new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(34f, 34f), UISprites.Get(sprite));
+            if (sprite != null) UIFactory.Centered("Icon", parent, tint, new Vector2(0f, 1f), new Vector2(130f, y), new Vector2(icon, icon), UISprites.Get(sprite));
             MapText("Legend", parent, 24f, MapLegendText, new Vector2(164f, y), false).text = label;
         }
 
@@ -344,9 +347,13 @@ namespace Nindo
                     if (!a.shown) continue;
                     if (kaito)
                     {
+                        // los dos son cuadrados: medido en círculo, las esquinas igual se tocaban en diagonal (la punta
+                        // de la flecha sobre la esquina del sello de Gorō en la cumbre, el cuadro de cada reaparición).
+                        // Con la distancia del cuadrado (la mayor de las dos) se corre lo que falta en esa dirección
                         Vector2 dk = a.at + a.nudge - k;
-                        float needK = (a.rt.sizeDelta.x + MapKaitoSize) * 0.5f * 0.85f + 2f, distK = dk.magnitude;
-                        if (distK < needK) a.nudge += (distK > 1e-3f ? dk / distK : Vector2.up) * (needK - distK);
+                        float needK = (a.rt.sizeDelta.x + MapKaitoSize) * 0.5f * 0.85f + 2f;
+                        float box = Mathf.Max(Mathf.Abs(dk.x), Mathf.Abs(dk.y));
+                        if (box < needK) a.nudge += box > 1e-3f ? dk * (needK / box - 1f) : Vector2.up * needK;
                     }
                     for (int j = i + 1; j < mapMarks.Count; j++)
                     {
@@ -625,7 +632,7 @@ namespace Nindo
             mapZoneTitle.text = z != null ? z.title : "";
             mapZoneSub.text = z != null ? z.subtitle : "";
             string goal = StoryText.Objective(save);
-            mapObjective.text = string.IsNullOrEmpty(goal) ? "" : "<color=#C7BFAB>Objetivo</color>  " + goal;
+            mapObjective.text = string.IsNullOrEmpty(goal) ? "" : "<color=#C7BFAB>Objetivo</color>  " + NoOrphan(goal);
             string zi = z != null ? (UISprites.ZoneIconName(z.id) ?? (z.id.StartsWith("lago") ? "ZoneLake" : "ZoneMoon")) : null;
             mapZoneHanko.sprite = UISprites.Hanko(zi);
             mapZoneHanko.enabled = mapZoneHanko.sprite != null;
@@ -1078,8 +1085,10 @@ namespace Nindo
                                : dg == 6 ? new Vector2(-extR * 0.6f, dyUp) : new Vector2(-extR * 0.6f, -dyUp));
                 Vector2 p = new Vector2(Mathf.Clamp(c.x, x0, x1), Mathf.Clamp(c.y, y0, y1));
                 float score = (p - c).magnitude * 40f + side + (side < 8 ? 0f : 20f);
+                // tapar el sello de un guardián pesa el triple que un portal o un santuario: si no hay lugar libre, el
+                // cartel prefiere taparlos a ellos (en la cumbre le comía la cuarta parte de arriba al de Gorō)
                 foreach (var o in mapMarks)
-                    if (o.shown) score += MapOverlap(p, extL, extR, hh, MapScreen(o.rt.anchoredPosition), o.rt.sizeDelta.x * 0.5f * o.rt.localScale.x * mapZoom) * (o == m ? 6f : 1f);
+                    if (o.shown) score += MapOverlap(p, extL, extR, hh, MapScreen(o.rt.anchoredPosition), o.rt.sizeDelta.x * 0.5f * o.rt.localScale.x * mapZoom) * (o == m ? 6f : o.arena != null ? 3f : 1f);
                 if (Game.Player != null) score += MapOverlap(p, extL, extR, hh, kaito, kaitoHalf + 6f) * 6f;
                 // los nombres de zona que se ven (su caja de PlaceMapLabel, este mismo cuadro): un nombre tapado
                 // por el cartel pesa el doble que una marca
@@ -1092,6 +1101,16 @@ namespace Nindo
             }
             mapTipSide = bestSide;
             return best;
+        }
+
+        /// <summary>Las dos últimas palabras juntas (TMP no corta adentro de nobr): el objetivo del jardín dejaba "dojo"
+        /// solo en el segundo renglón, arriba de todo el bloque de la columna.</summary>
+        static string NoOrphan(string s)
+        {
+            int i = s.LastIndexOf(' ');
+            if (i <= 0) return s;
+            int j = s.LastIndexOf(' ', i - 1);
+            return s.Substring(0, j + 1) + "<nobr>" + s.Substring(j + 1) + "</nobr>";
         }
 
         /// <summary>Área (px²) en que el trazo del cartel (extL a la izquierda del texto, extR a la derecha) tapa una

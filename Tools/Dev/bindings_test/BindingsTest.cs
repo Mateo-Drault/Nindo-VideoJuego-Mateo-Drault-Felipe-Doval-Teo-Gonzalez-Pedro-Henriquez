@@ -136,6 +136,10 @@ namespace Nindo.Tests
             t.Reset(-1);
             res = t.Assign(atk, Kb, 0, K(Key.F));
             Check(res.outcome == BindOutcome.Swapped && t.Get(fin, Kb, 0) == BindCode.MouseLeft && t.Get(inter, Kb, 1) == 0, "F al clic de Atacar: Ejecutar recibe el clic, Interactuar se queda con E");
+            // el aviso lee lo de cada fila: antes decía "Ejecutar e Interactuar pasan a Clic izq." (solo miraba la primera)
+            int fi = System.Array.IndexOf(res.others, fin), ii = System.Array.IndexOf(res.others, inter);
+            Check(res.otherGot != null && fi >= 0 && ii >= 0 && res.otherGot[fi] && res.otherCodes[fi] == BindCode.MouseLeft
+                  && !res.otherGot[ii] && res.otherCodes[ii] == K(Key.E), "F al clic de Atacar: lo que le quedó a cada una (clic y E)");
             Check(t.FindProblem() == null, "sin choques");
             // F (Ejecutar e Interactuar la comparten a propósito) a Atacar: las dos reciben lo que tenía Atacar
             t.Reset(-1);

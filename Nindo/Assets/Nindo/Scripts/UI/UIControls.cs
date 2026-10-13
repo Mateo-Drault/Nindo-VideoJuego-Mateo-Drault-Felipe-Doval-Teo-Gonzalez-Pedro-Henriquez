@@ -717,6 +717,9 @@ namespace Nindo
                     string sub = res.outcome == BindOutcome.Swapped
                         ? others + (many ? " pasan a " : " pasa a ") + ControlsChip(res.otherCode, dev)
                         : many ? others + (button ? " ya no lo usan" : " ya no la usan") : others + " se queda con " + ControlsChip(res.otherCode, dev);
+                    // dos que compartían la tecla y terminaron distinto (la F de Ejecutar e Interactuar: una recibe el
+                    // clic y la otra se queda con su E): un renglón por cada una, si no el plural decía algo falso
+                    if (many && MixedOutcome(res)) sub = EachOutcome(res, dev, button);
                     ControlsInfo(label + " ahora usa " + chip, sub, UIFactory.Gold, 4.5f);
                     return;
                 }
@@ -757,6 +760,32 @@ namespace Nindo
                     ControlsInfo("Esa casilla es fija", null, CtlWarn, 3f);
                     break;
             }
+        }
+
+        static bool MixedOutcome(BindResult res)
+        {
+            if (res.otherGot == null) return false;
+            for (int i = 1; i < res.others.Length; i++)
+                if (res.otherGot[i] != res.otherGot[0] || (res.otherGot[0] && res.otherCodes[i] != res.otherCodes[0])) return true;
+            return false;
+        }
+
+        /// <summary>"Ejecutar pasa a Clic izq. e Interactuar se queda con E": lo que le quedó a cada fila tocada.</summary>
+        string EachOutcome(BindResult res, int dev, bool button)
+        {
+            var t = InputBindings.Table;
+            var parts = new string[res.others.Length];
+            for (int i = 0; i < parts.Length; i++)
+            {
+                string name = t.Row(res.others[i]).label;
+                int c = res.otherCodes[i];
+                parts[i] = res.otherGot[i] ? name + " pasa a " + ControlsChip(c, dev)
+                    : c != BindCode.None ? name + " se queda con " + ControlsChip(c, dev)
+                    : name + (button ? " ya no lo usa" : " ya no la usa");
+            }
+            string last = parts[parts.Length - 1];
+            bool e = last.StartsWith("I") || last.StartsWith("Hi");
+            return string.Join(", ", parts, 0, parts.Length - 1) + (e ? " e " : " y ") + last;
         }
 
         static string RowNames(int[] rows)

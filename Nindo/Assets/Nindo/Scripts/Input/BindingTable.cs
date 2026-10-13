@@ -84,6 +84,10 @@ namespace Nindo
         public int other;
         /// <summary>Lo que le quedó a 'other': la tecla que recibió (Swapped) o la que conserva (Taken).</summary>
         public int otherCode;
+        /// <summary>Lo mismo para cada fila de 'others' (si recibió la tecla vieja y con qué quedó): dos que compartían
+        /// la tecla pueden terminar distinto (Ejecutar recibe el clic, Interactuar se queda con su E).</summary>
+        public int[] otherCodes;
+        public bool[] otherGot;
         public string reason;
         public bool Ok => outcome != BindOutcome.Refused;
         public bool Changed => outcome != BindOutcome.Refused && outcome != BindOutcome.Same;
@@ -283,11 +287,15 @@ namespace Nindo
 
             codes[Ix(r, dev, slot)] = code;
             res.others = new int[holders.Count];
+            res.otherCodes = new int[holders.Count];
+            res.otherGot = new bool[holders.Count];
             for (int h = 0; h < holders.Count; h++)
             {
                 int q = holders[h] / Slots, t = holders[h] % Slots;
                 codes[Ix(q, dev, t)] = gives[h];
                 res.others[h] = q;
+                res.otherGot[h] = gives[h] != BindCode.None;
+                res.otherCodes[h] = gives[h] != BindCode.None ? gives[h] : Get(q, dev, 1 - t);
             }
             if (holders.Count == 0) { res.outcome = BindOutcome.Assigned; return res; }
             int q0 = holders[0] / Slots, t0 = holders[0] % Slots;
