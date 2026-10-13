@@ -53,6 +53,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.59,
+      "at": 81,
+      "flex": -31.3,
+      "dev": -13.1,
+      "twist": -16.4,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 0.4,
+      "jump_at": 60
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 83,
+      "flex": 2.8,
+      "dev": 16.3,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.0,
+      "jump_deg": 1.6,
+      "jump_at": 58
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.19,
@@ -120,6 +144,30 @@
      ]
     },
     "loop_seam_deg": 0.04,
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 26,
+      "flex": -34.4,
+      "dev": -11.8,
+      "twist": -16.7,
+      "grip": false,
+      "twist_max": 16.9,
+      "jump_deg": 1.9,
+      "jump_at": 31
+     },
+     "L": {
+      "excess": 0.68,
+      "at": 35,
+      "flex": -7.8,
+      "dev": 16.6,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.0,
+      "jump_deg": 2.0,
+      "jump_at": 27
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.002
@@ -182,6 +230,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.62,
+      "at": 16,
+      "flex": -34.5,
+      "dev": -11.8,
+      "twist": -16.7,
+      "grip": false,
+      "twist_max": 16.9,
+      "jump_deg": 2.1,
+      "jump_at": 20
+     },
+     "L": {
+      "excess": 0.75,
+      "at": 0,
+      "flex": -18.6,
+      "dev": 17.3,
+      "twist": 9.5,
+      "grip": false,
+      "twist_max": 9.9,
+      "jump_deg": 3.0,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.002
@@ -244,6 +316,30 @@
      ]
     },
     "loop_seam_deg": 0.056,
+    "wrists": {
+     "R": {
+      "excess": 0.59,
+      "at": 7,
+      "flex": -30.8,
+      "dev": -13.6,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 0.4,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.66,
+      "at": 7,
+      "flex": -0.3,
+      "dev": 16.4,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.0,
+      "jump_deg": 0.2,
+      "jump_at": 5
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.0
@@ -306,6 +402,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.59,
+      "at": 7,
+      "flex": -30.8,
+      "dev": -13.6,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 0.4,
+      "jump_at": 5
+     },
+     "L": {
+      "excess": 0.66,
+      "at": 7,
+      "flex": -0.3,
+      "dev": 16.4,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.0,
+      "jump_deg": 0.2,
+      "jump_at": 5
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.0
@@ -368,6 +488,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 26,
+      "flex": -34.4,
+      "dev": -11.8,
+      "twist": -16.7,
+      "grip": false,
+      "twist_max": 16.9,
+      "jump_deg": 1.9,
+      "jump_at": 31
+     },
+     "L": {
+      "excess": 0.66,
+      "at": 33,
+      "flex": -0.9,
+      "dev": 16.5,
+      "twist": 10.1,
+      "grip": false,
+      "twist_max": 10.2,
+      "jump_deg": 1.8,
+      "jump_at": 27
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.001
@@ -415,6 +559,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.59,
+      "at": 81,
+      "flex": -31.3,
+      "dev": -13.1,
+      "twist": -16.4,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 0.4,
+      "jump_at": 60
+     },
+     "L": {
+      "excess": 0.64,
+      "at": 80,
+      "flex": -28.3,
+      "dev": 11.7,
+      "twist": 14.6,
+      "grip": false,
+      "twist_max": 15.0,
+      "jump_deg": 1.5,
+      "jump_at": 59
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.19,
@@ -482,6 +650,30 @@
      ]
     },
     "loop_seam_deg": 0.04,
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 26,
+      "flex": -34.4,
+      "dev": -11.8,
+      "twist": -16.7,
+      "grip": false,
+      "twist_max": 16.9,
+      "jump_deg": 1.9,
+      "jump_at": 31
+     },
+     "L": {
+      "excess": 0.69,
+      "at": 10,
+      "flex": -35.9,
+      "dev": 10.5,
+      "twist": 13.5,
+      "grip": false,
+      "twist_max": 15.0,
+      "jump_deg": 1.7,
+      "jump_at": 19
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.002
@@ -544,6 +736,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.62,
+      "at": 16,
+      "flex": -34.5,
+      "dev": -11.8,
+      "twist": -16.7,
+      "grip": false,
+      "twist_max": 16.9,
+      "jump_deg": 2.1,
+      "jump_at": 20
+     },
+     "L": {
+      "excess": 0.69,
+      "at": 6,
+      "flex": -35.9,
+      "dev": 10.5,
+      "twist": 13.5,
+      "grip": false,
+      "twist_max": 15.0,
+      "jump_deg": 2.6,
+      "jump_at": 11
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.002
@@ -606,6 +822,30 @@
      ]
     },
     "loop_seam_deg": 0.056,
+    "wrists": {
+     "R": {
+      "excess": 0.59,
+      "at": 7,
+      "flex": -30.8,
+      "dev": -13.6,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 0.4,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.63,
+      "at": 5,
+      "flex": -28.1,
+      "dev": 11.6,
+      "twist": 14.6,
+      "grip": false,
+      "twist_max": 14.7,
+      "jump_deg": 1.4,
+      "jump_at": 11
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.0
@@ -668,6 +908,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.59,
+      "at": 7,
+      "flex": -30.8,
+      "dev": -13.6,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 0.4,
+      "jump_at": 5
+     },
+     "L": {
+      "excess": 0.63,
+      "at": 5,
+      "flex": -28.1,
+      "dev": 11.6,
+      "twist": 14.6,
+      "grip": false,
+      "twist_max": 14.7,
+      "jump_deg": 1.4,
+      "jump_at": 11
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.0
@@ -730,6 +994,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 26,
+      "flex": -34.4,
+      "dev": -11.8,
+      "twist": -16.7,
+      "grip": false,
+      "twist_max": 16.9,
+      "jump_deg": 1.9,
+      "jump_at": 31
+     },
+     "L": {
+      "excess": 0.69,
+      "at": 10,
+      "flex": -35.9,
+      "dev": 10.5,
+      "twist": 13.5,
+      "grip": false,
+      "twist_max": 15.0,
+      "jump_deg": 1.7,
+      "jump_at": 18
+     }
+    },
     "self_clearance_cm": {},
     "max_height_m": 2.53,
     "min_z_m": -0.001
@@ -777,6 +1065,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.82,
+      "at": 58,
+      "flex": -8.1,
+      "dev": 20.3,
+      "twist": -12.0,
+      "grip": true,
+      "twist_max": 12.6,
+      "jump_deg": 5.1,
+      "jump_at": 20
+     },
+     "L": {
+      "excess": 0.84,
+      "at": 49,
+      "flex": 62.4,
+      "dev": -4.1,
+      "twist": -18.0,
+      "grip": true,
+      "twist_max": 18.1,
+      "jump_deg": 2.5,
+      "jump_at": 50
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.7,
@@ -853,6 +1165,30 @@
      ]
     },
     "loop_seam_deg": 0.04,
+    "wrists": {
+     "R": {
+      "excess": 0.81,
+      "at": 5,
+      "flex": -4.7,
+      "dev": 20.2,
+      "twist": -12.0,
+      "grip": true,
+      "twist_max": 12.4,
+      "jump_deg": 5.2,
+      "jump_at": 26
+     },
+     "L": {
+      "excess": 0.83,
+      "at": 15,
+      "flex": 62.2,
+      "dev": -3.4,
+      "twist": -18.1,
+      "grip": true,
+      "twist_max": 18.4,
+      "jump_deg": 3.2,
+      "jump_at": 20
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       2.4,
@@ -924,6 +1260,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.73,
+      "at": 5,
+      "flex": -17.8,
+      "dev": 16.9,
+      "twist": -10.9,
+      "grip": true,
+      "twist_max": 11.6,
+      "jump_deg": 3.1,
+      "jump_at": 21
+     },
+     "L": {
+      "excess": 0.78,
+      "at": 12,
+      "flex": 57.5,
+      "dev": -4.5,
+      "twist": -17.3,
+      "grip": true,
+      "twist_max": 17.9,
+      "jump_deg": 1.7,
+      "jump_at": 14
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       5.4,
@@ -991,6 +1351,30 @@
      ]
     },
     "loop_seam_deg": 0.056,
+    "wrists": {
+     "R": {
+      "excess": 0.82,
+      "at": 10,
+      "flex": -9.3,
+      "dev": 20.1,
+      "twist": -11.9,
+      "grip": true,
+      "twist_max": 12.0,
+      "jump_deg": 2.1,
+      "jump_at": 12
+     },
+     "L": {
+      "excess": 0.86,
+      "at": 12,
+      "flex": 64.0,
+      "dev": -4.4,
+      "twist": -17.8,
+      "grip": true,
+      "twist_max": 17.9,
+      "jump_deg": 5.0,
+      "jump_at": 13
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.7,
@@ -1061,7 +1445,31 @@
       0.0
      ]
     },
-    "loop_seam_deg": 0.0,
+    "loop_seam_deg": 0.079,
+    "wrists": {
+     "R": {
+      "excess": 0.82,
+      "at": 10,
+      "flex": -9.3,
+      "dev": 20.1,
+      "twist": -11.9,
+      "grip": true,
+      "twist_max": 12.0,
+      "jump_deg": 2.1,
+      "jump_at": 12
+     },
+     "L": {
+      "excess": 0.86,
+      "at": 12,
+      "flex": 64.0,
+      "dev": -4.4,
+      "twist": -17.8,
+      "grip": true,
+      "twist_max": 17.9,
+      "jump_deg": 5.0,
+      "jump_at": 13
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.7,
@@ -1133,6 +1541,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.81,
+      "at": 12,
+      "flex": -6.8,
+      "dev": 20.1,
+      "twist": -11.7,
+      "grip": true,
+      "twist_max": 12.3,
+      "jump_deg": 5.3,
+      "jump_at": 12
+     },
+     "L": {
+      "excess": 0.83,
+      "at": 3,
+      "flex": 61.6,
+      "dev": -4.8,
+      "twist": -17.9,
+      "grip": true,
+      "twist_max": 18.3,
+      "jump_deg": 1.4,
+      "jump_at": 9
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.3,
@@ -1312,15 +1744,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 17,
+      "flex": -60.9,
+      "dev": -1.1,
+      "twist": -20.1,
+      "grip": false,
+      "twist_max": 20.1,
+      "jump_deg": 35.4,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.67,
+      "at": 11,
+      "flex": -4.9,
+      "dev": 16.8,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.1,
+      "jump_deg": 3.0,
+      "jump_at": 15
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 14.7,
+    "root_peak_mps_60hz": 15.7,
     "reach_m": 1.32,
     "strike_height_m": [
      1.2,
      1.26
     ],
-    "tip_peak_mps": 72.2,
-    "tip_outside_ratio": 0.11,
+    "tip_peak_mps": 73.5,
+    "tip_outside_ratio": 0.09,
     "apex_tip_mps": [
      0.5,
      0.9
@@ -1349,7 +1805,7 @@
     },
     "max_height_m": 2.59,
     "min_z_m": -0.013,
-    "tell_silhouette_change": 0.345
+    "tell_silhouette_change": 0.337
    }
   },
   "Palm_Mid": {
@@ -1513,15 +1969,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 15,
+      "flex": -62.4,
+      "dev": -0.5,
+      "twist": -19.8,
+      "grip": false,
+      "twist_max": 19.8,
+      "jump_deg": 36.8,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.67,
+      "at": 11,
+      "flex": -4.9,
+      "dev": 16.8,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.1,
+      "jump_deg": 2.4,
+      "jump_at": 20
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 7.8,
+    "root_peak_mps_60hz": 8.3,
     "reach_m": 1.23,
     "strike_height_m": [
      1.24,
      1.3
     ],
-    "tip_peak_mps": 60.0,
-    "tip_outside_ratio": 0.12,
+    "tip_peak_mps": 60.8,
+    "tip_outside_ratio": 0.11,
     "apex_tip_mps": [
      0.5,
      0.9
@@ -1532,13 +2012,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.345
+    "tell_silhouette_change": 0.337
    }
   },
   "Palm_Close": {
@@ -1702,14 +2182,38 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 17,
+      "flex": -42.1,
+      "dev": -26.4,
+      "twist": -11.2,
+      "grip": false,
+      "twist_max": 19.6,
+      "jump_deg": 26.8,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.67,
+      "at": 11,
+      "flex": -4.9,
+      "dev": 16.8,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.1,
+      "jump_deg": 2.1,
+      "jump_at": 20
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 1.9,
+    "root_peak_mps_60hz": 2.0,
     "reach_m": 1.15,
     "strike_height_m": [
      1.28,
      1.33
     ],
-    "tip_peak_mps": 49.7,
+    "tip_peak_mps": 50.1,
     "tip_outside_ratio": 0.14,
     "apex_tip_mps": [
      0.5,
@@ -1727,7 +2231,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.345
+    "tell_silhouette_change": 0.337
    }
   },
   "ChopPalm": {
@@ -1897,15 +2401,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 12,
+      "flex": -12.8,
+      "dev": 23.2,
+      "twist": 9.0,
+      "grip": false,
+      "twist_max": 18.2,
+      "jump_deg": 32.8,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.74,
+      "at": 17,
+      "flex": -22.7,
+      "dev": 16.3,
+      "twist": 10.8,
+      "grip": false,
+      "twist_max": 10.8,
+      "jump_deg": 20.8,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 13.7,
+    "root_peak_mps_60hz": 14.5,
     "reach_m": 1.27,
     "strike_height_m": [
      1.07,
      1.38
     ],
-    "tip_peak_mps": 64.5,
-    "tip_outside_ratio": 0.16,
+    "tip_peak_mps": 68.6,
+    "tip_outside_ratio": 0.2,
     "apex_tip_mps": [
      0.8,
      1.1
@@ -1934,7 +2462,7 @@
     },
     "max_height_m": 2.95,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.302
+    "tell_silhouette_change": 0.294
    }
   },
   "ChopPalm_Mid": {
@@ -2100,15 +2628,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 15,
+      "flex": -61.4,
+      "dev": -6.0,
+      "twist": 14.7,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 33.6,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.71,
+      "at": 18,
+      "flex": -19.7,
+      "dev": 16.1,
+      "twist": 10.5,
+      "grip": false,
+      "twist_max": 10.5,
+      "jump_deg": 19.6,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 7.3,
+    "root_peak_mps_60hz": 7.7,
     "reach_m": 1.17,
     "strike_height_m": [
      1.1,
      1.41
     ],
-    "tip_peak_mps": 58.4,
-    "tip_outside_ratio": 0.18,
+    "tip_peak_mps": 62.1,
+    "tip_outside_ratio": 0.21,
     "apex_tip_mps": [
      0.8,
      1.1
@@ -2119,13 +2671,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "max_height_m": 2.95,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.302
+    "tell_silhouette_change": 0.294
    }
   },
   "ChopPalm_Close": {
@@ -2291,15 +2843,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 12,
+      "flex": -12.8,
+      "dev": 23.2,
+      "twist": 9.0,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 32.5,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.69,
+      "at": 18,
+      "flex": -15.5,
+      "dev": 16.3,
+      "twist": 10.4,
+      "grip": false,
+      "twist_max": 10.4,
+      "jump_deg": 17.8,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 1.8,
+    "root_peak_mps_60hz": 1.9,
     "reach_m": 1.09,
     "strike_height_m": [
      1.13,
      1.43
     ],
-    "tip_peak_mps": 53.7,
-    "tip_outside_ratio": 0.19,
+    "tip_peak_mps": 57.1,
+    "tip_outside_ratio": 0.22,
     "apex_tip_mps": [
      0.8,
      1.1
@@ -2316,7 +2892,7 @@
     ],
     "max_height_m": 2.95,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.302
+    "tell_silhouette_change": 0.294
    }
   },
   "CraneKick": {
@@ -2489,6 +3065,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 22,
+      "flex": 62.8,
+      "dev": -17.0,
+      "twist": 13.9,
+      "grip": false,
+      "twist_max": 20.8,
+      "jump_deg": 24.6,
+      "jump_at": 26
+     },
+     "L": {
+      "excess": 0.67,
+      "at": 4,
+      "flex": -0.6,
+      "dev": 16.8,
+      "twist": 9.3,
+      "grip": false,
+      "twist_max": 10.5,
+      "jump_deg": 5.9,
+      "jump_at": 16
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.1,
     "reach_m": 1.32,
@@ -2496,8 +3096,8 @@
      1.14,
      1.19
     ],
-    "tip_peak_mps": 34.5,
-    "tip_outside_ratio": 0.38,
+    "tip_peak_mps": 34.7,
+    "tip_outside_ratio": 0.26,
     "apex_tip_mps": [
      1.0,
      0.8
@@ -2514,7 +3114,7 @@
     ],
     "max_height_m": 2.61,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.429
+    "tell_silhouette_change": 0.44
    }
   },
   "LeapKick": {
@@ -2719,8 +3319,37 @@
       0.4
      ]
     },
-    "self_clearance_cm": {},
-    "root_peak_mps_60hz": 8.8,
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 43,
+      "flex": 67.5,
+      "dev": -12.0,
+      "twist": -7.4,
+      "grip": false,
+      "twist_max": 52.6,
+      "jump_deg": 40.0,
+      "jump_at": 33
+     },
+     "L": {
+      "excess": 0.78,
+      "at": 38,
+      "flex": -28.3,
+      "dev": 16.3,
+      "twist": 10.3,
+      "grip": false,
+      "twist_max": 10.5,
+      "jump_deg": 20.5,
+      "jump_at": 33
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      2.3,
+      4
+     ]
+    },
+    "root_peak_mps_60hz": 9.6,
     "reach_m": 0.31,
     "strike_height_m": [
      0.13,
@@ -2732,13 +3361,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_L",
      0.0
     ],
     "max_height_m": 3.88,
     "min_z_m": -0.013,
-    "tell_silhouette_change": 0.269
+    "tell_silhouette_change": 0.273
    }
   },
   "Palm_P2": {
@@ -2906,15 +3535,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 17,
+      "flex": -60.9,
+      "dev": -1.1,
+      "twist": -20.1,
+      "grip": false,
+      "twist_max": 20.1,
+      "jump_deg": 35.4,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.61,
+      "at": 20,
+      "flex": -29.2,
+      "dev": 10.5,
+      "twist": 14.4,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 0.0,
+      "jump_at": 0
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 14.7,
+    "root_peak_mps_60hz": 15.7,
     "reach_m": 1.32,
     "strike_height_m": [
      1.2,
      1.26
     ],
-    "tip_peak_mps": 72.2,
-    "tip_outside_ratio": 0.11,
+    "tip_peak_mps": 73.5,
+    "tip_outside_ratio": 0.09,
     "apex_tip_mps": [
      0.5,
      0.9
@@ -2931,19 +3584,19 @@
     ],
     "reach_same_deg": {
      "Palm_Mid_P2": [
-      0.06,
-      "Hand_L",
-      9
+      0.04,
+      "Forearm_L",
+      3
      ],
      "Palm_Close_P2": [
-      0.06,
-      "Hand_L",
-      9
+      0.04,
+      "Forearm_L",
+      3
      ]
     },
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.255
+    "tell_silhouette_change": 0.226
    }
   },
   "Palm_Mid_P2": {
@@ -3107,15 +3760,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 15,
+      "flex": -62.4,
+      "dev": -0.5,
+      "twist": -19.8,
+      "grip": false,
+      "twist_max": 19.8,
+      "jump_deg": 36.8,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.61,
+      "at": 13,
+      "flex": -29.2,
+      "dev": 10.5,
+      "twist": 14.4,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 0.0,
+      "jump_at": 0
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 7.8,
+    "root_peak_mps_60hz": 8.3,
     "reach_m": 1.23,
     "strike_height_m": [
      1.24,
      1.3
     ],
-    "tip_peak_mps": 60.0,
-    "tip_outside_ratio": 0.12,
+    "tip_peak_mps": 60.8,
+    "tip_outside_ratio": 0.11,
     "apex_tip_mps": [
      0.5,
      0.9
@@ -3126,13 +3803,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.255
+    "tell_silhouette_change": 0.226
    }
   },
   "Palm_Close_P2": {
@@ -3296,14 +3973,38 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 17,
+      "flex": -42.1,
+      "dev": -26.4,
+      "twist": -11.2,
+      "grip": false,
+      "twist_max": 19.6,
+      "jump_deg": 26.8,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.61,
+      "at": 17,
+      "flex": -29.2,
+      "dev": 10.5,
+      "twist": 14.4,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 0.0,
+      "jump_at": 0
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 1.9,
+    "root_peak_mps_60hz": 2.0,
     "reach_m": 1.15,
     "strike_height_m": [
      1.28,
      1.33
     ],
-    "tip_peak_mps": 49.7,
+    "tip_peak_mps": 50.1,
     "tip_outside_ratio": 0.14,
     "apex_tip_mps": [
      0.5,
@@ -3321,7 +4022,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.255
+    "tell_silhouette_change": 0.226
    }
   },
   "ChopPalm_P2": {
@@ -3491,15 +4192,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 12,
+      "flex": -12.8,
+      "dev": 23.2,
+      "twist": 9.0,
+      "grip": false,
+      "twist_max": 18.2,
+      "jump_deg": 32.8,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.61,
+      "at": 23,
+      "flex": -29.2,
+      "dev": 10.5,
+      "twist": 14.4,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 0.0,
+      "jump_at": 0
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 13.7,
+    "root_peak_mps_60hz": 14.5,
     "reach_m": 1.27,
     "strike_height_m": [
      1.07,
      1.38
     ],
-    "tip_peak_mps": 64.5,
-    "tip_outside_ratio": 0.16,
+    "tip_peak_mps": 68.6,
+    "tip_outside_ratio": 0.2,
     "apex_tip_mps": [
      0.8,
      1.1
@@ -3528,7 +4253,7 @@
     },
     "max_height_m": 2.95,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.258
+    "tell_silhouette_change": 0.248
    }
   },
   "ChopPalm_Mid_P2": {
@@ -3694,15 +4419,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 15,
+      "flex": -61.4,
+      "dev": -6.0,
+      "twist": 14.7,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 33.6,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.61,
+      "at": 20,
+      "flex": -29.2,
+      "dev": 10.5,
+      "twist": 14.4,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 0.0,
+      "jump_at": 0
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 7.3,
+    "root_peak_mps_60hz": 7.7,
     "reach_m": 1.17,
     "strike_height_m": [
      1.1,
      1.41
     ],
-    "tip_peak_mps": 58.4,
-    "tip_outside_ratio": 0.18,
+    "tip_peak_mps": 62.1,
+    "tip_outside_ratio": 0.21,
     "apex_tip_mps": [
      0.8,
      1.1
@@ -3713,13 +4462,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "max_height_m": 2.95,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.258
+    "tell_silhouette_change": 0.248
    }
   },
   "ChopPalm_Close_P2": {
@@ -3885,15 +4634,39 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 12,
+      "flex": -12.8,
+      "dev": 23.2,
+      "twist": 9.0,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 32.5,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.61,
+      "at": 18,
+      "flex": -29.2,
+      "dev": 10.5,
+      "twist": 14.4,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 0.0,
+      "jump_at": 0
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 1.8,
+    "root_peak_mps_60hz": 1.9,
     "reach_m": 1.09,
     "strike_height_m": [
      1.13,
      1.43
     ],
-    "tip_peak_mps": 53.7,
-    "tip_outside_ratio": 0.19,
+    "tip_peak_mps": 57.1,
+    "tip_outside_ratio": 0.22,
     "apex_tip_mps": [
      0.8,
      1.1
@@ -3910,7 +4683,7 @@
     ],
     "max_height_m": 2.95,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.258
+    "tell_silhouette_change": 0.248
    }
   },
   "CraneKick_P2": {
@@ -4083,6 +4856,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 22,
+      "flex": 62.8,
+      "dev": -17.0,
+      "twist": 13.9,
+      "grip": false,
+      "twist_max": 20.8,
+      "jump_deg": 24.6,
+      "jump_at": 26
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 25,
+      "flex": 41.6,
+      "dev": -29.2,
+      "twist": -19.9,
+      "grip": false,
+      "twist_max": 23.8,
+      "jump_deg": 30.3,
+      "jump_at": 26
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.1,
     "reach_m": 1.32,
@@ -4090,8 +4887,8 @@
      1.14,
      1.19
     ],
-    "tip_peak_mps": 34.5,
-    "tip_outside_ratio": 0.38,
+    "tip_peak_mps": 34.7,
+    "tip_outside_ratio": 0.26,
     "apex_tip_mps": [
      1.0,
      0.8
@@ -4103,12 +4900,12 @@
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Foot_L",
+     "Hand_L",
      0.0
     ],
     "max_height_m": 2.61,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.374
+    "tell_silhouette_change": 0.372
    }
   },
   "LeapKick_P2": {
@@ -4313,8 +5110,37 @@
       0.4
      ]
     },
-    "self_clearance_cm": {},
-    "root_peak_mps_60hz": 8.8,
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 43,
+      "flex": 67.5,
+      "dev": -12.0,
+      "twist": -7.4,
+      "grip": false,
+      "twist_max": 52.6,
+      "jump_deg": 40.0,
+      "jump_at": 33
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 11,
+      "flex": 68.4,
+      "dev": 6.9,
+      "twist": 19.3,
+      "grip": false,
+      "twist_max": 41.1,
+      "jump_deg": 31.3,
+      "jump_at": 44
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      2.3,
+      4
+     ]
+    },
+    "root_peak_mps_60hz": 9.6,
     "reach_m": 0.31,
     "strike_height_m": [
      0.13,
@@ -4332,7 +5158,7 @@
     ],
     "max_height_m": 3.88,
     "min_z_m": -0.013,
-    "tell_silhouette_change": 0.217
+    "tell_silhouette_change": 0.229
    }
   },
   "Guard": {
@@ -4377,6 +5203,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.93,
+      "at": 3,
+      "flex": 23.8,
+      "dev": -33.2,
+      "twist": -15.2,
+      "grip": false,
+      "twist_max": 18.1,
+      "jump_deg": 31.4,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.63,
+      "at": 2,
+      "flex": 4.6,
+      "dev": 15.7,
+      "twist": 9.7,
+      "grip": false,
+      "twist_max": 9.7,
+      "jump_deg": 1.8,
+      "jump_at": 2
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -4390,7 +5240,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.006,
-    "guard_silhouette_change": 0.186
+    "guard_silhouette_change": 0.166
    }
   },
   "GuardHit": {
@@ -4440,10 +5290,34 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.79,
+      "at": 5,
+      "flex": 4.5,
+      "dev": -29.8,
+      "twist": -14.1,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 31.7,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.63,
+      "at": 8,
+      "flex": 6.2,
+      "dev": 15.6,
+      "twist": 9.7,
+      "grip": false,
+      "twist_max": 9.7,
+      "jump_deg": 0.0,
+      "jump_at": 0
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.04,
-     "Forearm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -4503,10 +5377,34 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.75,
+      "at": 0,
+      "flex": 18.5,
+      "dev": -26.9,
+      "twist": -16.4,
+      "grip": false,
+      "twist_max": 20.1,
+      "jump_deg": 20.2,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.68,
+      "at": 14,
+      "flex": -5.0,
+      "dev": 16.8,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.0,
+      "jump_deg": 2.6,
+      "jump_at": 6
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.04,
-     "Forearm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -4675,6 +5573,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.93,
+      "at": 8,
+      "flex": -50.0,
+      "dev": -20.1,
+      "twist": -15.2,
+      "grip": false,
+      "twist_max": 19.6,
+      "jump_deg": 15.9,
+      "jump_at": 9
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 11,
+      "flex": -3.4,
+      "dev": 16.3,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.1,
+      "jump_deg": 1.8,
+      "jump_at": 16
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 8.9,
     "reach_m": 1.3,
@@ -4694,8 +5616,8 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "reach_same_deg": {
@@ -4712,7 +5634,7 @@
     },
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.324
+    "tell_silhouette_change": 0.318
    }
   },
   "CounterStrike_Mid": {
@@ -4868,6 +5790,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 9,
+      "flex": -45.6,
+      "dev": -24.9,
+      "twist": -12.8,
+      "grip": false,
+      "twist_max": 18.6,
+      "jump_deg": 18.7,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.66,
+      "at": 5,
+      "flex": -4.1,
+      "dev": 16.4,
+      "twist": 9.9,
+      "grip": false,
+      "twist_max": 9.9,
+      "jump_deg": 1.8,
+      "jump_at": 5
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 4.7,
     "reach_m": 1.2,
@@ -4887,13 +5833,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_L",
      0.0
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.324
+    "tell_silhouette_change": 0.318
    }
   },
   "CounterStrike_Close": {
@@ -5049,6 +5995,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 8,
+      "flex": -42.8,
+      "dev": -26.4,
+      "twist": -12.5,
+      "grip": false,
+      "twist_max": 18.2,
+      "jump_deg": 21.4,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 2,
+      "flex": -6.0,
+      "dev": 16.1,
+      "twist": 9.7,
+      "grip": false,
+      "twist_max": 10.0,
+      "jump_deg": 3.5,
+      "jump_at": 7
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 1.2,
     "reach_m": 1.12,
@@ -5074,7 +6044,7 @@
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.324
+    "tell_silhouette_change": 0.318
    }
   },
   "Taunt": {
@@ -5143,6 +6113,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 10,
+      "flex": -61.1,
+      "dev": 2.8,
+      "twist": 25.5,
+      "grip": false,
+      "twist_max": 34.3,
+      "jump_deg": 22.7,
+      "jump_at": 40
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 10,
+      "flex": -60.2,
+      "dev": -7.6,
+      "twist": -23.0,
+      "grip": false,
+      "twist_max": 23.5,
+      "jump_deg": 30.2,
+      "jump_at": 7
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -5156,9 +6150,9 @@
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.002,
-    "guard_silhouette_change": 0.35,
-    "vs_guard_silhouette": 0.646,
-    "vs_stance_silhouette": 0.603
+    "guard_silhouette_change": 0.332,
+    "vs_guard_silhouette": 0.619,
+    "vs_stance_silhouette": 0.593
    }
   },
   "Stance": {
@@ -5203,10 +6197,34 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.75,
+      "at": 12,
+      "flex": -6.4,
+      "dev": -28.1,
+      "twist": -19.8,
+      "grip": false,
+      "twist_max": 21.8,
+      "jump_deg": 13.9,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.87,
+      "at": 14,
+      "flex": -42.5,
+      "dev": -22.1,
+      "twist": 23.6,
+      "grip": false,
+      "twist_max": 30.1,
+      "jump_deg": 11.3,
+      "jump_at": 10
+     }
+    },
     "self_clearance_cm": {
      "antebrazo L / tronco": [
-      2.9,
-      5
+      5.9,
+      4
      ]
     },
     "chain_chain_from_deg": [
@@ -5221,8 +6239,8 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "guard_silhouette_change": 0.164,
-    "vs_guard_silhouette": 0.463
+    "guard_silhouette_change": 0.161,
+    "vs_guard_silhouette": 0.45
    }
   },
   "Hit": {
@@ -5297,6 +6315,30 @@
       ],
       0.0
      ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 2,
+      "flex": -18.5,
+      "dev": -20.3,
+      "twist": -15.7,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 14.1,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.64,
+      "at": 8,
+      "flex": 4.3,
+      "dev": 15.9,
+      "twist": 9.8,
+      "grip": false,
+      "twist_max": 9.8,
+      "jump_deg": 16.7,
+      "jump_at": 1
+     }
     },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 0.9,
@@ -5395,6 +6437,30 @@
       ],
       0.1
      ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.66,
+      "at": 2,
+      "flex": -42.6,
+      "dev": -1.4,
+      "twist": -19.3,
+      "grip": false,
+      "twist_max": 19.3,
+      "jump_deg": 16.8,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 1,
+      "flex": -20.5,
+      "dev": 22.3,
+      "twist": 11.4,
+      "grip": false,
+      "twist_max": 11.4,
+      "jump_deg": 22.6,
+      "jump_at": 1
+     }
     },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.7,
@@ -5508,6 +6574,30 @@
       ],
       0.0
      ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.66,
+      "at": 9,
+      "flex": -21.7,
+      "dev": -21.8,
+      "twist": -11.2,
+      "grip": false,
+      "twist_max": 17.3,
+      "jump_deg": 20.4,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 18,
+      "flex": 3.6,
+      "dev": 16.2,
+      "twist": 9.9,
+      "grip": false,
+      "twist_max": 9.9,
+      "jump_deg": 14.7,
+      "jump_at": 1
+     }
     },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.9,
@@ -5623,6 +6713,30 @@
       0.1
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.68,
+      "at": 13,
+      "flex": -20.1,
+      "dev": -23.0,
+      "twist": -7.3,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 22.1,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 22,
+      "flex": 3.7,
+      "dev": 16.1,
+      "twist": 9.9,
+      "grip": false,
+      "twist_max": 9.9,
+      "jump_deg": 20.5,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {
      "antebrazo L / tronco": [
       4.8,
@@ -5710,6 +6824,30 @@
       1.7
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.7,
+      "at": 13,
+      "flex": -10.3,
+      "dev": -26.1,
+      "twist": -14.3,
+      "grip": false,
+      "twist_max": 17.3,
+      "jump_deg": 15.5,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.8,
+      "at": 17,
+      "flex": -26.9,
+      "dev": 17.1,
+      "twist": 10.1,
+      "grip": false,
+      "twist_max": 10.3,
+      "jump_deg": 10.0,
+      "jump_at": 10
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -5766,6 +6904,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.65,
+      "at": 11,
+      "flex": -8.5,
+      "dev": -24.2,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 4.3,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.79,
+      "at": 11,
+      "flex": -26.5,
+      "dev": 17.0,
+      "twist": 10.1,
+      "grip": false,
+      "twist_max": 10.1,
+      "jump_deg": 12.2,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -5821,6 +6983,30 @@
       ],
       0.0
      ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.64,
+      "at": 0,
+      "flex": -8.0,
+      "dev": -23.9,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 9.5,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.78,
+      "at": 0,
+      "flex": -25.9,
+      "dev": 16.9,
+      "twist": 10.0,
+      "grip": false,
+      "twist_max": 10.1,
+      "jump_deg": 2.9,
+      "jump_at": 11
+     }
     },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
@@ -5879,6 +7065,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.93,
+      "at": 3,
+      "flex": 23.8,
+      "dev": -33.2,
+      "twist": -15.2,
+      "grip": false,
+      "twist_max": 18.1,
+      "jump_deg": 31.4,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.61,
+      "at": 0,
+      "flex": -29.2,
+      "dev": 10.5,
+      "twist": 14.4,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 13.2,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -5892,7 +7102,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.006,
-    "guard_silhouette_change": 0.161
+    "guard_silhouette_change": 0.195
    }
   },
   "GuardHit_P2": {
@@ -5942,10 +7152,34 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.79,
+      "at": 5,
+      "flex": 4.5,
+      "dev": -29.8,
+      "twist": -14.1,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 31.7,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.69,
+      "at": 1,
+      "flex": -30.4,
+      "dev": -19.0,
+      "twist": 7.6,
+      "grip": false,
+      "twist_max": 8.1,
+      "jump_deg": 12.1,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.04,
-     "Forearm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -6005,15 +7239,39 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.75,
+      "at": 0,
+      "flex": 18.5,
+      "dev": -26.9,
+      "twist": -16.4,
+      "grip": false,
+      "twist_max": 20.1,
+      "jump_deg": 20.2,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.72,
+      "at": 1,
+      "flex": -29.6,
+      "dev": -21.1,
+      "twist": 9.1,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 14.7,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
-     0.04,
-     "Forearm_R",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_L",
      0.0
     ],
     "max_height_m": 2.5,
@@ -6177,7 +7435,36 @@
       0.5
      ]
     },
-    "self_clearance_cm": {},
+    "wrists": {
+     "R": {
+      "excess": 0.93,
+      "at": 8,
+      "flex": -50.0,
+      "dev": -20.1,
+      "twist": -15.2,
+      "grip": false,
+      "twist_max": 19.6,
+      "jump_deg": 15.9,
+      "jump_at": 9
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 18,
+      "flex": -27.2,
+      "dev": 12.4,
+      "twist": 14.9,
+      "grip": false,
+      "twist_max": 18.0,
+      "jump_deg": 4.2,
+      "jump_at": 12
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo L / tronco": [
+      2.8,
+      8
+     ]
+    },
     "root_peak_mps_60hz": 8.9,
     "reach_m": 1.3,
     "strike_height_m": [
@@ -6196,8 +7483,8 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "reach_same_deg": {
@@ -6214,7 +7501,7 @@
     },
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.22
+    "tell_silhouette_change": 0.212
    }
   },
   "CounterStrike_Mid_P2": {
@@ -6370,7 +7657,36 @@
       0.5
      ]
     },
-    "self_clearance_cm": {},
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 9,
+      "flex": -45.6,
+      "dev": -24.9,
+      "twist": -12.8,
+      "grip": false,
+      "twist_max": 18.6,
+      "jump_deg": 18.7,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 18,
+      "flex": -27.2,
+      "dev": 12.4,
+      "twist": 14.9,
+      "grip": false,
+      "twist_max": 18.0,
+      "jump_deg": 4.2,
+      "jump_at": 12
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo L / tronco": [
+      3.0,
+      8
+     ]
+    },
     "root_peak_mps_60hz": 4.7,
     "reach_m": 1.2,
     "strike_height_m": [
@@ -6395,7 +7711,7 @@
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.22
+    "tell_silhouette_change": 0.212
    }
   },
   "CounterStrike_Close_P2": {
@@ -6551,7 +7867,36 @@
       0.5
      ]
     },
-    "self_clearance_cm": {},
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 8,
+      "flex": -42.8,
+      "dev": -26.4,
+      "twist": -12.5,
+      "grip": false,
+      "twist_max": 18.2,
+      "jump_deg": 21.4,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.65,
+      "at": 18,
+      "flex": -27.2,
+      "dev": 12.4,
+      "twist": 14.9,
+      "grip": false,
+      "twist_max": 18.0,
+      "jump_deg": 4.2,
+      "jump_at": 12
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo L / tronco": [
+      3.2,
+      8
+     ]
+    },
     "root_peak_mps_60hz": 1.2,
     "reach_m": 1.12,
     "strike_height_m": [
@@ -6576,7 +7921,7 @@
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.22
+    "tell_silhouette_change": 0.212
    }
   },
   "Taunt_P2": {
@@ -6645,6 +7990,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 10,
+      "flex": -61.1,
+      "dev": 2.8,
+      "twist": 25.5,
+      "grip": false,
+      "twist_max": 34.3,
+      "jump_deg": 22.7,
+      "jump_at": 40
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 10,
+      "flex": -60.2,
+      "dev": -7.6,
+      "twist": -23.0,
+      "grip": false,
+      "twist_max": 23.5,
+      "jump_deg": 16.4,
+      "jump_at": 12
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -6653,14 +8022,14 @@
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Foot_L",
+     "Hand_L",
      0.0
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.002,
-    "guard_silhouette_change": 0.328,
-    "vs_guard_silhouette": 0.66,
-    "vs_stance_silhouette": 0.609
+    "guard_silhouette_change": 0.342,
+    "vs_guard_silhouette": 0.693,
+    "vs_stance_silhouette": 0.611
    }
   },
   "Stance_P2": {
@@ -6705,6 +8074,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.75,
+      "at": 12,
+      "flex": -6.4,
+      "dev": -28.1,
+      "twist": -19.8,
+      "grip": false,
+      "twist_max": 21.8,
+      "jump_deg": 13.9,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.86,
+      "at": 14,
+      "flex": -42.4,
+      "dev": -21.5,
+      "twist": 23.8,
+      "grip": false,
+      "twist_max": 30.1,
+      "jump_deg": 13.2,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -6718,8 +8111,8 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "guard_silhouette_change": 0.17,
-    "vs_guard_silhouette": 0.427
+    "guard_silhouette_change": 0.153,
+    "vs_guard_silhouette": 0.436
    }
   },
   "Hit_P2": {
@@ -6795,6 +8188,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 2,
+      "flex": -18.5,
+      "dev": -20.3,
+      "twist": -15.7,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 14.1,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.64,
+      "at": 6,
+      "flex": -28.2,
+      "dev": 11.6,
+      "twist": 14.6,
+      "grip": false,
+      "twist_max": 15.4,
+      "jump_deg": 10.5,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 0.9,
     "chain_chain_from_deg": [
@@ -6803,8 +8220,8 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Hand_L",
      0.0
     ],
     "max_height_m": 2.59,
@@ -6892,6 +8309,30 @@
       ],
       0.1
      ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.66,
+      "at": 2,
+      "flex": -42.6,
+      "dev": -1.4,
+      "twist": -19.3,
+      "grip": false,
+      "twist_max": 19.3,
+      "jump_deg": 16.8,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.84,
+      "at": 1,
+      "flex": -48.8,
+      "dev": 9.5,
+      "twist": 13.9,
+      "grip": false,
+      "twist_max": 15.2,
+      "jump_deg": 19.7,
+      "jump_at": 1
+     }
     },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.7,
@@ -7006,11 +8447,35 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.66,
+      "at": 9,
+      "flex": -21.7,
+      "dev": -21.8,
+      "twist": -11.2,
+      "grip": false,
+      "twist_max": 17.3,
+      "jump_deg": 20.4,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.64,
+      "at": 13,
+      "flex": -28.3,
+      "dev": 11.7,
+      "twist": 14.6,
+      "grip": false,
+      "twist_max": 15.0,
+      "jump_deg": 10.5,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 2.9,
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Hand_L",
      0.0
     ],
     "max_height_m": 2.59,
@@ -7120,6 +8585,30 @@
       0.1
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.68,
+      "at": 13,
+      "flex": -20.1,
+      "dev": -23.0,
+      "twist": -7.3,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 22.1,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.64,
+      "at": 25,
+      "flex": -30.7,
+      "dev": 10.9,
+      "twist": 14.3,
+      "grip": false,
+      "twist_max": 15.0,
+      "jump_deg": 15.3,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "root_peak_mps_60hz": 5.8,
     "chain_chain_to_deg": [
@@ -7202,6 +8691,30 @@
       1.7
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.7,
+      "at": 13,
+      "flex": -10.3,
+      "dev": -26.1,
+      "twist": -14.3,
+      "grip": false,
+      "twist_max": 17.3,
+      "jump_deg": 15.5,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.84,
+      "at": 17,
+      "flex": -29.0,
+      "dev": -26.9,
+      "twist": 19.6,
+      "grip": false,
+      "twist_max": 19.6,
+      "jump_deg": 16.0,
+      "jump_at": 11
+     }
+    },
     "self_clearance_cm": {
      "antebrazo L / tronco": [
       5.2,
@@ -7263,6 +8776,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.65,
+      "at": 11,
+      "flex": -8.5,
+      "dev": -24.2,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 4.3,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.78,
+      "at": 11,
+      "flex": -28.7,
+      "dev": -24.5,
+      "twist": 18.8,
+      "grip": false,
+      "twist_max": 18.8,
+      "jump_deg": 8.9,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -7318,6 +8855,30 @@
       ],
       0.0
      ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.64,
+      "at": 0,
+      "flex": -8.0,
+      "dev": -23.9,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 9.5,
+      "jump_at": 11
+     },
+     "L": {
+      "excess": 0.76,
+      "at": 0,
+      "flex": -27.8,
+      "dev": -23.9,
+      "twist": 18.7,
+      "grip": false,
+      "twist_max": 18.7,
+      "jump_deg": 6.7,
+      "jump_at": 4
+     }
     },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
@@ -7376,6 +8937,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.78,
+      "at": 0,
+      "flex": -3.2,
+      "dev": 19.4,
+      "twist": -12.3,
+      "grip": true,
+      "twist_max": 13.9,
+      "jump_deg": 16.8,
+      "jump_at": 4
+     },
+     "L": {
+      "excess": 1.05,
+      "at": 6,
+      "flex": 17.4,
+      "dev": -39.0,
+      "twist": -4.5,
+      "grip": true,
+      "twist_max": 21.1,
+      "jump_deg": 22.3,
+      "jump_at": 2
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -7387,8 +8972,8 @@
      ]
     },
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -7398,7 +8983,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.006,
-    "guard_silhouette_change": 0.3
+    "guard_silhouette_change": 0.271
    }
   },
   "GuardHit_P3": {
@@ -7448,6 +9033,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.65,
+      "at": 2,
+      "flex": -42.0,
+      "dev": 1.0,
+      "twist": -12.8,
+      "grip": true,
+      "twist_max": 13.9,
+      "jump_deg": 8.5,
+      "jump_at": 3
+     },
+     "L": {
+      "excess": 0.7,
+      "at": 1,
+      "flex": -27.9,
+      "dev": -21.1,
+      "twist": 18.0,
+      "grip": true,
+      "twist_max": 18.8,
+      "jump_deg": 18.6,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
@@ -7489,7 +9098,7 @@
    "notes": "desvío circular (la hoja de Kaito sale hacia la izquierda del maestro en f2-3) y se enrosca: termina en COIL para el golpe del contraataque (CounterStrike)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.3,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.05,
@@ -7511,7 +9120,36 @@
       0.0
      ]
     },
-    "self_clearance_cm": {},
+    "wrists": {
+     "R": {
+      "excess": 0.77,
+      "at": 15,
+      "flex": -16.7,
+      "dev": 18.2,
+      "twist": -10.6,
+      "grip": true,
+      "twist_max": 17.1,
+      "jump_deg": 19.3,
+      "jump_at": 4
+     },
+     "L": {
+      "excess": 0.96,
+      "at": 14,
+      "flex": 41.0,
+      "dev": -30.2,
+      "twist": 0.6,
+      "grip": true,
+      "twist_max": 23.0,
+      "jump_deg": 22.3,
+      "jump_at": 1
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      2.0,
+      3
+     ]
+    },
     "chain_chain_from_deg": [
      0.0,
      "",
@@ -7683,6 +9321,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.84,
+      "at": 7,
+      "flex": -15.7,
+      "dev": 20.2,
+      "twist": -10.4,
+      "grip": true,
+      "twist_max": 13.3,
+      "jump_deg": 21.0,
+      "jump_at": 7
+     },
+     "L": {
+      "excess": 0.98,
+      "at": 8,
+      "flex": 58.5,
+      "dev": -22.3,
+      "twist": -26.2,
+      "grip": true,
+      "twist_max": 26.2,
+      "jump_deg": 23.3,
+      "jump_at": 7
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -7691,10 +9353,6 @@
      "bastón / muslo L": [
       2.3,
       26
-     ],
-     "antebrazo L / tronco": [
-      5.7,
-      11
      ]
     },
     "root_peak_mps_60hz": 8.9,
@@ -7715,8 +9373,8 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "reach_same_deg": {
@@ -7733,7 +9391,7 @@
     },
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.296
+    "tell_silhouette_change": 0.31
    }
   },
   "CounterStrike_Mid_P3": {
@@ -7889,6 +9547,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 8,
+      "flex": 4.7,
+      "dev": 24.0,
+      "twist": -10.8,
+      "grip": true,
+      "twist_max": 12.3,
+      "jump_deg": 18.2,
+      "jump_at": 7
+     },
+     "L": {
+      "excess": 1.03,
+      "at": 9,
+      "flex": 76.3,
+      "dev": -5.0,
+      "twist": -28.2,
+      "grip": true,
+      "twist_max": 30.6,
+      "jump_deg": 21.5,
+      "jump_at": 7
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -7897,10 +9579,6 @@
      "bastón / muslo L": [
       2.3,
       26
-     ],
-     "antebrazo L / tronco": [
-      5.1,
-      12
      ]
     },
     "root_peak_mps_60hz": 4.7,
@@ -7921,13 +9599,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.296
+    "tell_silhouette_change": 0.31
    }
   },
   "CounterStrike_Close_P3": {
@@ -8061,7 +9739,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 2.6,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.77,
@@ -8083,6 +9761,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 8,
+      "flex": 2.6,
+      "dev": 23.7,
+      "twist": -9.8,
+      "grip": true,
+      "twist_max": 12.3,
+      "jump_deg": 8.6,
+      "jump_at": 7
+     },
+     "L": {
+      "excess": 0.98,
+      "at": 9,
+      "flex": 70.1,
+      "dev": -11.7,
+      "twist": -27.8,
+      "grip": true,
+      "twist_max": 28.8,
+      "jump_deg": 21.8,
+      "jump_at": 7
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -8091,10 +9793,6 @@
      "bastón / muslo L": [
       2.3,
       26
-     ],
-     "antebrazo L / tronco": [
-      2.4,
-      13
      ]
     },
     "root_peak_mps_60hz": 1.2,
@@ -8115,13 +9813,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.296
+    "tell_silhouette_change": 0.31
    }
   },
   "Taunt_P3": {
@@ -8190,35 +9888,55 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 10,
+      "flex": -61.4,
+      "dev": -0.1,
+      "twist": 21.9,
+      "grip": false,
+      "twist_max": 34.3,
+      "jump_deg": 26.2,
+      "jump_at": 8
+     },
+     "L": {
+      "excess": 0.93,
+      "at": 49,
+      "flex": -6.4,
+      "dev": -35.2,
+      "twist": -8.6,
+      "grip": true,
+      "twist_max": 19.9,
+      "jump_deg": 21.7,
+      "jump_at": 6
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
       0
      ],
      "bastón / muslo L": [
-      2.3,
-      60
-     ],
-     "antebrazo L / tronco": [
-      5.7,
-      54
+      0.8,
+      3
      ]
     },
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Thumb_R_1",
+     "Foot_L",
      0.0
     ],
     "max_height_m": 2.6,
     "min_z_m": -0.002,
-    "guard_silhouette_change": 0.428,
-    "vs_guard_silhouette": 0.701,
-    "vs_stance_silhouette": 0.692
+    "guard_silhouette_change": 0.342,
+    "vs_guard_silhouette": 0.706,
+    "vs_stance_silhouette": 0.662
    }
   },
   "Stance_P3": {
@@ -8263,6 +9981,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 13,
+      "flex": -39.1,
+      "dev": -27.4,
+      "twist": 3.5,
+      "grip": true,
+      "twist_max": 12.3,
+      "jump_deg": 16.4,
+      "jump_at": 13
+     },
+     "L": {
+      "excess": 0.89,
+      "at": 13,
+      "flex": 2.3,
+      "dev": 22.3,
+      "twist": 4.1,
+      "grip": false,
+      "twist_max": 19.8,
+      "jump_deg": 29.8,
+      "jump_at": 11
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       2.5,
@@ -8271,15 +10013,11 @@
      "bastón / muslo L": [
       1.6,
       5
-     ],
-     "antebrazo L / tronco": [
-      1.4,
-      11
      ]
     },
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -8289,8 +10027,8 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "guard_silhouette_change": 0.179,
-    "vs_guard_silhouette": 0.482
+    "guard_silhouette_change": 0.207,
+    "vs_guard_silhouette": 0.475
    }
   },
   "Hit_P3": {
@@ -8366,6 +10104,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.78,
+      "at": 1,
+      "flex": -9.8,
+      "dev": 19.2,
+      "twist": -12.8,
+      "grip": true,
+      "twist_max": 13.0,
+      "jump_deg": 6.4,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.87,
+      "at": 2,
+      "flex": 64.4,
+      "dev": -4.9,
+      "twist": -16.8,
+      "grip": true,
+      "twist_max": 17.9,
+      "jump_deg": 5.1,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -8378,13 +10140,13 @@
     },
     "root_peak_mps_60hz": 0.9,
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
@@ -8451,7 +10213,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 2.0,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.18,
@@ -8473,6 +10235,30 @@
       0.1
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.81,
+      "at": 12,
+      "flex": -7.5,
+      "dev": 19.9,
+      "twist": -12.3,
+      "grip": true,
+      "twist_max": 13.0,
+      "jump_deg": 5.2,
+      "jump_at": 13
+     },
+     "L": {
+      "excess": 0.86,
+      "at": 8,
+      "flex": 63.6,
+      "dev": -4.7,
+      "twist": -17.3,
+      "grip": true,
+      "twist_max": 18.5,
+      "jump_deg": 5.3,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -8485,13 +10271,13 @@
     },
     "root_peak_mps_60hz": 2.7,
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
@@ -8595,6 +10381,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.82,
+      "at": 3,
+      "flex": 4.0,
+      "dev": 20.5,
+      "twist": -10.4,
+      "grip": true,
+      "twist_max": 12.4,
+      "jump_deg": 5.4,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 1.02,
+      "at": 5,
+      "flex": 74.4,
+      "dev": -9.1,
+      "twist": -21.3,
+      "grip": true,
+      "twist_max": 21.3,
+      "jump_deg": 14.6,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.4,
@@ -8603,16 +10413,12 @@
      "bastón / muslo L": [
       0.9,
       20
-     ],
-     "antebrazo L / tronco": [
-      5.8,
-      7
      ]
     },
     "root_peak_mps_60hz": 2.9,
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
@@ -8722,6 +10528,30 @@
       0.1
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 3,
+      "flex": 1.0,
+      "dev": 23.8,
+      "twist": -8.8,
+      "grip": true,
+      "twist_max": 12.4,
+      "jump_deg": 7.7,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 1.05,
+      "at": 4,
+      "flex": 65.9,
+      "dev": -21.9,
+      "twist": -22.6,
+      "grip": true,
+      "twist_max": 22.8,
+      "jump_deg": 12.5,
+      "jump_at": 1
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.1,
@@ -8730,16 +10560,12 @@
      "bastón / muslo L": [
       0.1,
       25
-     ],
-     "antebrazo L / tronco": [
-      5.8,
-      12
      ]
     },
     "root_peak_mps_60hz": 5.8,
     "chain_chain_to_deg": [
      0.04,
-     "Thumb_R_1",
+     "Foot_L",
      0.0
     ],
     "max_height_m": 2.59,
@@ -8817,6 +10643,30 @@
       1.7
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.87,
+      "at": 2,
+      "flex": -2.3,
+      "dev": 21.8,
+      "twist": -12.1,
+      "grip": true,
+      "twist_max": 17.3,
+      "jump_deg": 21.4,
+      "jump_at": 9
+     },
+     "L": {
+      "excess": 1.0,
+      "at": 13,
+      "flex": 74.9,
+      "dev": -3.3,
+      "twist": -27.7,
+      "grip": true,
+      "twist_max": 28.2,
+      "jump_deg": 21.0,
+      "jump_at": 100
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -8825,20 +10675,16 @@
      "bastón / muslo L": [
       2.3,
       120
-     ],
-     "antebrazo L / tronco": [
-      0.5,
-      9
      ]
     },
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
@@ -8885,6 +10731,30 @@
       ],
       0.0
      ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.65,
+      "at": 11,
+      "flex": -8.5,
+      "dev": -24.2,
+      "twist": -16.5,
+      "grip": false,
+      "twist_max": 16.5,
+      "jump_deg": 4.3,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.89,
+      "at": 1,
+      "flex": 14.7,
+      "dev": -33.0,
+      "twist": -24.4,
+      "grip": true,
+      "twist_max": 24.7,
+      "jump_deg": 13.2,
+      "jump_at": 1
+     }
     },
     "self_clearance_cm": {},
     "chain_chain_from_deg": [
@@ -8942,6 +10812,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.85,
+      "at": 11,
+      "flex": -30.8,
+      "dev": 17.5,
+      "twist": -15.6,
+      "grip": true,
+      "twist_max": 16.6,
+      "jump_deg": 15.6,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 7,
+      "flex": 70.5,
+      "dev": -4.5,
+      "twist": -24.4,
+      "grip": true,
+      "twist_max": 24.5,
+      "jump_deg": 21.0,
+      "jump_at": 4
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -8950,10 +10844,6 @@
      "bastón / muslo L": [
       2.3,
       22
-     ],
-     "antebrazo L / tronco": [
-      1.2,
-      7
      ]
     },
     "chain_chain_from_deg": [
@@ -8962,8 +10852,8 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
@@ -9037,12 +10927,31 @@
       0.5
      ]
     },
-    "self_clearance_cm": {
-     "antebrazo L / tronco": [
-      2.1,
-      48
-     ]
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 94,
+      "flex": -60.7,
+      "dev": 2.8,
+      "twist": -17.6,
+      "grip": false,
+      "twist_max": 18.0,
+      "jump_deg": 28.6,
+      "jump_at": 92
+     },
+     "L": {
+      "excess": 0.94,
+      "at": 49,
+      "flex": -35.3,
+      "dev": 19.3,
+      "twist": 4.3,
+      "grip": false,
+      "twist_max": 16.9,
+      "jump_deg": 31.5,
+      "jump_at": 91
+     }
     },
+    "self_clearance_cm": {},
     "chain_chain_from_deg": [
      0.0,
      "",
@@ -9136,15 +11045,48 @@
       0.0
      ]
     },
-    "self_clearance_cm": {},
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 42,
+      "flex": -20.0,
+      "dev": -34.1,
+      "twist": 8.6,
+      "grip": false,
+      "twist_max": 38.9,
+      "jump_deg": 26.0,
+      "jump_at": 36
+     },
+     "L": {
+      "excess": 0.96,
+      "at": 24,
+      "flex": -37.5,
+      "dev": -29.0,
+      "twist": -16.8,
+      "grip": false,
+      "twist_max": 20.1,
+      "jump_deg": 43.4,
+      "jump_at": 36
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      0.9,
+      37
+     ],
+     "antebrazo L / tronco": [
+      0.5,
+      36
+     ]
+    },
     "chain_chain_from_deg": [
      0.0,
      "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Hand_L",
      0.0
     ],
     "max_height_m": 3.06,
@@ -9323,15 +11265,48 @@
       0.5
      ]
     },
-    "self_clearance_cm": {},
-    "root_peak_mps_60hz": 15.7,
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 9,
+      "flex": -62.1,
+      "dev": 1.8,
+      "twist": -18.0,
+      "grip": false,
+      "twist_max": 22.2,
+      "jump_deg": 32.6,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 19,
+      "flex": -59.6,
+      "dev": -9.8,
+      "twist": 2.1,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 42.3,
+      "jump_at": 17
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      1.5,
+      13
+     ],
+     "antebrazo L / tronco": [
+      0.1,
+      15
+     ]
+    },
+    "root_peak_mps_60hz": 15.3,
     "reach_m": 1.23,
     "strike_height_m": [
      1.29,
      1.32
     ],
-    "tip_peak_mps": 53.0,
-    "tip_outside_ratio": 0.14,
+    "tip_peak_mps": 57.3,
+    "tip_outside_ratio": 0.19,
     "apex_tip_mps": [
      0.5,
      0.8
@@ -9360,7 +11335,7 @@
     },
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.278
+    "tell_silhouette_change": 0.198
    }
   },
   "TwinPalm_Mid": {
@@ -9531,15 +11506,48 @@
       0.5
      ]
     },
-    "self_clearance_cm": {},
-    "root_peak_mps_60hz": 8.3,
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 9,
+      "flex": -62.1,
+      "dev": 1.8,
+      "twist": -18.0,
+      "grip": false,
+      "twist_max": 21.9,
+      "jump_deg": 32.6,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.96,
+      "at": 20,
+      "flex": -47.2,
+      "dev": -23.9,
+      "twist": -3.1,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 41.5,
+      "jump_at": 17
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      1.5,
+      13
+     ],
+     "antebrazo L / tronco": [
+      -0.5,
+      15
+     ]
+    },
+    "root_peak_mps_60hz": 8.1,
     "reach_m": 1.14,
     "strike_height_m": [
      1.31,
      1.35
     ],
-    "tip_peak_mps": 43.8,
-    "tip_outside_ratio": 0.17,
+    "tip_peak_mps": 47.4,
+    "tip_outside_ratio": 0.22,
     "apex_tip_mps": [
      0.5,
      0.8
@@ -9550,13 +11558,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.278
+    "tell_silhouette_change": 0.198
    }
   },
   "TwinPalm_Close": {
@@ -9727,15 +11735,48 @@
       0.5
      ]
     },
-    "self_clearance_cm": {},
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 9,
+      "flex": -62.1,
+      "dev": 1.8,
+      "twist": -18.0,
+      "grip": false,
+      "twist_max": 21.6,
+      "jump_deg": 32.6,
+      "jump_at": 10
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 19,
+      "flex": -60.2,
+      "dev": -8.8,
+      "twist": -2.6,
+      "grip": false,
+      "twist_max": 14.4,
+      "jump_deg": 38.9,
+      "jump_at": 17
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      1.5,
+      13
+     ],
+     "antebrazo L / tronco": [
+      -0.2,
+      16
+     ]
+    },
     "root_peak_mps_60hz": 2.0,
     "reach_m": 1.05,
     "strike_height_m": [
      1.34,
      1.37
     ],
-    "tip_peak_mps": 36.2,
-    "tip_outside_ratio": 0.2,
+    "tip_peak_mps": 39.1,
+    "tip_outside_ratio": 0.25,
     "apex_tip_mps": [
      0.5,
      0.8
@@ -9752,7 +11793,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.278
+    "tell_silhouette_change": 0.198
    }
   },
   "SpinKick": {
@@ -9865,7 +11906,36 @@
       0.0
      ]
     },
-    "self_clearance_cm": {},
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 20,
+      "flex": 5.0,
+      "dev": 23.9,
+      "twist": -1.8,
+      "grip": false,
+      "twist_max": 17.7,
+      "jump_deg": 22.0,
+      "jump_at": 16
+     },
+     "L": {
+      "excess": 0.94,
+      "at": 22,
+      "flex": -61.2,
+      "dev": 0.3,
+      "twist": 18.9,
+      "grip": false,
+      "twist_max": 24.6,
+      "jump_deg": 33.1,
+      "jump_at": 15
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo L / tronco": [
+      3.8,
+      19
+     ]
+    },
     "reach_m": 1.89,
     "strike_height_m": [
      1.01,
@@ -9878,12 +11948,12 @@
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Thigh_L",
+     "Hand_L",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.001,
-    "tell_silhouette_change": 0.656
+    "tell_silhouette_change": 0.661
    }
   },
   "Sweep": {
@@ -9986,7 +12056,7 @@
    "release_rate": 1.6,
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.4,
+     "hands": 1.1,
      "legs": 0.0
     },
     "plant_drift_cm": 0.35,
@@ -10008,6 +12078,30 @@
       0.1
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 13,
+      "flex": -61.6,
+      "dev": -0.1,
+      "twist": -11.0,
+      "grip": false,
+      "twist_max": 20.3,
+      "jump_deg": 38.1,
+      "jump_at": 36
+     },
+     "L": {
+      "excess": 0.96,
+      "at": 9,
+      "flex": -62.1,
+      "dev": -2.0,
+      "twist": 14.0,
+      "grip": false,
+      "twist_max": 17.9,
+      "jump_deg": 33.0,
+      "jump_at": 19
+     }
+    },
     "self_clearance_cm": {},
     "reach_m": 1.69,
     "strike_height_m": [
@@ -10026,7 +12120,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.455
+    "tell_silhouette_change": 0.457
    }
   },
   "QiWave": {
@@ -10153,6 +12247,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.96,
+      "at": 15,
+      "flex": 37.5,
+      "dev": -31.1,
+      "twist": -14.3,
+      "grip": false,
+      "twist_max": 20.4,
+      "jump_deg": 38.9,
+      "jump_at": 36
+     },
+     "L": {
+      "excess": 0.96,
+      "at": 15,
+      "flex": 46.9,
+      "dev": -27.6,
+      "twist": 20.3,
+      "grip": false,
+      "twist_max": 20.7,
+      "jump_deg": 32.2,
+      "jump_at": 23
+     }
+    },
     "self_clearance_cm": {},
     "reach_m": 1.12,
     "strike_height_m": [
@@ -10165,13 +12283,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Hand_L",
      0.0
     ],
-    "max_height_m": 2.65,
+    "max_height_m": 2.66,
     "min_z_m": -0.004,
-    "tell_silhouette_change": 0.36
+    "tell_silhouette_change": 0.294
    }
   },
   "DashStrike": {
@@ -10331,7 +12449,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.1,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 1.46,
@@ -10353,8 +12471,37 @@
       0.7
      ]
     },
-    "self_clearance_cm": {},
-    "root_peak_mps_60hz": 19.2,
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 3,
+      "flex": -17.4,
+      "dev": 22.4,
+      "twist": -6.2,
+      "grip": false,
+      "twist_max": 18.2,
+      "jump_deg": 24.2,
+      "jump_at": 3
+     },
+     "L": {
+      "excess": 0.94,
+      "at": 18,
+      "flex": -4.3,
+      "dev": 23.5,
+      "twist": -7.9,
+      "grip": false,
+      "twist_max": 22.5,
+      "jump_deg": 42.2,
+      "jump_at": 9
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      0.1,
+      14
+     ]
+    },
+    "root_peak_mps_60hz": 21.2,
     "reach_m": 1.52,
     "strike_height_m": [
      1.26,
@@ -10366,13 +12513,13 @@
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Hand_L",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.009,
-    "tell_silhouette_change": 0.244
+    "tell_silhouette_change": 0.225
    }
   },
   "BackHop": {
@@ -10492,8 +12639,32 @@
       0.6
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 17,
+      "flex": -18.7,
+      "dev": -20.5,
+      "twist": -15.9,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 5.4,
+      "jump_at": 3
+     },
+     "L": {
+      "excess": 0.7,
+      "at": 6,
+      "flex": -15.2,
+      "dev": 16.4,
+      "twist": 9.8,
+      "grip": false,
+      "twist_max": 10.0,
+      "jump_deg": 18.4,
+      "jump_at": 15
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 20.2,
+    "root_peak_mps_60hz": 20.8,
     "chain_chain_from_deg": [
      0.0,
      "",
@@ -10625,8 +12796,32 @@
       0.6
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.61,
+      "at": 17,
+      "flex": -18.7,
+      "dev": -20.5,
+      "twist": -15.9,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 5.4,
+      "jump_at": 3
+     },
+     "L": {
+      "excess": 0.62,
+      "at": 21,
+      "flex": -26.6,
+      "dev": 11.8,
+      "twist": 14.9,
+      "grip": false,
+      "twist_max": 15.5,
+      "jump_deg": 3.9,
+      "jump_at": 2
+     }
+    },
     "self_clearance_cm": {},
-    "root_peak_mps_60hz": 20.2,
+    "root_peak_mps_60hz": 20.8,
     "chain_chain_from_deg": [
      0.0,
      "",
@@ -10758,6 +12953,30 @@
       0.6
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.84,
+      "at": 2,
+      "flex": -8.6,
+      "dev": 20.6,
+      "twist": -12.2,
+      "grip": true,
+      "twist_max": 12.3,
+      "jump_deg": 6.0,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 0.88,
+      "at": 12,
+      "flex": 64.9,
+      "dev": -6.8,
+      "twist": -17.8,
+      "grip": true,
+      "twist_max": 17.9,
+      "jump_deg": 7.4,
+      "jump_at": 15
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       0.8,
@@ -10768,15 +12987,15 @@
       6
      ]
     },
-    "root_peak_mps_60hz": 20.2,
+    "root_peak_mps_60hz": 20.8,
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.8,
@@ -10926,7 +13145,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.3,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.07,
@@ -10948,6 +13167,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 1.07,
+      "at": 16,
+      "flex": 7.9,
+      "dev": 26.6,
+      "twist": -7.1,
+      "grip": true,
+      "twist_max": 14.3,
+      "jump_deg": 21.9,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 1.03,
+      "at": 21,
+      "flex": 75.3,
+      "dev": -8.2,
+      "twist": -25.3,
+      "grip": true,
+      "twist_max": 64.7,
+      "jump_deg": 39.7,
+      "jump_at": 18
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       0.2,
@@ -10956,32 +13199,28 @@
      "bastón / muslo L": [
       1.4,
       4
-     ],
-     "antebrazo L / tronco": [
-      3.3,
-      13
      ]
     },
-    "root_peak_mps_60hz": 14.7,
+    "root_peak_mps_60hz": 15.7,
     "reach_m": 2.4,
     "strike_height_m": [
      0.92,
      0.99
     ],
-    "tip_peak_mps": 74.1,
-    "tip_outside_ratio": 0.12,
+    "tip_peak_mps": 75.4,
+    "tip_outside_ratio": 0.08,
     "apex_tip_mps": [
      0.5,
      0.8
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "reach_same_deg": {
@@ -10998,7 +13237,7 @@
     },
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.162
+    "tell_silhouette_change": 0.203
    }
   },
   "Palm_Mid_P3": {
@@ -11140,7 +13379,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.3,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.07,
@@ -11162,6 +13401,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.88,
+      "at": 2,
+      "flex": 4.0,
+      "dev": 22.0,
+      "twist": -12.2,
+      "grip": true,
+      "twist_max": 14.2,
+      "jump_deg": 19.4,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 1.06,
+      "at": 19,
+      "flex": 78.9,
+      "dev": -3.5,
+      "twist": -32.5,
+      "grip": true,
+      "twist_max": 32.5,
+      "jump_deg": 21.8,
+      "jump_at": 15
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       0.5,
@@ -11170,37 +13433,33 @@
      "bastón / muslo L": [
       1.4,
       4
-     ],
-     "antebrazo L / tronco": [
-      4.9,
-      13
      ]
     },
-    "root_peak_mps_60hz": 7.8,
+    "root_peak_mps_60hz": 8.3,
     "reach_m": 1.87,
     "strike_height_m": [
      0.99,
      1.04
     ],
-    "tip_peak_mps": 45.2,
+    "tip_peak_mps": 45.9,
     "tip_outside_ratio": 0.13,
     "apex_tip_mps": [
      0.5,
      0.8
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.162
+    "tell_silhouette_change": 0.203
    }
   },
   "Palm_Close_P3": {
@@ -11342,7 +13601,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.3,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 1.03,
@@ -11364,6 +13623,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.88,
+      "at": 2,
+      "flex": 4.0,
+      "dev": 22.0,
+      "twist": -12.2,
+      "grip": true,
+      "twist_max": 14.1,
+      "jump_deg": 11.5,
+      "jump_at": 15
+     },
+     "L": {
+      "excess": 1.03,
+      "at": 20,
+      "flex": 76.9,
+      "dev": -3.1,
+      "twist": -28.5,
+      "grip": true,
+      "twist_max": 28.5,
+      "jump_deg": 22.1,
+      "jump_at": 15
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       0.5,
@@ -11372,37 +13655,33 @@
      "bastón / muslo L": [
       1.4,
       4
-     ],
-     "antebrazo L / tronco": [
-      4.4,
-      24
      ]
     },
-    "root_peak_mps_60hz": 1.9,
+    "root_peak_mps_60hz": 2.0,
     "reach_m": 1.43,
     "strike_height_m": [
      1.04,
      1.08
     ],
-    "tip_peak_mps": 21.1,
-    "tip_outside_ratio": 0.29,
+    "tip_peak_mps": 21.3,
+    "tip_outside_ratio": 0.31,
     "apex_tip_mps": [
      0.5,
      0.8
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Thumb_R_1",
+     "Foot_L",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.162
+    "tell_silhouette_change": 0.203
    }
   },
   "ChopPalm_P3": {
@@ -11551,7 +13830,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.4,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 0.13,
@@ -11573,57 +13852,77 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 1.07,
+      "at": 17,
+      "flex": 60.0,
+      "dev": -26.7,
+      "twist": 43.7,
+      "grip": true,
+      "twist_max": 72.4,
+      "jump_deg": 42.5,
+      "jump_at": 17
+     },
+     "L": {
+      "excess": 1.13,
+      "at": 17,
+      "flex": 48.3,
+      "dev": -35.1,
+      "twist": -56.6,
+      "grip": true,
+      "twist_max": 72.9,
+      "jump_deg": 41.7,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      3.9,
-      28
+      3.8,
+      29
      ],
      "bastón / muslo L": [
       2.3,
       36
-     ],
-     "antebrazo L / tronco": [
-      5.7,
-      3
      ]
     },
-    "root_peak_mps_60hz": 13.7,
+    "root_peak_mps_60hz": 14.5,
     "reach_m": 2.79,
     "strike_height_m": [
      0.1,
      0.33
     ],
-    "tip_peak_mps": 154.1,
+    "tip_peak_mps": 163.9,
     "tip_outside_ratio": 0.23,
     "apex_tip_mps": [
-     2.1,
+     2.3,
      0.2
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Thumb_R_1",
+     "Foot_L",
      0.0
     ],
     "reach_same_deg": {
      "ChopPalm_Mid_P3": [
       0.06,
-      "Forearm_L",
-      5
+      "Foot_R",
+      12
      ],
      "ChopPalm_Close_P3": [
       0.06,
-      "Forearm_L",
-      5
+      "Foot_R",
+      12
      ]
     },
     "max_height_m": 2.71,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.323
+    "tell_silhouette_change": 0.299
    }
   },
   "ChopPalm_Mid_P3": {
@@ -11790,6 +14089,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 1.05,
+      "at": 15,
+      "flex": 11.9,
+      "dev": -39.4,
+      "twist": 51.7,
+      "grip": true,
+      "twist_max": 59.3,
+      "jump_deg": 42.4,
+      "jump_at": 17
+     },
+     "L": {
+      "excess": 1.06,
+      "at": 21,
+      "flex": 79.2,
+      "dev": -4.2,
+      "twist": -54.8,
+      "grip": true,
+      "twist_max": 74.4,
+      "jump_deg": 43.0,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       0.9,
@@ -11798,37 +14121,33 @@
      "bastón / muslo L": [
       2.3,
       36
-     ],
-     "antebrazo L / tronco": [
-      5.7,
-      3
      ]
     },
-    "root_peak_mps_60hz": 7.3,
+    "root_peak_mps_60hz": 7.7,
     "reach_m": 2.13,
     "strike_height_m": [
      0.37,
      0.54
     ],
-    "tip_peak_mps": 127.3,
-    "tip_outside_ratio": 0.27,
+    "tip_peak_mps": 135.4,
+    "tip_outside_ratio": 0.28,
     "apex_tip_mps": [
-     2.1,
+     2.3,
      0.2
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.71,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.323
+    "tell_silhouette_change": 0.299
    }
   },
   "ChopPalm_Close_P3": {
@@ -11995,45 +14314,65 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 1.05,
+      "at": 15,
+      "flex": 8.6,
+      "dev": -39.5,
+      "twist": 42.1,
+      "grip": true,
+      "twist_max": 49.2,
+      "jump_deg": 37.3,
+      "jump_at": 17
+     },
+     "L": {
+      "excess": 1.12,
+      "at": 21,
+      "flex": 83.3,
+      "dev": -5.7,
+      "twist": -69.3,
+      "grip": true,
+      "twist_max": 81.5,
+      "jump_deg": 39.3,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
-      3.9,
-      28
+      3.8,
+      29
      ],
      "bastón / muslo L": [
       2.3,
       36
-     ],
-     "antebrazo L / tronco": [
-      4.8,
-      26
      ]
     },
-    "root_peak_mps_60hz": 1.8,
+    "root_peak_mps_60hz": 1.9,
     "reach_m": 1.59,
     "strike_height_m": [
      0.65,
      0.78
     ],
-    "tip_peak_mps": 105.2,
-    "tip_outside_ratio": 0.33,
+    "tip_peak_mps": 111.9,
+    "tip_outside_ratio": 0.34,
     "apex_tip_mps": [
-     2.1,
+     2.3,
      0.2
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.71,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.323
+    "tell_silhouette_change": 0.299
    }
   },
   "CraneKick_P3": {
@@ -12206,6 +14545,30 @@
       0.5
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 22,
+      "flex": 62.8,
+      "dev": -17.0,
+      "twist": 13.9,
+      "grip": false,
+      "twist_max": 20.7,
+      "jump_deg": 29.1,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.87,
+      "at": 39,
+      "flex": 64.8,
+      "dev": -5.0,
+      "twist": -8.9,
+      "grip": true,
+      "twist_max": 17.8,
+      "jump_deg": 20.6,
+      "jump_at": 4
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -12226,25 +14589,25 @@
      1.14,
      1.19
     ],
-    "tip_peak_mps": 34.5,
-    "tip_outside_ratio": 0.38,
+    "tip_peak_mps": 34.7,
+    "tip_outside_ratio": 0.26,
     "apex_tip_mps": [
      1.0,
      0.8
     ],
     "chain_chain_from_deg": [
-     1.61,
-     "UpperArm_R",
+     1.39,
+     "Hand_R",
      0.0
     ],
     "chain_chain_to_deg": [
-     1.61,
-     "UpperArm_R",
+     1.39,
+     "Hand_R",
      0.0
     ],
     "max_height_m": 2.61,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.446
+    "tell_silhouette_change": 0.395
    }
   },
   "LeapKick_P3": {
@@ -12450,6 +14813,30 @@
       0.4
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.89,
+      "at": 31,
+      "flex": 6.3,
+      "dev": -33.6,
+      "twist": -10.9,
+      "grip": true,
+      "twist_max": 18.4,
+      "jump_deg": 21.4,
+      "jump_at": 21
+     },
+     "L": {
+      "excess": 1.16,
+      "at": 48,
+      "flex": 17.4,
+      "dev": -43.1,
+      "twist": -1.2,
+      "grip": true,
+      "twist_max": 18.0,
+      "jump_deg": 24.3,
+      "jump_at": 21
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -12472,25 +14859,25 @@
       17
      ]
     },
-    "root_peak_mps_60hz": 8.8,
+    "root_peak_mps_60hz": 9.6,
     "reach_m": 0.31,
     "strike_height_m": [
      0.13,
      0.13
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 3.88,
     "min_z_m": -0.013,
-    "tell_silhouette_change": 0.302
+    "tell_silhouette_change": 0.292
    }
   },
   "Sweep_P3": {
@@ -12615,6 +15002,30 @@
       0.1
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.79,
+      "at": 2,
+      "flex": -4.7,
+      "dev": 19.6,
+      "twist": -12.2,
+      "grip": true,
+      "twist_max": 15.8,
+      "jump_deg": 9.9,
+      "jump_at": 7
+     },
+     "L": {
+      "excess": 0.8,
+      "at": 2,
+      "flex": 59.3,
+      "dev": -4.8,
+      "twist": -17.7,
+      "grip": true,
+      "twist_max": 18.5,
+      "jump_deg": 3.3,
+      "jump_at": 7
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       1.2,
@@ -12623,10 +15034,6 @@
      "bastón / muslo L": [
       0.7,
       6
-     ],
-     "antebrazo L / tronco": [
-      1.8,
-      35
      ]
     },
     "reach_m": 2.46,
@@ -12635,8 +15042,8 @@
      0.11
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
@@ -12646,7 +15053,7 @@
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.008,
-    "tell_silhouette_change": 0.457
+    "tell_silhouette_change": 0.438
    }
   },
   "QiWave_P3": {
@@ -12751,7 +15158,7 @@
    "release_rate": 1.6,
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 0.3,
      "legs": 0.0
     },
     "plant_drift_cm": 0.16,
@@ -12773,6 +15180,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 1.22,
+      "at": 31,
+      "flex": 11.6,
+      "dev": 30.2,
+      "twist": -7.8,
+      "grip": true,
+      "twist_max": 43.6,
+      "jump_deg": 33.3,
+      "jump_at": 44
+     },
+     "L": {
+      "excess": 1.11,
+      "at": 12,
+      "flex": -10.2,
+      "dev": 27.5,
+      "twist": -10.3,
+      "grip": true,
+      "twist_max": 20.1,
+      "jump_deg": 39.8,
+      "jump_at": 12
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.7,
@@ -12781,10 +15212,6 @@
      "bastón / muslo L": [
       1.9,
       53
-     ],
-     "antebrazo L / tronco": [
-      4.1,
-      50
      ]
     },
     "reach_m": 0.95,
@@ -12793,18 +15220,18 @@
      0.01
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.004,
-    "tell_silhouette_change": 0.373
+    "tell_silhouette_change": 0.35
    }
   },
   "DashStrike_P3": {
@@ -12964,7 +15391,7 @@
    ],
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.3,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 1.46,
@@ -12986,6 +15413,30 @@
       0.7
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 1.24,
+      "at": 9,
+      "flex": -80.9,
+      "dev": -0.7,
+      "twist": -45.9,
+      "grip": true,
+      "twist_max": 45.9,
+      "jump_deg": 42.4,
+      "jump_at": 9
+     },
+     "L": {
+      "excess": 1.19,
+      "at": 18,
+      "flex": 66.1,
+      "dev": -30.6,
+      "twist": -32.4,
+      "grip": true,
+      "twist_max": 39.9,
+      "jump_deg": 42.8,
+      "jump_at": 17
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       0.5,
@@ -12994,27 +15445,31 @@
      "bastón / muslo L": [
       2.2,
       1
+     ],
+     "antebrazo R / tronco": [
+      0.2,
+      9
      ]
     },
-    "root_peak_mps_60hz": 19.2,
+    "root_peak_mps_60hz": 21.2,
     "reach_m": 2.43,
     "strike_height_m": [
      0.91,
      0.94
     ],
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "max_height_m": 2.59,
     "min_z_m": -0.009,
-    "tell_silhouette_change": 0.222
+    "tell_silhouette_change": 0.238
    }
   },
   "PhaseStaff": {
@@ -13087,6 +15542,30 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.91,
+      "at": 64,
+      "flex": 0.7,
+      "dev": -34.7,
+      "twist": 2.7,
+      "grip": true,
+      "twist_max": 16.4,
+      "jump_deg": 21.3,
+      "jump_at": 67
+     },
+     "L": {
+      "excess": 1.06,
+      "at": 65,
+      "flex": 10.0,
+      "dev": -39.8,
+      "twist": -11.0,
+      "grip": true,
+      "twist_max": 26.5,
+      "jump_deg": 22.1,
+      "jump_at": 70
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -13095,10 +15574,6 @@
      "bastón / muslo L": [
       2.3,
       90
-     ],
-     "antebrazo L / tronco": [
-      5.9,
-      75
      ]
     },
     "chain_chain_from_deg": [
@@ -13108,10 +15583,10 @@
     ],
     "chain_chain_to_deg": [
      0.04,
-     "Thumb_R_1",
+     "Foot_L",
      0.0
     ],
-    "max_height_m": 2.68,
+    "max_height_m": 2.69,
     "min_z_m": -0.0
    }
   },
@@ -13178,7 +15653,7 @@
    "notes": "se rinde: apoya el bastón y respira (f20), lo suelta y cae a su izquierda (f30-40), cruza las piernas de pie y se sienta (f98); en f112 ya medita (encadenar con Meditate)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.0,
+     "hands": 1.8,
      "legs": 0.0
     },
     "plant_drift_cm": 0.62,
@@ -13200,6 +15675,30 @@
       0.7
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.95,
+      "at": 80,
+      "flex": -59.3,
+      "dev": -9.8,
+      "twist": 14.7,
+      "grip": false,
+      "twist_max": 23.3,
+      "jump_deg": 19.9,
+      "jump_at": 87
+     },
+     "L": {
+      "excess": 1.1,
+      "at": 14,
+      "flex": 73.0,
+      "dev": -19.1,
+      "twist": -61.8,
+      "grip": true,
+      "twist_max": 65.7,
+      "jump_deg": 39.5,
+      "jump_at": 30
+     }
+    },
     "self_clearance_cm": {
      "bastón / tronco": [
       3.9,
@@ -13208,10 +15707,6 @@
      "bastón / muslo L": [
       2.3,
       1
-     ],
-     "antebrazo L / tronco": [
-      3.7,
-      4
      ],
      "muslo R / muslo L": [
       -0.5,
@@ -13231,13 +15726,13 @@
      ]
     },
     "chain_chain_from_deg": [
-     0.04,
-     "Thumb_R_1",
+     0.0,
+     "",
      0.0
     ],
     "chain_chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Forearm_R",
      0.0
     ],
     "max_height_m": 2.61,
@@ -13292,6 +15787,30 @@
      ]
     },
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "R": {
+      "excess": 0.41,
+      "at": 0,
+      "flex": 21.8,
+      "dev": 7.4,
+      "twist": 23.3,
+      "grip": false,
+      "twist_max": 23.3,
+      "jump_deg": 0.1,
+      "jump_at": 17
+     },
+     "L": {
+      "excess": 0.41,
+      "at": 0,
+      "flex": 21.8,
+      "dev": 7.4,
+      "twist": -23.3,
+      "grip": false,
+      "twist_max": 23.3,
+      "jump_deg": 0.1,
+      "jump_at": 19
+     }
+    },
     "self_clearance_cm": {
      "tibia R / tibia L": [
       -2.7,
@@ -13370,7 +15889,35 @@
       0.0
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 0.64,
+      "at": 3,
+      "flex": 15.4,
+      "dev": 15.1,
+      "twist": 19.5,
+      "grip": false,
+      "twist_max": 23.3,
+      "jump_deg": 9.2,
+      "jump_at": 6
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 5,
+      "flex": 9.4,
+      "dev": 23.6,
+      "twist": -3.3,
+      "grip": false,
+      "twist_max": 23.3,
+      "jump_deg": 17.1,
+      "jump_at": 65
+     }
+    },
     "self_clearance_cm": {
+     "antebrazo L / tronco": [
+      3.4,
+      65
+     ],
      "tibia R / tibia L": [
       -4.1,
       34
@@ -13422,7 +15969,7 @@
    "notes": "poses de prueba del esqueleto (no es un clip de pelea)",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.4,
+     "hands": 0.0,
      "legs": 0.0
     },
     "plant_drift_cm": 16.03,
@@ -13444,10 +15991,38 @@
       3.1
      ]
     },
+    "wrists": {
+     "R": {
+      "excess": 3.22,
+      "at": 147,
+      "flex": -28.9,
+      "dev": 79.9,
+      "twist": 22.4,
+      "grip": true,
+      "twist_max": 75.8,
+      "jump_deg": 95.1,
+      "jump_at": 147
+     },
+     "L": {
+      "excess": 1.09,
+      "at": 117,
+      "flex": 17.9,
+      "dev": 26.7,
+      "twist": 45.8,
+      "grip": true,
+      "twist_max": 45.8,
+      "jump_deg": 68.0,
+      "jump_at": 117
+     }
+    },
     "self_clearance_cm": {
+     "antebrazo R / tronco": [
+      0.0,
+      119
+     ],
      "antebrazo L / tronco": [
-      -8.1,
-      149
+      -0.9,
+      116
      ],
      "bastón / muslo R": [
       -9.4,

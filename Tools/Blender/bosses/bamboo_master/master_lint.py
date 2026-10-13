@@ -176,3 +176,59 @@ def sole_dump(rig, frames, roots, pts=None):
                   if i and tr[i].z < TOUCH_Z and tr[i - 1].z < TOUCH_Z]
             lines.append(f"    {S} f{i:3d} suela {low * 100:6.1f} cm  pivote {min(mv) * 100 if mv else -1:5.1f} cm")
     return "\n".join(lines)
+
+
+# ============================================================================ muñecas
+# Los límites y la medida son los de master_rig (los de team_limbs): 'exceso' 1 = en el borde de la elipse de flexión,
+# extensión y desvío. El giro de la mano sobre su eje que queda en la muñeca después de twist_follow, hasta TWIST. Un cuadro
+# en que la mano gira contra el antebrazo más que WRIST_JUMP es un tirón (fuera de los cortes que el clip declara en
+# timing['wrist_cuts'])
+TWIST = 85.0
+WRIST_JUMP = 45.0
+
+
+class WristMeter:
+    """(flexión, desvío, giro) de cada mano respecto de su antebrazo, con la relación del reposo como muñeca neutra."""
+
+    def __init__(self, rig):
+        self.side = MR.wrist_frames(rig)
+
+    def relative(self, W, S):
+        return (NA.rot3(W["Forearm_" + S]) @ self.side[S][0]).transposed() @ NA.rot3(W["Hand_" + S])
+
+    def angles(self, W, S):
+        _, n, l = self.side[S]
+        return MR.wrist_angles(self.relative(W, S), n, l)
+
+
+def wrist_report(meter, frames, ctrls, cuts=()):
+    """Por mano: el peor exceso (y si en ese cuadro agarra el bastón), la flexión, el desvío y el giro de ese cuadro, el
+    mayor giro que queda en la muñeca y el mayor tirón de un cuadro (grados de la mano contra el antebrazo)."""
+    cut = set()
+    for a, b in cuts:
+        cut.update(range(a, b + 1))
+    out = {}
+    for S in "RL":
+        s = S.lower()
+        worst = (0.0, 0, 0.0, 0.0, 0.0, False)
+        tw_max, jump = 0.0, (0.0, 0)
+        prev = None
+        for i, (W, c) in enumerate(zip(frames, ctrls)):
+            flex, dev, tw = meter.angles(W, S)
+            ex = MR.wrist_excess(flex, dev)
+            gw = c.get("grip_" + s + "_w")
+            grip = (c.get("staff_on") or 0.0) >= 0.5 and c.get("grip_" + s) is not None and (1.0 if gw is None else gw) >= 0.5
+            if ex > worst[0]:
+                worst = (ex, i, flex, dev, tw, grip)
+            tw_max = max(tw_max, abs(tw))
+            D = meter.relative(W, S).to_quaternion()
+            if prev is not None and i not in cut and (i - 1) not in cut:
+                d = math.degrees(prev.rotation_difference(D).angle)
+                d = 360.0 - d if d > 180.0 else d
+                if d > jump[0]:
+                    jump = (d, i)
+            prev = D
+        out[S] = {"excess": round(worst[0], 2), "at": worst[1], "flex": round(worst[2], 1), "dev": round(worst[3], 1),
+                  "twist": round(worst[4], 1), "grip": worst[5], "twist_max": round(tw_max, 1),
+                  "jump_deg": round(jump[0], 1), "jump_at": jump[1]}
+    return out

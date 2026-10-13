@@ -58,6 +58,7 @@ class MClip(Clip):
 
     def __init__(self, name, frames, keys, phase=1, base=None, overlay=None, overlays=(), overlay_start=0, **kw):
         super().__init__(name, frames, keys, **kw)
+        rigid_hands(self.keys)
         self.phase, self.base = phase, base
         # pista aparte para los pies (sin el atraso de 'lag'): los pasos de una reacción no caen en las mismas claves que
         # el cuerpo
@@ -86,7 +87,12 @@ class MClip(Clip):
             out[c] = self.sample(ff, c)
         for o in self.overlays:
             if f >= getattr(o, "start", 0):
-                out.update({k: v for k, v in o.controls(f).items() if v is not None})
+                oc = {k: v for k, v in o.controls(f).items() if v is not None}
+                for s in "rl":
+                    # una pista que pisa los dedos o el dorso sin traer su giro: el de las claves de abajo ya no vale
+                    if f"hand_{s}_q" not in oc and (f"hand_{s}_dir" in oc or f"hand_{s}_up" in oc):
+                        out.pop(f"hand_{s}_q", None)
+                out.update(oc)
         return out
 
     def sample(self, f, channel):
@@ -218,9 +224,18 @@ SOLVER = None
 
 
 def solved(p):
-    """Matrices de todos los huesos de una pose (sin resortes)."""
+    """Matrices de todos los huesos de una pose (sin resortes), sin la historia del brazo de lo que se horneaba (el
+    codo del cuadro anterior: la guardia de referencia tiene que salir igual que el primer cuadro de un clip)."""
     pose = NA.Pose(SOLVER.rig)
+    names = ("share_prev", "pole_prev", "up_prev", "d_prev", "h_prev", "ang_prev", "ang_now", "w_prev", "rh_prev", "wr_prev")
+    keep = (SOLVER.mode, dict(SOLVER.frame)) + tuple(dict(getattr(SOLVER, k)) for k in names)
+    SOLVER.mode = "free"
+    for k in names:
+        setattr(SOLVER, k, {})
     SOLVER.solve(pose, p)
+    SOLVER.mode, SOLVER.frame = keep[:2]
+    for k, v in zip(names, keep[2:]):
+        setattr(SOLVER, k, v)
     for b in SOLVER.rig.names:
         pose.get(b)
     return pose.W
@@ -283,8 +298,12 @@ READY2 = hand(hand(BODY, "r", **_GUARD_R), "l", **_GUARD_L)
 READY1 = mod(READY2, back_l=1.0, **MR.hand_shape("l", "relaxed"))
 # fase 3: el bastón apuntando a Kaito por delante a su izquierda, la derecha adelante y la izquierda en la cadera de atrás
 # (5 cm afuera del costado: más adentro el bastón quedaba medio metido en el chaleco en toda la fase 3)
+# los pulgares se miran en toda la fase 3: la derecha (del lado de la punta de abajo, la que pega) con el pulgar hacia
+# la de arriba y la izquierda hacia la de abajo (staff_pose: rt=1, lt=-1), la de adelante por arriba y la de atrás por
+# abajo. Con la derecha de esta guardia al revés (los dos pulgares hacia la punta), cada golpe que salía de ella daba
+# vuelta la mano alrededor del caño en un cuadro (Guard_P3 f2, Taunt_P3, CraneKick_P3, Defeat...)
 STAFF_GUARD = dict(staff_on=1.0, staff_pos=(0.17, -0.18, 1.2), staff_dir=n(0.22, 0.95, 0.2), staff_up=(0.0, 0.0, 1.0),
-                   grip_r=-0.36, grip_l=0.4, grip_r_up=(0.0, 0.0, 1.0), grip_l_up=(0.0, 0.0, 1.0), grip_r_thumb=-1.0,
+                   grip_r=-0.36, grip_l=0.4, grip_r_up=(0.0, 0.0, 1.0), grip_l_up=(0.0, 0.0, 1.0), grip_r_thumb=1.0,
                    grip_l_thumb=-1.0, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4), grip_r_w=1.0, grip_l_w=1.0,
                    back_l=0.0, **MR.hand_shape("r", "grip"), **MR.hand_shape("l", "grip"))
 READY3 = mod(READY2, **STAFF_GUARD)
@@ -378,6 +397,26 @@ def add(name, frames, keys, ph=1, base=None, loop=False, lag=None, timing=None, 
               lag=LEAD if lag is None else lag, timing=t, events=events, notes=notes, overlay=ov, overlay_start=ov_start)
     CLIPS.append(c)
     return c
+
+
+def rigid_hands(ks):
+    """El giro de cada mano en cada clave como cuaternión ('hand_r_q', 'hand_l_q', del mismo lado que el de la clave
+    anterior): el clip lo interpola como un giro (Clip.sample, normalizado en el Solver) en vez de los dedos y el dorso
+    por separado: con los dos vectores sueltos, la llamada de Taunt pasaba el dorso a 160° de los dedos y la palma daba
+    media vuelta en un cuadro. Se rehace con los dedos y el dorso de cada clave (una variante que copia las claves de su
+    base y les cambia la mano no hereda el giro viejo)."""
+    for s in "rl":
+        prev = None
+        for k in ks:
+            d, u = k.ctrl.get(f"hand_{s}_dir"), k.ctrl.get(f"hand_{s}_up")
+            if d is None or u is None:
+                k.ctrl.pop(f"hand_{s}_q", None)
+                continue
+            q = NA.basis_yz(d, u).to_quaternion()
+            if prev is not None and prev.dot(q) < 0.0:
+                q.negate()
+            k.ctrl[f"hand_{s}_q"] = tuple(q)
+            prev = q
 
 
 # la cadera guía y la cabeza llega después (las articulaciones se rompen en sucesión)
@@ -762,7 +801,9 @@ G_BODY = feet(mod(BODY, hips=(0.03, 0.15, -0.17), hips_rot=(0.0, 0.0, 18.0), spi
               r=ball(*land_xy(FOOT_R0), heel=14.0))
 _G_R = dict(pos=(-0.47, -0.3, 2.3), fingers=(-0.3, -0.15, 1.0), dorsum=(0.35, 0.9, 0.15), elbow=(-1.0, 0.15, -0.45), shape="palm")
 # la otra ala (fase 2): la izquierda baja junto a la cadera de adelante, la palma hacia el piso, los dedos hacia Kaito
-_G_L = dict(pos=(0.36, -0.36, 1.2), fingers=(0.25, -1.0, -0.05), dorsum=(0.1, 0.0, 1.0), elbow=(0.8, 0.4, -0.45), shape="palm")
+# (más afuera y adelante que la izquierda de la espera de la fase 2, que está casi en el mismo lugar 22 cm más arriba:
+# desde la cámara del juego la guardia quedaba en 15 % de cambio)
+_G_L = dict(pos=(0.48, -0.48, 1.18), fingers=(0.25, -1.0, -0.05), dorsum=(0.1, 0.0, 1.0), elbow=(0.8, 0.4, -0.45), shape="palm")
 # fase 3: el bastón horizontal delante del pecho, las manos abiertas a lo ancho (bloqueo alto)
 _G_STAFF = dict(staff_on=1.0, staff_follow=0.0, staff_pos=(0.02, -0.5, 1.72), staff_dir=n(1.0, 0.1, 0.06), staff_up=(0.0, -1.0, 0.0),
                 grip_r=-0.4, grip_l=0.4, grip_r_up=(0.0, 0.0, 1.0), grip_l_up=(0.0, 0.0, 1.0), grip_r_thumb=1.0, grip_l_thumb=-1.0,
@@ -1277,7 +1318,7 @@ def counter_strike(ph, var=None):
         c = lh - a * (1.0 - 0.9 * (1.0 - k))
         strike = staff_hands(mod(C_BODY, hips=(0.0, -0.04, -0.3), hips_rot=(6.0, 0.0, 22.0), spine=(10.0, 0.0, 8.0),
                                  chest=(4.0, 0.0, 6.0), neck=(-6.0, 0.0, -18.0), head=(-8.0, 0.0, -18.0)),
-                             tuple(c), tuple(a), hr=tuple(lh - a * 0.6), hl=tuple(lh), rt=-1.0, lt=-1.0,
+                             tuple(c), tuple(a), hr=tuple(lh - a * 0.6), hl=tuple(lh),
                              elbow_r=(-0.6, -0.2, -0.8), elbow_l=(0.9, 0.3, -0.3))
         strike["hips"] = tuple(Vector(strike["hips"]) + Vector((0.01, 0.11, 0.1)) * (1.0 - k))
         glow, pt = "Master_GlintStaff", ("Staff", (0.0, 0.0, 0.0))
@@ -1324,21 +1365,29 @@ def counter_strike(ph, var=None):
 S_BODY = feet(mod(BODY, hips=(0.03, 0.17, -0.3), hips_rot=(4.0, 0.0, 10.0), spine=(8.0, 0.0, 2.0), chest=(4.0, 0.0, 2.0),
                   neck=(-6.0, 0.0, -8.0), head=(-10.0, 0.0, -8.0), knee_l=(0.6, -1.0, 0.0), knee_r=(-0.3, -1.0, 0.0)),
               r=ball(*land_xy(FOOT_R0), heel=22.0))
-_S_R = dict(pos=(0.06, -0.6, 1.66), fingers=(0.25, -0.15, 1.0), dorsum=(0.2, 1.0, 0.1), elbow=(-0.9, 0.1, -0.4), shape="palm")
-_S_L = dict(pos=(-0.06, -0.62, 1.6), fingers=(-0.25, -0.15, 1.0), dorsum=(-0.2, 1.0, 0.1), elbow=(0.9, 0.1, -0.4), shape="palm")
+# las palmas cruzadas en X delante de la cara, los dedos siguiendo al antebrazo que sube desde el codo bien abierto:
+# paradas del todo con los codos afuera la muñeca tenía que doblarse 90° de costado y el brazo, para que entrara, bajaba
+# los codos 45° (la postura perdía el ancho y desde la cámara del juego quedaba en 13-15 % de cambio contra la espera)
+_S_R = dict(pos=(-0.02, -0.64, 1.74), fingers=(0.5, -0.35, 0.8), dorsum=(0.3, 0.9, 0.1), elbow=(-1.0, 0.2, -0.2), shape="palm")
+_S_L = dict(pos=(0.02, -0.66, 1.68), fingers=(-0.5, -0.35, 0.8), dorsum=(-0.3, 0.9, 0.1), elbow=(1.0, 0.2, -0.2), shape="palm")
 
 
 def stance_arms(p, ph, w=1.0):
     """Las dos palmas cruzadas adelante (w = cuánto: 0 = la guardia común de las manos), o el bastón parado adelante con
-    la punta apoyada en el piso y las dos manos arriba (fase 3)."""
+    la punta apoyada en el piso en la derecha y la palma izquierda parada al lado (fase 3)."""
     if ph == 3:
-        # parado adelante y un poco a su izquierda (las dos manos de ese lado: el antebrazo izquierdo no cruza el pecho)
+        # parado adelante y un poco a su izquierda (donde lo tiene la guardia: no cruza el cuerpo), en la derecha sola con
+        # el pulgar hacia arriba, y la palma izquierda parada al lado. Con las dos manos, la izquierda (la de arriba)
+        # quedaba con el pulgar hacia el piso y el antebrazo girado 125°: para llegar desde la guardia el giro cruzaba los
+        # 180° y la mano daba 75° en un cuadro
         top = Vector((0.16, -0.6, 1.76))
         tip = Vector((0.2, -0.7, MR.STAFF_R + 0.01))
         a = (top - tip).normalized()
-        return staff_hands(p, tuple(tip + a * (MR.STAFF_LEN * 0.5)), tuple(a), hr=(0.16, -0.62, 1.46), hl=(0.16, -0.6, 1.72),
-                           rt=-1.0, lt=1.0, gru=(-1.0, 0.0, 0.0), glu=(1.0, 0.0, 0.0), elbow_r=(-0.9, 0.2, -0.4),
-                           elbow_l=(0.9, 0.3, -0.3))
+        q = staff_hands(p, tuple(tip + a * (MR.STAFF_LEN * 0.5)), tuple(a), hr=(0.16, -0.62, 1.56), hl=None,
+                        gru=(-1.0, 0.0, 0.0), elbow_r=(-0.9, 0.2, -0.4))
+        q = hand(q, "l", (0.36, -0.56, 1.66), (-0.3, -0.35, 0.9), (-0.15, 0.95, 0.3), elbow=(1.0, 0.2, -0.3), shape="palm")
+        q["back_l"] = 0.0
+        return q
     q = hand(p, "r", **_S_R)
     q = hand(q, "l", **_S_L)
     q["back_l"] = 0.0
@@ -1385,8 +1434,11 @@ def taunt(ph):
     open_l = dict(pos=(0.62, -0.22, 1.18), fingers=(0.35, -0.2, -1.0), dorsum=(0.0, 1.0, -0.2), elbow=(0.6, 0.6, -0.4), shape="palm")
     # la llamada: el antebrazo derecho estirado adelante con la palma arriba y después recogido hacia él
     call_out = dict(pos=(-0.36, -0.72, 1.42), fingers=(0.1, -1.0, 0.1), dorsum=(0.0, 0.0, -1.0), elbow=(-0.8, 0.2, -0.5), shape="palm")
-    call_in = dict(pos=(-0.32, -0.38, 1.72), fingers=(0.1, -0.2, 1.0), dorsum=(0.0, 0.95, -0.3), elbow=(-0.85, 0.1, -0.5), shape="relaxed")
-    rest3 = staff_pose(BODY, (0.5, -0.12, 1.17), (0.0, 0.0, 1.0), upv=(0.0, -1.0, 0.0), gr=None, gl=0.32, lt=1.0, glu=(1.0, 0.0, 0.0),
+    # recogida: el antebrazo sube con la palma hacia él (el dorso hacia Kaito). Con el dorso hacia él la mano tenía que
+    # dar media vuelta contra el antebrazo entre la palma arriba de la llamada y esta
+    call_in = dict(pos=(-0.32, -0.38, 1.72), fingers=(0.1, -0.2, 1.0), dorsum=(0.0, -0.95, -0.2), elbow=(-0.85, 0.1, -0.5), shape="relaxed")
+    # (la punta que pega arriba y el pulgar izquierdo hacia ella, como master_clips_p3.side_staff)
+    rest3 = staff_pose(BODY, (0.5, -0.12, 1.17), (0.0, 0.0, -1.0), upv=(0.0, -1.0, 0.0), gr=None, gl=-0.32, glu=(1.0, 0.0, 0.0),
                        elbow_l=(0.85, 0.3, -0.4))
 
     def pose(body, r, l=open_l):
@@ -1492,7 +1544,7 @@ def _rise_keys(K0, g, ph, f0):
         hr, hl = Vector((0.04, -0.5, 1.1)), Vector((0.38, 0.08, 1.18))
         a = (hl - hr).normalized()
         stand = staff_hands(mod(stand, staff_follow=0.0), tuple(hr + a * 0.38), tuple(a), hr=tuple(hr), hl=tuple(hl),
-                            rt=-1.0, lt=-1.0, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.85, 0.45, -0.3))
+                            elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.85, 0.45, -0.3))
     return [(f0 + 6, push, "inout"), (f0 + 12, stand, "inout")]
 
 
@@ -1567,9 +1619,11 @@ def intro():
     w1 = mod(w0, breath=1.0, head=(15.0, 0.0, -2.0))
     look = mod(w0, neck=(-2.0, 0.0, -2.0), head=(-4.0, 0.0, -4.0))
     look2 = mod(look, head=(-3.0, 5.0, -4.0))
-    side = hand(hand(mod(look, back_r=0.0, back_l=0.0), "r", (-0.36, 0.04, 1.3), (0.0, 0.1, -1.0), (-1.0, 0.0, 0.0),
+    # las manos colgando con los dedos apenas adelante: la palma del saludo los tiene arriba y apenas adelante, y desde
+    # unos dedos apenas atrás el giro más corto los pasaba por detrás (la muñeca izquierda daba 59° en un cuadro)
+    side = hand(hand(mod(look, back_r=0.0, back_l=0.0), "r", (-0.36, 0.04, 1.3), (0.0, -0.1, -1.0), (-1.0, 0.0, 0.0),
                      elbow=(-0.8, 0.4, -0.2), shape="relaxed"),
-                "l", (0.36, 0.06, 1.3), (0.0, 0.1, -1.0), (1.0, 0.0, 0.0), elbow=(0.8, 0.4, -0.2), shape="relaxed")
+                "l", (0.36, 0.06, 1.3), (0.0, -0.1, -1.0), (1.0, 0.0, 0.0), elbow=(0.8, 0.4, -0.2), shape="relaxed")
     sal = _salute(mod(look, head=(-4.0, 0.0, -3.0)))
     POSES["saludo"] = sal
     sal_a = to_chest(sal, ("r", "l"))

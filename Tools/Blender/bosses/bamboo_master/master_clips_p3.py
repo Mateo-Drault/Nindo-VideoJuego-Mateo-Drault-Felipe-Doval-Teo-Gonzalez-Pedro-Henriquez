@@ -48,7 +48,7 @@ def arm_track(p, sides="rl"):
     return copy.deepcopy(out)
 
 
-def line(p, hr, hl, tip_from_r, gru=(0.0, 0.0, 1.0), glu=(0.0, 0.0, 1.0), rt=-1.0, lt=-1.0, **kw):
+def line(p, hr, hl, tip_from_r, gru=(0.0, 0.0, 1.0), glu=(0.0, 0.0, 1.0), rt=1.0, lt=-1.0, **kw):
     """El bastón por las dos manos con la punta que pega a tip_from_r metros de la derecha, del lado opuesto a la
     izquierda (la izquierda queda hacia la punta de atrás)."""
     hr, hl = Vector(hr), Vector(hl)
@@ -154,26 +154,37 @@ def smash_p3(var=None):
     up = dict(elbow_r=(-0.7, 0.3, 0.6), elbow_l=(0.7, 0.3, 0.5))
     lo = dict(elbow_r=(-0.6, 0.2, -0.8), elbow_l=(0.6, 0.2, -0.8))
     vert = dict(gru=(0.0, -1.0, 0.0), glu=(0.0, -1.0, 0.0))
-    raised = end_grip(B, (0.0, 0.02, 2.6), (0.06, -0.24, 2.38), **up)
-    hold = end_grip(B, (0.0, 0.03, 2.61), (0.06, -0.23, 2.39), **up)
+    # la derecha agarra como una espada (el pulgar hacia la punta que pega) desde que lo alza hasta que vuelve: con los
+    # pulgares mirándose de la guardia el bastón le salía por el lado del meñique y la muñeca se doblaba 47° hacia el
+    # pulgar en la caída (1.95 de exceso). Lo suelta y lo vuelve a tomar mientras la izquierda lo sostiene (f0-5 y f28-36)
+    sw = dict(rt=-1.0)
+    raised = end_grip(B, (0.0, 0.02, 2.6), (0.06, -0.24, 2.38), **up, **sw)
+    hold = end_grip(B, (0.0, 0.03, 2.61), (0.06, -0.23, 2.39), **up, **sw)
     MC.POSES["bastón alzado aviso 3"] = raised
     end_c = 0.12 + 1.08 * (1.0 - k)
+    # (la izquierda 6 cm más cerca del hombro y con los nudillos arriba como en la guardia: en (0.28, -0.42, 1.32) y con
+    # los nudillos hacia Kaito el brazo llegaba estirado del todo y el puño daba más de media vuelta alrededor del caño,
+    # 55° de muñeca en un cuadro)
+    stand = end_grip(B, (0.16, -0.6, 1.66), (0.27, -0.38, 1.37), end=0.3, gru=vert["gru"], **lo, **sw)
+    back = line(B, (0.09, -0.53, 1.13), (0.26, 0.18, 1.28), 0.8, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4), **sw)
     track = [(0, G3(), "lin"),
+             (2, mod(mix(G3(), stand, 0.5), grip_r_w=0.0, grip_r_thumb=0.0), "sine"),
              # se para delante a su izquierda: la izquierda sale de la cadera de atrás por afuera del vientre
-             (5, end_grip(B, (0.16, -0.6, 1.66), (0.28, -0.42, 1.32), end=0.3, **vert, **lo), "inout"),
+             (5, stand, "inout"),
              # llega arriba en f9 y se asienta hasta el aviso: la punta, a 4 m de las manos, llegaba todavía rápida
-             (9, end_grip(B, (0.0, -0.02, 2.56), (0.06, -0.28, 2.34), **up), "inout"),
+             (9, end_grip(B, (0.0, -0.02, 2.56), (0.06, -0.28, 2.34), **up, **sw), "inout"),
              (11, raised, "sine", {"stop": ("staff_pos",)}),
              (13, hold, "sine", {"stop": tuple(hold)}),
-             (15, end_grip(B, (-0.01, -0.5, 2.42), (0.06, -0.4, 2.06), end=0.15 + 0.5 * (1.0 - k), **vert, **up), "in2"),
+             (15, end_grip(B, (-0.01, -0.5, 2.42), (0.06, -0.4, 2.06), end=0.15 + 0.5 * (1.0 - k), **vert, **up, **sw), "in2"),
              # las manos terminan adelante y abajo, lejos del pecho que se dobla: el bastón cae en diagonal
              (17, end_grip(B, L3((0.12, -0.86, 1.3), (-0.06, -1.16, 1.04)), L3((0.24, -0.6, 1.5), (0.08, -0.82, 1.2)), end=end_c,
-                           **lo), "expo_in"),
+                           **lo, **sw), "expo_in"),
              (19, end_grip(B, L3((0.12, -0.88, 1.2), (-0.06, -1.18, 0.92)), L3((0.24, -0.63, 1.41), (0.08, -0.85, 1.1)), end=end_c,
-                           **lo), "out"),
-             (23, line(B, (0.0, -0.74, 1.12), (0.3, -0.3, 1.22), 1.0, **lo), "inout"),
-             (28, line(B, (0.09, -0.53, 1.13), (0.26, 0.18, 1.28), 0.8, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)),
-              "inout"), (36, G3(), "sine")]
+                           **lo, **sw), "out"),
+             (23, line(B, (0.0, -0.74, 1.12), (0.3, -0.3, 1.22), 1.0, **lo, **sw), "inout"),
+             (28, back, "inout"),
+             (30, mod(mix(back, G3(), 0.3), grip_r_w=0.0, grip_r_thumb=0.0), "inout"),
+             (36, G3(), "sine")]
     return p3_from("ChopPalm" if var is None else "ChopPalm_" + var, track, torso(over), timing={"staff_high": True},
                    notes="el bastón cae de arriba: alzado detrás de la cabeza (aviso f11, la punta a ~4 m), baja en arco y "
                          "pega a la altura del hombro de Kaito a ~2.6 m en f17" +
@@ -181,8 +192,11 @@ def smash_p3(var=None):
 
 
 def side_staff(z=1.32, grip=0.2):
-    """El bastón parado al costado izquierdo en la mano izquierda (la derecha libre: patadas), anclado al pecho."""
-    p = staff_pose(MC.BODY, (0.5, -0.18, z), (0.0, 0.08, 1.0), upv=(0.0, -1.0, 0.0), gr=None, gl=grip, lt=1.0,
+    """El bastón parado al costado izquierdo en la mano izquierda (la derecha libre: patadas), anclado al pecho. La
+    punta que pega queda ARRIBA: sale de la guardia levantando la punta de adelante (la izquierda, con el pulgar hacia
+    ella, queda con el pulgar arriba y el bastón se desliza en la mano hasta casi el piso). Con la punta abajo el
+    pulgar quedaba para abajo y el antebrazo llegaba a 150° de giro."""
+    p = staff_pose(MC.BODY, (0.5, -0.18, z), (0.0, -0.08, -1.0), upv=(0.0, -1.0, 0.0), gr=None, gl=-grip,
                    glu=(1.0, 0.0, 0.0), elbow_l=(0.85, 0.3, -0.45))
     q = MC.to_chest(p, ("staff",))
     return mod(p, **{k: q[k] for k in ("staff_cpos", "staff_cdir", "staff_cup", "staff_follow")})
@@ -198,7 +212,10 @@ def crane_p3():
     """CraneKick_P3: la grulla con el bastón parado en la izquierda, al costado de la pierna de apoyo (una garza al lado
     de una caña); la derecha es el ala de la grulla y patea igual que en la fase 1."""
     s = side_staff()
-    track = [(0, G3(), "lin"), (6, s, "inout"), (34, s, "lin"), (42, G3(), "inout")]
+    # la derecha suelta el bastón en los primeros 3 cuadros (el ala se abre después): soltándolo en 6 la mano quedaba a
+    # mitad de camino entre el agarre y el ala, con la muñeca en 1.42
+    let_go = mod(mix(G3(), s, 0.5), grip_r_w=0.0)
+    track = [(0, G3(), "lin"), (3, let_go, "inout"), (6, s, "inout"), (34, s, "lin"), (42, G3(), "inout")]
     return p3_from("CraneKick", track, body=grip_ends(42), sides="l", glow="Master_GlintFootR", strike=MC.TOE_R,
                    notes="grulla con el bastón parado en la izquierda (aviso f13), patada de frente (f18)")
 
@@ -208,7 +225,7 @@ def bar(z, y, out=0.36, lean=0.0):
     al pecho de la guardia: acompaña la agachada y el vuelo."""
     c = Vector((0.04, y, z))
     d = Vector((1.0, 0.0, lean)).normalized()
-    p = staff_hands(MC.BODY, tuple(c), tuple(d), hr=tuple(c - d * out), hl=tuple(c + d * out), rt=-1.0, lt=1.0,
+    p = staff_hands(MC.BODY, tuple(c), tuple(d), hr=tuple(c - d * out), hl=tuple(c + d * out),
                     gru=(0.0, -0.2, 1.0), glu=(0.0, -0.2, 1.0), elbow_r=(-0.8, 0.3, -0.5), elbow_l=(0.8, 0.3, -0.5))
     q = MC.to_chest(p, ("staff",))
     return mod(p, **{k: q[k] for k in ("staff_cpos", "staff_cdir", "staff_cup", "staff_follow")})
@@ -289,10 +306,14 @@ def qi_p3():
     planted = end_grip(B, (0.28, -0.8, 1.3), (0.3, -0.82, 0.96), end=0.95, **vert)
     track = [(0, G3(), "lin"), (5, line(B, g_r, g_l, 1.7, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), "inout"),
              (9, line(B, (0.1, -0.62, 1.22), (0.32, -0.2, 1.22), 1.75, elbow_r=(-0.8, 0.1, -0.6), elbow_l=(0.8, 0.3, -0.5)), "inout"),
-             (13, end_grip(B, (0.28, -0.6, 1.5), (0.32, -0.57, 1.12), end=0.2, **vert), "inout"),
+             # (la derecha con los nudillos arriba como en la guardia: girada hacia Kaito el puño daba la vuelta al caño y la
+             # muñeca 56° en un cuadro)
+             (13, end_grip(B, (0.28, -0.6, 1.5), (0.32, -0.57, 1.12), end=0.2, **dict(vert, gru=(0.0, 0.0, 1.0))), "inout"),
              (21, high, "inout"), (30, end_grip(B, (0.28, -0.56, 2.27), (0.31, -0.55, 1.93), end=0.2, **vert), "sine"),
              (33, end_grip(B, (0.28, -0.56, 2.34), (0.31, -0.55, 2.0), end=0.2, **vert), "out2"),
-             (36, planted, "expo_in", {"stop": ("staff_pos",)}), (40, planted, "lin", {"stop": ("staff_pos",)}),
+             # el clavado acelera hasta el piso (con expo_in casi todo el camino caía en el último cuadro: los brazos bajaban
+             # de la cabeza a la cadera de golpe y la muñeca izquierda daba 51° en un cuadro)
+             (36, planted, "in2", {"stop": ("staff_pos",)}), (40, planted, "lin", {"stop": ("staff_pos",)}),
              # al sacarlo del piso la punta de atrás sale por fuera del muslo izquierdo
              (45, line(B, (0.16, -0.66, 1.45), (0.35, -0.4, 1.22), 1.2, elbow_r=(-0.7, 0.1, -0.7), elbow_l=(0.8, 0.3, -0.5)), "inout"),
              (50, line(B, (0.08, -0.55, 1.15), (0.26, 0.1, 1.27), 0.95, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), "inout"),
@@ -327,7 +348,9 @@ def dash_p3():
 # rendido, apoya la punta del bastón en el piso adelante a su izquierda y lo suelta: cae de costado (gira sobre esa
 # punta) y queda en el piso a su izquierda apuntando a Kaito, como quien deja la espada al costado
 DROP_TIP = Vector((0.44, -1.25, MR.STAFF_R + 0.005))
-DROP_HAND = Vector((0.5, -0.24, 1.05))
+# (3 cm más arriba y adentro que con el pulgar hacia la punta de arriba: con el de la fase 3, hacia la de abajo, el puño
+# queda del otro lado del caño y la mano no llegaba por 2.3 cm)
+DROP_HAND = Vector((0.48, -0.22, 1.08))
 FLOOR_DIR = Vector((0.24, 0.97, 0.0)).normalized()
 
 
@@ -338,7 +361,7 @@ def staff_from_tip(p, d, hl=None, upv=(0.0, 0.0, 1.0)):
     c = DROP_TIP + d * HALF
     if hl is None:
         return staff_pose(p, tuple(c), tuple(d), upv=upv, gr=None, gl=None)
-    return staff_hands(p, tuple(c), tuple(d), hl=tuple(hl), lt=1.0, glu=(1.0, 0.0, 0.2), elbow_l=(0.8, 0.4, -0.4))
+    return staff_hands(p, tuple(c), tuple(d), hl=tuple(hl), glu=(1.0, 0.0, 0.2), elbow_l=(0.8, 0.4, -0.4))
 
 
 def floor_staff(p):
@@ -484,12 +507,18 @@ def phase_staff():
     g2 = arms(B, 2, right=True)
     call = arms(mod(B, hips=(0.0, 0.08, -0.08), hips_rot=(0.0, 0.0, 8.0), spine=(-2.0, 0.0, -2.0), chest=(-4.0, -4.0, -4.0),
                     neck=(-2.0, 0.0, -2.0), head=(-4.0, 0.0, -4.0), breath=1.0), 2)
-    call = hand(call, "r", (-1.02, -0.22, 1.84), (-1.0, -0.1, 0.25), (0.0, -1.0, 0.1), elbow=(0.0, 0.3, -1.0), shape="palm")
+    # el brazo estirado al costado con el pulgar arriba y la palma hacia adelante (con el dorso adelante el antebrazo
+    # quedaba girado 155° y no había cómo llegar al agarre del bastón sin media vuelta)
+    call = hand(call, "r", (-1.02, -0.22, 1.84), (-1.0, -0.1, 0.25), (0.0, 1.0, 0.1), elbow=(0.0, 0.3, -1.0), shape="palm")
     MC.POSES["llama al bastón 2"] = call
     catch_pos = Vector((-0.98, -0.24, 1.84))
     keys = [(0, mod(g2, staff_on=1.0, staff_pos=tuple(SPAWN), staff_dir=(0.0, 0.0, 1.0), staff_up=(0.0, -1.0, 0.0)), "sine")]
     k_call = mod(call, staff_on=1.0, staff_pos=tuple(SPAWN), staff_dir=(0.0, 0.0, 1.0), staff_up=(0.0, -1.0, 0.0))
     keys += [(8, k_call, "inout"), (12, k_call, "lin")]
+    # mientras el bastón vuela la palma abierta gira a recibirlo (los dedos adelante y afuera, la palma hacia adelante y
+    # adentro: la mano del agarre de f25); si esperaba con los dedos hacia afuera, al atraparlo la mano daba 58° en un
+    # cuadro
+    k_ready = hand(k_call, "r", (-1.0, -0.24, 1.84), (-0.7, -0.7, 0.1), (-0.7, 0.7, 0.0), elbow=(0.0, 0.3, -1.0), shape="palm")
     # vuelo: de SPAWN a la mano en un arco, girando en el plano del frente 1.25 vueltas (termina vertical)
     for f in range(13, 25):
         u = (f - 12) / 12.0
@@ -497,7 +526,8 @@ def phase_staff():
         c = SPAWN.lerp(catch_pos, e) + Vector((0.0, 0.0, 0.5 * math.sin(math.pi * e)))
         ang = math.radians(-450.0 * (1.0 - e))
         dd = (math.sin(ang), 0.0, math.cos(ang))
-        keys.append((f, staff_pose(k_call, tuple(c), dd, upv=(0.0, -1.0, 0.0), gr=None, gl=None), "lin"))
+        kf = mix(k_call, k_ready, NA.ease("inout", max(0.0, min(1.0, (f - 14) / 9.0))))
+        keys.append((f, staff_pose(kf, tuple(c), dd, upv=(0.0, -1.0, 0.0), gr=None, gl=None), "lin"))
     caught = staff_pose(call, tuple(catch_pos), (0.0, 0.0, 1.0), upv=(0.0, -1.0, 0.0), gr=0.0, gl=None, rt=1.0, gru=(0.0, -1.0, 0.0))
     absorb = staff_pose(mod(call, hips=(0.0, 0.1, -0.12), chest=(-2.0, -2.0, -6.0)), (-0.92, -0.2, 1.74), (0.08, 0.0, 1.0),
                         upv=(0.0, -1.0, 0.0), gr=0.0, gl=None, rt=1.0, gru=(0.0, -1.0, 0.0), elbow_r=(0.0, 0.4, -1.0))
@@ -507,13 +537,13 @@ def phase_staff():
     swing = hand(swing, "l", (0.36, -0.34, 1.5), (0.2, -0.3, 1.0), (0.25, 1.0, 0.25), elbow=(0.7, 0.3, -0.7), shape="palm")
     present = staff_pose(mod(B, hips=(0.0, 0.04, -0.02), spine=(-3.0, 0.0, 0.0), chest=(-4.0, 0.0, 0.0), neck=(-2.0, 0.0, 0.0),
                              head=(-6.0, 0.0, 0.0), breath=1.0), (0.0, -0.18, 2.58), (1.0, 0.0, 0.0), upv=(0.0, -1.0, 0.0),
-                         gr=-0.4, gl=0.4, rt=-1.0, lt=1.0, gru=(0.0, -0.3, 1.0), glu=(0.0, -0.3, 1.0), elbow_r=(-0.9, 0.2, -0.3),
+                         gr=-0.4, gl=0.4, gru=(0.0, -0.3, 1.0), glu=(0.0, -0.3, 1.0), elbow_r=(-0.9, 0.2, -0.3),
                          elbow_l=(0.9, 0.2, -0.3))
     MC.POSES["presenta el bastón 3"] = present
     hold = mod(present, breath=0.3, staff_pos=(0.0, -0.18, 2.55), head=(-5.0, 0.0, 0.0))
     # baja por delante girando a la guardia: el centro bien adelante (si no, la punta de atrás le pasaba por el hombro)
     lower = staff_pose(mod(B, hips=(0.02, 0.08, -0.12), head=(-6.0, 0.0, -10.0)), (0.04, -0.62, 1.7), n(0.75, 0.62, 0.05),
-                       upv=(0.0, 0.0, 1.0), gr=-0.36, gl=0.4, rt=-1.0, lt=-1.0, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.4, -0.4))
+                       upv=(0.0, 0.0, 1.0), gr=-0.36, gl=0.4, elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.4, -0.4))
     g3 = G3()
     keys += [(25, caught, "out"), (29, absorb, "out"), (38, swing, "inout"), (46, present, "inout"), (60, hold, "sine"),
              (70, lower, "inout"), (80, mod(g3, hips=(0.02, 0.07, -0.09)), "inout"), (90, g3, "sine")]

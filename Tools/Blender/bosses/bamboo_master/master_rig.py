@@ -258,6 +258,119 @@ def palm_rest(S):
 _PR, _PRD, _PRU = palm_rest("R")
 _PL, _PLD, _PLU = palm_rest("L")
 
+# ------------------------------------------------------------------ muñecas
+# Ítem 3 del traspaso ("muñecas dobladas"), medido en el FBX de la fase C2: el agarre del bastón doblaba la mano 115-169°
+# contra el antebrazo y la palma parada de la fase 2 ~95°. Los límites son los de team_limbs (los del resto del equipo):
+# flexión 75 (hacia la palma), extensión 65, desvío radial 25 (hacia el pulgar), cubital 38, respecto de la muñeca del
+# reposo; 'exceso' 1 = en el borde de esa elipse. Cómo se resuelve sin tocar lo que el clip pidió donde importa (la palma
+# donde pega, el bastón donde está), en Solver.place_arm:
+#   * el codo gira alrededor del eje hombro-muñeca (lo que hace un brazo de verdad) hasta que la muñeca queda cómoda,
+#     cerca del polo que pidió la clave y del codo del cuadro anterior, sin subir de más ni meterse en el tronco;
+#   * la mano que agarra el bastón rueda alrededor del caño hasta que el antebrazo pasa por el puño (el bastón no se
+#     mueve: el agarre de la clave es solo dónde empieza a buscar);
+#   * la mano libre que igual no entra (la palma parada con el antebrazo bajando: no hay codo que la haga posible) se
+#     endereza hasta FREE_LIMIT, con la palma en el mismo lugar;
+#   * el codo y el agarre de todo el clip salen de un camino (plan_clip, dos pasadas por clip en build_bamboo_master):
+#     cambiar de solución, girar el antebrazo y torcer la mano entre dos cuadros cuesta, así no salta en el cuadro en
+#     que otra solución pasó a ser apenas mejor;
+#   * la mano libre no gira contra el antebrazo más de WRIST_RATE por cuadro ni sobre su eje más de TWIST_HOLD, y la
+#     que agarra o suelta el bastón va o viene de donde estaba (place_arm, solve).
+FLEX, EXTEND, RADIAL, ULNAR = 75.0, 65.0, 25.0, 38.0
+FREE_LIMIT = 0.95
+SWIVEL_MAX = 120.0
+# la grilla de codos (giro alrededor del eje hombro-muñeca desde el polo pedido) y de agarres (vueltas del puño alrededor
+# del caño desde el pedido), y el camino del clip: PATH_STEP de costo por paso de la grilla entre dos cuadros (al
+# cuadrado), hasta PATH_REACH pasos por cuadro; el primer y el último cuadro quedan en su mejor solución
+GRID_THETAS = tuple(float(x) for x in range(-int(SWIVEL_MAX), int(SWIVEL_MAX) + 1, 15))
+GRID_ROLLS = tuple(float(x) for x in range(-180, 180, 15))
+PATH_STEP, PATH_REACH = 1.0, 3
+# por debajo de esta parte del polo perpendicular al eje hombro-muñeca, el lado del codo sale del cuadro anterior
+POLE_FIRM = 0.35
+# reparto del giro de la mano entre el antebrazo y la muñeca (fore_share)
+FORE_SHARE, FORE_MAX = 0.8, math.radians(100.0)
+# lo que cuesta en el camino del clip que el antebrazo cambie de giro entre dos cuadros: TWIST_W por cada TWIST_REF (al
+# cuadrado). Una mano cuyo giro pedido pasa por los 180° le daba media vuelta al antebrazo en un cuadro (de +100° a -100°)
+# o, desenrollado, le dejaba más de una vuelta a la muñeca: así el camino busca el codo que lo evita
+TWIST_W, TWIST_REF = 0.5, math.radians(20.0)
+# y que la mano gire contra el antebrazo entre dos cuadros más de JUMP_FREE grados (lo que master_lint mide como tirón):
+# JUMP_W por cada JUMP_REF de más, al cuadrado. Con la mano en el bastón el codo y el agarre son lo único que la acompaña
+# cuando el bastón gira rápido (ChopPalm_P3, DashStrike_P3)
+JUMP_W, JUMP_FREE, JUMP_REF = 4.0, 20.0, 20.0
+WRIST_COMFORT = 0.6       # desde acá la muñeca empieza a costar: una pose que ya entra no se toca
+WRIST_GRIP_SOFT = 1.25    # y desde acá, mucho (el agarre del bastón tiene hasta 1.35 en master_lint)
+RELEASE_HOLD = 0.6        # la mano que suelta el bastón lo sigue agarrando hasta que el peso del agarre baja de acá
+# lo más que gira la mano libre contra su antebrazo en un cuadro (master_lint.WRIST_JUMP es 45)
+WRIST_RATE = 40.0
+# lo más que gira la mano libre sobre su eje: lo que toma el antebrazo (FORE_MAX) más 75° en la muñeca (master_lint.TWIST
+# es 85). A una mano pedida más allá la busca por el otro lado (pasando por el medio, de a WRIST_RATE) si por ahí llega,
+# y si no se queda en el tope: si siguiera, el giro cruzaba los 180° y el antebrazo daba media vuelta en un cuadro
+TWIST_HOLD = FORE_MAX + math.radians(75.0)
+
+
+def wrist_excess(flex, dev):
+    return math.hypot(flex / (FLEX if flex >= 0.0 else EXTEND), dev / (RADIAL if dev >= 0.0 else ULNAR))
+
+
+def wrist_frames(rig):
+    """Por lado: (la relación antebrazo-mano del reposo, la palma y el pulgar en el marco de la mano en reposo)."""
+    out = {}
+    for S in "RL":
+        Rf0, Rh0 = rot3(rig.rest["Forearm_" + S]), rot3(rig.rest["Hand_" + S])
+        _, _, dors, thumb = hand_frame(S)
+        out[S] = (Rf0.transposed() @ Rh0, (Rh0.transposed() @ -dors).normalized(), (Rh0.transposed() @ thumb).normalized())
+    return out
+
+
+def wrist_angles(D, n, l):
+    """(flexión, desvío, giro) de la mano D (relativa a su neutra sobre ese antebrazo, en el marco de la mano neutra)."""
+    y = D.col[1]
+    flex = math.degrees(math.atan2(y.dot(n), y.y))
+    dev = math.degrees(math.atan2(y.dot(l), y.y))
+    q = D.to_quaternion()
+    tw = (2.0 * math.degrees(math.atan2(q.y, q.w)) + 180.0) % 360.0 - 180.0
+    return flex, dev, tw
+
+
+def _seg_dist(p1, q1, p2, q2):
+    """Distancia mínima entre los segmentos p1-q1 y p2-q2 (la de master_lint.seg_dist)."""
+    d1, d2, r = q1 - p1, q2 - p2, p1 - p2
+    a, e, f = d1.dot(d1), d2.dot(d2), d2.dot(r)
+    if a <= 1e-9 or e <= 1e-9:
+        return (p1 - p2).length
+    c, b = d1.dot(r), d1.dot(d2)
+    den = a * e - b * b
+    s = max(0.0, min(1.0, (b * f - c * e) / den)) if den > 1e-9 else 0.0
+    t = (b * s + f) / e
+    if t < 0.0:
+        t, s = 0.0, max(0.0, min(1.0, -c / a))
+    elif t > 1.0:
+        t, s = 1.0, max(0.0, min(1.0, (b - c) / a))
+    return ((p1 + d1 * s) - (p2 + d2 * t)).length
+
+
+def fore_share(ang):
+    """Lo que toma el antebrazo (rad) del giro 'ang' de la mano sobre su eje: como team_limbs, la mayor parte (el
+    antebrazo prona y supina; la muñeca casi no gira), hasta FORE_MAX. Con la mitad (Pose.twist_follow) lo que quedaba en
+    la muñeca llegaba a 90° y un giro rápido de la mano pedido por la clave era un tirón de la muñeca."""
+    t = ang * FORE_SHARE
+    return max(-FORE_MAX, min(FORE_MAX, t))
+
+
+def _swing(q):
+    """La parte de q que no es giro alrededor de su Y (q = swing @ giro en Y)."""
+    t = Quaternion((q.w, 0.0, q.y, 0.0))
+    if t.magnitude < 1e-9:
+        return q.copy()
+    return q @ t.normalized().inverted()
+
+
+def _twist_y(M):
+    """Giro (rad, -pi..pi) de M alrededor de su Y (como Pose.twist_follow)."""
+    q = M.to_quaternion()
+    a = 2.0 * math.atan2(q.y, q.w)
+    return (a + math.pi) % (2.0 * math.pi) - math.pi
+
+
 # ------------------------------------------------------------------ controles por defecto
 NEUTRAL = {
     "hips": (0.0, 0.0, 0.0), "hips_rot": (0.0, 0.0, 0.0),
@@ -302,6 +415,43 @@ class Solver:
         h3 = rot3(R.rest["Hips"]).transposed()
         self.back = {S: (hi @ p, h3 @ d, h3 @ u) for S, (p, d, u) in (("R", BACK_HAND_R), ("L", BACK_HAND_L))}
         self.back_elbow = {"R": h3 @ BACK_ELBOW_R, "L": h3 @ BACK_ELBOW_L}
+        self.wf = wrist_frames(rig)
+        self.mode = "free"
+        self.tables = {"R": [], "L": []}
+        self.shares = {"R": [], "L": []}
+        self.planes = {"R": [], "L": []}
+        self.path = {"R": [], "L": []}
+        self.frame = {"R": 0, "L": 0}
+        self.share_prev = {}
+        self.pole_prev = {}
+        self.up_prev = {}
+        self.d_prev = {}
+        self.h_prev = {}
+        self.ang_prev = {}
+        self.ang_now = {}
+        self.w_prev = {}
+        self.rh_prev = {}
+        self.wr_prev = {}
+
+    def begin_clip(self, mode="free"):
+        """Pasada nueva de un clip: 'collect' (junta las grillas de cada cuadro), 'replay' (el camino de plan_clip) o
+        'free' (cada cuadro solo, sin historia: las poses de referencia)."""
+        self.mode = mode
+        self.frame = {"R": 0, "L": 0}
+        self.share_prev = {}
+        self.pole_prev = {}
+        self.up_prev = {}
+        self.d_prev = {}
+        self.h_prev = {}
+        self.ang_prev = {}
+        self.ang_now = {}
+        self.w_prev = {}
+        self.rh_prev = {}
+        self.wr_prev = {}
+        if mode == "collect":
+            self.tables = {"R": [], "L": []}
+            self.shares = {"R": [], "L": []}
+            self.planes = {"R": [], "L": []}
 
     def solve(self, pose, c):
         c = {**NEUTRAL, **{k: v for k, v in c.items() if v is not None}}
@@ -366,6 +516,13 @@ class Solver:
             g = c.get("grip_" + s)
             elbow = c["elbow_" + s]
             palm, hd, hu = V(c["hand_" + s]) + up, V(c["hand_" + s + "_dir"]), V(c["hand_" + s + "_up"])
+            qh = c.get("hand_" + s + "_q")
+            if qh is not None:
+                # el giro de la mano entre dos claves como un solo giro (master_clips.rigid_hands): los dedos y el dorso
+                # interpolados cada uno por su lado no formaban una mano rígida y, cuando el dorso pasaba cerca de los
+                # dedos, la palma daba media vuelta
+                Rq = Quaternion(qh).normalized().to_matrix()
+                hd, hu = Rq.col[1], Rq.col[2]
             hf = max(0.0, min(1.0, c.get("hand_" + s + "_follow") or 0.0))
             if hf > 1e-4 and c.get("hand_" + s + "_cpos") is not None:
                 # la mano de guardia pegada al pecho (caminar, reacciones): hand_*_cpos/cdir/cup/celbow en el espacio de
@@ -384,22 +541,37 @@ class Solver:
                 hd = NA.slerp_dir(hd, rot3(Hm) @ bd, wb)
                 hu = NA.slerp_dir(hu, rot3(Hm) @ bu, wb)
                 elbow = NA.slerp_dir(elbow, rot3(Hm) @ self.back_elbow[S], wb)
-            Rh = basis_yz(hd, hu)
+            Rh = self.hand_basis(S, hd, hu)
             wrist = palm - Rh @ PALM_LOCAL
-            if staff_on and g is not None:
-                Rg, wg = self.grip_frame(Ms, S, g, c["grip_" + s + "_up"], c["grip_" + s + "_thumb"])
-                # grip_*_w < 1: la mano va o viene del bastón (lo atrapa, lo suelta): mezcla de muñeca y giro
-                gw = c.get("grip_" + s + "_w")
-                gw = 1.0 if gw is None else max(0.0, min(1.0, gw))
-                if gw >= 0.9999:
-                    Rh, wrist = Rg, wg
+            grip = None
+            gw = c.get("grip_" + s + "_w")
+            gw = 1.0 if gw is None else max(0.0, min(1.0, gw))
+            # (una clave con la mano suelta deja el agarre de la vecina con grip_*_w en 0: esa mano es libre del todo)
+            wp = self.w_prev.get(S, 0.0)
+            if self.mode != "free":
+                self.w_prev[S] = gw if (staff_on and g is not None) else 0.0
+            if staff_on and g is not None and gw > 1e-3:
+                # grip_*_w < 1: la mano va o viene del bastón (lo atrapa, lo suelta): mezcla de muñeca y giro. La que lo
+                # va agarrando (el peso sube) sale de donde estaba en el cuadro anterior y cubre en este la parte que le
+                # toca de lo que le falta: la mano libre de la clave de agarre es la de otra pose (la guardia de la fase
+                # 1 en G3) y a mitad de camino Taunt_P3 la daba vuelta 110° en un cuadro
+                catching = gw > wp + 1e-4 and S in self.rh_prev
+                if catching:
+                    k = (gw - wp) / max(1e-6, 1.0 - wp)
+                    grip = (Ms, g, V(c["grip_" + s + "_up"]), c["grip_" + s + "_thumb"], k, self.rh_prev[S].copy(),
+                            self.wr_prev[S].copy(), True)
                 else:
-                    q = Rh.to_quaternion().slerp(Rg.to_quaternion(), gw)
-                    Rh, wrist = q.to_matrix(), wrist.lerp(wg, gw)
+                    # la que lo suelta no se tuerce entre el agarre y la mano de la clave siguiente mientras todavía lo
+                    # sostiene: sigue agarrándolo hasta que el peso baja de RELEASE_HOLD y de ahí se abre (con el tope de
+                    # WRIST_RATE de place_arm). Mezclada desde el principio, CraneKick_P3 pasaba por 1.42 de muñeca
+                    gw_ = 1.0 if (gw < wp - 1e-4 and gw >= RELEASE_HOLD) else gw
+                    grip = (Ms, g, V(c["grip_" + s + "_up"]), c["grip_" + s + "_thumb"], gw_, Rh.copy(), wrist.copy(), False)
+                Rh, wrist = self.grip_hand(S, grip, 0.0)
             self.reach_with_clavicle(pose, S, wrist)
-            misses["hand_" + s] = pose.two_bone("UpperArm_" + S, "Forearm_" + S, wrist, elbow)
+            Rh, wrist, pole = self.place_arm(pose, S, Rh, wrist, palm, V(elbow), grip)
+            misses["hand_" + s] = pose.two_bone("UpperArm_" + S, "Forearm_" + S, wrist, pole)
             pose.place("Hand_" + S, compose(pose.tail("Forearm_" + S), Rh))
-            pose.twist_follow("Forearm_" + S, "Hand_" + S, 0.5)
+            self.twist_follow(pose, S)
             self.fingers(pose, S, c)
         # ---- piernas
         miss_legs = 0.0
@@ -456,6 +628,374 @@ class Solver:
         for k, bn in enumerate((f"Thumb_{S}_1", f"Thumb_{S}_2")):
             x, _ = self.axes[bn]
             pose.delta(bn, Quaternion(x, -math.radians(thumb[k])))
+
+    # ------------------------------------------------------------------ el brazo con la muñeca posible
+    def hand_basis(self, S, hd, hu):
+        """El giro de la mano pedido (dedos 'hd', dorso 'hu'). Con el dorso casi a lo largo de los dedos (claves que lo
+        interpolan pasando cerca: el saludo de Taunt los pedía a 160°) lo que queda de él no dice hacia dónde mira la
+        palma y la mano daba media vuelta en un cuadro: ahí se toma el dorso del cuadro anterior."""
+        Y = hd.normalized()
+        Z = hu - Y * hu.dot(Y)
+        k = Z.length / max(hu.length, 1e-6)
+        prev = self.up_prev.get(S)
+        if prev is not None:
+            w = max(0.0, min(1.0, (POLE_FIRM - k) / POLE_FIRM))
+            Zp = prev - Y * prev.dot(Y)
+            if w > 0.0 and Zp.length > 1e-6:
+                Z = (Z.normalized() * (1.0 - w) + Zp.normalized() * w) if Z.length > 1e-6 else Zp
+        R = basis_yz(Y, Z)
+        if self.mode != "free":
+            self.up_prev[S] = R.col[2].copy()
+        return R
+
+    def grip_hand(self, S, grip, roll):
+        """La mano en el bastón con el agarre rodado 'roll' grados alrededor del caño (desde el que pidió la clave), y la
+        mezcla con la mano libre si todavía va o viene del bastón. Devuelve (giro, muñeca)."""
+        Ms, g, up, thumb, gw, Rh_free, w_free, _ = grip
+        if abs(roll) > 1e-6:
+            up = Matrix.Rotation(math.radians(roll), 3, rot3(Ms).col[1]) @ up
+        Rg, wg = self.grip_frame(Ms, S, g, up, thumb)
+        if gw >= 0.9999:
+            return Rg, wg
+        q = Rh_free.to_quaternion().slerp(Rg.to_quaternion(), gw)
+        return q.to_matrix(), w_free.lerp(wg, gw)
+
+    def arm_try(self, pose, S, wrist, pole, Rh, ref=None):
+        """Las cuentas de Pose.two_bone y de twist_follow sin tocar la pose: (antebrazo final, codo, la mano
+        relativa a su neutra, lo que gira el antebrazo y el giro pedido de la mano, en rad). ref: el giro pedido del
+        cuadro anterior, hacia el que se desenrolla este (la mano libre, ver place_arm)."""
+        R = self.rig
+        ua, fa = "UpperArm_" + S, "Forearm_" + S
+        Mu = pose.follow(ua)
+        Sp, Fu0 = Mu.translation, rot3(Mu)
+        a, b = R.length[ua], R.length[fa]
+        Fl0 = Fu0 @ rot3(R.rel[fa])
+        u0, l0 = Fu0.col[1], Fl0.col[1]
+        n0 = u0.cross(l0)
+        if n0.length < 1e-6:
+            n0 = u0.orthogonal()
+        n0.normalize()
+        d_vec = wrist - Sp
+        d = max(abs(a - b) + 1e-4, min(d_vec.length, (a + b) * 0.999))
+        nd = d_vec.normalized() if d_vec.length > 1e-6 else u0
+        cosA = max(-1.0, min(1.0, (a * a + d * d - b * b) / (2.0 * a * d)))
+        sinA = math.sqrt(max(0.0, 1.0 - cosA * cosA))
+        P = pole - nd * pole.dot(nd)
+        if P.length < 1e-6:
+            P = n0.cross(nd)
+        P.normalize()
+        E = Sp + nd * (a * cosA) + P * (a * sinA)
+        u = (E - Sp).normalized()
+        l = (Sp + nd * d - E).normalized()
+        nn = u.cross(l)
+        if nn.length < 1e-6:
+            nn = n0
+        nn.normalize()
+        Rl = Matrix((l, nn, l.cross(nn))).transposed() @ Matrix((l0, n0, l0.cross(n0)))
+        Rf = Rl @ Fl0
+        rel0 = self.wf[S][0]
+        ang = _twist_y((Rf @ rel0).transposed() @ Rh)
+        if ref is not None:
+            ang += 2.0 * math.pi * round((ref - ang) / (2.0 * math.pi))
+        share = fore_share(ang)
+        Rf = Rf @ Matrix.Rotation(share, 3, 'Y')
+        return Rf, E, (Rf @ rel0).transposed() @ Rh, share, ang
+
+    def place_arm(self, pose, S, Rh, wrist, palm, elbow, grip):
+        """El codo (y, en el bastón, el agarre) con la muñeca más cómoda (ver 'muñecas', arriba). Devuelve (giro de la
+        mano, muñeca, polo del codo). Cómo elige según el modo (begin_clip): 'free' la mejor de la grilla de este cuadro;
+        'collect' además guarda la grilla para plan_clip; 'replay' el punto del camino de plan_clip para este cuadro.
+        En los tres se afina alrededor del punto (5° y 2°)."""
+        _, n, l = self.wf[S]
+        Sp = pose.follow("UpperArm_" + S).translation
+        E0 = self.arm_try(pose, S, wrist, elbow, Rh)[1]
+        # el tronco como lo mide master_lint (la cápsula de la cadera al pecho, 13 cm) más el antebrazo (4 cm)
+        Wc = pose.get("Chest")
+        trunk_a = pose.head("Hips") + Vector((0.0, 0.0, 0.04))
+        trunk_b = Wc.translation + (Wc @ Vector((0.0, self.rig.length["Chest"], 0.0)) - Wc.translation) * 0.85
+
+        # el lado del codo del cuadro anterior (plane) es el de la primera pasada también en la segunda: con otra historia
+        # el mismo codo de la grilla era otro brazo (Guard_P3 doblaba la muñeca de 55° a -34° en un cuadro)
+        prevP = self.pole_prev.get(S)
+        if self.mode == "collect":
+            self.planes[S].append(prevP)
+        elif self.mode == "replay" and self.frame[S] < len(self.planes[S]):
+            prevP = self.planes[S][self.frame[S]]
+
+        def plane(nd):
+            """Hacia dónde dobla el codo, perpendicular al eje hombro-muñeca. Con el polo de la clave casi a lo largo del
+            eje (el brazo que se estira hacia donde apuntaba el polo) su proyección no dice nada y saltaba de un lado al
+            otro: el antebrazo daba media vuelta en un cuadro (Taunt, f34-35). Ahí se toma el lado del cuadro anterior."""
+            P = elbow - nd * elbow.dot(nd)
+            k = P.length / max(elbow.length, 1e-6)
+            P = P.normalized() if k > 1e-6 else nd.orthogonal().normalized()
+            if prevP is not None:
+                w = max(0.0, min(1.0, (POLE_FIRM - k) / POLE_FIRM))
+                Pp = prevP - nd * prevP.dot(nd)
+                if w > 0.0 and Pp.length > 1e-6:
+                    P = (P * (1.0 - w) + Pp.normalized() * w).normalized()
+            return P
+
+        prevS = self.share_prev.get(S)
+        # el primer y el último cuadro sin el giro del anterior: son los que se cruzan con la guardia (lint_chains), que
+        # se resuelve sola
+        cont = (prevS is not None and self.mode == "replay" and 0 < self.frame[S] < len(self.path[S]) - 1)
+        prevD = self.d_prev[S].to_quaternion() if S in self.d_prev else None
+
+        def evaluate(th, r, hist=False):
+            Rh_, w_ = self.grip_hand(S, grip, r) if grip is not None else (Rh, wrist)
+            axis = (w_ - Sp).normalized()
+            P0 = plane(axis)
+            pole = Matrix.Rotation(math.radians(th), 3, axis) @ P0
+            Rf, E, D, share, _ = self.arm_try(pose, S, w_, pole, Rh_)
+            flex, dev, tw = wrist_angles(D, n, l)
+            e = wrist_excess(flex, dev)
+            cost = 3.0 * max(0.0, e - WRIST_COMFORT) ** 2 + 25.0 * max(0.0, e - 1.0) ** 2
+            # con el bastón, cerca del tope de master_lint (1.35) cuesta mucho más: con los costos de los tirones el camino
+            # aceptaba pasar dos cuadros por 1.6 para bajar el bastón de arriba a la guardia (PhaseStaff). La mano libre
+            # no: la que no entra se endereza después, y cobrarle tanto metía el antebrazo de TwinPalm en el tronco
+            if grip is not None:
+                cost += 150.0 * max(0.0, e - WRIST_GRIP_SOFT) ** 2
+            cost += (th / 90.0) ** 2 + (((r + 180.0) % 360.0 - 180.0) / 120.0) ** 2
+            # el codo que sube de más se lee como brazo de aficionado; el antebrazo adentro del tronco, imposible
+            if E.z > E0.z + 0.03:
+                cost += 3.0 * ((E.z - E0.z) / 0.3) ** 2
+            cl = _seg_dist(E, w_, trunk_a, trunk_b) - 0.17
+            if cl < 0.02:
+                cost += 60.0 * ((0.02 - cl) / 0.05) ** 2
+            # lo que queda girado en la muñeca (después de lo que toma el antebrazo) se ve como un caramelo
+            if abs(tw) > 35.0:
+                cost += ((abs(tw) - 35.0) / 25.0) ** 2
+            q = D.to_quaternion()
+            if hist:
+                cost += TWIST_W * ((share - prevS) / TWIST_REF) ** 2
+                if prevD is not None:
+                    j = 2.0 * math.degrees(math.acos(min(1.0, abs(q.dot(prevD)))))
+                    cost += JUMP_W * (max(0.0, j - JUMP_FREE) / JUMP_REF) ** 2
+            return cost, e, pole, Rh_, w_, Rf, D, P0, (share, q.w, q.x, q.y, q.z)
+
+        rolls = GRID_ROLLS if grip is not None else (0.0,)
+        if self.mode == "replay" and self.frame[S] < len(self.path[S]):
+            th0, r0 = self.path[S][self.frame[S]]
+            r0 = r0 if grip is not None else 0.0
+            best = (evaluate(th0, r0, cont), th0, r0)
+        else:
+            table = [[0.0] * len(rolls) for _ in GRID_THETAS]
+            shares = [[None] * len(rolls) for _ in GRID_THETAS]
+            best = None
+            for a, th in enumerate(GRID_THETAS):
+                for b, r in enumerate(rolls):
+                    v = evaluate(th, r)
+                    table[a][b], shares[a][b] = v[0], v[-1]
+                    if best is None or v[0] < best[0][0]:
+                        best = (v, th, r)
+            if self.mode == "collect":
+                # todas las grillas del clip con todos los agarres: un cuadro con la mano libre (el bastón todavía no
+                # llegó, o ya se soltó) cuesta lo mismo con cualquier agarre
+                wide = (lambda t: t) if grip is not None else (lambda t: [row * len(GRID_ROLLS) for row in t])
+                self.tables[S].append(wide(table))
+                self.shares[S].append(wide(shares))
+        self.frame[S] += 1
+        for step in (5.0, 2.0):
+            _, th0, r0 = best
+            for dt in (-2, -1, 0, 1, 2):
+                for dr in ((-2, -1, 0, 1, 2) if grip is not None else (0,)):
+                    th = max(-SWIVEL_MAX, min(SWIVEL_MAX, th0 + dt * step))
+                    v = evaluate(th, r0 + dr * step, cont)
+                    if v[0] < best[0][0]:
+                        best = (v, th, r0 + dr * step)
+        (_, _, pole, Rh, wrist, Rf, D, P0, _), th, r = best
+        if self.mode != "free":
+            self.pole_prev[S] = P0
+        # la mano libre, y la que está agarrando o soltando el bastón (grip_*_w < 1), se corrige en tres pasos, siempre
+        # con la palma donde estaba (se vuelve a resolver el brazo):
+        #   * sigue su giro desde el del cuadro anterior y no pasa de TWIST_HOLD;
+        #   * no gira contra el antebrazo más de WRIST_RATE en un cuadro: cuando el brazo se estira de golpe (la palma
+        #     parada de TwinPalm pasaba del antebrazo vertical al horizontal con la mano quieta, 54° de muñeca en un
+        #     cuadro) la mano llega un cuadro después, como la de una persona; la que suelta el bastón (ver RELEASE_HOLD
+        #     en solve) se abre así en vez de saltar a la mano libre de la clave;
+        #   * si igual no entra se endereza (solo la que ya no agarra: grip_*_w < 0.5, que master_lint cuenta como
+        #     libre): los dedos van por el camino más corto hacia el eje del antebrazo hasta quedar en FREE_LIMIT
+        #     (continuo cuadro a cuadro aunque lo pedido pase de 90°)
+        # La que está agarrando (el peso del agarre sube, ver solve) va desde la mano del cuadro anterior al agarre
+        # completo cubriendo la parte que le toca, con el mismo reparto de giro: mezclada en el mundo, la mano iba bien
+        # pero su giro contra el antebrazo cruzaba los 180° y el antebrazo daba media vuelta (Taunt_P3 f54)
+        catching = grip is not None and grip[7]
+        if grip is None or grip[4] < 0.999 or catching:
+            loose = (grip is None or grip[4] < 0.5) and not catching
+            rel0 = self.wf[S][0]
+            ref = self.ang_prev.get(S)
+            if catching:
+                Rq, wq = self.grip_hand(S, grip[:4] + (1.0,) + grip[5:], r)
+                pc = (self.wr_prev[S] + self.rh_prev[S] @ PALM_LOCAL).lerp(wq + Rq @ PALM_LOCAL, grip[4])
+            else:
+                Rq, pc = Rh, wrist + Rh @ PALM_LOCAL
+
+            def place(Rh_):
+                w_ = pc - Rh_ @ PALM_LOCAL
+                return (Rh_, w_) + self.arm_try(pose, S, w_, pole, Rh_, ref)
+
+            def clear(v):
+                return _seg_dist(v[3], v[1], trunk_a, trunk_b) - 0.17 >= 0.005
+
+            Rh, wrist, Rf, _, D, share, ang = place(Rh)
+            Hp = self.h_prev.get(S)
+            if ref is not None and Hp is not None:
+                # el giro que se busca, del lado al que llega (por el otro lado si por el más corto se pasa de TWIST_HOLD:
+                # la mano que venía del bastón con el antebrazo a -50° y pedía +160° iba a -200°, al tope, y al volver a
+                # agarrarlo daba la vuelta en un cuadro), y el resto de la mano (swing) por separado
+                s0 = _swing(Hp.to_quaternion())
+                for _ in range(3):
+                    F0 = self.fore0(Rf, share, S)
+                    Hq = F0.transposed() @ Rq
+                    tgt = _twist_y(Hq)
+                    tgt += 2.0 * math.pi * round((ref - tgt) / (2.0 * math.pi))
+                    if abs(tgt) > TWIST_HOLD:
+                        alt = tgt - math.copysign(2.0 * math.pi, tgt)
+                        if abs(alt) <= TWIST_HOLD:
+                            tgt = alt
+                        elif not catching:
+                            tgt = math.copysign(TWIST_HOLD, tgt)
+                    s1 = _swing(Hq.to_quaternion())
+                    if s0.dot(s1) < 0.0:
+                        s1.negate()
+                    dsw = 2.0 * math.acos(min(1.0, s0.dot(s1)))
+                    dtw = tgt - ref
+                    if catching:
+                        k = grip[4]
+                    else:
+                        k = min(1.0, math.radians(WRIST_RATE) / max(1e-9, math.hypot(dsw, dtw)))
+
+                    def at(k_):
+                        return place(F0 @ (s0.slerp(s1, k_).to_matrix() @ Matrix.Rotation(ref + dtw * k_, 3, 'Y')))
+                    v = at(k)
+                    if k < 1.0 and not catching and not clear(v):
+                        # la mano que llega tarde no puede meter el antebrazo en el tronco (PhaseCoat, al sacarse el
+                        # saco): ahí va lo justo más rápido
+                        lo_k, hi_k = k, 1.0
+                        if clear(at(1.0)):
+                            for _b in range(8):
+                                mid = 0.5 * (lo_k + hi_k)
+                                lo_k, hi_k = (lo_k, mid) if clear(at(mid)) else (mid, hi_k)
+                            v = at(hi_k)
+                    Rh, wrist, Rf, _, D, share, ang = v
+            Y0 = Vector((0.0, 1.0, 0.0))
+            for _ in range(3 if loose else 0):
+                if wrist_excess(*wrist_angles(D, n, l)[:2]) <= FREE_LIMIT + 0.01:
+                    break
+                y = D.col[1]
+                lo, hi = 0.0, 1.0
+                for _b in range(14):
+                    mid = 0.5 * (lo + hi)
+                    D2 = y.rotation_difference(NA.slerp_dir(y, Y0, mid)).to_matrix() @ D
+                    if wrist_excess(*wrist_angles(D2, n, l)[:2]) > FREE_LIMIT:
+                        lo = mid
+                    else:
+                        hi = mid
+                Rh, wrist, Rf, _, D, share, ang = place((Rf @ rel0) @ y.rotation_difference(NA.slerp_dir(y, Y0, hi)).to_matrix() @ D)
+        else:
+            Rf, _, D, share, ang = self.arm_try(pose, S, wrist, pole, Rh)
+        self.ang_now[S] = ang
+        if self.mode != "free":
+            self.d_prev[S] = D.copy()
+            self.h_prev[S] = self.hand_rel(Rf, share, Rh, S)
+            self.ang_prev[S] = ang
+            self.rh_prev[S], self.wr_prev[S] = Rh.copy(), wrist.copy()
+        return Rh, wrist, pole
+
+    def fore0(self, Rf, share, S):
+        """El marco neutro de la mano sobre el antebrazo Rf sin el giro 'share' que le pasó la mano (arm_try)."""
+        return (Rf @ Matrix.Rotation(-share, 3, 'Y')) @ self.wf[S][0]
+
+    def hand_rel(self, Rf, share, Rh, S):
+        """La mano contra el antebrazo antes de repartir el giro: lo que el tope de WRIST_RATE limita (con la mano
+        contra el antebrazo ya girado, un giro rápido pedido pasaba casi todo al antebrazo, que rotaba 80° en un cuadro)."""
+        return self.fore0(Rf, share, S).transposed() @ Rh
+
+    def plan_clip(self, anchors=True, prefix=None):
+        """El camino del codo y del agarre de todo el clip (después de un 'collect'): el más barato sumando la grilla de
+        cada cuadro y lo que cuesta cambiar entre cuadros (PATH_STEP por paso de la grilla, al cuadrado). Así el brazo
+        cambia de solución, si tiene que hacerlo, repartido en varios cuadros y donde menos se nota, en vez de saltar
+        en el cuadro en que la otra pasó a ser apenas mejor. Cambiar el giro del antebrazo (TWIST_W) y el de la mano
+        contra él (JUMP_W) también cuesta. Con 'anchors' el primer y el último cuadro quedan en la mejor de su cuadro
+        (con un ancla blanda el camino corría la primera para ahorrar tirones después y ChopPalm_P3 no encadenaba con la
+        guardia: son los cuadros que se cruzan con la guardia de su fase, lint_chains, que se resuelve sola). prefix:
+        {lado: [(codo, agarre)]} que los primeros cuadros siguen sí o sí (una variante de paso corto es el mismo golpe que
+        su base hasta la suelta: lint_reach)."""
+        import numpy as np
+        self.path = {}
+        for S in "RL":
+            tabs = self.tables[S]
+            if not tabs:
+                self.path[S] = []
+                continue
+            C = np.array(tabs, dtype=np.float64)            # cuadros x codos x agarres
+            Sh = np.array(self.shares[S], dtype=np.float64)      # cuadros x codos x agarres x (giro, cuaternión)
+            F, A, B = C.shape
+            if anchors:
+                for f in (0, F - 1):
+                    k = np.unravel_index(np.argmin(C[f]), C[f].shape)
+                    keep = C[f][k]
+                    C[f] = np.inf
+                    C[f][k] = keep
+            for f, (th, r) in enumerate((prefix or {}).get(S, ())[:F]):
+                keep = C[f, GRID_THETAS.index(th), GRID_ROLLS.index(r) if B > 1 else 0]
+                C[f] = np.inf
+                C[f, GRID_THETAS.index(th), GRID_ROLLS.index(r) if B > 1 else 0] = keep
+            acc = C[0].copy()
+            back = np.zeros((F, A, B, 2), dtype=np.int16)
+            for f in range(1, F):
+                best = np.full((A, B), np.inf)
+                arg = np.zeros((A, B, 2), dtype=np.int16)
+                for da in range(-PATH_REACH, PATH_REACH + 1):
+                    for db in (range(-PATH_REACH, PATH_REACH + 1) if B > 1 else (0,)):
+                        # de (a - da, b - db) a (a, b): el codo no da la vuelta (bordes), el agarre sí (circular)
+                        src = np.full((A, B), np.inf)
+                        ssh = np.zeros((A, B, 5))
+                        if da >= 0:
+                            src[da:, :] = acc[:A - da, :] if da else acc
+                            ssh[da:, :] = Sh[f - 1, :A - da, :] if da else Sh[f - 1]
+                        else:
+                            src[:da, :] = acc[-da:, :]
+                            ssh[:da, :] = Sh[f - 1, -da:, :]
+                        if db:
+                            src, ssh = np.roll(src, db, axis=1), np.roll(ssh, db, axis=1)
+                        dot = np.minimum(1.0, np.abs(np.sum(Sh[f, :, :, 1:] * ssh[:, :, 1:], axis=2)))
+                        jump = np.maximum(0.0, 2.0 * np.degrees(np.arccos(dot)) - JUMP_FREE)
+                        c = (src + PATH_STEP * (da * da + db * db) + TWIST_W * ((Sh[f, :, :, 0] - ssh[:, :, 0]) / TWIST_REF) ** 2
+                             + JUMP_W * (jump / JUMP_REF) ** 2)
+                        m = c < best
+                        best[m] = c[m]
+                        arg[m, 0] = da
+                        arg[m, 1] = db
+                acc = best + C[f]
+                back[f] = arg
+            a, b = np.unravel_index(np.argmin(acc), acc.shape)
+            path = [None] * F
+            for f in range(F - 1, -1, -1):
+                path[f] = (GRID_THETAS[a], (GRID_ROLLS[b] if B > 1 else 0.0))
+                if f:
+                    da, db = back[f, a, b]
+                    a, b = a - int(da), (b - int(db)) % B
+            self.path[S] = path
+        self.tables = {"R": [], "L": []}
+        self.shares = {"R": [], "L": []}
+
+    def twist_follow(self, pose, S):
+        """Pose.twist_follow(antebrazo, mano) con fore_share: lo mismo que midió arm_try para el camino del clip (que es el que
+        evita que el giro pedido cruce los 180°; desenrollarlo acá dejaba más de una vuelta en la muñeca y la última pose
+        no encadenaba con la guardia)."""
+        fa, ha = "Forearm_" + S, "Hand_" + S
+        Wl, We = pose.get(fa), pose.get(ha)
+        ang = _twist_y((Wl @ self.rig.rel[ha]).inverted() @ We)
+        # del lado que eligió place_arm (la mano libre puede pasar de los 180° desenrollada)
+        ref = self.ang_now.get(S)
+        if ref is not None:
+            ang += 2.0 * math.pi * round((ref - ang) / (2.0 * math.pi))
+        share = fore_share(ang)
+        if self.mode != "free":
+            self.share_prev[S] = share
+        pose.W[fa] = compose(Wl.translation, rot3(Wl) @ Matrix.Rotation(share, 3, 'Y'))
 
     def grip_frame(self, Ms, S, g, up_hint, thumb):
         """Marco de la mano S agarrando el bastón a 'g' metros de su centro: el bastón pasa por el puño de lado (X de

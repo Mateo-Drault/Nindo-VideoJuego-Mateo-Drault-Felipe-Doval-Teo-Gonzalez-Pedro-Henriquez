@@ -68,6 +68,9 @@ TELL_MIN = 0.15
 GUARD_MIN = 0.15
 SOLE_WARN_ONLY = False
 GUARD_PAIR_MIN = 0.25   # postura / abierto / guardia entre sí (lo que no está en las dos, sobre la más grande)    # la palma estirada hacia Kaito medía 12 % (apunta a la cámara); la grulla con las alas abiertas, 16-31 %
+# el agarre del bastón: hasta este exceso de muñeca con aviso (ver lint_clip)
+WRIST_GRIP_WARN = 1.35
+WRISTS = None
 failures, warnings = [], []
 
 
@@ -75,6 +78,17 @@ def check(ok, msg, warn=False):
     print(("  ok   " if ok else ("  WARN " if warn else "  FAIL ")) + msg)
     if not ok:
         (warnings if warn else failures).append(msg)
+
+
+REGRIP_W = 0.2
+
+
+def gripped(c, s):
+    """Cuánto agarra la mano s el bastón en el control c (0 = libre)."""
+    if (c.get("staff_on") or 0.0) < 0.5 or c.get("grip_" + s) is None:
+        return 0.0
+    w = c.get("grip_" + s + "_w")
+    return 1.0 if w is None else w
 
 
 def wanted(name, pattern):
@@ -128,6 +142,26 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses):
         seam, step = NA.loop_seam_deg(rig, frames)
         rep["loop_seam_deg"] = seam
         check(seam <= 0.5, f"{clip.name}: costura del loop {seam:.3f}° (salto típico {step:.2f}°)")
+    # el pulgar no pasa de mirar a una punta del bastón a la otra con la mano cerrada: es media vuelta de la mano en un
+    # cuadro alrededor del caño (Guard_P3 la daba en f2). Para cambiar de agarre la mano lo suelta (grip_*_w hasta
+    # REGRIP_W o menos en ese cuadro)
+    for s in "rl":
+        flips = [i for i in range(1, len(ctrls)) if all(gripped(ctrls[j], s) > REGRIP_W for j in (i - 1, i))
+                 and (ctrls[i]["grip_" + s + "_thumb"] >= 0.0) != (ctrls[i - 1]["grip_" + s + "_thumb"] >= 0.0)]
+        check(not flips, f"{clip.name}: la mano {s.upper()} no da vuelta el agarre sin soltar el bastón"
+                         f"{f' (f{flips[0]})' if flips else ''}")
+    # muñecas (ítem 3): dentro de los límites de una persona, y sin tirones de un cuadro. El agarre del bastón puede
+    # pasarse un poco con aviso (el puño envuelve el caño y la manga tapa la muñeca), nunca más que WRIST_GRIP_WARN
+    wr = ML.wrist_report(WRISTS, frames, ctrls, t.get("wrist_cuts", ()))
+    rep["wrists"] = wr
+    if not test:
+        for S, w in wr.items():
+            lim = WRIST_GRIP_WARN if w["grip"] else 1.0
+            check(w["excess"] <= lim, f"{clip.name}: muñeca {S} posible (exceso {w['excess']:.2f} en f{w['at']}: flexión "
+                                      f"{w['flex']:.0f}°, desvío {w['dev']:.0f}°{', con el bastón' if w['grip'] else ''})",
+                  warn=w["grip"] and w["excess"] <= WRIST_GRIP_WARN and w["excess"] > 1.0)
+            check(w["twist_max"] <= ML.TWIST, f"{clip.name}: giro que queda en la muñeca {S} {w['twist_max']:.0f}° (tope {ML.TWIST:.0f})")
+            check(w["jump_deg"] <= ML.WRIST_JUMP, f"{clip.name}: la mano {S} no da tirones ({w['jump_deg']:.0f}° en un cuadro, f{w['jump_at']})")
     # el cuerpo contra sí mismo
     skip = set()
     for a, b in t.get("legs_cross", []):
@@ -270,6 +304,8 @@ def main():
     import master_clips as MC
     import master_poses as MP
     solver = MR.Solver(rig)
+    global WRISTS
+    WRISTS = ML.WristMeter(rig)
     clips = list(MC.init(solver)) + [c for c in MP.CLIPS if c.name == "PoseTest"]
     lab = None
     if LAB:
@@ -279,12 +315,27 @@ def main():
         clips = [c for c in clips if wanted(c.name, ONLY)]
     sprs = MR.springs(rig)
     baked, reports, rootsd, ctrlsd, framesd = [], {}, {}, {}, {}
+    # las variantes de paso corto siguen el camino de los brazos de su base hasta la suelta (lint_reach)
+    paths, reach_of = {}, {}
+    for c in clips:
+        for v in c.timing.get("reach_variants") or ():
+            reach_of[v] = (c.name, reach_upto(c))
     for clip in clips:
         misses = []
 
         def solve(pose, c):
             misses.append(dict(solver.solve(pose, c)))
+        # dos pasadas por clip (master_rig.Solver.plan_clip): la primera junta las soluciones posibles de cada brazo en
+        # cada cuadro y elige el camino del clip entero; la segunda lo aplica
+        solver.begin_clip("collect")
+        MS.bake_clip(rig, clip, solve, sprs)
+        base, upto = reach_of.get(clip.name, (None, 0))
+        solver.plan_clip(prefix={S: p[:upto + 1] for S, p in paths[base].items()} if base in paths else None)
+        paths[clip.name] = {S: list(p) for S, p in solver.path.items()}
+        misses.clear()
+        solver.begin_clip("replay")
         frames, ctrls, roots = MS.bake_clip(rig, clip, solve, sprs)
+        solver.begin_clip("free")
         print(f"-- {clip.name} ({clip.frames} cuadros)")
         reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses) if clip is not lab else {}
         baked.append((clip, frames))
@@ -436,6 +487,13 @@ def lint_variants(clips, ctrlsd, reports):
         check(same, f"{c.name}: variante de {b} con los mismos cuadros, tiempos, eventos y avance")
 
 
+def reach_upto(c):
+    """Hasta qué cuadro una variante de paso corto es el golpe de su base: el jefe cambia de variante cuando arranca la
+    suelta (el apex más lo que avanza la pausa), con un cuadro de margen."""
+    ap, hold = c.timing["apex"], c.timing.get("hold", [0, 0])[1]
+    return ap + 1 if hold > ap else ap
+
+
 def lint_reach(rig, clips, framesd, reports):
     """Las variantes de paso corto (timing.reach_variants) son el MISMO golpe hasta la suelta: el jefe pasa de una a otra
     sin fundido en el cuadro de la suelta (BambooMasterBoss.PickReach), así que hasta el final de la pausa del aviso
@@ -444,9 +502,7 @@ def lint_reach(rig, clips, framesd, reports):
         vs = c.timing.get("reach_variants")
         if not vs:
             continue
-        # el jefe cambia de variante cuando arranca la suelta (el apex más lo que avanza la pausa): un cuadro de margen
-        ap, hold = c.timing["apex"], c.timing.get("hold", [0, 0])[1]
-        upto = ap + 1 if hold > ap else ap
+        upto = reach_upto(c)
         for v in vs:
             if v not in framesd:
                 check(False, f"{c.name}: falta la variante {v}")
