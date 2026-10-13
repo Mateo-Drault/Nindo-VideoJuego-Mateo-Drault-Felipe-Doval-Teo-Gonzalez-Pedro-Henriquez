@@ -145,12 +145,14 @@ namespace Nindo
         {
             if (Game.Combat != null && Health > 0) Game.Combat.Register(this);
             GameEvents.BossStarted += OnBossStarted;
+            GameEvents.PlayerDied += OnPlayerDied;
         }
 
         void OnDisable()
         {
             Game.Combat?.Unregister(this);
             GameEvents.BossStarted -= OnBossStarted;
+            GameEvents.PlayerDied -= OnPlayerDied;
             HoldCutscene(false);
         }
 
@@ -164,6 +166,8 @@ namespace Nindo
         void OnBossStarted(Boss b)
         {
             if (b != this) return;
+            // el reintento retoma la fase a la que había llegado Kaito (MizuchiBoss.Pacing)
+            if (retryPhase > 0) { ResumeRetryPhase(); return; }
             // los especiales grandes no abren la pelea: primero se aprende el ritmo de la mordida y las aletas
             StaggerCooldowns(0, 0.5f);
         }
@@ -404,7 +408,8 @@ namespace Nindo
             base.ResetEnemy();
             // los patrones son otros (la config de fábrica): las firmas de la fase anterior no se restauran sobre ellos
             for (int n = 0; n < signature.Length; n++) signature[n] = null;
-            if (body != null) { body.SetPhase(0); body.SetHidden(false); }
+            // el reintento desde la fase 2 o 3 espera ya corrompido: la re-presentación lo muestra como va a pelear
+            if (body != null) { body.SetPhase(retryPhase >= 1 ? 1 : 0); body.SetHidden(false); }
             baseFinisherHealth = config.finisherHealth;
             Game.Camera?.SetFocusBias(Vector3.zero);
             // Kaito murió en otro lado antes de conocerlo: vuelve a esperar en el pozo
@@ -506,10 +511,7 @@ namespace Nindo
             if (newPhase == 1)
             {
                 Imbalance = 0f;
-                // corrompido: más rápido para girar, menos tiempo agotado, golpes 10 % más fuertes y 12 % más rápidos
-                config.turnSpeed = 6f;
-                config.exhaustedTime = 2.8f;
-                config.ScaleSteps(1.1f, 1.12f / (1f + phaseSpeedBonus));
+                CorruptedStats();
                 Run(CorruptionRoutine());
             }
             else
@@ -520,6 +522,14 @@ namespace Nindo
                 StaggerCooldowns(2, 0.6f);
                 QueueSignatures(2);
             }
+        }
+
+        /// <summary>Corrompido: más rápido para girar, menos tiempo agotado, golpes 10 % más fuertes y 12 % más rápidos.</summary>
+        void CorruptedStats()
+        {
+            config.turnSpeed = 6f;
+            config.exhaustedTime = 2.8f;
+            config.ScaleSteps(1.1f, 1.12f / (1f + phaseSpeedBonus));
         }
 
         AttackPattern FindPattern(string name)

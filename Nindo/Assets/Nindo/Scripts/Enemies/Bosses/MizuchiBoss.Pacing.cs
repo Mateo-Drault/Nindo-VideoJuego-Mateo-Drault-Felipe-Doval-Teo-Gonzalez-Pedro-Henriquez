@@ -25,16 +25,56 @@ namespace Nindo
         /// <summary>
         /// Las dos perillas del balance final (EnemyArchetypes.Mizuchi las aplica): HealthScale multiplica la vida pedida
         /// (1440, el doble de antes) y DamageScale el daño de diseño de todos sus golpes (perlas, saltos, ola y pilares
-        /// incluidos). Simulado (pelea entera, minutos hasta ganar con los reintentos, 40 peleas por punto; "humano" =
-        /// ve el aviso y se equivoca un poco más que el bot):
-        ///   vida 1440, daño 1.0:  bueno 4.0 min y 2.3 muertes; humano 15 min y 8.2 muertes (con la ola, los pilares y la
-        ///                          tormenta siempre en su fase la pelea doble es mucho más peligrosa que la de 720);
-        ///   vida 1440, daño 0.7:  bueno 1.8 min y 0.7 muertes; humano 4.0 min y 2.3 muertes   (lo de hoy);
-        ///   vida 1800, daño 0.5:  bueno 2.1 min y 0.3 muertes; humano 3.8 min y 1.2 muertes   (más larga y más pareja).
-        /// El tiempo real es ~1.4 veces el simulado (un solo dato: medirlo con "bot on bueno"). Para la hora de partida,
-        /// la última fila (HealthScale 1.25, DamageScale 0.5) es la candidata.
+        /// incluidos). Simulado con los bots de AutoPilot (el promedio recalibrado) y el reintento por fase
+        /// (Tools/Dev/boss_sims/mizuchi_sim.py, cfg 'retry'; minutos hasta ganar con los reintentos, 60 peleas):
+        ///   vida 1440, daño 0.7:  bueno 1.8 min y 0.5 muertes; promedio 4.4 min y 3.7 muertes (sin reintento por fase:
+        ///                          16 min y 10 muertes, no ganaba);
+        ///   vida 1800, daño 0.5:  bueno 2.1 min y 0.2 muertes; promedio 5.3 min y 3.2 muertes;
+        ///   vida 2160, daño 0.35: bueno 2.4 min y 0.05 muertes; promedio 4.8 min y 1.9 muertes; humano 2.7 min y 0.3
+        ///                          muertes (lo de hoy).
+        /// El bot promedio falla ~45 % de los golpes del koi (el bueno 25 %): con más daño no termina. El tiempo real es
+        /// ~1.4 veces el simulado: medirlo con "bot on bueno" y "bot on promedio" y ajustar acá.
         /// </summary>
-        public const float HealthScale = 1f, DamageScale = 0.7f;
+        public const float HealthScale = 1.5f, DamageScale = 0.35f;
+
+        /// <summary>
+        /// Reintento: la pelea vuelve en la fase más alta a la que llegó Kaito (como las fases de Chikuō y los actos de
+        /// Kokuyō). Con la vida doble, morir en la fase 3 y volver a la plataforma sana dejaba al bot promedio ~10 muertes
+        /// por pelea: cada fase es una lección ya aprendida.
+        /// </summary>
+        int retryPhase;
+
+        void OnPlayerDied()
+        {
+            if (Fighting) retryPhase = Mathf.Max(retryPhase, Mathf.Min(CurrentPhase, phaseThresholds.Length));
+        }
+
+        /// <summary>
+        /// Arranca la pelea en la fase del reintento como queda al terminar su transición: el cuerpo corrompido, la cascada
+        /// crecida e inundando la plataforma y, en la 3, a pleno con el arcoíris doble; las esperas, las firmas y la cadencia
+        /// de cada fase saltada; la vida en el umbral. Sin la escena de 5.5 s ni la cura (Kaito reapareció entero). El tema
+        /// entra en su fase: esto corre en el mismo frame que PlayBossMusic (Boss.BeginFight).
+        /// </summary>
+        void ResumeRetryPhase()
+        {
+            int n = retryPhase;
+            ResumeAtPhase(n);
+            for (int i = 1; i <= n; i++) ApplyPhasePacing(i);
+            Imbalance = 0f;
+            CorruptedStats();
+            body?.SetPhase(1);
+            if (Falls != null)
+            {
+                Falls.Corruption = 0.35f;
+                Falls.Intensity = n >= 2 ? 1.6f : 1.4f;
+                if (n >= 2) Falls.MoonbowBoost = 2f;
+                Falls.Flood?.Rise(2f);
+            }
+            Health = Mathf.Min(Health, config.maxHealth * phaseThresholds[n - 1]);
+            StaggerCooldowns(n, 0.6f);
+            QueueSignatures(n);
+            Game.Audio?.SetBossMusicPhase(n + 1);
+        }
 
         // cooldowns por fase (1, 2, 3) de los especiales que se aceleran; el resto queda como lo pone EnemyArchetypes
         static readonly string[] FasterNames = { "Salto del Dragón", "Ola de la Cascada", "Pilares", "Chorro barrido", "Perlas de tormenta" };

@@ -40,16 +40,19 @@ namespace Nindo
         /// <summary>
         /// Las dos perillas del balance final: HealthScale multiplica la vida pedida (1800, el doble de antes; los actos y
         /// sus tramos se reparten solos con cualquier vida) y DamageScale el daño de diseño de todo lo que pega (él, la
-        /// sombra, la grieta). Simulado (pelea entera con la distancia a la que pelea el bot, minutos hasta ganar con los
-        /// reintentos, 40 peleas por punto; "humano" = ve el aviso, con más errores si viene de atrás o de la oscuridad):
-        ///   vida 1800, daño 1.0:  bueno 2.4 min y 0.8 muertes; humano 1.8 min y 0.9 muertes   (lo de hoy);
-        ///   vida 1800, daño 0.85: bueno 1.5 min y 0.5 muertes (con menos daño se muere menos y la pelea se ACORTA);
-        ///   vida 2700, daño 0.8:  bueno 3.2 min y 1.2 muertes; humano 3.0 min y 1.5 muertes   (tres tercios por acto);
-        ///   vida 3600, daño 0.6:  bueno 2.6 min y 0.9 muertes; humano 4.2 min y 1.2 muertes.
-        /// El tiempo real es ~1.4 veces el simulado (un solo dato: medirlo con "bot on bueno"). Para 4-6 min reales la
-        /// candidata es HealthScale 1.5 con DamageScale 0.8.
+        /// sombra, la grieta). Simulado con los bots de AutoPilot (el promedio recalibrado; Tools/Dev/boss_sims/kk_fix_run.py
+        /// largo VIDA DAÑO 40 bueno,promedio 60: minutos hasta ganar con los reintentos):
+        ///   vida 1800, daño 1.0:  bueno 2.4 min y 0.95 muertes; promedio 10.7 min y 10.5 muertes (no gana nunca);
+        ///   vida 2700, daño 0.8:  bueno 2.5 min y 1.0 muertes;  promedio 13 min y 11.6 muertes (la candidata de antes);
+        ///   vida 2700, daño 0.5:  bueno 2.0 min y 0.08 muertes; promedio 12.8 min y 7.5 muertes;
+        ///   vida 2700, daño 0.4:  bueno 2.0 min y 0.03 muertes; promedio 6.1 min, 3 muertes y 20 % gana sin morir (lo de hoy);
+        ///   vida 2700, daño 0.35: bueno 2.0 min y 0.02 muertes; promedio 4.3 min, 1.7 muertes y 27 % sin morir.
+        /// El bot promedio falla ~55 % de los golpes de Kokuyō (el cuerpo y la sombra se turnan sin respiro): con más daño
+        /// muere en el Acto 1. El perfil "humano" (ve el anillo) a 2700 / 0.4 casi no muere. Con 2700 (ThirdsFrom) cada
+        /// acto tiene sus tres tramos y la escalada de especiales. El tiempo real es ~1.4 veces el simulado: medirlo con
+        /// "bot on bueno" y "bot on promedio" y ajustar acá.
         /// </summary>
-        public const float HealthScale = 1f, DamageScale = 1f;
+        public const float HealthScale = 1.5f, DamageScale = 0.4f;
         /// <summary>Ichimonji: dentro de este radio la hoja pasa por encima de la cabeza de Kaito (la empuñadura va a
         /// 1.9 m y la punta baja a 0.97 m: a menos de ~2 m del centro la hoja corta arriba de 1.5 m). Sale del sidecar
         /// (safe_core_m), que es la única fuente: el disco pálido y el golpe usan el mismo número.</summary>

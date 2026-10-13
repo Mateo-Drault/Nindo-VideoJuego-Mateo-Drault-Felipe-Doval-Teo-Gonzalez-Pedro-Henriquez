@@ -79,7 +79,9 @@ MAXLEAD = {False: 0.85, True: 1.0}
 SKILLS = {
     "experto": dict(rt=(0.25, 0.04), miss=0.0, wrong=0.0, greedy=0.0),
     "bueno": dict(rt=(0.28, 0.06), miss=0.10, wrong=0.05, greedy=0.1),
-    "promedio": dict(rt=(0.32, 0.08), miss=0.25, wrong=0.10, greedy=0.25),
+    # Input/AutoPilot.cs Skill.Average, recalibrado (antes miss 0.25, wrong 0.10, greedy 0.25): los mismos números que
+    # goro_fight_sim.py y boss_sims/kaito.py
+    "promedio": dict(rt=(0.32, 0.08), miss=0.15, wrong=0.07, greedy=0.15),
 }
 DEATH_AND_RETRY = 3.6 + 3.0              # muerte → reaparición y caminar del santuario a la arena
 REINTRO = 2.0
