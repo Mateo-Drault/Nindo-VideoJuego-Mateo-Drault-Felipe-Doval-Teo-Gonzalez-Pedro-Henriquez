@@ -146,7 +146,10 @@ namespace Nindo
         struct Skill { public float rtMean, rtSd, miss, wrong, greedy; }
         static readonly Skill Expert = new Skill { rtMean = ReactionMean, rtSd = ReactionSd };
         static readonly Skill Good = new Skill { rtMean = 0.28f, rtSd = 0.06f, miss = 0.1f, wrong = 0.05f, greedy = 0.1f };
-        static readonly Skill Average = new Skill { rtMean = 0.32f, rtSd = 0.08f, miss = 0.25f, wrong = 0.1f, greedy = 0.25f };
+        // el promedio de antes (no ve 25 %, se confunde 10 %, apurado 25 %) perdía contra todos los jefes un orden de
+        // magnitud más que el bueno: no medía a alguien que juega por primera vez sino a alguien que no mira. Los mismos
+        // números en las simulaciones (Tools/Dev/goro_fight_sim.py, sim_bamboo_master.py, boss_sims/kaito.py)
+        static readonly Skill Average = new Skill { rtMean = 0.32f, rtSd = 0.08f, miss = 0.15f, wrong = 0.07f, greedy = 0.15f };
         Skill skill = Expert;
         public static string SkillName { get; private set; } = "experto";
 

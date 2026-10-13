@@ -17,33 +17,43 @@ namespace Nindo
     ///    Golpes más pesados y con variantes (EnemyArchetypes.GoroPhase2), la onda que sale por el piso (SlamWave) y la
     ///    AVALANCHA (GoroAvalanche). Mientras carga un golpe la roca rebota los cortes (ArmorWindow): hay que desviar o
     ///    esquivar y pegarle después. Con la vida se le va cayendo la armadura (y cada tramo roto le devuelve aire a Kaito).
-    ///  * Reintento: todo vuelve a la fase 1 (la armadura, el epíteto y la barra). La sorpresa de la barra falsa es la
-    ///    primera vez; las siguientes la cinemática va más rápida y sin el silencio largo. Morir en la fase 2 vuelve a la
-    ///    1 porque la fase 2 se gana conociendo a Gorō entero (y la 1 se aprende rápido: ~2 min con un jugador bueno).
+    ///  * Reintento: morir en la primera barra vuelve a ella (la sorpresa de la barra falsa es la primera vez; las
+    ///    siguientes la cinemática va más rápida y sin el silencio largo). Morir ARMADO arranca armado (retryArmored, como
+    ///    los actos de Kokuyō y las fases de Chikuō): con las barras largas de la hora de juego, volver a la primera barra
+    ///    después de cada muerte en la segunda dejaba al jugador promedio 20-50 min trabado (goro_fight_sim.py).
     /// bossId 'goro', flags, SealId.Montana y musicKey 'boss_goro' no cambian. Los cuadros de los clips y de la armadura
     /// salen de GoroTimings (generado desde los sidecars).
     /// </summary>
     public class GoroBoss : Boss, ICameraProfile
     {
         public const string ArmorSeenFlag = "goro_armor_seen";
-        /// <summary>Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth).</summary>
-        public float armoredHealth = 520f;
+        /// <summary>
+        /// Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth, 1000 en EnemyArchetypes.Goro). Las cinco
+        /// perillas salen de Tools/Dev/goro_fight_sim.py con el reintento armado, los tres tramos de armadura y los bots de
+        /// AutoPilot (el promedio recalibrado): bueno 3.4 min simulados (~4.8 reales, el modelo no cuenta lo que el bot
+        /// camina) casi sin morir; promedio 4.8 min, 1.45 muertes y 30 % gana al primer intento. Con 520 + 520 el bueno
+        /// ganaba en 1.6 min y con más vida sin reintento armado el promedio quedaba 20-50 min trabado.
+        /// </summary>
+        public float armoredHealth = 1600f;
         /// <summary>
         /// Daño de Gorō armado respecto del arquetipo (golpes, onda y avalancha). Perilla de balance: con más vida en las
-        /// barras el daño tiene que bajar, si no la pelea larga se vuelve desgaste (Tools/Dev/goro_fight_sim.py --p2dmg).
-        /// Los valores por omisión de las tres perillas salen de goro_fight_sim.py con las barras de 520 + 520: el bot
-        /// promedio muere ~1.3 veces por pelea (antes 6, dos tercios en la primera barra) y el bueno casi nunca.
+        /// barras el daño tiene que bajar, si no la pelea larga se vuelve desgaste (goro_fight_sim.py --p2dmg).
         /// </summary>
-        public float armoredDamageScale = 0.7f;
+        public float armoredDamageScale = 0.4f;
         /// <summary>
         /// Daño de Gorō en la primera barra respecto de EnemyArchetypes.Goro (la otra perilla de balance: con la barra
-        /// falsa más larga, dos tercios de las muertes del bot promedio eran en la fase 1, que armoredDamageScale no toca).
+        /// falsa más larga, la mayoría de las muertes del bot promedio eran en la fase 1, que armoredDamageScale no toca).
         /// Las dos perillas son respecto del arquetipo, no una de la otra.
         /// </summary>
-        public float firstBarDamageScale = 0.7f;
-        /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (66 % y 33 % de la segunda barra):
-        /// la única cura de una pelea de varios minutos (goro_fight_sim.py --shed-heal).</summary>
-        public float shedHeal = 30f;
+        public float firstBarDamageScale = 0.5f;
+        /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (ShedAt): la única cura de una
+        /// pelea de varios minutos (goro_fight_sim.py --shed-heal).</summary>
+        public float shedHeal = 25f;
+        /// <summary>Fracciones de la segunda barra en que se le cae un tramo de la armadura y las piezas de cada uno: un
+        /// cuerno y una rodilla, el brazo izquierdo con el faldón y el pecho, y al final una hombrera y una cumbre de la
+        /// espalda (las grandes quedan para el último). Al morir se le cae el resto.</summary>
+        static readonly float[] ShedAt = { 0.75f, 0.5f, 0.25f };
+        static readonly int[][] ShedPieces = { new[] { 15, 3 }, new[] { 7, 4, 9 }, new[] { 10, 13 } };
         /// <summary>
         /// Kaito no se cura en la pelea (solo +8 por "matar" la barra falsa): sin esto llegaba a la fase 2 con lo que le
         /// quedó de la 1 y moría ahí, volviendo a empezar de cero. Como los cambios de acto de Kokuyō (KokuyoBoss.RewardKaito).
@@ -82,6 +92,8 @@ namespace Nindo
         float baseFinisherHealth = -1f;
         int shedStage;
         bool bounceHinted, barkPending;
+        // murió con la armadura puesta: el reintento arranca armado (OnPlayerDied, OnBossStarted)
+        bool retryArmored;
         Vector3 riseCamDir;
 
         // ---- presentación (y la versión corta del reintento)
@@ -130,14 +142,36 @@ namespace Nindo
             started = true;
             SetDamageScale(firstBarDamageScale);
             ApplyFinisherGate();
-            if (!Defeated) avalanche = GoroAvalanche.Create(this);
+            if (Defeated) return;
+            avalanche = GoroAvalanche.Create(this);
+            GameEvents.PlayerDied += OnPlayerDied;
+            GameEvents.BossStarted += OnBossStarted;
         }
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
+            GameEvents.PlayerDied -= OnPlayerDied;
+            GameEvents.BossStarted -= OnBossStarted;
             HoldCutscene(false);
             if (avalanche != null) Destroy(avalanche.gameObject);
+        }
+
+        void OnPlayerDied()
+        {
+            if (Fighting && armored) retryArmored = true;
+        }
+
+        /// <summary>
+        /// El reintento después de morir armado: la re-presentación ya lo mostró con la armadura (ResetEnemy) y acá entra
+        /// directo a la fase 2, sin la barra falsa ni la cinemática. La música arranca en su clímax: este evento sale en el
+        /// mismo frame que PlayBossMusic (Boss.BeginFight), así el tema empieza en la fase 2.
+        /// </summary>
+        void OnBossStarted(Boss b)
+        {
+            if (b != this || !retryArmored || !Game.Save.HasFlag(ArmorSeenFlag)) return;
+            ResumeAtPhase(1);   // la segunda mitad de la primera barra ya pasó ('Terremoto' y su aceleración)
+            BeginArmored(true);
         }
 
         public override void ResetEnemy()
@@ -156,6 +190,13 @@ namespace Nindo
             armor.HideAll();
             if (baseTitle != null) { title = baseTitle; subtitle = baseSubtitle; }
             ApplyFinisherGate();
+            // murió armado: espera con la armadura puesta y el epíteto (la re-presentación lo muestra así)
+            if (retryArmored && Game.Save.HasFlag(ArmorSeenFlag))
+            {
+                armor.ShowAll();
+                title = StoryText.Goro;
+                subtitle = StoryText.GoroEpithet;
+            }
         }
 
         /// <summary>Sin remate en la primera barra: la barra se vacía a golpes y "le ganaste". El remate es del final de verdad.</summary>
@@ -263,9 +304,8 @@ namespace Nindo
         {
             base.OnDamaged(info);
             if (!armored) return;
-            // la armadura se le va rompiendo: a los dos tercios y al tercio de la barra se le caen pedazos
-            if (shedStage == 0 && Health01 <= 0.66f) { shedStage = 1; ShedGroup(info.direction, 15, 7, 3); }
-            if (shedStage == 1 && Health01 <= 0.33f) { shedStage = 2; ShedGroup(info.direction, 10, 13, 9, 4); }
+            // la armadura se le va rompiendo en tramos (ShedAt); un golpe grande puede romper dos
+            while (shedStage < ShedAt.Length && Health01 <= ShedAt[shedStage]) ShedGroup(info.direction, ShedPieces[shedStage++]);
         }
 
         void ShedGroup(Vector3 dir, params int[] ids)
@@ -504,8 +544,11 @@ namespace Nindo
             }, () => ShotFov, 0.9f, duration, 0.8f);
         }
 
-        /// <summary>Barra nueva entera, el epíteto, el tema en su clímax y a pelear (la avalancha primero: se la presenta).</summary>
-        void BeginArmored()
+        /// <summary>
+        /// Barra nueva entera, el epíteto, el tema en su clímax y a pelear (la avalancha primero: se la presenta). 'retry':
+        /// el reintento después de morir armado (Kaito ya reapareció entero y la avalancha ya la conoce).
+        /// </summary>
+        void BeginArmored(bool retry = false)
         {
             armored = true;
             inCinematic = false;
@@ -528,16 +571,16 @@ namespace Nindo
             IsAggro = true;
             target = Game.Player;
             // la avalancha espera a que se vaya el cartel: el carril rojo es el único aviso justo de la primera
-            nextAttackTime = Time.time + 3f;
-            forceAvalanche = true;
+            nextAttackTime = Time.time + (retry ? 0.6f : 3f);
+            forceAvalanche = !retry;
             // el grito sale cuando termina esa primera avalancha (encima de ella tapaba los carriles de arriba)
-            barkPending = true;
+            barkPending = !retry;
             Game.UI?.ShowBossBar(this);
             // la fase 2 ya entró al levantarse (ArmorRise); acá solo hace falta si se llegó sin la cinemática (DebugArmor).
             // Un PlayBossMusic acá reiniciaba el tema y cortaba los tambores recién caídos
             Game.Audio?.SetBossMusicPhase(2);
             var p = Game.Player;
-            if (p != null && p.IsAlive)
+            if (!retry && p != null && p.IsAlive)
             {
                 p.Heal(TransitionHeal);
                 p.AddSpirit(TransitionSpirit);

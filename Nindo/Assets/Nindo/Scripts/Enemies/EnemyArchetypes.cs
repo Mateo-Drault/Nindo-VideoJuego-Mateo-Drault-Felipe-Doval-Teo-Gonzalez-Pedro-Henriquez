@@ -150,7 +150,8 @@ namespace Nindo
         {
             var c = new EnemyConfig
             {
-                id = "goro", displayName = "Gorō", maxHealth = 520, runSpeed = 3.8f, walkSpeed = 2f, turnSpeed = 5f,
+                // la primera barra (la falsa); la de la armadura es GoroBoss.armoredHealth (balance en goro_fight_sim.py)
+                id = "goro", displayName = "Gorō", maxHealth = 1000, runSpeed = 3.8f, walkSpeed = 2f, turnSpeed = 5f,
                 radius = 1.0f, height = 3.2f, scale = 1f, maxImbalance = 4, exhaustedTime = 4f, guardTime = 0.6f,
                 poiseHits = 5, hyperArmor = true, knockbackResist = 0.9f, preferredDistance = 4.2f, detectRadius = 30f, loseRadius = 80f,
                 finisherHealth = 0.12f, attackCooldown = new Vector2(0.9f, 1.8f),

@@ -1,7 +1,8 @@
 """Simulación offline de la pelea con Gorō (barra falsa + fase armada) contra los bots de AutoPilot.
 
-    python Tools/Dev/goro_fight_sim.py [--runs 400] [--bot bueno|promedio|experto] [--p1 520] [--p2 520] [--dmg 1.0]
-                                       [--p1dmg 0.7] [--p2dmg 0.7] [--shed-heal 30]
+    python Tools/Dev/goro_fight_sim.py [--runs 400] [--bot bueno|promedio|experto] [--p1 1000] [--p2 1600] [--dmg 1.0]
+                                       [--p1dmg 0.5] [--p2dmg 0.4] [--shed-heal 25] [--sheds 0.75,0.5,0.25] [--no-retry-armored]
+(los valores por omisión son los del juego: EnemyArchetypes.Goro y GoroBoss)
     python Tools/Dev/goro_fight_sim.py --grid [--runs 150]   (barre las perillas de GoroBoss contra el objetivo)
 
 Modelo a nivel de golpe (no de cuadro), con los números del código:
@@ -17,8 +18,10 @@ Modelo a nivel de golpe (no de cuadro), con los números del código:
   * Fase 2: la roca rebota los cortes mientras carga cada golpe (GoroBoss.InArmorWindow): el bot pierde los que mete
     en la anticipación. Avalancha: ~0.55 rocas le pegan al bueno (goro_avalanche_check.py), después queda abierto.
   * Kaito tiene 100 de vida y no se cura salvo: +8 al "matar" la barra falsa, +40 al terminar la cinemática de la
-    armadura (GoroBoss.TransitionHeal) y 'shed-heal' cada vez que se le rompe un tramo de la armadura (al 66 % y al 33 %
-    de la segunda barra: GoroBoss.shedHeal). Si muere, vuelve a la fase 1 (re-presentación 1.2 s y 3.6 s de muerte).
+    armadura (GoroBoss.TransitionHeal) y 'shed-heal' cada vez que se le rompe un tramo de la armadura ('sheds': las
+    fracciones de la segunda barra, GoroBoss.ShedAt y shedHeal). Si muere en la primera barra vuelve a ella; si muere
+    armado, el reintento arranca armado (GoroBoss.retryArmored: sin la cinemática, re-presentación 1.2 s) salvo con
+    --no-retry-armored. Cada muerte suma 3.6 s.
   * 'p1dmg' escala el daño de Gorō en la primera barra (GoroBoss.firstBarDamageScale) y 'p2dmg' el de Gorō armado
     (GoroBoss.armoredDamageScale: golpes, onda y avalancha); los dos respecto de EnemyArchetypes.Goro.
   * No modela al bot que camina: el bot de verdad se le pega a Gorō, y antes del arreglo de la avalancha (las rocas
@@ -27,10 +30,13 @@ Es un modelo: sirve para comparar vidas y ver órdenes de magnitud; el número f
 """
 import argparse, math, random, sys
 
+# los mismos niveles que Input/AutoPilot.cs (Skill): si se cambian allá, se cambian acá y en sim_bamboo_master.py y
+# kokuyo_mizuchi_sim.py. El promedio de antes (miss 0.25, wrong 0.10, greedy 0.25) perdía contra todos los jefes un
+# orden de magnitud más que el bueno: no se parecía a una persona que juega por primera vez, sino a una que no mira
 BOTS = {
     "experto": dict(rt=0.25, sd=0.04, miss=0.0, wrong=0.0, greedy=0.0),
     "bueno": dict(rt=0.28, sd=0.06, miss=0.10, wrong=0.05, greedy=0.10),
-    "promedio": dict(rt=0.32, sd=0.08, miss=0.25, wrong=0.10, greedy=0.25),
+    "promedio": dict(rt=0.32, sd=0.08, miss=0.15, wrong=0.07, greedy=0.15),
 }
 
 H, U = "heavy", "unblockable"
@@ -67,9 +73,10 @@ TAP = 0.32
 
 
 class Sim:
-    def __init__(self, bot, rng, p1, p2, dmg_mul, heal, p2dmg=1.0, shed_heal=0.0, p1dmg=1.0):
+    def __init__(self, bot, rng, p1, p2, dmg_mul, heal, p2dmg=1.0, shed_heal=0.0, p1dmg=1.0, sheds=(0.66, 0.33), retry_armored=True):
         self.b, self.rng, self.p1, self.p2, self.dmg_mul, self.heal = bot, rng, p1, p2, dmg_mul, heal
         self.p1dmg, self.p2dmg, self.shed_heal = p1dmg, p2dmg, shed_heal
+        self.sheds, self.retry_armored = tuple(sheds), retry_armored
         self.combo_i = 0
 
     def kaito_hit(self, mul=1.0):
@@ -96,19 +103,20 @@ class Sim:
             return "imperfect"
         return "hit"
 
-    def attempt(self, t_limit=1800):
-        """Un intento entero desde la fase 1. Devuelve (ganó, segundos, fase alcanzada)."""
+    def attempt(self, t_limit=1800, start_armored=False):
+        """Un intento entero desde la fase 1 (o, con 'start_armored', desde la armada: el reintento después de morir
+        armado). Devuelve (ganó, segundos, fase alcanzada)."""
         r = self.rng
         t, hp = 0.0, 100.0
-        armored, health, maxh = False, self.p1, self.p1
+        armored, health, maxh = start_armored, (self.p2 if start_armored else self.p1), (self.p2 if start_armored else self.p1)
         imb = 0.0
         last_used = {p[0]: -99.0 for p in PATTERNS}
         forced_aval = False
         shed = 0
         while t < t_limit:
-            # la armadura se rompe al 66 % y al 33 % de la segunda barra (GoroBoss.OnDamaged): cada tramo cura
+            # la armadura se rompe en tramos de la segunda barra (GoroBoss.OnDamaged, ShedAt): cada tramo cura
             if armored:
-                while shed < 2 and health / maxh <= (0.66, 0.33)[shed]:
+                while shed < len(self.sheds) and health / maxh <= self.sheds[shed]:
                     shed += 1
                     hp = min(100.0, hp + self.shed_heal)
             phase = 2 if armored else (1 if health / maxh <= 0.5 else 0)
@@ -219,14 +227,17 @@ class Sim:
     def fight(self, bname, max_attempts=30):
         self.bname = bname
         total, deaths, phases = 0.0, 0, []
+        armored_retry = False
         for a in range(max_attempts):
-            won, secs, ph = self.attempt()
+            won, secs, ph = self.attempt(start_armored=armored_retry)
             total += secs + (1.2 if a > 0 else 6.0)
             phases.append(ph)
             if won:
                 return total, deaths, phases
             deaths += 1
             total += 3.6
+            if self.retry_armored and ph == 2:
+                armored_retry = True
         return total, deaths, phases
 
 
@@ -235,28 +246,32 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=400)
     ap.add_argument("--bot", default="bueno")
-    ap.add_argument("--p1", type=float, default=520)
-    ap.add_argument("--p2", type=float, default=520)
+    ap.add_argument("--p1", type=float, default=1000)
+    ap.add_argument("--p2", type=float, default=1600)
     ap.add_argument("--dmg", type=float, default=1.0, help="multiplicador del daño de Gorō")
     ap.add_argument("--heal", type=float, default=40)
-    ap.add_argument("--p1dmg", type=float, default=0.7, help="multiplicador del daño de Gorō en la primera barra (GoroBoss.firstBarDamageScale)")
-    ap.add_argument("--p2dmg", type=float, default=0.7, help="multiplicador del daño de Gorō armado (GoroBoss.armoredDamageScale)")
-    ap.add_argument("--shed-heal", type=float, default=30.0, help="vida que recupera Kaito con cada tramo de armadura roto (GoroBoss.shedHeal)")
+    ap.add_argument("--p1dmg", type=float, default=0.5, help="multiplicador del daño de Gorō en la primera barra (GoroBoss.firstBarDamageScale)")
+    ap.add_argument("--p2dmg", type=float, default=0.4, help="multiplicador del daño de Gorō armado (GoroBoss.armoredDamageScale)")
+    ap.add_argument("--shed-heal", type=float, default=25.0, help="vida que recupera Kaito con cada tramo de armadura roto (GoroBoss.shedHeal)")
+    ap.add_argument("--sheds", default="0.75,0.5,0.25", help="fracciones de la segunda barra en que se rompe un tramo (GoroBoss.ShedAt)")
+    ap.add_argument("--no-retry-armored", action="store_true", help="el reintento vuelve siempre a la fase 1 (como antes)")
     ap.add_argument("--seed", type=int, default=3)
     ap.add_argument("--grid", action="store_true", help="barre vidas y perillas y lista las que más se acercan al objetivo")
     a = ap.parse_args()
+    a.sheds = tuple(float(x) for x in a.sheds.split(",") if x.strip())
+    a.retry = not a.no_retry_armored
     if a.grid:
         return grid(a)
     rng = random.Random(a.seed)
     times, deaths, first_try, p2_deaths = [], [], 0, 0
     one = []
     for _ in range(a.runs):
-        s = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal, a.p1dmg)
+        s = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal, a.p1dmg, a.sheds, a.retry)
         tt, d, ph = s.fight(a.bot)
         times.append(tt); deaths.append(d)
         first_try += d == 0
         p2_deaths += sum(1 for p in ph[:-1] if p == 2)
-        s2 = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal, a.p1dmg)
+        s2 = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal, a.p1dmg, a.sheds, a.retry)
         s2.bname = a.bot
         won, secs, _ = s2.attempt()
         if won:
@@ -265,7 +280,7 @@ def main():
     med = times[len(times) // 2]
     print(f"bot {a.bot}, barras {a.p1:.0f} + {a.p2:.0f}, daño x{a.dmg} (primera barra x{a.p1dmg}, armado x{a.p2dmg}), "
           f"cura de transición {a.heal:.0f}, "
-          f"cura por tramo roto {a.shed_heal:.0f}")
+          f"cura por tramo roto {a.shed_heal:.0f} en {a.sheds}, reintento armado {'sí' if a.retry else 'no'}")
     print(f"  pelea hasta ganar (con reintentos): mediana {med / 60:.1f} min, p10 {times[len(times) // 10] / 60:.1f}, p90 {times[len(times) * 9 // 10] / 60:.1f}")
     print(f"  muertes por pelea: media {sum(deaths) / len(deaths):.2f}, gana al primer intento {first_try / len(deaths) * 100:.0f} %, "
           f"muertes en la fase armada {p2_deaths / max(1, sum(deaths)) * 100:.0f} % de las muertes")
@@ -274,12 +289,12 @@ def main():
         print(f"  un intento ganado: mediana {one[len(one) // 2] / 60:.1f} min")
 
 
-def stats(bot, p1, p2, p1dmg, p2dmg, shed, runs, seed, heal=40.0):
+def stats(bot, p1, p2, p1dmg, p2dmg, shed, runs, seed, heal=40.0, sheds=(0.66, 0.33), retry=True):
     """(mediana en min, muertes medias, % que gana al primer intento, % de las muertes que son en la primera barra)."""
     rng = random.Random(seed)
     times, deaths, first, p1_deaths = [], [], 0, 0
     for _ in range(runs):
-        s = Sim(BOTS[bot], rng, p1, p2, 1.0, heal, p2dmg, shed, p1dmg)
+        s = Sim(BOTS[bot], rng, p1, p2, 1.0, heal, p2dmg, shed, p1dmg, sheds, retry)
         tt, d, ph = s.fight(bot)
         times.append(tt)
         deaths.append(d)
@@ -289,20 +304,26 @@ def stats(bot, p1, p2, p1dmg, p2dmg, shed, runs, seed, heal=40.0):
     return times[len(times) // 2] / 60.0, sum(deaths) / runs, first * 100.0 / runs, p1_deaths * 100.0 / max(1, sum(deaths))
 
 
+# el tiempo real es ~1.4 veces el simulado (el bot camina, se acomoda y espera aperturas que el modelo no cuenta; el
+# mismo factor que miden los otros jefes): 4-6 min reales del bueno son ~2.9-4.3 min acá
+TARGET_MIN, TARGET_MAX = 2.9, 4.3
+
+
 def grid(a):
-    """Objetivo del diseño: el bot bueno gana en 4-6 min casi sin morir y el promedio muere a veces (0.4-2 muertes por
-    pelea). Lista las 15 combinaciones que más se acercan (la distancia suma lo que falta o sobra de cada cosa)."""
+    """Objetivo del diseño: el bot bueno gana en 4-6 min reales (TARGET_MIN-TARGET_MAX simulados) casi sin morir y el
+    promedio muere a veces (0.4-2 muertes por pelea). Lista las 15 combinaciones que más se acercan (la distancia suma
+    lo que falta o sobra de cada cosa)."""
     rows = []
-    for p1 in (520, 700, 850, 1000, 1200):
-        for p2 in (520, 700, 850, 1000, 1200, 1400):
-            for p1d in (0.5, 0.6, 0.7, 0.85, 1.0):
-                for p2d in (0.4, 0.5, 0.6, 0.7, 0.8):
-                    for shed in (15, 30, 40):
-                        b = stats("bueno", p1, p2, p1d, p2d, shed, a.runs, a.seed)
+    for p1 in (520, 700, 850, 1000):
+        for p2 in (700, 850, 1000, 1200, 1400):
+            for p1d in (0.5, 0.6, 0.7, 0.85):
+                for p2d in (0.4, 0.5, 0.6, 0.7):
+                    for shed in (15, 25, 30):
+                        b = stats("bueno", p1, p2, p1d, p2d, shed, a.runs, a.seed, sheds=a.sheds, retry=a.retry)
                         if b[1] > 0.3:
                             continue
-                        pr = stats("promedio", p1, p2, p1d, p2d, shed, a.runs, a.seed + 1)
-                        miss = max(0.0, 4.0 - b[0]) + max(0.0, b[0] - 6.0) + 2.0 * max(0.0, 0.4 - pr[1]) + max(0.0, pr[1] - 2.0)
+                        pr = stats("promedio", p1, p2, p1d, p2d, shed, a.runs, a.seed + 1, sheds=a.sheds, retry=a.retry)
+                        miss = max(0.0, TARGET_MIN - b[0]) + max(0.0, b[0] - TARGET_MAX) + 2.0 * max(0.0, 0.4 - pr[1]) + max(0.0, pr[1] - 2.0)
                         rows.append((miss, p1, p2, p1d, p2d, shed, b, pr))
     rows.sort(key=lambda r: r[0])
     print("vida1 vida2 daño1 daño2 cura | bueno: min muertes 1er% | promedio: min muertes 1er% muertes en la barra 1 %")
