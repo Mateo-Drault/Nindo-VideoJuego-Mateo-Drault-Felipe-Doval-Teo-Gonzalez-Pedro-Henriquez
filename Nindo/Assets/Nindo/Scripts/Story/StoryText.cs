@@ -14,6 +14,7 @@ namespace Nindo
         public const string Ninja = "Ninja Kurokage";
         public const string Kage = "Kage";
         public const string Kokuyo = "Kokuyō";
+        public const string Chikuo = "Chikuō";
         public const string Espiritu = "Espíritu de la Bandana";
 
         // Mizuchi: avisos de los cambios de fase y del final (MizuchiBoss)
@@ -186,11 +187,19 @@ namespace Nindo
                         L(Kaito, "Por eso el lago está oscuro. Aguantá, gran koi: te voy a sacar esa estaca."),
                         L(Espiritu, "Mirá el agua, Kaito. El agua no miente: dorada, desviá. Roja, salí de ahí."),
                     };
+                // Chikuō, el Maestro del Bambú (el id del jefe sigue siendo "ozeki"): fue maestro de Kokuyō un invierno
                 case "ozeki_intro":
                     return new List<DialogueLine> {
-                        L("Ōzeki", "¡Alto ahí! Este claro es mi dohyō, y nadie lo pisa sin luchar conmigo."),
-                        L("Ōzeki", "El bambú se dobla pero no se quiebra. Vos sí te vas a quebrar."),
-                        L(Kaito, "Ya vamos a ver quién se dobla primero."),
+                        L(Chikuo, "Pisás fuerte para ser tan chico. El bambú me avisó que venías desde el arroyo."),
+                        L(Chikuo, "El sello que buscás me lo dejó Kokuyō. Fue mi alumno un invierno, hasta que quiso aprender a golpear antes que a esperar."),
+                        L(Chikuo, "Si querés el sello, mostrame qué te enseñó tu abuelo. Para eso me alcanza con una sola mano."),
+                        L(Kaito, "Entonces guardate la otra. La vas a necesitar."),
+                    };
+                // vencido, sentado a meditar, mientras le hace la reverencia
+                case "bamboo_defeat":
+                    return new List<DialogueLine> {
+                        L(Chikuo, "Tu abuelo sabía esperar, igual que vos. Por eso Kokuyō nunca lo entendió."),
+                        L(Chikuo, "Llevate el sello. Y cuando lo enfrentes, mirá su sombra: siempre llega antes que él."),
                     };
                 case "kage_intro":
                     return new List<DialogueLine> {
@@ -226,7 +235,10 @@ namespace Nindo
                         L(Espiritu, "Hace mucho, tu abuelo ayudó a otro koi a subir esta cascada. Ese dragón vive en tu bandana."),
                     };
                 case "seal_bamboo":
-                    return new List<DialogueLine> { L(Kaito, "El Sello del Bambú. Hasta el campeón terminó doblándose.") };
+                    return new List<DialogueLine> {
+                        L(Kaito, "Gracias, maestro."),
+                        L(Kaito, "El Sello del Bambú. Primero la paciencia, después la fuerza."),
+                    };
                 case "ending":
                     return new List<DialogueLine> {
                         L(Abuelo, "Kaito... viniste. Sabía que la cinta te elegiría."),
@@ -250,15 +262,17 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Gritos del Ōzeki en plena pelea (salen como aviso debajo del HUD, una vez cada uno): al encenderse la tsuna
-        /// en la fase 2 y la primera vez que su embestida termina contra el bambú.
+        /// Frases de Chikuō en plena pelea (salen como grito, una vez cada una): al sacarse el saco, al tomar el bastón, la
+        /// primera vez que le pegan en la postura del bambú y la primera vez que Kaito sabe esperarla.
         /// </summary>
-        public static string OzekiLine(string beat)
+        public static string ChikuoLine(string beat)
         {
             switch (beat)
             {
-                case "fase2": return "Ōzeki: «¡Basta de jugar! ¡Que la sal limpie mi dohyō!»";
-                case "choque": return "Ōzeki: «¡Grr! ¡Bambú maldito!»";
+                case "fase2": return "Bien. Ahora con las dos manos.";
+                case "fase3": return "El bambú se dobla, se dobla... y vuelve.";
+                case "paciencia": return "Paciencia. El que ataca primero, cae primero.";
+                case "espera": return "Eso. Supiste esperar.";
                 default: return "";
             }
         }
@@ -280,12 +294,31 @@ namespace Nindo
             }
         }
 
+        /// <summary>Lo que dice Chikuō al recibir a Kaito otra vez después de vencerlo (una frase distinta por intento; si la
+        /// lección sigue en la fase 2 o 3, retoma donde quedó).</summary>
+        public static string ChikuoRetry(int attempt, int phase)
+        {
+            if (phase >= 2) return "Seguimos donde quedamos. Levantá la guardia.";
+            if (phase == 1) return "Ya no tengo saco que sacarme. Vení.";
+            switch (attempt)
+            {
+                // volvió otro día (el contador de intentos vive en la pelea y arranca en 0 al cargar la partida)
+                case 0: return "Volviste. Esta vez mirá antes de pegar.";
+                case 1: return "Otra vez. Respirá primero.";
+                case 2: return "El bambú no se apura. Vos tampoco.";
+                case 3: return "Mirá mis manos, no mis ojos.";
+                default: return "El que cae siete veces se levanta ocho.";
+            }
+        }
+
         /// <summary>Pistas de una línea que aparecen como tutorial en plena pelea (las teclas van entre llaves).</summary>
         public static string Hint(string id)
         {
             switch (id)
             {
                 case "kage_shadow": return "La sombra no se corta con la katana: clavala con {Ability1} o {Ability2}";
+                case "bamboo_stance": return "Manos de jade: no le pegues. Esperá a que baje la guardia o pará su contragolpe";
+                case "bamboo_guard": return "Su guardia no se rompe a golpes: pará los dorados con {Parry} y pegale cuando queda abierto";
                 default: return "";
             }
         }
@@ -313,7 +346,7 @@ namespace Nindo
                 case "montana": if (!s.HasSeal(SealId.Montana)) return Guardian(s, "goro", "Vencé a Gorō en la cumbre de Kodoyama", "Tomá el Sello de la Montaña"); break;
                 case "lago":
                 case "lago_cascada": if (!s.HasSeal(SealId.Lago)) return Guardian(s, "mizuchi", "Vencé a Mizuchi en la Cascada Kohan", "Tomá el Sello del Agua"); break;
-                case "bambu": if (!s.HasSeal(SealId.Bambu)) return Guardian(s, "ozeki", "Vencé al Ōzeki en el claro del bambú", "Tomá el Sello del Bambú"); break;
+                case "bambu": if (!s.HasSeal(SealId.Bambu)) return Guardian(s, "ozeki", "Vencé a Chikuō en el claro del bambú", "Tomá el Sello del Bambú"); break;
             }
             if (!s.HasFlag(Flags.DojoGateSeen) && s.SealCount == 0) return "Atravesá el Jardín del Clan hasta el dojo";
             var missing = new List<string>();

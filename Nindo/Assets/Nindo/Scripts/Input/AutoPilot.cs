@@ -24,6 +24,7 @@ namespace Nindo
     ///   waitcontrol [max]      espera a que no haya cinemática ni diálogo
     ///   goto X Z [max]         camina hasta el punto (x, z) del mundo (o hasta 'max' s)
     ///   kokuyo act N           en plena pelea con Kokuyō, salta al acto N (2, 3; 4 = última resistencia)
+    ///   chikuo fase N          en plena pelea con Chikuō (el jefe del bambú), salta a la fase N (2 = sin saco, 3 = bastón)
     ///   pose ESTADO [vel]      Kaito toca ese estado de su Animator quieto (modo guionado) y vuelve: para revisar
     ///                          clips en Play (p. ej. "pose Death; pose Finisher 1.7; pose WindSlash")
     /// ACT = nombre de <see cref="Act"/> (Attack, Parry, Dash, Lock, Finisher, Interact, Ability1,
@@ -265,6 +266,13 @@ namespace Nindo
                     var k = Game.Combat != null ? Game.Combat.ActiveBoss as KokuyoBoss : null;
                     if (k == null || t.Length < 3 || t[1].ToLowerInvariant() != "act") throw new System.ArgumentException("uso: kokuyo act N (en plena pelea)");
                     k.DebugJump(int.Parse(t[2], CultureInfo.InvariantCulture));
+                    return null;
+                }
+                case "chikuo":
+                {
+                    var m = Game.Combat != null ? Game.Combat.ActiveBoss as BambooMasterBoss : null;
+                    if (m == null || t.Length < 3 || t[1].ToLowerInvariant() != "fase") throw new System.ArgumentException("uso: chikuo fase N (en plena pelea)");
+                    m.DebugJump(int.Parse(t[2], CultureInfo.InvariantCulture));
                     return null;
                 }
                 case "move":

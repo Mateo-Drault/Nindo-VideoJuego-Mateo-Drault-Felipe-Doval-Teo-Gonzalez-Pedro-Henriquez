@@ -322,7 +322,9 @@ namespace Nindo
         {
             switch (archetype)
             {
-                case "sumo": case "sumo_mountain": case "ozeki": return "sumo";
+                case "sumo": case "sumo_mountain": return "sumo";
+                // el jefe del bambú: Chikuō (el arquetipo sigue siendo "ozeki" por las partidas y el sello)
+                case "ozeki": return "bamboo_master";
                 case "goro": return "goro";
                 case "kage": return "kokuyo";
                 case "mizuchi": return "mizuchi_koi";
@@ -362,7 +364,7 @@ namespace Nindo
             {
                 Boss b = archetype switch
                 {
-                    "ozeki" => root.AddComponent<OzekiBoss>(),
+                    "ozeki" => root.AddComponent<BambooMasterBoss>(),
                     // barra falsa, armadura de roca y avalancha (fase 2)
                     "goro" => root.AddComponent<GoroBoss>(),
                     "kage" => root.AddComponent<KokuyoBoss>(),
@@ -398,8 +400,10 @@ namespace Nindo
                     b.phaseSpeedBonus = 0.08f;
                     break;
                 case "ozeki":
-                    b.bossId = "ozeki"; b.title = "Ōzeki"; b.subtitle = "El Gran Campeón del Bambú";
-                    b.introAnim = "Spotted"; b.phaseAnim = "Spotted"; b.musicKey = "boss"; b.phaseThresholds = new[] { 0.5f };
+                    // Chikuō: las fases (66 % y 33 %), sus escenas y su ritmo los maneja BambooMasterBoss
+                    b.bossId = "ozeki"; b.title = "Chikuō"; b.subtitle = "El Maestro del Bambú";
+                    b.introAnim = "Intro"; b.phaseAnim = "PhaseCoat"; b.musicKey = "boss_bamboo"; b.phaseThresholds = new[] { 0.66f, 0.33f };
+                    b.phaseSpeedBonus = 0f;
                     break;
                 case "kage":
                     // Kokuyō: los actos (65 % y 30 %) y su ritmo los maneja KokuyoBoss, sin la aceleración genérica

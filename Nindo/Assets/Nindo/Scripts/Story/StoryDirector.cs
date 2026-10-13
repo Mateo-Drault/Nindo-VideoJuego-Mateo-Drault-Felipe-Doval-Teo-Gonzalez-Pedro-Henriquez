@@ -580,6 +580,19 @@ namespace Nindo
             b.ScriptedFace(P.transform.position);
             // Kokuyō tiene su propia presentación (y su versión corta para los reintentos)
             if (b is KokuyoBoss k) { yield return KokuyoIntro(k); yield break; }
+            // Chikuō también (espera con las manos en la espalda; en los reintentos, el saludo corto con una frase)
+            if (b is BambooMasterBoss master)
+            {
+                // bandera propia: el bossId sigue siendo "ozeki" (partidas, sello) y una partida que vio al sumo de antes
+                // tenía boss_seen_ozeki, así que nunca veía la presentación ni la historia de Chikuō
+                bool first = !Game.Save.HasFlag(BossSeenFlag("chikuo"));
+                yield return master.Presentation(P, first);
+                if (first) { Game.Save.SetFlag(BossSeenFlag("chikuo")); SaveSystem.Save(); }
+                yield return new WaitForSecondsRealtime(0.3f);
+                b.ExitScripted(false);
+                b.BeginFight();
+                yield break;
+            }
             // reintento: la presentación entera (~6 s más el diálogo) solo la primera vez
             if (Game.Save.HasFlag(BossSeenFlag(b.bossId))) { yield return BossReintro(b); yield break; }
             // Mizuchi tiene su propia presentación (sale del pozo de la cascada): la toma, el título y el diálogo son suyos

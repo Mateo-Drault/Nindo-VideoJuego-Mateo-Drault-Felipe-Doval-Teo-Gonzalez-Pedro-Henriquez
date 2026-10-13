@@ -994,7 +994,7 @@ namespace Nindo
         }
 
         /// <summary>¿Este agotamiento se muestra como postura quebrada (clip mareado, chispas, sonido)? Una pausa que el
-        /// jefe se da solo (el ritual de la sal del Ōzeki) queda abierta sin mentir que Kaito le quebró la guardia.</summary>
+        /// jefe se da solo (Chikuō bajando la guardia para llamar a Kaito) queda abierta sin mentir que Kaito le quebró la guardia.</summary>
         protected virtual bool ExhaustedFeedback => true;
 
         void TickExhausted(float dt)
@@ -1125,14 +1125,14 @@ namespace Nindo
                 return HitResult.Killed;
             }
 
-            float kb = startled ? 0f : info.knockback * (1f - config.knockbackResist);
+            float kb = startled ? 0f : KnockMeters(info, info.knockback * (1f - config.knockbackResist));
             if (kb > 0f) knock += info.direction.Flat().normalized * kb;
 
             if (State == EnemyState.Exhausted)
             {
                 if (exhaustedHits >= ExhaustedHitCap) EndExhaustion();
                 // el sacudón propio de la postura quebrada (si el controller lo tiene): Hit lo paraba en guardia. Una pausa
-                // que no es postura quebrada (la sal del Ōzeki) no se agacha
+                // que no es postura quebrada (Chikuō llamando a Kaito) no se agacha
                 else anim.Play(ExhaustedFeedback && anim.HasState(ExhaustedHitState) ? ExhaustedHitState : config.animHit, 0.03f);
             }
             else if (State == EnemyState.Attack && (config.hyperArmor && info.kind != AttackKind.Ability || armored && info.kind == AttackKind.Light && !info.riposte))
@@ -1153,6 +1153,13 @@ namespace Nindo
         }
 
         protected virtual void OnDamaged(in DamageInfo info) { }
+
+        /// <summary>Metros que lo empuja un golpe que entró ('kb' ya con su resistencia). Un jefe con clips autorados lo
+        /// ajusta a lo que dice su reacción (de rodillas o en pleno golpe no se desliza por el piso).</summary>
+        protected virtual float KnockMeters(in DamageInfo info, float kb) => kb;
+
+        /// <summary>El estallido y el sonido de muerte comunes (un jefe que no muere, como Chikuō, no los usa).</summary>
+        protected virtual bool DeathBurst => true;
 
         const float HeavyKnockback = 1f;
         const string HitHeavyState = "HitHeavy", ParriedPerfectState = "ParriedPerfect";
@@ -1237,8 +1244,11 @@ namespace Nindo
             deathSeated = Ambient != null && Ambient.SeatedNow;
             if (deathSeated) anim.SetSpeed(0f);
             else anim.Play(config.animDeath, 0.06f);
-            Game.FX?.EnemyDeath(AimPoint, info.direction, finisher);
-            Game.Audio?.Play("kill", transform.position, 0.9f);
+            if (DeathBurst)
+            {
+                Game.FX?.EnemyDeath(AimPoint, info.direction, finisher);
+                Game.Audio?.Play("kill", transform.position, 0.9f);
+            }
             GameEvents.RaiseEnemyKilled(this);
             encounter?.OnMemberDied(this);
             StartCoroutine(DeathRoutine(info.direction));
