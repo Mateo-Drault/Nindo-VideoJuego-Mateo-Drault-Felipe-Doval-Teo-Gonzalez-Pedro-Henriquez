@@ -869,7 +869,7 @@ _zan_over = mod(AFTER_CUT, hips=(0.0, -0.27, -0.36), hips_rot=(18.0, 0.0, -28.0)
                 grip=(-1.06, 0.08, 1.08), blade=(-0.86, -0.35, -0.38), edge=perp((-0.86, -0.35, -0.38), (0.2, 1.0, 0.4)),
                 elbow_r=(-0.7, 0.6, 0.3),
                 hand_l=(0.34, 0.04, 0.82), hand_l_dir=(0.05, -0.9, -0.3), hand_l_up=(0.3, 0.0, -0.95), elbow_l=(0.6, 0.8, -0.2),
-                fingers_l=0.3, hand_l_relax=1.0)
+                fingers_l=0.37, hand_l_relax=1.0)
 # asentado: el brazo derecho estirado a su costado, la hoja baja y atrás (desde arriba, una raya larga que sale de la
 # silueta por la derecha y hacia atrás), el puño izquierdo cerrado en la cadera, el pecho abierto y la vista adelante. El
 # puño flojo (sigue al antebrazo): el puño autorado no entra en lo cómodo con el codo del zanshin y el recorte lo
@@ -894,7 +894,10 @@ FINISHER_HOLD_END = 86          # PlayerController.FinisherHoldEndFrame
 FINISHER_SKIP_FROM = 71         # el corto salta de acá a FINISHER_HOLD_END (0.2 s después del tajo a x2.8)
 add("Finisher", 106, [
     (0, READY, "sine"), (4, _step_in, "out"), (8, _step_back, "inout"), (12, IAI, "inout"), (22, _iai_b, "sine"), (36, mod(IAI, tremble=0.6), "sine"),
-    (50, _iai_deep, "sine"), (54, _iai_cmp, "in2"), (55, AFTER_CUT, "hold"), (58, _zan_over, "out"), (64, ZANSHIN, "sine"),
+    # (el puño izquierdo se cierra parejo de f55 a f64: en la pose quieta, cerrándose en 6 cuadros con curva, la punta
+    # de los dedos giraba 27° por cuadro y se veía como un tic)
+    (50, _iai_deep, "sine"), (54, _iai_cmp, "in2"), (55, AFTER_CUT, "hold"), (58, _zan_over, "out", {"fingers_l": "lin"}),
+    (64, ZANSHIN, "sine", {"fingers_l": "lin"}),
     (72, _zan_in, "sine"), (77, _zan_look, "inout"), (81, mod(_zan_look, head=(-6.0, -4.0, -31.0)), "sine"),
     (FINISHER_HOLD_END, ZAN_END, "inout"), (89, _chi_up, "inout"),
     (91, _chi_snap, "snap"), (92, mod(_chi_snap, grip=(-0.75, -0.26, 0.9)), "lin"), (95, _step_out, "inout"),
@@ -1308,7 +1311,11 @@ def pi_knee_keys(frames, half, kiza, first):
     out = []
     for f, (u, knee, foot) in zip(frames, _PI_KNEE):
         p_ = mod(inter(half, kiza, u), knee_at_r=knee, knee_guide_r=1.0)
-        out.append((f, feet(p_, r=foot or first), "inout"))
+        # la clave junto al pie apoyado es un tope del giro del pie: el Catmull-Rom traía el giro de la clave siguiente
+        # (el pie que da la vuelta, 40° de rolido) y entre el pie plano y el talón levantado la punta rotaba y se corría
+        # 2.8 cm por el piso
+        ch = {"stop": ("foot_r_rot",)} if foot is None else {}
+        out.append((f, feet(p_, r=foot or first), "inout", ch))
     return sorted(out, key=lambda k: k[0])
 
 
@@ -1547,8 +1554,10 @@ add("WakeUp", 108, [
     (86, feet(mod(inter(_wk_see2, _wk_rise, 0.4), knee_at_l=(0.33, 0.46, 0.25), knee_guide_l=1.0),
               l=swung("L", 0.41, 0.7, 0.2, (18.0, -140.0, 150.0))), "inout"),
     (89, feet(mod(_wk_rise, knee_at_l=(0.39, 0.27, 0.33), knee_guide_l=1.0), l=swung("L", 0.47, 0.47, 0.24, (15.0, -80.0, 100.0))), "out"),
+    # (el pie derecho a medio levantar el talón sobre su punta: mezclada, la clave lo dejaba fuera del giro sobre la
+    # punta y la suela se corría 2.9 cm antes del envión)
     (91, feet(mod(inter(_wk_rise, _wk_up, 0.5), knee_at_l=(0.37, 0.12, 0.38), knee_guide_l=1.0),
-              l=swung("L", 0.38, 0.3, 0.26, (10.0, -25.0, 40.0))), "inout"),
+              r=toe("R", *_WK_RF, 10.0), l=swung("L", 0.38, 0.3, 0.26, (10.0, -25.0, 40.0))), "inout"),
     (93, _wk_up, "in2"), (96, _wk_step, "inout"), (99, _wk_reach, "in2"),
     (104, _wk_ready, "sine"), (108, mod(READY, fingers_r=1.0), "sine")],
     lag=mod(LEAD, hand_l=0.0),

@@ -12,7 +12,7 @@
 Orden con export_kaito.py (malla, materiales y katana del pulido B2): primero export_kaito.py, después este.
 
 Falla (código 1) si un chequeo no pasa: alcance de manos y pies, deriva de los pies apoyados (< 2 cm en el
-juego), suelas que rozan el piso y se corren (< 2 cm por cuadro del juego y < 3 cm por tramo, con el avance y el
+juego), suelas que rozan el piso y se corren (< 2 cm por cuadro del juego y < 2 cm por tramo, con el avance y el
 giro del modelo que pone el código, entre cuadros en los ciclos, y también con el avance del corte cortado por el
 imán), pies en el aire donde el juego mueve el cuerpo ('airborne'), empalmes de los crossfades cortos
 (kaito_clips.CHAINS), costura de los loops (< 1°), velocidad de los ciclos contra la autorada, el impacto dentro de
@@ -73,7 +73,9 @@ def sole_pivots():
 # arrastrada en un tajo, la punta que roza al despegar en el trote) no lo ve. Acá cuenta cualquier punto de la
 # suela a menos de CONTACT del piso en dos muestras seguidas, con el avance del juego aplicado
 CONTACT_U = 0.012 * KR.U_PER_M
-SKATE_STEP_CM, SKATE_RUN_CM = 2.0, 3.0      # por cuadro del juego / acumulado en un tramo
+# por cuadro del juego / acumulado en un tramo (el tope del pie apoyado del pedido es 2 cm: con 3, WakeUp y PrayIncense
+# se corrían 2.9 y 2.8 cm al levantar el talón)
+SKATE_STEP_CM, SKATE_RUN_CM = 2.0, 2.0
 SKATE_NOISE_CM = 0.5                        # cm por cuadro del juego (15 cm/s) que no se ven: no suman
 
 
@@ -577,6 +579,7 @@ def main():
     C.rest(arm, True)
     print("esqueleto de juego:", KR.game_skeleton(arm, body))
     print("nudo de la bandana (caras borradas, caras del moño):", KR.bandana_knot(body))
+    print("bandana entera a la cabeza (vértices con peso de otro hueso):", KR.bandana_weights(body))
     C.limit_weights(body)
     C.flat_normals(body)
     C.flat_normals(kat)

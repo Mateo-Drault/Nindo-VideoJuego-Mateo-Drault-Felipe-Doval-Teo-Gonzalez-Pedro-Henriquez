@@ -347,6 +347,24 @@ def bandana_knot(body, slot="AmarilloBandana"):
     return len(old), made
 
 
+def bandana_weights(body, slot="AmarilloBandana", bone="cabeza"):
+    """Toda la bandana del cuerpo (la cinta y el moño) solo a la cabeza. Un vértice de atrás del nudo (el 1416) venía
+    31 % al brazo derecho: en cada golpe con la derecha el brazo lo tiraba hacia adentro de la cabeza y el nudo se
+    doblaba como una púa amarilla. Devuelve cuántos vértices tenían peso de otro hueso."""
+    mi = {i for i, s in enumerate(body.material_slots) if s.material and s.material.name.startswith(slot)}
+    head = body.vertex_groups.get(bone)
+    if not mi or head is None:
+        return 0
+    vs = sorted({v for p in body.data.polygons if p.material_index in mi for v in p.vertices})
+    names = {g.index: g.name for g in body.vertex_groups}
+    stray = {g.group for i in vs for g in body.data.vertices[i].groups if names[g.group] != bone and g.weight > 0.0}
+    moved = sum(1 for i in vs if any(names[g.group] != bone and g.weight > 0.0 for g in body.data.vertices[i].groups))
+    for gi in stray:
+        body.vertex_groups[names[gi]].remove(vs)
+    head.add(vs, 1.0, 'REPLACE')
+    return moved
+
+
 def knot_bow(body, bm, mat, M):
     """Moño del nudo (caras planas, todo a la cabeza): un prisma octogonal que se angosta hacia atrás y dos lazos."""
     import bmesh
