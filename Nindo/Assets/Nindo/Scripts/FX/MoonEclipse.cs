@@ -208,6 +208,9 @@ namespace Nindo
             col.color = g;
             ps.GetComponent<ParticleSystemRenderer>().sharedMaterial = FXMaterials.Alpha;
             ps.transform.position = arenaCenter + Vector3.up * 13f;
+            // desde el primer Petals el sistema queda andando para siempre (sin emitir entre una lluvia y otra): fuera de
+            // cuadro, en pausa
+            ZoneCulling.AddDynamic(ps);
             return ps;
         }
 

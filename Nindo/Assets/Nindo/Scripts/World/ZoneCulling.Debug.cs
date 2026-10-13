@@ -12,8 +12,8 @@ namespace Nindo
     /// <summary>
     /// Medición y depuración de ZoneCulling, para el Inspector o RunCommand:
     ///  * ZoneCulling.Stats: una línea con lo prendido ahora (renderers, y cuántos pide solo la cámara de juego si hay
-    ///    otra cámara contando; casters de sombra, celdas, enemigos despiertos, la cascada, Animators y luces de la
-    ///    escena, y lo que cuesta el chequeo por frame).
+    ///    otra cámara contando; los dinámicos de AddDynamic, casters de sombra, celdas, enemigos despiertos, partículas
+    ///    simulando, la cascada, Animators y luces de la escena, y lo que cuesta el chequeo por frame).
     ///  * ZoneCulling.ShowHud = true: esa línea abajo a la izquierda y, en la vista Scene, las celdas (verde = prendida).
     ///  * ZoneCulling.Benchmark(segundos): alterna con y sin culling en el mismo lugar y escribe en la consola el promedio
     ///    de cada contador del Profiler (tiempo del hilo principal y de render, batches, SetPass, casters de sombra...).
@@ -96,13 +96,14 @@ namespace Nindo
             else if (!hudWanted && hud != null) Destroy(hud);
         }
 
-        /// <summary>Partículas del mundo en loop que están simulando ahora (las pausadas por estar escondidas no).</summary>
+        /// <summary>Partículas en loop (del mundo y las de AddDynamic) que están simulando ahora (las pausadas por estar
+        /// escondidas no).</summary>
         public static int ParticlesSimulating => Instance != null ? Instance.CountSimulating() : 0;
-        public static int ParticlesTotal => Instance != null ? Instance.totalParticles : 0;
+        public static int ParticlesTotal => Instance != null ? Instance.totalParticles + Instance.dynLoops : 0;
 
         int CountSimulating()
         {
-            int n = 0;
+            int n = CountDynamicSimulating();
             if (items != null) for (int i = 0; i < items.Length; i++) if (items[i].ps != null && items[i].ps.isPlaying) n++;
             return n;
         }
@@ -138,10 +139,11 @@ namespace Nindo
             sb.Append(" | renderers ").Append(litRenderers).Append('/').Append(totalRenderers);
             if (On && camCount > 1 && mainCam >= 0) sb.Append(" (cámara de juego sola ").Append(CountMainCamera()).Append(')');
             if (!HideBatched) sb.Append(" (lote estático siempre prendido)");
+            sb.Append(" | dinámicos ").Append(dynLit).Append('/').Append(dynCount);
             sb.Append(" | casters de sombra ").Append(litCasters).Append('/').Append(totalCasters);
             sb.Append(" | celdas en cuadro ").Append(litCells).Append('/').Append(cells != null ? cells.Length : 0);
             sb.Append(twoLines ? "\n" : " | ").Append("enemigos despiertos ").Append(awake).Append('/').Append(sleepers.Count);
-            sb.Append(" | partículas simulando ").Append(CountSimulating()).Append('/').Append(totalParticles);
+            sb.Append(" | partículas simulando ").Append(CountSimulating()).Append('/').Append(totalParticles + dynLoops);
             foreach (var fc in falls)
                 if (fc.f != null) sb.Append(" | cascada ").Append(!fc.f.Active ? "lejos (LOD)" : fc.f.Frozen ? "congelada (fuera de cuadro)" : "en movimiento");
             sb.Append(" | cámaras ").Append(camCount);
@@ -511,7 +513,8 @@ namespace Nindo
             Destroy(t);
         }
 
-        /// <summary>Los renderers del mundo prendidos (sin tocar enemigos ni la cascada), para el "sin" de CheckFrame.</summary>
+        /// <summary>Los renderers del mundo y los dinámicos prendidos (sin tocar enemigos ni la cascada), para el "sin" de
+        /// CheckFrame.</summary>
         void ShowItems()
         {
             for (int c = 0; c < cells.Length; c++)
@@ -521,6 +524,7 @@ namespace Nindo
                 for (int i = cell.start; i < end; i++)
                     if (!items[i].on) Set(ref items[i], ref cell, true);
             }
+            ShowDynamic();
         }
 
         /// <summary>La cámara con el estado de culling de ahora, en una textura del tamaño de la pantalla (se reusa).</summary>
@@ -545,7 +549,8 @@ namespace Nindo
         }
 
 #if UNITY_EDITOR
-        /// <summary>Con el HUD prendido, las celdas en la vista Scene: verde las que tienen algo prendido.</summary>
+        /// <summary>Con el HUD prendido, las celdas en la vista Scene (verde las que tienen algo prendido) y las cajas de lo
+        /// dinámico con las que se decidió el último frame (celeste prendido, gris escondido).</summary>
         void OnDrawGizmos()
         {
             if (!hudWanted || cells == null) return;
@@ -553,6 +558,13 @@ namespace Nindo
             {
                 Gizmos.color = cells[c].lit > 0 ? new Color(0.3f, 1f, 0.4f, 0.8f) : new Color(0.5f, 0.5f, 0.5f, 0.15f);
                 Gizmos.DrawWireCube((cells[c].min + cells[c].max) * 0.5f, cells[c].max - cells[c].min);
+            }
+            for (int i = 0; i < dynCount; i++)
+            {
+                ref var d = ref dyn[i];
+                if (d.r == null || d.max.x < d.min.x) continue;
+                Gizmos.color = d.on ? new Color(0.35f, 0.85f, 1f, 0.9f) : new Color(0.5f, 0.5f, 0.5f, 0.25f);
+                Gizmos.DrawWireCube((d.min + d.max) * 0.5f, d.max - d.min);
             }
         }
 #endif

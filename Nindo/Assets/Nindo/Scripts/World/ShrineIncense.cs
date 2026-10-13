@@ -168,6 +168,8 @@ namespace Nindo
             glowTarget = 1f;
             if (instant) glowK = 1f;
             if (ashGlow == null) ashGlow = MakeAshGlow();
+            // la brasa y el brillo de la ceniza quedan en loop para siempre: fuera de cuadro, en pausa (ZoneCulling.Dynamic)
+            ZoneCulling.AddDynamic(gameObject);
         }
 
         /// <summary>

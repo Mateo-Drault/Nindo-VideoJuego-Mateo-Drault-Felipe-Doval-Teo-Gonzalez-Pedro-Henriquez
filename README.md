@@ -303,6 +303,10 @@ en el mismo frame. Los idles de ambiente (`EnemyAmbient`) corren en Idle, así q
 mientras duermen no siguen el reloj de su pareja; `SetState` y `ScriptedPlay` lo despiertan en el acto. Kokuyō (arrodillado) y Mizuchi
 (escondido en el lago) esperan en Scripted y no se duermen nunca. En el editor también cuenta lo que mira cada
 vista Scene que se está dibujando (`Nindo.ZoneCulling.IncludeSceneView = false` para medir solo la cámara de juego).
+Lo que se crea después del armado lo registra quien lo crea con `ZoneCulling.AddDynamic(raíz)` (el incienso de un
+santuario rezado, los braseros del patio, las rocas de Gorō, los pétalos): se prueba en cada frame con su caja de
+ahora y se toman solo las partículas en loop (escondidas se pausan) y lo que tira sombra; lo demás ya lo descarta
+Unity fuera de cuadro.
 Para depurar: `Nindo.ZoneCulling.ShowHud = true`, `Debug.Log(Nindo.ZoneCulling.Stats)`,
 `Nindo.ZoneCulling.Benchmark()` (30 s alternando con y sin en el mismo lugar, sin tope de fps ni vsync mientras
 mide; en un Development Build, Ctrl + Shift + F9 o arrancar con `-zcbench`, y el informe va a `Player.log`),

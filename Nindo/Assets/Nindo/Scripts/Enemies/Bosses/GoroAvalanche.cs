@@ -545,6 +545,8 @@ namespace Nindo
                 mg.AddComponent<MeshFilter>();
                 mg.AddComponent<MeshRenderer>();
                 flung.Add(f);
+                // tira sombra: la que vuela fuera de cuadro con la sombra afuera sale del mapa de sombras (ZoneCulling.Dynamic)
+                ZoneCulling.AddDynamic(go);
             }
             int i = Random.Range(0, boulderMeshes.Length);
             f.mesh.GetComponent<MeshFilter>().sharedMesh = boulderMeshes[i];
@@ -675,6 +677,8 @@ namespace Nindo
                 b.lane = NewQuad("Carril", out b.laneR);
                 b.mark = NewQuad("Caida", out b.markR);
                 boulders.Add(b);
+                // la roca tira sombra (el carril y la marca no: esos los sigue probando Unity)
+                ZoneCulling.AddDynamic(go);
             }
             b.r = r;
             // una de las rocas, centrada (rueda sobre su centro) y escalada a 2r de diámetro
@@ -706,6 +710,7 @@ namespace Nindo
                 go.AddComponent<MeshFilter>();
                 go.AddComponent<MeshRenderer>();
                 shards.Add(s);
+                ZoneCulling.AddDynamic(go);
             }
             int i = (salt + Random.Range(0, shardMeshes.Length)) % shardMeshes.Length;
             s.t.GetComponent<MeshFilter>().sharedMesh = shardMeshes[i];

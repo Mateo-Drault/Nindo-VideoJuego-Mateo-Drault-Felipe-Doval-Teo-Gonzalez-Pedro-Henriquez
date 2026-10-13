@@ -37,6 +37,9 @@ namespace Nindo
     ///    demás. Mientras pelea un jefe no se duerme a nadie nuevo.
     ///  * Las luces no se tocan: URP descarta solo las que no tocan el frustum y LightPool reparte las de los faroles
     ///    (simulado sobre el mapa: con su densidad nunca deja apagada una luz que se ve).
+    ///  * Lo que se crea después del armado (el incienso de un santuario rezado, los braseros del patio, las rocas de
+    ///    Gorō, los pétalos): su dueño lo registra con AddDynamic y se prueba en cada frame con su caja de ahora; las
+    ///    partículas en loop se pausan escondidas. Las reglas, en ZoneCulling.Dynamic.cs.
     /// Medición y depuración en ZoneCulling.Debug.cs (Stats, ShowHud, Benchmark, CheckFrame).
     /// </summary>
     [DefaultExecutionOrder(10050)]
@@ -61,7 +64,7 @@ namespace Nindo
         static bool on = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Instance = null; on = true; hudWanted = false; IncludeSceneView = true; HideBatched = true; }
+        static void ResetStatics() { Instance = null; on = true; hudWanted = false; IncludeSceneView = true; HideBatched = true; pendingDyn.Clear(); }
 
         /// <summary>
         /// Con false, lo que está en el lote estático no se esconde nunca (solo lo de fuera del lote). Por si esconder
@@ -225,7 +228,9 @@ namespace Nindo
             }
             if (staticRoot.parent != null)
                 foreach (var f in staticRoot.parent.GetComponentsInChildren<KohanFalls>(true)) AddFalls(f);
-            Debug.Log($"[Nindo] ZoneCulling: {totalRenderers} renderers en {cells.Length} celdas, {sleepers.Count} enemigos, {falls.Count} cascada(s).");
+            // lo que se registró mientras se armaba (lo que ya se juntó arriba no se toma dos veces)
+            FlushPending();
+            Debug.Log($"[Nindo] ZoneCulling: {totalRenderers} renderers en {cells.Length} celdas, {sleepers.Count} enemigos, {falls.Count} cascada(s), {dynCount} dinámicos.");
             if (huge > 0) Debug.LogWarning($"[Nindo] ZoneCulling: {huge} renderers con bounds de más de {HugeBounds} m (¿el de la malla combinada del static batching?): quedan siempre prendidos.");
         }
 
@@ -248,8 +253,9 @@ namespace Nindo
         void Add(List<Item> list, Renderer r, float pad)
         {
             // solo lo que no cambia de forma: mallas fijas y partículas (con su caja estimada). Una línea, una estela o una
-            // malla con piel (el humo del incienso, por ejemplo) mueven sus vértices y su caja: esos los sigue probando Unity
-            if (!(r is MeshRenderer) && !(r is ParticleSystemRenderer)) return;
+            // malla con piel (el humo del incienso, por ejemplo) mueven sus vértices y su caja: van a la lista dinámica, que
+            // prueba su caja de ahora en cada frame (y solo toma las que tiran sombra: las otras las sigue probando Unity)
+            if (!(r is MeshRenderer) && !(r is ParticleSystemRenderer)) { TakeDynamic(r); return; }
             bool always = false;
             Bounds b = r is ParticleSystemRenderer ? ParticleBounds(r.GetComponent<ParticleSystem>(), out always)
                      : r.gameObject.activeInHierarchy ? r.bounds : MeshBounds(r);
@@ -265,6 +271,7 @@ namespace Nindo
             if (ps != null && !ps.main.loop) ps = null;
             if (ps != null) totalParticles++;
             list.Add(new Item { r = r, min = b.min, max = b.max, shadows = shadows, on = true, ps = ps, always = always, batched = r.isPartOfStaticBatch });
+            managed.Add(r);
             worldMask |= 1 << r.gameObject.layer;
             totalRenderers++;
             if (shadows) totalCasters++;
@@ -546,6 +553,7 @@ namespace Nindo
             float now = Time.unscaledTime;
             litCells = 0;
             for (int c = 0; c < cells.Length; c++) TickCell(ref cells[c], now);
+            TickDynamic(now);
             TickFalls(now);
             TickSleepers(now);
             float ms = (System.Diagnostics.Stopwatch.GetTimestamp() - t0) * 1000f / System.Diagnostics.Stopwatch.Frequency;
@@ -578,6 +586,7 @@ namespace Nindo
                 if (fc.f == null || fc.f.Frozen || !fc.f.Active) continue;
                 foreach (var r in fc.rs) if (r != null) Grow(ref fc.min, ref fc.max, r.bounds, 2f);
             }
+            MeasureDynamic();
         }
 
         /// <summary>Agranda la caja para que entre 'b' con 'pad' de margen; true si creció. Un bounds vacío no cuenta.</summary>
@@ -823,6 +832,7 @@ namespace Nindo
                 for (int i = cell.start; i < end; i++)
                     if (!items[i].on) Set(ref items[i], ref cell, true);
             }
+            ShowDynamic();
             foreach (var s in sleepers) if (s.e != null && s.e.Asleep) Wake(s);
             awake = sleepers.Count;
             foreach (var fc in falls)
