@@ -282,14 +282,16 @@ namespace Nindo
             if (freed) grandpa.PlayThen(GrandpaFreedState, "Locomotion", 0.25f);
             else grandpa.Play("Locomotion", 0.3f);
             Game.FX?.Petals(grandpa.transform.position + Vector3.up * 1.6f, 1.6f);
-            yield return Wait(freed ? NpcStateLength(grandpa, GrandpaFreedState, 3f) * 0.95f : 0.6f);
+            // Freed entero (3.6 s): termina en Idle f0 y de ahí arranca Walk. Cortado a 0.95 (f102.6) el cruce a Walk
+            // saltaba 18 cm y 44° en el plano del reencuentro (el abuelo todavía se estaba acomodando)
+            yield return Wait(freed ? NpcStateLength(grandpa, GrandpaFreedState, 3f) : 0.6f);
             // unos pasos hacia su nieto
             Vector3 to = grandpa.transform.position + (P.transform.position - grandpa.transform.position).Flat().normalized * EndGrandpaStep;
             float walk = EndGrandpaStep / GrandpaWalkSpeed;
             if (NpcHasState(grandpa, GrandpaWalkState))
             {
                 grandpa.TurnTo(to, 0.3f);
-                grandpa.Play(GrandpaWalkState, 0.2f);
+                grandpa.Play(GrandpaWalkState, 0.25f);
                 grandpa.SlideTo(to, GrandpaWalkSpeed);
                 yield return Wait(walk);
                 grandpa.Play("Locomotion", 0.3f);
