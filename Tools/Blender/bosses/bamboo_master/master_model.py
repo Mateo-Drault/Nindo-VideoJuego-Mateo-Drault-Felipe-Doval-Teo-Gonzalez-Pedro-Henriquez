@@ -559,8 +559,105 @@ ROBE_BODY = [  # (z, medio ancho, frente, espalda): un poco más grande que el c
 ]
 
 
+# --------------------------------------------------------------------------- el saco que se desliza (formas CoatSlip)
+# PhaseCoat no puede apagar un saco puesto entero en un cuadro (la silueta pasaba de blanca a oscura en 33 ms): antes del
+# cambio de malla el saco se abre y se le desliza por la espalda y los brazos. Las formas 'CoatSlip1..4' de Master_Robe
+# son el saco en cuatro etapas de esa salida (en el reposo; el skin las lleva con los huesos): las dos mitades del frente
+# giran hacia la espalda alrededor del tronco, todo baja y se agranda y las mangas bajan por los brazos hasta tapar las
+# manos. Cada etapa es el punto girado DE VERDAD hasta su fracción del giro: una sola forma lineal llevaba cada vértice
+# por la cuerda del arco (a mitad de camino quedaba al 71 % del radio, metido hasta 11 cm en el pecho). El clip pasa de
+# una etapa a la siguiente (timing.slip_curve de PhaseCoat, master_coat.write_coat_slip) y build_bamboo_master las
+# corrige contra el cuerpo con la pose de cada cuadro (master_coat.refine_slip). El frente del saco, el cuello y la faja
+# están abiertos al medio (open_front): sin esa costura, la cara del medio se estiraba de un costado al otro por detrás
+# del cuello cuando las mitades se separaban
+COAT_SLIP = "CoatSlip"
+SLIP_STAGES = 4
+SLIP_SWING_DEG = 100.0     # cuánto gira hacia la espalda el frente del saco (el centro del frente: 0° -> 100°)
+SLIP_DROP = 0.13           # cuánto baja (m) a la altura de los hombros (con 0.15 el cuello se metía en el trapecio)
+SLIP_GROW = 0.16           # cuánto se agranda alrededor del tronco a la altura de los hombros
+SLIP_BACK = 0.10           # y lo que termina en la espalda cuelga suelto, separado del cuerpo (m)
+SLIP_REAR = 0.07           # la espalda del saco se separa del cuerpo al bajar (si no, el cuello bajaba por la nuca)
+SLIP_SLEEVE = 0.30         # cuánto bajan las mangas por el brazo (m: el puño pasa la punta de los dedos)
+SLIP_SLEEVE_GROW = 0.12    # y cuánto se agrandan (la boca de la manga pasa por la mano)
+SLIP_WAIST = 0.35          # la cintura y los faldones bajan esta fracción de lo que bajan los hombros
+SLIP_WAIST_SWING = 0.75    # y giran esta: el ruedo largo es lo que más se ve desde arriba (si quedaba adelante hasta
+                           # CoatOff, el pantalón negro aparecía de golpe)
+SEAM_GAP = 0.0012          # medio ancho de la costura del frente (más que el 'merge' de MeshBuilder.finish)
+
+
+def slip_names():
+    return [f"{COAT_SLIP}{k}" for k in range(1, SLIP_STAGES + 1)]
+
+
+def slip_amount(z):
+    """Fracción de lo que baja y se agranda a la altura z: entera en los hombros, SLIP_WAIST de la cintura abajo."""
+    return SLIP_WAIST + (1.0 - SLIP_WAIST) * smooth01((z - 1.30) / 0.70)
+
+
+def slip_turn(z):
+    """Fracción del giro hacia la espalda a la altura z."""
+    return SLIP_WAIST_SWING + (1.0 - SLIP_WAIST_SWING) * smooth01((z - 1.30) / 0.70)
+
+
+def slip_swing(co, h, turn, u, side=None):
+    """El punto del saco en la etapa u (0..1) de la salida: girado hacia la espalda alrededor del eje del tronco
+    ('turn': cada mitad hacia su lado, el frente gira entero y la espalda no), agrandado y bajado con la fracción h.
+    'side' (+1 su izquierda, -1 su derecha) manda una pieza entera hacia un lado (un faldón que cruza el medio se
+    rompía en dos). Devuelve el corrimiento."""
+    x, y = co.x, co.y
+    r = math.hypot(x, y)
+    if r < 1e-6:
+        return Vector((0.0, 0.0, -SLIP_DROP * h * u))
+    th = math.atan2(x, -y)                       # 0 = frente, + = hacia su izquierda (x+)
+    s = side if side is not None else (1.0 if th >= 0.0 else -1.0)
+    th2 = th + s * math.radians(SLIP_SWING_DEG) * turn * u * (1.0 - abs(th) / math.pi)
+    back = max(0.0, -math.cos(th2)) * max(0.0, math.cos(th))   # lo que vino del frente y quedó atrás
+    rear = max(0.0, -math.cos(th))                              # lo que ya era la espalda
+    r2 = r * (1.0 + SLIP_GROW * h * u) + (SLIP_BACK * back * turn + SLIP_REAR * rear * h) * u
+    return Vector((r2 * math.sin(th2) - x, -r2 * math.cos(th2) - y, -SLIP_DROP * h * u))
+
+
+def slip_sleeve(co, w, u):
+    """La manga baja por el brazo (por el tramo del hueso que la lleva: brazo o antebrazo) y se agranda alrededor
+    de él, hasta la etapa u. Las de la izquierda usan el espejo de los ejes."""
+    S, E, W, ua, l = arm_points()
+    if co.x > 0.0:                                # manga izquierda: el espejo en x del brazo derecho
+        S, E, W = (Vector((-p.x, p.y, p.z)) for p in (S, E, W))
+        ua, l = Vector((-ua.x, ua.y, ua.z)), Vector((-l.x, l.y, l.z))
+    fore = sum(v for n, v in w.items() if n.startswith(("Forearm", "Sleeve", "Hand")))
+    upper = sum(w.values()) - fore
+    d = (ua * upper + l * fore).normalized()
+    # el eje del brazo más cercano (para agrandar alrededor de él)
+    t = along_bone(co, S, E)
+    if t <= 1.0:
+        c = S + (E - S) * max(0.0, t)
+    else:
+        c = E + (W - E) * min(1.0, along_bone(co, E, W))
+    rad = co - c
+    rad -= d * rad.dot(d)
+    return (d * SLIP_SLEEVE + rad * SLIP_SLEEVE_GROW) * u
+
+
+def open_front(bm):
+    """Abre al medio el frente de una pieza cerrada (el saco con el cuello y los botones, la faja): corta las caras de
+    adelante por x = 0 y separa los dos lados SEAM_GAP. Cerrado no se ve (la tira de la abertura y los botones quedan
+    partidos justo por la mitad); en las formas CoatSlip cada mitad se va con su lado."""
+    import bmesh
+    front = [f for f in bm.faces if f.calc_center_median().y < 0.0]
+    geom = list({e for f in front for e in f.edges}) + front + list({v for f in front for v in f.verts})
+    bmesh.ops.bisect_plane(bm, geom=geom, dist=1e-6, plane_co=(0.0, 0.0, 0.0), plane_no=(1.0, 0.0, 0.0))
+    on = [e for e in bm.edges if all(abs(v.co.x) < 1e-5 and v.co.y < 0.0 for v in e.verts)]
+    bmesh.ops.split_edges(bm, edges=on)
+    for v in bm.verts:
+        if abs(v.co.x) < 1e-5 and v.co.y < 0.0 and v.link_faces:
+            side = sum(f.calc_center_median().x for f in v.link_faces)
+            v.co.x = SEAM_GAP if side > 0.0 else -SEAM_GAP
+
+
 def build_robe(kits):
     k = kits["Robe_Body"] = Kit("robe_Body", "Chest", weights=torso_weights)
+    k.slip = lambda co, w, u: slip_swing(co, slip_amount(co.z), slip_turn(co.z), u)
+    k.front_seam = True
     rings = [ring(z, w, f, b, n=14, power=2.4) for z, w, f, b in ROBE_BODY]
     k.rings_loft(rings, C["ivory"], False, False, [C["ivory2"], C["ivory"], C["ivory"], C["ivory"], C["ivory"], C["ivory"]])
     # cuello mao, la línea de botones de sapo y la abertura del frente
@@ -574,6 +671,9 @@ def build_robe(kits):
     k.obox((0.0, section_y(ROBE_BODY, 0.0, 1.72) - 0.003, 1.72), (0.012, 0.006, 0.54), (1, 0, 0), (0, 1, 0), C["ivory3"])
     # la faja a la medida del saco (el nudo y las colas son del cuerpo: quedan en la fase 2)
     ks = kits["Robe_Sash"] = Kit("robe_Sash", "Hips", weights=torso_weights)
+    # la faja se abre al medio con el saco (open_front) y se va con la cintura
+    ks.slip = lambda co, w, u: slip_swing(co, slip_amount(co.z), slip_turn(co.z), u)
+    ks.front_seam = True
     ks.tube([(0, 0.0, 1.235), (0, 0.0, 1.30), (0, 0.0, 1.38)],
             [(MR.ROBE_R[0] + 0.02, MR.ROBE_R[1] + 0.02), (MR.ROBE_R[0] + 0.024, MR.ROBE_R[1] + 0.022), (0.256, 0.196)], 14,
             C["jade"], phase=math.pi / 14, cap0=False, cap1=False, power=2.4, ring_colors=[C["jade"], C["jade2"]])
@@ -584,6 +684,8 @@ def build_robe(kits):
         b1, b2 = MR.robe_name(a, 1), MR.robe_name(a, 2)
         J = [bh(b1), bh(b2), bt(b2)]
         kk = kits["Robe_" + b1] = Kit("robe_" + b1, b1, weights=chain_weights(J, [b1, b2], span=0.07))
+        # los faldones van con la cintura: los de adelante giran hacia los costados y todos bajan un poco
+        kk.slip = lambda co, w, u, sd=(1.0 if math.sin(math.radians(a)) >= 0.0 else -1.0): slip_swing(co, SLIP_WAIST, SLIP_WAIST_SWING, u, sd)
         panel(kk, a, MR.ROBE_TOP_Z, [0.0, L0 - 0.07, L0, L0 + 0.07, L0 + L1], 1.012, 41.0, C["ivory"], C["ivory3"], 0.018)
     # mangas anchas con el puño jade (la mano vendada asoma del puño); el borde de abajo cuelga de Sleeve_R
     S, E, W, u, l = arm_points()
@@ -603,6 +705,7 @@ def build_robe(kits):
             w["Sleeve_R"] = w.get("Sleeve_R", 0.0) + a
         return w
     k = kits["Robe_Sleeve_R"] = Kit("robe_Sleeve_R", "UpperArm_R", weights=w_sleeve)
+    k.slip = slip_sleeve
     pts = [S - u * 0.08, S + u * 0.1, S + u * 0.28, E - u * 0.04, E + l * 0.04, E + l * 0.15, E + l * 0.27, E + l * 0.32]
     rads = [(0.105, 0.096), (0.112, 0.106), (0.116, 0.112), (0.122, 0.118), (0.134, 0.13), (0.152, 0.146), (0.17, 0.164),
             (0.174, 0.168)]
@@ -613,6 +716,7 @@ def build_robe(kits):
     k.tube([c_end - l * 0.01, c_end - l * 0.07], [(0.166, 0.16), (0.07, 0.068)], 8, C["jade3"], ups=[(0, -1, 0)] * 2,
            phase=math.pi / 8, cap0=False, cap1=False)
     kits["Robe_Sleeve_L"] = mirror_kit(k, "robe_Sleeve_L", "UpperArm_L", weights=mirror_weights(w_sleeve))
+    kits["Robe_Sleeve_L"].slip = slip_sleeve
 
 
 def build_robe_thrown(kits):
@@ -744,10 +848,17 @@ def ensure_extra_materials():
 
 def join(kits, name, arm):
     objs, per = [], {}
+    # el corrimiento de cada etapa de CoatSlip de cada pieza (kit.slip) viaja en atributos hasta después de unir las piezas
+    slips = any(getattr(k, "slip", None) for k in kits.values())
+    us = [(i + 1) / SLIP_STAGES for i in range(SLIP_STAGES)]
     for bn, k in kits.items():
+        if getattr(k, "front_seam", False):
+            open_front(k.bm)
         o = finish_kit(k, EXTRA_MATS)
         per[bn] = tri_count(o)
         vg = {}
+        fn = getattr(k, "slip", None)
+        ats = [o.data.attributes.new(f"slip{i}", 'FLOAT_VECTOR', 'POINT') for i in range(SLIP_STAGES)] if slips else []
         for v in o.data.vertices:
             w = k.weights(v.co) if k.weights else {k.bone: 1.0}
             tot = sum(w.values())
@@ -755,6 +866,8 @@ def join(kits, name, arm):
                 if n_ not in vg:
                     vg[n_] = o.vertex_groups.get(n_) or o.vertex_groups.new(name=n_)
                 vg[n_].add([v.index], val / tot, 'REPLACE')
+            for at, u in zip(ats, us):
+                at.data[v.index].vector = fn(v.co, w, u) if fn else (0.0, 0.0, 0.0)
         objs.append(o)
     bpy.ops.object.select_all(action='DESELECT')
     for o in objs:
@@ -765,10 +878,27 @@ def join(kits, name, arm):
     body.name = name
     body.data.name = name
     body.parent = arm
+    if slips:
+        slip_shape(body)
     mod = body.modifiers.new("Armature", 'ARMATURE')
     mod.object = arm
     clean_slots(body)
     return body, per
+
+
+def slip_shape(o):
+    """Las formas CoatSlip1..N desde los atributos 'slip0..' (que se borran: el FBX no los necesita)."""
+    o.shape_key_add(name="Basis", from_mix=False)
+    moved = 0.0
+    for i, nm in enumerate(slip_names()):
+        at = o.data.attributes[f"slip{i}"]
+        off = [Vector(d.vector) for d in at.data]
+        o.data.attributes.remove(at)
+        kb = o.shape_key_add(name=nm, from_mix=False)
+        for j, v in enumerate(o.data.vertices):
+            kb.data[j].co = v.co + off[j]
+        moved = max(moved, max(d.length for d in off))
+    print(f"  {o.name}: formas {', '.join(slip_names())} hasta {moved * 100:.1f} cm")
 
 
 def clean_slots(o):

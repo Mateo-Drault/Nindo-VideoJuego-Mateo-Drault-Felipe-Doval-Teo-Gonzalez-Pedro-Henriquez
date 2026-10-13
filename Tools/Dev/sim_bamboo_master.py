@@ -5,16 +5,23 @@ Sin Unity. Porta las reglas que deciden la pelea, con los números del código (
     en el Recoil, postura (parry 1, perfecto 1.5, guardia imperfecta 0.34), agotado (x exhaustedDamageMul, tope
     de golpes), StepTimeline.Build / MinWindup / NormAt (cuándo pega cada paso) y el "¡ya!" (TickLead).
   * BambooMasterBoss / Moves: los tiempos de cada clip (sidecar BambooMaster.fbx.json), pausas del apex por fase,
-    pisos de vida (66 % / 33 %) y escenas de cambio de fase, los rebotes fuera de sus huecos (el 2.º dentro de
-    BounceWindow se contragolpea), postura del bambú (desvío + contragolpe, cuya parada perfecta lo arrodilla;
-    esperarla lo deja abierto), de rodillas solo con la postura llena, la onda de qi (frente a QiSpeed m/s), la
-    grulla voladora (cae sobre Kaito; de cerca primero el salto atrás hasta LeapFrom, x20 desde los 14 s hasta que sale),
-    la barrida (disco), el paso del viento (desde lejos o con el salto atrás antes, x4 hasta que sale en la fase, el
-    vuelo entero escalado entre 0.1 y 1.4 para frenar sobre donde va a estar Kaito, el corto en menos tiempo y con más
-    pausa agachado: PlanDash y CompressFlight; al que lo esquiva con el dash lo atraviesa), las variantes de paso de los golpes que
-    avanzan (en la suelta, la más larga que entra: PickReach), el contraataque de Kaito (2 cortes después de un parry, 3
-    después de uno perfecto), el hueco del final del último golpe de un combo, las habilidades (rebotan fuera de los
-    huecos y suman postura) y el reintento desde la fase más alta a la que llegó Kaito.
+    pisos de vida (66 % / 33 %) y escenas de cambio de fase, lo que pasa fuera de sus huecos (Bounce: parado, el
+    primer corte lo aparta con la palma sin clang (Swat: Kaito se frena 0.05 s) y contesta con su combo answer s después
+    saliendo de la guardia, nunca antes del descanso de después de un contraataque de Kaito, que pasa cubierto; el 2.º
+    dentro de BounceWindow también lo aparta y lo hace contestar swat_answer s después aunque esté descansando; el 3.º se
+    contragolpea; cargando un dorado aparta el primero; lo demás rebota con clang), postura del
+    bambú (desvío + contragolpe, cuya parada perfecta lo arrodilla; esperarla lo deja abierto), de rodillas solo con la
+    postura llena, la onda de qi (frente a QiSpeed m/s), la grulla voladora (cae sobre Kaito; de cerca primero el salto
+    atrás hasta LeapFrom, x20 desde los 14 s hasta que sale), la barrida (disco), el paso del viento (desde LeapFrom o con
+    el salto atrás antes, x4 hasta que sale en la fase: de frente con el vuelo escalado entre 0.5 y 1.4 para frenar sobre
+    donde va a estar Kaito, o, si para eso tendría que volar menos de la mitad, la variante que le pasa al costado a
+    pass_beside con el cruce en el contacto; el vuelo corto en menos tiempo y con más pausa agachado: PlanDash, PlanPass y
+    CompressFlight; el carril sigue a Kaito hasta que despega y ahí se vuelve a planear el vuelo: FixLane; sin la arena:
+    es 1D, con Kaito a pass_beside del carril o, más cerca, a 0.87 d), las variantes de paso de los golpes que avanzan (en la suelta, la más larga que
+    entra donde va a estar Kaito o la de paso más largo si esa no llega; lo que no entra corre a Kaito con el cuerpo:
+    PickReach y Travel), el contraataque de Kaito (2 cortes después de un parry, 3 después de uno perfecto), el hueco del
+    final del último golpe de un combo, las habilidades (rebotan fuera de los huecos y suman postura) y el reintento desde
+    la fase más alta a la que llegó Kaito.
   * PlayerController: combo de Kaito (clips de 0.43 / 0.37 / 0.70 s, golpe en f4 / f3 / f7), parry 0.24 s
     (perfecto 0.11), guardia imperfecta 0.15 s, encadenar parries 0.18 s, contraataque x1.5 por 0.7 s, dash
     6.5 m con i-frames 0.02-0.24 y 15 de Espíritu (sin Espíritu: paso sin i-frames), aturdido 0.65 s, 0.7 s
@@ -30,9 +37,14 @@ daño a Chikuō y una tabla de lectura de cada golpe (windup, anillo, "¡ya!" y 
 
 Con --abilities Kaito usa el Corte del Viento como un jugador (en los huecos, con Espíritu de sobra); el bot de AutoPilot
 no las usa. "avance perdido" cuenta lo que Travel no pudo mover del avance autorado (el pie apoyado patina eso).
+"rebotes" son los cortes que chocan con clang (Blocked) y "desvios_suaves" los que aparta sin clang (Swat); "cortes
+rechazados" cuenta los dos y los contragolpes, por minuto y según lo que hacía el maestro; "embestida" dice a qué
+distancia salió, cuánto voló y si frenó de frente o le pasó al costado. Con --human P el bot le pega igual a la guardia
+en esa parte de sus decisiones de atacar (como un jugador apurado: el de AutoPilot nunca); con --masher P vuelve a tirar
+en cada cuadro (un jugador que no para nunca: era el --human de la ronda anterior).
 
 Uso: python Tools/Dev/sim_bamboo_master.py [--runs 200] [--seed 1] [--skill bueno|promedio|experto|all] [--table] [--fair]
-     [--abilities]
+     [--abilities] [--human 0.5] [--masher 0.5]
 """
 import argparse, json, math, os, random
 
@@ -43,7 +55,7 @@ DT = 1.0 / 60.0
 
 # --------------------------------------------------------------------------- Chikuō (BambooMasterBoss / Moves)
 P = dict(
-    health=2000.0,
+    health=2200.0,
     gates=[1.0, 0.66, 0.33, 0.0],
     parry_hold=[0.30, 0.22, 0.16], dodge_hold=[0.14, 0.10, 0.08], chained=0.6, phase_mul=0.9,
     cooldown=[(1.8, 2.6), (1.4, 2.2), (1.1, 1.8)],      # BambooMasterMoves.Cooldown
@@ -53,7 +65,17 @@ P = dict(
     recoil=0.4,                          # Parried.Seconds * 0.4 (x1.5 el perfecto)
     run=4.0, walk=1.6, pref=3.6, radius=0.5,
     qi_speed=[9.0, 9.0, 10.0], qi_radius=[9.0, 9.0, 10.5], leap_min=2.6, leap_max=7.4, leap_minr=2.5,
-    dash_from=5.6, dash_minr=5.0, hop_min=0.25, dash_k=(0.1, 1.4), dash_flight=0.25, leap_from=4.8, leap_near=0.5,
+    dash_from=4.8, dash_minr=4.8, hop_min=0.25, dash_k=(0.5, 1.4), dash_flight=0.1, leap_from=4.8, leap_near=0.5,
+    # la que pasa al costado (DashStrike_Pass): a PassBeside del carril, el cruce PassOver pasado de Kaito en el contacto,
+    # el vuelo escalado entre pass_k (y en menos tiempo); en el contacto le pega si está a pass_reach por el carril
+    pass_beside=1.2, pass_over=0.1, pass_k=(0.2, 1.4), pass_reach=1.1,
+    # BambooMasterBoss.FixLane: el vuelo que se vuelve a planear al despegar (contra la compresión de la suelta) y lo más
+    # rápido que corre el clip en el corte del cruce (sustain)
+    replan=(0.6, 1.8), cut_rate=2.0, pass_gap=1.15,
+    # el primer corte fuera de un hueco (en neutral o en la guardia): lo desvía con el manotazo (HitResult.Deflected:
+    # Kaito se frena 0.05 s y resbala deflect_push m) y contesta con su combo answer[fase] s después, nunca antes del
+    # descanso que se toma después de un contraataque de Kaito (BambooMasterBoss.Swat)
+    deflect_freeze=0.05, answer=0.6, rest_guard_min=0.3, swat_answer=0.12,
     riposte_grace=0.3, riposte_cuts=(2, 3), hole_delay=0.1, ability_posture=2.0,
     transition=[3.67, 3.0], heal=30.0, spirit_gift=30.0,
     counter_clip=0.5333, guardhit_extra=0.5,
@@ -62,6 +84,7 @@ P = dict(
 )
 K_R = 0.35                               # radio de Kaito (CharacterController)
 CONTACT = P["radius"] + K_R + 0.25       # Travel() frena acá contra Kaito
+REACH_OVERRUN = 0.03                     # BambooMasterBoss.ReachOverrun
 
 # --------------------------------------------------------------------------- Kaito (PlayerConfig)
 K = dict(hp=100.0, spirit0=40.0, run=6.2,
@@ -116,10 +139,16 @@ class Step:
         self.frames = c["frames"]
         air = nm.get("air")
         self.air = air if air and air[1] > air[0] else None
-        # BambooMasterBoss.StretchSpan: la embestida escala del pie que empuja (DashStart) al que se clava (contacto)
+        # BambooMasterBoss.StretchSpan: la embestida escala del pie que empuja (DashStart) al que se clava (el contacto,
+        # o el apoyo DashEnd en la que pasa al costado)
         ds = [e["t"] for e in c.get("events", []) if e["fn"] == "DashStart"]
+        de = [e["t"] for e in c.get("events", []) if e["fn"] == "DashEnd"]
         if ds:
-            self.air = [ds[0], nm["contact"]]
+            self.air = [ds[0], max([nm["contact"]] + de)]
+        # la variante que pasa al costado (mismos tiempos: se cambia en la suelta)
+        pv = t.get("pass_variant")
+        self.pass_step = Step(pv[:-3] if pv.endswith("_P3") else pv, ph, dmg / P["dmg_mul"][ph], chained, special) \
+            if pv and special == "dash" else None
         self.base = base
         # las variantes de paso corto (PickReach): (avance total, alcance, travel_m)
         self.variants = []
@@ -276,8 +305,8 @@ def patterns(ph):
 
 
 # BambooMasterMoves: daño por fase (palma, los otros dorados, los rojos de piso, salto y embestida, contragolpe)
-DMG = [dict(palm=4, gold=4, red=5, leap=5, counter=4), dict(palm=4, gold=5, red=6, leap=6, counter=4),
-       dict(palm=5, gold=6, red=6, leap=7, counter=5)]
+DMG = [dict(palm=4, gold=4, red=5, leap=5, counter=4), dict(palm=4, gold=4, red=5, leap=5, counter=4),
+       dict(palm=4, gold=4.5, red=5.5, leap=5.5, counter=4)]
 
 
 def counter_step(ph):
@@ -335,9 +364,10 @@ class Fight:
         self.qi_r = None
         self.qi_pending = False
         self.k_stretch = 1.0
-        self.flight, self.behind = 1.0, False
+        self.flight, self.behind, self.through = 1.0, False, False
         self.v_travel, self.v_reach, self.picked = None, None, False
         self.riposte_until_b, self.riposte_left, self.last_perfect = -1.0, 0, False
+        self.rest_until = -1.0     # el descanso después de un contraataque de Kaito (la respuesta al desvío no lo pisa)
         # Kaito
         self.k_hp = K["hp"]
         self.sp = K["spirit0"]
@@ -416,13 +446,44 @@ class Fight:
             return K["run"]
         return 0.0
 
+    def pass_along(self):
+        """Kaito por el carril de la que pasa: AimPass le apunta a PassBeside de su costado, salvo de muy cerca (el giro
+        llega a 60°: a 0.87 d)."""
+        return math.sqrt(max(0.0, self.d ** 2 - min(P["pass_beside"], 0.87 * self.d) ** 2))
+
+    def closing_along_pass(self):
+        """Lo que se acerca Kaito por el carril de la que pasa al costado: corriendo o en su dash. El avance de su corte va
+        hacia el maestro, que vuela por al lado: en el plano es casi de costado (lo abre PassAside), no por el carril."""
+        return self.closing() if self.ks in ("loco", "dash") else 0.0
+
     def plan_dash(self, lead):
-        """PlanDash: el factor del vuelo para frenar con la mano sobre donde va a estar Kaito en el contacto."""
+        """PlanDash: el factor del vuelo para frenar con la mano sobre donde va a estar Kaito en el contacto (sin
+        límites: abajo de dash_k[0] no frena, lo atraviesa)."""
         a = self.a
         span = a.travel_at(a.air[1]) - a.travel_at(a.air[0])
         before, after = a.travel_at(a.air[0]), a.travel[-1] - a.travel_at(a.air[1])
         along = max(self.d - self.closing() * lead, CONTACT)
-        return min(P["dash_k"][1], max(P["dash_k"][0], (along - CONTACT - before - after) / span))
+        return (along - CONTACT - before - after) / span
+
+    def fix_lane(self):
+        """BambooMasterBoss.FixLane: despega. El carril siguió a Kaito en la pausa agachado (AimPass): se vuelve a medir
+        dónde está y el vuelo se vuelve a planear a la velocidad que eligió la suelta (entre replan[0] y replan[1] veces la
+        compresión); la que pasa corta con sustain (la ventana activa a lo sumo a cut_rate veces el clip)."""
+        a, tl = self.a, self.tl
+        self.lane_fixed = True
+        lead = max(0.0, tl.T - self.clock)
+        lo, hi = self.flight * P["replan"][0], self.flight * P["replan"][1]
+        if self.through:
+            self.d_along = self.pass_along()
+            self.pass_close = self.closing_along_pass()
+            before = a.travel_at(a.air[0])
+            k = (self.d_along - self.pass_close * lead + P["pass_over"] - before) / (a.travel_at(a.contact) - before)
+            self.k_stretch = min(hi, max(lo, min(P["pass_k"][1], max(P["pass_k"][0], k))))
+            r0 = max(1.0, 2.0 * (tl.act - (tl.apex + tl.creep)) / tl.tR * tl.L)
+            tl.sustain = (tl.act_end - tl.act) * tl.L / min(r0, P["cut_rate"])
+        else:
+            self.k_stretch = min(hi, max(lo, min(P["dash_k"][1], max(P["dash_k"][0], self.plan_dash(lead)))))
+        self.stat("embestida_k_al_despegar", self.k_stretch)
 
     def can_reach(self):
         """Enemy.StrikeCanReach(Kaito, radio + 0.5): ¿el bot lo considera suyo?"""
@@ -506,8 +567,12 @@ class Fight:
         self.qi_r = None
         self.qi_pending = False
         self.k_stretch = 1.0
-        self.flight, self.behind = 1.0, False
+        self.flight, self.behind, self.through = 1.0, False, False
+        self.lane_fixed = True
+        self.passing = False
         self.v_travel, self.v_reach, self.picked = None, None, False
+        self.step_yield = False
+        self.end_step_stats()
         self.cue_at = None
         if a.special == "hop":
             # BambooMasterBoss.HopScale: hasta DashFrom de Kaito, como poco un cuarto del salto
@@ -524,6 +589,17 @@ class Fight:
         self.tell_start = max(0.0, self.tl.T + travel - MAXLEAD[a.red])
         self.tell_on = a.dmg > 0
         self.stat("pasos")
+
+    def end_step_stats(self):
+        """Lo que patinó el pie apoyado (avance perdido) y lo que corrió a Kaito en el paso que termina."""
+        lost, sh = getattr(self, "step_lost", 0.0), getattr(self, "step_shove", 0.0)
+        if lost > 0.0:
+            self.st["avance_perdido_max"] = max(self.st.get("avance_perdido_max", 0.0), lost)
+            if lost > 0.05:
+                self.stat("pasos_patinan_gt5cm")
+        if sh > 0.0:
+            self.st["empuje_max"] = max(self.st.get("empuje_max", 0.0), sh)
+        self.step_lost = self.step_shove = 0.0
 
     def boss_receive(self, dmg, kind, riposte, stop):
         """Enemy.ReceiveHit + BambooMasterBoss.ReceiveHit. Devuelve 'hit', 'blocked', 'guarded', 'ignored'."""
@@ -575,6 +651,7 @@ class Fight:
             self.bdur = P["stagger"] * (1.6 if kind == "heavy" else 1.0)
             # se rehace antes de volver a atacar
             self.next_attack = max(self.next_attack, self.t + self.bdur + self.rng.uniform(*P["cooldown"][self.ph]))
+            self.rest_until = self.next_attack
         # el contraataque de Kaito: 2 cortes después de un parry, 3 después de uno perfecto
         if was_recoil:
             # los cortes que siguen entran mientras le dure el retroceso del parry (más el margen): el perfecto dura 1.5x
@@ -602,17 +679,35 @@ class Fight:
         return self.bs in ("counter", "guard", "chase", "strafe", "alert", "stagger")
 
     def bounce(self):
-        self.stat("rebotes_jefe")
         if self.bs not in ("attack", "counter"):
             if self.t - self.last_bounce > P["bounce_window"]:
                 self.bounces_n = 0
             self.bounces_n += 1
-            if self.bounces_n >= 2:
+            if self.bounces_n >= 3:
                 self.bounces_n, self.last_bounce = 0, -99.0
                 return self.deflect("contra_guardia")
             if self.bs != "guard":
                 self.enter_guard()
-            self.bdur = max(self.bdur, self.bt + P["guardhit_extra"])
+            self.last_bounce = self.t
+            if self.bounces_n == 2:
+                # BambooMasterBoss.Bounce: el segundo seguido lo aparta y toma la palabra (contesta enseguida, aunque
+                # estuviera descansando de un contraataque de Kaito)
+                self.rest_until = min(self.rest_until, self.t)
+                self.next_attack = self.t + P["swat_answer"]
+                self.bdur = self.bt + P["swat_answer"]
+                self.stat("desvio_que_contesta")
+                return "deflected"
+            # BambooMasterBoss.Swat: el primero no rebota, lo desvía con la palma y le contesta (sin pisar el descanso
+            # que se tomó después de un contraataque de Kaito)
+            self.next_attack = min(self.next_attack, max(self.t + P["answer"], self.rest_until))
+            # se queda en la guardia hasta que contesta (rondando, el corte siguiente le caía en el aviso)
+            self.bdur = max(self.bdur, self.bt + max(P["guardhit_extra"], self.next_attack - self.t))
+            return "deflected"
+        if self.bs == "attack" and not self.a.red and self.a.dmg > 0 and self.clock < self.tl.release and not self.step_yield:
+            # cargando un dorado: la mano libre desvía el primer corte; el golpe sale igual
+            self.step_yield = True
+            return "deflected"
+        self.stat("rebotes_jefe")
         self.last_bounce = self.t
         return "blocked"
 
@@ -726,6 +821,13 @@ class Fight:
                 self.finish_transition()
             return
         if s in ("chase", "strafe"):
+            if self.t < self.rest_until - P["rest_guard_min"] and not (self.t < self.riposte_until_b and self.riposte_left > 0):
+                # BambooMasterBoss.RestGuard: le entró el contraataque y se recompone en la guardia hasta que vuelve a
+                # atacar (rondando, cada toque suelto era otro desvío: ~3 por contraataque contra el bot "bueno")
+                self.set_bs("guard")
+                self.bdur = self.rest_until - self.t
+                self.stat("guardia_de_descanso")
+                return
             if self.t >= self.next_attack:
                 # Enemy: elige un patrón nuevo cada vez (el de un combo cortado no sigue); desde Strafe se compromete
                 # con uno y se acerca hasta tenerlo en rango (2.5 s como mucho)
@@ -764,6 +866,14 @@ class Fight:
                 return
             if self.bt >= self.bdur:
                 self.stance = False
+                if self.t >= self.next_attack:
+                    # BambooMasterBoss.AnswerFromGuard: si ya le toca atacar sale de la guardia con el golpe (un cuadro
+                    # rondando entre la guardia y el golpe era el que Kaito usaba para meterle el corte en el aviso)
+                    p = self.pick(self.d)
+                    if p is not None and self.d <= p["maxr"]:
+                        self.pat = p
+                        self.start_attack(False)
+                        return
                 self.set_bs("chase")
             return
         if s == "exhausted":
@@ -804,47 +914,82 @@ class Fight:
                 self.picked = True
                 if a.special == "dash":
                     # PlanDash: el vuelo entero escalado para frenar con la mano sobre donde va a estar Kaito al contacto;
-                    # si para eso el vuelo baja de dash_k[0], le pasa por encima (pega al alcanzarlo, nunca antes de lo que
-                    # dijo en la suelta)
-                    self.k_stretch = self.plan_dash(max(0.0, tl.T - self.clock))
+                    # si para eso el vuelo baja de dash_k[0], la variante que pasa al costado (ReleaseDash): el cruce en el
+                    # contacto (tl.T, lo que dijo el "¡ya!") donde va a estar Kaito por el carril
+                    lead = max(0.0, tl.T - self.clock)
+                    raw = self.plan_dash(lead)
+                    self.through = raw < P["dash_k"][0] and a.pass_step is not None
+                    if self.through:
+                        a = self.a = a.pass_step
+                        # (1D: Kaito por el carril a PassBeside del costado; sigue acercándose lo que venía hasta el cruce)
+                        self.d_along = self.pass_along()
+                        self.pass_close = self.closing_along_pass()
+                        before = a.travel_at(a.air[0])
+                        # (KaitoAlong: por el carril, que ya apunta a PassBeside de su costado)
+                        along = self.pass_along() - self.pass_close * lead
+                        self.k_stretch = min(P["pass_k"][1], max(P["pass_k"][0], (along + P["pass_over"] - before) /
+                                                                 (a.travel_at(a.contact) - before)))
+                        floor = P["pass_k"][0]
+                    else:
+                        self.k_stretch = min(P["dash_k"][1], max(P["dash_k"][0], raw))
+                        floor = P["dash_flight"]
                     # CompressFlight: el vuelo corto a la misma velocidad y en menos tiempo, la pausa agachado se alarga
                     # lo mismo y el golpe sigue en tl.T
-                    c = min(1.0, max(P["dash_flight"], self.k_stretch))
+                    c = min(1.0, max(floor, self.k_stretch))
                     cut = tl.tR * (1.0 - c)
                     tl.tR -= cut
                     tl.hold += cut
                     self.flight = c
+                    self.lane_fixed = False
                     self.stat("embestida")
                     self.stat("embestida_d", self.d)
                     self.stat("embestida_k", self.k_stretch)
-                    self.stat("embestida_corta" if c < 1.0 else "embestida_entera")
+                    self.stat("embestida_vuelo_m", a.stretched(1.0, self.k_stretch))
+                    self.stat("embestida_al_costado" if self.through else "embestida_de_frente")
                 elif a.variants:
-                    # PickReach: la variante más larga cuyo paso entra (5 cm de gracia)
-                    room = self.d - CONTACT + self.travel_done + 0.05
-                    if a.travel[-1] > room:
-                        pick = a.variants[-1]
-                        for v in a.variants:
-                            if v[0] <= room:
-                                pick = v
-                                break
-                        self.v_travel, self.v_reach = pick[2], pick[1]
-                        self.stat("variante_" + ("corta" if pick is a.variants[-1] else "media"))
-                    else:
-                        self.stat("variante_entera")
+                    # PickReach: la variante más larga cuyo paso entra (5 cm de gracia); si esa no llega a Kaito en el
+                    # contacto, la de paso más largo aunque se pase hasta REACH_OVERRUN (frena antes y pega)
+                    # donde va a estar Kaito en el contacto (lo que se viene acercando, hasta tocarlo como poco)
+                    along = self.d - min(self.closing() * max(0.0, tl.T - self.clock), max(0.0, self.d - P["radius"] - K_R))
+                    room = along - CONTACT + self.travel_done + 0.05
+                    cands = [(a.travel[-1], a.reach, None)] + a.variants
+                    i = next((j for j, v in enumerate(cands) if v[0] <= room), len(cands) - 1)
+                    tr = lambda v: v[2] or a.travel
+                    hits = lambda v: along - a.travel_at(a.contact, tr(v)) <= v[1] + 0.1 + K_R - 0.02
+                    if i > 0 and not hits(cands[i]) and cands[i - 1][0] - room <= REACH_OVERRUN:
+                        i -= 1
+                    pick = cands[i]
+                    self.v_travel, self.v_reach = pick[2], (pick[1] if i else None)
+                    self.stat("variante_" + ("entera" if i == 0 else "corta" if i == len(cands) - 1 else "media"))
+            if a.special == "dash" and self.picked and not self.lane_fixed and (self.clock >= tl.release or tl.T - self.clock <= 0.2):
+                self.fix_lane()
             x = a.stretched(n, self.k_stretch, self.v_travel)
             dx = x - self.travel_done
             self.travel_done = x
-            if dx > 0 and a.special == "dash" and self.ks == "dash":
-                # Travel: al que la esquiva con el dash la embestida lo atraviesa (queda detrás del jefe)
-                if dx > self.d:
-                    self.behind = True
-                self.d = max(0.05, abs(self.d - dx))
+            if dx > 0 and a.special == "dash" and self.through:
+                # la que pasa al costado: s = dónde está Kaito sobre el carril desde el jefe (negativo: ya lo pasó; Kaito
+                # también se mueve), a PassBeside del carril. Termina mirándolo (el giro en el aire): la distancia es
+                # la de los dos
+                s = (-self.d_along if self.behind else self.d_along) - dx
+                if n < a.contact:
+                    s -= self.pass_close * DT
+                self.behind = s < 0.0
+                self.d_along = abs(s)
+                # (en el vuelo PassAside lo deja a PassGap del costado como poco)
+                self.d = math.hypot(self.d_along, max(P["pass_gap"], min(P["pass_beside"], 0.87 * self.d)))
+            elif dx > 0 and a.special == "dash":
+                # de frente frena contra Kaito (la red de seguridad de Travel)
+                self.d = max(CONTACT, self.d - dx)
             elif dx > 0:
                 room = self.d - CONTACT
-                if dx > room:
-                    self.stat("avance_perdido_" + a.base + ("_tras" if n > a.contact else "_antes"), dx - max(0.0, room))
-                    self.stat("avance_perdido", dx - max(0.0, room))
-                self.d = max(CONTACT, self.d - dx)
+                if dx > room and self.ks != "dash":
+                    # Travel: lo que no entra corre a Kaito con el cuerpo (PlayerController.Shove); el que se le mete con
+                    # el dash pasa por al lado (con i-frames: el paso no frena)
+                    over = dx - max(0.0, room)
+                    self.stat("empuje_m", over)
+                    self.stat("empujes")
+                    self.step_shove += over
+                self.d = max(CONTACT if self.ks != "dash" else 0.9, self.d - dx)
             elif dx < 0:
                 self.d -= dx                                   # el salto atrás
         eta = self.strike_eta()
@@ -894,7 +1039,18 @@ class Fight:
             elif a.special == "sweep":
                 ok = self.d - K_R <= a.ring
             elif a.special == "dash":
-                ok = not self.behind and self.d - K_R <= a.reach + 0.3
+                # el primer cuadro después del contacto prueba aunque ya haya pasado la ventana entera (TickDash: antes,
+                # con el vuelo comprimido, un cuadro de 60 Hz saltaba los 2 cuadros del clip y el golpe no salía)
+                self.stat("embestida_cuadro_salta_ventana", n > a.active_end)
+                # de frente: la mano sobre Kaito; al costado: el cruce a su alcance por el carril (el que lo esquiva con
+                # el dash queda en los i-frames, kaito_receive)
+                ok = self.d_along <= P["pass_reach"] if self.through else self.d - K_R <= a.reach + 0.3
+                if self.through:
+                    self.stat("cruce_n")
+                    self.stat("cruce_s", self.d_along)
+                    # (el que se le cruza con el dash pasa por adentro: queda lejos del cruce y está en sus i-frames)
+                    self.stat("cruce_fuera", self.d_along > P["pass_reach"] and self.ks != "dash")
+                    self.stat("cruce_esquiva", self.ks == "dash")
                 if self.cue_at is not None:
                     err = self.t - (self.cue_at + TICK[True])
                     self.stat("cue_err_n")
@@ -1134,7 +1290,15 @@ class Fight:
     def kaito_hits(self, c):
         riposte = self.t < self.riposte_until
         dmg = c["dmg"] * (K["rage_mul"] if self.rage_on() else 1.0) * (K["riposte_mul"] if riposte else 1.0)
+        where = self.bs
+        if where == "attack":
+            where = "attack_" + ("aviso" if self.in_tell() else "carga" if self.clock < self.tl.T else "tras")
         r = self.boss_receive(dmg, c["kind"], riposte, c["stop"])
+        self.stat("cortes")
+        if r != "hit":
+            # los cortes que no entran, según lo que estaba haciendo el maestro (rechazados por minuto: los que pesan)
+            self.stat("rechazo")
+            self.stat("rechazo_" + where)
         if r == "hit":
             self.k_frozen_until = self.t + c["stop"]
             self.sp = min(100.0, self.sp + K["sp_hit"])
@@ -1145,11 +1309,18 @@ class Fight:
             if self.bs not in ("exhausted", "attack", "counter"):
                 self.d += (0.42 if c["kb"] > 1.0 else 0.12) * 0.5
         elif r == "blocked":
+            # PlayerController.Push(-dir, 0.3): sale a 3 m/s y frena a 30 m/s², 0.15 m
             self.stat("rebotes")
-            self.d += 0.3
+            self.k_frozen_until = self.t + 0.06
+            self.d += 0.15
+        elif r == "deflected":
+            # PlayerController con Deflected: se frena un instante (sin clang) y resbala un poco hacia atrás
+            self.stat("desvios_suaves")
+            self.k_frozen_until = self.t + P["deflect_freeze"]
         elif r == "guarded":
+            # GetCountered: Push(0.9) sale a 9 m/s y frena a 30 m/s², 1.35 m
             self.set_ks("blocked")
-            self.d += 0.9
+            self.d += 1.35
 
     # ------------------------------------------------------------------ bot
     def bot_cue(self, a):
@@ -1177,7 +1348,13 @@ class Fight:
             return
         threatened = self.in_tell() and self.d < max(7.0, self.strike_reach() + 2.0)
         greedy = self.rng.random() < self.sk["greedy"] * DT * 4.0
-        if self.d < 2.6 and (not threatened or greedy) and not self.pending and self.bs != "guard" and self.bs != "dead":
+        # el bot de AutoPilot no le pega a una guardia; --human P: en una parte P de sus decisiones de atacar sí (como un
+        # jugador apurado; si no, espera a la decisión siguiente); --masher P: vuelve a tirar en cada cuadro (era el
+        # --human de antes: con cualquier P le pegaba a la guardia a los 1-2 cuadros, un jugador que no para nunca)
+        guard_ok = self.bs != "guard" or self.rng.random() < HUMAN_GUARD
+        if not guard_ok and not MASHER:
+            self.next_bot = self.t + 0.32
+        if self.d < 2.6 and (not threatened or greedy) and not self.pending and guard_ok and self.bs != "dead":
             self.tap("attack")
             self.next_bot = self.t + 0.32
             self.stat("bot_ataques")
@@ -1205,6 +1382,8 @@ class Fight:
 
 
 CONTACT_QI = P["radius"] + 0.6
+HUMAN_GUARD = 0.0                      # --human: probabilidad de pegarle igual a la guardia en cada decisión de atacar
+MASHER = False                         # --masher: la misma probabilidad, pero vuelve a tirar en cada cuadro
 QI_ONE_FRAME_LATE = True               # BambooMasterBoss.ResolveQiHit (False = el cruce pega en el mismo cuadro)
 K["rage_spd"] = 1.12
 
@@ -1242,6 +1421,40 @@ def reading_table():
                       min(tl.T, MAXLEAD[st.red]), TICK[st.red], tl.hold))
 
 
+def window_frames():
+    """El paso del viento con el vuelo comprimido: en cuántas fases del cuadro (60 y 30 Hz) ningún cuadro cae en la ventana
+    activa (con la prueba de antes, el golpe no salía nunca) y cuántos cuadros se ven con el clip en el corte (f16.5-f20 de
+    la que pasa, con su sustain: FixLane)."""
+    print("\n-- paso del viento: la ventana activa en pantalla según el vuelo (fases de cuadro uniformes)")
+    for base, floor, cut in (("de frente", P["dash_flight"], False), ("al costado", P["pass_k"][0], True)):
+        st = Step("DashStrike", 1, 0, special="dash")
+        if cut:
+            st = st.pass_step
+        for fps in (60, 30):
+            row = []
+            for k in (0.1, 0.2, 0.3, 0.43, 0.7, 1.0):
+                tl = Timeline(st, min_windup(st, False, 1))
+                c = min(1.0, max(floor, k))
+                cutr = tl.tR * (1.0 - c)
+                tl.tR -= cutr
+                tl.hold += cutr
+                if cut:
+                    r0 = max(1.0, 2.0 * (tl.act - (tl.apex + tl.creep)) / tl.tR * tl.L)
+                    tl.sustain = (tl.act_end - tl.act) * tl.L / min(r0, P["cut_rate"])
+                skip, shown = 0, 0
+                phases = 40
+                for i in range(phases):
+                    t0 = tl.T - 0.3 + (i / phases) / fps
+                    ns = [tl.norm(t0 + j / fps) for j in range(int(0.6 * fps))]
+                    if not any(tl.act <= n <= tl.act_end for n in ns):
+                        skip += 1
+                    shown += sum(1 for n in ns if 16.5 / st.frames <= n <= 20.0 / st.frames)
+                row.append("x%.2f %3.0f %% / %.1f" % (k, 100.0 * skip / phases, shown / phases))
+            print("   %-10s %d Hz: %s" % (base, fps, ", ".join(row)))
+    print("   (vuelo x, % de fases sin ningún cuadro en la ventana: la prueba de antes no pegaba; / cuadros con el clip en "
+          "el corte f16.5-f20. TickDash prueba ahora en el primer cuadro que pasa el contacto)")
+
+
 def fairness():
     """Lo que se puede medir sin jugar: el "¡ya!" contra la reacción del bot, cuánto hay que correr para salir de cada
     rojo y si cada golpe arranca dentro del cuadro de la cámara de pelea con un jefe."""
@@ -1271,8 +1484,10 @@ def fairness():
                 t, need = tl.T, st.ring + K_R - CONTACT
                 what = "aviso→vuelta %.2f s, salir %.2f m (pegado a él)" % (t, need)
             elif special == "dash":
-                t, need = tl.tR, 2.0 * (P["radius"] + 0.6) / 2.0 + K_R * 0.5
-                what = "carril fijo→contacto %.2f s, correrse %.2f m de costado" % (t, need)
+                # de cerca le pasa al costado (PassBeside) con el vuelo escalado ~0.45 en ese tiempo (CompressFlight): salir
+                # del carril (que llega PassLaneOut más allá de Kaito) es sacar el cuerpo entero hacia afuera
+                t, need = tl.tR * 0.45, 0.45 + K_R
+                what = "carril fijo→contacto %.2f s de lejos, %.2f s al costado; correrse %.2f m hacia afuera" % (tl.tR, t, need)
             else:
                 v, r = P["qi_speed"][ph], P["qi_radius"][ph]
                 t = tl.T + (r - CONTACT_QI) / v
@@ -1282,6 +1497,7 @@ def fairness():
                 print("   fase %d %-11s %s -> o el dash cuando llega el frente" % (ph + 1, base, what))
                 continue
             print("   fase %d %-11s %s -> %.2f s de carrera (%s)" % (ph + 1, base, what, need / K["run"], "ok" if need / K["run"] < t - 0.15 else "JUSTO"))
+    window_frames()
     print("\n-- cuadro de la cámara de pelea con jefe (CameraDirector: 19 + 0.35 d m + %.1f del perfil, 45°, FOV 30, 16:9)" % 1.6)
     import math as _m
     for d in (2.0, 4.0, 6.0, 7.6, 10.0):
@@ -1311,7 +1527,12 @@ def main():
     ap.add_argument("--table", action="store_true")
     ap.add_argument("--fair", action="store_true", help="reacción, escapes de los rojos y cuadro de la cámara")
     ap.add_argument("--abilities", action="store_true", help="Kaito usa el Corte del Viento en los huecos (el bot no)")
+    ap.add_argument("--human", type=float, default=0.0, help="probabilidad de pegarle a la guardia (el bot: 0)")
+    ap.add_argument("--masher", type=float, default=0.0, help="como --human, pero vuelve a tirar en cada cuadro (no para)")
     a = ap.parse_args()
+    global HUMAN_GUARD, MASHER
+    HUMAN_GUARD = a.masher or a.human
+    MASHER = a.masher > 0
     if a.table:
         reading_table()
     if a.fair:
@@ -1341,14 +1562,33 @@ def main():
         print("   daño a Chikuō por estado: " + ", ".join("%s %.0f%%" % (k, 100 * v / tot_d) for k, v in sorted(dmg.items(), key=lambda x: -x[1])))
         keys = ["pasos", "parries", "parries_perfectos", "imperfectas", "esquivas", "golpes_a_kaito", "contraataques",
                 "rodillas", "quiebres", "quiebres_contra", "posturas", "abierto_espera", "desvios", "contra_guardia",
-                "rebotes", "dash_sin_espiritu", "furia", "bot_no_vio", "fuera_de_alcance", "habilidades",
+                "rebotes", "desvios_suaves", "dash_sin_espiritu", "furia", "bot_no_vio", "fuera_de_alcance", "habilidades",
                 "habilidades_que_entran", "habilidad_a_la_guardia", "variante_entera", "variante_media", "variante_corta",
-                "embestida", "embestida_corta",
+                "embestida", "embestida_al_costado", "embestida_de_frente",
                 "con_salto_atras_leap_f1", "con_salto_atras_leap_f2", "con_salto_atras_leap_f3",
                 "con_salto_atras_dash_f2", "con_salto_atras_dash_f3", "avance_perdido"]
         print("   por pelea: " + ", ".join("%s %.1f" % (k, stats.get(k, 0) / n) for k in keys))
+        if stats.get("cortes"):
+            # cortes de Kaito que no entran (clang, desvío suave, contragolpe), por minuto de pelea y por lo que hacía el
+            # maestro: la "pared" que se siente
+            mins = sum(r["total"] for r in rs) / 60.0
+            rej = sorted(((k[8:], v / n) for k, v in stats.items() if k.startswith("rechazo_")), key=lambda x: -x[1])
+            print("   cortes rechazados: %.0f %% de %.1f por pelea, %.1f por minuto (%s)" % (
+                100.0 * stats.get("rechazo", 0) / stats["cortes"], stats["cortes"] / n, stats.get("rechazo", 0) / mins,
+                ", ".join("%s %.1f" % kv for kv in rej)))
         if stats.get("embestida"):
-            print("   embestida: Kaito a %.2f m en la suelta, vuelo x%.2f (medias)" % (stats["embestida_d"] / stats["embestida"], stats["embestida_k"] / stats["embestida"]))
+            print("   embestida: Kaito a %.2f m en la suelta, vuelo x%.2f, recorre %.2f m (medias)" % (
+                stats["embestida_d"] / stats["embestida"], stats["embestida_k"] / stats["embestida"],
+                stats["embestida_vuelo_m"] / stats["embestida"]))
+        if stats.get("cruce_n"):
+            print("   al costado: en el contacto Kaito a %.2f m del cruce por el carril (media), %.0f %% fuera del alcance sin "
+                  "esquivarlo (%.0f %% se le cruza con el dash); vuelo al despegar x%.2f" % (
+                      stats["cruce_s"] / stats["cruce_n"], 100.0 * stats.get("cruce_fuera", 0) / stats["cruce_n"],
+                      100.0 * stats.get("cruce_esquiva", 0) / stats["cruce_n"],
+                      stats.get("embestida_k_al_despegar", 0) / stats["embestida"]))
+        if stats.get("embestida"):
+            print("   embestida: el primer cuadro después del contacto ya pasó la ventana activa en el %.1f %% (el juego prueba "
+                  "el golpe igual en ese cuadro: TickDash)" % (100.0 * stats.get("embestida_cuadro_salta_ventana", 0) / stats["embestida"]))
         if stats.get("cue_err_n"):
             print("   embestida: el golpe llega %.3f s después del '¡ya!' + %.2f (media), %.0f %% a más de 0.03 s" % (
                 stats["cue_err_sum"] / stats["cue_err_n"], TICK[True], 100.0 * stats.get("cue_err_abs_gt_0.03", 0) / stats["cue_err_n"]))
@@ -1358,7 +1598,11 @@ def main():
         print("   patrones: " + ", ".join("%s %.1f" % kv for kv in uses))
         hits = sorted(((k[6:], v / n) for k, v in stats.items() if k.startswith("golpe_")), key=lambda x: -x[1])
         print("   golpes que más le pegan: " + ", ".join("%s %.1f" % kv for kv in hits[:8]))
-        lost = sorted(((k[15:], v / n) for k, v in stats.items() if k.startswith("avance_perdido_")), key=lambda x: -x[1])
+        print("   paso contra Kaito: lo corre con el cuerpo %.1f veces por pelea (%.2f m en total, máx. %.2f m en un paso); el pie "
+              "patina (Kaito en su dash) %.2f m por pelea, máx. %.3f m en un paso, %.1f pasos de más de 5 cm" % (
+                  stats.get("empujes", 0) / n, stats.get("empuje_m", 0.0) / n, stats.get("empuje_max", 0.0),
+                  stats.get("avance_perdido", 0.0) / n, stats.get("avance_perdido_max", 0.0), stats.get("pasos_patinan_gt5cm", 0) / n))
+        lost = sorted(((k[15:], v / n) for k, v in stats.items() if k.startswith("avance_perdido_") and k != "avance_perdido_max"), key=lambda x: -x[1])
         print("   avance perdido contra Kaito (m por pelea): " + (", ".join("%s %.2f" % kv for kv in lost) or "nada"))
 
 

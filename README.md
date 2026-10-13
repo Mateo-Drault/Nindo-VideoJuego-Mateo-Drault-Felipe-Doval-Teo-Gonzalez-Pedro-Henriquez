@@ -131,14 +131,23 @@ para fijar, que antes andaban sin verse, ahora se asignan a mano. Las reglas y c
   pierna arriba en el shiko, agachado con los puños en el piso antes de embestir.
 * **Chikuō, el Maestro del Bambú** (jefe del bambú, `Enemies/Bosses/BambooMasterBoss`; el
   arquetipo y el bossId siguen siendo `ozeki`): un viejo maestro de kung fu que enseña paciencia.
-  Fuera de sus huecos los cortes rebotan y el combo que insiste se contragolpea; se le pega en el
+  Fuera de sus huecos desvía el corte con la palma: lee el corte de Kaito y le sale al encuentro,
+  la palma (o el bastón) encuentra la hoja en el contacto y la acompaña para donde va
+  (`GuardHit` / `GuardHitL` para el revés), sin empujarlo; contesta con su combo, enseguida si
+  Kaito insiste con el segundo, y recién el tercero seguido se contragolpea (entre combo y combo
+  descansa cubierto). Se le pega en el
   contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
   (esperó la postura del bambú: hundido con las palmas cruzadas y un aro de jade en el piso), en la
   vuelta de un rojo que no pegó y al final del último golpe de un combo. Fase 1
   con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca y,
   con Kaito pegado, primero salta hacia atrás), fase 2 sin el saco (palmas gemelas, patada
-  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: de cerca el vuelo es
-  más corto y sale después, siempre pega cuando lo dice el aviso), fase 3 con el bastón. Vencido se sienta a meditar, saluda y deja el sello.
+  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: vuela como poco la
+  mitad del autorado y, si Kaito está cerca, pasa a su costado (`DashStrike_Pass`): el carril
+  rojo lo sigue hasta que despega, en el aire se abre de costado en vez de frenar, le sostiene
+  la mano encima al cruzarlo y cae dado vuelta, mirándolo; siempre pega cuando lo dice el aviso),
+  fase 3 con el bastón. Antes de tirar el saco se lo desliza por la espalda y los brazos (formas
+  `CoatSlip1..4` de `Master_Robe`); el que vuela, `Master_RobeThrown`, sale igual al saco puesto
+  y se aplana al caer (`Collapse`). Vencido se sienta a meditar, saluda y deja el sello.
   Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair]`.
 * **Cámara de combate**: baja a 45° y fijada nunca queda a menos de 19 m ni gira (los controles
   no cambian de dirección); con Kaito casi centrado se ven ~5 m detrás de él. Lo que tapa a

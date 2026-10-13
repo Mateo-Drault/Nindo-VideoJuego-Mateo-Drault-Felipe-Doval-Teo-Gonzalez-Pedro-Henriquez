@@ -14,7 +14,8 @@ namespace Nindo
         Guarded,     // el enemigo estaba en guardia y contraatacó
         Blocked,     // el enemigo lo frenó con la guardia (o un jefe rugiendo) sin contraatacar: rebota y avisa
         Dodged,      // i-frames del dash
-        Killed
+        Killed,
+        Deflected    // un maestro le apartó la hoja con la palma (Chikuō fuera de sus huecos): sin clang ni castigo
     }
 
     public enum AttackKind { Light, Heavy, Unblockable, Ability, Finisher, Projectile }
