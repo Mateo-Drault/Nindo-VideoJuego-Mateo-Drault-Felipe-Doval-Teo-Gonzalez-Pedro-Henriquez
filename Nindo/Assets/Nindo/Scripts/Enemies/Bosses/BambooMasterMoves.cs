@@ -254,8 +254,9 @@ namespace Nindo
         /// (Tools/Dev/sim_bamboo_master.py: en Unity tarda más, se ajusta con el PlayClock de 'bot on bueno'). No se lo
         /// ejecuta: termina sentado a meditar (BambooMasterBoss). Postura de 8 (parry 1, perfecto 1.5, unos seis parries):
         /// solo de rodillas con la barra llena, y de rodillas aguanta tres cortes a x1.15. Con 5 y x1.3 se arrodillaba
-        /// cada 15 s y la pelea duraba la mitad. Los golpes fuera de sus huecos los desvía o rebotan (BambooMasterBoss.Bounce), así que poiseHits
-        /// no se usa. Locomoción a 1.6 / 4.0 m/s, las velocidades a las que están autorados Walk y Run (los pies no
+        /// cada 15 s y la pelea duraba la mitad. Los golpes fuera de sus huecos los desvía o rebotan (BambooMasterBoss.Bounce): poiseHits
+        /// alto apaga la regla común del neutral (con 0, el 2.º y el 3.º corte del contraataque de Kaito, que le caen en el
+        /// Stagger, lo metían en la guardia de Enemy con clang: el contraataque entero era un corte). Locomoción a 1.6 / 4.0 m/s, las velocidades a las que están autorados Walk y Run (los pies no
         /// patinan).
         /// </summary>
         public static EnemyConfig Config()
@@ -265,7 +266,7 @@ namespace Nindo
                 id = "ozeki", displayName = "Chikuō", maxHealth = 2200, runSpeed = 4.0f, walkSpeed = 1.6f, turnSpeed = 7f,
                 radius = 0.5f, height = 2.4f, scale = 1f, tintStrength = 0f,
                 maxImbalance = 8, exhaustedTime = BambooMasterTimings.Exhausted.Seconds, exhaustedDamageMul = 1.15f, guardTime = 0.7f,
-                poiseHits = 0, hyperArmor = true, knockbackResist = 0.7f, staggerTime = 0.35f,
+                poiseHits = 99, hyperArmor = true, knockbackResist = 0.7f, staggerTime = 0.35f,
                 // el retroceso del parry dura lo que tarda el clip en volver a la guardia (resume de Parried, 0.4 s; el
                 // perfecto, x1.5 = 0.6 s = resume de ParriedPerfect)
                 parriedRecoil = BambooMasterTimings.Parried.Seconds * 0.4f,

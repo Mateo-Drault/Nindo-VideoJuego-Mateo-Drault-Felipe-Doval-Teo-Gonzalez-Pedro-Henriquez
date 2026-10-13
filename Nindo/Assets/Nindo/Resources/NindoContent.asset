@@ -1412,6 +1412,13 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: palm_deflect
+    clips:
+    - {fileID: 8300000, guid: 33cdc3e221f0463a61660c63c04e2145, type: 3}
+    - {fileID: 8300000, guid: 1f8dd90067071ec6b78dd7072effd663, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: parry
     clips:
     - {fileID: 8300000, guid: 3996a0f0dbc6cce48be0e5ec2f1e88a3, type: 3}

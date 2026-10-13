@@ -10,28 +10,38 @@ namespace Nindo
     ///    corta DE FRENTE en el cruce y cae mirándolo. Antes atravesaba a Kaito con la estocada de frente: en el impacto la
     ///    mano apuntaba lejos de él, los cuerpos se metían uno en el otro y terminaba de espaldas, con el golpe siguiente
     ///    girando 150° sobre los pies.
-    /// El carril del aviso es el que toma (no gira en la suelta) y el golpe cae en tl.T, cuando lo dice el "¡ya!".
+    /// El carril del aviso sigue a Kaito hasta que de verdad sale volando y el golpe cae en tl.T, cuando lo dice el "¡ya!".
     /// </summary>
     public partial class BambooMasterBoss
     {
-        // embestida: carril fijo desde la suelta (del aviso 'laneTell'; laneT0 = lo avanzado hasta ahí)
-        bool laneFixed;
+        // embestida: la suelta autorada eligió variante y vuelo (dashPlanned); el carril queda fijo cuando despega
+        // (laneFixed, del aviso 'laneTell'; laneT0 = lo avanzado hasta ahí)
+        bool dashPlanned, laneFixed;
         int laneTell;
         Vector3 laneO, laneD;
         float laneT0;
+        // lo que se acortó el vuelo en el tiempo (CompressFlight): el vuelo que se vuelve a planear al despegar va a esa
+        // velocidad, con margen
+        float flightRate = 1f;
         // la que pasa al costado: cuánto apunta al costado antes de la suelta (0..1), si salió esa variante, y cuánto corrige
         // el giro en el aire para caer mirando a Kaito (grados, una vez en el contacto)
         Quaternion passRot;
         float passW, passDelta;
         bool passing, passDeltaSet;
+        // el golpe ya se probó una vez en la ventana (el primer cuadro que llega a activeStart siempre prueba)
+        bool dashTested;
 
         /// <summary>De centro a centro en el cruce: medido en la pose de vuelo, el cuerpo queda a más de ~0.3 m del eje de
         /// Kaito (con 0.85, la suma de los dos radios, el brazo y la pierna de atrás pasaban por adentro). Kaito queda a la
         /// derecha del maestro (el clip corta con la derecha).</summary>
         const float PassBeside = 1.15f;
-        /// <summary>Lo que tiene que estar Kaito al costado del carril en la suelta para que vaya la variante que pasa (si se
-        /// metió en el carril, de frente frena contra él: la red de seguridad de Travel).</summary>
-        const float PassMinLat = 0.6f;
+        /// <summary>
+        /// Lo menos que queda al costado de Kaito en el vuelo y lo rápido que se abre en el aire para mantenerlo
+        /// (PassAside), entre PassAsideAhead m antes del cruce y PassAsideBehind después. Antes frenaba como la de frente: si
+        /// Kaito se metía hacia el carril después de la suelta (corriendo, de costado o con el corte), el vuelo quedaba
+        /// colgado 4-8 cuadros en la pose del aire, perdía hasta 1.7 m y el corte del cruce erraba. Kaito corre a 6.2 m/s.
+        /// </summary>
+        const float PassGap = 1.1f, PassAsideSpeed = 8f, PassAsideAhead = 2.5f, PassAsideBehind = 1f;
         /// <summary>La cadera apenas pasada de Kaito en el contacto (m por el carril).</summary>
         const float PassOver = 0.1f;
         /// <summary>Cuánto tarda en pasar de apuntarle de frente a apuntarle al costado (s).</summary>
@@ -42,6 +52,12 @@ namespace Nindo
         const float PassDeltaMax = 50f;
         /// <summary>Lo que el carril de la que pasa cubre afuera de Kaito (m más allá de él) y del lado del cuerpo.</summary>
         const float PassLaneOut = 0.45f, PassLaneIn = 0.2f;
+        /// <summary>
+        /// El corte del cruce: lo más rápido que corre el clip en la ventana activa (veces su velocidad: sustain de
+        /// StepTimeline) y lo más que el giro se corrige para tener la mano (o la punta) sobre Kaito. Con el vuelo comprimido
+        /// el clip salía del contacto a 3-6 veces su velocidad y la mano extendida quedaba en pantalla un cuadro o ninguno.
+        /// </summary>
+        const float PassCutRate = 2f, PassTrackMax = 45f;
 
         /// <summary>Lo más largo que estira el vuelo y lo más corto que se escala el de frente (2.85 m de los 5.7 autorados:
         /// más cerca le pasa al costado) y el que pasa. Con 0.1 cada embestida contra el bot "bueno" volaba x0.10.</summary>
@@ -49,27 +65,37 @@ namespace Nindo
         /// <summary>El vuelo más corto en tiempo: con el borde de la arena encima el de frente puede quedar en x0.1, y con el
         /// tiempo frenado en la mitad volaba a la quinta parte de su velocidad (cámara lenta con fantasmas).</summary>
         const float DashMinFlight = 0.1f;
+        /// <summary>El vuelo que se vuelve a planear al despegar, contra la velocidad que eligió la suelta (más lento o más
+        /// rápido que el autorado): si Kaito frenó o se arrimó en la pausa, el cruce igual cae sobre él.</summary>
+        const float ReplanSlow = 0.6f, ReplanFast = 1.8f;
 
         void BeginDashStep()
         {
             passRot = transform.rotation;
             passW = passDelta = 0f;
-            passing = passDeltaSet = false;
+            passing = passDeltaSet = dashPlanned = dashTested = false;
+            flightRate = 1f;
         }
 
         /// <summary>
-        /// Embestida: en la suelta el carril queda fijo hacia donde mira (el que dibujó el aviso) y se elige cómo llega;
-        /// salen las imágenes residuales (DashStart → DashEnd, en jade pálido: la estela de alguien rápido, no un aviso).
-        /// La que pasa gira el transform en el vuelo (el giro del clip, como el avance) y lo corta en el cruce; la de frente
-        /// pega con la mano sobre él. Las dos empujan a Kaito desde el maestro: la que pasa lo saca del carril hacia afuera y
-        /// lo deja mirándolo (empujarlo por el carril lo daba vuelta de espaldas y lo tiraba contra el cuerpo del jefe).
+        /// Embestida: en la suelta elige cómo llega (y la pausa agachado que alarga CompressFlight); el carril del aviso
+        /// sigue a Kaito hasta que despega y ahí queda fijo. Salen las imágenes residuales (DashStart → DashEnd, en jade
+        /// pálido: la estela de alguien rápido, no un aviso). La que pasa gira el transform en el vuelo (el giro del clip,
+        /// como el avance) y lo corta en el cruce; la de frente pega con la mano sobre él. Las dos empujan a Kaito desde el
+        /// maestro: la que pasa lo saca del carril hacia afuera y lo deja mirándolo (empujarlo por el carril lo daba vuelta de
+        /// espaldas y lo tiraba contra el cuerpo del jefe).
         /// </summary>
         void TickDash(AttackDef a, float dt)
         {
-            if (!laneFixed) AimPass(dt);
-            if (!laneFixed && stepClock >= tl.ReleaseTime) ReleaseDash();
-            // el vuelo corto espera agachado un poco más (CompressFlight): Enemy lo seguiría girando hacia Kaito hasta la
-            // suelta nueva, y el carril ya está dibujado
+            if (!laneFixed)
+            {
+                AimPass(dt);
+                if (!dashPlanned && stepClock >= tl.ReleaseTime) PlanRelease();
+                // despega (la suelta de verdad, que CompressFlight corrió) o entra en los últimos TrackingStopLead s: desde
+                // ahí va recto y correrse sirve. Antes el carril quedaba fijo en la suelta autorada, 0.44 s antes del golpe,
+                // y lo que Kaito se movía en la pausa agachado lo metía en el vuelo
+                if (dashPlanned && (stepClock >= tl.ReleaseTime || tl.T - stepClock <= TrackingStopLead)) FixLane();
+            }
             if (LaneLive) transform.rotation = DashFacing();
             float start = clip.Event("DashStart"), end = clip.Event("DashEnd");
             if (!dashFx && start >= 0f && stepNorm >= start)
@@ -82,7 +108,10 @@ namespace Nindo
                 Game.Audio?.Play("dash", transform.position, 1f, 0.05f);
             }
             if (passing && !passDeltaSet && stepNorm >= clip.Contact) PlanLanding();
-            if (stepHit || target == null || stepNorm < a.activeStart || stepNorm > a.activeEnd) return;
+            // el primer cuadro que llega al contacto prueba siempre: con el vuelo comprimido un cuadro de 60 Hz saltaba
+            // la ventana entera (2 cuadros del clip) hasta 7 de cada 10 veces y el golpe no salía nunca
+            if (stepHit || target == null || stepNorm < a.activeStart || dashTested && stepNorm > DashActiveEnd(a)) return;
+            dashTested = true;
             Vector3 tp = target.transform.position;
             if (passing)
             {
@@ -101,35 +130,56 @@ namespace Nindo
             if (passing && (r == HitResult.Hit || r == HitResult.Killed)) WindCut(tp);
         }
 
-        /// <summary>La suelta: el carril queda fijo y se elige la variante. Pasa al costado si venía apuntándole al costado,
-        /// Kaito sigue a un lado del carril y el vuelo entero entra en la arena; si no, de frente.</summary>
-        void ReleaseDash()
+        /// <summary>La ventana del golpe: la del clip que pasa al costado (su corte dura más) o la del paso.</summary>
+        float DashActiveEnd(AttackDef a) => passing ? Mathf.Max(a.activeEnd, clip.ActiveEnd) : a.activeEnd;
+
+        /// <summary>La suelta autorada: elige la variante y cuánto vuela, y acorta el vuelo en el tiempo (CompressFlight).
+        /// Pasa al costado si venía apuntándole al costado y el vuelo entero entra en la arena; si no, de frente.</summary>
+        void PlanRelease()
         {
-            laneFixed = true;
-            laneTell = TellId;
-            laneO = transform.position;
-            laneT0 = travelDone;
-            laneD = transform.forward.Flat().normalized;
+            dashPlanned = true;
+            Vector3 o = transform.position, d = transform.forward.Flat().normalized;
             // en la suelta cuenta lo que Kaito sigue corriendo hasta el contacto
             float lead = Mathf.Max(0f, tl.T - stepClock);
             var pc = PassClip;
             if (pc != null && passW > 0.5f && target != null)
             {
-                float lat = Vector3.Dot((target.transform.position - laneO).Flat(), Vector3.Cross(Vector3.up, laneD));
-                float k = PlanPass(pc, laneO, laneD, lead);
-                if (lat > PassMinLat && Stretched(pc, 1f, k) - laneT0 <= ArenaRoom(laneO, laneD) - 0.5f)
+                float k = PlanPass(pc, o, d, lead);
+                if (Stretched(pc, 1f, k) - travelDone <= ArenaRoom(o, d) - 0.5f)
                 {
                     passing = true;
                     clip = pc;
                     // mismos cuadros hasta la suelta: se cambia sin fundido (como las variantes de paso de PickReach)
                     anim.Play(pc.State, 0f, stepNorm);
                     airStretch = k;
-                    CompressFlight(k, PassMinStretch);
+                    flightRate = CompressFlight(k, PassMinStretch);
                     return;
                 }
             }
-            airStretch = PlanDash(laneO, laneD, lead);
-            CompressFlight(airStretch, DashMinFlight);
+            airStretch = PlanDash(o, d, lead);
+            flightRate = CompressFlight(airStretch, DashMinFlight);
+        }
+
+        /// <summary>
+        /// Despega: el carril queda fijo hacia donde mira (el que dibujó el aviso) y el vuelo se vuelve a planear con donde
+        /// está Kaito ahora, a la velocidad que eligió la suelta (con margen). En la que pasa, el corte del cruce va con
+        /// sustain: la ventana activa a lo sumo a PassCutRate veces la velocidad del clip.
+        /// </summary>
+        void FixLane()
+        {
+            laneFixed = true;
+            laneTell = TellId;
+            laneO = transform.position;
+            laneT0 = travelDone;
+            laneD = transform.forward.Flat().normalized;
+            if (target == null) return;
+            float lead = Mathf.Max(0f, tl.T - stepClock);
+            float k = passing ? PlanPass(clip, laneO, laneD, lead) : PlanDash(laneO, laneD, lead);
+            airStretch = Mathf.Clamp(k, flightRate * ReplanSlow, flightRate * ReplanFast);
+            if (!passing) return;
+            float from = tl.creepIn ? tl.apex : tl.apex + tl.creep;
+            float r0 = Mathf.Max(1f, 2f * (tl.activeStart - from) / Mathf.Max(1e-4f, tl.tR) * tl.stepLen);
+            tl.sustain = (tl.activeEnd - tl.activeStart) * tl.stepLen / Mathf.Min(r0, PassCutRate);
         }
 
         /// <summary>La variante que pasa al costado del clip de este paso (null si el FBX no la tiene: sale de frente).</summary>
@@ -143,11 +193,10 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Hasta la suelta apunta a Kaito (el mismo giro amortiguado que la puntería de Enemy, que este paso reemplaza, y
+        /// Hasta despegar apunta a Kaito (el mismo giro amortiguado que la puntería de Enemy, que este paso reemplaza, y
         /// quieto en los últimos TrackingStopLead s). Si de frente no le entraría medio vuelo (con lo que viene corriendo),
         /// apunta a su izquierda lo justo para pasarle a PassBeside: el carril del aviso ya es el que va a tomar (girarlo en
-        /// la suelta lo hacía saltar). Antes decidía por la distancia de ese cuadro: al que entraba corriendo desde 5-6 m le
-        /// apuntaba de frente y el vuelo de la mitad lo atravesaba antes de pegar.
+        /// la suelta lo hacía saltar). Elegida la variante en la suelta, la sigue sosteniendo en la pausa agachado.
         /// </summary>
         void AimPass(float dt)
         {
@@ -158,7 +207,7 @@ namespace Nindo
                 float d = to.magnitude;
                 if (d > 0.3f)
                 {
-                    bool pass = PassClip != null && HeadOnStretch(transform.position, to / d, Mathf.Max(0f, tl.T - stepClock)) < DashMinStretch;
+                    bool pass = dashPlanned ? passing : PassClip != null && HeadOnStretch(transform.position, to / d, Mathf.Max(0f, tl.T - stepClock)) < DashMinStretch;
                     passW = Mathf.MoveTowards(passW, pass ? 1f : 0f, dt / PassBlend);
                     float ang = passW * Mathf.Asin(Mathf.Clamp(PassBeside / d, 0f, 0.87f)) * Mathf.Rad2Deg;
                     // Kaito queda a su derecha: el carril sale girado hacia su izquierda
@@ -168,13 +217,28 @@ namespace Nindo
             transform.rotation = passRot;
         }
 
-        /// <summary>Hacia dónde mira en el vuelo: el carril, y en la que pasa el giro del clip (+ en Blender es hacia su
-        /// izquierda: en Unity, negativo) más la corrección para caer mirándolo, del cruce al apoyo.</summary>
+        /// <summary>
+        /// Hacia dónde mira en el vuelo: el carril, y en la que pasa el giro del clip (+ en Blender es hacia su izquierda: en
+        /// Unity, negativo) más la corrección para caer mirándolo, del cruce al apoyo. En el corte (CutTrack) lo mira de
+        /// verdad: el clip extiende la mano (o el bastón) hacia adelante y el giro la lleva sobre Kaito mientras le pasa por
+        /// al lado, con cualquier vuelo y aunque se haya movido.
+        /// </summary>
         Quaternion DashFacing()
         {
             var q = Quaternion.LookRotation(laneD);
             if (!passing) return q;
-            return q * Quaternion.Euler(0f, -clip.TurnAt(stepNorm) + passDelta * LandingBlend(stepNorm), 0f);
+            float yaw = -clip.TurnAt(stepNorm) + passDelta * LandingBlend(stepNorm);
+            float w = CutTrack(stepNorm);
+            if (w > 0f && target != null)
+            {
+                Vector3 to = (target.transform.position - transform.position).Flat();
+                if (to.sqrMagnitude > 0.04f)
+                {
+                    float err = Mathf.DeltaAngle(yaw, Vector3.SignedAngle(laneD, to, Vector3.up));
+                    yaw += Mathf.Clamp(err, -PassTrackMax, PassTrackMax) * w;
+                }
+            }
+            return q * Quaternion.Euler(0f, yaw, 0f);
         }
 
         float LandingBlend(float n)
@@ -183,9 +247,40 @@ namespace Nindo
             return Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a, b, n));
         }
 
+        /// <summary>Cuánto mira a Kaito en el corte: entra en los dos cuadros antes del contacto, entero en la ventana activa
+        /// del clip y sale en los dos de después.</summary>
+        float CutTrack(float n)
+        {
+            float f2 = clip.FrameNorm(2f), a = clip.Contact, b = Mathf.Max(a, clip.ActiveEnd);
+            if (n < a) return Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(a - f2, a, n));
+            return n <= b ? 1f : Mathf.SmoothStep(1f, 0f, Mathf.InverseLerp(b, b + f2, n));
+        }
+
         /// <summary>Por dónde avanza: el carril y, en la que pasa, desde que apoya (DashEnd) el carril girado lo que corrigió
         /// en el aire (los pies apoyados frenan hacia atrás de su espalda: con el carril sin girar patinaban de costado).</summary>
         Vector3 DashDir => passing && stepNorm > clip.Event("DashEnd") ? Quaternion.Euler(0f, passDelta, 0f) * laneD : laneD;
+
+        /// <summary>¿La que pasa al costado está en el aire? (del pie que empuja al que apoya: ahí se puede abrir de costado)</summary>
+        bool PassAirborne => passing && laneFixed && stepNorm >= clip.Event("DashStart") && stepNorm <= Mathf.Max(clip.Contact, clip.Event("DashEnd"));
+
+        /// <summary>
+        /// La que pasa al costado no frena en el aire: si Kaito se metió hacia el carril (corriendo, de costado o con el
+        /// avance del corte), el vuelo se abre de costado hasta pasarle a PassGap, a lo sumo a PassAsideSpeed. En el aire no
+        /// hay pie apoyado que patine y el carril dibujado se corre con él. Al que viene con el dash (i-frames) no le hace
+        /// lugar: se cruzan, como con cualquier embestida.
+        /// </summary>
+        void PassAside(float dt)
+        {
+            Vector3 dir = laneD, right = Vector3.Cross(Vector3.up, dir);
+            Vector3 to = (target.transform.position - transform.position).Flat();
+            float along = Vector3.Dot(to, dir), lat = Vector3.Dot(to, right);
+            if (along < -PassAsideBehind || along > PassAsideAhead) return;
+            float need = PassGap - Mathf.Abs(lat);
+            if (need <= 0f) return;
+            Vector3 side = (lat >= 0f ? -right : right) * Mathf.Min(need, PassAsideSpeed * dt);
+            MoveBy(side);
+            laneO += side;
+        }
 
         /// <summary>En el cruce: cuánto más tiene que girar en el aire para caer mirando a Kaito desde donde termina.</summary>
         void PlanLanding()
@@ -270,36 +365,41 @@ namespace Nindo
         /// Un vuelo más corto que el autorado se hace a la misma velocidad, en menos tiempo: la suelta se acorta y lo que
         /// sobra se suma a la pausa agachado antes de salir, así el golpe sigue cayendo en tl.T (el aviso, el "¡ya!" y la
         /// agenda de golpes no cambian). Escalar solo la distancia lo volvía un vuelo en cámara lenta con fantasmas.
+        /// Devuelve la fracción del tiempo autorado que queda.
         /// </summary>
-        void CompressFlight(float k, float floor)
+        float CompressFlight(float k, float floor)
         {
             float c = Mathf.Clamp(k, floor, 1f);
-            if (c >= 0.999f) return;
+            if (c >= 0.999f) return 1f;
             float cut = tl.tR * (1f - c);
             tl.tR -= cut;
             tl.hold += cut;
+            return c;
         }
 
         // ------------------------------------------------------------------ el carril del aviso
         float LaneWidth => 2f * (Radius + 0.6f);
 
         /// <summary>
-        /// El carril rojo: de frente, centrado en el camino; al costado (con passW), del lado de adentro del cuerpo hasta
-        /// PassLaneOut más allá de Kaito. Llega hasta donde de verdad termina la embestida (con su vuelo ya escalado) más el
-        /// alcance de la mano o del bastón.
+        /// El carril rojo: de frente, centrado en el camino y hasta donde de verdad termina la embestida (con su vuelo ya
+        /// escalado) más el alcance de la mano o del bastón; al costado (con passW), del lado de adentro del cuerpo hasta
+        /// PassLaneOut más allá de Kaito y hasta el cruce más el alcance (lo que sigue volando ya no corta: un carril hasta
+        /// el final del vuelo dejaba adentro a quien ya estaba lejos del corte).
         /// </summary>
         TellArea DashArea()
         {
             Vector3 o = LaneLive ? laneO : transform.position, d = LaneDir;
-            float w = LaneLive ? (passing ? 1f : 0f) : passW;
+            float w = dashPlanned ? (passing ? 1f : 0f) : passW;
             float lo = Mathf.Lerp(-LaneWidth * 0.5f, -(Radius + PassLaneIn), w), hi = Mathf.Lerp(LaneWidth * 0.5f, PassBeside + PassLaneOut, w);
-            var c = LaneLive || w < 0.5f ? clip : PassClip ?? clip;
-            float k = LaneLive ? airStretch : w >= 0.5f && c != clip ? PlanPass(c, o, d, Mathf.Max(0f, tl.T - stepClock)) : PreviewStretch();
-            float len = c != null ? Stretched(c, 1f, k) + c.Reach : 8f;
+            // la que va a salir: la que eligió la suelta o, antes, a la que viene apuntando
+            var c = dashPlanned || w < 0.5f ? clip : PassClip ?? clip;
+            bool pass = dashPlanned ? passing : c != clip;
+            float k = dashPlanned ? airStretch : pass ? PlanPass(c, o, d, Mathf.Max(0f, tl.T - stepClock)) : PreviewStretch();
+            float len = c == null ? 8f : (pass ? Stretched(c, c.Contact, k) + PassOver : Stretched(c, 1f, k)) + c.Reach;
             return new TellArea { lane = true, origin = o + Vector3.Cross(Vector3.up, d) * ((lo + hi) * 0.5f), forward = d, size = len, width = hi - lo };
         }
 
-        /// <summary>El carril fijo o, antes de la suelta, hacia donde mira (el que va a tomar).</summary>
+        /// <summary>El carril fijo o, antes de que despegue, hacia donde mira (el que va a tomar).</summary>
         Vector3 LaneDir => LaneLive ? laneD : transform.forward.Flat().normalized;
 
         /// <summary>El vuelo de frente que va a tomar si se suelta ahora (antes de la suelta el aviso ya lo dibuja).</summary>

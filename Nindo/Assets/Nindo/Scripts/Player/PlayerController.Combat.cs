@@ -214,8 +214,10 @@ namespace Nindo
                     break;
                 case HitResult.Deflected:
                     // le apartaron la hoja con la mano (Chikuō): el corte se frena en el roce, sin clang ni empujón (con el
-                    // corte en curso, cualquier deslizamiento le patinaba los pies apoyados). El que insiste sí rebota (Guarded)
-                    Game.Audio?.Play("parry", p, 0.45f, 0.1f);
+                    // corte en curso, cualquier deslizamiento le patinaba los pies apoyados). El que insiste sí rebota (Guarded).
+                    // Suena la palma contra el plano de la hoja: con "parry" (el choque del parry de Kaito) parecía que él
+                    // había parado algo
+                    Game.Audio?.Play("palm_deflect", p, 0.8f, 0.08f);
                     Game.Time?.HitStop(0.03f);
                     Game.Input?.Rumble(0.18f, 0.12f, 0.06f);
                     anim.Freeze(0.05f);
