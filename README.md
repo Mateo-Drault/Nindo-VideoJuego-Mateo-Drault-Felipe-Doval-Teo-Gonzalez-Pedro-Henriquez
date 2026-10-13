@@ -185,7 +185,9 @@ Nindo/Assets/Nindo/
     Camera/       CameraDirector (tomas mezclables, fijado, perfiles de jefe, golpe de FOV, oído sobre
                   Kaito), CameraOcclusion (disolución de lo que tapa, shader Nindo/Occluder Fade)
     FX/           partículas, hit-stop, post-proceso en runtime (URP Volume)
-    Audio/        AudioManager: música por zona/combate/jefe, ambientes, efectos con pool
+    Audio/        AudioManager: música por zona/combate/jefe, ambientes, efectos con pool;
+                  MusicDirector: música de jefe por fases y el final, encadenada a la muestra
+                  (MusicPlan.cs: su tabla, la genera build_boss_music.py)
     UI/           HUD, menús, diálogos (todo creado por código)
     World/        WorldBuilder (arma el mapa desde los FBX), áreas, interactuables
     Story/        StoryDirector (cinemáticas, objetivos), StoryText (TODOS los textos), NPC
@@ -210,6 +212,17 @@ Tools/            pipelines en Python (Blender, audio, generación de assets de 
   `PROPS`. Se exporta solo, con collider y tags (luz, oclusor…) en el manifest.
 * *Cambiar el mapa*: `Tools/Blender/world/world_plan.py` (áreas, caminos, edificios,
   santuarios, encuentros, jefes) y volver a correr el generador.
+* *Un tema de jefe por fases*: en `Tools/Audio/build_boss_music.py`, la fuente en `SOURCES`, una función
+  que arme en compases de la grilla medida la intro, un loop por fase (`arrange`: tramos del tema en orden,
+  cada salto a un compás parecido al que seguiría), la frase de entrada de cada fase (`pickup`) y el cierre
+  (`outro` o `stinger`), la fila en `PHASES` y en `OUTROS`, y correr los pasos del encabezado: `install`
+  copia los .ogg, escribe `boss_music.json` y `Scripts/Audio/MusicPlan.cs`. Las claves nuevas van a
+  `NindoContent` (lista `music`); si el tema es CC BY, su crédito va en el cartel del final. En el jefe:
+  `musicKey` y `Game.Audio.SetBossMusicPhase(n)` en cada cambio (`Boss.PhaseChange` ya lo hace): entra en el
+  próximo tiempo con la frase de entrada y la sección nueva cae en un compás. Antes de un silencio de la
+  pelea, `SilenceBossMusic(fade, withOutro)` (con el golpe final, para una victoria falsa); después del
+  silencio `SetBossMusicPhase(n, leadIn)` elige cuántos segundos tarda en caer lo que la frase anuncia.
+  `Tools/Audio/sim_music_director.py` renderiza cada pelea como la tocaría el juego, para oírla sin Unity.
 
 ## Pipelines (Tools/)
 
@@ -229,6 +242,9 @@ python3 Tools/Blender/bosses/bamboo_master/check_master_fbx.py   # lo que Unity 
 # iterar clips sin exportar: --only 'Palm*,Defeat' --renders DIR --sheets Palm_P3 ; poses sueltas: --lab 'sentado 3' --renders DIR
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
+# música de jefes por fases y del final: pasos (fuentes, Vorbis, recorte, verificación) en su encabezado
+python3 Tools/Audio/build_boss_music.py build|trim|verify|install|plan [claves] --out CARPETA
+python3 Tools/Audio/sim_music_director.py Tools/Audio/boss_music.json CARPETA/enc/check SALIDA   # cada pelea, para oírla
 # kit de UI: paneles de pincel, cintas, teclas, pictogramas, sellos (Resources/UI)
 python3 Tools/UI/build_ui_art.py [--preview carpeta]
 # metas, materiales, controllers, NindoContent, escenas  (correr después de cualquiera de los anteriores)
@@ -302,7 +318,8 @@ Pendiente / para decidir:
 
 Código, diseño y modelos originales de personajes/enemigos: el equipo de Nindō.
 Entornos low‑poly, terreno y efectos sintetizados: generados con los scripts de `Tools/`.
-Música y efectos de terceros: todo CC0, detallado en `Nindo/Assets/Nindo/Audio/CREDITS.md`.
+Música y efectos de terceros: CC0, salvo la música de jefes y del final (PeriTune y TAD, CC BY 4.0: hay que
+darles crédito), detallado en `Nindo/Assets/Nindo/Audio/CREDITS.md`.
 Fuentes: Shippori Mincho B1 y Zen Maru Gothic (SIL Open Font License 1.1), con las vocales con
 macrón agregadas por `Tools/Fonts/add_macrons.py`; copyright y licencia en
 `Nindo/Assets/Nindo/Art/Fonts/OFL.txt`.

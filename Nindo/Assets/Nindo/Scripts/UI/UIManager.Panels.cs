@@ -821,8 +821,10 @@ namespace Nindo
                 "<size=28>Gracias por jugar.</size>",
                 // la OFL pide nombrar las fuentes (modificadas) y su licencia en lo que se distribuye
                 "<size=20><color=#8a8070>Fuentes: Shippori Mincho B1 y Zen Maru Gothic (con macrones agregados) · SIL Open Font License 1.1</color></size>",
+                // la CC BY 4.0 pide autor, licencia y aviso de cambios en lo que se distribuye (Audio/CREDITS.md no viaja en la build)
+                "<size=20><color=#8a8070>Música: Amenoshita, Wuxia y Sakuya4 de PeriTune (peritune.com) · Revenge de TAD (opengameart.org)\nCC BY 4.0 (creativecommons.org/licenses/by/4.0), cortadas y editadas para Nindō · Boss_Koto de G_P (CC0)</color></size>",
             };
-            float[] ys = { 90f, 30f, -70f, -160f, -215f };
+            float[] ys = { 90f, 30f, -70f, -160f, -215f, -262f };
             endLines = new CanvasGroup[lines.Length];
             for (int i = 0; i < lines.Length; i++)
             {

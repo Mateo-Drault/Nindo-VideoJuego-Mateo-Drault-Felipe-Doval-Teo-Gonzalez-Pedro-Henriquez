@@ -19,6 +19,7 @@ import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from dsp import *  # noqa
+from build_boss_music import credits_md
 
 REPO = os.path.dirname(os.path.dirname(HERE))
 OUT = os.path.join(REPO, "Nindo", "Assets", "Nindo", "Audio")
@@ -41,12 +42,12 @@ MUSIC = {
     "explore_lake": ("https://opengameart.org/sites/default/files/hot_spring_town_1.ogg", "Kistol", "https://opengameart.org/content/hot-springs-town"),
     "combat": ("https://opengameart.org/sites/default/files/BeepBox-Song_0.wav", "Pepsidog", "https://opengameart.org/content/looping-japanese-fight-track"),
     "boss": ("https://opengameart.org/sites/default/files/boss_koto_0.mp3", "G_P", "https://opengameart.org/content/bosskoto"),
-    "boss_final": ("https://opengameart.org/sites/default/files/Great%20Boss_0.ogg", "Spring Spring", "https://opengameart.org/content/great-boss"),
     "gameover": ("https://opengameart.org/sites/default/files/Death%20of%20a%20Ninja%20%28Game%20Over%29.mp3", "Joth", "https://opengameart.org/content/death-of-a-ninja-game-over"),
-    "ending": ("https://opengameart.org/sites/default/files/The_fallen_samurai.mp3", "Pro Sensory", "https://opengameart.org/content/the-last-samurai"),
 }
+# "boss_final", "ending" y la música por fases de cada jefe los arma Tools/Audio/build_boss_music.py (cortes por compás,
+# loops y transiciones): si estuvieran acá, correr este script los pisaría con el tema entero
 # sonoridad objetivo (LUFS): la exploración más suave que el combate
-LOUDNESS = {"combat": -15, "boss": -14, "boss_final": -14, "gameover": -16, "ending": -16}
+LOUDNESS = {"combat": -15, "boss": -14, "gameover": -16}
 
 
 def fetch(url, name):
@@ -1145,10 +1146,12 @@ def build_music(only_key=None):
 
 def write_credits(music_credits):
     lines = ["# Créditos de audio", "",
-             "Todo el audio nuevo de Nindō es CC0 (dominio público) o sintetizado por `Tools/Audio/build_audio.py`.", "",
+             "El audio nuevo de Nindō es CC0 (dominio público), CC BY 4.0 con su crédito (música de jefes y del final,",
+             "abajo) o sintetizado por `Tools/Audio/build_audio.py`.", "",
              "## Música (OpenGameArt, CC0)", "", "| Clave | Tema | Autor | Licencia |", "|---|---|---|---|"]
     lines += music_credits
-    lines += ["", "## Efectos", "",
+    lines += [""] + credits_md()
+    lines += ["## Efectos", "",
               "* Impactos, pasos, crujidos e interfaz: packs *Impact Sounds*, *RPG Audio* e *Interface Sounds* de Kenney (www.kenney.nl), CC0.",
               "* Capas de acero, silbidos, campanas, magia y todos los ambientes: síntesis propia (numpy).",
               "* Clips originales del equipo (Assets/Audios): SwordSwing, SwordClash, Hurt, Dash, Finisher, Boton, Footsteps.", "",
