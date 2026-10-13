@@ -14,14 +14,14 @@
   * **Teo González**: modelos y animaciones.
   * **Mateo Drault**: enemigos y mapa.
   * **Pedro Henríquez**: el jugador.
-* Kaito, con la bandana mágica del abuelo, rescata al abuelo secuestrado por el clan Kurokage. Hay tres jefes de zona (montaña: Gorō; lago: Mizuchi; bambú) y un jefe final (Kokuyō).
+* Kaito, con la bandana mágica del abuelo, rescata al abuelo secuestrado por el clan Kurokage. Hay tres jefes de zona (montaña: Gorō; lago: Mizuchi; bambú: Chikuō, el Maestro del Bambú) y un jefe final (Kokuyō).
 * **Estado del juego**:
   * Se juega de punta a punta.
-  * Ya están Mizuchi (el koi), Kokuyō (el jefe final) y Ōzeki (sumo). **A Ōzeki el usuario lo quiere reemplazar.**
-  * Las variantes por zona tienen ataques propios.
-  * Kaito y los personajes del equipo tienen animaciones nuevas.
-* **Lo pendiente**: una lista grande de pedidos del usuario (sección 4). **Ninguno está terminado.** Seis worktrees tienen trabajo a medio hacer (sección 5).
-* **El usuario pide**: calidad de juego publicado, autocrítica, respetar el estilo de arte, y que la partida dure cerca de **una hora** (hoy dura unos 30 min).
+  * Están Mizuchi (el koi), Kokuyō (el jefe final), Gorō con barra falsa y armadura de roca, y **Chikuō**, que reemplazó a Ōzeki (el arquetipo y el bossId siguen siendo `ozeki`: partidas, flags y sello del bambú no cambian).
+  * Las variantes por zona tienen ataques propios; ninjas y sumos tienen idles de ambiente.
+  * Kaito y los personajes del equipo tienen animaciones nuevas, con las muñecas medidas en el lint de cada pipeline.
+* **Lo pendiente**: la fase C2 hizo casi toda la lista de la sección 4 en la rama `c2/integration` (13 frentes `c2/*`, sección 5). Cada pedido dice ahí su estado; lo que quedó abierto está juntado en la sección 4b. **Falta probar C2 en Unity y llevarla a main.**
+* **El usuario pide**: calidad de juego publicado, autocrítica, respetar el estilo de arte, y que la partida dure cerca de **una hora**. Con la vida de C2 las simulaciones dan ~1 h para el bot "promedio"; `Core/PlayClock` la mide de verdad en la consola (por zona y por jefe) y el cartel del final la muestra.
 
 ---
 
@@ -47,7 +47,8 @@
 * **Descargas**: el usuario tiene que aprobar cada archivo que se baje de internet. Mostrale nombre, fuente, licencia y tamaño.
 * **Higgsfield** (MCP `4e3e7df2…`): sirve para hojas de concepto (`generate_image_batch`, `gpt_image_2_5`, ~0.25 créditos por imagen), con aprobación del usuario. **No sirve para música**: su modelo de música está reservado para otro uso.
 * **Herramientas disponibles**:
-  * Blender 4.4 por CLI (`"C:/Program Files/Blender Foundation/Blender 4.4/blender.exe" -b --python script.py -- args`).
+  * Blender 5.2 por CLI (`"C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --factory-startup --python script.py -- args`); el 4.4 ya no está. Las diferencias de API de 5.2 están juntas en `Tools/Blender/bl_compat.py`: todos los pipelines pasan por ahí. Hay un MCP de Blender, pero **el usuario prefiere la línea de comandos** (no quiere tener Blender abierto todo el tiempo).
+  * Blender en Windows no abre un script de más de 260 caracteres de ruta: con el scratchpad largo, copiá a una carpeta corta o corré desde el repo.
   * MCP de Unity, Higgsfield, Python con PIL y numpy.
   * `python Tools/Dev/compile_check.py --project "<checkout principal>/Nindo"`: compila todo el C# sin Unity, en unos 30 s. Corrélo antes de cada commit de C#.
 
@@ -77,16 +78,17 @@
 * **Código**: `Nindo/Assets/Nindo/Scripts/`
   * `Core/`: Game, GameBootstrap, SaveSystem/Settings, NindoContent, CharacterFactory, CharacterKits, TimeController.
   * `Player/`: PlayerController(.Combat), PlayerConfig.
-  * `Enemies/`: Enemy, Boss, EnemyArchetypes (los AttackDef de todos), EnemyVariants, VariantMotion, SumoPoser, StepTimeline (tiempos de aviso).
-    * `Enemies/Bosses/`: MizuchiBoss(+Moves), KoiBody, WaterPearl, MizuchiMarks, KokuyoBoss, KokuyoMoves/Timings/Hazards/Look, KageShadow, OzekiBoss.
+  * `Enemies/`: Enemy, Boss, EnemyArchetypes (los AttackDef de todos), EnemyVariants, VariantMotion, SumoPoser, StepTimeline (tiempos de aviso y embestidas en cuadros del clip), EnemyAmbient (idles de ambiente).
+    * `Enemies/Bosses/`: MizuchiBoss(+Moves, Pacing), KoiBody, WaterPearl, MizuchiMarks, KokuyoBoss, KokuyoMoves/Timings/Hazards/Look, KageShadow, GoroBoss(+GoroArmor, GoroAvalanche), BambooMasterBoss(+Moves, Look, Qi, Story, BambooMasterTimings).
   * `Combat/`: CombatDirector (tokens), CharacterAnimator, CombatTypes.
   * `Camera/`: CameraDirector (planos, perfil de jefe ICameraProfile, SetFocusBias, auto-encuadre), CameraOcclusion.
   * `FX/`: FXManager, CombatTelegraphs (anillos ensō), ParryCrescent, ScreenFX, CharacterGlint, KohanFalls (la cascada), FloodSheet, WaterSplash, Braziers, MoonEclipse, PlanarShadow, ShadowRopes, KageArenaFX, FinisherStreak, XRaySilhouette, SpringChain, BandanaGlow.
   * `UI/`: UIManager(.HUD/.Panels/.World), UIFactory, UISprites, ThreatIndicators.
-  * `Story/`: StoryDirector(.Kokuyo), StoryText (todo el texto del juego), NPC.
-  * `World/`: WorldBuilder, Areas (Zone, Encounter, BossArena, ArenaBarrier, BarrierFade, LightPool), Interactables (Checkpoint/santuario, KeyPickup, SealGate).
-  * `Input/`: InputReader, AutoPilot.
-  * `Audio/`: AudioManager.
+  * `Story/`: StoryDirector(.Kokuyo, .Ending, .Shrines, .Prologue), StoryText (todo el texto del juego), KaitoTimings (los momentos de los clips de historia, generado por `Tools/Unity/kaito_timings.py`), NPC.
+  * `World/`: WorldBuilder, Areas (Zone, Encounter, BossArena, ArenaBarrier, BarrierFade, LightPool), Interactables (Checkpoint/santuario, KeyPickup, SealGate), ZoneCulling (activación por zonas; el banco de pruebas es Ctrl+Shift+F9).
+  * `Input/`: InputReader, BindingTable (controles reasignables), AutoPilot.
+  * `Audio/`: AudioManager, MusicDirector (un tema por jefe con fases, en el reloj DSP).
+  * `Core/PlayClock`: la hora de juego.
 * **Shaders**: `Nindo/Assets/Nindo/Resources/Shaders/` (CharacterLit, Telegraph, Waterfall, FoamWater, Spray, Mist, InkStreak, CharacterXRay, Moon, ShadowInk…).
 * **Pipelines** (ver README):
   * `Tools/Unity/generate_assets.py`: personajes, controllers, metas, `NindoContent.asset`. Correrlo entero reescribe cosas ajenas: tocá sus entradas a mano o revertí lo que no corresponde.
@@ -98,16 +100,15 @@
   * `Tools/Audio/build_audio.py`: efectos sintetizados.
   * `Tools/UI/`: el kit de sprites de la interfaz.
 * **Música**: `Nindo/Assets/Nindo/Audio/Music/*.ogg`, todo CC0 de OpenGameArt; los créditos están en `Audio/CREDITS.md`.
-  * `boss` = *bosskoto* (G_P). **Al usuario le encanta.** Hoy la usan Gorō y el jefe del bambú.
-  * `boss_final` = *great-boss*.
-  * Mizuchi pide `boss_lake`, que no existe, y queda sonando la música de exploración (bug).
+  * Cada jefe tiene su tema con fases (`boss_goro`, `boss_lake`, `boss_bamboo`, `boss_final`) y el final el suyo (`ending`), por `Audio/MusicDirector`. *bosskoto* (G_P, **al usuario le encanta**) quedó para Gorō, con el clímax en su fase 2.
+  * Dos pistas de PeriTune (Amenoshita y Sakuya4) se usan como CC BY 4.0 por la cláusula general del autor: sus páginas no dicen licencia. **Falta que el usuario lo apruebe** (sección 4b).
 * **Coordenadas útiles** (de `world_plan.py`):
 
   | Jefe | Arena (centro, radio) | Checkpoint cercano |
   |---|---|---|
   | Gorō | (-200, 122), r15 | `cp_mountain_top` (-189, 112) |
   | Mizuchi | (184, 72) | `cp_lake_falls` (177, 58); para entrar, teletransportar a (184, 3, 64) y hacer `goto 184 69` |
-  | Ōzeki / bambú | (124, 162) | `cp_bamboo_gate` (111.5, 144.2); el arco de bambú traba el `goto`, mejor teletransportar a (122, 150) |
+  | Chikuō / bambú | (124, 162) | `cp_bamboo_gate` (111.5, 144.2); el arco de bambú traba el `goto`, mejor teletransportar a (122, 150) |
   | Kokuyō | (0, 132) | `cp_dojo` (8, 114.5); `goto 0 124 15` funciona |
 
 * **AutoPilot** (`Nindo.AutoPilot.Run("…")`, pasos separados por `;`):
@@ -160,16 +161,16 @@
 * La rama `c/ui-hud` ya está integrada: se puede borrar su worktree.
 * Ojo en AutoPilot desde RunCommand: formateá los números con `CultureInfo.InvariantCulture` (con la coma decimal, `goto -25,0 …` manda a Kaito a cualquier lado). `Unity_ReadConsole` lo bloquea el clasificador de permisos: usá `Unity_GetConsoleLogs`.
 
-## 4. LO QUE FALTA (todo pedido por el usuario; los de 3b ya están)
+## 4. Los pedidos del usuario (los de 3b ya están)
 
-Están casi en sus palabras, con notas. **Leé también `Docs/handoff/fase_c_frentes_workflow.js`**: tiene los nueve frentes ya especificados en detalle (contratos entre frentes, alcance, validación) y se puede reusar tal cual pasándole `args: { only: [...] }`.
+Están casi en sus palabras, con notas. Al final de cada uno, entre corchetes, **su estado después de la fase C2** (todo en `c2/integration`, sin probar en Unity todavía). Lo que quedó abierto está juntado en la sección 4b. `Docs/handoff/fase_c_frentes_workflow.js` tiene los frentes de la fase C especificados en detalle (contratos entre frentes, alcance, validación) y se puede reusar pasándole `args: { only: [...] }`.
 
 ### 4.1 Animación y modelos
-1. **El abuelo arrastrado** (prólogo y bosque): mejorar la animación. Contacto creíble con el ninja que lo lleva (manos en el cuello o el brazo), talones que se arrastran con polvo, forcejeo. Clips `Kidnap`/`Dragged`.
-2. **Kaito despertándose en el suelo** al ver que secuestran al abuelo: clip `WakeUp` bien hecho y una cámara que lo muestre (`StoryDirector.Intro` / `LieDown`).
-3. **Muñecas y brazos doblados** en varios ninjas, Kaito y el abuelo: corregir el modelo. Averiguar si viene del bind pose, de los pesos o de las rotaciones de las manos en los clips.
-4. **La cola de la bandana amarilla está duplicada.** La malla de `kaitooo.fbx` tiene sus propias colas animadas y además están las del kit (`Kit_kaito_bandana.fbx` + SpringChain) con física. Tiene que quedar **un solo juego de colas, con física**.
-5. **Idles nuevos y realistas**: ninjas meditando sobre una roca, entrenando entre ellos en pareja, el sumo durmiendo con las manos en la panza; un sobresalto antes de pelear. Contrato: `IdleMeditate`, `IdleSparA/B`, `IdleSleep`, `AmbientAlert`, más un `Enemies/EnemyAmbient.cs` nuevo.
+1. **El abuelo arrastrado** (prólogo y bosque): mejorar la animación. Contacto creíble con el ninja que lo lleva (manos en el cuello o el brazo), talones que se arrastran con polvo, forcejeo. Clips `Kidnap`/`Dragged`. **[C2 hecho, c2/grandpa: agarre de las muñecas, arrastre sin patinar, polvo de los talones.]**
+2. **Kaito despertándose en el suelo** al ver que secuestran al abuelo: clip `WakeUp` bien hecho y una cámara que lo muestre (`StoryDirector.Intro` / `LieDown`). **[C2 hecho, c2/kaito-anim y c2/world-story.]**
+3. **Muñecas y brazos doblados** en varios ninjas, Kaito y el abuelo: corregir el modelo. Averiguar si viene del bind pose, de los pesos o de las rotaciones de las manos en los clips. **[C2 hecho: los lints de Kaito, del equipo y de Chikuō miden las muñecas con los límites de team_limbs. Quedan tirones de un cuadro de Kaito como avisos (4b).]**
+4. **La cola de la bandana amarilla está duplicada.** La malla de `kaitooo.fbx` tiene sus propias colas animadas y además están las del kit (`Kit_kaito_bandana.fbx` + SpringChain) con física. Tiene que quedar **un solo juego de colas, con física**. **[C2 hecho: solo las del kit; el nudo del cuerpo es un moño y pesa entero a la cabeza.]**
+5. **Idles nuevos y realistas**: ninjas meditando sobre una roca, entrenando entre ellos en pareja, el sumo durmiendo con las manos en la panza; un sobresalto antes de pelear. Contrato: `IdleMeditate`, `IdleSparA/B`, `IdleSleep`, `AmbientAlert`, más un `Enemies/EnemyAmbient.cs` nuevo. **[C2 hecho, c2/ninja-sumo.]**
 6. **Lo pendiente del pase de animación anterior (B4)**:
    * **Ninja y sumo**:
      * Strafe izquierda/derecha y retroceso: hoy caminan hacia adelante mientras rodean a Kaito.
@@ -189,7 +190,8 @@ Están casi en sus palabras, con notas. **Leé también `Docs/handoff/fase_c_fre
      * Transiciones que saltan (Dash → Attack1, la réplica temprana después de un parry).
      * Frenada (RunStop).
    * **Limpieza del esqueleto** donde las manos o los pies cuelgan de controles de IK (sumo, Gorō, abuelo): se hace como se hizo con Kaito, sin cambiar nombres ni GUIDs.
-7. **"Ult" cortada**: el remate y las habilidades (Corte del Viento, Torbellino de Hojas) vuelven a la cámara de juego demasiado pronto. El usuario quiere **un segundo** de Kaito en la pose final, tanto en el clip como en la duración del plano (`CameraDirector.PlayFinisherShot` / `PlayAbilityShot`, `Player/*`).
+   * **[C2 hecho casi todo, c2/ninja-sumo, c2/team-rig, c2/goro, c2/grandpa, c2/kaito-anim: rodeo de costado, bofetadas largas, embestidas en cuadros del clip con su lint, saltos, Gorō sin el martillo en el cuerpo ni saltos en Parried, Intro e Idle propios, Bound/Freed/Walk del abuelo, muerte con peso, HitBack/Left/Right, RunStop. Abierto: Gorō no pasa el lint nuevo de la embestida y sus manos se despegan del mango (4b).]**
+7. **"Ult" cortada**: el remate y las habilidades (Corte del Viento, Torbellino de Hojas) vuelven a la cámara de juego demasiado pronto. El usuario quiere **un segundo** de Kaito en la pose final, tanto en el clip como en la duración del plano (`CameraDirector.PlayFinisherShot` / `PlayAbilityShot`, `Player/*`). **[C2 hecho: un segundo de zanshin en el clip y en el plano.]**
 
 ### 4.2 Jefes y balance
 8. **Reemplazar por completo al jefe del bambú.** Un **anciano maestro de kung fu**, sabio, que **no se parezca al abuelo de Kaito**, con ropa de kung fu y habilidades de kung fu. Animaciones profesionales de ataques, **bloqueos** y especiales. Pensar estilo de arte, diseño y sensación de juego.
@@ -201,7 +203,7 @@ Están casi en sus palabras, con notas. **Leé también `Docs/handoff/fase_c_fre
      * Onda de qi como anillo rojo, embestida rápida con imágenes residuales.
      * Cambio de fase con bastón de bambú o sacándose la túnica.
      * Derrota: se sienta a meditar y le hace una reverencia.
-   * Ya hay un WIP en `c/bamboo-master` (sección 5).
+   * **[C2 hecho, c2/bamboo-master: Chikuō, con palmas, grulla, patada voladora, barrida, postura del bambú que contraataca, onda de qi, embestida con imágenes residuales, el saco que se saca, el bastón en la fase 3 y la derrota meditando. Vida ~2000. Abierto: no es chibi como el resto (4b).]**
 9. **Gorō: barra de vida falsa y fase 2.**
    * Vida total el doble.
    * Cuando la primera barra se vacía, "le ganaste": cae, hay un silencio, y de golpe muchas rocas vuelan y se le pegan al cuerpo.
@@ -209,29 +211,35 @@ Están casi en sus palabras, con notas. **Leé también `Docs/handoff/fase_c_fre
    * Fase 2: los mismos ataques pero más difíciles y con variaciones, y uno nuevo: una **avalancha** que baja por la ladera en carriles rojos con aviso, que se esquiva corriendo y que nunca arranca fuera de pantalla.
    * La música tiene que llegar a su clímax en la fase 2.
    * Código nuevo: `Enemies/Bosses/GoroBoss.cs`.
+   * **[C2 hecho, c2/goro: barras de 1000 + 1600, avalancha, armadura en tres tramos que curan, el reintento arranca armado, la música por fases. Abierto: la armadura podría ser más grande (4b).]**
 10. **Vida doble en todos los jefes** (Mizuchi 1440, Kokuyō 1800, bambú ~1400, Gorō ~1040 entre las dos barras) y algunos especiales más rápidos, para peleas más dinámicas.
     * **Objetivo: que la partida dure ~1 hora** (hoy ~30 min).
     * Después balancear en Unity con `bot on bueno` / `bot on promedio`: el bueno gana en unos 4-6 min por jefe, el promedio muere alguna vez.
+    * **[C2 hecho en simulación (`Tools/Dev/goro_fight_sim.py`, `sim_bamboo_master.py`, `boss_sims/`): Gorō 1000 + 1600, Mizuchi y Kokuyō x1.5 (2160 y 2700, con el daño que aguanta el promedio), Chikuō ~2000; el bot promedio se recalibró (falla 15 %, se confunde 7 %, ataca apurado 15 %). Falta medir en Unity con PlayClock.]**
 11. **Kokuyō**:
     * **La sombra viva casi nunca ataca.** El usuario la considera la mejor mecánica: tiene que estar en todos los actos.
     * En la fase de luna llena, donde la sombra no se ve, cuando ataca **tiene que hacerse visible un segundo antes y poder pararse** (difícil pero justo).
     * En el cambio de luna **se nota un rectángulo**, como el borde de una capa (`MoonEclipse` / shader de la luna / planos del cielo).
+   * **[C2 hecho, c2/combat-kokuyo: la sombra pelea en los tres actos, en la luna llena se ve antes de pegar (con un filo de tinta en la hoja) y la luna ya no tiene rectángulo.]**
 12. **Final**:
     * La música no va con el rescate.
     * Mejorar la animación de Kaito cuando se da vuelta y le da la cinta a Kokuyō (`EndingTurn`, `StoryDirector.Kokuyo.EndingScene`).
+   * **[C2 hecho: el final suena con su tema, EndingTurn saca la media cinta del cinturón y se retoma si la partida se cerró en medio.]**
 
 ### 4.3 Mundo e historia
 13. **Santuario**:
     * Hoy **brilla demasiado** cuando se activa y no se entiende el modelo. Por defecto no tiene que brillar nada; después de rezar, un brillo muy leve y **humo de incienso**.
     * **Escena de rezo** con cámara de costado: Kaito se arrodilla, prende el incienso, lo apoya en el santuario y reza por el abuelo (clip `PrayIncense` con eventos).
     * La primera vez se ve completa; después, una versión corta.
-14. **Tutorial temprano** que avise que se puede **rezar** en los santuarios (cura, guarda y marca el punto de reaparición).
-15. **Muralla del Jardín del Clan**: después de ganarles a los ninjas, Kaito se acerca a la muralla y la abre con el poder de la bandana (clip `BandanaPower`, VFX, sonido, cámara). Hoy el portón se abre solo.
+   * **[C2 hecho, c2/world-story.]**
+14. **Tutorial temprano** que avise que se puede **rezar** en los santuarios (cura, guarda y marca el punto de reaparición). **[C2 hecho.]**
+15. **Muralla del Jardín del Clan**: después de ganarles a los ninjas, Kaito se acerca a la muralla y la abre con el poder de la bandana (clip `BandanaPower`, VFX, sonido, cámara). Hoy el portón se abre solo. **[C2 hecho.]**
 16. **Puerta de los tres sellos**:
     * Cada círculo muestra el ícono de su jefe.
     * Los sellos se ponen **de a uno**, apenas los tenés (ganás a Mizuchi, vas y ponés el suyo). La puerta abre con los tres.
     * Hay que guardar cuáles están puestos.
-17. **Optimización**: hoy **no hay sistema por chunks**. Existe: FBX por zona, static batching, frustum culling de Unity, decoración del piso fusionada por chunk, LightPool, far clip 400 y la cascada que se apaga a 110 m. Falta: activar y desactivar zonas, props, luces, partículas y la IA de enemigos según la distancia, con histéresis y sin pop-in a la vista. Hay que medir la ganancia.
+   * **[C2 hecho.]**
+17. **Optimización**: hoy **no hay sistema por chunks**. Existe: FBX por zona, static batching, frustum culling de Unity, decoración del piso fusionada por chunk, LightPool, far clip 400 y la cascada que se apaga a 110 m. Falta: activar y desactivar zonas, props, luces, partículas y la IA de enemigos según la distancia, con histéresis y sin pop-in a la vista. Hay que medir la ganancia. **[C2 hecho, c2/culling: `World/ZoneCulling`. Falta medir la ganancia en un build con el banco de pruebas (Ctrl+Shift+F9).]**
 
 ### 4.4 Interfaz
 18. **El cartel "Desatá la bandana" queda trabado** hasta que aparece otro (rezar, portal). Hay que esconder los carteles cuando su objetivo ya no está, se usó o quedó fuera de rango (`UIManager.World`, `Interactables`, `StoryDirector` del prólogo).
@@ -247,11 +255,11 @@ Están casi en sus palabras, con notas. **Leé también `Docs/handoff/fase_c_fre
 24. **HUD**:
     * El relleno de vida dentro de la bandana está corrido a la izquierda y no se ve el diseño entero.
     * **El ojo del dragón no le gusta**: probar otras opciones en su estilo.
-25. **Mapa con M**: dónde estás, niebla sobre las zonas no exploradas (se guarda en la partida), santuarios, estilo Nindō. Pausa el juego.
-26. **Controles reasignables**: cada acción, sin conflictos (intercambiar o rechazar con un mensaje), resetear, guardar, y mostrar las teclas con los key-caps actuales.
+25. **Mapa con M**: dónde estás, niebla sobre las zonas no exploradas (se guarda en la partida), santuarios, estilo Nindō. Pausa el juego. **[C2 hecho, c2/ui-map.]**
+26. **Controles reasignables**: cada acción, sin conflictos (intercambiar o rechazar con un mensaje), resetear, guardar, y mostrar las teclas con los key-caps actuales. **[C2 hecho, c2/ui-controls: Opciones › Controles.]**
 
 ### 4.5 Combate
-27. **Efecto de parry de Kaito**: hoy es la misma forma que el segmento de ensō bajo el enemigo. Tiene que ser **distinto, pero con el color relacionado**: por ejemplo un destello de acero horizontal, chispas y una onda corta, con una variante para el perfecto.
+27. **Efecto de parry de Kaito**: hoy es la misma forma que el segmento de ensō bajo el enemigo. Tiene que ser **distinto, pero con el color relacionado**: por ejemplo un destello de acero horizontal, chispas y una onda corta, con una variante para el perfecto. **[C2 hecho: parry con lenguaje de acero.]**
 28. **Dash sin espíritu**: es un bug. El documento de diseño dice que el dash mágico gasta Espíritu y que sin barra no hay dash. Arreglarlo con aviso (el dragón parpadea y suena). Evaluar si conviene un pasito sin invulnerabilidad.
 29. **Kaito queda afuera del anillo amarillo de combate** (`ArenaBarrier`, `Encounter.lockArea`): el anillo tiene que encerrar a Kaito y a todos los enemigos, o arrimarlo suavemente.
 
@@ -263,12 +271,47 @@ Están casi en sus palabras, con notas. **Leé también `Docs/handoff/fase_c_fre
     * Arreglar que Mizuchi no tenga música (`boss_lake`).
     * Sistema de música por fases: claves `boss_goro`, `boss_lake`, `boss_bamboo`, `boss_final`, `ending`. Intro, loop A y loop B o salto de sección con fundido; frase de transición; sin cortes audibles.
     * Armá una lista corta (página, URL del archivo, licencia citada, autor, duración, tamaño, por qué encaja, qué parte sirve para cada fase) y **pedile aprobación** antes de bajar.
+    * **[C2 hecho, c2/music: los temas por fases y los créditos en el juego. Abierto: la aprobación de las dos pistas de PeriTune (4b).]**
+
+## 4b. Abierto después de la fase C2
+
+* **Música**: Amenoshita y Sakuya4 (PeriTune, `boss_lake` y `ending`) se usan como CC BY 4.0 por la cláusula general del autor; sus páginas no dicen licencia. Que el usuario lo apruebe (y quede anotado en `Audio/CREDITS.md`) o cambiarlas por pistas con CC BY o CC0 en su página.
+* **Kaito** (`Tools/Blender/anim/kaito`): `build_kaito.py` avisa tirones de un cuadro (manos, codos, piernas) en casi todos los golpes y en las escenas: BandanaPower f36-38 (la mano izquierda 117°, el húmero 94°), Death f32-35 (la pierna derecha 71°, el brazo izquierdo 112°), PrayQuick f45-46 (75°), EndingTurn f27-29 (el pie izquierdo 56°), WakeUp, Pray y PrayIncense (45-55°). El pedido era que en las escenas fallen arriba de 45° por cuadro: falta un tope de giro por cuadro en el camino de los brazos (`kaito_rig.arm_path`) y repartir la suelta de BandanaPower y el estirón de piernas de Death en 3-5 cuadros.
+* **Gorō** (`Tools/Blender/anim/build_team_anims.py -- goro`): no pasa el lint de la embestida que agregó c2/ninja-sumo (con el reloj del juego los pies apoyados patinan 6-16 cm en Combo1/2/3, Combo1B/2B/3B y SlamWave), así que GoroAnims.fbx no se puede re-exportar hasta arreglarlo. Pendientes del mismo pase: las manos se despegan del mango 2.9-5.2 cm (Combo1, Combo3, Heavy, Combo3B, AvalancheSummon), la cadera de FakeDefeat y ArmorRise 3 cm bajo el piso, el martillo 2.7 cm en el piso en Heavy. La armadura es parda con brasa más ancha; **más grande** (x1.3) choca con el mango y con el piso en 13 chequeos: hay que agrandarla junto con los caminos del martillo.
+* **Chikuō**: no es chibi como el resto (2.6 m, cabeza chica, manos de mitón): es decisión de Felipe. La pelea es mayormente rebotes (~0.9 por segundo con el bot bueno) y el Paso del Viento vuela poco; el saco sale en un cuadro (se podría deslizar en 6-8).
+* **Ambiente**: el pase de Felipe sobre el mundo (lo que quedó del ítem de basaltos que se leen como hielo).
 
 ---
 
-## 5. Trabajo a medio hacer (worktrees)
+## 5. Ramas de la fase C2
 
-Los agentes de la fase C se cortaron por el límite. Su trabajo quedó commiteado como **WIP sin revisar ni compilar** en ramas locales: no están en origin y su base es `70351e4`.
+Las ramas `c2/*` son locales (no están en origin) y están integradas en `c2/integration`, que es la que hay que probar en Unity y llevar a main (fast-forward, como siempre).
+
+| Rama | Qué trajo |
+|---|---|
+| `c2/team-rig` | Rig del equipo con muñecas validadas, el segundo esqueleto (el ninja del secuestro) y el pipeline de Blender 5.2 (`bl_compat`). |
+| `c2/kaito-anim` | Clips de historia de Kaito (WakeUp, PrayIncense, PrayQuick, BandanaPower, EndingTurn), golpes según el lado, frenada, muerte con peso, una sola bandana. |
+| `c2/ninja-sumo` | Idles de ambiente (`EnemyAmbient`), rodeo de costado, bofetadas, saltos, embestidas en cuadros del clip y su lint de patinaje. |
+| `c2/goro` | Barra falsa, armadura de roca que se le arma encima, fase 2 con la avalancha, manos sin teletransporte. |
+| `c2/grandpa` | Secuestro con agarre de muñecas, arrastre sin patinar, atado de rodillas con cuerdas y liberación. |
+| `c2/bamboo-master` | Chikuō, el Maestro del Bambú, en lugar del Ōzeki (modelo, 107 clips, pelea, balance). |
+| `c2/combat-kokuyo` | La sombra viva de Kokuyō en los tres actos, la luna sin rectángulo, el parry de acero, la vida de Mizuchi y Kokuyō. |
+| `c2/music` | Un tema por jefe con fases y el del final (`MusicDirector`), créditos en el juego. |
+| `c2/world-story` | Santuarios con incienso y rezo, el consejo de rezar, la muralla que abre la bandana, la puerta de los sellos de a uno, el despertar y el final. |
+| `c2/culling` | `ZoneCulling`: apaga lo que ninguna cámara ve, congela la cascada fuera de cuadro y duerme por campamento a los enemigos lejanos. |
+| `c2/ui-map` | El mapa con la M. |
+| `c2/ui-controls` | Controles reasignables. |
+| `c2/integration` | Las doce integradas más los arreglos de la revisión final (reintentos de Gorō y Mizuchi, títulos de jefe en el tercio de abajo, PlayClock, partidas viejas, muñecas de Chikuō, nudo de la bandana, rugido de Gorō más cerca...). |
+
+Cada frente dejó su lista de pruebas en Play en su informe del workflow; las de la revisión final están en el informe de `c2/integration`. Los worktrees viejos de la fase C (`c-*`, `b4-*`) ya no hacen falta.
+
+**Memoria**: cuatro frentes con Blender a la vez más Unity ya es el límite de los 16 GB.
+
+---
+
+## 5b. La fase C (vieja, ya integrada en C2)
+
+Lo que sigue es cómo había quedado la fase C antes de C2; su trabajo ya lo retomaron los frentes `c2/*`. Queda por referencia.
 
 | Worktree (`.claude/worktrees/…`) | Rama | Qué hay |
 |---|---|---|
@@ -284,8 +327,6 @@ Los agentes de la fase C se cortaron por el límite. Su trabajo quedó commitead
 Para seguir un frente: entrá a su worktree, mirá `git show --stat HEAD`, decidí qué sirve y seguí.
 
 Si relanzás agentes: usá el script `Docs/handoff/fase_c_frentes_workflow.js` (pasá el script **en línea** con `args: { only: ["..."], limit: 4 }`). Ya contempla que el worktree exista y que tenga que retomar.
-
-**Memoria**: cuatro frentes con Blender a la vez más Unity ya es el límite de los 16 GB.
 
 ---
 
@@ -316,13 +357,10 @@ Si relanzás agentes: usá el script `Docs/handoff/fase_c_frentes_workflow.js` (
 
 * La hoja del ninja negro apenas se ve desde arriba: hoy el aviso depende del brillo del arma.
 * Los números de vida se ajustaron contra el bot experto, que es sobrehumano; con una persona las peleas duran más.
-* Las presentaciones de los jefes ponen el título encima de la cabeza del jefe en algunas tomas.
+* Las presentaciones de los jefes ponían el título encima de la cabeza del jefe en algunas tomas (C2: ahora va en el tercio de abajo, `ShowBossTitle`; verificarlo en Play).
 * El pozo de la cascada quedó bien, pero los basaltos claros todavía se pueden leer como hielo.
 * Otros detalles:
-  * El abuelo no tiene animación de atado.
-  * El rezo de Kaito no se lee desde la cámara de juego.
-  * Gorō: el arma atraviesa el cuerpo.
-  * Los enemigos rodean a Kaito caminando hacia adelante.
+  * Los cuatro de esta lista (el abuelo atado, el rezo que no se leía, el arma de Gorō en el cuerpo y el rodeo hacia adelante) se hicieron en C2; falta verlos en Play.
 
 ---
 
