@@ -11,7 +11,9 @@ namespace Nindo
     ///    la muerte, el golpe de victoria y la música que se va) pero sin bandera, sello ni cartel. Un silencio, la montaña
     ///    retumba y las 16 rocas de la armadura se arrancan de la pared de la cumbre y se le clavan una por una (ArmorRise,
     ///    GoroArmor), en un plano de costado. Se levanta, ruge y sale el cartel "Gorō / La Montaña Despierta".
-    ///  * FASE 2: barra nueva entera, el tema de jefe vuelve y entra en su clímax (PlayBossMusic + SetBossMusicPhase(2)).
+    ///  * FASE 2: barra nueva entera, el tema de jefe vuelve y entra en su clímax: la barra falsa toca el golpe final de
+    ///    la fase 1 y deja el silencio (SilenceBossMusic), y cuando vuelan las rocas SetBossMusicPhase(2, ...) agenda los
+    ///    tambores para el instante en que se pone de pie.
     ///    Golpes más pesados y con variantes (EnemyArchetypes.GoroPhase2), la onda que sale por el piso (SlamWave) y la
     ///    AVALANCHA (GoroAvalanche). Mientras carga un golpe la roca rebota los cortes (ArmorWindow): hay que desviar o
     ///    esquivar y pegarle después. Con la vida se le va cayendo la armadura (y cada tramo roto le devuelve aire a Kaito).
@@ -335,7 +337,9 @@ namespace Nindo
             Game.Time?.SlowMotion(0.2f, seen ? 0.5f : 1.0f, 0.02f, 0.5f);
             shot = Game.Camera != null ? Game.Camera.PlayBossDeathShot(transform) : -1;
             Game.Audio?.Play("boss_defeat", transform.position, 1f);
-            Game.Audio?.StopBossMusic(seen ? 1f : 2f);
+            // "le ganaste": el golpe final del tema en el próximo tiempo y después silencio. El tema sigue cargado: la
+            // fase 2 entra desde ese silencio (StopBossMusic lo descargaba y la fase 2 arrancaba recién al pelear)
+            Game.Audio?.SilenceBossMusic(0.4f, true);
             Game.FX?.EnemyDeath(AimPoint, dir, true);
             float t = 0f;
             bool knee = false, drop = false, hammer = false, back = false;
@@ -394,6 +398,8 @@ namespace Nindo
             // el retumbe solo: el reloj del vuelo (y la primera roca) arranca después
             yield return new WaitForSeconds(RumbleTime);
             assembling = true;
+            // la frase de entrada de la fase 2 arranca con las rocas y sus tambores caen cuando se pone de pie
+            Game.Audio?.SetBossMusicPhase(2, lead + GoroTimings.RiseStand / sp);
             bool started = false, titled = false, roared = false, peaked = false;
             while (assemblyClock < GoroTimings.RiseLength / sp)
             {
@@ -527,7 +533,8 @@ namespace Nindo
             // el grito sale cuando termina esa primera avalancha (encima de ella tapaba los carriles de arriba)
             barkPending = true;
             Game.UI?.ShowBossBar(this);
-            Game.Audio?.PlayBossMusic(musicKey);
+            // la fase 2 ya entró al levantarse (ArmorRise); acá solo hace falta si se llegó sin la cinemática (DebugArmor).
+            // Un PlayBossMusic acá reiniciaba el tema y cortaba los tambores recién caídos
             Game.Audio?.SetBossMusicPhase(2);
             var p = Game.Player;
             if (p != null && p.IsAlive)
