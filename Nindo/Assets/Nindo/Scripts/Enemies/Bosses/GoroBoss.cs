@@ -35,10 +35,15 @@ namespace Nindo
         /// 1000 + 1600, daño x0.5 / x0.4, cura por tramo 25): 'bot on bueno' ganó en 2:24 sin morir y 'bot on promedio'
         /// en 4:04 con 2 muertes; la simulación daba 3.4 y 5.2 min, así que con Gorō el bot real va 0.71x el modelo (se le
         /// pega y le corta las vueltas a la guardia). Objetivo: el bueno ~4.5 min reales, el promedio 1-2 muertes.
-        /// Con estos números (las dos barras al doble, el daño a la mitad, más cura por tramo) y los clips de C3 la
-        /// simulación da: bueno 6.4 min simulados = ~4.6 reales, sin morir; promedio 9.1 simulados = ~7 reales, 1.1
-        /// muertes simuladas = ~1.5 reales, 35 % gana al primer intento (dos tercios de las muertes son armado: con 0.5 en
-        /// las dos barras largas el promedio moría casi siempre en la barra falsa).
+        /// PROVISORIO: esa calibración sale de UNA pelea por bot con los clips de C2; hay que medir de nuevo en Unity
+        /// (3 peleas por bot, Core/PlayClock) con los clips de C3 antes de darlo por bueno.
+        /// Con 2000 + 3200 y el daño a x0.25 / x0.23 cada martillazo sacaba 5-7 de vida (un corte de ninja saca 12): el
+        /// golpe de un oni de 3.4 m no pesaba. Ahora el daño sube a x0.30 / x0.25 (Combo1 6.6, el golpe sísmico 11.4, la
+        /// onda 10), la vida baja un 5 % y cada tramo roto cura 55: lo más pesado que sigue en el objetivo
+        /// (Tools/Dev/goro_fight_sim.py, 1500 peleas, clips de C3): bueno 6.1 min simulados = ~4.3 reales, sin morir;
+        /// promedio 8.5 simulados = ~6.6 reales, 1.27 muertes simuladas = ~1.7 reales, 34 % gana al primer intento, un
+        /// tercio de las muertes armado. Con x0.35 / x0.30 el promedio ya muere 2.4-3 veces (reales) si la pelea del bueno
+        /// dura lo mismo.
         ///  * FirstBarHealth: la barra falsa (fase 1, config.maxHealth) y ArmoredHealth la de la armadura (fase 2): se
         ///    mantiene la proporción de antes (la falsa es ~40 % de la pelea), así la sorpresa llega a mitad de camino.
         ///  * FirstBarDamage / ArmoredDamage: el daño de Gorō respecto del arquetipo en cada barra (golpes, onda y
@@ -47,9 +52,9 @@ namespace Nindo
         ///  * ShedHealAmount: lo que recupera Kaito con cada tramo de armadura roto (ShedAt), la única cura de la pelea
         ///    larga además de TransitionHeal.
         /// </summary>
-        public const float FirstBarHealth = 2000f, ArmoredHealth = 3200f;
-        public const float FirstBarDamage = 0.25f, ArmoredDamage = 0.23f;
-        public const float ShedHealAmount = 40f;
+        public const float FirstBarHealth = 1900f, ArmoredHealth = 3040f;
+        public const float FirstBarDamage = 0.30f, ArmoredDamage = 0.25f;
+        public const float ShedHealAmount = 55f;
 
         /// <summary>Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth = FirstBarHealth).</summary>
         public float armoredHealth = ArmoredHealth;

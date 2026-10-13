@@ -45,6 +45,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
 SIDECAR = os.path.join(REPO, "Nindo", "Assets", "Nindo", "Art", "Characters", "TeamAnims", "GoroAnims.fbx.json")
 GOROBOSS = os.path.join(REPO, "Nindo", "Assets", "Nindo", "Scripts", "Enemies", "Bosses", "GoroBoss.cs")
+ARCHETYPES = os.path.join(REPO, "Nindo", "Assets", "Nindo", "Scripts", "Enemies", "EnemyArchetypes.cs")
 
 
 def load_balance():
@@ -69,29 +70,45 @@ STEP_DEFS = {
     "c1b": ("Combo1B", H, 26, 1.0), "c2b": ("Combo2B", H, 24, 1.0), "c3b": ("Combo3B", H, 30, 1.0),
     "wave": ("SlamWave", U, 40, 1.0), "spin2": ("Spin", U, 24, 1.0),
 }
-# SlamWave: GoroBoss estira la fase activa lo que tarda la onda en llegar al final del carril (10 m a 11 m/s)
-STEP_EXTRA = {"SlamWave": 0.87}
 ARMOR_OF_T = 0.85
+# StepTimeline.FollowTau: después del golpe el clip sale a r0 veces su velocidad (la de la suelta) y frena hacia 1
+FOLLOW_TAU = 0.06
+
+
+def wave_extra(clip):
+    """Lo que GoroBoss alarga el SlamWave: tl.sustain = specialParam / WaveSpeed REEMPLAZA la fase activa del paso (de
+    activeStart a activeEnd del Hit, la arada entera: StepTimeline.NormAt), no se le suma. De GoroBoss.cs (WaveSpeed) y
+    EnemyArchetypes.cs (wave.specialParam y el Hit); antes era 0.87 a mano y sobraban 0.26 s por onda."""
+    ws = float(re.search(r"WaveSpeed\s*=\s*([\d.]+)f", open(GOROBOSS, encoding="utf-8").read()).group(1))
+    arch = open(ARCHETYPES, encoding="utf-8").read()
+    sp = float(re.search(r"wave\.specialParam\s*=\s*([\d.]+)f", arch).group(1))
+    a0, a1 = (float(x) for x in re.search(r'Hit\("SlamWave",\s*[\d.]+,\s*([\d.]+)f,\s*([\d.]+)f', arch).groups())
+    return sp / ws - (a1 - a0) * clip["frames"] / 30.0
 
 
 def step_T(clip, speed=1.0):
     """(T, segundos que dura el paso) con el reloj del juego (StepTimeline.Build: T = la anticipación a 0.85x más la
-    suelta a releaseRate, o el windup si es más largo; tools/Blender/anim/nindo_anim.StepTimeline)."""
+    suelta a releaseRate, o el windup si es más largo; tools/Blender/anim/nindo_anim.StepTimeline). Después del golpe el
+    clip arranca a r0 = 2 x releaseRate veces su velocidad y frena hacia 1 en FollowTau: el seguimiento dura
+    (r0 - 1) FollowTau menos que el resto del clip a velocidad 1."""
     t = dict(clip["timing"], **clip["timing"].get("clock", {}))
     n = float(clip["frames"])
     L = n / 30.0 / speed
     apex, contact = t["apex"] / n, t["contact"] / n
-    T = max(apex * L / 0.85 + (contact - apex) * L / t.get("release_rate", 1.6), t.get("windup", 0.55))
-    return T, T + (1.0 - contact) * L
+    rr = t.get("release_rate", 1.6)
+    T = max(apex * L / 0.85 + (contact - apex) * L / rr, t.get("windup", 0.55))
+    r0 = max(1.0, 2.0 * rr)
+    return T, T + max(0.0, (1.0 - contact) * L - (r0 - 1.0) * FOLLOW_TAU)
 
 
 def load_steps():
     """{paso: (estado, tipo, daño, T, segundos que dura el paso, ventana de armadura)} y la llamada de la avalancha (s)."""
     clips = json.load(open(SIDECAR, encoding="utf-8"))["clips"]
+    extra = {"SlamWave": wave_extra(clips["SlamWave"])}
     out = {}
     for k, (st, kind, dmg, sp) in STEP_DEFS.items():
         T, dur = step_T(clips[st], sp)
-        out[k] = (st, kind, dmg, round(T, 3), round(dur + STEP_EXTRA.get(st, 0.0), 3), round(ARMOR_OF_T * T, 3))
+        out[k] = (st, kind, dmg, round(T, 3), round(dur + extra.get(st, 0.0), 3), round(ARMOR_OF_T * T, 3))
     # AvalancheSummon: de que empieza el paso a la llamada (el 'contacto' del clip)
     return out, step_T(clips["AvalancheSummon"])[0]
 
