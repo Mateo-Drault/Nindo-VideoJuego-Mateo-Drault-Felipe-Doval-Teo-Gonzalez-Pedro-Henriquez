@@ -88,6 +88,8 @@ namespace Nindo
             sorted.RemoveAll(t => t == null);
             sorted.Sort((x, y) => Bearing(x.position - center).CompareTo(Bearing(y.position - center)));
             foreach (var a in sorted) b.Add(a);
+            // chispas y humo (16 sistemas) quedan en loop todo el juego: fuera de cuadro, en pausa (ZoneCulling.Dynamic)
+            ZoneCulling.AddDynamic(go);
             return b;
         }
 
