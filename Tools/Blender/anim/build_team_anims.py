@@ -82,7 +82,7 @@ def archetype_hits(func_names):
 
 # las variantes de zona reusan los clips con sus propios números: también tienen que coincidir
 ARCH_FUNCS = {"ninja": ["Ninja", "NinjaElite", "NinjaMountainMoves", "NinjaLakeMoves", "NinjaBambooMoves"],
-              "sumo": ["Sumo", "Ozeki", "SumoMountainMoves", "SumoLakeMoves", "SumoBambooMoves"], "goro": ["Goro"], "grandpa": []}
+              "sumo": ["Sumo", "Ozeki", "SumoMountainMoves", "SumoLakeMoves", "SumoBambooMoves"], "goro": ["Goro", "GoroPhase2"], "grandpa": []}
 
 
 # ------------------------------------------------------------------------------- mediciones

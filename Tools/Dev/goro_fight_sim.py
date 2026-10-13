@@ -1,6 +1,7 @@
 """Simulación offline de la pelea con Gorō (barra falsa + fase armada) contra los bots de AutoPilot.
 
     python Tools/Dev/goro_fight_sim.py [--runs 400] [--bot bueno|promedio|experto] [--p1 520] [--p2 520] [--dmg 1.0]
+                                       [--p2dmg 0.8] [--shed-heal 15]
 
 Modelo a nivel de golpe (no de cuadro), con los números del código:
   * Gorō (EnemyArchetypes.Goro / GoroPhase2): patrones con su peso, enfriamiento y fase; cada paso con su clip
@@ -14,11 +15,15 @@ Modelo a nivel de golpe (no de cuadro), con los números del código:
   * Fase 1: sin remate (GoroBoss.ApplyFinisherGate); fase 2: remate con <= 12 % y agotado (cinemática: muere).
   * Fase 2: la roca rebota los cortes mientras carga cada golpe (GoroBoss.InArmorWindow): el bot pierde los que mete
     en la anticipación. Avalancha: ~0.55 rocas le pegan al bueno (goro_avalanche_check.py), después queda abierto.
-  * Kaito tiene 100 de vida y no se cura salvo: +8 al "matar" la barra falsa y +40 al terminar la cinemática de la
-    armadura (GoroBoss.TransitionHeal). Si muere, vuelve a la fase 1 (re-presentación 1.2 s y 3.6 s de muerte).
+  * Kaito tiene 100 de vida y no se cura salvo: +8 al "matar" la barra falsa, +40 al terminar la cinemática de la
+    armadura (GoroBoss.TransitionHeal) y 'shed-heal' cada vez que se le rompe un tramo de la armadura (al 66 % y al 33 %
+    de la segunda barra: GoroBoss.shedHeal). Si muere, vuelve a la fase 1 (re-presentación 1.2 s y 3.6 s de muerte).
+  * 'p2dmg' escala el daño de Gorō armado (GoroBoss.armoredDamageScale: golpes, onda y avalancha).
+  * No modela al bot que camina: el bot de verdad se le pega a Gorō, y antes del arreglo de la avalancha (las rocas
+    saltan por encima de Gorō, la armadura aguanta toda la llamada) ese lugar era inmune; ahora no.
 Es un modelo: sirve para comparar vidas y ver órdenes de magnitud; el número final sale del bot en Unity.
 """
-import argparse, math, random
+import argparse, math, random, sys
 
 BOTS = {
     "experto": dict(rt=0.25, sd=0.04, miss=0.0, wrong=0.0, greedy=0.0),
@@ -55,8 +60,9 @@ TAP = 0.32
 
 
 class Sim:
-    def __init__(self, bot, rng, p1, p2, dmg_mul, heal):
+    def __init__(self, bot, rng, p1, p2, dmg_mul, heal, p2dmg=1.0, shed_heal=0.0):
         self.b, self.rng, self.p1, self.p2, self.dmg_mul, self.heal = bot, rng, p1, p2, dmg_mul, heal
+        self.p2dmg, self.shed_heal = p2dmg, shed_heal
         self.combo_i = 0
 
     def kaito_hit(self, mul=1.0):
@@ -91,7 +97,13 @@ class Sim:
         imb = 0.0
         last_used = {p[0]: -99.0 for p in PATTERNS}
         forced_aval = False
+        shed = 0
         while t < t_limit:
+            # la armadura se rompe al 66 % y al 33 % de la segunda barra (GoroBoss.OnDamaged): cada tramo cura
+            if armored:
+                while shed < 2 and health / maxh <= (0.66, 0.33)[shed]:
+                    shed += 1
+                    hp = min(100.0, hp + self.shed_heal)
             phase = 2 if armored else (1 if health / maxh <= 0.5 else 0)
             # ---- neutral: guardia (el bot no pega) y la pausa entre combos (pega hasta que se cubre)
             guard = 0.6 * r.uniform(0.7, 1.2)
@@ -131,7 +143,7 @@ class Sim:
                     t += 1.6 + 4.6
                     expected = {"experto": 0.05, "bueno": 0.55, "promedio": 1.1}[self.bname]
                     k = sum(1 for _ in range(6) if r.random() < expected / 6)
-                    hp -= 24 * k * self.dmg_mul
+                    hp -= 24 * k * self.dmg_mul * self.p2dmg
                     if hp <= 0:
                         return False, t, 2
                     # la pausa: 2.4 s abierto, 4 golpes x1.3
@@ -151,10 +163,10 @@ class Sim:
                 res = self.defend(kind)
                 t += T
                 if res == "hit":
-                    hp -= dmg * self.dmg_mul
+                    hp -= dmg * self.dmg_mul * (self.p2dmg if armored else 1.0)
                     t += 0.65                    # aturdido
                 elif res == "imperfect":
-                    hp -= dmg * 0.35 * self.dmg_mul
+                    hp -= dmg * 0.35 * self.dmg_mul * (self.p2dmg if armored else 1.0)
                     imb += 0.34
                 elif res in ("parry", "perfect"):
                     imb += 1.5 if res == "perfect" else 1.0
@@ -212,6 +224,7 @@ class Sim:
 
 
 def main():
+    sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--runs", type=int, default=400)
     ap.add_argument("--bot", default="bueno")
@@ -219,25 +232,28 @@ def main():
     ap.add_argument("--p2", type=float, default=520)
     ap.add_argument("--dmg", type=float, default=1.0, help="multiplicador del daño de Gorō")
     ap.add_argument("--heal", type=float, default=40)
+    ap.add_argument("--p2dmg", type=float, default=0.8, help="multiplicador del daño de Gorō armado (GoroBoss.armoredDamageScale)")
+    ap.add_argument("--shed-heal", type=float, default=15.0, help="vida que recupera Kaito con cada tramo de armadura roto (GoroBoss.shedHeal)")
     ap.add_argument("--seed", type=int, default=3)
     a = ap.parse_args()
     rng = random.Random(a.seed)
     times, deaths, first_try, p2_deaths = [], [], 0, 0
     one = []
     for _ in range(a.runs):
-        s = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal)
+        s = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal)
         tt, d, ph = s.fight(a.bot)
         times.append(tt); deaths.append(d)
         first_try += d == 0
         p2_deaths += sum(1 for p in ph[:-1] if p == 2)
-        s2 = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal)
+        s2 = Sim(BOTS[a.bot], rng, a.p1, a.p2, a.dmg, a.heal, a.p2dmg, a.shed_heal)
         s2.bname = a.bot
         won, secs, _ = s2.attempt()
         if won:
             one.append(secs)
     times.sort()
     med = times[len(times) // 2]
-    print(f"bot {a.bot}, barras {a.p1:.0f} + {a.p2:.0f}, daño x{a.dmg}, cura de transición {a.heal:.0f}")
+    print(f"bot {a.bot}, barras {a.p1:.0f} + {a.p2:.0f}, daño x{a.dmg} (armado x{a.p2dmg}), cura de transición {a.heal:.0f}, "
+          f"cura por tramo roto {a.shed_heal:.0f}")
     print(f"  pelea hasta ganar (con reintentos): mediana {med / 60:.1f} min, p10 {times[len(times) // 10] / 60:.1f}, p90 {times[len(times) * 9 // 10] / 60:.1f}")
     print(f"  muertes por pelea: media {sum(deaths) / len(deaths):.2f}, gana al primer intento {first_try / len(deaths) * 100:.0f} %, "
           f"muertes en la fase armada {p2_deaths / max(1, sum(deaths)) * 100:.0f} % de las muertes")

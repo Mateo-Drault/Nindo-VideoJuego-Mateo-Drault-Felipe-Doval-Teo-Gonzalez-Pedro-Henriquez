@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Nindo
@@ -9,15 +10,16 @@ namespace Nindo
     ///  * Cuando la barra se vacía, "le ganaste" (FakeDefeat): cae como cualquier jefe vencido (cámara lenta, la órbita de
     ///    la muerte, el golpe de victoria y la música que se va) pero sin bandera, sello ni cartel. Un silencio, la montaña
     ///    retumba y las 16 rocas de la armadura se arrancan de la pared de la cumbre y se le clavan una por una (ArmorRise,
-    ///    GoroArmor), en un plano de costado. Se levanta, ruge y sale el cartel "Gorō, la Montaña Despierta".
+    ///    GoroArmor), en un plano de costado. Se levanta, ruge y sale el cartel "Gorō / La Montaña Despierta".
     ///  * FASE 2: barra nueva entera, el tema de jefe vuelve y entra en su clímax (PlayBossMusic + SetBossMusicPhase(2)).
     ///    Golpes más pesados y con variantes (EnemyArchetypes.GoroPhase2), la onda que sale por el piso (SlamWave) y la
     ///    AVALANCHA (GoroAvalanche). Mientras carga un golpe la roca rebota los cortes (ArmorWindow): hay que desviar o
-    ///    esquivar y pegarle después. Con la vida se le va cayendo la armadura.
+    ///    esquivar y pegarle después. Con la vida se le va cayendo la armadura (y cada tramo roto le devuelve aire a Kaito).
     ///  * Reintento: todo vuelve a la fase 1 (la armadura, el epíteto y la barra). La sorpresa de la barra falsa es la
     ///    primera vez; las siguientes la cinemática va más rápida y sin el silencio largo. Morir en la fase 2 vuelve a la
     ///    1 porque la fase 2 se gana conociendo a Gorō entero (y la 1 se aprende rápido: ~2 min con un jugador bueno).
-    /// bossId 'goro', flags, SealId.Montana y musicKey 'boss_goro' no cambian.
+    /// bossId 'goro', flags, SealId.Montana y musicKey 'boss_goro' no cambian. Los cuadros de los clips y de la armadura
+    /// salen de GoroTimings (generado desde los sidecars).
     /// </summary>
     public class GoroBoss : Boss, ICameraProfile
     {
@@ -25,25 +27,34 @@ namespace Nindo
         /// <summary>Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth).</summary>
         public float armoredHealth = 520f;
         /// <summary>
+        /// Daño de Gorō armado respecto de la fase 1 (golpes, onda y avalancha). Perilla de balance: con más vida en las
+        /// barras el daño tiene que bajar, si no la pelea larga se vuelve desgaste (Tools/Dev/goro_fight_sim.py --p2dmg).
+        /// </summary>
+        public float armoredDamageScale = 0.8f;
+        /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (66 % y 33 % de la segunda barra):
+        /// la única cura de una pelea de varios minutos (goro_fight_sim.py --shed-heal).</summary>
+        public float shedHeal = 15f;
+        /// <summary>
         /// Kaito no se cura en la pelea (solo +8 por "matar" la barra falsa): sin esto llegaba a la fase 2 con lo que le
         /// quedó de la 1 y moría ahí, volviendo a empezar de cero. Como los cambios de acto de Kokuyō (KokuyoBoss.RewardKaito).
         /// </summary>
         public const float TransitionHeal = 40f, TransitionSpirit = 30f;
 
-        // clip ArmorRise (GoroAnims.fbx.json): ruge en f184 y abre los brazos en f190; dura 7 s
-        const float RiseRoar = 184f / 30f, RisePeak = 190f / 30f, RiseLength = 7f;
-        // FakeDefeat: cae de espaldas en f53, quieto desde f60
-        const float FakeDrop = 43f / 30f, FakeHammer = 47f / 30f, FakeBack = 53f / 30f, FakeLength = 2.6f;
-        // AvalancheSummon: clava el martillo en f14 y f31, llama a la montaña en f48; la armadura aguanta hasta f66
-        const float AvalStrike1 = 14f / 30f, AvalStrike2 = 31f / 30f, AvalCall = 48f / 30f, AvalArmorEnd = 66f / 30f, AvalLength = 2.8f;
         const int AvalWaves = 3;
         const float AvalOpenTime = 2.4f;
-        // SlamWave: el martillo cae a 3.9 m y la onda se abre por el piso en un carril
-        const float HeadReach = 3.9f, WaveSpeed = 11f, WaveWidth = 3.2f, ImpactRadius = 1.8f;
+        // SlamWave: el martillo cae a HeadReach y la onda se abre por el piso en un carril. El carril arranca en el borde de
+        // atrás del disco del martillazo y es tan ancho como el disco: lo rojo es lo que pega, nada más y nada menos
+        static float HeadReach => GoroTimings.SlamWaveAt.y;
+        const float WaveSpeed = 11f, ImpactRadius = 1.8f, WaveWidth = 2f * ImpactRadius;
         // la cumbre: la pared del cráter empieza a ~17.5 m del centro (Tools/Blender/world, mont_cumbre)
         const float RimRadius = 17.5f;
-        // el retumbe antes de la primera roca; ArmorRise se para en f148
-        const float RumbleTime = 0.6f, RiseStand = 148f / 30f;
+        // el retumbe antes de la primera roca
+        const float RumbleTime = 0.6f;
+        // StoryDirector.BossReintro devuelve el control a los 1.2 s: la re-presentación llega a la guardia justo ahí
+        const float ReintroTime = 1.2f;
+        // el plano de costado: tirado cerca y bajo; desde que se arrodilla se aleja para que entren las cumbres de la
+        // espalda y el martillo del rugido
+        const float ShotNear = 6.8f, ShotFar = 12.5f, ShotFov = 42f;
 
         public bool Armored => armored;
         bool armored, inCinematic, assembling, wideFrame;
@@ -55,7 +66,8 @@ namespace Nindo
         string baseTitle, baseSubtitle;
         float baseFinisherHealth = -1f;
         int shedStage;
-        bool bounceHinted;
+        bool bounceHinted, barkPending;
+        Vector3 riseCamDir;
 
         // ---- presentación (y la versión corta del reintento)
         string prevAnim = "";
@@ -118,7 +130,7 @@ namespace Nindo
             avalanche?.Clear(false);
             base.ResetEnemy();
             armored = inCinematic = assembling = wideFrame = false;
-            held = forceAvalanche = avalOpen = avalPause = false;
+            held = forceAvalanche = avalOpen = avalPause = barkPending = false;
             slamLive = false;
             shedStage = 0;
             armor.HideAll();
@@ -140,6 +152,8 @@ namespace Nindo
             float dt = Time.deltaTime;
             TickIntro(dt);
             TickSlamWave(dt);
+            // la avalancha terminó por otro camino (una habilidad lo sacó del paso, el reintento): la cámara vuelve
+            if (wideFrame && (avalanche == null || !avalanche.Active)) wideFrame = false;
         }
 
         void LateUpdate()
@@ -148,10 +162,14 @@ namespace Nindo
             armor.TickFalling(Time.deltaTime);
         }
 
+        /// <summary>Lo que pega en el piso, en el mundo: (derecha, adelante) de GoroTimings respecto de Gorō.</summary>
+        Vector3 Local(Vector2 rightForward) =>
+            transform.position + transform.right * rightForward.x + transform.forward * rightForward.y;
+
         /// <summary>
-        /// La presentación (StoryDirector.BossIntroRoutine) toca 'Intro' entera: acá el martillazo al piso del cuadro 13. La
-        /// re-presentación de un reintento dura 1.2 s: Intro arranca en el rugido (f26) un poco más rápida y llega a la
-        /// guardia justo cuando vuelve el control (antes se cortaba en plena subida al hombro).
+        /// La presentación (StoryDirector.BossIntroRoutine) toca 'Intro' entera: acá el martillazo al piso. La re-presentación
+        /// de un reintento dura ReintroTime: Intro arranca con el martillo ya en el hombro, más rápida, y llega a la guardia
+        /// justo cuando vuelve el control (antes se cortaba en plena subida al hombro).
         /// </summary>
         void TickIntro(float dt)
         {
@@ -165,16 +183,17 @@ namespace Nindo
                 introSlam = false;
                 if (!Fighting && Game.Save.HasFlag(StoryDirector.BossSeenFlag(bossId)))
                 {
-                    anim.Play(introAnim, 0.15f, 26f / 84f, 1.45f);
+                    float speed = GoroTimings.IntroLength * (1f - GoroTimings.IntroRiseNorm) / ReintroTime;
+                    anim.Play(introAnim, 0.15f, GoroTimings.IntroRiseNorm, speed);
                     prevAnim = introAnim;
                     introSlam = true;
                 }
             }
             introClock += dt;
-            if (!introSlam && introClock >= 13f / 30f)
+            if (!introSlam && introClock >= GoroTimings.IntroSlam)
             {
                 introSlam = true;
-                Vector3 h = transform.position + transform.forward * 1.6f;
+                Vector3 h = Local(GoroTimings.IntroSlamAt);
                 Game.FX?.Shockwave(h, 4f, new Color(1f, 0.75f, 0.45f));
                 Game.FX?.GroundCrack(h, 2.6f);
                 Game.Audio?.Play("slam", h, 0.9f);
@@ -198,24 +217,25 @@ namespace Nindo
                 }
                 return HitResult.Blocked;
             }
-            return base.ReceiveHit(info);
+            bool inAvalanche = held && State == EnemyState.Attack;
+            var r = base.ReceiveHit(info);
+            // una habilidad lo sacó de la llamada (Enemy la deja pasar la hiperarmadura): la montaña se calla con él, así
+            // nunca hay rocas y martillazos a la vez
+            if (inAvalanche && State != EnemyState.Attack) EndAvalanche(true);
+            return r;
         }
 
-        /// <summary>¿Está cargando un golpe con la armadura puesta? (GoroAnims.fbx.json, 'armor_window' de cada clip)</summary>
+        /// <summary>
+        /// ¿Está cargando un golpe con la armadura puesta? (GoroTimings.ArmorWindow, la 'armor_window' de cada clip). La
+        /// avalancha entera: pegado a Gorō, las rocas saltan por encima de él (GoroAvalanche), y sin esto quedarse a su lado
+        /// regalaba seis segundos de cortes; la ventana para pegarle es la pausa en que queda abierto después.
+        /// </summary>
         bool InArmorWindow()
         {
             var a = CurrentAttack;
             if (a == null) return false;
-            if (a.special == "avalanche") return stepClock < AvalArmorEnd;
-            float from, to;
-            switch (a.state)
-            {
-                case "Combo1B": from = 6f / 54f; to = 37f / 54f; break;
-                case "Combo2B": from = 4f / 46f; to = 25f / 46f; break;
-                case "Combo3B": from = 5f / 54f; to = 37f / 54f; break;
-                case "SlamWave": from = 5f / 64f; to = 36f / 64f; break;
-                default: from = 0.08f; to = a.activeStart + 0.03f; break;
-            }
+            if (a.special == "avalanche") return held || stepClock < GoroTimings.AvalArmorEnd;
+            if (!GoroTimings.ArmorWindow(a.state, out float from, out float to)) { from = 0.08f; to = a.activeStart + 0.03f; }
             return stepNorm >= from && stepNorm <= to;
         }
 
@@ -240,6 +260,13 @@ namespace Nindo
             }
             Game.Audio?.Play("boulder_break", transform.position, 0.8f);
             Game.Camera?.Shake(0.25f);
+            // romperle la montaña le devuelve el aire a Kaito: sin una cura la fase larga se volvía puro desgaste
+            var k = Game.Player;
+            if (k != null && k.IsAlive && shedHeal > 0f)
+            {
+                k.Heal(shedHeal);
+                BandanaGlow.Ensure(k)?.Pulse(BandanaGlow.Gold, 0.6f);
+            }
         }
 
         // ================================================================== la barra falsa
@@ -293,14 +320,21 @@ namespace Nindo
             Game.Audio?.StopBossMusic(seen ? 1f : 2f);
             Game.FX?.EnemyDeath(AimPoint, dir, true);
             float t = 0f;
-            bool drop = false, hammer = false, back = false;
-            while (t < FakeLength / sp)
+            bool knee = false, drop = false, hammer = false, back = false;
+            while (t < GoroTimings.FakeLength / sp)
             {
                 t += Time.deltaTime;
                 float c = t * sp;
-                if (!drop && c >= FakeDrop) { drop = true; Game.FX?.Dust(transform.position + transform.forward * 0.6f, 1f); }
-                if (!hammer && c >= FakeHammer) { hammer = true; Game.Audio?.Play("rock_impact", transform.position, 0.7f); }
-                if (!back && c >= FakeBack)
+                if (!knee && c >= GoroTimings.FakeKnee) { knee = true; Game.FX?.Dust(transform.position + transform.forward * 0.4f, 0.8f); }
+                if (!drop && c >= GoroTimings.FakeDrop) { drop = true; Game.FX?.Dust(transform.position + transform.forward * 0.6f, 1f); }
+                if (!hammer && c >= GoroTimings.FakeHammerLand)
+                {
+                    hammer = true;
+                    Game.Audio?.Play("rock_impact", transform.position, 0.7f);
+                    // el mango cae acostado a lo largo de su brazo derecho (la cabeza quedó clavada adelante a la derecha)
+                    Game.FX?.Dust(transform.position + transform.right * 1.65f + transform.forward * 0.2f, 1f);
+                }
+                if (!back && c >= GoroTimings.FakeBackHit)
                 {
                     back = true;
                     Game.FX?.Dust(transform.position - transform.forward * 1.2f, 2f);
@@ -309,6 +343,9 @@ namespace Nindo
                 }
                 yield return null;
             }
+            // el plano de la armadura se decide ya: Kaito camina fuera del cuadro durante el silencio
+            riseCamDir = SideShotDirection();
+            ClearShotOfKaito(riseCamDir);
             // el silencio: la música ya se fue, queda el viento de la cumbre
             yield return new WaitForSeconds(seen ? 0.4f : 1.6f);
             if (shot >= 0) { Game.Camera?.CancelShot(shot); shot = -1; }
@@ -329,39 +366,47 @@ namespace Nindo
                 Vector3 d = Quaternion.Euler(0f, i * 45f + Random.Range(-15f, 15f), 0f) * Vector3.forward;
                 Game.FX?.Dust(arenaCenter + d * (RimRadius - 1f) + Vector3.up * 2f, 1.8f);
             }
-            Vector3 camDir = SideShotDirection();
+            Vector3 camDir = riseCamDir;
             armor.PlanAssembly(arenaCenter, RimRadius, camDir, sp, GroundMask);
             float lead = armor.Lead;
             // el plano arranca con el retumbe (RumbleTime antes de la primera roca) y dura hasta el rugido y un poco más
-            shot = PlayRiseShot(camDir, RumbleTime + lead + (RiseLength + 0.5f) / sp, RumbleTime + lead + RiseStand / sp);
+            shot = PlayRiseShot(camDir, RumbleTime + lead + (GoroTimings.RiseLength + 0.5f) / sp,
+                RumbleTime + lead + GoroTimings.RiseKneel / sp, RumbleTime + lead + GoroTimings.RiseRoar / sp);
             assemblyClock = -lead;
-            assembling = true;
-            // el retumbe solo antes de que vuele la primera roca
+            // el retumbe solo: el reloj del vuelo (y la primera roca) arranca después
             yield return new WaitForSeconds(RumbleTime);
-            bool started = false, roared = false, peaked = false;
-            while (assemblyClock < RiseLength / sp)
+            assembling = true;
+            bool started = false, titled = false, roared = false, peaked = false;
+            while (assemblyClock < GoroTimings.RiseLength / sp)
             {
                 assemblyClock += Time.deltaTime;
                 if (!started && assemblyClock >= 0f)
                 {
                     started = true;
-                    // FakeDefeat termina exacto en la pose de arranque de ArmorRise: sin fundido
-                    anim.Play("ArmorRise", 0f, 0f, sp);
+                    // FakeDefeat termina en la pose de arranque de ArmorRise salvo el brazo derecho (el solver lo resuelve
+                    // por otra rama: goro_checks mide ~18°): un fundido de 0.2 s entre dos poses quietas no se ve
+                    anim.Play("ArmorRise", 0.2f, 0f, sp);
                 }
-                if (!roared && assemblyClock * sp >= RiseRoar)
+                float c = assemblyClock * sp;
+                // el cartel apenas se para: así se apagó antes de la primera avalancha (con el rugido se encimaba con ella)
+                if (!titled && c >= GoroTimings.RiseStand)
+                {
+                    titled = true;
+                    Game.UI?.ShowAreaTitle(StoryText.Goro, StoryText.GoroEpithet, "IconBoss");
+                }
+                if (!roared && c >= GoroTimings.RiseRoar)
                 {
                     roared = true;
                     Game.Audio?.Play("boss_roar", transform.position, 1f);
                     Game.Camera?.Shake(0.6f);
                 }
-                if (!peaked && assemblyClock * sp >= RisePeak)
+                if (!peaked && c >= GoroTimings.RisePeak)
                 {
                     peaked = true;
                     Game.Camera?.Punch(-4f, 0.5f);
                     Game.FX?.Shockwave(transform.position, 7f, new Color(1f, 0.55f, 0.3f));
                     Game.FX?.FlashLight(AimPoint, new Color(1f, 0.55f, 0.25f), 6f, 12f, 0.6f);
                     Game.Input?.Rumble(0.9f, 0.6f, 0.5f);
-                    Game.UI?.ShowAreaTitle(StoryText.GoroTitle, "", "IconBoss");
                     // con el rugido se vienen abajo más rocas alrededor (del lado de atrás: no pasan por el lente)
                     for (int i = 0; i < 6; i++)
                     {
@@ -382,35 +427,57 @@ namespace Nindo
             BeginArmored();
         }
 
-        /// <summary>De costado (con un poco de frente), del lado que da al centro de la cumbre: ahí hay lugar para la cámara.</summary>
+        /// <summary>
+        /// De costado (con un poco de frente) por su IZQUIERDA: ArmorRise clava el martillo a su derecha y desde ese lado el
+        /// mango le tapaba el torso justo cuando se le pegan las hombreras y las cumbres. Si de ese lado no entra la cámara
+        /// (cayó cerca de la pared), se corre hacia el centro de la cumbre.
+        /// </summary>
         Vector3 SideShotDirection()
         {
             Vector3 fwd = transform.forward.Flat().normalized;
-            Vector3 right = Vector3.Cross(Vector3.up, fwd);
+            Vector3 left = -Vector3.Cross(Vector3.up, fwd);
+            Vector3 dir = (left * 0.85f + fwd * 0.45f).normalized;
             Vector3 toCenter = (arenaCenter - transform.position).Flat();
-            Vector3 side = Vector3.Dot(right, toCenter) >= 0f ? right : -right;
-            Vector3 dir = (side * 0.85f + fwd * 0.45f).normalized;
             Vector3 inward = toCenter.sqrMagnitude > 0.01f ? toCenter.normalized : -fwd;
-            for (int i = 0; i < 8 && ((transform.position + dir * 10.5f) - arenaCenter).Flat().magnitude > arenaRadius; i++)
+            for (int i = 0; i < 8 && ((transform.position + dir * ShotFar) - arenaCenter).Flat().magnitude > RimRadius - 1.5f; i++)
                 dir = Vector3.Slerp(dir, inward, 0.3f).Flat().normalized;
             return dir;
         }
 
-        int PlayRiseShot(Vector3 dir, float duration, float stand)
+        /// <summary>Si Kaito quedó entre la cámara y Gorō, camina hasta atrás y al costado de Gorō (se lo ve mirando).</summary>
+        void ClearShotOfKaito(Vector3 dir)
+        {
+            var p = Game.Player;
+            if (p == null || !p.IsAlive) return;
+            Vector3 c = transform.position;
+            Vector3 to = (p.transform.position - c).Flat();
+            Vector3 perp = Vector3.Cross(Vector3.up, dir);
+            float along = Vector3.Dot(to, dir), lat = Vector3.Dot(to, perp);
+            // el cono del plano: delante de Gorō hacia la cámara y a menos de ~3 m del eje
+            if (along < 0.5f || Mathf.Abs(lat) > 3f + along * 0.35f) return;
+            float s = lat >= 0f ? 1f : -1f;
+            Vector3 goal = c - dir * 2.5f + perp * (s * 4f);
+            Vector3 off = (goal - arenaCenter).Flat();
+            if (off.magnitude > arenaRadius - 1f) goal = arenaCenter + off.normalized * (arenaRadius - 1f);
+            goal.y = c.y;
+            p.ScriptedMoveTo(goal, 4.5f);
+        }
+
+        int PlayRiseShot(Vector3 dir, float duration, float kneel, float roar)
         {
             if (Game.Camera == null) return -1;
             Vector3 c = transform.position;
-            // tirado: cerca y bajo, se acerca mientras las rocas se le pegan; cuando se para (f148) se aleja y sube para que
-            // entren las cumbres de la espalda y el martillo arriba del rugido (de 8.5 m arriba se cortaba)
+            // tirado: cerca y bajo, se acerca mientras las rocas se le pegan; desde que se arrodilla se aleja y sube hasta el
+            // rugido, para que entren las cumbres de la espalda y el martillo en alto (Tools/Blender/bosses/goro/goro_rise_review)
             return Game.Camera.PlayShot(t =>
             {
-                float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / stand));
-                float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - stand) / (duration - stand)));
-                float dist = Mathf.Lerp(Mathf.Lerp(8.5f, 6.8f, a), 11f, b);
-                Vector3 pos = c + dir * dist + Vector3.up * Mathf.Lerp(Mathf.Lerp(1.7f, 2.1f, a), 2.8f, b);
-                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, 1.3f, a), 3.0f, b);
+                float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / kneel));
+                float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - kneel) / Mathf.Max(0.1f, roar - kneel)));
+                float dist = Mathf.Lerp(Mathf.Lerp(8.5f, ShotNear, a), ShotFar, b);
+                Vector3 pos = c + dir * dist + Vector3.up * Mathf.Lerp(Mathf.Lerp(1.7f, 2.1f, a), 3.0f, b);
+                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, 1.3f, a), 3.4f, b);
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
-            }, () => 42f, 0.9f, duration, 0.8f);
+            }, () => ShotFov, 0.9f, duration, 0.8f);
         }
 
         /// <summary>Barra nueva entera, el epíteto, el tema en su clímax y a pelear (la avalancha primero: se la presenta).</summary>
@@ -426,26 +493,48 @@ namespace Nindo
             // más agresivo y con ventanas un poco más cortas (Boss.ResetEnemy vuelve a la config original)
             config.attackCooldown *= 0.8f;
             config.exhaustedTime = 3.4f;
+            ScaleArmoredDamage();
             ApplyFinisherGate();
-            title = StoryText.GoroTitleBar;
+            // la barra como la de la fase 1: el nombre y el epíteto abajo (el cartel ya salió al pararse)
+            title = StoryText.Goro;
             subtitle = StoryText.GoroEpithet;
             HoldCutscene(false);
             ExitScripted(false);
             SetState(EnemyState.Chase);
             IsAggro = true;
             target = Game.Player;
-            nextAttackTime = Time.time + 1.4f;
+            // la avalancha espera a que se vaya el cartel: el carril rojo es el único aviso justo de la primera
+            nextAttackTime = Time.time + 3f;
             forceAvalanche = true;
+            // el grito sale cuando termina esa primera avalancha (encima de ella tapaba los carriles de arriba)
+            barkPending = true;
             Game.UI?.ShowBossBar(this);
             Game.Audio?.PlayBossMusic(musicKey);
             Game.Audio?.SetBossMusicPhase(2);
-            Game.UI?.ShowBark("Gorō", StoryText.GoroLine("fase2"), UIFactory.Crimson, 3.2f);
             var p = Game.Player;
             if (p != null && p.IsAlive)
             {
                 p.Heal(TransitionHeal);
                 p.AddSpirit(TransitionSpirit);
                 BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 1f);
+            }
+        }
+
+        /// <summary>El daño armado (perilla armoredDamageScale) en cada paso una sola vez (los combos comparten pasos).</summary>
+        void ScaleArmoredDamage()
+        {
+            if (Mathf.Approximately(armoredDamageScale, 1f) || config.patterns == null) return;
+            var done = new HashSet<AttackDef>();
+            foreach (var pt in config.patterns)
+            {
+                if (pt == null || pt.steps == null) continue;
+                foreach (var s in pt.steps)
+                {
+                    if (s == null || !done.Add(s)) continue;
+                    s.damage *= armoredDamageScale;
+                    // la avalancha no pega con el martillo: su daño por roca va en specialParam
+                    if (s.special == "avalanche") s.specialParam *= armoredDamageScale;
+                }
             }
         }
 
@@ -471,6 +560,8 @@ namespace Nindo
             Game.FX?.Embers(at);
             Game.Audio?.Play("rock_impact", at, big ? 1f : 0.8f);
             Game.Camera?.Shake(big ? 0.3f : 0.14f);
+            // las de las piernas y el pecho son chicas en el plano: un empujón corto del lente marca cada golpe
+            if (!big) Game.Camera?.Punch(-1.5f, 0.3f);
             Game.Input?.Rumble(big ? 0.6f : 0.3f, 0.2f, 0.12f);
         }
 
@@ -516,7 +607,7 @@ namespace Nindo
                     anim.SetSpeed(1f);
                     break;
                 case "slamwave":
-                    // la fase activa (la arada, f34-f43) dura lo que tarda la onda en llegar al final: el aviso sigue vivo
+                    // la fase activa (la arada) dura lo que tarda la onda en llegar al final: el aviso sigue vivo
                     slamLive = slamHit = false;
                     slamAttack = a;
                     tl.sustain = Mathf.Max(0.1f, a.specialParam / WaveSpeed);
@@ -552,12 +643,17 @@ namespace Nindo
                 {
                     Vector3 o = slamLive || specialFired ? slamO : transform.position;
                     Vector3 d = slamLive || specialFired ? slamD : transform.forward.Flat().normalized;
-                    area = new TellArea { lane = true, origin = o, forward = d, size = HeadReach + a.specialParam, width = WaveWidth };
+                    // del borde de atrás del disco del martillazo hasta el final de la onda
+                    area = new TellArea { lane = true, origin = o + d * (HeadReach - ImpactRadius), forward = d, size = ImpactRadius + a.specialParam, width = WaveWidth };
                     return true;
                 }
                 default: return base.HitAreaFor(a, out area);
             }
         }
+
+        /// <summary>El golpe sísmico pega donde cae la cabeza del martillo (antes, a 0.4 del alcance: entre los pies y el martillo).</summary>
+        protected override Vector3 SlamCenter(AttackDef a) =>
+            a.state == "Heavy" ? Local(GoroTimings.HeavyLandAt) : base.SlamCenter(a);
 
         protected override void TickSpecial(AttackDef a, float dt)
         {
@@ -577,13 +673,22 @@ namespace Nindo
             }
         }
 
+        /// <summary>Mientras ruedan rocas no arranca otro golpe (ni rondando ni persiguiendo): nunca carriles y martillazos a la vez.</summary>
+        bool AvalancheBusy => avalanche != null && avalanche.Active;
+
+        protected override void TickStrafe(float dt)
+        {
+            if (AvalancheBusy) nextAttackTime = Mathf.Max(nextAttackTime, Time.time + 0.4f);
+            base.TickStrafe(dt);
+        }
+
         // ------------------------------------------------------------------ avalancha
         void TickAvalancheStep(AttackDef a)
         {
             float c = stepClock;
-            if (!avalStrike1 && c >= AvalStrike1) { avalStrike1 = true; HammerToGround(0.35f); }
-            if (!avalStrike2 && c >= AvalStrike2) { avalStrike2 = true; HammerToGround(0.5f); }
-            if (!avalCalled && c >= AvalCall)
+            if (!avalStrike1 && c >= GoroTimings.AvalStrike1) { avalStrike1 = true; HammerToGround(GoroTimings.AvalStrike1At, 0.35f); }
+            if (!avalStrike2 && c >= GoroTimings.AvalStrike2) { avalStrike2 = true; HammerToGround(GoroTimings.AvalStrike2At, 0.5f); }
+            if (!avalCalled && c >= GoroTimings.AvalCall)
             {
                 avalCalled = true;
                 wideFrame = true;
@@ -597,17 +702,28 @@ namespace Nindo
                 }
                 avalanche?.Begin(AvalWaves, a.specialParam, a.knockback);
             }
-            if (!avalIdle && c >= AvalLength) { avalIdle = true; anim.Play(config.animGuard, 0.3f); }
+            if (!avalIdle && c >= GoroTimings.AvalLength) { avalIdle = true; anim.Play(config.animGuard, 0.3f); }
             // termina cuando no queda roca: el paso sigue con su línea de tiempo (ya pasada) y cierra el patrón
             if (avalCalled && held && (avalanche == null || !avalanche.Active)) { held = false; wideFrame = false; }
         }
 
-        void HammerToGround(float shake)
+        /// <summary>Corta la avalancha en curso (las rocas que ruedan se rompen donde están).</summary>
+        void EndAvalanche(bool breakFx)
         {
-            Vector3 h = transform.position + transform.forward * 2.4f;
-            Game.FX?.Shockwave(h, 3.5f, new Color(1f, 0.75f, 0.45f));
+            avalanche?.Clear(breakFx);
+            held = false;
+            wideFrame = false;
+        }
+
+        /// <summary>
+        /// Los martillazos que llaman a la montaña: no pegan, así que no llevan el anillo de onda de los que sí (Heavy, el
+        /// SlamWave); polvo, la grieta y el golpe, donde cae la cabeza del martillo.
+        /// </summary>
+        void HammerToGround(Vector2 at, float shake)
+        {
+            Vector3 h = Local(at);
             Game.FX?.GroundCrack(h, 2.4f);
-            Game.FX?.Dust(h, 1.3f);
+            Game.FX?.Dust(h, 1.5f);
             Game.Audio?.Play("slam", h, 0.9f);
             Game.Camera?.Shake(shake);
             Game.Input?.Rumble(0.6f, 0.3f, 0.2f);
@@ -616,6 +732,7 @@ namespace Nindo
         /// <summary>La avalancha se fuerza apenas se arma (se la presenta con su cartel) y después sale por sorteo.</summary>
         protected override void TickChase(float dt)
         {
+            if (AvalancheBusy) nextAttackTime = Mathf.Max(nextAttackTime, Time.time + 0.4f);
             if (forceAvalanche && armored && Time.time >= nextAttackTime && target != null && target.IsAlive && Game.Combat != null && Game.Combat.RequestAttackToken(this))
             {
                 forceAvalanche = false;
@@ -643,6 +760,11 @@ namespace Nindo
             avalOpen = true;
             savedImbalance = Imbalance;
             BecomeExhausted();
+            if (barkPending)
+            {
+                barkPending = false;
+                Game.UI?.ShowBark(StoryText.Goro, StoryText.GoroLine("fase2"), UIFactory.Crimson, 3.2f);
+            }
         }
 
         protected override void BecomeExhausted()

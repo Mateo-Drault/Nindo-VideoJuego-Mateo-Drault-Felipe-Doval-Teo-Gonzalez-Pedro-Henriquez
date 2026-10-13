@@ -1,4 +1,4 @@
-"""La armadura de roca de Gorō: kit, sidecar con el contrato de la cinemática y renders (Blender 4.4, -b).
+"""La armadura de roca de Gorō: kit, sidecar con el contrato de la cinemática y renders (Blender 5.2, -b).
 
   blender -b --factory-startup --python Tools/Blender/bosses/goro/build_goro_armor.py -- [--export]
 
@@ -71,7 +71,7 @@ def sidecar(armor, obj, ch):
     return {
         "kit": GA.KIT_ID, "fbx": "Kit_" + GA.KIT_ID + ".fbx", "character": "goro", "model": ch.spec["fbx"],
         "tris": tris, "bones": [GA.BONE_PREFIX + p["name"] for p in GA.PIECES],
-        "materials": {"Nindo_Palette": "granito (rock, rock_dark, rock_light, rock_brown) y nieve (snow, snow_shade) por UV",
+        "materials": {"Nindo_Palette": "granito oscuro (rock_dark, rock_brown_dark, con facetas de rock y rock_brown) y nieve en las tapas (snow, snow_shade) por UV",
                       "Nindo_Emissive": GA.EMBER + " (las vetas de brasa entre las rocas de cada pieza)"},
         "frames": "start_unity / center_unity / spin_axis_unity: metros en el espacio local del transform de Gorō (el que "
                   "tiene Enemy: +Z adelante, +X derecha, +Y arriba). *_authoring: el marco de autoría de team_rig "

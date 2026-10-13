@@ -20,11 +20,11 @@ namespace Nindo
         public const string MizuchiPhase2 = "¡El sello corrompe a Mizuchi!";
         public const string MizuchiPhase3 = "¡La cascada responde!";
         public const string MizuchiFreed = "Mizuchi, liberado";
-        // Gorō armado (GoroBoss): el cartel de la fase 2 y la barra ("Gorō," + el epíteto en dorado, como el título de
-        // la primera barra). La montaña le da la armadura y le tira las rocas: despertó con él
-        public const string GoroEpithet = "la Montaña Despierta";
-        public const string GoroTitle = "Gorō, la Montaña Despierta";
-        public const string GoroTitleBar = "Gorō,";
+        // Gorō armado (GoroBoss): el cartel de la fase 2 y la barra llevan el nombre arriba y el epíteto abajo, igual que
+        // la primera barra ("Gorō" / "El Martillo de Kodoyama"). La montaña le da la armadura y le tira las rocas:
+        // despertó con él
+        public const string Goro = "Gorō";
+        public const string GoroEpithet = "La Montaña Despierta";
 
         public static string CheckpointName(string id)
         {

@@ -3,9 +3,12 @@
     "C:/Program Files/Blender Foundation/Blender 5.2/blender.exe" -b --python Tools/Blender/bosses/goro/build_goro_boulders.py -- [--export] [--preview DIR]
 
 Las rocas del mundo (props_nature.build_rock) son lajas chatas apoyadas en el piso: rodando se leían como platos. Estas
-son cascos convexos de puntos sobre una esfera achatada al azar (granito facetado como la armadura, con manchas de nieve
-pegada: bajan de la pared nevada de la cumbre), centradas en el origen para girar sobre su centro. Miden 1 m de diámetro;
-GoroAvalanche las escala a 2r (r = 0.75-0.9 m). Los pedazos ('Shard_*') también miden 1 m y se escalan al romperse.
+son redondeadas para rodar, pero de la misma roca que la armadura de Gorō (la montaña que lo arma es la que se le viene
+encima): granito oscuro (rock_dark de base, con caras de rock y rock_brown_dark), una tapa de nieve en las caras de
+arriba (~15 %, la regla de rock_snow_a) y DOS cascos encimados con una veta de brasa en la unión, así la silueta tiene
+una muesca (un solo casco convexo daba una gema de octaedro, un dado gris). Centradas en el origen para girar sobre su
+centro; miden 1 m de diámetro y GoroAvalanche las escala a 2r (r = 0.75-0.9 m). Los pedazos ('Shard_*') también miden
+1 m, son lajas partidas de dos tonos y se escalan al romperse.
 
 El FBX lleva todos los objetos juntos (Boulder_A..C, Shard_A..D): GoroAvalanche toma las mallas del prefab por nombre.
 Sin colisión (no las toca la física: el rodar es cuenta propia).
@@ -44,18 +47,46 @@ def sphere_pts(rng, n, radius, squash, jitter):
     return pts
 
 
-def boulder(name, seed, n, squash, jitter, snow):
+def granite(rng, snow_t=0.86, snow=True):
+    """Color por cara: tapa de nieve en las que miran casi arriba, el resto granito oscuro con caras de granito medio y
+    pardo (tres tonos: las facetas se leen sin textura, como en la armadura)."""
+    def fn(f):
+        z = N.nrm(f).z
+        u = rng.random()
+        if snow and z > snow_t:
+            return "snow" if u < 0.8 else "snow_shade"
+        if z < -0.4:
+            return "rock_dark" if u < 0.7 else "rock_brown_dark"
+        return "rock_dark" if u < 0.55 else ("rock" if u < 0.8 else "rock_brown_dark")
+    return fn
+
+
+def boulder(name, seed, n, squash, jitter, snow, notch):
     rng = random.Random(seed)
     mb = L.MeshBuilder(name, seed)
-    # caja con los cantos muy biselados (como las rocas del mundo, props_nature.chamfer_box_pts) casi cúbica, más unos
-    # puntos sobre la esfera que la redondean: caras grandes y planas de roca, pero rueda sin trabarse. Solo la esfera
-    # daba un dado de icosaedro, demasiado regular
-    pts = N.chamfer_box_pts(rng, (0, 0, 0), 0.5, 0.5 * rng.uniform(0.88, 0.98), 0.5 * squash, chamfer=0.62, jit=0.14, taper=0.9)
-    pts += sphere_pts(rng, n, 0.53, squash, jitter)
-    p = N.hull(mb, pts, "rock")
-    # nieve pegada en las caras de arriba (contrasta con el granito gris), granito facetado en el resto
-    N.rock_colors(p, rng, light="rock", mid="rock", dark="rock_dark",
-                  top="snow" if snow else None, top_alt="snow_shade", top_t=0.45, p_top=0.9)
+    # el casco grande: caja con los cantos muy biselados (como las rocas del mundo, props_nature.chamfer_box_pts) más
+    # unos puntos sobre la esfera que la redondean: caras grandes y planas de roca, pero rueda sin trabarse
+    pts = N.chamfer_box_pts(rng, (0, 0, 0), 0.44, 0.44 * rng.uniform(0.88, 0.98), 0.44 * squash, chamfer=0.62, jit=0.14, taper=0.9)
+    pts += sphere_pts(rng, n, 0.47, squash, jitter)
+    big = N.hull(mb, pts, "rock_dark")
+    big.color_faces(granite(rng, snow=snow))
+    # el segundo, más chico y corrido hacia 'notch': la unión de los dos tiene una muesca (la cara partida)
+    d = Vector(notch).normalized()
+    c = d * 0.38
+    pts2 = [Vector(q) * 0.62 + c for q in sphere_pts(rng, 9, 0.5, 0.9, 0.3)]
+    small = N.hull(mb, pts2, "rock_dark")
+    small.color_faces(granite(rng, snow=snow))
+    # veta de brasa en la unión: un núcleo chato metido entre los dos (la roca del cráter que arma a Gorō)
+    side = d.cross(Vector((0, 0, 1)))
+    if side.length < 1e-3:
+        side = Vector((1, 0, 0))
+    side.normalize()
+    up = side.cross(d).normalized()
+    # en el plano donde se cortan los dos cascos (~0.36 m del centro, un anillo de ~0.3 m): el disco es un poco más ancho
+    # y asoma 4 cm por la muesca
+    core = [d * 0.36 + side * (0.34 * math.cos(a)) + up * (0.34 * math.sin(a)) + d * (0.04 * (1 if i % 2 else -1))
+            for i, a in enumerate(TAU * k / 10 for k in range(10))]
+    N.hull(mb, core, "glow_fire")
     mb.collider_none()
     return mb.finish()
 
@@ -64,8 +95,8 @@ def shard(name, seed):
     rng = random.Random(seed)
     mb = L.MeshBuilder(name, seed)
     pts = sphere_pts(rng, 9, 0.5, rng.uniform(0.45, 0.7), 0.45)
-    p = N.hull(mb, pts, "rock")
-    N.rock_colors(p, rng, top="snow_shade", top_t=0.6, p_top=0.5)
+    p = N.hull(mb, pts, "rock_dark")
+    p.color_faces(granite(rng, snow_t=0.8, snow=seed % 2 == 0))
     mb.collider_none()
     return mb.finish()
 
@@ -73,9 +104,9 @@ def shard(name, seed):
 def build():
     L.clear_scene()
     objs = [
-        boulder("Boulder_A", 11, 8, 0.92, 0.2, True),
-        boulder("Boulder_B", 23, 7, 0.84, 0.25, True),
-        boulder("Boulder_C", 37, 6, 0.95, 0.3, False),
+        boulder("Boulder_A", 11, 8, 0.92, 0.2, True, (1.0, 0.3, 0.5)),
+        boulder("Boulder_B", 23, 7, 0.84, 0.25, True, (-0.6, 0.8, -0.2)),
+        boulder("Boulder_C", 37, 6, 0.95, 0.3, True, (0.2, -1.0, 0.6)),
     ]
     objs += [shard(f"Shard_{c}", 50 + i) for i, c in enumerate("ABCD")]
     for o in objs:

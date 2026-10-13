@@ -16,7 +16,10 @@ namespace Nindo
     ///  * una ola nueva se arma recién cuando todas las rocas de la anterior pasaron a Kaito: nunca hay dos olas
     ///    encimadas sobre él (Tools/Dev/goro_avalanche_check.py lo verifica con la cámara y la arena reales);
     ///  * las rocas se rompen contra la barrera del borde o contra el propio Gorō (la armadura de su montaña no le hace
-    ///    nada): detrás de él no llegan.
+    ///    nada): detrás de él no llegan. Salvo la que viene por Kaito: si Gorō está en el medio, rebota en su armadura y
+    ///    salta por encima de él (pegado a Gorō no había roca que llegara: era el lugar más seguro de la pelea);
+    ///  * el carril y la marca de caída se dibujan siempre, con o sin las ayudas de combate: no hay pose de Gorō por cada
+    ///    roca, el carril ES el aviso (como el filo encendido de los golpes; las ayudas solo sacan la marca de la cabeza).
     /// Las rocas no tienen física: rodar, rebotar y romperse es cuenta propia (barato y determinista). Sin asignaciones
     /// por cuadro: rocas, carriles y pedazos salen de listas reutilizadas.
     /// </summary>
@@ -29,6 +32,10 @@ namespace Nindo
         // el arranque se corre este tanto hacia adentro del cuadro: Kaito se mueve y la cámara lo sigue mientras la roca
         // cae (sin esto ~1 de cada 5 arranques quedaba en el borde y salía de cuadro al correrse 1.5 m)
         const float StartBackoff = 1.8f;
+        // el salto por encima de Gorō: cae 1 m pasando su radio, con la altura de la armadura (cumbres a ~3.5 m)
+        const float HopPast = 1.0f, HopHeight = 4.0f;
+        // giros que se prueban para que Gorō no tape el carril de Kaito antes de hacerla saltar (grados)
+        static readonly float[] Detours = { 25f, -25f, 40f, -40f };
         const int MaxEmptyWaves = 4;
 
         class Boulder
@@ -39,7 +46,8 @@ namespace Nindo
             public Vector3 S, E, D, from, axis, prev;
             public Quaternion spin;
             public int stage;          // 0 avisando (y cayendo), 1 rodando, 2 roto (se apaga el carril), 3 libre
-            public bool resolved, cued, onBoss;
+            public bool resolved, cued, onBoss, hop, hopped;
+            public float hopA, hopB;   // tramo del carril (m desde S) en que va por el aire por encima de Gorō
         }
 
         class Shard
@@ -235,10 +243,19 @@ namespace Nindo
             // bajan hacia la cámara (de arriba de la pantalla): es el lado de la arena que más se ve
             Vector3 down = -cam.transform.forward.Flat().normalized;
             if (down.sqrMagnitude < 0.01f) down = Vector3.back;
-            Vector3 dir = Quaternion.Euler(0f, Random.Range(-14f, 14f), 0f) * down;
+            float r = Random.Range(0.75f, 0.9f);
+            float a0 = Random.Range(-14f, 14f);
+            Vector3 dir = Quaternion.Euler(0f, a0, 0f) * down;
+            // Gorō entre la pared y Kaito: primero se gira la ola para que no lo tape; si no alcanza (pegado a él), la roca
+            // de Kaito salta por encima
+            bool hop = BlockedByBoss(k, dir, r, cam);
+            for (int i = 0; hop && i < Detours.Length; i++)
+            {
+                Vector3 alt = Quaternion.Euler(0f, a0 + Detours[i], 0f) * down;
+                if (!BlockedByBoss(k, alt, r, cam)) { dir = alt; hop = false; }
+            }
             Vector3 side = Vector3.Cross(Vector3.up, dir);
             float speed = 8.5f + 0.5f * wave;
-            float r = Random.Range(0.75f, 0.9f);
             float w = 2f * (r + KaitoPad);
             // carriles: uno por Kaito y pasillos de GapMin-GapMax a los costados (la primera ola, uno solo al lado)
             int n = wave == 0 ? 2 : 3;
@@ -250,7 +267,8 @@ namespace Nindo
             {
                 float x = i == 0 ? 0f : i == 1 ? sgn * a : -sgn * b2;
                 Vector3 bas = k + side * x;
-                if (!LaneFor(bas, dir, r, cam, out Vector3 S, out Vector3 E, out bool onBoss)) continue;
+                bool through = i == 0 && hop;
+                if (!LaneFor(bas, dir, r, cam, through, out Vector3 S, out Vector3 E, out bool onBoss, out float hopA)) continue;
                 float ahead = Vector3.Dot((k - S).Flat(), dir);
                 // aviso: lo que haga falta para que entre el aviso y el golpe haya MinWarning s (nunca menos de MinTell)
                 float tell = Mathf.Max(MinTell, MinWarning - Mathf.Max(0f, ahead - r - KaitoPad) / speed);
@@ -262,6 +280,10 @@ namespace Nindo
                 // las de los costados caen un poco después: se lee como un derrumbe, no como una fila
                 bo.tLand = Mathf.Max(tLand, clock + tell) + 0.12f * planned;
                 bo.onBoss = onBoss;
+                bo.hop = through && hopA >= 0f;
+                bo.hopped = false;
+                bo.hopA = hopA;
+                bo.hopB = hopA + 2f * (owner.Radius + r) + HopPast;
                 bo.from = S - dir * 5f + Vector3.up * 6.5f;
                 bo.axis = side;
                 bo.s = 0f; bo.roll = 0f; bo.nextDust = 0f;
@@ -285,13 +307,22 @@ namespace Nindo
             Game.Input?.Rumble(0.35f, 0.15f, 0.5f);
         }
 
+        /// <summary>¿El carril que pasa por Kaito ('k') choca contra Gorō antes de llegarle (o no hay carril por eso)?</summary>
+        bool BlockedByBoss(Vector3 k, Vector3 dir, float r, Camera cam)
+        {
+            if (!LaneFor(k, dir, r, cam, true, out Vector3 S, out _, out _, out float hopA)) return false;
+            // la roca toca a Gorō antes de pasar por Kaito
+            return hopA >= 0f && hopA < Vector3.Dot((k - S).Flat(), dir);
+        }
+
         /// <summary>
         /// Carril que pasa por 'bas' en la dirección 'dir': arranca donde se ve (adentro de la cámara y de la arena, lo más
-        /// arriba posible) y termina contra la barrera o contra Gorō. false si no queda carril (muy corto o tapado).
+        /// arriba posible) y termina contra la barrera o contra Gorō. false si no queda carril (muy corto o tapado). Con
+        /// 'through' Gorō no lo corta: 'hopA' es dónde lo toca la roca (la que salta por encima; -1 si no lo toca).
         /// </summary>
-        bool LaneFor(Vector3 bas, Vector3 dir, float r, Camera cam, out Vector3 S, out Vector3 E, out bool onBoss)
+        bool LaneFor(Vector3 bas, Vector3 dir, float r, Camera cam, bool through, out Vector3 S, out Vector3 E, out bool onBoss, out float hopA)
         {
-            S = E = bas; onBoss = false;
+            S = E = bas; onBoss = false; hopA = -1f;
             Vector3 c = owner.arenaCenter;
             float rim = owner.arenaRadius + 1f - r - 0.15f;     // la barrera está a arenaRadius + 1 (BossArena)
             if ((bas - c).Flat().magnitude > rim) return false;
@@ -323,6 +354,7 @@ namespace Nindo
             if (ga > 0f && ga < len && gl < hit)
             {
                 float stop = ga - Mathf.Sqrt(hit * hit - gl * gl);
+                if (through) { hopA = Mathf.Max(0f, stop); return len >= 3f; }
                 if (stop < 2f) return false;
                 E = Ground(S + dir * stop);
                 onBoss = true;
@@ -377,6 +409,18 @@ namespace Nindo
                 Vector3 q = Ground(b.S + b.D * b.s);
                 // tumbos chicos: no es una bola perfecta
                 q.y += b.r + 0.1f * Mathf.Abs(Mathf.Sin(b.roll * Mathf.Deg2Rad * 0.5f + b.seed));
+                if (b.hop && b.s >= b.hopA && b.s <= b.hopB)
+                {
+                    // rebota en la armadura y pasa por encima de Gorō
+                    if (!b.hopped)
+                    {
+                        b.hopped = true;
+                        Game.FX?.Dust(q, 1.4f);
+                        Game.Audio?.Play("rock_impact", q, 0.9f);
+                    }
+                    float u = (b.s - b.hopA) / Mathf.Max(0.1f, b.hopB - b.hopA);
+                    q.y += HopHeight * 4f * u * (1f - u);
+                }
                 // eje = arriba x dirección (el costado): con ángulo positivo el frente de la roca baja, rueda hacia adelante
                 b.t.SetPositionAndRotation(q, Quaternion.AngleAxis(b.roll, b.axis) * b.spin);
                 if (clock >= b.nextDust)
@@ -551,7 +595,7 @@ namespace Nindo
         // ------------------------------------------------------------------ dibujo del carril
         void DrawLane(Boulder b)
         {
-            if (laneMat == null || !Settings.ShowUnblockableAids) { b.laneR.enabled = false; b.markR.enabled = false; return; }
+            if (laneMat == null) { b.laneR.enabled = false; b.markR.enabled = false; return; }
             float startS = b.stage == 1 ? b.s : 0f;
             float size = Mathf.Max(0.05f, b.len - startS);
             Vector3 o = b.S + b.D * startS;

@@ -14,7 +14,12 @@ FOV 30 vertical, 16:9. Mide, para cada ola:
   2. el aviso: segundos entre que aparece el carril y el golpe a Kaito (>= MinWarning);
   3. que siempre exista un lugar a salvo alcanzable a la carrera (6.2 m/s, PlayerConfig.runSpeed) dentro del aviso con
      una reacción de 0.45 s (0.35 de una persona + latencia), adentro de la barrera y sin atravesar a Gorō;
-  4. con el bot 'bueno' (AutoPilot: reacción N(0.28, 0.06), no ve el 10 %, se confunde el 5 %), cuántas rocas le pegan.
+  4. con el bot 'bueno' (AutoPilot: reacción N(0.28, 0.06), no ve el 10 %, se confunde el 5 %), cuántas rocas le pegan;
+  5. pegado a Gorō (Kaito a 1.4-2.2 m delante de él del lado de la cámara, el lugar natural de un jugador de cuerpo a
+     cuerpo): en cada ola al menos una roca le apunta (gira la ola o la roca salta por encima de Gorō). Antes ese lugar
+     era inmune: el carril de Kaito siempre se cortaba contra Gorō.
+El carril y la marca de caída se dibujan con o sin las ayudas de combate (GoroAvalanche.DrawLane): el aviso medido
+vale también con las ayudas apagadas.
 Sale con código 1 si algo falla.
 """
 import argparse, math, random, sys
@@ -30,6 +35,8 @@ RUN = 6.2
 FOV, ASPECT = 30.0, 16 / 9
 TICK_UNBLOCKABLE, LATENCY = 0.42, 0.05
 DASH_I0, DASH_I1 = 0.02, 0.24
+HOP_PAST = 1.0                  # GoroAvalanche.HopPast
+DETOURS = (25.0, -25.0, 40.0, -40.0)
 
 
 def rot(v, deg):
@@ -89,8 +96,9 @@ def camera(mode, k, g):
     return Cam((k[0], 1.0, k[1]), 52, 24)
 
 
-def lane_for(bas, d, r, cam, g):
-    """LaneFor: arranque lo más arriba posible adentro de la arena y de la pantalla; fin en la barrera o en Gorō."""
+def lane_for(bas, d, r, cam, g, through=False):
+    """LaneFor: arranque lo más arriba posible adentro de la arena y de la pantalla; fin en la barrera o en Gorō (con
+    'through', Gorō no lo corta: devuelve dónde lo toca la roca que salta por encima)."""
     rim = ARENA_R + 1 - r - 0.15
     if norm(bas) > rim:
         return None
@@ -118,23 +126,43 @@ def lane_for(bas, d, r, cam, g):
     gl = abs(dot(dg, side))
     hit = GORO_R + r
     on_boss = False
+    hop_a = -1.0
     if 0 < ga < length and gl < hit:
         stop = ga - math.sqrt(hit * hit - gl * gl)
-        if stop < 2:
-            return None
-        length = stop
-        on_boss = True
+        if through:
+            hop_a = max(0.0, stop)
+        else:
+            if stop < 2:
+                return None
+            length = stop
+            on_boss = True
     if length < 3:
         return None
-    return S, length, on_boss
+    return S, length, on_boss, hop_a
+
+
+def blocked_by_boss(k, d, r, cam, g):
+    L = lane_for(k, d, r, cam, g, True)
+    if L is None:
+        return False
+    S, length, _, hop_a = L
+    return 0 <= hop_a < dot(add(k, S, -1), d)
 
 
 def plan_wave(wave, k, g, cam, rng):
     down = (0.0, -1.0)                       # -cam.forward plano: hacia la cámara
-    d = rot(down, rng.uniform(-14, 14))
+    r = rng.uniform(0.75, 0.9)
+    a0 = rng.uniform(-14, 14)
+    d = rot(down, a0)
+    hop = blocked_by_boss(k, d, r, cam, g)
+    for det in DETOURS:
+        if not hop:
+            break
+        alt = rot(down, a0 + det)
+        if not blocked_by_boss(k, alt, r, cam, g):
+            d, hop = alt, False
     side = (d[1], -d[0])
     speed = 8.5 + 0.5 * wave
-    r = rng.uniform(0.75, 0.9)
     w = 2 * (r + PAD)
     n = 2 if wave == 0 else 3
     sgn = -1 if rng.random() < 0.5 else 1
@@ -143,16 +171,18 @@ def plan_wave(wave, k, g, cam, rng):
     t_land = None
     for i in range(n):
         x = 0 if i == 0 else (sgn * a if i == 1 else -sgn * b2)
-        L = lane_for(add(k, side, x), d, r, cam, g)
+        through = i == 0 and hop
+        L = lane_for(add(k, side, x), d, r, cam, g, through)
         if L is None:
             continue
-        S, length, on_boss = L
+        S, length, on_boss, hop_a = L
         ahead = dot(add(k, S, -1), d)
         tell = max(MIN_TELL, MIN_WARNING - max(0.0, ahead - r - PAD) / speed)
         if t_land is None:
             t_land = tell
         land = max(t_land, tell) + 0.12 * len(lanes)
-        lanes.append(dict(S=S, d=d, side=side, len=length, r=r, speed=speed, land=land, on_boss=on_boss, x=x))
+        lanes.append(dict(S=S, d=d, side=side, len=length, r=r, speed=speed, land=land, on_boss=on_boss, x=x,
+                          hop=through and hop_a >= 0))
     return lanes
 
 
@@ -231,6 +261,16 @@ def bot_hits(lanes, k, rng):
     return hits
 
 
+def push_out(k, g):
+    """Kaito no puede quedar adentro de Gorō (la cápsula lo empuja)."""
+    off = add(k, g, -1)
+    if norm(off) < GORO_R + PAD + 0.05:
+        if norm(off) < 1e-3:
+            off = (1.0, 0.0)
+        k = add(g, off, (GORO_R + PAD + 0.1) / norm(off))
+    return k
+
+
 def run(trials, seed):
     rng = random.Random(seed)
     fails = []
@@ -254,7 +294,8 @@ def run(trials, seed):
             retry = 0
             while not lanes and retry < 4:
                 retry += 1
-                k = add(k, k, -0.15)
+                # (corre a Kaito hacia el centro: no lo puede meter adentro de Gorō)
+                k = push_out(add(k, k, -0.15), g)
                 cam = camera(mode, k, g)
                 lanes = plan_wave(wave, k, g, cam, rng)
             if not lanes:
@@ -287,10 +328,7 @@ def run(trials, seed):
             k = add(k, lanes[0]["side"], rng.choice((-1, 1)) * (lanes[0]["r"] + PAD + 0.6))
             if norm(k) > BARRIER - PAD:
                 k = add((0, 0), k, (BARRIER - PAD - 0.2) / norm(k))
-            # Kaito no puede quedar adentro de Gorō (la cápsula lo empuja)
-            off = add(k, g, -1)
-            if norm(off) < GORO_R + PAD + 0.05:
-                k = add(g, off if norm(off) > 1e-3 else (1.0, 0.0), (GORO_R + PAD + 0.1) / max(1e-3, norm(off)))
+            k = push_out(k, g)
     ok = True
     for m, st in stats.items():
         print(f"[{m:6s}] olas {st['waves']}, carriles {st['lanes']} ({st['lanes'] / max(1, st['waves']):.2f}/ola), sin carril {st['empty']}, "
@@ -306,10 +344,36 @@ def run(trials, seed):
           f"{bot_total / max(1, aimed) * 100:.1f} % de las que le apuntaban) -> ~{3 * bot_total / max(1, bot_waves):.2f} por avalancha")
     if fails:
         ok = False
+    # 5. pegado a Gorō del lado de la cámara
+    hug_waves, hug_aimed, hug_hops, hug_stuck, hug_margin = 0, 0, 0, 0, 9.0
+    for _ in range(max(1000, trials // 6)):
+        mode = rng.choice(("jefe", "fijado", "52/24"))
+        a = rng.uniform(0, 2 * math.pi)
+        g = (math.cos(a) * rng.uniform(0, 10), math.sin(a) * rng.uniform(0, 10))
+        k = add(g, rot((0.0, -1.0), rng.uniform(-35, 35)), rng.uniform(1.4, 2.2))
+        if norm(k) > BARRIER - PAD:
+            continue
+        for wave in range(3):
+            cam = camera(mode, k, g)
+            lanes = plan_wave(wave, k, g, cam, rng)
+            if not lanes:
+                continue
+            hug_waves += 1
+            if any(impact_time(L, k) is not None for L in lanes):
+                hug_aimed += 1
+            hug_hops += sum(1 for L in lanes if L["hop"])
+            esc, m = safe_reachable(lanes, k, g, 0.45)
+            hug_stuck += not esc
+            hug_margin = min(hug_margin, m)
+    print(f"pegado a Gorō: {hug_aimed}/{hug_waves} olas con una roca que le apunta ({hug_hops} saltan por encima de Gorō), "
+          f"sin salida {hug_stuck}, margen mínimo {hug_margin:.2f} s")
+    if hug_aimed < hug_waves or hug_stuck:
+        ok = False
     return ok
 
 
 if __name__ == "__main__":
+    sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser()
     ap.add_argument("--trials", type=int, default=20000)
     ap.add_argument("--seed", type=int, default=1)

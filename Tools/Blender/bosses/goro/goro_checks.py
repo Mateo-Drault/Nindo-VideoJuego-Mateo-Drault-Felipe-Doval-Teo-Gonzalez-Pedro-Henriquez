@@ -9,14 +9,28 @@ no el cuerpo contra el arma: esto lo mide cuadro a cuadro.
     normal más cercana o por paridad de rayos daba metros de falsos positivos; el casco convexo es cerrado y exacto. Sin
     las manos, los dedos y los antebrazos (agarran el mango), ni los shide de papel y el maedate de oro (cuelgan o salen
     del contorno: rozarlos no es atravesar el cuerpo).
-  * El martillo: sus vértices más puntos cada 5 cm sobre sus aristas; se saltean los del mango a menos de 22 cm (a lo
-    largo) de cada mano que lo agarra: el puño lo envuelve.
+  * El martillo: sus vértices más puntos cada 5 cm sobre sus aristas; se saltean los del mango entre las dos manos y a
+    menos de 8 cm (a lo largo) de cada una: el puño lo envuelve. Con 22 cm se salteaba también la cola: con las manos en la
+    punta del mango sobran 16 cm detrás de la izquierda, y esa cola entraba 12 cm en la panza en las vueltas a la
+    guardia sin que nada lo viera.
   * Con la armadura (clips con timing['armored']), cada roca es un casco más, rígido con su hueso.
 
-Profundidad = cuánto se metió el punto más hondo (distancia a la cara del casco más cercana). El límite es 6 cm: el casco
-de un hueso incluye la carne de la articulación vecina (el hombro, la cadera) y un mango que pasa pegado a la piel queda
-2-5 cm adentro; medio mango (10 cm de grueso) atravesando el torso pasa de 10. Falla, salvo en los cuadros de
+Profundidad = cuánto se metió el punto más hondo (distancia a la cara del casco más cercana). El límite es 6 cm para el
+cuerpo: el casco de un hueso incluye la carne de la articulación vecina (el hombro, la cadera) y un mango que pasa pegado
+a la piel queda 2-5 cm adentro; medio mango (10 cm de grueso) atravesando el torso pasa de 10. La cola del mango (detrás
+de la mano de abajo) y las rocas de la armadura (cascos exactos, sin carne) tienen 3 cm. Falla, salvo en los cuadros de
 timing['clip_ok'] (rangos [a, b]), que se informan.
+
+Además (motion_checks), sobre lo horneado:
+  * el martillo no da vueltas de golpe: el mango (BaseM) gira a lo sumo 45° de un cuadro al otro fuera del golpe (del
+    apex al último activo) y de los tramos de timing['swing_ok'] (los martillazos de los clips sin golpe del juego). El
+    parry lo daba vuelta por encima en un cuadro (90-133°) y quedaba congelado;
+  * brazos sin tics: un hueso del brazo que gira más de 45° en un cuadro, 30° más que sus vecinos, falla fuera de esas
+    mismas ventanas (build_team_anims solo avisaba y los martillazos arrancaban con un sacudón de 55-110°);
+  * FakeDefeat: la cabeza no cae más de 25 cm por cuadro (caía 91 cm en uno) y 'hammer_land' se mide en la malla: el
+    primer cuadro, después de 'drop', en que el punto más bajo del mango (sin la cabeza, que ya estaba apoyada) llega a
+    donde queda acostado (a 2 cm; la cabeza del martillo le levanta esa punta del piso);
+  * ArmorRise arranca en la pose final de FakeDefeat (el juego los encadena): peor hueso en grados.
 """
 import bpy, bmesh, os
 from mathutils import Vector
@@ -25,7 +39,9 @@ from mathutils import Vector
 DEBUG = os.environ.get("GORO_CHECKS_DEBUG") == "1"
 
 DEPTH_CM = 6.0
-SKIP_ALONG = 0.22
+# la cola del mango y las rocas: cascos exactos, sin la carne de las articulaciones
+TIGHT_CM = 3.0
+SKIP_ALONG = 0.08
 SKIP_BONES = ("Mano", "Dedo", "Puntadedo", "Antebrazo")
 SKIP_MATS = ("ShideMiniJefe", "OroMiniJefe")
 
@@ -149,26 +165,34 @@ class Clearance:
         if (ctrl.get("drop_r") or 0.0) < 0.5:
             grips.append(w["grips"][1] - (ctrl.get("slide_r") or 0.0))
         gl = ctrl.get("grip_l")
-        if gl is None or gl > 0.5:
+        if gl is None or gl > 0.35:
             grips.append(w["grips"][0] + (ctrl.get("slide_l") or 0.0))
         keep = []
+        tail = min(grips) if grips else w["butt"]
         for q in hp:
             t = (q - base).dot(axis) / ch.u
             radial = ((q - base) - axis * (q - base).dot(axis)).length / ch.u
-            if radial < 0.15 and any(abs(t - g) < SKIP_ALONG for g in grips):
+            # el mango entre las dos manos y 8 cm a cada lado de cada una: los puños y los antebrazos lo tapan
+            if radial < 0.15 and grips and min(grips) - SKIP_ALONG < t < max(grips) + SKIP_ALONG:
                 continue
             keep.append((q, t))
-        hulls = self.hulls + [(b, hull) for piece, b, hull, _ in self.armor if piece in pieces]
-        worst, where = 0.0, ""
-        for b, hull in hulls:
+        # sin las rocas de los antebrazos: el guantelete está pegado al puño que agarra el mango (como el antebrazo)
+        hulls = [(b, hull, False) for b, hull in self.hulls] + [(b, hull, True) for piece, b, hull, _ in self.armor
+                                                                 if piece in pieces and not b.startswith(SKIP_BONES)]
+        # la peor profundidad relativa a su límite: el punto que más se pasó (o el más hondo, si ninguno se pasa)
+        worst, where, over = 0.0, "", -9.0
+        for b, hull, rock in hulls:
             to_rest = self.bone_inv(b)
             for q, t in keep:
-                d = depth_in(hull, to_rest(q))
-                if d * 100.0 > worst:
-                    worst = d * 100.0
-                    part = "mango" if t < w["head_center"] - 0.45 else "cabeza"
-                    where = f"{part} t={t:.2f} m en {b}"
-        return worst, where
+                d = depth_in(hull, to_rest(q)) * 100.0
+                if d <= 0.0:
+                    continue
+                lim = TIGHT_CM if rock or t < tail - SKIP_ALONG else DEPTH_CM
+                if d - lim > over:
+                    over = d - lim
+                    part = "cola" if t < tail - SKIP_ALONG else ("mango" if t < w["head_center"] - 0.45 else "cabeza")
+                    worst, where = d, f"{part} t={t:.2f} m en {'roca ' if rock else ''}{b} (tope {lim:.0f})"
+        return worst, where, over > 0.0
 
 
 _CACHE = {}
@@ -193,8 +217,8 @@ def weapon_body(ch, clip, first, check, armor=None):
     bad, worst_at, low_at, low_bad = [], (0.0, -1, ""), (900.0, -1, ""), []
     for f in range(clip.frames + 1):
         on = {p for p, f0 in since.items() if f >= f0}
-        d, where = cl.frame(scn, first + f, clip.controls(f), on)
-        if d > DEPTH_CM and not any(a <= f <= b for a, b in ok_ranges):
+        d, where, past = cl.frame(scn, first + f, clip.controls(f), on)
+        if past and not any(a <= f <= b for a, b in ok_ranges):
             bad.append(f)
             if DEBUG:
                 print(f"       {clip.name} f{f}: {d:.1f} cm ({where})")
@@ -206,7 +230,7 @@ def weapon_body(ch, clip, first, check, armor=None):
                 low_at = (z, f, piece)
             if z < ARMOR_FLOOR_CM:
                 low_bad.append(f)
-    msg = (f"{clip.name}: el martillo no atraviesa el cuerpo{' ni la armadura' if since else ''} "
+    msg = (f"{clip.name}: el martillo (con la cola) no atraviesa el cuerpo{' ni la armadura' if since else ''} "
            f"(peor {worst_at[0]:.1f} cm en f{worst_at[1]}{': ' + worst_at[2] if worst_at[2] else ''}"
            f"{'; cuadros ' + ','.join(map(str, bad)) if bad else ''})")
     check(not bad, msg)
@@ -216,3 +240,132 @@ def weapon_body(ch, clip, first, check, armor=None):
                            f"f{low_at[1]}, {low_at[2]}{'; cuadros ' + ','.join(map(str, low_bad)) if low_bad else ''})")
         out["armor_lowest_cm"] = round(low_at[0], 1)
     return out
+
+
+# ---------------------------------------------------------------------------- movimiento
+ARM_BONES = ("Brazo.R", "Antebrazo.R", "Mano.R", "Brazo.L", "Antebrazo.L", "Mano.L")
+SNAP_DEG = 45.0             # el mango, por cuadro, fuera del golpe
+POP_DEG, POP_SPIKE = 45.0, 30.0
+HEAD_DROP_M = 0.25          # FakeDefeat: lo más que cae la cabeza en un cuadro
+_LAST = {}                  # pose final de cada clip ya medido (FakeDefeat -> ArmorRise)
+
+
+def _free_frames(clip):
+    """Cuadros en que un giro rápido es legítimo: el golpe (apex .. último activo + 2) y timing['swing_ok']."""
+    t = clip.timing
+    ok = set()
+    if "contact" in t:
+        ok.update(range(t["apex"], t.get("active", [t["contact"], t["contact"] + 2])[1] + 3))
+    for a, b in t.get("swing_ok", []):
+        ok.update(range(a, b + 1))
+    return ok
+
+
+def _local_rots(ch):
+    out = {}
+    for n in ARM_BONES:
+        pb = ch.arm.pose.bones.get(n)
+        if pb is None:
+            continue
+        M = pb.parent.matrix.inverted() @ pb.matrix if pb.parent else pb.matrix
+        out[n] = M.to_quaternion()
+    return out
+
+
+def motion_checks(ch, clip, first, check):
+    """Ver el docstring del módulo. Devuelve lo que va al sidecar (y en FakeDefeat ajusta el evento 'hammer_land')."""
+    import math
+    scn = bpy.context.scene
+    w = ch.weapon_info
+    B = ch.spec["weapon"]["bone"]
+    ham = bpy.data.objects[ch.spec["weapon"]["mesh"]]
+    free = _free_frames(clip)
+    loop = clip.loop
+    axes, rots, heads, handle_low = [], [], [], []
+    hm = ham.data
+    for f in range(clip.frames + 1):
+        scn.frame_set(first + f)
+        pb = ch.arm.pose.bones[B]
+        axes.append((pb.matrix.to_3x3() @ Vector((0.0, 1.0, 0.0))).normalized())
+        rots.append(_local_rots(ch))
+        hb = ch.arm.pose.bones.get("Cabeza")
+        heads.append(ch.Pc(hb.tail).z if hb else 0.0)
+        if clip.name == "FakeDefeat":
+            dg = bpy.context.evaluated_depsgraph_get()
+            Mh = ch.Ai @ ham.evaluated_get(dg).matrix_world
+            base = pb.matrix.translation
+            ax = axes[-1]
+            low = 9.0
+            for v in hm.vertices:
+                q = Mh @ v.co
+                if (q - base).dot(ax) / ch.u < w["head_center"] - 0.6:
+                    low = min(low, ch.Pc(q).z)
+            handle_low.append(low)
+    out = {}
+    # el mango
+    snap, at = 0.0, -1
+    for f in range(1, len(axes)):
+        if f in free:
+            continue
+        a = math.degrees(axes[f - 1].angle(axes[f], 0.0))
+        if a > snap:
+            snap, at = a, f
+    out["hammer_turn_max_deg"] = round(snap, 1)
+    check(snap <= SNAP_DEG, f"{clip.name}: el martillo no da vueltas de golpe ({snap:.0f}° en f{at - 1}-f{at} fuera del golpe, tope {SNAP_DEG:.0f})")
+    # tics del brazo
+    bad, txt = 0.0, ""
+    n = len(rots)
+    for bn in ARM_BONES:
+        dl = [0.0] + [math.degrees(rots[i - 1][bn].rotation_difference(rots[i][bn]).angle) for i in range(1, n) if bn in rots[i]]
+        dl = [min(d, 360.0 - d) for d in dl]
+        for i in range(1, len(dl)):
+            if i in free or (not loop and i <= 2) or dl[i] <= POP_DEG:
+                continue
+            nb = [dl[j] for j in (i - 1, i + 1) if 1 <= j < len(dl)]
+            spike = dl[i] - max(nb, default=0.0)
+            if spike > POP_SPIKE and spike > bad:
+                bad, txt = spike, f"{bn} f{i - 1}-f{i}: {dl[i]:.0f}°, vecinos {', '.join(f'{x:.0f}' for x in nb)}°"
+    out["arm_pop_deg"] = round(bad, 1)
+    check(bad == 0.0, f"{clip.name}: brazos sin tics fuera del golpe ({txt or 'ok'})")
+    if clip.name == "FakeDefeat":
+        drop, df = 0.0, -1
+        for f in range(1, len(heads)):
+            d = heads[f - 1] - heads[f]
+            if d > drop:
+                drop, df = d, f
+        out["head_drop_max_m"] = round(drop, 3)
+        check(drop <= HEAD_DROP_M, f"FakeDefeat: la cabeza cae con el peso, sin teletransporte ({drop * 100:.0f} cm en f{df - 1}-f{df}, "
+                                   f"tope {HEAD_DROP_M * 100:.0f})")
+        ev = clip.timing.setdefault("events", {})
+        f0 = ev.get("drop", 0)
+        rest = min(handle_low[f0:])
+        land = next((f for f in range(f0, len(handle_low)) if handle_low[f] <= rest + 0.02), None)
+        check(land is not None and rest < 0.25, f"FakeDefeat: el mango llega al piso (más bajo {rest * 100:.0f} cm, en f{land})")
+        if land is not None:
+            ev["hammer_land"] = land
+            out["hammer_land_frame"] = land
+        out["head_height_m"] = [round(h, 2) for h in heads]
+    # FakeDefeat -> ArmorRise: la misma pose (todos los huesos)
+    scn.frame_set(first + clip.frames)
+    last = {pb.name: pb.matrix.to_quaternion() for pb in ch.arm.pose.bones}
+    _LAST[clip.name] = last
+    if clip.name == "ArmorRise" and "FakeDefeat" in _LAST:
+        scn.frame_set(first)
+        cur = {pb.name: pb.matrix.to_quaternion() for pb in ch.arm.pose.bones}
+        prev = _LAST["FakeDefeat"]
+        worst, who = 0.0, ""
+        for k, q in cur.items():
+            if k in prev and not k.startswith("Acc_"):
+                d = math.degrees(prev[k].rotation_difference(q).angle)
+                d = min(d, 360.0 - d)
+                if d > worst:
+                    worst, who = d, k
+        out["chain_from_fakedefeat_deg"] = round(worst, 1)
+        # GoroBoss los encadena con un fundido de 0.2 s: hasta 20° no se ve
+        check(worst <= 20.0, f"ArmorRise f0 = FakeDefeat f{_LAST_FRAMES.get('FakeDefeat', '?')} (peor {who} {worst:.1f}°, tope 20 con el fundido de 0.2 s)",
+              warn=worst <= 35.0)
+    _LAST_FRAMES[clip.name] = clip.frames
+    return out
+
+
+_LAST_FRAMES = {}

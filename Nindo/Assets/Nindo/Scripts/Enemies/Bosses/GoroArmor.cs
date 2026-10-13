@@ -16,35 +16,9 @@ namespace Nindo
     /// </summary>
     public class GoroArmor
     {
-        /// <summary>Datos de cada pieza (Kit_goro_armor.fbx.json: slam_s = cuadro slam_&lt;Pieza&gt; / 30, giro y su eje en el
-        /// marco de Gorō, y la dirección de 'start_unity', de donde la arrancaba la etapa de autoría).</summary>
-        struct Spec
-        {
-            public string name;
-            public float slam, spin;
-            public Vector3 axis, from;
-            public Spec(string n, float s, float sp, Vector3 ax, Vector3 f) { name = n; slam = s; spin = sp; axis = ax.normalized; from = f; }
-        }
-
-        static readonly Spec[] Specs =
-        {
-            new Spec("Greave_L", 24f / 30f, 200f, new Vector3(0.8876f, 0.4379f, -0.1429f), new Vector3(-2.6f, 0f, -1.8f)),
-            new Spec("Greave_R", 30f / 30f, 220f, new Vector3(0.1171f, 0.879f, -0.4622f), new Vector3(2.8f, 0f, -1.4f)),
-            new Spec("Knee_L", 38f / 30f, 260f, new Vector3(0.6669f, 0.2002f, -0.7178f), new Vector3(-3.4f, 0f, 1.0f)),
-            new Spec("Knee_R", 44f / 30f, 240f, new Vector3(0.2791f, 0.5968f, -0.7523f), new Vector3(3.6f, 0f, 0.6f)),
-            new Spec("Tasset_L", 52f / 30f, 180f, new Vector3(-0.1669f, 0.7071f, -0.6871f), new Vector3(-4.2f, 0f, -0.6f)),
-            new Spec("Tasset_R", 56f / 30f, 200f, new Vector3(-0.6266f, 0.5556f, -0.5465f), new Vector3(4.0f, 0f, -1.2f)),
-            new Spec("Bracer_R", 70f / 30f, 300f, new Vector3(0.329f, 0.6242f, 0.7086f), new Vector3(3.2f, 0f, 2.6f)),
-            new Spec("Bracer_L", 76f / 30f, 280f, new Vector3(0.5998f, 0.5965f, 0.5333f), new Vector3(-3.4f, 0f, 2.4f)),
-            new Spec("Chest_Low", 92f / 30f, 160f, new Vector3(0.3482f, 0.6562f, 0.6694f), new Vector3(-0.6f, 0f, 4.6f)),
-            new Spec("Chest_High", 100f / 30f, 180f, new Vector3(0.6125f, 0.6774f, -0.4075f), new Vector3(0.8f, 0f, 5.0f)),
-            new Spec("Pauldron_L", 118f / 30f, 220f, new Vector3(0.5757f, 0.4057f, -0.7099f), new Vector3(-5.2f, 0f, -2.2f)),
-            new Spec("Pauldron_R", 128f / 30f, 240f, new Vector3(-0.6935f, 0.3359f, -0.6374f), new Vector3(5.4f, 0f, -1.6f)),
-            new Spec("Ridge_L", 146f / 30f, 140f, new Vector3(0.9774f, 0.2073f, -0.0406f), new Vector3(-2.4f, 0f, -6.0f)),
-            new Spec("Ridge_R", 152f / 30f, 160f, new Vector3(-0.7908f, 0.585f, -0.1799f), new Vector3(2.2f, 0f, -6.2f)),
-            new Spec("Horn_L", 170f / 30f, 320f, new Vector3(-0.6987f, 0.6839f, 0.21f), new Vector3(-1.6f, 0f, -4.4f)),
-            new Spec("Horn_R", 174f / 30f, 340f, new Vector3(-0.8706f, 0.1879f, 0.4547f), new Vector3(1.6f, 0f, -4.2f)),
-        };
+        // datos de cada pieza (GoroTimings.Pieces, generado desde Kit_goro_armor.fbx.json y ArmorRise: cuándo se pega,
+        // el giro del vuelo y de qué lado salía en la autoría)
+        static GoroTimings.Piece[] Specs => GoroTimings.Pieces;
 
         public const int Count = 16;
         /// <summary>Cuadro (s del clip ArmorRise) en que se pega la pieza i.</summary>
@@ -61,7 +35,7 @@ namespace Nindo
             public Mode mode;
             // vuelo (ArmorRise)
             public Vector3 start, axis;
-            public float launch, flight, arc, spin;
+            public float launch, flight, arc, spin, nextDust;
             public bool launched, slammed;
             // caída (Shed): sin física, una parábola con rebote chico y se hunde en la nieve
             public Vector3 vel, angVel, euler;
@@ -101,7 +75,11 @@ namespace Nindo
 
         // escala de una pieza escondida: el skin rígido la junta en un punto (cero exacto deja las normales en NaN)
         static readonly Vector3 Gone = Vector3.one * 1e-4f;
-        const float FlightScale = 0.45f;
+        // en el aire salen 2.2 veces más grandes y llegan a su tamaño al pegarse: con 1.45 las de las piernas eran un par de
+        // píxeles en el plano de costado (más chicas que el ojo de Gorō)
+        const float FlightScale = 1.2f;
+        // la estela de polvo y nieve de cada roca en el aire (s entre soplos)
+        const float DustEvery = 0.05f;
 
         public void HideAll()
         {
@@ -161,6 +139,7 @@ namespace Nindo
                 // vuela más que en la autoría (0.55-0.8 s): más vueltas para que siga leyéndose como roca suelta
                 p.spin = s.spin * 1.6f;
                 p.launched = p.slammed = false;
+                p.nextDust = 0f;
                 p.mode = Mode.Hidden;
                 p.bone.localScale = Gone;
             }
@@ -186,7 +165,7 @@ namespace Nindo
                 var p = pieces[i];
                 if (p.mode == Mode.On || p.mode == Mode.Falling) continue;
                 if (t < p.launch) continue;
-                if (!p.launched) { p.launched = true; Launched?.Invoke(i, p.start); }
+                if (!p.launched) { p.launched = true; p.nextDust = t; Launched?.Invoke(i, p.start); }
                 float u = Mathf.Clamp01((t - p.launch) / p.flight);
                 Rest(p);
                 if (u >= 1f)
@@ -201,8 +180,13 @@ namespace Nindo
                 Vector3 pos = Vector3.Lerp(p.start, at, u * u) + Vector3.up * (p.arc * 4f * u * (1f - u));
                 float w = 1f - u;
                 p.bone.SetPositionAndRotation(pos, Quaternion.AngleAxis(p.spin * w * w, p.axis) * rot);
-                // en el aire un poco más grande (llega a su tamaño al pegarse): las chicas se leían como piedritas
+                // en el aire más grande (llega a su tamaño al pegarse): las chicas se leían como piedritas
                 p.bone.localScale = p.restScale * (1f + FlightScale * w);
+                if (t >= p.nextDust)
+                {
+                    p.nextDust = t + DustEvery;
+                    Game.FX?.Dust(pos, 0.45f + 0.35f * w);
+                }
             }
         }
 

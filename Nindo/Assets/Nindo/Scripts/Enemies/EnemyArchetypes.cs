@@ -184,9 +184,10 @@ namespace Nindo
             var c3b = Hit("Combo3B", 30, 0.6481f, 0.7037f, range: 4.0f, arc: 160, kind: AttackKind.Heavy, lunge: 1.5f, kb: 2.6f, apex: 0.5926f);
             c3b.windup = 1.2f;
             // la onda: el martillo cae a 3.9 m y la onda sale por el piso hasta 'specialParam' m más (GoroBoss "slamwave").
-            // La fase activa es la arada entera (f34-f43): GoroBoss la estira lo que tarda la onda en llegar al final
-            var wave = Hit("SlamWave", 40, 0.5312f, 0.6719f, range: 3.9f, arc: 60, kind: AttackKind.Unblockable, lunge: 1.0f, kb: 3f, apex: 0.4688f);
-            wave.special = "slamwave"; wave.specialParam = 10f; wave.windup = 1.25f;
+            // La fase activa es la arada entera (f34-f43): GoroBoss la estira lo que tarda la onda en llegar al final. El
+            // aviso es el martillo arrastrado en el piso (apex f24); la suelta es el molino por el costado (10 cuadros) a 1.2x
+            var wave = Hit("SlamWave", 40, 0.5312f, 0.6719f, range: 3.9f, arc: 60, kind: AttackKind.Unblockable, lunge: 1.0f, kb: 3f, apex: 0.375f);
+            wave.special = "slamwave"; wave.specialParam = 10f; wave.windup = 1.25f; wave.releaseRate = 1.2f;
             // la avalancha no pega con el martillo: el aviso y el golpe son de cada roca (GoroAvalanche). Contacto = "call" (f48)
             var aval = Hit("AvalancheSummon", 0, 0.5714f, 0.75f, range: 30f, arc: 360, kind: AttackKind.Unblockable, lunge: 0f, kb: 2.6f, apex: 0.369f);
             aval.special = "avalanche"; aval.specialParam = 24f; aval.releaseRate = 1f; aval.tracking = false;
