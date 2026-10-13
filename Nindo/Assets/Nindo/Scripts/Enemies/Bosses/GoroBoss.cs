@@ -27,28 +27,38 @@ namespace Nindo
     public class GoroBoss : Boss, ICameraProfile
     {
         public const string ArmorSeenFlag = "goro_armor_seen";
+
+        // ------------------------------------------------------------------------------------------- balance
         /// <summary>
-        /// Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth, 1000 en EnemyArchetypes.Goro). Las cinco
-        /// perillas salen de Tools/Dev/goro_fight_sim.py con el reintento armado, los tres tramos de armadura y los bots de
-        /// AutoPilot (el promedio recalibrado): bueno 3.4 min simulados (~4.8 reales, el modelo no cuenta lo que el bot
-        /// camina) casi sin morir; promedio 4.8 min, 1.45 muertes y 30 % gana al primer intento. Con 520 + 520 el bueno
-        /// ganaba en 1.6 min y con más vida sin reintento armado el promedio quedaba 20-50 min trabado.
+        /// EL BALANCE DE LA PELEA, EN UN SOLO LUGAR (EnemyArchetypes.Goro toma de acá la primera barra y
+        /// Tools/Dev/goro_fight_sim.py lee estos números de este archivo). Medido en Unity con el bot (main 76be027, barras
+        /// 1000 + 1600, daño x0.5 / x0.4, cura por tramo 25): 'bot on bueno' ganó en 2:24 sin morir y 'bot on promedio'
+        /// en 4:04 con 2 muertes; la simulación daba 3.4 y 5.2 min, así que con Gorō el bot real va 0.71x el modelo (se le
+        /// pega y le corta las vueltas a la guardia). Objetivo: el bueno ~4.5 min reales, el promedio 1-2 muertes.
+        /// Con estos números (las dos barras al doble, el daño a la mitad, más cura por tramo) y los clips de C3 la
+        /// simulación da: bueno 6.4 min simulados = ~4.6 reales, sin morir; promedio 9.1 simulados = ~7 reales, 1.1
+        /// muertes simuladas = ~1.5 reales, 35 % gana al primer intento (dos tercios de las muertes son armado: con 0.5 en
+        /// las dos barras largas el promedio moría casi siempre en la barra falsa).
+        ///  * FirstBarHealth: la barra falsa (fase 1, config.maxHealth) y ArmoredHealth la de la armadura (fase 2): se
+        ///    mantiene la proporción de antes (la falsa es ~40 % de la pelea), así la sorpresa llega a mitad de camino.
+        ///  * FirstBarDamage / ArmoredDamage: el daño de Gorō respecto del arquetipo en cada barra (golpes, onda y
+        ///    avalancha). Con más vida el daño baja: si no, la pelea larga se vuelve desgaste y el promedio muere en la
+        ///    fase 1, que el daño armado no toca. Son respecto del arquetipo, no uno del otro.
+        ///  * ShedHealAmount: lo que recupera Kaito con cada tramo de armadura roto (ShedAt), la única cura de la pelea
+        ///    larga además de TransitionHeal.
         /// </summary>
-        public float armoredHealth = 1600f;
-        /// <summary>
-        /// Daño de Gorō armado respecto del arquetipo (golpes, onda y avalancha). Perilla de balance: con más vida en las
-        /// barras el daño tiene que bajar, si no la pelea larga se vuelve desgaste (goro_fight_sim.py --p2dmg).
-        /// </summary>
-        public float armoredDamageScale = 0.4f;
-        /// <summary>
-        /// Daño de Gorō en la primera barra respecto de EnemyArchetypes.Goro (la otra perilla de balance: con la barra
-        /// falsa más larga, la mayoría de las muertes del bot promedio eran en la fase 1, que armoredDamageScale no toca).
-        /// Las dos perillas son respecto del arquetipo, no una de la otra.
-        /// </summary>
-        public float firstBarDamageScale = 0.5f;
-        /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (ShedAt): la única cura de una
-        /// pelea de varios minutos (goro_fight_sim.py --shed-heal).</summary>
-        public float shedHeal = 25f;
+        public const float FirstBarHealth = 2000f, ArmoredHealth = 3200f;
+        public const float FirstBarDamage = 0.25f, ArmoredDamage = 0.23f;
+        public const float ShedHealAmount = 40f;
+
+        /// <summary>Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth = FirstBarHealth).</summary>
+        public float armoredHealth = ArmoredHealth;
+        /// <summary>Daño de Gorō armado respecto del arquetipo (ArmoredDamage).</summary>
+        public float armoredDamageScale = ArmoredDamage;
+        /// <summary>Daño de Gorō en la primera barra respecto del arquetipo (FirstBarDamage).</summary>
+        public float firstBarDamageScale = FirstBarDamage;
+        /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (ShedHealAmount).</summary>
+        public float shedHeal = ShedHealAmount;
         /// <summary>Fracciones de la segunda barra en que se le cae un tramo de la armadura y las piezas de cada uno: un
         /// cuerno y una rodilla, el brazo izquierdo con el faldón y el pecho, y al final una hombrera y una cumbre de la
         /// espalda (las grandes quedan para el último). Al morir se le cae el resto.</summary>
