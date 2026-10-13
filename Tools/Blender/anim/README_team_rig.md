@@ -44,6 +44,12 @@ El FBX de animación lleva solo la armadura, con los mismos padres que el modelo
 de otro padre, si una ruta no empieza en `Armature/` o si el nodo `Armature` se anima (el bug de los enemigos
 invisibles: un FBX con un solo nodo raíz que Unity aplana).
 
+Después de exportar, `fbx_skate.py` re-importa el FBX sobre el modelo y repasa cada embestida y cada salto con el reloj
+del juego (StepTimeline y la embestida de Enemy.Locomotion portados del C#) a 120 Hz, con las curvas evaluadas entre
+cuadros: falla si una suela apoyada se corre más de 3 cm o más de 2 cm en una muestra. Es la medida que ve lo que hace
+una pierna cuando la cadera gira mucho en un cuadro (el despegue del Whirl barría 16 cm entre f11 y f11.6 y entre
+cuadros enteros daba 0). Suelto: `blender -b --factory-startup --python Tools/Blender/anim/fbx_skate.py -- ninja`.
+
 `SumoPoser` (Unity) sirve para los dos esqueletos: con FK la mano sigue al antebrazo y el pie conserva el giro que le
 dio el clip.
 
@@ -167,6 +173,21 @@ la cara de la katana hacia la cámara del juego (media de |normal . cámara| des
 inicio del aviso, el apex y el golpe, en los loops y en los cuadros `timing["read"]` de un clip sin golpe (`blade_face`
 en el sidecar). Ese número no ve lo que tapa el cuerpo: para comparar de verdad, contar píxeles con máscaras planas
 (Metal / Lomo / Glint) desde la cámara del juego, como hizo la revisión.
+
+### Locomoción en cualquier dirección y saltos (team_moves)
+
+* `team_moves.gait_dir(ch, n, (vx, vy), duty, feet, strike=, off=)`: un ciclo con el transform yendo a cualquier
+  velocidad del marco de autoría (rodeo, retroceso); el pie apoyado va para el otro lado a la velocidad del suelo.
+  `ProcClip(..., root_vel=(vx, vy, 0))`: los chequeos y las hojas de revisión siguen el avance de costado o para atrás.
+  Los ciclos que Enemy cruza entre sí (Walk, StrafeL/R, WalkBack) apoyan el derecho en el cuadro 0.
+* `team_moves.ArcClip(..., arc=hop_arc(frame_times(n, apex, contact, windup), despegue, aterrizaje, alto))`: un salto
+  balístico medido con el reloj del juego (la suelta acelera el clip, un arco por cuadros quedaba torcido). El arco sube
+  la cadera y lo que se pide en el marco de autoría (`grip`, `hand_k`); los pies llevan el suyo en sus `FootKey`, cuadro a
+  cuadro con el avance (`tr[f]`) como en el Thrust.
+* `variant_skate_cm` del sidecar: lo que se corre un pie que toca el piso (apoyado o rodando sobre la punta) con la
+  embestida y la velocidad de cada `Hit(...)` que reusa el clip (antes era un aviso por diferencia de números).
+  `magnet_skate_cm` y `magnet_curve_cm`: lo mismo si el imán del golpe (Kaito pegado) deja avanzar al transform solo una
+  parte (0..100 %), sin y con el `lungeSlack` del arquetipo (Enemy.Locomotion.cs: el modelo hace los últimos metros).
 
 ## Dos personajes en el mismo FBX (el abuelo y el ninja del secuestro)
 

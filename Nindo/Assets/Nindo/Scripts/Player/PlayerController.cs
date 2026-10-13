@@ -279,6 +279,17 @@ namespace Nindo
             externalPush += dir.normalized * meters * 10f;
         }
 
+        /// <summary>Lo corre ya, con colisiones (un sumo que embiste con Kaito pegado lo arrastra con la panza en vez de
+        /// patinar en el lugar). No mueve a Kaito esquivando, invulnerable ni muerto: devuelve lo que se movió (m).</summary>
+        public float Shove(Vector3 delta)
+        {
+            delta.y = 0f;
+            if (cc == null || !cc.enabled || State == PlayerState.Dash || IsInvulnerable || delta.sqrMagnitude < 1e-8f) return 0f;
+            Vector3 before = transform.position;
+            cc.Move(delta);
+            return CombatMath.FlatDistance(before, transform.position);
+        }
+
         /// <summary>Teletransporte seguro (desactiva el CharacterController un frame).</summary>
         public void Teleport(Vector3 pos, Quaternion rot)
         {

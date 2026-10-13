@@ -435,31 +435,56 @@ def controller(path, name, states, locomotion, loco_thresholds=None):
         locomotion = [m[0] if isinstance(m, tuple) else m for m in locomotion]
         bt_id = stable_id(name, "bt")
         ths = loco_thresholds or (0, 1)
-        childs = "".join(f"""  - serializedVersion: 2
+
+        def child(mot, th, sc, pos=(0, 0)):
+            return f"""  - serializedVersion: 2
     m_Motion: {mot}
     m_Threshold: {th}
-    m_Position: {{x: 0, y: 0}}
+    m_Position: {{x: {pos[0]:g}, y: {pos[1]:g}}}
     m_TimeScale: {sc:g}
     m_CycleOffset: 0
     m_DirectBlendParameter: Speed
     m_Mirror: 0
-""" for mot, th, sc in zip(locomotion, ths, loco_scales))
-        objs.append(f"""--- !u!206 &{bt_id}
+"""
+
+        def tree(tid, tname, childs, px, py, btype):
+            return f"""--- !u!206 &{tid}
 BlendTree:
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {{fileID: 0}}
   m_PrefabInstance: {{fileID: 0}}
   m_PrefabAsset: {{fileID: 0}}
-  m_Name: Locomotion
+  m_Name: {tname}
   m_Childs:
-{childs}  m_BlendParameter: Speed
-  m_BlendParameterY: Speed
+{childs}  m_BlendParameter: {px}
+  m_BlendParameterY: {py}
   m_MinThreshold: 0
   m_MaxThreshold: 1
   m_UseAutomaticThresholds: 0
   m_NormalizedBlendValues: 0
-  m_BlendType: 0
-""")
+  m_BlendType: {btype}
+"""
+        # umbrales (x, y): la velocidad en el marco del personaje (VelX/VelZ, Enemy.Locomotion.cs). El centro y el anillo de
+        # caminar van en un blend tree 2D Simple Directional (interpola en el triángulo de dos vecinos y el centro: el paso
+        # mezclado camina justo la velocidad pedida); una muestra en la misma dirección que otra pero más lejos (Run, delante
+        # de Walk) va con el anillo en un 1D sobre Speed, como antes
+        two_d = isinstance(ths[0], (list, tuple))
+        if not two_d:
+            objs.append(tree(bt_id, "Locomotion", "".join(child(m, th, sc) for m, th, sc in zip(locomotion, ths, loco_scales)), "Speed", "Speed", 0))
+        else:
+            mags = [(t[0] * t[0] + t[1] * t[1]) ** 0.5 for t in ths]
+
+            def same_dir(i, j):
+                return mags[i] > 1e-6 and mags[j] > 1e-6 and abs(ths[i][0] * ths[j][1] - ths[i][1] * ths[j][0]) < 1e-6 and \
+                    ths[i][0] * ths[j][0] + ths[i][1] * ths[j][1] > 0
+            outer = [i for i in range(len(ths)) if any(same_dir(i, j) and mags[j] < mags[i] for j in range(len(ths)))]
+            inner = [i for i in range(len(ths)) if i not in outer]
+            dir_id = stable_id(name, "bt", "dir")
+            objs.append(tree(dir_id, "Direccional", "".join(child(locomotion[i], 0, loco_scales[i], ths[i]) for i in inner), "VelX", "VelZ", 1))
+            o = outer[0]
+            ring = next(j for j in inner if same_dir(o, j))
+            objs.append(tree(bt_id, "Locomotion", child(f"{{fileID: {dir_id}}}", round(mags[ring] / mags[o], 4), 1) + child(locomotion[o], 1, loco_scales[o]),
+                             "Speed", "Speed", 0))
         states = dict(states)
         states = {"Locomotion": f"{{fileID: {bt_id}}}", **states}
     for i, (sname, motion) in enumerate(states.items()):
@@ -496,6 +521,13 @@ AnimatorState:
   m_TimeParameter:
 """)
     default = state_ids.get("Locomotion", next(iter(state_ids.values())))
+    dir_params = "".join(f"""
+  - m_Name: {pn}
+    m_Type: 1
+    m_DefaultFloat: 0
+    m_DefaultInt: 0
+    m_DefaultBool: 0
+    m_Controller: {{fileID: 9100000}}""" for pn in ("VelX", "VelZ")) if locomotion and two_d else ""
     head = f"""%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!91 &9100000
@@ -512,7 +544,7 @@ AnimatorController:
     m_DefaultFloat: 0
     m_DefaultInt: 0
     m_DefaultBool: 0
-    m_Controller: {{fileID: 9100000}}
+    m_Controller: {{fileID: 9100000}}{dir_params}
   m_AnimatorLayers:
   - serializedVersion: 5
     m_Name: Base Layer

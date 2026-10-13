@@ -63,6 +63,12 @@ namespace Nindo
         [Tooltip("Golpes seguidos que aguanta en neutral antes de cubrirse")] public int poiseHits = 2;
         [Tooltip("No se interrumpe al recibir golpes mientras ataca")] public bool hyperArmor = false;
         public float knockbackResist = 0f;
+        [Tooltip("Metros de embestida que el modelo puede seguir avanzando cuando Kaito pegado la corta (el pie apoyado no " +
+                 "patina; el cuerpo visible está más adentro que la cápsula). 0 = el transform frena y listo")]
+        public float lungeSlack = 0f;
+        [Tooltip("Metros que puede arrastrar a Kaito por golpe cuando lo tiene pegado y la embestida no entra (el sumo empuja " +
+                 "con el cuerpo en vez de patinar). 0 = no lo mueve")]
+        public float lungeShove = 0f;
         public float staggerTime = 0.32f;
         public float parriedRecoil = 0.32f;
         [Range(0, 1)] public float finisherHealth = 0.25f;

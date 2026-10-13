@@ -349,7 +349,9 @@ namespace Nindo
                 // el pie del shiko se enciende para el pisotón (después el golpe es la onda, que viaja sola)
                 glowMove = m; danger = a.kind == AttackKind.Unblockable;
                 glowEta = a.special == "shiko" ? (clock < tl.T ? tl.T - clock : float.PositiveInfinity) : enemy.StrikeEta;
-                if (clipOwned.Contains(a.name)) return SumoPose.Lerp(output, default, 1f - Mathf.Exp(-dt / 0.09f));
+                // el golpe con su propio clip (el nombre es el estado): solo la luz. Un golpe con nombre propio sobre el clip
+                // de otro (Harite D en Attack1, o el Morote que volvió al Attack2 sin su clip) sigue posando las manos
+                if (a.name == a.state && clipOwned.Contains(a.name)) return SumoPose.Lerp(output, default, 1f - Mathf.Exp(-dt / 0.09f));
                 var p = Evaluate(m, clock, tl.ReleaseTime, tl.T, tl.sustain, snapshot);
                 // sobre un estado con clip nuevo (los golpes con nombre propio reusan Attack1..Special) el cuerpo ya viene
                 // agachado, inclinado y girado: la cadera y el torso del poser son ADITIVOS y lo doblaban (el tachiai
@@ -374,11 +376,11 @@ namespace Nindo
 
         /// <summary>
         /// Estados con clip propio (TeamAnims/SumoAnims.fbx) que ya trae la carga y el golpe atados al mismo reloj. Por
-        /// nombre de golpe (el sumo común): solo se enciende la mano o el pie que pega. Por estado (los golpes con nombre
+        /// nombre de golpe igual al estado (el sumo común, el Morote del lago): solo se enciende la mano o el pie que pega. Por estado (los golpes con nombre
         /// propio del Ōzeki y las variantes que los reusan: Harite D, Shiko D, Tachiai, Agarre, Morote): el poser sigue
         /// llevando manos y pies a su pose, pero no le suma cadera ni torso al clip.
         /// </summary>
-        static readonly HashSet<string> clipOwned = new HashSet<string> { "Attack1", "Attack2", "Attack3", "Special" };
+        static readonly HashSet<string> clipOwned = new HashSet<string> { "Attack1", "Attack2", "Attack3", "Special", "Morote" };
 
         SumoPose Evaluate(Move m, float clock, float release, float T, float sustain, in SumoPose from)
         {

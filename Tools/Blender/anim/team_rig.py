@@ -660,8 +660,10 @@ class TeamSolver:
         sp = ch.spec
         g = lambda k, dflt=None: c.get(k) if c.get(k) is not None else dflt
         travel = g("travel", 0.0)
-        # lo clavado en el mundo (pies) se autora en el mundo: en el clip se corre lo que avanzó el transform
-        sh = ch.travel_axis * travel
+        # lo clavado en el mundo (pies) se autora en el mundo: en el clip se corre lo que avanzó el transform (para atrás del
+        # avance; un salto de costado o para atrás trae su dirección en 'travel_dir')
+        td = c.get("travel_dir")
+        sh = ch.travel_axis * travel if td is None else Vector((-td[0], -td[1], 0.0)) * travel
         # ---- cadera
         prest = R.rest[sp["pelvis"]]
         Hm = compose(prest.translation + ch.offset_arm(g("hips", (0, 0, 0))),
@@ -1070,7 +1072,10 @@ def bake(ch, clip, solver):
             pose.get(n)
         frames.append(pose.W)
         ctrls.append(c)
-        roots.append(ch.offset_arm((0.0, -(c.get("travel") or 0.0), 0.0)) + ch.offset_arm(clip.root_vel * (f / FPS)))
+        # 'travel' va hacia adelante (-Y) salvo que el clip diga otra dirección (los saltos de costado o para atrás)
+        tx, ty = getattr(clip, "travel_dir", (0.0, -1.0))
+        tv = c.get("travel") or 0.0
+        roots.append(ch.offset_arm((tx * tv, ty * tv, 0.0)) + ch.offset_arm(clip.root_vel * (f / FPS)))
         drops.append(solver.hip_drop)
         misses.append(dict(m))
     if clip.loop:
@@ -1165,6 +1170,8 @@ class TeamClip(NA.Clip):
         if self.travel_table is not None:
             i = max(0, min(len(self.travel_table) - 1, int(round(f))))
             c["travel"] = self.travel_table[i]
+            if getattr(self, "travel_dir", None) is not None:
+                c["travel_dir"] = self.travel_dir
         h = self.timing.get("hold")
         # los cuadros que se leen del golpe (de la pausa del aviso al primero activo; un clip puede pedir otros con
         # una clave 'look'): ahí el arma va donde se pidió

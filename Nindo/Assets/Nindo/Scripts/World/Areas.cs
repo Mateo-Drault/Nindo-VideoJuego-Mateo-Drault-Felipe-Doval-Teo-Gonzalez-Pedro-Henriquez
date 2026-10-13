@@ -106,19 +106,24 @@ namespace Nindo
         public void SpawnAll()
         {
             completed = Game.Save.HasFlag(Flags.Encounter(id));
-            if (completed) return;
+            // qué hace cada uno antes de la pelea (EnemyAmbient); la roca del que medita queda aunque ya esté ganado
+            if (completed) { EnemyAmbient.Setup(this, spawns, members); return; }
             foreach (var s in spawns)
             {
                 var e = EnemyFactory.Spawn(s.archetype, s.pos, s.rot, this);
                 e.transform.SetParent(transform, true);
                 members.Add(e);
             }
+            EnemyAmbient.Setup(this, spawns, members);
         }
 
         void Update()
         {
             if (completed || Game.Player == null) return;
-            if (!manualActivation && !active && CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < activationRadius && !Game.InCutscene)
+            // con alguno en su idle ambiental (meditando, practicando, dormido) el radio del centro no vale: el encuentro arranca
+            // cuando uno de ellos nota a Kaito de cerca (Enemy.TickIdle) y avisa al resto (EnemyAmbient.NoticeRadius)
+            if (!manualActivation && !active && CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < activationRadius && !Game.InCutscene
+                && !EnemyAmbient.AnyHolding(members))
                 Activate();
             if (active && wantBarrier && barrier == null && !Game.InCutscene) TryCloseArea();
         }

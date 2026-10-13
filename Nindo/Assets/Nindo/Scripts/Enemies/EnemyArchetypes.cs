@@ -11,16 +11,25 @@ namespace Nindo
     {
         // apex = fin de la pausa del aviso y activeStart = cuadro de contacto de los clips nuevos (TeamAnims/*Anims.fbx.json,
         // 'normalized': Tools/Blender/anim/build_team_anims.py falla si estos números no coinciden con el clip)
-        const float NinjaApex1 = 0.50f, NinjaApex2 = 0.318f, NinjaApex3 = 0.382f, NinjaApexThrust = 0.275f;
+        const float NinjaApex1 = 0.50f, NinjaApex2 = 0.318f, NinjaApex3 = 0.3056f, NinjaApexThrust = 0.275f;
         const float SumoApex1 = 0.556f, SumoApex2 = 0.407f, SumoApex3 = 0.571f, SumoApexSpecial = 0.233f;
+        // golpes de zona con clip propio (Tools/Blender/anim/team_moves.py): el remolino y el salto del ninja, el morote del sumo
+        const float NinjaApexWhirl = 0.2778f, NinjaApexLeap = 0.2917f, SumoApexMorote = 0.3333f;
+        // cuadro del clip en que arranca la embestida (AttackDef.lungeFrom: desde ahí sigue los cuadros del clip, ver
+        // Enemy.Locomotion.cs). En los cortes es el primero de la suelta; en los saltos, el último con la punta en el piso
+        const float NinjaFrom1 = 0.5417f, NinjaFrom2 = 0.3636f, NinjaFrom3 = 0.3611f, NinjaFromThrust = 0.3f;
+        const float NinjaFromLeap = 0.3333f, NinjaFromWhirl = 0.3056f;
+        const float SumoFrom1 = 0.5926f, SumoFrom2 = 0.4444f, SumoFrom3 = 0.5952f, SumoFromMorote = 0.3611f;
 
         static AttackDef Hit(string state, float dmg, float aStart, float aEnd, float range = 2.3f, float arc = 110f,
-            AttackKind kind = AttackKind.Light, float lunge = 0.8f, float telegraph = 0f, float speed = 1f, float kb = 0.6f, float apex = -1f)
+            AttackKind kind = AttackKind.Light, float lunge = 0.8f, float telegraph = 0f, float speed = 1f, float kb = 0.6f, float apex = -1f,
+            float from = -1f, bool air = false)
         {
             return new AttackDef
             {
                 name = state, state = state, damage = dmg, activeStart = aStart, activeEnd = aEnd, range = range, arc = arc,
                 kind = kind, lunge = lunge, telegraph = telegraph, speed = speed, knockback = kb, apex = apex,
+                lungeFrom = from, lungeAir = air,
                 hitStop = kind == AttackKind.Light ? 0.07f : 0.12f, sfx = kind == AttackKind.Light ? "enemy_swing" : "enemy_swing_heavy",
             };
         }
@@ -53,14 +62,19 @@ namespace Nindo
                 // desequilibrio por golpe: hasta 4 golpes o ese tiempo)
                 radius = 0.42f, height = 1.7f, scale = 1f, maxImbalance = 3, exhaustedTime = 2.4f, guardTime = 1.4f,
                 poiseHits = 3, preferredDistance = 3.4f, detectRadius = 10f,
+                // los cortes despegan los pies en la suelta, pero el de atrás todavía empuja: con Kaito pegado (el imán corta
+                // la embestida) patinaba hasta 14 cm (build_team_anims, magnet_skate_cm); 0.15 m de modelo lo cubren (el
+                // cuerpo llega a 0.48 m adelante del transform, a ~0.4 m del de Kaito con las cápsulas pegadas)
+                lungeSlack = 0.15f,
                 animGuard = "Guard", animCounter = "Counter", animExhausted = "Exhausted", animHit = "Hit",
                 animSpotted = "Spotted", animDeath = "Death", animParried = "Parried", deathClipFalls = true,
             };
-            var a1 = Hit("Attack1", 12, 0.583f, 0.75f, telegraph: 0.12f, apex: NinjaApex1);
-            var a2 = Hit("Attack2", 12, 0.455f, 0.636f, apex: NinjaApex2);
-            var a3 = Hit("Attack3", 15, 0.5f, 0.618f, kind: AttackKind.Heavy, lunge: 1.4f, kb: 1.2f, apex: NinjaApex3);
+            // los cuatro golpes saltan (los pies dejan el piso en la embestida): con Kaito cerca caen más corto ('air')
+            var a1 = Hit("Attack1", 12, 0.583f, 0.75f, telegraph: 0.12f, apex: NinjaApex1, from: NinjaFrom1, air: true);
+            var a2 = Hit("Attack2", 12, 0.455f, 0.636f, apex: NinjaApex2, from: NinjaFrom2, air: true);
+            var a3 = Hit("Attack3", 15, 0.583f, 0.694f, kind: AttackKind.Heavy, lunge: 1.4f, kb: 1.2f, apex: NinjaApex3, from: NinjaFrom3, air: true);
             // la estocada arranca de lejos con su propio clip (se lanza volando): el aviso dura más para que se lea
-            var thrust = Hit("Thrust", 16, 0.525f, 0.625f, kind: AttackKind.Heavy, lunge: 3.2f, range: 2.6f, apex: NinjaApexThrust);
+            var thrust = Hit("Thrust", 16, 0.525f, 0.625f, kind: AttackKind.Heavy, lunge: 3.2f, range: 2.6f, apex: NinjaApexThrust, from: NinjaFromThrust, air: true);
             thrust.windup = 0.7f;
             c.patterns = new[]
             {
@@ -78,9 +92,9 @@ namespace Nindo
             c.maxHealth = 90; c.runSpeed = 5.6f; c.maxImbalance = 4; c.guardTime = 1.8f; c.poiseHits = 2; c.cinematicFinisher = true;
             c.tint = new Color(0.75f, 0.18f, 0.15f); c.tintStrength = 0.55f;
             c.ScaleSteps(1.25f, 1.12f); // a1/a2 del ninja están en dos patrones: se escalan una sola vez
-            var a1 = Hit("Attack1", 14, 0.583f, 0.75f, telegraph: 0.1f, speed: 1.12f, apex: NinjaApex1);
-            var a2 = Hit("Attack2", 14, 0.455f, 0.636f, speed: 1.12f, apex: NinjaApex2);
-            var a3 = Hit("Attack3", 18, 0.5f, 0.618f, kind: AttackKind.Heavy, lunge: 1.4f, speed: 1.1f, apex: NinjaApex3);
+            var a1 = Hit("Attack1", 14, 0.583f, 0.75f, telegraph: 0.1f, speed: 1.12f, apex: NinjaApex1, from: NinjaFrom1, air: true);
+            var a2 = Hit("Attack2", 14, 0.455f, 0.636f, speed: 1.12f, apex: NinjaApex2, from: NinjaFrom2, air: true);
+            var a3 = Hit("Attack3", 18, 0.583f, 0.694f, kind: AttackKind.Heavy, lunge: 1.4f, speed: 1.1f, apex: NinjaApex3, from: NinjaFrom3, air: true);
             var list = new System.Collections.Generic.List<AttackPattern>(c.patterns);
             list.Add(new AttackPattern { name = "Combo largo", steps = new[] { a1, a2, a1, a3 }, weight = 1.2f, maxRange = 2.8f });
             c.patterns = list.ToArray();
@@ -95,12 +109,18 @@ namespace Nindo
                 radius = 0.85f, height = 2.5f, scale = 1f, maxImbalance = 2, exhaustedTime = 3.8f, guardTime = 0.8f,
                 poiseHits = 4, hyperArmor = true, knockbackResist = 0.7f, preferredDistance = 3.6f, detectRadius = 11f,
                 staggerTime = 0.25f, cinematicFinisher = true,
+                // con Kaito pegado el imán corta la embestida y el pie de atrás (clavado mientras avanza) patinaba hasta
+                // 0.5 m (build_team_anims, magnet_skate_cm). Con las cápsulas pegadas la panza (0.58 m adelante del
+                // transform, 0.78 en el golpe) queda a ~0.45 m del cuerpo de Kaito: el modelo sigue 0.35 m sin tocarlo
+                lungeSlack = 0.35f,
+                // y antes de eso lo arrastra con la panza (hasta 0.6 m por golpe): el pie de atrás queda clavado empujando
+                lungeShove = 0.6f,
                 animGuard = "Idle", animCounter = "Attack1", animExhausted = "Exhausted", animHit = "Hit",
                 animSpotted = "Spotted", animDeath = "Death", animParried = "Parried", deathClipFalls = true,
             };
-            var slap1 = Hit("Attack1", 18, 0.667f, 0.815f, range: 2.8f, arc: 120, kind: AttackKind.Heavy, lunge: 0.6f, kb: 1.6f, apex: SumoApex1);
-            var slap2 = Hit("Attack2", 20, 0.593f, 0.741f, range: 2.8f, arc: 130, kind: AttackKind.Heavy, lunge: 0.6f, kb: 1.6f, apex: SumoApex2);
-            var stomp = Hit("Attack3", 26, 0.643f, 0.738f, range: 3.4f, arc: 360, kind: AttackKind.Heavy, lunge: 0.2f, kb: 2.2f, apex: SumoApex3);
+            var slap1 = Hit("Attack1", 18, 0.667f, 0.815f, range: 2.8f, arc: 120, kind: AttackKind.Heavy, lunge: 0.6f, kb: 1.6f, apex: SumoApex1, from: SumoFrom1);
+            var slap2 = Hit("Attack2", 20, 0.593f, 0.741f, range: 2.8f, arc: 130, kind: AttackKind.Heavy, lunge: 0.6f, kb: 1.6f, apex: SumoApex2, from: SumoFrom2);
+            var stomp = Hit("Attack3", 26, 0.643f, 0.738f, range: 3.4f, arc: 360, kind: AttackKind.Heavy, lunge: 0.2f, kb: 2.2f, apex: SumoApex3, from: SumoFrom3);
             // embestida: el windup mínimo de un imparable (0.8 s) ya alcanza; el resto lo da el recorrido (la fase
             // activa del clip es la carrera, que Enemy estira lo que dura el carril)
             var charge = Hit("Special", 30, 0.3f, 0.7f, range: 2.4f, arc: 90, kind: AttackKind.Unblockable, lunge: 0f, kb: 3f, apex: SumoApexSpecial);
@@ -308,10 +328,10 @@ namespace Nindo
         public static void NinjaMountainMoves(EnemyConfig c)
         {
             c.ScaleSteps(1.1f, 0.92f);
-            var a1 = Hit("Attack1", 14, 0.583f, 0.75f, telegraph: 0.15f, speed: 0.92f, apex: NinjaApex1);
-            var a2 = Hit("Attack2", 14, 0.455f, 0.636f, speed: 0.92f, apex: NinjaApex2);
+            var a1 = Hit("Attack1", 14, 0.583f, 0.75f, telegraph: 0.15f, speed: 0.92f, apex: NinjaApex1, from: NinjaFrom1, air: true);
+            var a2 = Hit("Attack2", 14, 0.455f, 0.636f, speed: 0.92f, apex: NinjaApex2, from: NinjaFrom2, air: true);
             // el tajo de arriba con todo el peso: 0.95 s de carga (VariantMotion lo echa atrás antes de soltar)
-            var breaker = Hit("Attack3", 20, 0.5f, 0.618f, range: 2.6f, arc: 120, kind: AttackKind.Unblockable, lunge: 1.3f, kb: 2.2f, apex: NinjaApex3);
+            var breaker = Hit("Attack3", 20, 0.583f, 0.694f, range: 2.6f, arc: 120, kind: AttackKind.Unblockable, lunge: 1.3f, kb: 2.2f, apex: NinjaApex3, from: NinjaFrom3, air: true);
             breaker.windup = 0.95f; breaker.name = "Rompeguardia";
             Weight(c, "Combo de 3", 1f);
             Add(c, new AttackPattern { name = "Avalancha", steps = new[] { a1, a2, breaker }, weight = 1.6f, maxRange = 2.8f, cooldown = 5f },
@@ -321,11 +341,15 @@ namespace Nindo
         /// <summary>Ninja del lago: fluido; un corte y un remolino de 360° (dorado) y el arpón que llega de lejos.</summary>
         public static void NinjaLakeMoves(EnemyConfig c)
         {
-            var a1 = Hit("Attack1", 12, 0.583f, 0.75f, telegraph: 0.1f, apex: NinjaApex1);
-            var whirl = Hit("Attack2", 14, 0.455f, 0.636f, range: 2.7f, arc: 360, kind: AttackKind.Heavy, lunge: 1.1f, telegraph: 0.1f, kb: 1.4f, apex: NinjaApex2);
+            var a1 = Hit("Attack1", 12, 0.583f, 0.75f, telegraph: 0.1f, apex: NinjaApex1, from: NinjaFrom1, air: true);
+            // el remolino tiene su clip (Whirl: una vuelta entera en el aire, los pies giran con el cuerpo); sin él vuelve al
+            // Attack2 que VariantMotion gira entero
+            var whirl = Hit("Whirl", 14, 0.556f, 0.667f, range: 2.7f, arc: 360, kind: AttackKind.Heavy, lunge: 1.1f, telegraph: 0.1f, kb: 1.4f, apex: NinjaApexWhirl, from: NinjaFromWhirl, air: true);
             whirl.name = "Remolino";
-            // el arpón es la estocada voladora (clip Thrust) con menos recorrido
-            var harpoon = Hit("Thrust", 16, 0.525f, 0.625f, range: 3.2f, kind: AttackKind.Heavy, lunge: 2.4f, kb: 1.2f, apex: NinjaApexThrust);
+            whirl.fallback = Fallback(Hit("Attack2", 14, 0.455f, 0.636f, lunge: 1.1f, apex: NinjaApex2, from: NinjaFrom2, air: true));
+            // el arpón es la estocada voladora (clip Thrust) con menos recorrido: en el vuelo los pies van con el avance y
+            // caen cuando terminó, así que con 2.4 m no patinan (build_team_anims lo mide con el reloj del juego)
+            var harpoon = Hit("Thrust", 16, 0.525f, 0.625f, range: 3.2f, kind: AttackKind.Heavy, lunge: 2.4f, kb: 1.2f, apex: NinjaApexThrust, from: NinjaFromThrust, air: true);
             harpoon.windup = 0.75f; harpoon.name = "Arpón";
             Remove(c, "Estocada");
             // alcance real: 3.2 + 2.4 de embestida + el radio de Kaito = 5.95 m; arranca a 5.5 como mucho (si no, el
@@ -337,14 +361,20 @@ namespace Nindo
         /// <summary>Ninja del bambú: acrobático; entra de un salto desde 4-6.5 m y después de un combo se repliega.</summary>
         public static void NinjaBambooMoves(EnemyConfig c)
         {
-            var a1 = Hit("Attack1", 12, 0.583f, 0.75f, telegraph: 0.12f, apex: NinjaApex1);
-            var a2 = Hit("Attack2", 12, 0.455f, 0.636f, apex: NinjaApex2);
+            var a1 = Hit("Attack1", 12, 0.583f, 0.75f, telegraph: 0.12f, apex: NinjaApex1, from: NinjaFrom1, air: true);
+            var a2 = Hit("Attack2", 12, 0.455f, 0.636f, apex: NinjaApex2, from: NinjaFrom2, air: true);
             // el salto: el aviso dura lo que tarda en cerrar la distancia (VariantMotion lo levanta en el aire)
-            var leap = Hit("Attack3", 16, 0.5f, 0.618f, range: 2.4f, kind: AttackKind.Heavy, lunge: 4.4f, kb: 1.4f, apex: NinjaApex3);
+            // el clip Leap salta en un arco de 1 m con la embestida entera en el aire (0.51 s desde la suelta) y el golpe
+            // pega bajando; sin él vuelve al Attack3, que VariantMotion levanta (y patina en la pausa: 4.4 m no entran en su suelta)
+            // con Kaito cerca (desde 3.8 m) cae más corto: cortado por el imán a mitad del vuelo chocaba con una pared invisible
+            var leap = Hit("Leap", 16, 0.708f, 0.792f, range: 2.4f, kind: AttackKind.Heavy, lunge: 4.4f, kb: 1.4f, apex: NinjaApexLeap, from: NinjaFromLeap, air: true);
             leap.windup = 0.8f; leap.name = "Salto";
-            // repliegue: salto atrás de 3 m sin daño (queda a tiro de otro salto)
-            var hop = Hit("Spotted", 0, 0.15f, 0.6f, lunge: 0f, telegraph: 0.12f);
+            leap.fallback = Fallback(Hit("Attack3", 16, 0.583f, 0.694f, lunge: 4.4f, apex: NinjaApex3, from: NinjaFrom3, air: true));
+            // repliegue: salto atrás de 3 m sin daño (queda a tiro de otro salto). Su clip (HopBack) se agacha, despega en
+            // 'from' y cae en activeEnd; sin él vuelve al Spotted que VariantMotion levanta
+            var hop = Hit("HopBack", 0, 0.219f, 0.844f, lunge: 0f, telegraph: 0.12f, apex: 0.156f, from: 0.219f);
             hop.special = "hop_back"; hop.specialParam = 3f; hop.name = "Repliegue";
+            hop.fallback = Fallback(Hit("Spotted", 0, 0.15f, 0.6f, lunge: 0f, telegraph: 0.12f));
             Remove(c, "Estocada");
             // alcance real del salto: 2.4 + 4.4 + 0.35 = 7.15 m. El patrón se elige el primer frame que entra en rango
             // (corriendo hacia Kaito arranca casi siempre en el borde): a 6.6 queda medio metro de margen
@@ -356,7 +386,7 @@ namespace Nindo
         public static void SumoMountainMoves(EnemyConfig c)
         {
             c.ScaleSteps(1.1f, 0.9f);
-            var stomp = Hit("Attack3", 26, 0.643f, 0.738f, range: 3.4f, arc: 360, kind: AttackKind.Unblockable, lunge: 0.2f, telegraph: 0.15f, kb: 2.6f, apex: SumoApex3);
+            var stomp = Hit("Attack3", 26, 0.643f, 0.738f, range: 3.4f, arc: 360, kind: AttackKind.Unblockable, lunge: 0.2f, telegraph: 0.15f, kb: 2.6f, apex: SumoApex3, from: SumoFrom3);
             stomp.special = "slam"; stomp.specialParam = 4.6f; stomp.tracking = false; stomp.name = "Shiko D";
             Remove(c, "Pisotón");
             Add(c, new AttackPattern { name = "Shiko de nieve", steps = new[] { stomp }, weight = 1.2f, maxRange = 4f, cooldown = 5f });
@@ -365,9 +395,12 @@ namespace Nindo
         /// <summary>Sumo del lago: una bofetada y el empujón a dos manos que te saca lejos (dorado, con salpicón).</summary>
         public static void SumoLakeMoves(EnemyConfig c)
         {
-            var slap = Hit("Attack1", 18, 0.667f, 0.815f, range: 2.8f, arc: 120, kind: AttackKind.Heavy, lunge: 0.6f, kb: 1.6f, apex: SumoApex1);
-            var morote = Hit("Attack2", 20, 0.593f, 0.741f, range: 3.0f, arc: 120, kind: AttackKind.Heavy, lunge: 1.6f, kb: 3.8f, apex: SumoApex2);
+            var slap = Hit("Attack1", 18, 0.667f, 0.815f, range: 2.8f, arc: 120, kind: AttackKind.Heavy, lunge: 0.6f, kb: 1.6f, apex: SumoApex1, from: SumoFrom1);
+            // el morote tiene su clip (dos pasos que empujan con los dos brazos estirados, los pies nunca clavados mientras
+            // avanza); sin él vuelve al Attack2 con las manos de SumoPoser (el pie de atrás patinaba 1 m)
+            var morote = Hit("Morote", 20, 0.611f, 0.75f, range: 3.0f, arc: 120, kind: AttackKind.Heavy, lunge: 1.6f, kb: 3.8f, apex: SumoApexMorote, from: SumoFromMorote);
             morote.name = "Morote";
+            morote.fallback = Fallback(Hit("Attack2", 20, 0.593f, 0.741f, lunge: 1.6f, apex: SumoApex2, from: SumoFrom2));
             Weight(c, "Bofetadas", 1.2f);
             Add(c, new AttackPattern { name = "Oleaje", steps = new[] { slap, morote }, weight = 1.6f, maxRange = 3.4f });
         }
@@ -375,12 +408,20 @@ namespace Nindo
         /// <summary>Sumo del bambú: se corre de costado de un salto (la finta) y embiste desde ahí.</summary>
         public static void SumoBambooMoves(EnemyConfig c)
         {
-            var feint = Hit("Spotted", 0, 0.15f, 0.7f, lunge: 0f, telegraph: 0.1f);
+            // su clip (HopSideR, y HopSideL cuando Enemy elige el otro lado) se hunde, despega en 'from' y cae en activeEnd;
+            // sin él vuelve al Spotted que VariantMotion levanta
+            var feint = Hit("HopSideR", 0, 0.306f, 0.722f, lunge: 0f, telegraph: 0.1f, apex: 0.222f, from: 0.306f);
             feint.special = "hop_side"; feint.specialParam = 2.6f; feint.name = "Finta";
+            feint.fallback = Fallback(Hit("Spotted", 0, 0.15f, 0.7f, lunge: 0f, telegraph: 0.1f));
             var charge = Hit("Special", 30, 0.3f, 0.7f, range: 2.4f, arc: 90, kind: AttackKind.Unblockable, lunge: 0f, kb: 3f, apex: SumoApexSpecial);
             charge.special = "charge"; charge.specialParam = 13f; charge.tracking = true;
             Add(c, new AttackPattern { name = "Finta y embestida", steps = new[] { feint, charge }, weight = 1.5f, minRange = 3.5f, maxRange = 10f, cooldown = 5f });
         }
+
+        /// <summary>El clip de siempre (estado y tiempos de un Hit) para un golpe con clip propio: Enemy lo usa si el
+        /// controller no tiene el estado nuevo.</summary>
+        static AttackClipFallback Fallback(AttackDef a) =>
+            new AttackClipFallback { state = a.state, activeStart = a.activeStart, activeEnd = a.activeEnd, apex = a.apex, lungeFrom = a.lungeFrom, lungeAir = a.lungeAir };
 
         static void Add(EnemyConfig c, params AttackPattern[] add)
         {
