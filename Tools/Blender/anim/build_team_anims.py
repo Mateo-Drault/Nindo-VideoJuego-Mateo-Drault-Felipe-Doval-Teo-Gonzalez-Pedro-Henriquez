@@ -1211,14 +1211,15 @@ def main():
     # .meta todavía viejo, el worktree tuvo 20 minutos un FBX mal cortado que Unity o el resto podían tomar
     import tempfile, shutil
     if EXPORT and (not ONLY or opt("--fbx")):
-        stage = os.path.join(tempfile.mkdtemp(prefix="nindo_" + CHAR + "_"), os.path.basename(FBX))
         if failures:
             print("NO SE EXPORTA: fallaron chequeos")
         else:
+            stage = os.path.join(tempfile.mkdtemp(prefix="nindo_" + CHAR + "_"), os.path.basename(FBX))
             export_fbx(ch, stage, 1, last)
             nfail = len(failures)
             verify_fbx(ch, stage, last)
             if len(failures) > nfail:
+                shutil.rmtree(os.path.dirname(stage), ignore_errors=True)
                 print("FBX DESCARTADO: no coincide con el modelo")
                 sys.exit(1)
             info = {"fps": T.FPS, "take": "Scene", "character": CHAR, "model": ch.spec["fbx"], "units_per_meter": round(ch.u, 5),
