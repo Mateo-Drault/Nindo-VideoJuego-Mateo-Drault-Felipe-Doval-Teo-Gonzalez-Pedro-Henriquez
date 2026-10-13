@@ -22,7 +22,8 @@ namespace Nindo
         {
             NewGameRequested = newGame;
             CameFromMenu = true;
-            if (newGame) SaveSystem.NewGame(); else SaveSystem.Load();
+            if (newGame) { SaveSystem.NewGame(); Game.Audio?.OnNewGame(); }
+            else SaveSystem.Load();
             Load(GameScene);
         }
 

@@ -128,7 +128,10 @@ namespace Nindo
         int layer;              // capa actual; las anteriores se están apagando
         int head = -1, next = -1;
         int playing, target;    // fase que suena y fase pedida
-        float targetLead = -1f; // s hasta lo que anuncia la frase de entrada pedida (-1: lo de siempre)
+        // cuándo tiene que sonar lo que anuncia la frase de entrada pedida, en el reloj del DSP (-1: lo de siempre). Absoluto:
+        // como segundos desde el pedido se medía desde donde arrancaba la capa (el pedido + Lead) y se redondeaba a tiempos
+        // de la frase, y los tambores de Gorō caían 0.03-0.47 s (0.25 de media) después de que se pone de pie
+        double targetAt = -1;
         int requestPhase, requestFrame = -1;
         bool pendingStart, silent, inOutro;
         double startAt, outroEnd;
@@ -178,6 +181,13 @@ namespace Nindo
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Partida nueva en la misma sesión: las intros largas vuelven a sonar enteras la primera vez. introHeard vive en el
+        /// AudioManager (no se destruye entre escenas) y la primera pelea de un jefe ya oído en otra partida se salteaba
+        /// su apertura (16 s de koto en Gorō, 14 s en Mizuchi, 10.8 s en Kokuyō).
+        /// </summary>
+        public void ForgetHeardIntros() => introHeard.Clear();
+
         /// <summary>¿Este tema es por fases y está en NindoContent? Si falta el clip se usa el camino de siempre.</summary>
         public bool Handles(string key)
         {
@@ -199,6 +209,7 @@ namespace Nindo
             silent = inOutro = false;
             pendingStart = true;
             startAt = Now + Mathf.Max(0f, delay);
+            targetAt = -1;
             head = next = -1;
         }
 
@@ -214,13 +225,13 @@ namespace Nindo
                 // después del silencio la fase entra apenas se la pide (la misma que sonaba o una más alta), con su
                 // frase de entrada, sin esperar compás: no hay nada sonando con qué alinearse. Lo que todavía suena
                 // (la cola del golpe de la barra falsa) se apaga mientras entra
-                target = Mathf.Max(target, phase); targetLead = leadIn;
+                target = Mathf.Max(target, phase); targetAt = leadIn >= 0f ? Now + leadIn : -1;
                 FadeAll(Now + Lead, 0.4, false);
                 silent = false; pendingStart = true; startAt = Now;
                 return;
             }
             if (phase <= target) return;
-            target = phase; targetLead = leadIn;
+            target = phase; targetAt = leadIn >= 0f ? Now + leadIn : -1;
         }
 
         /// <summary>Apaga lo que suena sin terminar el tema: la próxima SetPhase entra desde el silencio. Con
@@ -355,7 +366,9 @@ namespace Nindo
             if (intro != null)
             {
                 int beats;
-                if (targetLead >= 0f) beats = Mathf.Max(1, Mathf.RoundToInt((float)(targetLead * intro.rate / intro.BeatSamples)));
+                // con lo que suena la frase sigue su grilla: lo pedido cae en el tiempo más cercano (±medio tiempo, sin
+                // el atraso de antes)
+                if (targetAt >= 0) beats = Mathf.Max(1, Mathf.RoundToInt((float)((targetAt - b) * intro.rate / intro.BeatSamples)));
                 else
                 {
                     // la sección nueva cae en un compás de lo que sonaba, de 2 a 5 tiempos después del cambio
@@ -371,7 +384,7 @@ namespace Nindo
             head = next = -1;
             if (intro != null) head = Schedule(intro, entry, b, true);
             StartLoop(MusicPlan.FindClip(p.clip), b);
-            playing = target; targetLead = -1f;
+            playing = target; targetAt = -1;
         }
 
         void StartLayer(int phase, double at, bool allowIntro)
@@ -384,15 +397,19 @@ namespace Nindo
             if (intro != null)
             {
                 int entry = p.introEntry;
-                if (targetLead >= 0f)
+                if (targetAt >= 0)
                 {
-                    int beats = Mathf.Max(1, Mathf.RoundToInt((float)(targetLead * intro.rate / intro.BeatSamples)));
-                    entry = Mathf.Max(0, p.introHit - (int)System.Math.Round(beats * intro.BeatSamples));
+                    // desde el silencio no hay con qué alinearse: la frase entra donde haga falta para que lo que anuncia
+                    // caiga justo en targetAt. Si falta más que lo que la frase tiene antes, arranca desde su principio
+                    // más tarde; si ya pasó, desde lo anunciado
+                    long lead = (long)System.Math.Round((targetAt - at) * intro.rate);
+                    if (lead > p.introHit) { at += (lead - p.introHit) / (double)intro.rate; lead = p.introHit; }
+                    entry = p.introHit - (int)System.Math.Max(0L, lead);
                 }
                 head = Schedule(intro, entry, at, true);
             }
             StartLoop(MusicPlan.FindClip(p.clip), at);
-            playing = phase; targetLead = -1f;
+            playing = phase; targetAt = -1;
             if (phase == 1) introHeard.Add(track.key);
         }
 

@@ -185,6 +185,9 @@ namespace Nindo
         // caer el jefe, EndBossMusic toca el cierre del tema.
         public int BossMusicPhase { get; private set; }
 
+        /// <summary>Partida nueva: las aperturas largas de los jefes vuelven a sonar (MusicDirector.ForgetHeardIntros).</summary>
+        public void OnNewGame() => director.ForgetHeardIntros();
+
         /// <summary>Estado de la música por fases (para probar con RunCommand: Debug.Log(Game.Audio.MusicState)).</summary>
         public string MusicState => director.Describe();
 
