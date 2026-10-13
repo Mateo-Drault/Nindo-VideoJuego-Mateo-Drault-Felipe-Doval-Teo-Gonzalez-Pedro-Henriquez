@@ -134,15 +134,13 @@ namespace Nindo
             mapSealCount = MapText("SealCount", info, 30f, UIFactory.Paper, new Vector2(376f, -576f), true);
             MapText("ExploredLabel", info, 24f, MapDim, new Vector2(112f, -632f), false).text = "Explorado";
             mapExplored = MapText("Explored", info, 32f, UIFactory.Gold, new Vector2(300f, -632f), true);
-            // "Sin rezar" solo si la partida guarda dónde se rezó; con esa fila de más se aprietan (en 1080 de alto no
-            // tienen que tocar las teclas de abajo, que son tres renglones). El de reaparición es el mismo torii que en
-            // la lámina, sobre su charco de tinta con la luz: puede no estar rezado (se registra al pasar cerca) y lo
-            // que lo distingue es la luz
-            bool bare = MapShrinesField != null;
-            float step = bare ? 34f : 38f, dy = 0f;
+            // con la fila de "Sin rezar" se aprietan (en 1080 de alto no tienen que tocar las teclas de abajo, que son tres
+            // renglones). El de reaparición es el mismo torii que en la lámina, sobre su charco de tinta con la luz: puede
+            // no estar rezado (se registra al pasar cerca) y lo que lo distingue es la luz
+            float step = 34f, dy = 0f;
             MapLegendRow(info, dy, "MapKaito", Color.white, "Kaito", false);
             MapLegendRow(info, dy += step, "MapShrine", MapShrineRed, "Santuario", false);
-            if (bare) MapLegendRow(info, dy += step, "MapShrine", MapShrineBare, "Sin rezar", false);
+            MapLegendRow(info, dy += step, "MapShrine", MapShrineBare, "Sin rezar", false);
             MapLegendRow(info, dy += step, "MapShrine", MapShrineRed, "Punto de reaparición", true);
             MapLegendRow(info, dy += step, "Hanko_IconBoss", Color.white, "Guardián", false);
             MapLegendRow(info, dy += step, "MapPortal", MapPortalJade, "Portal al dojo", false);
@@ -223,17 +221,9 @@ namespace Nindo
             MapText("Legend", parent, 24f, MapLegendText, new Vector2(164f, y), false).text = label;
         }
 
-        // SaveData.shrines (los santuarios donde Kaito ya rezó con incienso) lo agrega el frente del rezo
-        // (World/ShrineIncense, StoryDirector.Shrines). Se lee por reflexión para que el mapa compile y funcione sin
-        // ese cambio: sin el campo, todo santuario descubierto se ve rezado y la leyenda no tiene "Sin rezar". Con los
-        // dos en main se puede cambiar por Game.Save.shrines. Solo se consulta al abrir el mapa, nunca por cuadro.
-        static readonly System.Reflection.FieldInfo MapShrinesField = typeof(SaveData).GetField("shrines");
-
-        static bool MapShrinePrayed(SaveData save, string id)
-        {
-            if (MapShrinesField == null) return true;
-            return MapShrinesField.GetValue(save) is List<string> prayed && prayed.Contains(id);
-        }
+        /// <summary>Kaito ya rezó con incienso en ese santuario (SaveData.shrines, el mismo que deja el humo: World/ShrineIncense,
+        /// StoryDirector.Shrines). Solo se consulta al abrir el mapa, nunca por cuadro.</summary>
+        static bool MapShrinePrayed(SaveData save, string id) => save.shrines != null && save.shrines.Contains(id);
 
         /// <summary>Lo que depende del mundo (santuarios, jefes, portales, zonas, la lámina y su material): la primera vez
         /// que se abre, con el mundo ya armado.</summary>
