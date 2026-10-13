@@ -16939,9 +16939,270 @@
     "min_z_m": -0.001
    }
   },
-  "PoseTest": {
+  "GuardHitLow": {
    "first": 5440,
-   "last": 5672,
+   "last": 5455,
+   "frames": 15,
+   "seconds": 0.5,
+   "loop": false,
+   "phase": 1,
+   "variant_of": null,
+   "timing": {
+    "kind": "none",
+    "chain_from": "GUARD",
+    "chain_to": "GUARD",
+    "swat_meet": 3,
+    "phase": 1
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.2,
+     "fn": "Deflect"
+    }
+   ],
+   "notes": "desvío del Corte final (la hoja baja, con las dos manos): la reverencia más honda, la palma (o el bastón) encuentra la hoja a la altura de la rodilla en f3 y la acompaña hacia afuera y abajo; vuelve a la guardia en f15",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       15
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 14,
+      "flex": 11.6,
+      "dev": -35.3,
+      "twist": -12.5,
+      "grip": false,
+      "twist_max": 17.2,
+      "jump_deg": 33.5,
+      "jump_at": 12
+     },
+     "L": {
+      "excess": 0.96,
+      "at": 4,
+      "flex": -41.9,
+      "dev": 17.7,
+      "twist": 10.6,
+      "grip": false,
+      "twist_max": 10.6,
+      "jump_deg": 19.2,
+      "jump_at": 2
+     }
+    },
+    "self_clearance_cm": {},
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.5,
+    "min_z_m": -0.001
+   }
+  },
+  "GuardHitLow_P2": {
+   "first": 5465,
+   "last": 5480,
+   "frames": 15,
+   "seconds": 0.5,
+   "loop": false,
+   "phase": 2,
+   "variant_of": "GuardHitLow",
+   "timing": {
+    "kind": "none",
+    "chain_from": "GUARD",
+    "chain_to": "GUARD",
+    "swat_meet": 3,
+    "phase": 2
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.2,
+     "fn": "Deflect"
+    }
+   ],
+   "notes": "desvío del Corte final (la hoja baja, con las dos manos): la reverencia más honda, la palma (o el bastón) encuentra la hoja a la altura de la rodilla en f3 y la acompaña hacia afuera y abajo; vuelve a la guardia en f15",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       15
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.93,
+      "at": 9,
+      "flex": 17.2,
+      "dev": -34.1,
+      "twist": -11.7,
+      "grip": false,
+      "twist_max": 16.4,
+      "jump_deg": 19.7,
+      "jump_at": 1
+     },
+     "L": {
+      "excess": 0.96,
+      "at": 9,
+      "flex": -60.1,
+      "dev": -9.2,
+      "twist": 5.6,
+      "grip": false,
+      "twist_max": 12.6,
+      "jump_deg": 15.3,
+      "jump_at": 2
+     }
+    },
+    "self_clearance_cm": {},
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.5,
+    "min_z_m": -0.001
+   }
+  },
+  "GuardHitLow_P3": {
+   "first": 5490,
+   "last": 5505,
+   "frames": 15,
+   "seconds": 0.5,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "GuardHitLow",
+   "timing": {
+    "kind": "none",
+    "chain_from": "GUARD",
+    "chain_to": "GUARD",
+    "swat_meet": 3,
+    "phase": 3
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.2,
+     "fn": "Deflect"
+    }
+   ],
+   "notes": "desvío del Corte final (la hoja baja, con las dos manos): la reverencia más honda, la palma (o el bastón) encuentra la hoja a la altura de la rodilla en f3 y la acompaña hacia afuera y abajo; vuelve a la guardia en f15",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.0,
+    "sole_slip_cm": {
+     "Foot_R": [
+      0.0,
+      [
+       0,
+       15
+      ],
+      0.0
+     ],
+     "Foot_L": [
+      0.0,
+      [
+       0,
+       13
+      ],
+      0.0
+     ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 1.0,
+      "at": 5,
+      "flex": -2.1,
+      "dev": 25.0,
+      "twist": -7.2,
+      "grip": true,
+      "twist_max": 13.9,
+      "jump_deg": 21.8,
+      "jump_at": 2
+     },
+     "L": {
+      "excess": 0.8,
+      "at": 2,
+      "flex": -30.5,
+      "dev": -24.4,
+      "twist": 22.0,
+      "grip": true,
+      "twist_max": 33.1,
+      "jump_deg": 11.5,
+      "jump_at": 2
+     }
+    },
+    "self_clearance_cm": {},
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.5,
+    "min_z_m": -0.001
+   }
+  },
+  "PoseTest": {
+   "first": 5515,
+   "last": 5747,
    "frames": 232,
    "seconds": 7.7333,
    "loop": false,
@@ -17098,6 +17359,10 @@
   "GuardHitL": {
    "2": "GuardHitL_P2",
    "3": "GuardHitL_P3"
+  },
+  "GuardHitLow": {
+   "2": "GuardHitLow_P2",
+   "3": "GuardHitLow_P3"
   },
   "Hit": {
    "2": "Hit_P2",

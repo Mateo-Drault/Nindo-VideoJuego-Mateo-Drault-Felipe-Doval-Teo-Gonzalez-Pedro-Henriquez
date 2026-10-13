@@ -669,6 +669,9 @@ MonoBehaviour:
     - Defeat
     - Meditate
     - SeatedBow
+    - GuardHitLow
+    - GuardHitLow_P2
+    - GuardHitLow_P3
     - PoseTest
     stateLengths:
     - 3.2
@@ -782,6 +785,9 @@ MonoBehaviour:
     - 5.0
     - 3.2
     - 2.3333
+    - 0.5
+    - 0.5
+    - 0.5
     - 7.7333
   kits:
   - id: goro_armor

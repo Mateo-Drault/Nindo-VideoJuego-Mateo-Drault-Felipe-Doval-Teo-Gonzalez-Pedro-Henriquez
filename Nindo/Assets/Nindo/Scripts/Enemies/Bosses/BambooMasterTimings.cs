@@ -531,6 +531,18 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
             "MEDITATE", "MEDITATE", 0.0f, new string[0], new[] { "Salute", "Bow", "BowEnd" }, new[] { 0.1714f, 0.4286f, 0.7714f });
+        public static readonly MasterClip GuardHitLow = new MasterClip("GuardHitLow", 15, 0.5f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            null,
+            "GUARD", "GUARD", 0.0f, new string[0], new[] { "Deflect" }, new[] { 0.2f });
+        public static readonly MasterClip GuardHitLow_P2 = new MasterClip("GuardHitLow_P2", 15, 0.5f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            null,
+            "GUARD", "GUARD", 0.0f, new string[0], new[] { "Deflect" }, new[] { 0.2f });
+        public static readonly MasterClip GuardHitLow_P3 = new MasterClip("GuardHitLow_P3", 15, 0.5f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
+            null,
+            "GUARD", "GUARD", 0.0f, new string[0], new[] { "Deflect" }, new[] { 0.2f });
         public static readonly MasterClip PoseTest = new MasterClip("PoseTest", 232, 7.7333f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
@@ -543,7 +555,7 @@ namespace Nindo
             if (all == null)
             {
                 all = new Dictionary<string, MasterClip>();
-                foreach (var c in new[] { Idle, Walk, Run, StrafeL, StrafeR, WalkBack, Idle_P2, Walk_P2, Run_P2, StrafeL_P2, StrafeR_P2, WalkBack_P2, Idle_P3, Walk_P3, Run_P3, StrafeL_P3, StrafeR_P3, WalkBack_P3, Palm, Palm_Mid, Palm_Close, ChopPalm, ChopPalm_Mid, ChopPalm_Close, CraneKick, LeapKick, Palm_P2, Palm_Mid_P2, Palm_Close_P2, ChopPalm_P2, ChopPalm_Mid_P2, ChopPalm_Close_P2, CraneKick_P2, LeapKick_P2, Guard, GuardHit, GuardHitL, Counter, CounterStrike, CounterStrike_Mid, CounterStrike_Close, Taunt, Stance, Hit, HitHeavy, Parried, ParriedPerfect, Exhausted, ExhaustedHit, ExhaustedRise, Guard_P2, GuardHit_P2, GuardHitL_P2, Counter_P2, CounterStrike_P2, CounterStrike_Mid_P2, CounterStrike_Close_P2, Taunt_P2, Stance_P2, Hit_P2, HitHeavy_P2, Parried_P2, ParriedPerfect_P2, Exhausted_P2, ExhaustedHit_P2, ExhaustedRise_P2, Guard_P3, GuardHit_P3, GuardHitL_P3, Counter_P3, CounterStrike_P3, CounterStrike_Mid_P3, CounterStrike_Close_P3, Taunt_P3, Stance_P3, Hit_P3, HitHeavy_P3, Parried_P3, ParriedPerfect_P3, Exhausted_P3, ExhaustedHit_P3, ExhaustedRise_P3, Intro, PhaseCoat, TwinPalm, TwinPalm_Mid, TwinPalm_Close, SpinKick, Sweep, QiWave, DashStrike, DashStrike_Pass, BackHop, BackHop_P2, BackHop_P3, Palm_P3, Palm_Mid_P3, Palm_Close_P3, ChopPalm_P3, ChopPalm_Mid_P3, ChopPalm_Close_P3, CraneKick_P3, LeapKick_P3, Sweep_P3, QiWave_P3, DashStrike_P3, DashStrike_Pass_P3, PhaseStaff, Defeat, Meditate, SeatedBow, PoseTest })
+                foreach (var c in new[] { Idle, Walk, Run, StrafeL, StrafeR, WalkBack, Idle_P2, Walk_P2, Run_P2, StrafeL_P2, StrafeR_P2, WalkBack_P2, Idle_P3, Walk_P3, Run_P3, StrafeL_P3, StrafeR_P3, WalkBack_P3, Palm, Palm_Mid, Palm_Close, ChopPalm, ChopPalm_Mid, ChopPalm_Close, CraneKick, LeapKick, Palm_P2, Palm_Mid_P2, Palm_Close_P2, ChopPalm_P2, ChopPalm_Mid_P2, ChopPalm_Close_P2, CraneKick_P2, LeapKick_P2, Guard, GuardHit, GuardHitL, Counter, CounterStrike, CounterStrike_Mid, CounterStrike_Close, Taunt, Stance, Hit, HitHeavy, Parried, ParriedPerfect, Exhausted, ExhaustedHit, ExhaustedRise, Guard_P2, GuardHit_P2, GuardHitL_P2, Counter_P2, CounterStrike_P2, CounterStrike_Mid_P2, CounterStrike_Close_P2, Taunt_P2, Stance_P2, Hit_P2, HitHeavy_P2, Parried_P2, ParriedPerfect_P2, Exhausted_P2, ExhaustedHit_P2, ExhaustedRise_P2, Guard_P3, GuardHit_P3, GuardHitL_P3, Counter_P3, CounterStrike_P3, CounterStrike_Mid_P3, CounterStrike_Close_P3, Taunt_P3, Stance_P3, Hit_P3, HitHeavy_P3, Parried_P3, ParriedPerfect_P3, Exhausted_P3, ExhaustedHit_P3, ExhaustedRise_P3, Intro, PhaseCoat, TwinPalm, TwinPalm_Mid, TwinPalm_Close, SpinKick, Sweep, QiWave, DashStrike, DashStrike_Pass, BackHop, BackHop_P2, BackHop_P3, Palm_P3, Palm_Mid_P3, Palm_Close_P3, ChopPalm_P3, ChopPalm_Mid_P3, ChopPalm_Close_P3, CraneKick_P3, LeapKick_P3, Sweep_P3, QiWave_P3, DashStrike_P3, DashStrike_Pass_P3, PhaseStaff, Defeat, Meditate, SeatedBow, GuardHitLow, GuardHitLow_P2, GuardHitLow_P3, PoseTest })
                     all[c.State] = c;
             }
             return state != null && all.TryGetValue(state, out var r) ? r : null;

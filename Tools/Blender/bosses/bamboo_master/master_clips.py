@@ -570,6 +570,9 @@ def define_clips():
     # fase 3 (el bastón), el cambio de fase 2 -> 3 y la derrota: master_clips_p3.py
     import master_clips_p3 as P3
     P3.define()
+    # (al final de la toma: los clips de antes quedan en sus mismos cuadros del FBX)
+    for ph in (1, 2, 3):
+        guard_hit_low(ph)
 
 
 def knock(f, K):
@@ -974,6 +977,40 @@ def guard_hit_l(ph):
                events=[{"frame": SWAT_MEET, "fn": "Deflect"}],
                notes="desvío del revés que sube hacia su izquierda: la derecha (o el bastón) encuentra la hoja a la altura "
                      "de la cadera en f3 y la lleva hacia afuera y arriba; vuelve a la guardia en f15")
+
+
+def guard_hit_low(ph):
+    """El Corte final de Kaito, que llega con las dos manos en la empuñadura y la punta adelante y 17° abajo: en el
+    contacto (f7, el cuadro que congela el hit-stop) la hoja cruza a 0.59 m del piso, 0.65 m adelante (0.54-0.64 m con
+    Kaito de 1.6 a 1.25 m). GuardHit la encontraba a 0.76 m: la palma paraba 15-24 cm arriba de la hoja y se leía como un
+    manotazo al aire (swat2.py). Es GuardHit con la reverencia más honda y la palma (o la mano baja de la fase 2, o el
+    bastón) a la altura de la rodilla en f3; la acompaña hacia su derecha y abajo y vuelve a la guardia en f15. Mismos
+    tiempos que GuardHit (BambooMasterBoss.PlaySwat la elige por el nombre del corte)."""
+    bows = [(1, 0.35, 0.0), (2, 0.9, 0.0), (SWAT_MEET, 1.25, -2.0), (5, 1.2, -9.0), (7, 0.7, -6.0), (10, 0.25, -2.0)]
+    if ph == 1:
+        track = [(1, "r", ((-0.38, -0.42, 1.85), (0.2, -0.6, -0.75), (-0.4, 0.3, 0.85)), None),
+                 (2, "r", ((-0.15, -0.58, 1.05), (0.45, -0.85, -0.3), (0.0, 0.1, 1.0)), None),
+                 (SWAT_MEET, "r", ((0.05, -0.64, 0.65), (0.55, -0.8, -0.2), (0.05, 0.05, 1.0)), None),
+                 (5, "r", ((-0.24, -0.64, 0.5), (0.2, -1.0, -0.2), (-0.3, 0.1, 0.95)), None),
+                 (7, "r", ((-0.44, -0.5, 0.7), (-0.2, -1.0, 0.2), (-0.6, 0.2, 0.75)), None),
+                 (10, "r", ((-0.45, -0.38, 1.5), (-0.1, -0.6, 0.8), (-0.4, 0.6, 0.5)), None)]
+    else:
+        rr = ((-0.5, -0.22, 2.22), _G_R["fingers"], _G_R["dorsum"])
+        track = [(1, "l", ((0.36, -0.55, 0.98), (-0.1, -0.9, -0.3), (0.2, 0.1, 1.0)), rr),
+                 (2, "l", ((0.18, -0.6, 0.78), (-0.25, -0.9, -0.3), (0.1, 0.05, 1.0)), rr),
+                 (SWAT_MEET, "l", ((0.05, -0.64, 0.65), (-0.35, -0.9, -0.2), (0.05, 0.0, 1.0)), rr),
+                 (5, "l", ((-0.1, -0.6, 0.55), (-0.6, -0.8, -0.1), (0.15, 0.0, 1.0)), rr),
+                 (7, "l", ((0.0, -0.53, 0.76), (-0.4, -0.85, 0.2), (0.3, 0.2, 0.9)), rr),
+                 (10, "l", ((0.32, -0.5, 1.06), (0.1, -0.7, 0.6), (0.2, 0.7, 0.6)), None)]
+    staff = [(1, (0.03, -0.03, -0.34), (1.0, 0.1, 0.25)), (2, (0.06, -0.07, -0.78), (1.0, 0.15, 0.45)),
+             (SWAT_MEET, (0.12, -0.1, -1.03), (1.0, 0.2, 0.5)), (5, (0.0, -0.08, -1.02), (1.0, 0.15, 0.6)),
+             (7, (-0.02, -0.04, -0.66), (1.0, 0.1, 0.5)), (10, (0.0, 0.0, -0.22), (1.0, 0.1, 0.15))]
+    return add("GuardHitLow", 15, _swat_keys(ph, track, staff, bows), ph=ph, lag={"head": 1.0},
+               timing={"kind": "none", "chain_from": "GUARD", "chain_to": "GUARD", "swat_meet": SWAT_MEET},
+               events=[{"frame": SWAT_MEET, "fn": "Deflect"}],
+               notes="desvío del Corte final (la hoja baja, con las dos manos): la reverencia más honda, la palma (o el "
+                     "bastón) encuentra la hoja a la altura de la rodilla en f3 y la acompaña hacia afuera y abajo; vuelve a "
+                     "la guardia en f15")
 
 
 C_BODY = feet(mod(G_BODY, hips=(0.03, 0.16, -0.18), hips_rot=(0.0, -2.0, -10.0), spine=(0.0, 0.0, -6.0), chest=(-2.0, 0.0, -6.0),
