@@ -168,6 +168,11 @@ MonoBehaviour:
       smoothness: 0.3
       emission: {r: 0.3, g: 0.36, b: 0.46, a: 1}
       clearBaseMap: 0
+    - material: Lomo
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.35
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
     stateNames:
     - Attack1
     - Attack2

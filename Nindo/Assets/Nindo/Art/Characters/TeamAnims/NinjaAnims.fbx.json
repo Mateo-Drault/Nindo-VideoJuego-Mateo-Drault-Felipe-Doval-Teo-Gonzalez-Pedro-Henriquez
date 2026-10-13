@@ -21,12 +21,53 @@
     },
     "hip_drop_cm": 0.0,
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.59,
+      "twist": 14.6,
+      "fore": 61.8,
+      "swivel": 49.0,
+      "clamp": 0.0,
+      "swing": 26.7,
+      "pinned": 0.0,
+      "pron": [
+       -54.0,
+       -47.8
+      ]
+     },
+     "l": {
+      "excess": 0.27,
+      "twist": 15.1,
+      "fore": 71.2,
+      "swivel": 6.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -63.4,
+       -60.4
+      ]
+     }
+    },
+    "solver_jump_deg": 1.9,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 2.8,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.5,
+      "max": 4.9
+     }
+    },
+    "blade_face": {
+     "0": 0.57,
+     "30": 0.59
+    },
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -0.7,
-    "lowest_weapon_cm": 69.7
+    "lowest_weapon_cm": 69.0
    }
   },
   "Walk": {
@@ -44,13 +85,54 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
-    "loop_seam_deg": 0.04,
+    "loop_seam_deg": 0.056,
+    "wrists": {
+     "r": {
+      "excess": 0.59,
+      "twist": 15.8,
+      "fore": 66.9,
+      "swivel": 51.0,
+      "clamp": 0.0,
+      "swing": 27.0,
+      "pinned": 0.0,
+      "pron": [
+       -59.1,
+       -42.3
+      ]
+     },
+     "l": {
+      "excess": 0.37,
+      "twist": 16.3,
+      "fore": 75.1,
+      "swivel": 7.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -67.3,
+       -63.7
+      ]
+     }
+    },
+    "solver_jump_deg": 15.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 14.5,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.4,
+      "max": 5.0
+     }
+    },
+    "blade_face": {
+     "0": 0.58,
+     "7": 0.58
+    },
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -1.2,
-    "lowest_weapon_cm": 69.2
+    "lowest_weapon_cm": 68.4
    },
    "root_velocity_mps": 2.0
   },
@@ -69,7 +151,48 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.1,
-    "loop_seam_deg": 0.0,
+    "loop_seam_deg": 0.056,
+    "wrists": {
+     "r": {
+      "excess": 0.6,
+      "twist": 14.7,
+      "fore": 62.4,
+      "swivel": 57.0,
+      "clamp": 0.0,
+      "swing": 26.3,
+      "pinned": 0.0,
+      "pron": [
+       -54.6,
+       -34.9
+      ]
+     },
+     "l": {
+      "excess": 0.0,
+      "twist": 0.0,
+      "fore": 0.0,
+      "swivel": 0.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       7.8,
+       7.8
+      ]
+     }
+    },
+    "solver_jump_deg": 8.2,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 37.1,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 5.7,
+      "max": 6.7
+     }
+    },
+    "blade_face": {
+     "0": 0.62,
+     "5": 0.62
+    },
     "floor_skate_cm": {
      "r": [
       [
@@ -89,7 +212,7 @@
      ]
     },
     "lowest_body_cm": -0.3,
-    "lowest_weapon_cm": 67.0
+    "lowest_weapon_cm": 66.5
    },
    "root_velocity_mps": 5.0
   },
@@ -134,22 +257,65 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
-    "hold_tip_mps": 1.59,
-    "peak_frame": 14,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 22.5,
+      "fore": 82.2,
+      "swivel": 87.5,
+      "clamp": 8.8,
+      "swing": 47.4,
+      "pinned": 0.12,
+      "pron": [
+       3.5,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 25.5,
+      "fore": 92.8,
+      "swivel": 42.0,
+      "clamp": 21.1,
+      "asked_over": 27.4,
+      "pron": [
+       -85.0,
+       -62.3
+      ]
+     }
+    },
+    "solver_jump_deg": 23.4,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 86.1,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.0,
+      "max": 7.4
+     }
+    },
+    "blade_face": {
+     "8": 0.79,
+     "12": 0.79,
+     "14": 0.78
+    },
+    "hold_tip_mps": 1.6,
+    "peak_frame": 13,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.67,
     "game_hold_s": 0.158,
     "contact_tip_m": [
-     -0.08,
-     -1.78,
-     0.88
+     -0.1,
+     -1.71,
+     0.96
     ],
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -1.3,
-    "lowest_weapon_cm": 44.4
+    "lowest_weapon_cm": 44.7
    }
   },
   "Attack2": {
@@ -193,14 +359,57 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
-    "hold_tip_mps": 1.99,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 22.5,
+      "fore": 89.0,
+      "swivel": 94.0,
+      "clamp": 4.3,
+      "swing": 43.4,
+      "pinned": 0.3,
+      "pron": [
+       -81.2,
+       90.0
+      ],
+      "clamp_tell": 0.6
+     },
+     "l": {
+      "excess": 0.75,
+      "twist": 25.5,
+      "fore": 92.8,
+      "swivel": 32.0,
+      "clamp": 10.3,
+      "asked_over": 59.1,
+      "pron": [
+       -85.0,
+       -57.3
+      ]
+     }
+    },
+    "solver_jump_deg": 11.2,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 62.6,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.3,
+      "max": 7.9
+     }
+    },
+    "blade_face": {
+     "5": 0.75,
+     "7": 0.75,
+     "10": 0.68
+    },
+    "hold_tip_mps": 1.51,
     "peak_frame": 10,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.42,
     "game_hold_s": 0.083,
     "contact_tip_m": [
-     -0.46,
-     -1.66,
+     -0.13,
+     -1.74,
      1.39
     ],
     "floor_skate_cm": {
@@ -215,7 +424,7 @@
      "l": []
     },
     "lowest_body_cm": -0.7,
-    "lowest_weapon_cm": 5.6
+    "lowest_weapon_cm": 6.3
    }
   },
   "Attack3": {
@@ -259,22 +468,73 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
-    "hold_tip_mps": 1.03,
+    "wrists": {
+     "r": {
+      "excess": 0.58,
+      "twist": 13.9,
+      "fore": 61.5,
+      "swivel": 60.0,
+      "clamp": 0.0,
+      "swing": 26.5,
+      "pinned": 0.0,
+      "pron": [
+       -50.3,
+       69.3
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.93,
+      "twist": 34.8,
+      "fore": 82.2,
+      "swivel": 42.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "swing": 39.2,
+      "pinned": 0.09,
+      "pron": [
+       -62.3,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 33.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 59.7,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.5,
+      "max": 6.8
+     },
+     "l": {
+      "ref": 6.6,
+      "min": 5.3,
+      "max": 8.4
+     }
+    },
+    "blade_face": {
+     "8": 0.64,
+     "13": 0.65,
+     "17": 0.57
+    },
+    "hold_tip_mps": 0.99,
     "peak_frame": 15,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.593,
     "game_hold_s": 0.0,
     "contact_tip_m": [
-     -0.06,
-     -2.22,
-     1.26
+     0.17,
+     -2.19,
+     1.19
     ],
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -1.1,
-    "lowest_weapon_cm": 5.4
+    "lowest_weapon_cm": 4.2
    }
   },
   "Thrust": {
@@ -314,19 +574,62 @@
    "notes": "estocada voladora; aviso: muy agachado, hoja abierta en la cadera",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.8,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 7.8,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 22.5,
+      "fore": 79.8,
+      "swivel": 76.6,
+      "clamp": 3.7,
+      "swing": 32.0,
+      "pinned": 0.0,
+      "pron": [
+       -72.0,
+       13.1
+      ],
+      "clamp_tell": 2.6
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 25.5,
+      "fore": 92.8,
+      "swivel": 23.0,
+      "clamp": 22.8,
+      "asked_over": 93.0,
+      "pron": [
+       -85.0,
+       -50.1
+      ]
+     }
+    },
+    "solver_jump_deg": 15.7,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 55.9,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.2,
+      "max": 7.9
+     }
+    },
+    "blade_face": {
+     "9": 0.79,
+     "11": 0.79,
+     "21": 0.72
+    },
     "hold_tip_mps": 1.75,
     "peak_frame": 21,
     "prerelease_glide_cm": 0.0,
     "game_T_s": 0.7,
     "game_hold_s": 0.06,
     "contact_tip_m": [
-     -0.08,
-     -4.01,
-     0.68
+     -0.09,
+     -4.02,
+     0.71
     ],
     "floor_skate_cm": {
      "r": [
@@ -340,7 +643,7 @@
      "l": []
     },
     "lowest_body_cm": -0.8,
-    "lowest_weapon_cm": 42.6
+    "lowest_weapon_cm": 43.2
    }
   },
   "Guard": {
@@ -359,12 +662,53 @@
     },
     "hip_drop_cm": 0.0,
     "loop_seam_deg": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.11,
+      "twist": 3.8,
+      "fore": 19.9,
+      "swivel": 1.0,
+      "clamp": 0.0,
+      "swing": 8.2,
+      "pinned": 0.0,
+      "pron": [
+       -12.1,
+       -10.2
+      ]
+     },
+     "l": {
+      "excess": 0.54,
+      "twist": 7.6,
+      "fore": 30.6,
+      "swivel": 7.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -22.8,
+       -21.4
+      ]
+     }
+    },
+    "solver_jump_deg": 1.0,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 1.1,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 5.8,
+      "max": 5.8
+     }
+    },
+    "blade_face": {
+     "0": 0.77,
+     "18": 0.77
+    },
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -0.8,
-    "lowest_weapon_cm": 94.6
+    "lowest_weapon_cm": 96.7
    }
   },
   "Counter": {
@@ -373,7 +717,12 @@
    "frames": 12,
    "seconds": 0.4,
    "loop": false,
-   "timing": {},
+   "timing": {
+    "read": [
+     3,
+     6
+    ]
+   },
    "normalized": {},
    "notes": "desvío con la hoja hacia afuera y un pisotón; termina en guardia",
    "lint": {
@@ -382,6 +731,47 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.57,
+      "twist": 8.8,
+      "fore": 47.0,
+      "swivel": 62.0,
+      "clamp": 0.0,
+      "swing": 22.9,
+      "pinned": 0.0,
+      "pron": [
+       -11.6,
+       54.8
+      ]
+     },
+     "l": {
+      "excess": 0.6,
+      "twist": 14.9,
+      "fore": 70.1,
+      "swivel": 10.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -62.3,
+       -23.0
+      ]
+     }
+    },
+    "solver_jump_deg": 13.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 39.6,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.0,
+      "max": 5.8
+     }
+    },
+    "blade_face": {
+     "3": 0.59,
+     "6": 0.59
+    },
     "floor_skate_cm": {
      "r": [
       [
@@ -394,7 +784,7 @@
      "l": []
     },
     "lowest_body_cm": -0.7,
-    "lowest_weapon_cm": 70.4
+    "lowest_weapon_cm": 70.8
    }
   },
   "Hit": {
@@ -412,12 +802,49 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.8,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 22.5,
+      "fore": 57.8,
+      "swivel": 43.0,
+      "clamp": 4.3,
+      "swing": 28.5,
+      "pinned": 0.0,
+      "pron": [
+       -50.0,
+       47.8
+      ]
+     },
+     "l": {
+      "excess": 0.83,
+      "twist": 20.3,
+      "fore": 83.3,
+      "swivel": 52.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -75.5,
+       -62.3
+      ]
+     }
+    },
+    "solver_jump_deg": 16.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 32.5,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.7,
+      "max": 6.4
+     }
+    },
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -1.4,
-    "lowest_weapon_cm": 70.4
+    "lowest_weapon_cm": 69.6
    }
   },
   "HitHeavy": {
@@ -439,10 +866,47 @@
    "notes": "golpe pesado recibido: despedido 1.6 m, cae y trastabilla",
    "lint": {
     "reach_miss_cm": {
-     "hands": 0.4,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 22.5,
+      "fore": 80.4,
+      "swivel": 68.0,
+      "clamp": 2.9,
+      "swing": 34.6,
+      "pinned": 0.06,
+      "pron": [
+       -50.0,
+       88.2
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 18.7,
+      "fore": 78.8,
+      "swivel": 46.5,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -71.1,
+       -43.3
+      ]
+     }
+    },
+    "solver_jump_deg": 19.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 46.4,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.6,
+      "max": 7.9
+     }
+    },
     "floor_skate_cm": {
      "r": [
       [
@@ -455,7 +919,7 @@
      "l": []
     },
     "lowest_body_cm": -1.2,
-    "lowest_weapon_cm": 70.0
+    "lowest_weapon_cm": 69.6
    }
   },
   "Parried": {
@@ -488,6 +952,43 @@
      "legs": 0.0
     },
     "hip_drop_cm": 4.0,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 22.2,
+      "fore": 82.2,
+      "swivel": 62.0,
+      "clamp": 2.2,
+      "swing": 34.4,
+      "pinned": 0.09,
+      "pron": [
+       -50.0,
+       90.0
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 17.0,
+      "fore": 73.1,
+      "swivel": 36.0,
+      "clamp": 0.4,
+      "asked_over": 0.0,
+      "pron": [
+       -65.4,
+       -12.7
+      ]
+     }
+    },
+    "solver_jump_deg": 22.2,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 86.1,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.8,
+      "max": 7.9
+     }
+    },
     "floor_skate_cm": {
      "r": [
       [
@@ -500,7 +1001,7 @@
      "l": []
     },
     "lowest_body_cm": -1.4,
-    "lowest_weapon_cm": 70.2
+    "lowest_weapon_cm": 69.6
    }
   },
   "ParriedPerfect": {
@@ -529,10 +1030,47 @@
    "notes": "parry perfecto: despedido 0.8 m con los dos pies en el aire, trastabilla; en guardia al corte",
    "lint": {
     "reach_miss_cm": {
-     "hands": 3.1,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.71,
+      "twist": 13.8,
+      "fore": 62.3,
+      "swivel": 65.0,
+      "clamp": 0.0,
+      "swing": 27.0,
+      "pinned": 0.0,
+      "pron": [
+       -50.0,
+       70.1
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 17.6,
+      "fore": 75.3,
+      "swivel": 38.5,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -67.5,
+       -11.5
+      ]
+     }
+    },
+    "solver_jump_deg": 30.8,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 73.5,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.7,
+      "max": 7.5
+     }
+    },
     "floor_skate_cm": {
      "r": [
       [
@@ -545,7 +1083,7 @@
      "l": []
     },
     "lowest_body_cm": -0.7,
-    "lowest_weapon_cm": 69.8
+    "lowest_weapon_cm": 69.6
    }
   },
   "Exhausted": {
@@ -563,13 +1101,54 @@
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
-    "loop_seam_deg": 0.0,
+    "loop_seam_deg": 0.04,
+    "wrists": {
+     "r": {
+      "excess": 0.74,
+      "twist": 14.6,
+      "fore": 59.3,
+      "swivel": 69.0,
+      "clamp": 0.0,
+      "swing": 31.2,
+      "pinned": 0.0,
+      "pron": [
+       -51.5,
+       -50.2
+      ]
+     },
+     "l": {
+      "excess": 0.28,
+      "twist": 5.4,
+      "fore": 24.5,
+      "swivel": 1.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -16.7,
+       -15.0
+      ]
+     }
+    },
+    "solver_jump_deg": 2.2,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 2.9,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 5.7,
+      "max": 6.0
+     }
+    },
+    "blade_face": {
+     "0": 0.73,
+     "24": 0.73
+    },
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -0.5,
-    "lowest_weapon_cm": 2.0
+    "lowest_weapon_cm": 1.6
    }
   },
   "ExhaustedHit": {
@@ -592,16 +1171,53 @@
    "notes": "sacudón estando quebrado, dos pasitos atrás; vuelve al primer cuadro de Exhausted",
    "lint": {
     "reach_miss_cm": {
-     "hands": 1.4,
+     "hands": 0.0,
      "legs": 0.0
     },
     "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.71,
+      "twist": 15.1,
+      "fore": 62.5,
+      "swivel": 68.0,
+      "clamp": 0.0,
+      "swing": 29.9,
+      "pinned": 0.0,
+      "pron": [
+       -54.7,
+       -48.7
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 15.9,
+      "fore": 61.2,
+      "swivel": 9.0,
+      "clamp": 15.9,
+      "asked_over": 0.0,
+      "pron": [
+       -53.4,
+       -16.3
+      ]
+     }
+    },
+    "solver_jump_deg": 10.7,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 14.3,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 5.0,
+      "max": 5.8
+     }
+    },
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -1.4,
-    "lowest_weapon_cm": 2.0
+    "lowest_weapon_cm": 1.6
    }
   },
   "Spotted": {
@@ -619,12 +1235,49 @@
      "legs": 0.0
     },
     "hip_drop_cm": 4.2,
+    "wrists": {
+     "r": {
+      "excess": 0.58,
+      "twist": 13.8,
+      "fore": 57.8,
+      "swivel": 43.0,
+      "clamp": 0.0,
+      "swing": 25.7,
+      "pinned": 0.0,
+      "pron": [
+       -50.0,
+       8.8
+      ]
+     },
+     "l": {
+      "excess": 0.4,
+      "twist": 14.9,
+      "fore": 70.1,
+      "swivel": 5.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "pron": [
+       -62.3,
+       -20.3
+      ]
+     }
+    },
+    "solver_jump_deg": 6.1,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 8.4,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.7,
+      "max": 6.7
+     }
+    },
     "floor_skate_cm": {
      "r": [],
      "l": []
     },
     "lowest_body_cm": -1.2,
-    "lowest_weapon_cm": 70.2
+    "lowest_weapon_cm": 69.6
    }
   },
   "Death": {
@@ -651,6 +1304,43 @@
      "legs": 0.0
     },
     "hip_drop_cm": 7.2,
+    "wrists": {
+     "r": {
+      "excess": 0.75,
+      "twist": 13.8,
+      "fore": 57.8,
+      "swivel": 72.5,
+      "clamp": 3.2,
+      "swing": 32.4,
+      "pinned": 0.0,
+      "pron": [
+       -50.0,
+       65.0
+      ]
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 25.5,
+      "fore": 84.6,
+      "swivel": 48.0,
+      "clamp": 11.6,
+      "asked_over": 0.0,
+      "pron": [
+       -76.8,
+       72.4
+      ]
+     }
+    },
+    "solver_jump_deg": 17.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 38.2,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 6.0,
+      "min": 4.7,
+      "max": 7.9
+     }
+    },
     "floor_skate_cm": {
      "r": [
       [
@@ -663,7 +1353,7 @@
      "l": []
     },
     "lowest_body_cm": -2.3,
-    "lowest_weapon_cm": 3.3
+    "lowest_weapon_cm": 6.1
    }
   }
  },

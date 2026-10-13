@@ -162,4 +162,12 @@ for x in (-0.06, 0.20):
               sy=RZ / RY, cap0=False, cap1=False)
 print("martillo", C.replace_mesh(ham, geo), "tris")
 
-C.finish(arm, src, REL, o, poses=poses, pose=pose)
+# ------------------------------------------------------------------ esqueleto de juego
+# manos y pies colgaban de TargetBrazo/TargetPie en la raíz (sin pesos): pasan a hijos del antebrazo y la tibia, y el
+# martillo (BaseM, también en la raíz) a hijo de la mano derecha, la que manda en el agarre: en los cruces de clips y en
+# el blend de locomoción Unity mezcla cada hueso por separado y el martillo se despegaba de las manos. La toma 'Intro'
+# del equipo se re-hornea con la misma pose (compare_poses la valida)
+GORO_LIMBS = [("Mano.L", "Antebrazo.L"), ("Mano.R", "Antebrazo.R"), ("Pie.L", "Tibia.L"), ("Pie.R", "Tibia.R"), ("BaseM", "Mano.R")]
+print("esqueleto de juego", C.game_limbs(arm, GORO_LIMBS))
+
+C.finish(arm, src, REL, o, poses=poses, pose=pose, reparented=dict(GORO_LIMBS))

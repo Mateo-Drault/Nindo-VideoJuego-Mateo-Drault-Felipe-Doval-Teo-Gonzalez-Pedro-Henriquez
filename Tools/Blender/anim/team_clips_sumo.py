@@ -35,7 +35,8 @@ STANCE = dict(
     knee_r=(-0.8, -0.6, 0.0), knee_l=(0.8, -0.6, 0.0),
     hand_r=(-0.62, -0.20, 1.05), hand_r_dir=(-0.1, -0.35, -0.9), hand_r_palm=(1.0, 0.0, 0.0), elbow_r=(-1.0, 0.3, -0.3),
     hand_l=(0.62, -0.20, 1.05), hand_l_dir=(0.1, -0.35, -0.9), hand_l_palm=(-1.0, 0.0, 0.0), elbow_l=(1.0, 0.3, -0.3),
-    fist_r=0.3, fist_l=0.3, breath=0.0, travel=0.0,
+    # los dedos curvados como una mano suelta (con 0.3 se veían rectos, de paleta, desde que la mano dejó de salir doblada)
+    fist_r=0.45, fist_l=0.45, breath=0.0, travel=0.0,
 )
 R0, L0 = (-0.42, 0.02, -22.0), (0.42, 0.02, 22.0)
 
@@ -253,8 +254,10 @@ def special():
     n, apex, contact, end = 60, 14, 18, 42
     CROUCH = P(hips=(0.0, 0.14, -0.40), hips_rot=(36.0, 0.0, 0.0), spine=(10.0, 0.0, 0.0), head=(-44.0, 0.0, 0.0),
                knee_r=(-1.0, -0.5, 0.0), knee_l=(1.0, -0.5, 0.0),
-               hand_r=(-0.30, -0.58, 0.24), hand_r_dir=(0.0, -0.3, -0.95), hand_r_palm=(0.0, 1.0, 0.0), elbow_r=(-1.0, 0.0, 0.0),
-               hand_l=(0.30, -0.58, 0.24), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(0.0, 1.0, 0.0), elbow_l=(1.0, 0.0, 0.0),
+               # la muñeca a 0.38 m: con la mano entera (antes la exportaba doblada sobre el antebrazo) los nudillos del puño
+               # quedan apoyados en el piso; a 0.24 m el puño se hundía 14 cm
+               hand_r=(-0.30, -0.58, 0.38), hand_r_dir=(0.0, -0.3, -0.95), hand_r_palm=(0.0, 1.0, 0.0), elbow_r=(-1.0, 0.0, 0.0),
+               hand_l=(0.30, -0.58, 0.38), hand_l_dir=(0.0, -0.3, -0.95), hand_l_palm=(0.0, 1.0, 0.0), elbow_l=(1.0, 0.0, 0.0),
                fist_r=1.0, fist_l=1.0)
     HOLD = dict(CROUCH, hips=(0.0, 0.15, -0.42))
     LAUNCH = P(hips=(0.0, -0.10, -0.24), hips_rot=(32.0, 0.0, 0.0), spine=(14.0, 0.0, 0.0), head=(-40.0, 0.0, 0.0),
@@ -427,10 +430,12 @@ def death():
             hand_r=(-0.82, 0.10, 0.62), hand_r_dir=(-0.4, 0.2, -0.9), hand_r_palm=(0.0, 0.0, -1.0), elbow_r=(-1.0, 0.3, 0.2),
             hand_l=(0.82, 0.10, 0.62), hand_l_dir=(0.4, 0.2, -0.9), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(1.0, 0.3, 0.2),
             fist_r=0.0, fist_l=0.0)
+    # de espaldas con los brazos abiertos y las palmas al piso, como cuando estaba sentado: con las palmas arriba el
+    # antebrazo daba media vuelta en los 5 cuadros de la caída (73° en uno)
     LIE = P(hips=(0.0, 0.22, -0.22), hips_rot=(-72.0, 0.0, 0.0), spine=(-6.0, 0.0, 0.0), head=(16.0, 0.0, 12.0),
             knee_r=(-0.6, -0.5, 0.6), knee_l=(0.6, -0.5, 0.6),
-            hand_r=(-0.95, 0.80, 0.36), hand_r_dir=(-0.8, 0.5, 0.0), hand_r_palm=(0.0, 0.0, 1.0), elbow_r=(-1.0, 0.0, 0.3),
-            hand_l=(0.95, 0.80, 0.36), hand_l_dir=(0.8, 0.5, 0.0), hand_l_palm=(0.0, 0.0, 1.0), elbow_l=(1.0, 0.0, 0.3),
+            hand_r=(-0.95, 0.80, 0.36), hand_r_dir=(-0.8, 0.5, 0.0), hand_r_palm=(0.0, 0.0, -1.0), elbow_r=(-1.0, 0.0, 0.3),
+            hand_l=(0.95, 0.80, 0.36), hand_l_dir=(0.8, 0.5, 0.0), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(1.0, 0.0, 0.3),
             fist_r=0.2, fist_l=0.2)
     keys = [Key(0, P()), Key(3, REC, "snap"), Key(10, dict(REC, hips=(0.0, 0.14, -0.14)), "out"),
             Key(20, SIT, "in2"), Key(23, dict(SIT, hips=(0.0, 0.10, -0.58), spine=(4.0, 0.0, 0.0)), "out"),
