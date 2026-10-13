@@ -52,6 +52,29 @@ namespace Nindo
             Game.UI?.HideInteractPrompt();
         }
 
+        /// <summary>
+        /// Segundos que le faltan al corte en curso para llegar a su ventana activa (infinito si no está cortando o ya
+        /// llegó), con la curva del corte: Chikuō le sale al encuentro con la palma para que se encuentren en el contacto.
+        /// </summary>
+        public float CutEta
+        {
+            get
+            {
+                var a = currentAttack;
+                if (State != PlayerState.Attack || a == null || attackNorm >= a.activeStart) return float.PositiveInfinity;
+                // attackNorm avanza Timing(n) * rage / attackLen por segundo (TickAttack)
+                float rate = (RageActive ? config.rageSpeedMul : 1f) / Mathf.Max(0.05f, attackLen);
+                float step = (a.activeStart - attackNorm) / CutEtaSteps, eta = 0f;
+                for (int i = 0; i < CutEtaSteps; i++) eta += step / (a.Timing(attackNorm + (i + 0.5f) * step) * rate);
+                return eta;
+            }
+        }
+
+        const int CutEtaSteps = 4;
+
+        /// <summary>El nombre del corte en curso (de qué lado viene la hoja) o null.</summary>
+        public string CutName => State == PlayerState.Attack && currentAttack != null ? currentAttack.name : null;
+
         void TickAttack(InputReader input, float dt)
         {
             var a = currentAttack;
@@ -211,6 +234,17 @@ namespace Nindo
                     anim.Freeze(0.06f);
                     Push(-info.direction, 0.3f);
                     if (State == PlayerState.Attack && currentAttack != null) lungeDone = currentAttack.lunge;   // no sigue avanzando contra la guardia
+                    break;
+                case HitResult.Deflected:
+                    // le apartaron la hoja con la mano (Chikuō): el corte se frena en el roce, sin clang ni empujón (con el
+                    // corte en curso, cualquier deslizamiento le patinaba los pies apoyados). El que insiste sí rebota (Guarded).
+                    // Suena la palma contra el plano de la hoja: con "parry" (el choque del parry de Kaito) parecía que él
+                    // había parado algo
+                    Game.Audio?.Play("palm_deflect", p, 0.8f, 0.08f);
+                    Game.Time?.HitStop(0.03f);
+                    Game.Input?.Rumble(0.18f, 0.12f, 0.06f);
+                    anim.Freeze(0.05f);
+                    if (State == PlayerState.Attack && currentAttack != null) lungeDone = currentAttack.lunge;
                     break;
                 case HitResult.Guarded:
                     // el enemigo desvió el golpe: Kaito rebota
@@ -670,10 +704,13 @@ namespace Nindo
             finisherTarget = null;
             float len = anim.Length("Finisher", FinisherFrames / 30f);
             float from = Mathf.Min(FinisherHoldEndFrame / 30f, len);
-            if (!finisherCinematic) anim.Play("Finisher", ShortSkipFade, from / len, finisherSpeed);
+            // el resto va a x1 en los dos caminos, como está autorado (kaito_clips): a la velocidad del remate (x1.7 el
+            // cinemático, x2.8 el corto) el latigazo del chiburi daba 90-190° por cuadro. Es un gesto: no alarga la pelea
+            if (!finisherCinematic) anim.Play("Finisher", ShortSkipFade, from / len);
+            else anim.SetStateSpeed(1f);
             // lo que queda del clip desde donde está de verdad (al jefe se le termina apenas cae, en pleno zanshin)
             float left = finisherCinematic && anim.TryNormalizedTime("Finisher", out float n) ? (1f - n) * len : len - from;
-            StartGesture("Finisher", left / finisherSpeed);
+            StartGesture("Finisher", left);
         }
 
         /// <summary>Despide a los que están a menos de 'radius' de c ('push' m) y les da 'delay' s antes de volver a atacar

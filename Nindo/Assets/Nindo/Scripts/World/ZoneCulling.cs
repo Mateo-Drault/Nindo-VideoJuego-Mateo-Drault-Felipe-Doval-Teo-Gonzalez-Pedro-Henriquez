@@ -26,7 +26,9 @@ namespace Nindo
     ///    cámara, una cinemática o un teletransporte; apagar espera 0.35 s (sin parpadeo en el borde del cuadro).
     ///  * Partículas del mundo en loop (luciérnagas, humo): al apagarse su renderer se pausan a mano (Pause) y siguen al
     ///    volver; su caja sale de lo que llegan a moverse según su propio sistema (emisor, velocidad, ruido, fuerzas,
-    ///    gravedad, vida, escala) y además crece con lo que de verdad ocupan mientras simulan.
+    ///    gravedad, vida, escala) y además crece con lo que de verdad ocupan mientras simulan. Debajo sigue la pausa de
+    ///    Unity (Automatic: un loop fuera de cuadro se pausa, con la caja justa y sin ponerse al día); son nubes que no
+    ///    cambian, congeladas se ven igual.
     ///  * La cascada de Kohan (fuera del lote: cuelga de [World]): dentro de su LOD de 110 m, con ninguna cámara
     ///    mirándola, KohanFalls.SetOffscreen congela sus ~1300 partículas y su emisión a mano.
     ///  * Enemigos y jefes del mundo, por encuentro: cuando todos los de un campamento están quietos en su puesto
@@ -37,6 +39,10 @@ namespace Nindo
     ///    demás. Mientras pelea un jefe no se duerme a nadie nuevo.
     ///  * Las luces no se tocan: URP descarta solo las que no tocan el frustum y LightPool reparte las de los faroles
     ///    (simulado sobre el mapa: con su densidad nunca deja apagada una luz que se ve).
+    ///  * Lo que se crea después del armado (el incienso de un santuario rezado, los braseros del patio, las rocas de
+    ///    Gorō, los pétalos): su dueño lo registra con AddDynamic y se prueba en cada frame con su caja de ahora; sus
+    ///    partículas en loop las pausa esto en vez del culling de Unity y al volver se ponen al día. Las reglas, en
+    ///    ZoneCulling.Dynamic.cs.
     /// Medición y depuración en ZoneCulling.Debug.cs (Stats, ShowHud, Benchmark, CheckFrame).
     /// </summary>
     [DefaultExecutionOrder(10050)]
@@ -61,7 +67,7 @@ namespace Nindo
         static bool on = true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() { Instance = null; on = true; hudWanted = false; IncludeSceneView = true; HideBatched = true; }
+        static void ResetStatics() { Instance = null; on = true; hudWanted = false; IncludeSceneView = true; HideBatched = true; pendingDyn.Clear(); }
 
         /// <summary>
         /// Con false, lo que está en el lote estático no se esconde nunca (solo lo de fuera del lote). Por si esconder
@@ -225,7 +231,9 @@ namespace Nindo
             }
             if (staticRoot.parent != null)
                 foreach (var f in staticRoot.parent.GetComponentsInChildren<KohanFalls>(true)) AddFalls(f);
-            Debug.Log($"[Nindo] ZoneCulling: {totalRenderers} renderers en {cells.Length} celdas, {sleepers.Count} enemigos, {falls.Count} cascada(s).");
+            // lo que se registró mientras se armaba (lo que ya se juntó arriba no se toma dos veces)
+            FlushPending();
+            Debug.Log($"[Nindo] ZoneCulling: {totalRenderers} renderers en {cells.Length} celdas, {sleepers.Count} enemigos, {falls.Count} cascada(s), {dynCount} dinámicos.");
             if (huge > 0) Debug.LogWarning($"[Nindo] ZoneCulling: {huge} renderers con bounds de más de {HugeBounds} m (¿el de la malla combinada del static batching?): quedan siempre prendidos.");
         }
 
@@ -265,6 +273,7 @@ namespace Nindo
             if (ps != null && !ps.main.loop) ps = null;
             if (ps != null) totalParticles++;
             list.Add(new Item { r = r, min = b.min, max = b.max, shadows = shadows, on = true, ps = ps, always = always, batched = r.isPartOfStaticBatch });
+            managed.Add(r);
             worldMask |= 1 << r.gameObject.layer;
             totalRenderers++;
             if (shadows) totalCasters++;
@@ -281,12 +290,27 @@ namespace Nindo
         /// sistema ocupa de verdad. 'unsupported': algo que no se puede acotar desde acá (luces que alumbran fuera de las
         /// partículas, subemisores, fuerzas de viento, un emisor de malla): ese renderer no se esconde nunca.
         /// </summary>
-        static Bounds ParticleBounds(ParticleSystem ps, out bool unsupported)
+        static Bounds ParticleBounds(ParticleSystem ps, out bool unsupported) => PlaceReach(ps.transform, MeasureReach(ps, out unsupported));
+
+        /// <summary>Lo de ParticleBounds que no depende de dónde está ni cómo gira el emisor: lo dinámico que se mueve o
+        /// gira rearma su caja con esto (PlaceReach) sin volver a leer los módulos.</summary>
+        struct ParticleReach
+        {
+            /// <summary>Semiejes de la forma en su espacio (ya escalados), su giro y su corrimiento en el del emisor.</summary>
+            public Vector3 shapeHalf, shapePos;
+            public Quaternion shapeRot;
+            public bool shaped;
+            /// <summary>Lo que una partícula llega a alejarse para cada lado, lo que sube o baja de más por la gravedad y su vida más larga.</summary>
+            public float reach, up, down, life;
+        }
+
+        static ParticleReach MeasureReach(ParticleSystem ps, out bool unsupported)
         {
             var t = ps.transform;
             var m = ps.main;
             unsupported = ps.lights.enabled || ps.subEmitters.enabled || ps.externalForces.enabled;
-            Vector3 ls = t.lossyScale, center = t.position, half = Vector3.zero;
+            Vector3 ls = t.lossyScale;
+            var p = new ParticleReach();
             var sh = ps.shape;
             if (sh.enabled)
             {
@@ -308,10 +332,10 @@ namespace Nindo
                         e = new Vector3(r, r, r);
                         break;
                 }
-                // la caja del mundo del emisor girado (|R| por los semiejes), corrido a donde lo pone el módulo
-                var rot = Matrix4x4.Rotate(t.rotation * Quaternion.Euler(sh.rotation));
-                for (int i = 0; i < 3; i++) half[i] = Mathf.Abs(rot[i, 0]) * e.x + Mathf.Abs(rot[i, 1]) * e.y + Mathf.Abs(rot[i, 2]) * e.z;
-                center += t.TransformVector(sh.position);
+                p.shaped = true;
+                p.shapeHalf = e;
+                p.shapeRot = Quaternion.Euler(sh.rotation);
+                p.shapePos = sh.position;
             }
             float life = CurveMax(m.startLifetime);
             float reach = CurveMax(m.startSpeed) * life;
@@ -343,11 +367,28 @@ namespace Nindo
             // con gravedad positiva caen (la caja baja), con negativa suben (el humo); con una curva, para los dos lados
             float g = m.gravityModifier.mode == ParticleSystemCurveMode.Constant ? m.gravityModifier.constant : CurveMax(m.gravityModifier);
             float fall = g * Physics.gravity.magnitude * 0.5f * life * life;
-            float down = m.gravityModifier.mode == ParticleSystemCurveMode.Constant ? Mathf.Max(0f, fall) : fall;
-            float up = m.gravityModifier.mode == ParticleSystemCurveMode.Constant ? Mathf.Max(0f, -fall) : fall;
-            Vector3 ext = half + new Vector3(reach, reach, reach);
+            p.down = m.gravityModifier.mode == ParticleSystemCurveMode.Constant ? Mathf.Max(0f, fall) : fall;
+            p.up = m.gravityModifier.mode == ParticleSystemCurveMode.Constant ? Mathf.Max(0f, -fall) : fall;
+            p.reach = reach;
+            p.life = life;
+            return p;
+        }
+
+        /// <summary>La caja de MeasureReach donde está ahora el emisor 't'.</summary>
+        static Bounds PlaceReach(Transform t, in ParticleReach p)
+        {
+            Vector3 center = t.position, half = Vector3.zero;
+            if (p.shaped)
+            {
+                // la caja del mundo del emisor girado (|R| por los semiejes), corrido a donde lo pone el módulo
+                var rot = Matrix4x4.Rotate(t.rotation * p.shapeRot);
+                Vector3 e = p.shapeHalf;
+                for (int i = 0; i < 3; i++) half[i] = Mathf.Abs(rot[i, 0]) * e.x + Mathf.Abs(rot[i, 1]) * e.y + Mathf.Abs(rot[i, 2]) * e.z;
+                center += t.TransformVector(p.shapePos);
+            }
+            Vector3 ext = half + new Vector3(p.reach, p.reach, p.reach);
             var b = new Bounds();
-            b.SetMinMax(center - ext - new Vector3(0f, down, 0f), center + ext + new Vector3(0f, up, 0f));
+            b.SetMinMax(center - ext - new Vector3(0f, p.down, 0f), center + ext + new Vector3(0f, p.up, 0f));
             return b;
         }
 
@@ -392,7 +433,8 @@ namespace Nindo
         static float KeyMax(AnimationCurve c)
         {
             float m = 0f;
-            if (c != null) foreach (var k in c.keys) m = Mathf.Max(m, Mathf.Abs(k.value));
+            // con el índice: AnimationCurve.keys arma un arreglo nuevo en cada llamada
+            if (c != null) for (int i = 0; i < c.length; i++) m = Mathf.Max(m, Mathf.Abs(c[i].value));
             return m;
         }
 
@@ -546,6 +588,7 @@ namespace Nindo
             float now = Time.unscaledTime;
             litCells = 0;
             for (int c = 0; c < cells.Length; c++) TickCell(ref cells[c], now);
+            TickDynamic(now);
             TickFalls(now);
             TickSleepers(now);
             float ms = (System.Diagnostics.Stopwatch.GetTimestamp() - t0) * 1000f / System.Diagnostics.Stopwatch.Frequency;
@@ -578,6 +621,7 @@ namespace Nindo
                 if (fc.f == null || fc.f.Frozen || !fc.f.Active) continue;
                 foreach (var r in fc.rs) if (r != null) Grow(ref fc.min, ref fc.max, r.bounds, 2f);
             }
+            MeasureDynamic();
         }
 
         /// <summary>Agranda la caja para que entre 'b' con 'pad' de margen; true si creció. Un bounds vacío no cuenta.</summary>
@@ -823,6 +867,7 @@ namespace Nindo
                 for (int i = cell.start; i < end; i++)
                     if (!items[i].on) Set(ref items[i], ref cell, true);
             }
+            ShowDynamic();
             foreach (var s in sleepers) if (s.e != null && s.e.Asleep) Wake(s);
             awake = sleepers.Count;
             foreach (var fc in falls)

@@ -23,14 +23,19 @@ namespace Nindo
         public static readonly Vector2 HeavyLandAt = new Vector2(-0.05f, 3.7f);
         public static readonly Vector2 SlamWaveAt = new Vector2(-0.05f, 3.9f);
 
+        /// <summary>El aviso agachado del SlamWave: desde que se agacha (el arranque de la pausa del aviso, normalizado) el
+        /// cuerpo con la armadura llega hasta acá por delante del centro (m: lo más cerca que puede estar el centro de Kaito,
+        /// build_team_anims body_reach_m 'aviso' de SlamWavePlanted, que hasta el apex es el mismo clip). GoroBoss.ClearCrouch.</summary>
+        public const float SlamWaveCrouchFrom = 0.2188f, SlamWaveCrouchReach = 1.549f;
+
         /// <summary>Ventana (normalizada) en que la armadura rebota los cortes mientras carga el golpe ('armor_window').</summary>
         public static bool ArmorWindow(string state, out float from, out float to)
         {
             switch (state)
             {
-                case "Combo1B": from = 0.1017f; to = 0.6271f; return true;
-                case "Combo2B": from = 0.087f; to = 0.5435f; return true;
-                case "Combo3B": from = 0.0877f; to = 0.6491f; return true;
+                case "Combo1B": from = 0.0896f; to = 0.6418f; return true;
+                case "Combo2B": from = 0.0784f; to = 0.549f; return true;
+                case "Combo3B": from = 0.0781f; to = 0.6875f; return true;
                 case "SlamWave": from = 0.0781f; to = 0.5625f; return true;
                 default: from = to = 0f; return false;
             }

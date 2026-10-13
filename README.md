@@ -131,15 +131,33 @@ para fijar, que antes andaban sin verse, ahora se asignan a mano. Las reglas y c
   pierna arriba en el shiko, agachado con los puños en el piso antes de embestir.
 * **Chikuō, el Maestro del Bambú** (jefe del bambú, `Enemies/Bosses/BambooMasterBoss`; el
   arquetipo y el bossId siguen siendo `ozeki`): un viejo maestro de kung fu que enseña paciencia.
-  Fuera de sus huecos los cortes rebotan y el combo que insiste se contragolpea; se le pega en el
+  Fuera de sus huecos desvía el corte con la palma: lee el corte de Kaito y le sale al encuentro,
+  la palma (o el bastón) encuentra la hoja en el contacto y la acompaña para donde va
+  (`GuardHit` / `GuardHitL` para el revés / `GuardHitLow` para el Corte final, que llega bajo),
+  sin empujarlo; el primero de una tanda igual lo roza (un cuarto del daño), contesta con su
+  combo, enseguida si Kaito insiste con el segundo, y recién el tercero seguido se contragolpea
+  (entre combo y combo descansa cubierto). El golpe que abre un combo a veces entra con el paso
+  largo y corre a Kaito con el pecho, si hay lugar detrás. Se le pega en el
   contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
   (esperó la postura del bambú: hundido con las palmas cruzadas y un aro de jade en el piso), en la
   vuelta de un rojo que no pegó y al final del último golpe de un combo. Fase 1
   con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca y,
   con Kaito pegado, primero salta hacia atrás), fase 2 sin el saco (palmas gemelas, patada
-  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: de cerca el vuelo es
-  más corto y sale después, siempre pega cuando lo dice el aviso), fase 3 con el bastón. Vencido se sienta a meditar, saluda y deja el sello.
-  Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair]`.
+  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: de frente vuela como
+  poco la mitad del autorado y, si Kaito está cerca, pasa a su costado (`DashStrike_Pass`): el
+  carril rojo lo sigue hasta que despega, en el aire se abre de costado en vez de frenar, le
+  sostiene la mano encima al cruzarlo, sigue volando lo autorado después del cruce y cae ~2.4 m
+  detrás de él, mirándolo; siempre pega cuando lo dice el aviso),
+  fase 3 con el bastón. Antes de tirar el saco se lo desliza por la espalda y los brazos (formas
+  `CoatSlip1..4` de `Master_Robe`); el que vuela, `Master_RobeThrown`, sale igual al saco puesto
+  y se aplana al caer (`Collapse`). Vencido se sienta a meditar, saluda y deja el sello.
+  Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair] [--calib]`.
+* **Balance de los jefes en minutos de juego**: las simulaciones (`goro_fight_sim.py`,
+  `sim_bamboo_master.py`, `boss_sims/mz_run.py`, `boss_sims/kk_fix_run.py`) se pasan a tiempo
+  de Unity con el factor real/simulado de cada jefe, medido con `bot on bueno` y el PlayClock
+  (`Tools/Dev/boss_sims/calibration.py`: Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92, Chikuō 1.42).
+  Con `--calib` (o `'{"calib": true}'`) el daño de Kaito va a 1/F y dicen segundos y muertes del
+  juego. Al medir de nuevo se pegan las líneas del PlayClock en ese archivo.
 * **Cámara de combate**: baja a 45° y fijada nunca queda a menos de 19 m ni gira (los controles
   no cambian de dirección); con Kaito casi centrado se ven ~5 m detrás de él. Lo que tapa a
   Kaito, al fijado, al jefe o a quien está por pegar se disuelve con una trama (hueco en cono,
@@ -303,6 +321,12 @@ en el mismo frame. Los idles de ambiente (`EnemyAmbient`) corren en Idle, así q
 mientras duermen no siguen el reloj de su pareja; `SetState` y `ScriptedPlay` lo despiertan en el acto. Kokuyō (arrodillado) y Mizuchi
 (escondido en el lago) esperan en Scripted y no se duermen nunca. En el editor también cuenta lo que mira cada
 vista Scene que se está dibujando (`Nindo.ZoneCulling.IncludeSceneView = false` para medir solo la cámara de juego).
+Lo que se crea después del armado lo registra quien lo crea con `ZoneCulling.AddDynamic(raíz)` (el incienso de un
+santuario rezado, los braseros del patio, las rocas de Gorō, los pétalos): se prueba en cada frame con su caja de
+ahora y se toman solo las partículas en loop y las mallas que tiran sombra; lo demás ya lo descarta Unity fuera de
+cuadro. Unity ya pausa solo los loops fuera de cuadro, pero con la caja de las partículas que hay y sin ponerse al
+día; a los registrados los pausa ZoneCulling en su lugar, con una caja que no deja partículas afuera, y al volver
+se ponen al día (con `On = false` vuelven al modo de Unity).
 Para depurar: `Nindo.ZoneCulling.ShowHud = true`, `Debug.Log(Nindo.ZoneCulling.Stats)`,
 `Nindo.ZoneCulling.Benchmark()` (30 s alternando con y sin en el mismo lugar, sin tope de fps ni vsync mientras
 mide; en un Development Build, Ctrl + Shift + F9 o arrancar con `-zcbench`, y el informe va a `Player.log`),

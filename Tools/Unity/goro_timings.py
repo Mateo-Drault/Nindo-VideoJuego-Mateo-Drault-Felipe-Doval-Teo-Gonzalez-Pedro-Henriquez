@@ -80,6 +80,13 @@ def main():
         # marco de autoría: +X izquierda, -Y adelante
         w("        public static readonly Vector2 %s = new Vector2(%s, %s);" % (const, f(-x), f(-y)))
     w("")
+    sw, swp = clips["SlamWave"], clips["SlamWavePlanted"]
+    w("        /// <summary>El aviso agachado del SlamWave: desde que se agacha (el arranque de la pausa del aviso, normalizado) el")
+    w("        /// cuerpo con la armadura llega hasta acá por delante del centro (m: lo más cerca que puede estar el centro de Kaito,")
+    w("        /// build_team_anims body_reach_m 'aviso' de SlamWavePlanted, que hasta el apex es el mismo clip). GoroBoss.ClearCrouch.</summary>")
+    w("        public const float SlamWaveCrouchFrom = %s, SlamWaveCrouchReach = %s;" % (
+        f(sw["timing"]["hold"][0] / sw["frames"]), f(swp["lint"]["body_reach_m"]["aviso"])))
+    w("")
     w("        /// <summary>Ventana (normalizada) en que la armadura rebota los cortes mientras carga el golpe ('armor_window').</summary>")
     w("        public static bool ArmorWindow(string state, out float from, out float to)")
     w("        {")

@@ -16,6 +16,11 @@ PRESETS = {
 PRESETS["final"] = dict(PRESETS["retirada"], th=[0.68, 0.38], dmg=[0.85, 0.935, 0.935])
 # la corrección: una espera por especial, firmas de fase, mezcla de cerca más liviana y el daño de diseño (x1)
 PRESETS["fix"] = dict(PRESETS["final"], fix=True, dmg=[1.0, 1.1, 1.1])
+# lo de hoy, leído del C# (cs_knobs: MizuchiBoss.Pacing HealthScale, DamageScale, PostureHeal, PhaseHeal, PhaseSpirit;
+# la vida base de EnemyArchetypes y el x1.1 corrompido de CorruptedStats) con el reintento por fase.
+# Uso: python mz_run.py tuning bueno,promedio,humano 200 ['{"hp": 2880, "posture_heal": 10}']
+import cs_knobs
+PRESETS["tuning"] = dict(PRESETS["fix"], retry=True, **cs_knobs.mizuchi())
 
 
 def cfg_of(name, extra=None):
@@ -29,6 +34,13 @@ def cfg_of(name, extra=None):
 if __name__ == "__main__":
     runs = int(sys.argv[3]) if len(sys.argv) > 3 else 100
     extra = json.loads(sys.argv[4]) if len(sys.argv) > 4 else None
+    # '{"calib": true}' (o un número): el daño de Kaito a 1/F, el factor real/simulado medido con el bot de Unity
+    # (calibration.py): los minutos y las muertes que da son los del juego
+    cal = extra.pop("calib", None) if extra else None
+    if cal:
+        import calibration, kaito
+        kaito.DAMAGE_MUL = 1.0 / (calibration.factor("mizuchi") if cal is True else float(cal))
+        print("calibrado con el bot de Unity: daño de Kaito x%.3f" % kaito.DAMAGE_MUL, flush=True)
     for pn in sys.argv[1].split(","):
         for lv in sys.argv[2].split(","):
             print(json.dumps(M.report(lv, runs, cfg_of(pn, extra), pn), ensure_ascii=False))

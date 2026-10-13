@@ -115,15 +115,20 @@ def gap(first, second):
 
 
 OLD = os.environ.get("OLD") == "1"
-TURN_CHANCE = [0, 0.4, 0.6, 0.5] if OLD else [0, 0.55, 0.6, 0.5]
-TURN_MIN_GAP = [0, 5.5, 2.6, 3.2] if OLD else [0, 4.0, 2.6, 3.2]
-MAX_QUIET = [0, 11, 5.5, 6.5] if OLD else [0, 7.0, 5.5, 5.0]
-FIRST_TURN = [0, 15, 1.6, 2.5] if OLD else [0, 6.0, 1.6, 2.5]
+# los turnos de hoy salen de KokuyoBoss.Shadow (cs_knobs: una sola fuente); OLD=1 = los de antes de la fase C2
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import cs_knobs
+_KK = cs_knobs.kokuyo()
+TURN_CHANCE = [0, 0.4, 0.6, 0.5] if OLD else list(_KK["turn_chance"])
+TURN_MIN_GAP = [0, 5.5, 2.6, 3.2] if OLD else list(_KK["turn_min_gap"])
+MAX_QUIET = [0, 11, 5.5, 6.5] if OLD else list(_KK["max_quiet"])
+FIRST_TURN = [0, 15, 1.6, 2.5] if OLD else list(_KK["first_turn"])
 GAP_AFTER_NOBI = 1.2 if OLD else 1.7
 NOBI_MIN = 2.5 if OLD else 0.0
 TEACH_NOBI = 1.0 if OLD else 1.5
 TEACH_DARK = 1.0 if OLD else 1.4
 BODY_AFTER = float(os.environ.get("BODY_AFTER", "0.6"))
+DEFER = os.environ.get("DEFER", "1") == "1" and not OLD
 TURN_CHANCE[1] = float(os.environ.get("TC1", TURN_CHANCE[1]))
 TURN_MIN_GAP[1] = float(os.environ.get("TG1", TURN_MIN_GAP[1]))
 MAX_QUIET[1] = float(os.environ.get("MQ1", MAX_QUIET[1]))
@@ -183,6 +188,10 @@ class Sim:
         self.last_turn = -99; self.turn_asked = False; self.act_start = 0.0; self.nobi_taught = act > 1
         self.events = []   # (t_impacto, actor, kind, move, ring_start, visible_from)
         self.outcomes = []
+        # golpes de dúo (KokuyoBoss.Shadow.RunCues): el que la sombra no pudo dar porque se estaba apagando queda guardado
+        # y sale apenas puede dentro de ese paso (DEFER=0 en el entorno = como antes, se perdía)
+        self.deferred = None   # (patrón, paso, golpe, lado)
+        self.cues = {}         # acto -> [pedidos, al toque, guardados que salieron, perdidos]
 
     # -------------------------------------------------------- reglas
     def fit(self, t, pending, gap_before, gap_after):
@@ -213,6 +222,48 @@ class Sim:
     # -------------------------------------------------------- sombra
     def shadow_can(self):
         return self.sstate == "hunt" and self.t >= self.sready_at
+
+    def shadow_rearming(self):
+        """KageShadow.Rearming: suelta o a oscuras, terminando el golpe anterior (pegada a sus pies no cuenta)."""
+        return self.act >= 2 and self.sstate == "hunt" and self.t < self.sready_at
+
+    def cue_stat(self, i):
+        c = self.cues.setdefault(self.act, [0, 0, 0, 0])
+        c[i] += 1
+
+    def run_cue(self, mv, sd):
+        """Un golpe de dúo del paso que arranca: sale, queda guardado (la sombra se apaga) o se pierde."""
+        self.cue_stat(0)
+        if self.shadow_try(mv, False, sd):
+            self.cue_stat(1)
+            self.on_duet_cue()
+        elif DEFER and self.shadow_rearming():
+            self.deferred = (self.bpat, self.bi, mv, sd)
+        else:
+            self.cue_stat(3)
+
+    def on_duet_cue(self):
+        pass
+
+    def run_deferred(self):
+        """El golpe de dúo guardado: solo mientras él siga en ese paso de ese patrón; sale apenas la sombra puede (la
+        regla lo acomoda contra el golpe de él en camino). Devuelve True si hay algo guardado (no se piden turnos)."""
+        if self.deferred is None:
+            return False
+        pat, bi, mv, sd = self.deferred
+        if self.bstate != "attack" or self.bpat is not pat or self.bi != bi:
+            self.deferred = None
+            self.cue_stat(3)
+            return False
+        if not self.shadow_can():
+            return True
+        self.deferred = None
+        if self.shadow_try(mv, False, sd):
+            self.cue_stat(2)
+            self.on_duet_cue()
+        else:
+            self.cue_stat(3)
+        return True
 
     def shadow_try(self, move, before_body=False, side="any"):
         if not self.shadow_can():
@@ -307,14 +358,14 @@ class Sim:
         # cues 'before' en PlanWindup
         for (si, mv, before, sd) in self.bpat["cues"]:
             if si == self.bi and before:
-                self.shadow_try(mv, True, sd)
+                self.run_cue(mv, sd)
         T = step_T(c, k, a)
         imp = self.earliest_body(self.t + T, k)
         self.bimpact = imp; self.bkind = k; self.bring = imp - MAXLEAD[k]
         self.bstep_end = imp + tail(c)
         for (si, mv, before, sd) in self.bpat["cues"]:
             if si == self.bi and not before:
-                self.shadow_try(mv, False, sd)
+                self.run_cue(mv, sd)
 
     def resolve(self, actor, kind, move, imp, ring, vis):
         out = self.bot.outcome(kind)
@@ -373,7 +424,9 @@ class Sim:
                         self.bpat = p; self.bsteps = p["steps"]; self.bi = 0; self.bstate = "attack"
                         self.begin_body_step()
             # ---- director de la sombra
-            if self.old:
+            if self.t >= self.kneel_until and self.run_deferred():
+                pass
+            elif self.old:
                 if (self.act == 2 and self.sstate == "hunt" and self.body_free() and self.bstate != "attack"
                         and t >= self.old_next and t >= self.act_start + 1.6):
                     mv = "nui" if self.rng.random() < 2 / 3 else "watari"
@@ -401,6 +454,9 @@ class Sim:
         self.kneel_until = t + 3.0     # 3.6 s menos lo que la cortan los 8 golpes del bot, en promedio
         self.posture = 0.0
         self.bstate = "chase"; self.bimpact = -1; self.bnext = self.kneel_until + 0.3
+        if self.deferred is not None:
+            self.deferred = None
+            self.cue_stat(3)
         # la sombra suelta lo que no llegó al "¡ahora!"
         if self.simpact > 0 and self.simpact - t > GO_LEAD:
             self.simpact = -1; self.sstate = "hunt"

@@ -386,6 +386,7 @@ class Review:
             for f in show:
                 scn.frame_set(start + f)
                 self.arm.location = roots[f]
+                self.arm.rotation_euler = (0.0, 0.0, math.radians(clip.controls(f).get("turn") or 0.0))
                 if visfn:
                     self.show_only(visfn(f))
                 bpy.context.view_layer.update()
@@ -406,6 +407,7 @@ class Review:
             for f, lab in zip(show, labels):
                 scn.frame_set(start + f)
                 self.arm.location = roots[f]
+                self.arm.rotation_euler = (0.0, 0.0, math.radians(clip.controls(f).get("turn") or 0.0))
                 if visfn:
                     self.show_only(visfn(f))
                 eyes = ph >= 2 or (eyes_from is not None and f >= eyes_from)
@@ -416,6 +418,7 @@ class Review:
                 tiles.append({"img": p, "label": lab})
             rows.append({"label": title, "tiles": tiles})
         self.arm.location = (0, 0, 0)
+        self.arm.rotation_euler = (0.0, 0.0, 0.0)
         self.glow(())
         self.set_phase(1)
         L.set_moon(None)

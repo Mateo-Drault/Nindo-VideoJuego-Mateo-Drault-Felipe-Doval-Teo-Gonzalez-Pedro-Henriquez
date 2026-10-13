@@ -1,10 +1,11 @@
 """La armadura de roca de Gorō: kit, sidecar con el contrato de la cinemática y renders (Blender 5.2, -b).
 
-  blender -b --factory-startup --python Tools/Blender/bosses/goro/build_goro_armor.py -- [--export]
+  blender -b --factory-startup --python Tools/Blender/bosses/goro/build_goro_armor.py -- [--export] [--out PATH]
 
 --export   escribe Nindo/Assets/Nindo/Art/Characters/Kits/Kit_goro_armor.fbx (el esqueleto de Models/Minijefe.fbx, los
            huesos Acc_Roca_* y la malla 'Acc_Kit' con skin rígido) y Kit_goro_armor.fbx.json (piezas, huesos, orden,
            vuelo). El .meta lo escribe Tools/Unity/generate_assets.py (kit_metas: importa con la escala del modelo, x2).
+--out      con --export: escribe el FBX (y su .json) ahí (para revisarlo antes de tocar el repo).
 Los renders de la armadura puesta (y de la cinemática) los hace goro_review.py.
 
 Es un kit como los de Tools/Blender/characters/kits (CharacterKits.Attach cuelga los huesos Acc_* de los vivos con el
@@ -71,7 +72,7 @@ def sidecar(armor, obj, ch):
     return {
         "kit": GA.KIT_ID, "fbx": "Kit_" + GA.KIT_ID + ".fbx", "character": "goro", "model": ch.spec["fbx"],
         "tris": tris, "bones": [GA.BONE_PREFIX + p["name"] for p in GA.PIECES],
-        "materials": {"Nindo_Palette": "granito oscuro (rock_dark, rock_brown_dark, con facetas de rock y rock_brown) y nieve en las tapas (snow, snow_shade) por UV",
+        "materials": {"Nindo_Palette": "granito oscuro (rock_dark, rock_brown_dark; en los costados, facetas de rock y rock_brown) por UV, sin nieve",
                       "Nindo_Emissive": GA.EMBER + " (las vetas de brasa entre las rocas de cada pieza)"},
         "frames": "start_unity / center_unity / spin_axis_unity: metros en el espacio local del transform de Gorō (el que "
                   "tiene Enemy: +Z adelante, +X derecha, +Y arriba). *_authoring: el marco de autoría de team_rig "
@@ -99,20 +100,21 @@ def sidecar(armor, obj, ch):
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     export = "--export" in argv
+    out = argv[argv.index("--out") + 1] if "--out" in argv else OUT
     ch = T.TeamChar("goro", T.CHARS["goro"])
     armor = GA.build_on(ch)
     obj = armor["object"]
     print("ARMADURA", GA.KIT_ID, sum(len(p.vertices) - 2 for p in obj.data.polygons), "tris,", len(obj.vertex_groups), "huesos")
     if export:
-        size = K.export_kit(GA.kit_char(ch), obj, OUT)
-        bad = verify(OUT, ch.src)
+        size = K.export_kit(GA.kit_char(ch), obj, out)
+        bad = verify(out, ch.src)
         if bad:
-            os.remove(OUT)
+            os.remove(out)
             print("FBX BORRADO:", "; ".join(bad))
             sys.exit(1)
-        with open(OUT + ".json", "w", encoding="utf-8", newline="\n") as fh:
+        with open(out + ".json", "w", encoding="utf-8", newline="\n") as fh:
             json.dump(sidecar(armor, obj, ch), fh, indent=1, ensure_ascii=False)
-        print("ESCRITO", OUT, size)
+        print("ESCRITO", out, size)
 
 
 if __name__ == "__main__":

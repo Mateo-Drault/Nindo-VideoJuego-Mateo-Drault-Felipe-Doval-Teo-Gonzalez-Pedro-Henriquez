@@ -24,11 +24,14 @@ martillazos y el rugido al cielo). Todos los demás clips, salvo Intro, FakeDefe
 armadura puesta (timing['armored'] en el sidecar): la fase 2 sigue caminando, corriendo, recibiendo golpes y muriendo
 con las rocas encima.
 
+Cada martillazo con paso (PLANTABLE) tiene además su variante en el lugar, '<clip>Planted' (planted_clip, al final de la
+toma): el juego la toca cuando Kaito no se deja arrastrar y el paso no entra (Enemy.DecidePlant).
+
 El contrato con el juego está en el sidecar (GoroAnims.fbx.json: cuadros, normalizados, eventos, armor_from,
 armor_window, punish) y en Kit_goro_armor.fbx.json (las piezas y la fórmula del vuelo).
 """
 import math, os, sys
-from mathutils import Vector
+from mathutils import Vector, Matrix
 import nindo_anim as NA
 import team_rig as T
 
@@ -42,6 +45,8 @@ Key = NA.Key
 # clips que solo se ven sin la armadura: el resto lo sigue usando en la fase 2 (camina, corre, recibe golpes, se marea,
 # muere con la armadura puesta) y se mide también contra las rocas. ArmorRise las va sumando (timing['armor_from'])
 UNARMORED = ("Intro", "FakeDefeat", "ArmorRise")
+# build_team_anims: con Kaito pegado (el imán, con lungeShove y lungeSlack de Goro()) un pie apoyado que patina es una falla
+MAGNET_STRICT = True
 
 
 def mesh_checks(ch, clip, first, check):
@@ -52,6 +57,19 @@ def mesh_checks(ch, clip, first, check):
     out = GC.weapon_body(ch, clip, first, check, armor=GA.rocks_for_checks())
     out.update(GC.motion_checks(ch, clip, first, check))
     return out
+
+
+# build_team_anims.body_reach (cuánto se le mete el cuerpo a Kaito): sin los shide de papel ni el maedate de oro (cuelgan
+# o salen del contorno, como en goro_checks) y con las rocas de la armadura en los clips que la llevan, sin los guanteletes
+# (van con los brazos, que el golpe lleva adonde está Kaito)
+REACH_SKIP_MATS = ("ShideMiniJefe", "OroMiniJefe")
+
+
+def body_extras(ch, clip):
+    import goro_armor as GA
+    if not clip.timing.get("armored", clip.name not in UNARMORED):
+        return []
+    return [(b, pts) for piece, b, pts in GA.rocks_for_checks() if not piece.startswith("Bracer")]
 
 
 # medidas del martillo (ch.weapon_info de Models/Minijefe.fbx, metros a lo largo del mango desde BaseM): Agarre1 (la
@@ -81,16 +99,19 @@ def club_points(pose):
 
 RUN_SPEED, WALK_SPEED = 3.8, 2.0          # EnemyArchetypes.Goro(): runSpeed, walkSpeed
 LOCOMOTION = (("Idle", 0.0), ("Walk", WALK_SPEED / RUN_SPEED), ("Run", 1.0))
+# los martillazos con paso que tienen variante en el lugar ('<clip>Planted', planted_clip)
+PLANTABLE = ("Combo1", "Combo2", "Combo3", "Combo1B", "Combo2B", "Combo3B", "SlamWave")
 # cruces del Animator (clip, cuadro, otro clip, cuadro; -1 = el último): build_team_anims ancla ahí los brazos a la rama del
 # otro clip y chequea que los antebrazos lleguen con el mismo giro local
 BLENDS = ([("Walk", 0, "Idle", 0), ("Run", 0, "Walk", 0), ("Spin", -1, "StunSpin", 0), ("ExhaustedHit", 0, "StunSpin", 0),
            ("ExhaustedHit", -1, "StunSpin", 0)]
           + [(c, f, "Idle", 0) for c in ("Combo1", "Combo2", "Combo3", "Heavy", "Hit", "HitHeavy", "Spotted", "Intro",
-                                         "Combo1B", "Combo2B", "Combo3B", "SlamWave", "AvalancheSummon") for f in (0, -1)]
+                                         "Combo1B", "Combo2B", "Combo3B", "SlamWave", "AvalancheSummon")
+                                        + tuple(c + "Planted" for c in PLANTABLE) for f in (0, -1)]
           + [("ArmorRise", -1, "Idle", 0), ("ArmorRise", 0, "FakeDefeat", -1)]
           + [(c, 0, "Idle", 0) for c in ("Spin", "Death")]
           # el parry cruza desde el contacto del golpe parado (PARRY_FROM): ancla en el de Combo1
-          + [(c, 0, "Combo1", 24) for c in ("Parried", "ParriedPerfect")]
+          + [(c, 0, "Combo1", 29) for c in ("Parried", "ParriedPerfect")]
           # y termina en la guardia (el corte arranca el paso siguiente desde ahí): la misma rama del brazo que el Idle
           + [(c, -1, "Idle", 0) for c in ("Parried", "ParriedPerfect")])
 
@@ -187,6 +208,8 @@ def clips(ch):
     out += [intro(ch)]
     out += [fake_defeat(), armor_rise()]
     out += [combo1b(), combo2b(), combo3b(), slam_wave(), avalanche_summon()]
+    # las variantes en el lugar, al final de la toma: los rangos de los clips de siempre no cambian
+    out += [c(planted=True) for c in (combo1, combo2, combo3, combo1b, combo2b, combo3b, slam_wave)]
     return out
 
 
@@ -205,9 +228,12 @@ def intro(ch):
     SLAM = P2(hips=(0.0, -0.04, -0.42), hips_rot=(16.0, 0.0, 2.0), spine=(10.0, 0.0, 0.0), head=(-18.0, 0.0, 0.0),
               face=(0.0, -0.22, -0.97), elbow_r=(-1.0, 0.3, -0.4), elbow_l=(1.0, 0.3, -0.4),
               **club((-0.25, -3.45, 0.93), (0.0, -0.97, -0.24), sr=SR, sl=SL))
-    keys = [Key(0, P(grip_r=1.0, fist_r=1.0)), Key(4, GRAB, "inout"), Key(7, dict(tween(GRAB, HEAVE, 0.55, 0.30, hand=(-0.10, -0.12, 0.10)), grip_l=0.45), "in"),
-            Key(9, HEAVE, "out"), Key(11, tween(HEAVE, SLAM, 0.45, 0.20), "in"), Key(13, SLAM, "expo_in"),
-            Key(16, dict(SLAM, hips=(0.0, -0.04, -0.45)), "out")]
+    keys = [Key(0, P(grip_r=1.0, fist_r=1.0)), Key(4, GRAB, "inout"), Key(7, dict(tween(GRAB, HEAVE, 0.55, 0.30, hand=(-0.10, -0.12, 0.10)), grip_l=0.35), "in"),
+            Key(9, HEAVE, "out")]
+    # la caída girando sobre las manos en una sola curva que acelera (u^1.3): con una clave en el medio por tween y la
+    # llegada 'expo_in', el antebrazo derecho giraba 65° en un cuadro (f10-f11) y la mano 77° en el último
+    keys += path_keys([lambda u: swing(HEAVE, SLAM, u)], 9, 13, ease=lambda u: u ** 1.3)
+    keys += [Key(16, dict(SLAM, hips=(0.0, -0.04, -0.45)), "out")]
     # el martillo apoyado en el hombro derecho: el mango sobre el hombro por afuera (x -0.75, lejos del casco), la cabeza
     # arriba atrás y la cola adelante abajo
     REST = P(hips=(0.0, 0.03, -0.12), hips_rot=(-2.0, 0.0, 10.0), spine=(-4.0, 0.0, 6.0), head=(-6.0, 0.0, -6.0),
@@ -362,11 +388,42 @@ def sweep_pose():
     (todavía en la punta del mango, la izquierda soltando) por afuera de la cadera derecha y abajo, así la cola del mango
     pasa debajo del brazo derecho y no por el torso ni el bíceps."""
     d = Vector((-0.36, -0.88, -0.30)).normalized()
-    hand = Vector((-1.15, -0.85, 1.30))
+    # (2 cm sobre el piso: de canto las esquinas de la cabeza lo rozan y con la mano 1 cm más abajo se metían)
+    hand = Vector((-1.15, -0.85, 1.32))
     pose = P(hips=(0.0, -0.02, -0.22), hips_rot=(8.0, 0.0, -6.0), spine=(6.0, 0.0, -4.0), head=(-12.0, 0.0, 8.0), grip_l=0.3,
              grip_r=0.1, fist_r=0.7, face=flat_face(tuple(d), (1.0, 0.0, 0.0)),
              **club(tuple(hand + d * (HEAD_C - GRIP_R + SR)), tuple(d), sr=SR))
     return pose
+
+
+def turned(pose, deg, face=None):
+    """La pose con el martillo girado 'deg' grados alrededor del eje vertical del cuerpo (+: hacia su izquierda): la
+    cabeza sigue el arco del golpe y las manos van con el mango (el seguimiento de los revoleos). 'face': de qué lado
+    queda la cara de la cabeza (flat_face); sin eso gira con el martillo."""
+    R = Matrix.Rotation(math.radians(deg), 3, 'Z')
+    head, haft = R @ club_points(pose)[2], R @ Vector(pose["haft"])
+    out = dict(pose, **club(tuple(head), tuple(haft), sr=pose["slide_r"], sl=pose.get("slide_l")))
+    out["face"] = flat_face(tuple(haft), face) if face is not None else tuple(R @ Vector(pose["face"]))
+    return out
+
+
+def floored(pose, z):
+    """La pose con la cabeza del martillo bajada al piso (centro a 'z' m) girando el mango sobre la mano derecha, la
+    cabeza de canto (flat_face): el martillo que cae al piso después de un revoleo."""
+    g, h = Vector(pose["grip"]), Vector(pose["haft"]).normalized()
+    reach = HEAD_C - GRIP_R + pose["slide_r"]
+    hz = max(-0.95, min(0.95, (z - g.z) / reach))
+    hor = Vector((h.x, h.y, 0.0)).normalized()
+    d = hor * math.sqrt(1.0 - hz * hz) + Vector((0.0, 0.0, hz))
+    out = dict(pose, **club(tuple(g + d * reach), tuple(d), sr=pose["slide_r"], sl=pose.get("slide_l")))
+    # (la cara del lado que ya tenía: dada vuelta, la cabeza giraba media vuelta por debajo del mango y se metía en el piso)
+    out["face"] = flat_face(tuple(d), pose["face"])
+    return out
+
+
+def decel(u):
+    """Avance que sale a la velocidad que traía (el doble de la media del tramo) y frena parejo hasta parar."""
+    return 1.0 - (1.0 - u) ** 2
 
 
 def recovery_keys(src, f0, f1, loose=0.1):
@@ -376,20 +433,182 @@ def recovery_keys(src, f0, f1, loose=0.1):
     rueda sobre el mango y así cambia de agarre sin que el antebrazo dé media vuelta; aflojarla menos dejaba media vuelta
     para el final, 60-75° en un cuadro al cerrar el puño) y vuelve a cerrar al llegar. Necesita ~16 cuadros: al aflojarse
     la mano rueda y los nudillos recorren el doble que el agarre; con 12 iban a 0.6 m por cuadro (y con claves sueltas,
-    cada una con su curva, a 0.6-0.7 m al salir del piso)."""
+    cada una con su curva, a 0.6-0.7 m al salir del piso). Floja del todo desde los dos tercios del arrastre hasta el
+    primer tercio de la subida: el antebrazo pasa de una pronación a la otra (140°) en esa meseta; con la mano floja un
+    solo cuadro (la V de antes) daba 40-48° de codo y antebrazo por cuadro (codo y antebrazo sin saltos)."""
     SW = sweep_pose()
 
     def drag(s):
         q = tween(src, SW, s, 0.30)
-        e = NA.ease("inout", s)
+        e = NA.ease("inout", min(1.0, s / 0.65))
         q.update(grip_r=1.0 - (1.0 - loose) * e, fist_r=1.0 - 0.25 * e)
         return q
 
     def up(s):
         q = tween(SW, P(), s, 0.18)
-        q.update(grip_r=loose + (1.0 - loose) * s, fist_r=0.75 + 0.25 * s)
+        e = NA.ease("inout", max(0.0, (s - 0.35) / 0.65))
+        q.update(grip_r=loose + (1.0 - loose) * e, fist_r=0.75 + 0.25 * e)
         return q
-    return path_keys([drag, up], f0, f1)
+    return path_keys([drag, up], f0, f1, w_loose=2.5)
+
+
+# ------------------------------------------------------------------ la embestida de los martillazos
+# El transform del juego recorre la embestida en cuadros del clip (AttackDef.lungeFrom = apex + 1, el primero de la suelta)
+# y la termina en el contacto (AttackDef.lungeTo): team_moves.clip_lunge_travel. Antes avanzaba lineal en el tiempo desde
+# la suelta hasta 0.08 s después del golpe, mientras el clip la tocaba acelerando (u²): entre cuadros el pie apoyado
+# patinaba 12-16 cm (build_team_anims, con el reloj del juego) y, como más de la mitad del avance caía después del golpe,
+# la cabeza del martillo ya clavada en el piso se arrastraba con el cuerpo hasta un metro. La suelta (el martillo que baja)
+# dura 7-10 cuadros y el juego la toca a 1.2x (AttackDef.releaseRate; 1.6 por omisión): en 0.19-0.28 s, acelerando.
+# La embestida es de 0.6-0.85 m, lo que da un paso largo con el pie de atrás clavado en la punta (lunge_step): con 1.2-1.5 m
+# en 0.1 s el cuerpo de 3.4 m iba a 16-18 m/s con los dos pies en el aire y se leía como un patinazo, no como un paso
+# pesado. Ahora la cadera llega a 7-9 m/s y el pie de adelante sube 28 cm. El golpe llega igual de lejos desde donde
+# está Gorō al pegar (Hit range); desde donde arrancó, 0.45-0.65 m menos.
+HAMMER_RR = 1.2
+
+
+def lunge_table(n, apex, contact, lunge, windup, rr=HAMMER_RR, planted=False):
+    """Recorrido del transform en cada cuadro (el del juego, ver arriba) y el timing que lo describe para el sidecar
+    (con 'release_rate': build_team_anims y fbx_skate tocan el clip con ese reloj y chequean que el AttackDef lo tenga).
+    'planted': la variante en el lugar (planted_clip), sin recorrido."""
+    import team_moves as TM
+    tr = TM.clip_lunge_travel(n, apex, contact, lunge, windup, apex + 1, lunge_to=contact, release_rate=rr)[0]
+    if planted:
+        return [0.0] * len(tr), dict(release_rate=rr)
+    return tr, dict(lunge_from=apex + 1, lunge_to=contact, release_rate=rr)
+
+
+# ------------------------------------------------------------------ martillazos en el lugar
+# Con Kaito que no se deja empujar (contra la barrera de la arena, una pared u otro enemigo) el imán corta la embestida
+# y el pie de atrás, clavado en la punta mientras el cuerpo le pasa por encima, se corría lo cortado: 25-50 cm (Combo1B
+# y Combo3B) en cuanto Kaito quedaba arrinconado, y en "Cuatro martillazos" cuatro veces seguidas. Que el modelo siga la
+# embestida igual no sirve: con Kaito a 1.65 m (donde el imán lo toca) la panza y la armadura se le metían en el cuerpo
+# hasta 18 cm en los martillazos y 50 en la arada del SlamWave (radio de Kaito 0.30 m, medido sobre la malla), y en una
+# cadena se le subía encima. Cada martillazo con paso tiene entonces su variante en el lugar, '<clip>Planted': el mismo
+# clip hasta la suelta (las mismas claves; Enemy.DecidePlant elige un poco antes de la suelta si el paso entra y cruza
+# mientras los dos todavía son iguales) y desde ahí el mismo golpe sin avanzar: el pie de adelante sube y pisa fuerte
+# de talón en la misma pisada del paso medida desde el cuerpo (la base queda más corta) y el de atrás queda plano en su
+# lugar. El martillo cae igual de lejos del cuerpo: Kaito, que está pegado, igual queda adentro del golpe.
+PLANT_SUFFIX = "Planted"
+
+
+def planted_feet(apex, contact, front, sf=(0.0, 0.0), sb=(0.0, 0.0), over=0.30, knee=0.28):
+    """Los pies de la suelta de un martillazo en el lugar, del apex al golpe: (pie de adelante, pie de atrás). El de
+    adelante hace la pisada de lunge_feet sin el recorrido (las mismas claves hasta apex + 1); el de atrás no se mueve
+    (ni levanta el talón: el cuerpo no le pasa por encima)."""
+    fk, _ = lunge_feet([0.0] * (contact + 2), apex, contact, front, sf=sf, sb=sb, over=over, knee=knee)
+    B = FL if front == "r" else FR
+    return fk, [B(apex, sb[1], dx=sb[0])]
+
+
+def planted_step(tr, apex, contact, n, over=0.30, knee=0.28, settle=(9, 4), pre=None, **_):
+    """lunge_step para la variante en el lugar (misma firma: los argumentos del paso de atrás no se usan): hasta el apex
+    las mismas claves; en la suelta la pisada de planted_feet; en la vuelta a la guardia el de adelante vuelve a su
+    lugar con un paso corto."""
+    s0, s1 = settle
+    pre = pre or {}
+    fr, fl = planted_feet(apex, contact, "r", over=over, knee=knee)
+    r = [FR(0)] + pre.get("r", []) + [FR(apex - 3)] + fr + [FR(n - s0, over), FR(n - s1, lift=0.06)]
+    l = [FL(0), FL(12)] + pre.get("l", []) + fl
+    return {"r": r, "l": l}
+
+
+def planted_clip(clip, apex):
+    """El clip de la variante en el lugar: '<clip>Planted', sin embestida en el timing, con el clip del que sale
+    ('planted_of') y el primer cuadro en que cambia ('fork': build_team_anims chequea que hasta ahí sean iguales)."""
+    base = clip.name
+    t = {k: v for k, v in clip.timing.items() if k not in ("lunge", "lunge_from", "lunge_to")}
+    t.update(state=base + PLANT_SUFFIX, planted_of=base, fork=apex + 1)
+    clip.name, clip.timing = base + PLANT_SUFFIX, t
+    clip.notes += " (en el lugar: Kaito no se deja empujar)"
+    return clip
+
+
+def smooth_hips(keys, tr, f0, f1):
+    """La cadera en el MUNDO (lo que pone la clave más lo que avanzó el transform) de f0 a f1 por una sola curva que sale
+    quieta y llega quieta (smoothstep): el transform pasa de 0 a 10-14 cm por cuadro en el primer cuadro de la embestida y
+    la cadera daba un tirón de 17-19 cm (la cadera sin tirones, build_team_anims). Corrige solo lo de adelante-atrás de las
+    claves de ese tramo (a lo sumo 5-6 cm): el peso sale antes que el transform y frena con el pie de adelante."""
+    ks = {k.frame: k for k in keys if f0 <= k.frame <= f1}
+    if f0 not in ks or f1 not in ks:
+        return
+    wy = lambda f: ks[f].ctrl["hips"][1] - tr[int(f)]
+    a, b = wy(f0), wy(f1)
+    for f, k in ks.items():
+        if f0 < f < f1:
+            u = (f - f0) / float(f1 - f0)
+            want = a + (b - a) * u * u * (3.0 - 2.0 * u)
+            h = k.ctrl["hips"]
+            k.ctrl = dict(k.ctrl, hips=(h[0], want + tr[int(f)], h[2]))
+
+
+# lo que mueve el martillo (y las manos que lo agarran) en la suelta; el resto es el cuerpo, que va adelantado
+HAMMER_CH = ("grip", "haft", "slide_r", "slide_l", "face", "grip_l", "grip_r", "fist_r", "fist_l", "elbow_r", "elbow_l",
+             "hand_l", "hand_l_dir", "hand_l_palm")
+
+
+def downswing_keys(poses, f0, f1, lead=1.0, ease=None, hands=None):
+    """La suelta de un martillazo, de 'f0' (el apex) a 'f1' (el contacto), una clave por cuadro: el martillo gira sobre las
+    manos por 'poses' (swing, tramos parejos) a velocidad pareja en cuadros del clip (el juego toca la suelta acelerando,
+    u²: la cabeza sale quieta del apex y llega al piso a toda velocidad, como algo pesado que cae) y el cuerpo va adelante
+    ('lead': la cadera gira y baja antes que el martillo, el peso entra primero y el martillo llega último). 'hands': por
+    tramo, cuánto se abren las manos en el medio (m: así el mango pasa por fuera de las rocas del pecho)."""
+    m = len(poses) - 1
+    hands = hands or [(0.0, 0.0, 0.0)] * m
+
+    def at(s):
+        i = min(m - 1, int(s * m))
+        return swing(poses[i], poses[i + 1], s * m - i, hand=hands[i])
+
+    def seg(s):
+        q = dict(at(1.0 - (1.0 - s) ** lead))
+        h = at(s)
+        q.update({k: h[k] for k in HAMMER_CH if k in h})
+        return q
+    return path_keys([seg], f0, f1, ease=ease or (lambda u: u))
+
+
+def lunge_step(tr, apex, contact, n, over=0.30, knee=0.28, heel=40.0, back=0.12, up=(3, 8), settle=(9, 4), pre=None):
+    """Los pies de la embestida de un martillazo (tr: el recorrido del transform en cada cuadro, lunge_table): un paso
+    largo y pesado, no un salto.
+      * el derecho (adelante) pela el talón en el apex y en apex + 1, cuando el transform arranca, ya está 4 cm arriba (con
+        la punta todavía en el piso, el transform lineal entre cuadros contra el clip cúbico de Unity la raspaba 2-3 cm en
+        el FBX); la rodilla lo sube 'knee' m a mitad de la suelta, se estira adelante y baja de talón: el talón pega el
+        piso con el martillo (el contacto) a 'over' m más allá de su lugar y en el cuadro siguiente apoya plano;
+      * el izquierdo (atrás) queda clavado en la punta mientras el cuerpo le pasa por encima: el talón sube con lo que
+        avanzó el transform hasta 'heel' grados en el golpe (la pierna de atrás empuja estirada), sigue así 'up[0]'
+        cuadros y se arrima 'up[1]' cuadros después del golpe, 'back' m detrás de su lugar (la base queda ancha);
+      * en la vuelta a la guardia los dos vuelven a su lugar con un paso corto ('settle': cuadros antes del final).
+    Con Kaito pegado el imán corta la embestida y el pie clavado se correría con lo cortado: Gorō lo arrastra con el cuerpo
+    (lungeShove) y lo que igual no entra lo hace el modelo (lungeSlack); si así no entra, el golpe sale en la variante en
+    el lugar (planted_step). build_team_anims mide esos casos (magnet_config_cm, magnet_noshove_cm, magnet_partial_cm).
+    'pre': {pie: [FootKey...]} de la anticipación, entre el cuadro 12 y el apex (el amague de Combo1B)."""
+    L = tr[contact]
+    s0, s1 = settle
+    pre = pre or {}
+    fr, fl = lunge_feet(tr, apex, contact, "r", over=over, knee=knee, heel=heel, back=back, up=up)
+    r = [FR(0)] + pre.get("r", []) + [FR(apex - 3)] + fr + [FR(n - s0, L + over), FR(n - s1, L, lift=0.06)]
+    l = [FL(0), FL(12)] + pre.get("l", []) + fl + [FL(n - s0 + 2, L - back), FL(n - s1 + 2, L, lift=0.05)]
+    return {"r": r, "l": l}
+
+
+def lunge_feet(tr, apex, contact, front, sf=(0.0, 0.0), sb=(0.0, 0.0), over=0.30, knee=0.28, heel=40.0, back=0.12, up=(3, 8)):
+    """Las claves del paso de la embestida (lunge_step), del apex a 'up[1]' cuadros después del golpe: (pie de adelante,
+    pie de atrás). 'front': "r" o "l"; 'sf' / 'sb': (dx, dy) de cada pie en el apex respecto de su lugar de la guardia
+    (la base ancha del SlamWave). 'over': cuánto más adelante de su lugar queda el de adelante, ya con la embestida."""
+    L = tr[contact]
+    F, B = (FR, FL) if front == "r" else (FL, FR)
+    mid = apex + 1 + max(1, int(round((contact - apex - 1) * 0.45)))
+    fx, fy = sf
+    fk = [F(apex, fy, dx=fx, pitch=8.0, lift=0.0), F(apex + 1, fy, dx=fx, pitch=12.0, z=0.04, ease="in", lift=0.0),
+          F(mid, fy + (L + over - fy) * 0.45, dx=fx, pitch=2.0, z=knee, ease="out", lift=0.0),
+          F(contact - 1, L + over, dx=fx, pitch=-16.0, z=0.05, ease="inout", lift=0.0),
+          F(contact, L + over, dx=fx, pitch=-10.0, ease="in", lift=0.0), F(contact + 1, L + over, dx=fx, ease="out", lift=0.0)]
+    bx, by = sb
+    # el talón sube con el cuerpo que pasa (con lo que avanzó el transform), la punta queda en su lugar del mundo
+    bk = [B(apex, by, dx=bx)] + [B(f, by, dx=bx, pitch=heel * min(1.0, tr[f] / max(1e-6, L)) ** 0.8, ease="lin", lift=0.0)
+                                 for f in range(apex + 1, contact + 1)]
+    bk += [B(contact + up[0], by, dx=bx, pitch=heel, lift=0.0), B(contact + up[1], L - back, dx=bx, ease="inout", lift=0.10)]
+    return fk, bk
 
 
 def raise_grip():
@@ -399,16 +618,19 @@ def raise_grip():
     return held((-1.12, -0.75, 1.55), (-0.08, -1.45, -0.10), 1.3)
 
 
-def combo1():
+def combo1(planted=False):
     """Martillazo en diagonal (abre el combo). Levanta el martillo derecho adelante (la izquierda lo agarra abajo), lo
     monta sobre el hombro derecho y queda armado: la cabeza a 4 m de altura arriba a la DERECHA y atrás, el cuerpo torcido
     a la derecha y el peso atrás (desde la cámara del juego, un brazo de 3 m que sale por arriba a la derecha). Baja en
     diagonal con un paso largo y las manos tirando hacia la cadera izquierda; la cabeza se clava adelante a la izquierda,
-    a 3.7 m (castigo). La cola del mango pasa siempre por delante del pecho. 1.4 s: la vuelta a la guardia dura 0.4 s
-    (arrastra la cabeza por el piso y cambia el agarre sin que el antebrazo dé media vuelta)."""
-    n, apex, contact = 48, 21, 24
-    lunge, windup = 1.2, 0.85
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    a 3.7 m (castigo). La cola del mango pasa siempre por delante del pecho. 1.83 s: la vuelta a la guardia dura 0.67 s
+    (arrastra la cabeza por el piso y cambia el agarre sin que el antebrazo dé media vuelta).
+
+    La suelta (f21-f29) es el paso largo de la embestida: la rodilla derecha sube con la cadera y el pie aterriza de talón
+    con el golpe; el izquierdo empuja clavado en la punta y se arrima después del golpe (lunge_step)."""
+    n, apex, contact = 55, 21, 29
+    lunge, windup = 0.75, 0.85
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, planted=planted)
     # la cabeza sale del piso hacia afuera (la cola baja por fuera del muslo derecho) y sube derecha adelante
     RAISE = P(hips=(0.02, 0.03, -0.13), hips_rot=(4.0, 0.0, 0.0), head=(-8.0, 0.0, 8.0), grip_l=0.3, **raise_grip())
     LIFT = P2(hips=(0.03, 0.05, -0.14), hips_rot=(2.0, 0.0, -14.0), spine=(0.0, 0.0, -8.0), head=(-8.0, 0.0, 14.0), grip_l=0.65,
@@ -418,8 +640,9 @@ def combo1():
               face=(0.6, -0.6, 0.3), elbow_r=(-1.0, 0.0, -0.3), elbow_l=(0.6, -0.8, -0.2),
               **club((-1.84, 1.07, 4.09), (-0.42, 0.55, 0.72), sr=SR, sl=SL))
     HOLD = dict(TELL, hips=(0.05, 0.13, -0.18), **club((-1.88, 1.12, 4.08), (-0.43, 0.57, 0.70), sr=SR, sl=SL))
+    # (las manos 0.3 m adelante del pecho cuando el mango pasa parado: más cerca, el mango rozaba las rocas del pecho)
     SMEAR = dict(HOLD, hips=(0.0, 0.0, -0.20), hips_rot=(10.0, 0.0, -8.0), spine=(4.0, 0.0, -4.0), head=(-12.0, 0.0, 10.0),
-                 face=(0.3, -0.8, -0.5), **club((-0.95, -2.34, 3.70), (-0.28, -0.60, 0.75), sr=SR, sl=SL))
+                 face=(0.3, -0.8, -0.5), **club((-1.08, -2.58, 3.94), (-0.243, -0.566, 0.788), sr=SR, sl=SL))
     # el golpe: la cara de abajo de la cabeza pega el piso (el centro a 0.82 m: la cabeza mide 1.6 m de cara a cara), las
     # manos estiradas a la altura del pecho y la espalda casi recta, con la cadera bien abajo y centrada (inclinado y con la
     # cadera adelante, el pecho bajaba sobre la cola del mango)
@@ -430,30 +653,31 @@ def combo1():
                   **club((0.86, -3.62, 0.92), (0.21, -0.94, -0.24), sr=SR, sl=SL))
     PUNISH = dict(FOLLOW, hips=(0.0, -0.02, -0.38), spine=(8.0, 0.0, 8.0), head=(-14.0, 0.0, -12.0),
                   **club((0.86, -3.62, 0.94), (0.21, -0.94, -0.24), sr=SR, sl=SL))
-    keys = lift_windup(RAISE, LIFT, TELL, 12, clock=windup_clock(n, apex, contact, windup))
-    keys += [Key(apex, HOLD, "sine"), Key(22, SMEAR, "in"), Key(contact, CONTACT, "lin"), Key(26, FOLLOW, "out"),
-             Key(30, dict(PUNISH, grip_r=1.0, fist_r=1.0), "out")]
-    keys += recovery_keys(PUNISH, 30, n)
-    feet = {"r": [FR(0), FR(apex), FR(27, lunge, pitch=-10.0), FR(29, lunge)],
-            "l": [FL(0), FL(12), FL(apex, pitch=16.0), FL(32, lunge, ease="out")]}
+    keys = lift_windup(RAISE, LIFT, TELL, 12, clock=windup_clock(n, apex, contact, windup, lt["release_rate"]))
+    keys += [Key(apex, HOLD, "sine")] + downswing_keys([HOLD, SMEAR, CONTACT], apex, contact, lead=1.3, hands=[(-0.10, -0.15, 0.05), (0.0, -0.10, 0.0)])
+    smooth_hips(keys, tr, apex, contact)
+    keys += [Key(contact + 2, FOLLOW, "out"), Key(contact + 6, dict(PUNISH, grip_r=1.0, fist_r=1.0), "out")]
+    keys += recovery_keys(PUNISH, contact + 6, n)
+    feet = (planted_step if planted else lunge_step)(tr, apex, contact, n)
     clip = T.TeamClip("Combo1", n, keys, travel=tr, feet=feet, notes="martillazo en diagonal; aviso: martillo arriba a la derecha",
-                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 28], hold=[12, apex], lunge=lunge,
-                                  windup=windup, state="Combo1", reach=2.5))
+                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 4], hold=[12, apex], lunge=lunge,
+                                  windup=windup, state="Combo1", reach=2.5, **lt))
     # las poses con nombre para Combo1B (antes las tomaba por cuadro de clave)
     clip.poses = dict(RAISE=RAISE, LIFT=LIFT, TELL=TELL, SMEAR=SMEAR, CONTACT=CONTACT, FOLLOW=FOLLOW, PUNISH=PUNISH)
-    return clip
+    return planted_clip(clip, apex) if planted else clip
 
 
-def combo2():
+def combo2(planted=False):
     """Revés horizontal (encadenado). La izquierda baja al mango y las dos manos corren hasta la punta mientras la cabeza
     se arrastra por el piso hacia adelante; la lleva por la izquierda hasta atrás, a la altura de la cadera, con el cuerpo
     torcido a la izquierda (desde arriba: la cabeza del martillo sale del contorno por el otro lado que en Combo1). Barre
     de izquierda a derecha a la altura del pecho de Kaito, con las manos adelante (la cola del mango barre por delante de la
-    panza) y la cabeza cae al piso a la derecha. 1.4 s; la vuelta gira el mango sobre la mano derecha por afuera de la
-    cadera."""
-    n, apex, contact = 42, 18, 21
-    lunge, windup = 1.2, 0.5
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    panza) y la cabeza cae al piso a la derecha. 1.57 s; la vuelta gira el mango sobre la mano derecha por afuera de la
+    cadera. La suelta (f18-f26) lleva el paso largo de la embestida, como Combo1 (lunge_step); después del golpe la cabeza
+    sigue el arco frenando, se pasa y vuelve (1.73 s)."""
+    n, apex, contact = 52, 18, 26
+    lunge, windup = 0.6, 0.5
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, planted=planted)
     GATHER = P2(hips=(0.0, 0.0, -0.20), hips_rot=(10.0, 0.0, 10.0), spine=(8.0, 0.0, 6.0), head=(-14.0, 0.0, -6.0), grip_l=0.9,
                 face=flat_face((0.10, -0.97, -0.22), (1.0, 0.0, 0.0)), elbow_r=(-1.0, 0.2, -0.5), elbow_l=(1.0, 0.2, -0.5),
                 **club((-0.10, -3.45, 0.56), (0.10, -0.97, -0.22), sr=SR, sl=SL))
@@ -463,49 +687,63 @@ def combo2():
     HOLD = dict(TELL, hips=(-0.04, 0.11, -0.21), **club((2.32, 1.34, 1.55), (0.66, 0.73, 0.11), sr=SR, sl=-0.98))
     SMEAR = dict(HOLD, hips_rot=(6.0, 0.0, 14.0), spine=(6.0, 0.0, 6.0), head=(-10.0, 0.0, -10.0), face=(-0.82, -0.55, 0.0),
                  **club((2.30, -2.35, 1.25), (0.74, -0.67, 0.03), sr=SR, sl=SL))
-    CONTACT = P2(hips=(0.0, -0.10, -0.26), hips_rot=(12.0, 0.0, -14.0), spine=(8.0, 0.0, -12.0), head=(-12.0, 0.0, 10.0),
+    # (la cadera abajo y sobre el pie de atrás: el pie izquierdo queda clavado en la punta mientras el cuerpo gira a la
+    # derecha, y con la cadera 10 cm más adelante y más alta la pierna no llegaba por 17 cm)
+    CONTACT = P2(hips=(0.0, -0.02, -0.34), hips_rot=(12.0, 0.0, -12.0), spine=(10.0, 0.0, -12.0), head=(-12.0, 0.0, 10.0),
                  face=(-1.0, 0.0, 0.0), elbow_r=(-1.0, 0.0, -0.4), elbow_l=(0.8, 0.5, -0.4),
                  **club((0.15, -3.85, 1.10), (0.20, -0.98, -0.05), sr=SR, sl=SL))
-    # (la cabeza es un cilindro: la cara del seguimiento va del mismo lado que la de la guardia, así la vuelta no la
-    # hace girar media vuelta por debajo del mango)
-    FOLLOW = dict(CONTACT, hips_rot=(10.0, 0.0, -30.0), spine=(10.0, 0.0, -20.0), face=(0.38, -0.92, 0.0),
-                  **club((-2.85, -1.80, 1.05), (-0.92, -0.38, -0.05), sr=SR, sl=SL))
+    # el seguimiento: la cabeza sigue el arco hacia la derecha y frena (decel: sale del golpe a la velocidad con que llegó)
+    # se pasa 18 cm y vuelve con el peso del martillo, y la cadera y el pecho siguen girando tres cuadros después de que la
+    # cabeza frenó. Antes iba al seguimiento 60° más allá en 3 cuadros con 'out': la cabeza saltaba 2 m en 1/120 s del
+    # juego y se quedaba quieta de golpe
+    # (la cabeza es un cilindro: en el seguimiento, en el aire, la cara pasa al lado de la de la guardia, así la vuelta no
+    # la hace girar media vuelta por debajo del mango)
+    OVER = dict(turned(CONTACT, -24.0, (1.0, 0.0, 0.0)), hips_rot=(11.0, 0.0, -18.0), spine=(10.0, 0.0, -17.0), head=(-12.0, 0.0, 14.0))
+    FOLLOW = dict(turned(CONTACT, -21.0, (1.0, 0.0, 0.0)), hips=(0.0, -0.04, -0.32), hips_rot=(10.0, 0.0, -24.0), spine=(10.0, 0.0, -21.0),
+                  head=(-12.0, 0.0, 16.0))
     # la cabeza cae al piso a la derecha, de canto (de frente a frente cruzaba vertical por el piso)
-    PUNISH = dict(FOLLOW, hips=(0.0, -0.08, -0.24), hips_rot=(12.0, 0.0, -24.0),
-                  face=flat_face((-0.92, -0.32, -0.22), (1.0, 0.0, 0.0)), **club((-2.95, -1.70, 0.56), (-0.92, -0.32, -0.22), sr=SR, sl=SL))
+    PUNISH = dict(floored(turned(CONTACT, -28.0, (1.0, 0.0, 0.0)), 0.56), hips=(0.0, -0.06, -0.26), hips_rot=(12.0, 0.0, -22.0), spine=(10.0, 0.0, -20.0),
+                  head=(-12.0, 0.0, 16.0))
     # vuelta: el mango gira sobre la mano derecha (afuera de la cadera) hasta apuntar adelante, la cabeza arrastrándose
     # por el piso; después la derecha sube por el mango y la izquierda suelta
     TURN = P(hips=(0.0, -0.04, -0.20), hips_rot=(8.0, 0.0, -2.0), spine=(6.0, 0.0, -4.0), head=(-10.0, 0.0, 4.0), grip_l=0.3,
              grip_r=0.15, fist_r=0.7, face=flat_face((-0.30, -0.92, -0.26), (1.0, 0.0, 0.0)),
-             **aim((-1.05, -0.70, 1.30), (-1.85, -3.10, 0.56)))
-    TURN["slide_r"] = round((Vector((-1.85, -3.10, 0.56)) - Vector((-1.05, -0.70, 1.30))).length - (HEAD_C - GRIP_R), 3)
+             **aim((-1.05, -0.70, 1.30), (-1.85, -3.10, 0.60)))
+    TURN["slide_r"] = round((Vector((-1.85, -3.10, 0.60)) - Vector((-1.05, -0.70, 1.30))).length - (HEAD_C - GRIP_R), 3)
     # junta y revolea en una sola curva (con claves sueltas la mano salía a 0.7 m por cuadro del juego al despegar)
     tell = 13
-    keys = gather_keys(GATHER) + path_keys([lambda u: swing(GATHER, TELL, u)], GATHER_F, tell, clock=windup_clock(n, apex, contact, windup))
-    keys += [Key(apex, HOLD, "sine"), Key(19, SMEAR, "in"), Key(contact, CONTACT, "lin"), Key(24, FOLLOW, "out"), Key(29, dict(PUNISH, grip_r=1.0, fist_r=1.0), "out"),
-            Key(32, lift(mix(PUNISH, TURN, 0.5), 0.10), "sine"), Key(34, TURN, "sine"),
-            Key(38, dict(lift(mix(TURN, P(), 0.6), 0.07), grip_r=0.5, fist_r=0.85), "sine"),
-            Key(n, P(grip_r=1.0, fist_r=1.0), "sine")]
-    feet = {"r": [FR(0), FR(apex), FR(24, lunge, pitch=-10.0), FR(26, lunge)],
-            "l": [FL(0), FL(10), FL(apex, pitch=14.0), FL(29, lunge, ease="out")]}
+    keys = gather_keys(GATHER) + path_keys([lambda u: swing(GATHER, TELL, u)], GATHER_F, tell, clock=windup_clock(n, apex, contact, windup, lt["release_rate"]))
+    keys += [Key(apex, HOLD, "sine")] + downswing_keys([HOLD, SMEAR, CONTACT], apex, contact, lead=1.3)
+    smooth_hips(keys, tr, apex, contact)
+    keys += path_keys([lambda u: swing(CONTACT, OVER, u)], contact, contact + 5, ease=decel)
+    # (la vuelta del mango en 4 cuadros, con la mano y la cabeza del martillo en línea recta en el medio (tween): en 2 la
+    # mano floja giraba con el mango y la punta de los dedos iba a 0.57 m por cuadro)
+    keys += [Key(contact + 8, FOLLOW, "sine"), Key(contact + 12, dict(PUNISH, grip_r=1.0, fist_r=1.0), "inout"),
+             Key(contact + 15, tween(PUNISH, TURN, 0.5, 0.10), "sine"), Key(contact + 19, TURN, "sine"),
+             # (la cabeza 11 cm más alta en la subida: gira de canto y con 7 cm las esquinas se metían 2 cm en el piso)
+             Key(contact + 22, dict(lift(mix(TURN, P(), 0.6), 0.11), grip_r=0.5, fist_r=0.85), "sine"),
+             Key(n, P(grip_r=1.0, fist_r=1.0), "sine")]
+    # (el pie de atrás se arrima apenas pasa el golpe: el cuerpo sigue girando a la derecha y le lleva la cadera adelante)
+    feet = (planted_step if planted else lunge_step)(tr, apex, contact, n, up=(1, 6))
     clip = T.TeamClip("Combo2", n, keys, travel=tr, feet=feet, notes="revés horizontal; aviso: martillo atrás a la izquierda",
-                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 24], hold=[tell, apex], lunge=lunge,
-                                  windup=windup, state="Combo2", reach=2.7, regrip=[[1, 3]]))
+                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 3], hold=[tell, apex], lunge=lunge,
+                                  windup=windup, state="Combo2", reach=2.7, regrip=[[1, 3]], **lt))
     clip.poses = dict(GATHER=GATHER, TURN=TURN)
-    return clip
+    return planted_clip(clip, apex) if planted else clip
 
 
-def combo3():
+def combo3(planted=False):
     """El de arriba (cierra el combo). Levanta el martillo derecho adelante y lo lleva por encima de la cabeza: las dos
     manos juntas arriba, delante del casco, el mango que pasa por encima del casco y la cabeza del martillo parada atrás
     a 5 m de altura, el pecho arqueado (desde arriba: la silueta más alta). Cae derecho al frente con todo el peso; la
-    cabeza se clava a 3.9 m y queda agachado. 1.57 s; vuelve arrastrando la cabeza a la derecha, como Combo1.
+    cabeza se clava a 3.9 m y queda agachado. 1.7 s; vuelve arrastrando la cabeza a la derecha, como Combo1.
 
     La subida dura 17 cuadros (antes 9): con un martillo de 3.7 m arriba en 0.3 s (el juego toca el principio de la
-    anticipación a 1.3x) las manos iban a 1.4 m por cuadro y el aviso se leía como un salto, no como peso."""
-    n, apex, contact = 47, 22, 25
-    lunge, windup = 1.0, 0.5
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    anticipación a 1.3x) las manos iban a 1.4 m por cuadro y el aviso se leía como un salto, no como peso. La caída
+    (f22-f29) lleva el paso largo de la embestida, como Combo1 (lunge_step)."""
+    n, apex, contact = 51, 22, 29
+    lunge, windup = 0.6, 0.5
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, planted=planted)
     TELL = P2(hips=(0.0, 0.14, -0.10), hips_rot=(-8.0, 0.0, 4.0), spine=(-12.0, 0.0, -2.0), head=(6.0, 0.0, 0.0),
               face=(0.0, 0.62, -0.78), elbow_r=(-1.0, -0.2, 0.3), elbow_l=(1.0, -0.2, 0.3),
               **club((0.11, 1.28, 5.03), (0.04, 0.62, 0.78), sr=SR, sl=SL))
@@ -519,18 +757,19 @@ def combo3():
     # sube con una sola curva (la mano a lo sumo ~0.4 m por cuadro del juego) y frena en la pausa: 5 cuadros arriba
     # antes de la suelta, que el seno de la anticipación estira a 0.35 s
     tell = 17
-    keys = overhead_windup(TELL, tell, clock=windup_clock(n, apex, contact, windup)) + [Key(apex, HOLD, "sine"), Key(apex + 1, SMEAR, "in"), Key(contact, CONTACT, "lin"),
-                                          Key(contact + 2, FOLLOW, "out"), Key(contact + 6, dict(FOLLOW, grip_r=1.0, fist_r=1.0), "sine")]
+    keys = overhead_windup(TELL, tell, clock=windup_clock(n, apex, contact, windup, lt["release_rate"])) + [Key(apex, HOLD, "sine")]
+    keys += downswing_keys([HOLD, SMEAR, CONTACT], apex, contact, lead=1.3)
+    smooth_hips(keys, tr, apex, contact)
+    keys += [Key(contact + 2, FOLLOW, "out"), Key(contact + 6, dict(FOLLOW, grip_r=1.0, fist_r=1.0), "sine")]
     keys += recovery_keys(FOLLOW, contact + 6, n)
-    feet = {"r": [FR(0), FR(apex), FR(contact + 3, lunge, pitch=-10.0), FR(contact + 5, lunge)],
-            "l": [FL(0), FL(12), FL(apex, pitch=14.0), FL(contact + 7, lunge, ease="out")]}
+    feet = (planted_step if planted else lunge_step)(tr, apex, contact, n)
     clip = T.TeamClip("Combo3", n, keys, travel=tr, feet=feet, notes="martillazo de arriba; aviso: martillo atrás de la cabeza",
                       timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 3], hold=[tell, apex], lunge=lunge,
-                                  windup=windup, state="Combo3", reach=2.9))
+                                  windup=windup, state="Combo3", reach=2.9, **lt))
     # las poses con nombre, para las variantes (Combo3B, SlamWave, AvalancheSummon): por cuadro de clave se rompían cada
     # vez que cambiaba el tiempo de Combo3
     clip.poses = dict(TELL=TELL, HOLD=HOLD, SMEAR=SMEAR, CONTACT=CONTACT)
-    return clip
+    return planted_clip(clip, apex) if planted else clip
 
 
 def heavy():
@@ -541,32 +780,39 @@ def heavy():
     y el contacto es el aterrizaje: la cabeza del martillo a 3.6 m y los dos pies en el piso a la vez."""
     n, apex, contact = 64, 32, 40
     lunge, windup = 0.5, 1.1
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    # la embestida va en la caída, de lo más alto del salto (el apex) al aterrizaje: los pies están en el aire
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, rr=1.6)
     CROUCH = P2(hips=(0.0, 0.10, -0.40), hips_rot=(14.0, 0.0, 0.0), spine=(-6.0, 0.0, 0.0), head=(-10.0, 0.0, 0.0),
                 knee_r=(-0.8, -0.8, 0.0), knee_l=(0.8, -0.8, 0.0), face=(0.0, 0.62, -0.78),
                 elbow_r=(-1.0, -0.2, 0.3), elbow_l=(1.0, -0.2, 0.3), **club((-0.04, 0.52, 5.22), (0.03, 0.35, 0.94), sr=SR, sl=SL))
     DEEP = dict(CROUCH, hips=(0.0, 0.11, -0.46), **club((-0.04, 0.56, 5.16), (0.03, 0.37, 0.93), sr=SR, sl=SL))
-    TAKEOFF = dict(CROUCH, hips=(0.0, 0.04, 0.14), hips_rot=(4.0, 0.0, 0.0), spine=(-10.0, 0.0, 0.0), head=(-6.0, 0.0, 0.0),
+    # (el despegue con la cadera 6 cm más baja: las piernas estiradas en punta de pie no llegaban y el solver la bajaba)
+    TAKEOFF = dict(CROUCH, hips=(0.0, 0.04, 0.08), hips_rot=(4.0, 0.0, 0.0), spine=(-10.0, 0.0, 0.0), head=(-6.0, 0.0, 0.0),
                    **club((0.10, 1.10, 5.70), (0.04, 0.52, 0.85), sr=SR, sl=SL))
     TOP = dict(TAKEOFF, hips=(0.0, 0.0, 0.50), knee_r=(-0.6, -1.0, 0.0), knee_l=(0.6, -1.0, 0.0), spine=(-14.0, 0.0, 0.0),
                **club((0.10, 0.85, 6.10), (0.04, 0.40, 0.92), sr=SR, sl=SL))
+    # (las manos bajan 1.05 m adelante de la cara: a 0.84 el puño derecho rozaba la máscara del casco en la caída)
     FALL = dict(TOP, hips=(0.0, -0.06, 0.30), hips_rot=(14.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(-14.0, 0.0, 0.0),
-                face=(0.0, -0.95, -0.30), **club((0.05, -1.95, 5.20), (0.02, -0.40, 0.92), sr=SR, sl=SL))
+                face=(0.0, -0.95, -0.30), **club((0.055, -2.16, 5.15), (0.02, -0.40, 0.92), sr=SR, sl=SL))
     # el aterrizaje: la cadera abajo del todo, las manos estiradas a la altura de las rodillas y la cara de abajo de la
-    # cabeza en el piso (centro a 0.92 m: con el mango inclinado la cabeza pega con el canto)
+    # cabeza en el piso (centro a 0.95 m: con el mango inclinado la cabeza pega con el canto; a 0.92, cuando la cadera
+    # rebota después del golpe el canto se metía 2.7 cm en el piso)
     LAND = P2(hips=(0.0, -0.06, -0.50), hips_rot=(20.0, 0.0, 0.0), spine=(10.0, 0.0, 0.0), head=(-22.0, 0.0, 0.0),
               knee_r=(-0.8, -0.8, 0.0), knee_l=(0.8, -0.8, 0.0), face=(0.0, -0.20, -0.98),
-              elbow_r=(-1.0, 0.3, -0.4), elbow_l=(1.0, 0.3, -0.4), **club((0.05, -3.70, 0.92), (0.02, -0.98, -0.20), sr=SR, sl=SL))
+              elbow_r=(-1.0, 0.3, -0.4), elbow_l=(1.0, 0.3, -0.4), **club((0.05, -3.70, 0.95), (0.02, -0.98, -0.20), sr=SR, sl=SL))
     # sube el martillo y se agacha en 21 cuadros con una sola curva (con claves sueltas la mano iba a 0.6 m por cuadro)
-    keys = overhead_windup(CROUCH, 21, clock=windup_clock(n, apex, contact, windup)) + [Key(23, DEEP, "sine"),
+    keys = overhead_windup(CROUCH, 21, clock=windup_clock(n, apex, contact, windup, lt["release_rate"])) + [Key(23, DEEP, "sine"),
             Key(26, TAKEOFF, "inout"), Key(apex, TOP, "out"), Key(36, FALL, "in"), Key(contact, LAND, "expo_in"),
             Key(43, dict(LAND, hips=(0.0, -0.05, -0.46)), "out"), Key(48, dict(LAND, grip_r=1.0, fist_r=1.0), "sine")]
     keys += recovery_keys(LAND, 48, n)
-    feet = {"r": [FR(0), FR(22), FR(26, pitch=24.0), FR(apex, 0.25, z=0.40, ease="out"), FR(contact, lunge, ease="in"), FR(n - 6, lunge)],
-            "l": [FL(0), FL(22), FL(26, pitch=24.0), FL(apex, 0.25, z=0.40, ease="out"), FL(contact, lunge, ease="in"), FL(n - 6, lunge)]}
+    # (arriba del salto los pies recogidos a 0.62 m: a 0.40, con la cadera 0.5 m arriba las piernas no llegaban y el
+    # solver la bajaba 21 cm justo en la cima)
+    # (y en el despegue en punta de pie, 40°: con 24° y la cadera arriba las piernas no llegaban por 7 cm)
+    feet = {"r": [FR(0), FR(22), FR(26, pitch=40.0), FR(apex, 0.25, z=0.62, ease="out"), FR(contact, lunge, ease="in"), FR(n - 6, lunge)],
+            "l": [FL(0), FL(22), FL(26, pitch=40.0), FL(apex, 0.25, z=0.62, ease="out"), FL(contact, lunge, ease="in"), FL(n - 6, lunge)]}
     return T.TeamClip("Heavy", n, keys, travel=tr, feet=feet, notes="golpe sísmico: salta y pega al aterrizar",
                       timing=dict(kind="unblockable", apex=apex, contact=contact, active=[contact, 42], hold=[21, 23], lunge=lunge,
-                                  windup=windup, state="Heavy", reach=3.1, impacts={"land": [0.05, -3.70]}))
+                                  windup=windup, state="Heavy", reach=3.1, impacts={"land": [0.05, -3.70]}, **lt))
 
 
 def stun_pose(a=0.0):
@@ -701,7 +947,7 @@ def windup_clock(n, apex, contact, windup, release_rate=1.6):
     return lambda f: tA * math.asin(min(1.0, f / float(apex))) * 2.0 / math.pi
 
 
-def path_keys(segs, f0, f1, ease=trap, w_head=0.3, lever=0.4, w_grip=1.0, clock=None):
+def path_keys(segs, f0, f1, ease=trap, w_head=0.3, lever=0.4, w_grip=1.0, clock=None, w_loose=0.0):
     """Una clave por cuadro de f0 (sin incluirlo) a f1 a lo largo de una cadena de tramos (cada uno fn(s) -> pose, s de 0
     a 1, el final de uno es el principio del otro) con UNA sola curva de velocidad para toda la cadena, repartida por lo
     que se mueve: la mano que más se mueve (la izquierda, en el mango o suelta), lo que la hace girar el mango (los
@@ -709,7 +955,9 @@ def path_keys(segs, f0, f1, ease=trap, w_head=0.3, lever=0.4, w_grip=1.0, clock=
     por todo lo que se afloja o se cierra la derecha (floja rueda sobre el mango y los nudillos se mueven solos). Con una
     clave por pose y su propia curva cada tramo arrancaba y frenaba solo, y en el tramo largo ('out', el 70 % en el
     primer cuadro) la mano saltaba 1.4 m en un cuadro: así la velocidad sube y baja una vez y el tramo que más se mueve
-    se lleva más cuadros. 'clock' (f -> s, windup_clock): la curva va en el tiempo del juego."""
+    se lleva más cuadros. 'clock' (f -> s, windup_clock): la curva va en el tiempo del juego. 'w_loose': m por tramo
+    entero con la derecha floja del todo (grip_r 0): ahí el solver da vuelta el antebrazo sobre el mango y los nudillos
+    se mueven aunque la mano pedida no; sin ese tiempo la mano iba a 0.56-0.59 m por cuadro."""
     samples, cum, prev = [], 0.0, None
     for i, fn in enumerate(segs):
         for j in range(0 if i == 0 else 1, 33):
@@ -725,7 +973,8 @@ def path_keys(segs, f0, f1, ease=trap, w_head=0.3, lever=0.4, w_grip=1.0, clock=
                     dh = max(dh, (left - prev[4]).length)
                 elif q.get("grip_l", 0.0) <= 0.5 and prev[5] <= 0.5:
                     dh = max(dh, (Vector(q["hand_l"]) - prev[6]).length + lever * prev[7].angle(Vector(q["hand_l_dir"]), 0.0))
-                cum += dh + w_head * (head - prev[1]).length + lever * prev[2].angle(ax, 0.0) + w_grip * abs(gr - prev[3])
+                cum += (dh + w_head * (head - prev[1]).length + lever * prev[2].angle(ax, 0.0) + w_grip * abs(gr - prev[3])
+                        + w_loose * (1.0 - 0.5 * (gr + prev[3])) / 32.0)
             prev = (hand, head, ax, gr, left, q.get("grip_l", 0.0), Vector(q["hand_l"]), Vector(q["hand_l_dir"]))
             samples.append((cum, i, s))
     keys = []
@@ -740,17 +989,21 @@ def path_keys(segs, f0, f1, ease=trap, w_head=0.3, lever=0.4, w_grip=1.0, clock=
     return keys
 
 
-def lift_windup(RAISE, LIFT, top, f1, ease=trap, clock=None):
+def lift_windup(RAISE, LIFT, top, f1, ease=trap, clock=None, hand=(0.0, 0.0, 0.0)):
     """Del reposo a 'top' (el aviso): la derecha corre hacia la punta del mango mientras la cabeza sale del piso (RAISE),
     las dos manos lo levantan derecho adelante (LIFT) y lo llevan a 'top' girando sobre las manos, en una sola curva de
     velocidad (path_keys). Antes eran claves sueltas en f3, f4.5, f6 y el aviso en f9 con 'out': de LIFT al aviso la mano
-    recorría 1.4 m en un cuadro (Combo3)."""
+    recorría 1.4 m en un cuadro (Combo3). 'hand': cuánto se corren las manos a mitad del último giro."""
     segs = [lambda s: mix(P(), RAISE, s),
             # (en el medio las manos se abren adelante a la derecha y la cabeza del martillo sube antes que ellas, 0.7 m
             # más alta: el mango se para y la cola, que gira por detrás de las manos, pasa por delante del muslo; con el
             # mango acostado bajaba a la altura de la escarcela de roca y se metía 4-10 cm)
-            lambda s: tween(RAISE, LIFT, s, 0.70, hand=(-0.18, -0.30, 0.0)),
-            lambda s: swing(LIFT, top, s)]
+            # (la izquierda cierra sobre el mango recién cuando el mango le llega cerca, s³: cerrándola pareja, a mitad de
+            # camino el mango todavía iba por la derecha a 1.7 m del hombro izquierdo y la mano no llegaba por 3-4 cm; con s²
+            # quedaban 3 cm en Heavy y AvalancheSummon)
+            lambda s: dict(tween(RAISE, LIFT, s, 0.70, hand=(-0.18, -0.30, 0.0)),
+                           grip_l=RAISE["grip_l"] + (LIFT["grip_l"] - RAISE["grip_l"]) * s ** 3),
+            lambda s: swing(LIFT, top, s, hand=hand)]
     return [Key(0, P())] + path_keys(segs, 0, f1, ease, clock=clock)
 
 
@@ -774,7 +1027,9 @@ def overhead_windup(top, f1, ease=trap, clock=None):
     LIFT = P2(hips=(0.0, 0.06, -0.15), hips_rot=(0.0, 0.0, -6.0), spine=(-4.0, 0.0, -4.0), head=(-4.0, 0.0, 6.0), grip_l=0.8,
               elbow_r=(-1.0, -0.2, -0.4), elbow_l=(0.8, -0.4, -0.4),
               **club((-0.95, -1.90, 4.40), (-0.20, -0.30, 0.93), sr=1.3, sl=-1.05))
-    return lift_windup(RAISE, LIFT, top, f1, ease, clock)
+    # (las manos 10 cm más adelante a mitad del giro: con el pecho de roca agrandado la cola del mango, que baja por
+    # delante cuando la cabeza sube atrás, se metía 4 cm en Chest_High)
+    return lift_windup(RAISE, LIFT, top, f1, ease, clock, hand=(0.0, -0.10, 0.02))
 
 
 def recoil_keys(knock, fracs, hand=(0.0, 0.0, 0.0)):
@@ -904,8 +1159,9 @@ def hit_heavy():
     cuando el empujón pasa de 1 m): el sacudón más grande y un paso pesado atrás del pie derecho."""
     n = 15
     b = HEAVY_BACK
+    # (la mano 10 cm más afuera y 6 más abajo: la cola del mango pasaba por la hombrera derecha agrandada)
     PEAK = P(hips=(0.0, 0.10, -0.12), hips_rot=(-8.0, 0.0, 10.0), spine=(-16.0, 0.0, 2.0), head=(20.0, 0.0, 10.0),
-             hand_l=(0.76, -0.05, 1.30), **aim((-0.95, -0.32, 1.44), IDLE_HEAD + Vector((-0.08, 0.10, 0.20))))
+             hand_l=(0.76, -0.05, 1.30), **aim((-1.05, -0.32, 1.38), IDLE_HEAD + Vector((-0.08, 0.10, 0.20))))
     keys = [Key(0, P()), Key(2, PEAK, "snap"), Key(8, dict(P(), hips=(0.0, 0.02, -0.17)), "inout"), Key(n, P(), "sine")]
     feet = {"r": [FR(0), FR(2), FR(8, -b, ease="out", lift=0.06)], "l": [FL(0), FL(6), FL(12, -b, ease="out", lift=0.05)]}
     return T.TeamClip("HitHeavy", n, keys, travel=knock_travel(n, b), feet=feet, notes="golpe pesado: sacudón y un paso atrás")
@@ -938,7 +1194,8 @@ def spotted():
     ROAR = P(hips=(0.0, 0.04, -0.10), hips_rot=(-6.0, 0.0, 0.0), spine=(-16.0, 0.0, 0.0), head=(18.0, 0.0, 0.0),
              face=(0.0, -1.0, 0.1), grip_l=0.0, elbow_r=(-1.0, 0.0, -0.2),
              hand_l=(1.10, -0.20, 2.10), hand_l_dir=(0.6, -0.1, 0.8), hand_l_palm=(0.0, -1.0, 0.0), fist_l=1.0, elbow_l=(1.0, 0.0, -0.4),
-             **aim((-1.36, -0.18, 2.60), (-1.64, -0.24, 4.07)))
+             # (el mango casi vertical y la mano 6 cm más afuera: inclinado afuera, la cola caía sobre la rodillera derecha)
+             **aim((-1.42, -0.18, 2.58), (-1.50, -0.22, 4.12)))
     # junta aire y levanta el martillo en una sola curva (con claves sueltas, 'out' en IN, la mano subía 0.54 m en f9-f10)
     keys = [Key(0, P())] + path_keys([lambda u: tween(P(), IN, u, 0.10, hand=(-0.10, 0.0, 0.0)),
                                       lambda u: tween(IN, ROAR, u, 0.0, hand=(-0.15, 0.0, 0.0))], 0, 14)
@@ -946,7 +1203,9 @@ def spotted():
         s = 1 if i % 2 else -1
         keys.append(Key(f, dict(ROAR, spine=(-16.0, 1.2 * s, 0.0), head=(18.0, 0.0, 2.0 * s)), "sine"))
     # vuelve a la guardia en una sola curva (con dos claves la mano bajaba 0.56 m en un cuadro)
-    keys += path_keys([lambda u: tween(dict(ROAR, hips=(0.0, 0.03, -0.12)), P(), u, 0.10, hand=(-0.15, 0.0, 0.0))], 33, n)
+    # (la cabeza 20 cm más afuera y adelante en el medio: con el martillo parado derecho bajaba rozando el pecho de roca)
+    keys += path_keys([lambda u: tween(dict(ROAR, hips=(0.0, 0.03, -0.12)), P(), u, 0.10, hand=(-0.15, 0.0, 0.0),
+                                       head=(-0.15, -0.15, 0.0))], 33, n)
     feet = {"r": [FR(0), FR(10), FR(14, dx=-0.08, lift=0.06), FR(34, dx=-0.08), FR(n, lift=0.06)],
             "l": [FL(0), FL(10), FL(14, dx=0.08, lift=0.06), FL(32, dx=0.08), FL(n - 2, lift=0.06)]}
     return T.TeamClip("Spotted", n, keys, feet=feet, tremble=0.0, notes="rugido: pecho afuera, brazos abiertos")
@@ -990,8 +1249,11 @@ def death():
                 hand_l=(0.55, -0.80, 0.40), hand_l_dir=(0.0, -0.8, -0.3), grip_r=0.15, fist_r=0.5,
                 drop_r=1.0, hand_r=(-0.58, -0.82, 0.40), hand_r_dir=(0.0, -0.8, -0.3), elbow_r=(-1.0, 0.3, 0.2),
                 face=flat_face(tuple(LAID), (0.0, 1.0, 0.0)), **planted(HW + Vector((0.0, 0.0, 0.03)), tuple(LAID), -0.70, slide[54]))
+    # (la izquierda a mitad de camino de la rodilla al piso: con la de DOWN ya en f51 bajaba 55 cm y giraba 50° en tres
+    # cuadros y el antebrazo daba media vuelta en uno, f51 y f53-f54)
     TOPPLE = dict(DOWN, hips=(0.0, 0.04, -0.47), hips_rot=(38.0, 0.0, 9.0), spine=(22.0, 0.0, 0.0), drop_r=0.9, grip_r=0.4,
-                  hand_r=(-0.64, -0.78, 0.80), face=face, **planted(HW, tuple(TIP), -0.70, slide[51]))
+                  hand_r=(-0.64, -0.78, 0.80), hand_l=(0.53, -0.58, 0.66), hand_l_dir=(0.0, -0.55, -0.83),
+                  face=face, **planted(HW, tuple(TIP), -0.70, slide[51]))
     keys = [Key(0, P(grip_r=1.0, fist_r=1.0)), Key(1, tween(P(), REC, 0.3, 0.35, hand=(-0.15, 0.0, 0.0), head=(-0.45, 0.0, 0.0)), "snap"),
             Key(2, tween(P(), REC, 0.6, 0.40, hand=(-0.28, 0.0, -0.12), head=(-0.45, 0.0, 0.0)), "lin"), Key(4, REC, "out"),
             Key(12, dict(STEADY, grip_r=1.0, fist_r=1.0), "out"), Key(24, KNEEL, "in2"),
@@ -1016,16 +1278,17 @@ def death():
 # centro a 0.57 m, las esquinas del octógono y los zunchos llegan a 0.56; las caras mirando a los costados, como estaba
 # clavado: así cae sin girar la cabeza), con el mango acostado a lo largo del brazo derecho; la derecha abierta apoyada en
 # el mango, 0.8 m más arriba de la punta (desde ahí lo agarra en ArmorRise)
-SUPINE_HEAD = Vector((-1.68, -0.75, 0.57))
+SUPINE_HEAD = Vector((-1.70, -0.75, 0.57))
 SUPINE_HAFT = Vector((0.0, -0.995, 0.10)).normalized()      # de la mano hacia la cabeza
 SUPINE_SR = 0.80
 SUPINE_HAND = SUPINE_HEAD - SUPINE_HAFT * (HEAD_C - GRIP_R + SUPINE_SR)
 
 
 def supine(breath=0.0, **kw):
-    """Boca arriba (ver arriba). La cadera a 0.37 m del piso y el cuerpo acostado hacia atrás; la cabeza levantada del
-    piso lo justo para que el casco no se meta; los pies de talón con la punta arriba ('feet' de cada clip)."""
-    p = P(hips=(0.0, 0.42, -0.73), hips_rot=(-84.0, 0.0, 4.0), spine=(-2.0, 0.0, 0.0), head=(18.0, 0.0, 10.0), breath=breath,
+    """Boca arriba (ver arriba). La cadera a 0.40 m del piso y el cuerpo acostado hacia atrás (a 0.37 la cola y la espalda
+    se metían 3 cm en el piso); la cabeza levantada del piso lo justo para que el casco no se meta; los pies de talón con
+    la punta arriba ('feet' de cada clip)."""
+    p = P(hips=(0.0, 0.42, -0.695), hips_rot=(-84.0, 0.0, 4.0), spine=(-2.0, 0.0, 0.0), head=(18.0, 0.0, 10.0), breath=breath,
           knee_r=(-0.2, -1.0, 0.4), knee_l=(0.2, -1.0, 0.4), grip_l=0.0, drop_r=1.0, grip_r=0.2, fist_r=0.35, fist_l=0.35,
           hand_r=tuple(SUPINE_HAND + Vector((0.0, 0.0, 0.10))), hand_r_dir=(-0.4, 0.6, -0.15), hand_r_palm=(0.0, 0.0, -1.0),
           elbow_r=(-1.0, 0.5, 0.3), hand_l=(1.32, 0.95, 0.38), hand_l_dir=(0.6, 0.6, -0.15), hand_l_palm=(0.0, 0.0, -1.0),
@@ -1039,9 +1302,10 @@ SUPINE_FEET = {"r": (-0.50, -0.62, -12.0), "l": (0.50, -0.58, 14.0)}
 
 
 # el martillo clavado de la derrota falsa y de ArmorRise: la cabeza adelante a su derecha con las caras a los costados
-# (así, cuando se vence para atrás cae sin girar la cabeza: es la de SUPINE_HEAD), 1.68 m afuera: más adentro, de
-# rodilla en ArmorRise, la canillera nueva (0.45 m) se metía en la cabeza del martillo
-FD_HW = Vector((-1.68, -0.75, 0.58))
+# (así, cuando se vence para atrás cae sin girar la cabeza: es la de SUPINE_HEAD), 1.70 m afuera: más adentro, de
+# rodilla en ArmorRise, la canillera derecha (agrandada como la izquierda) se metía en la cabeza del martillo; más
+# afuera la mano no llega al mango
+FD_HW = Vector((-1.70, -0.75, 0.58))
 FD_DOWN = (0.04, 0.02, -1.0)
 FD_FACE = (1.0, 0.0, 0.0)
 
@@ -1069,13 +1333,18 @@ def fake_defeat():
     HW, down, face = FD_HW, FD_DOWN, FD_FACE
     HIT = P(hips=(0.0, 0.14, -0.12), hips_rot=(-12.0, 0.0, -6.0), spine=(-12.0, 0.0, 4.0), head=(20.0, 0.0, -8.0),
             **aim((-0.95, -0.40, 1.42), IDLE_HEAD + Vector((-0.05, 0.10, 0.20))))
-    CATCH = P(hips=(0.0, 0.16, -0.22), hips_rot=(4.0, 0.0, 6.0), spine=(6.0, 0.0, 0.0), head=(18.0, 0.0, 4.0), face=face,
-              grip_r=0.3, fist_r=0.75, elbow_r=(-1.0, 0.4, -0.3), **planted(HW, down, -0.20, 0.0))
+    # (se ataja inclinado hacia el martillo, que clava 1.7 m a su derecha, y lo agarra 12 cm más arriba del mango que
+    # arrodillado: derecho, o más abajo, el brazo no llegaba al mango por 4 cm)
+    CATCH = P(hips=(-0.14, 0.12, -0.24), hips_rot=(4.0, -9.0, 6.0), spine=(6.0, -13.0, 0.0), head=(18.0, 6.0, 4.0), face=face,
+              grip_r=0.3, fist_r=0.75, elbow_r=(-1.0, 0.4, -0.3), **planted(HW, down, -0.08, 0.0))
     KNEEL = kneel_pose()
     PUSH = dict(KNEEL, hips=(0.0, 0.14, -0.38), spine=(6.0, 0.0, 0.0), head=(10.0, 0.0, 0.0), breath=1.0,
                 **planted(HW, down, -0.50, 0.0))
-    SLIP = dict(KNEEL, hips=(0.0, 0.24, -0.58), hips_rot=(-10.0, 0.0, 4.0), spine=(0.0, 0.0, 0.0), head=(14.0, 0.0, 6.0),
-                drop_r=0.0, grip_r=0.4, fist_r=0.5, hand_r=(-1.20, -0.20, 1.05), hand_r_dir=(-0.2, -0.6, -0.75),
+    # (la mano ya empieza a soltarse, drop_r 0.22: agarrada del todo con el cuerpo echado atrás no llegaba al mango por
+    # 5 cm justo cuando se empieza a resbalar)
+    # (la cadera 3 cm hacia el martillo y girada hacia él: echado atrás derecho la mano no llegaba al mango por 3-4 cm)
+    SLIP = dict(KNEEL, hips=(-0.03, 0.23, -0.58), hips_rot=(-10.0, -4.0, 4.0), spine=(0.0, -4.0, 0.0), head=(14.0, 0.0, 6.0),
+                drop_r=0.22, grip_r=0.4, fist_r=0.5, hand_r=(-1.20, -0.20, 1.05), hand_r_dir=(-0.2, -0.6, -0.75),
                 hand_r_palm=(-1.0, 0.0, 0.0),
                 hand_l=(0.80, 0.10, 1.00), face=face, **planted(HW, (0.0, -0.32, -0.95), -0.62, 0.0))
     # se sienta para atrás: la cola al piso entre los talones, el torso todavía arriba, los brazos que se abren
@@ -1096,7 +1365,7 @@ def fake_defeat():
         q.update(club(tuple(SUPINE_HEAD), tuple(Vector(SIT["haft"]).normalized().slerp(SUPINE_HAFT, hu)), sr=SUPINE_SR))
         return q
     # rebota: la cadera y la cabeza suben 2-3 cm y los brazos, sueltos, rebotan un poco después del cuerpo
-    BOUNCE = supine(hips=(0.0, 0.42, -0.705), head=(20.5, 0.0, 10.0))
+    BOUNCE = supine(hips=(0.0, 0.42, -0.67), head=(20.5, 0.0, 10.0))
     FLOP = supine(hand_r=tuple(SUPINE_HAND + Vector((0.0, 0.02, 0.16))), hand_l=(1.32, 0.97, 0.44))
     keys = [Key(0, P(grip_r=1.0, fist_r=1.0)), Key(3, HIT, "snap"), Key(6, dict(tween(HIT, CATCH, 0.5, 0.30, hand=(-0.20, 0.0, -0.10),
                                                                               head=(-0.40, 0.0, 0.0)), grip_r=0.3, fist_r=0.75), "lin"),
@@ -1104,16 +1373,24 @@ def fake_defeat():
             Key(22, dict(KNEEL, breath=1.0, spine=(10.0, 0.0, 0.0)), "sine"), Key(27, dict(KNEEL, breath=0.0), "sine"),
             Key(31, PUSH, "inout"), Key(35, dict(KNEEL, breath=0.6), "inout"), Key(39, KNEEL, "sine"),
             Key(43, SLIP, "inout")]
-    # la mano suelta: el lugar libre ya mirando como en SIT (así gira mientras se abre, no al final)
-    free = dict(hand_r_dir=SIT["hand_r_dir"], hand_r_palm=SIT["hand_r_palm"])
-    keys += [Key(44, dict(tween(SLIP, SIT, 0.10, 0.10), drop_r=0.12, fist_r=0.2, hand_r=(-1.26, -0.08, 1.06), **free), "inout"),
-             Key(45.5, dict(tween(SLIP, SIT, 0.35, 0.35), drop_r=0.42, fist_r=0.2, hand_r=(-1.34, 0.18, 0.99), **free), "inout"),
-             Key(47, dict(tween(SLIP, SIT, 0.66, 0.30), drop_r=0.70, hand_r=(-1.29, 0.30, 0.94), **free), "inout"),
-             Key(48, dict(tween(SLIP, SIT, 0.86, 0.20), drop_r=0.90, hand_r=(-1.22, 0.34, 0.94), **free), "lin"), Key(49, SIT, "lin"),
+    # la mano suelta: los dedos siguen al antebrazo (adelante y abajo, hacia el mango) y la palma todavía mira al mango
+    # mientras se abre; gira a la de SIT recién cuando ya soltó. Con la de SIT (para atrás) desde que empezaba a soltar,
+    # la muñeca se quebraba 55-60° con la mano todavía en el mango (f47-f48)
+    free = dict(hand_r_dir=(-0.38, -0.52, -0.76), hand_r_palm=(-0.90, 0.30, 0.30))
+    # al sentarse para atrás la cadera pasa sobre los talones 3.5 cm más alta que la recta entre las dos poses (por la
+    # recta la cola se metía 2 cm en el piso)
+    def sit_back(u):
+        h0, h1 = Vector(SLIP["hips"]), Vector(SIT["hips"])
+        return tuple(h0.lerp(h1, u) + Vector((0.0, 0.0, 0.035 * math.sin(math.pi * u))))
+    keys += [Key(44, dict(tween(SLIP, SIT, 0.10, 0.10), hips=sit_back(0.10), drop_r=0.32, fist_r=0.2, hand_r=(-1.26, -0.08, 1.06), **free), "inout"),
+             Key(45.5, dict(tween(SLIP, SIT, 0.35, 0.35), hips=sit_back(0.35), drop_r=0.50, fist_r=0.2, hand_r=(-1.34, 0.18, 0.99), **free), "inout"),
+             Key(47, dict(tween(SLIP, SIT, 0.66, 0.30), hips=sit_back(0.66), drop_r=0.72, hand_r=(-1.29, 0.30, 0.94), **free), "inout"),
+             Key(48, dict(tween(SLIP, SIT, 0.86, 0.20), hips=sit_back(0.86), drop_r=0.90, hand_r=(-1.22, 0.34, 0.94), **free), "lin"),
+             Key(49, SIT, "lin"),
             Key(51, falling(0.15, 0.10, 0.05), "lin"), Key(54, falling(0.40, 0.36, 0.08), "lin"), Key(56, falling(0.58, 0.62, 0.07), "lin"),
             Key(57.5, falling(0.74, 0.86, 0.05), "lin"), Key(land - 1, falling(0.88, 1.0, 0.02), "lin"), Key(land, LIE, "lin"),
             Key(land + 2, BOUNCE, "out"), Key(land + 4, dict(LIE, hand_r=FLOP["hand_r"], hand_l=FLOP["hand_l"]), "in"),
-            Key(land + 7, LIE, "sine"), Key(land + 10, dict(LIE, hips=(0.0, 0.42, -0.725)), "sine"), Key(land + 13, LIE, "sine"),
+            Key(land + 7, LIE, "sine"), Key(land + 10, dict(LIE, hips=(0.0, 0.42, -0.69)), "sine"), Key(land + 13, LIE, "sine"),
             Key(n, LIE, "sine")]
     rx, ry, ryaw = SUPINE_FEET["r"]
     lx, ly, lyaw = SUPINE_FEET["l"]
@@ -1123,7 +1400,7 @@ def fake_defeat():
             "l": [FL(0), FL(2), FL(7, -0.12, ease="out", lift=0.07), FL(10, -0.12), FL(16, 0.05), FL(39, 0.05),
                   FL(48, -0.05, pitch=-30.0), T.FootKey(land, lx, ly, lyaw, -72.0), T.FootKey(n, lx, ly, lyaw, -72.0)]}
     return T.TeamClip("FakeDefeat", n, keys, feet=feet, tremble=0.0, notes="derrota falsa: de rodilla agarrado del martillo y cae de espaldas",
-                      timing=dict(sheet=[3, 9, 16, 31, 43, 48, 51, 54, 56, land, land + 2, 78], slide_ok=4.0,
+                      timing=dict(sheet=[3, 9, 16, 31, 43, 48, 51, 54, 56, land, land + 2, 78], slide_ok=4.0, floor_cm=-1.0,
                                   # el martillo que se vence solo y cae: gira rápido al final de la caída (desde que la mano
                                   # ya lo soltó: la suelta se mide)
                                   swing_ok=[[49, land]],
@@ -1160,7 +1437,7 @@ def armor_rise():
     slams = {p["name"]: p["slam"] for p in GA.PIECES}
     face = FD_FACE
     LIE = supine()
-    BREATH = supine(breath=1.0, hips=(0.0, 0.42, -0.71), spine=(-5.0, 0.0, 0.0), head=(14.0, 0.0, 6.0))
+    BREATH = supine(breath=1.0, hips=(0.0, 0.42, -0.675), spine=(-5.0, 0.0, 0.0), head=(14.0, 0.0, 6.0))
     # agarra el mango donde tenía la mano: la derecha se cierra sobre él
     GRAB = supine(breath=0.4, drop_r=0.0, grip_r=1.0, fist_r=1.0, fist_l=1.0, head=(24.0, -6.0, 14.0))
     # el pecho lo arquea: la cadera se levanta del piso, la cabeza para atrás
@@ -1179,34 +1456,38 @@ def armor_rise():
     HUNCH = P(hips=(0.0, 0.10, -0.22), hips_rot=(18.0, -4.0, 6.0), spine=(18.0, -6.0, 0.0), head=(20.0, 4.0, 0.0), breath=0.6,
               grip_l=0.0, fist_l=1.0, hand_l=(0.70, -0.30, 1.20), hand_l_dir=(0.1, -0.3, -0.95), hand_l_palm=(-1.0, 0.0, 0.0),
               elbow_l=(1.0, 0.3, -0.3), elbow_r=(-1.0, 0.4, -0.3), face=face, **planted(FD_HW, FD_DOWN, -0.30, 0.0))
-    UPRIGHT = dict(HUNCH, hips=(0.0, 0.04, -0.14), hips_rot=(2.0, -2.0, 6.0), spine=(-4.0, -2.0, 0.0), head=(-4.0, 0.0, 0.0),
+    # (ya derecho, la cadera 4 cm hacia el mango clavado: con la cabeza del martillo 1.7 m afuera la mano no llegaba por 2 cm;
+    # inclinando también el pecho, la hombrera derecha se metía en la cola del mango al arrancarlo)
+    UPRIGHT = dict(HUNCH, hips=(-0.04, 0.04, -0.14), hips_rot=(2.0, -3.0, 6.0), spine=(-4.0, -2.0, 0.0), head=(-4.0, 0.0, 0.0),
                    breath=1.0, **planted(FD_HW, FD_DOWN, -0.18, 0.0))
     # arranca el martillo del piso y lo levanta parado a la derecha (la cola baja por fuera del muslo, como en Spotted)
     # el martillo sale del piso girando sobre la mano: la cabeza sube por delante (a la altura de la mano, adelante) y
     # después arriba; derecho de abajo a arriba la cabeza pasaba por la mano y la cola se hundía en el piso
     SWING = P(hips=(0.0, 0.04, -0.16), hips_rot=(6.0, 0.0, 6.0), spine=(4.0, 0.0, 0.0), head=(-8.0, 0.0, 0.0), grip_l=0.0, fist_l=1.0,
-              face=(1.0, 0.0, 0.0), elbow_r=(-1.0, 0.1, -0.4), **aim((-1.27, -0.70, 1.65), (-1.50, -2.15, 1.80)))
-    SWING["slide_r"] = round((Vector((-1.50, -2.15, 1.80)) - Vector((-1.27, -0.70, 1.65))).length - (HEAD_C - GRIP_R), 3)
+              face=(1.0, 0.0, 0.0), elbow_r=(-1.0, 0.1, -0.4), **aim((-1.36, -0.70, 1.65), (-1.60, -2.15, 1.80)))
+    SWING["slide_r"] = round((Vector((-1.60, -2.15, 1.80)) - Vector((-1.36, -0.70, 1.65))).length - (HEAD_C - GRIP_R), 3)
     PULL = P(hips=(0.0, 0.04, -0.16), hips_rot=(4.0, 0.0, 6.0), spine=(0.0, 0.0, 0.0), head=(-6.0, 0.0, 0.0), grip_l=0.0, fist_l=1.0,
              hand_l=(0.92, -0.25, 1.55), hand_l_dir=(0.45, -0.25, 0.2), hand_l_palm=(0.0, -0.7, -0.7), elbow_l=(1.0, 0.0, -0.4),
-             face=(1.0, 0.0, 0.0), elbow_r=(-1.0, 0.0, -0.3), **aim((-1.32, -0.55, 1.75), (-1.62, -1.00, 3.20)))
-    PULL["slide_r"] = round((Vector((-1.62, -1.00, 3.20)) - Vector((-1.32, -0.55, 1.75))).length - (HEAD_C - GRIP_R), 3)
+             face=(1.0, 0.0, 0.0), elbow_r=(-1.0, 0.0, -0.3), **aim((-1.40, -0.55, 1.75), (-1.55, -0.90, 3.25)))
+    PULL["slide_r"] = round((Vector((-1.55, -0.90, 3.25)) - Vector((-1.40, -0.55, 1.75))).length - (HEAD_C - GRIP_R), 3)
     ROAR = P(hips=(0.0, 0.04, -0.08), hips_rot=(-8.0, 0.0, 0.0), spine=(-18.0, 0.0, 0.0), head=(22.0, 0.0, 0.0), breath=1.0,
              face=(0.0, -1.0, 0.1), grip_l=0.0, elbow_r=(-1.0, 0.0, -0.2),
              hand_l=(1.15, -0.20, 2.15), hand_l_dir=(0.6, -0.1, 0.8), hand_l_palm=(0.0, -1.0, 0.0), fist_l=1.0, elbow_l=(1.0, 0.0, -0.4),
-             **aim((-1.36, -0.18, 2.62), (-1.64, -0.24, 4.09)))
+             **aim((-1.42, -0.18, 2.60), (-1.50, -0.22, 4.14)))
     # el primer intento: tira del mango, el martillo se levanta a medias, la izquierda empuja el piso y la cabeza todavía
     # atrás (llega última); no le alcanza y vuelve a caer. El segundo carga el peso sobre la izquierda y tira hasta sentarse
     push_l = dict(hand_l=(0.98, 0.60, 0.33), hand_l_dir=(0.40, 0.60, -0.55), hand_l_palm=(0.0, 0.0, -1.0), elbow_l=(1.0, 0.4, 0.9))
     TRY = dict(tween(GRAB, SITUP, 0.32, 0.15), breath=1.0, head=(0.0, 0.0, 6.0), hips=(0.0, 0.42, -0.42), **push_l)
-    FAIL = dict(tween(GRAB, SITUP, 0.12, 0.05), breath=0.3, head=(20.0, -4.0, 10.0), fist_l=0.6, hips=(0.0, 0.42, -0.66))
+    FAIL = dict(tween(GRAB, SITUP, 0.12, 0.05), breath=0.3, head=(20.0, -4.0, 10.0), fist_l=0.6, hips=(0.0, 0.42, -0.635))
     HEAVE = dict(tween(GRAB, SITUP, 0.72, 0.22), breath=1.0, head=(4.0, 6.0, 4.0), hips=(0.0, 0.41, -0.40),
                  hips_rot=tween(GRAB, SITUP, 0.72)["hips_rot"][:1] + (-10.0, 6.0), spine=(12.0, -12.0, 0.0),
                  **dict(push_l, hand_l=(0.92, 0.48, 0.18), elbow_l=(1.0, 0.4, 0.3)))
-    # la base: dónde está el cuerpo en cada momento; los golpes de las rocas se suman encima
+    # la base: dónde está el cuerpo en cada momento; los golpes de las rocas se suman encima (al arrancar el martillo del
+    # piso, f168-f172, la mano 10 cm más afuera en el medio: la cola del mango, que baja por detrás al inclinarlo, rozaba
+    # la hombrera derecha)
     base = [(0, LIE), (16, LIE), (62, BREATH), (68, LIE), (82, dict(LIE, fist_r=0.6, fist_l=1.0)), (86, GRAB), (96, GRAB),
             (102, ARCH), (106, TRY, 0.25), (109, FAIL, 0.25), (115, HEAVE, 0.55, (0.0, 0.0, 0.15)), (119, SITUP, 0.30, (0.0, 0.0, 0.10)), (126, KNEEL), (132, SAG), (140, PUSH),
-            (148, HUNCH), (158, HUNCH), (168, UPRIGHT), (172, SWING), (177, PULL), (184, ROAR), (200, ROAR), (n, P(grip_r=1.0, fist_r=1.0))]
+            (148, HUNCH), (158, HUNCH), (168, UPRIGHT), (172, SWING, 0.0, (-0.10, 0.0, 0.0)), (177, PULL), (184, ROAR), (197, ROAR), (n, P(grip_r=1.0, fist_r=1.0))]
 
     def at(f):
         """La base en el cuadro f; un tercer valor en la entrada de llegada levanta la cabeza del martillo en el medio
@@ -1230,7 +1511,8 @@ def armor_rise():
             "Bracer_R": dict(spine=(-4.0, 0.0, 0.0), head=(-8.0, 0.0, 0.0), hand_r=(0.0, 0.0, -0.06)),
             "Bracer_L": dict(spine=(-4.0, 0.0, 0.0), head=(-8.0, 0.0, 0.0), hand_l=(0.0, 0.0, -0.06)),
             "Chest": dict(spine=(12.0, 0.0, 0.0), head=(16.0, 0.0, 0.0), hips=(0.0, 0.0, 0.035)),
-            "Pauldron": dict(hips=(0.0, 0.0, -0.06), spine=(10.0, 0.0, 0.0), head=(14.0, 0.0, 0.0)),
+            # (de rodilla: hundido 6 cm la cola tocaba los talones y el piso)
+            "Pauldron": dict(hips=(0.0, 0.0, -0.04), spine=(10.0, 0.0, 0.0), head=(14.0, 0.0, 0.0)),
             "Ridge": dict(hips=(0.0, 0.0, -0.05), hips_rot=(6.0, 0.0, 0.0), spine=(12.0, 0.0, 0.0), head=(10.0, 0.0, 0.0)),
             "Horn": dict(head=(-16.0, 0.0, 0.0), spine=(-4.0, 0.0, 0.0))}
     marks = {}
@@ -1280,7 +1562,7 @@ def armor_rise():
     ev.update(breath=62, grab=86, sit=119, kneel=126, stand=148, pull=170, roar=184, roar_peak=190)
     return T.TeamClip("ArmorRise", n, keys, feet=feet, tremble=0.0,
                       notes="la armadura: las rocas se le clavan de a una, se levanta agarrado del martillo y ruge",
-                      timing=dict(sheet=[0, 26, 46, 62, 102, 106, 109, 115, 119, 126, 140, 152, 168, 184, 210], slide_ok=4.0,
+                      timing=dict(sheet=[0, 26, 46, 62, 102, 106, 109, 115, 119, 126, 140, 152, 168, 184, 210], slide_ok=4.0, floor_cm=-1.0,
                                   armor_from=dict(slams), events=ev))
 
 
@@ -1289,16 +1571,16 @@ def armor_rise():
 # una lleva 'armor_window' (del aviso al golpe: la armadura brilla y el golpe no se interrumpe, GoroBoss decide si además
 # baja el daño que recibe) y 'punish' (la vuelta: queda clavado y es cuando se lo castiga). Toman las poses de los golpes
 # de siempre por nombre (clip.poses).
-def combo1b():
+def combo1b(planted=False):
     """Martillazo retardado (fase 2, desviable): arma el martillo sobre el hombro derecho como Combo1 y AMAGA: arranca la
     bajada de verdad (f12-f16: la cabeza del martillo viaja 1.6 m hacia Kaito acelerando, la cadera gira 20° y el pie de
     adelante carga), la frena en seco a ~45° del arco con dos cuadros de rebote y lo vuelve a armar más alto y más torcido
-    (f18-f26): el golpe sale 0.6 s más tarde de lo que el ojo espera. Pega con un paso más largo (1.4 m) y la cabeza se
+    (f18-f26): el golpe sale 0.6 s más tarde de lo que el ojo espera. Pega con un paso más largo (0.85 m) y la cabeza se
     clava a 3.8 m. El amague está antes de la pausa del aviso: el anillo se cierra con el golpe de verdad."""
     c1 = combo1().poses
-    n, apex, contact = 59, 32, 35
-    lunge, windup = 1.4, 1.2
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    n, apex, contact = 67, 32, 41
+    lunge, windup = 0.85, 1.2
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, planted=planted)
     TELL, SMEAR, CONTACT, FOLLOW, PUNISH = (c1[k] for k in ("TELL", "SMEAR", "CONTACT", "FOLLOW", "PUNISH"))
     # el amague: la bajada arranca como la de verdad y se clava en seco; 'OVER' es el rebote del frenazo (se pasa un poco)
     FEINT = dict(tween(TELL, SMEAR, 0.50, 0.35, hand=(-0.30, 0.05, 0.0)), hips=(0.02, -0.02, -0.22), hips_rot=(8.0, 0.0, -14.0), spine=(2.0, 0.0, -6.0),
@@ -1310,30 +1592,32 @@ def combo1b():
                   **club((-2.00, 1.25, 4.30), (-0.44, 0.56, 0.70), sr=SR, sl=SL))
     HOLD = dict(RECOCK, hips=(0.06, 0.16, -0.18), **club((-2.04, 1.30, 4.28), (-0.45, 0.57, 0.69), sr=SR, sl=SL))
     HIT = dict(CONTACT, hips=(0.0, -0.02, -0.42))
-    keys = lift_windup(c1["RAISE"], c1["LIFT"], TELL, 12, clock=windup_clock(n, apex, contact, windup))
-    keys += [Key(16, FEINT, "in"), Key(17, OVER, "out"), Key(18.5, BACK, "inout"), Key(26, RECOCK, "inout"), Key(apex, HOLD, "sine"),
-             Key(33, SMEAR, "in"), Key(contact, HIT, "lin"), Key(37, dict(FOLLOW, hips=(0.0, -0.03, -0.45)), "out"),
-             Key(41, dict(PUNISH, grip_r=1.0, fist_r=1.0), "out")]
-    keys += recovery_keys(PUNISH, 41, n)
+    keys = lift_windup(c1["RAISE"], c1["LIFT"], TELL, 12, clock=windup_clock(n, apex, contact, windup, lt["release_rate"]))
+    keys += [Key(16, FEINT, "in"), Key(17, OVER, "out"), Key(18.5, BACK, "inout"), Key(26, RECOCK, "inout"), Key(apex, HOLD, "sine")]
+    keys += downswing_keys([HOLD, SMEAR, HIT], apex, contact, lead=1.3, hands=[(-0.10, -0.15, 0.05), (0.0, -0.10, 0.0)])
+    smooth_hips(keys, tr, apex, contact)
+    keys += [Key(contact + 2, dict(FOLLOW, hips=(0.0, -0.03, -0.45)), "out"), Key(contact + 6, dict(PUNISH, grip_r=1.0, fist_r=1.0), "out")]
+    keys += recovery_keys(PUNISH, contact + 6, n)
     # el pie de adelante carga en el amague (el talón baja, el peso adelante) y vuelve
-    feet = {"r": [FR(0), FR(apex), FR(38, lunge, pitch=-10.0), FR(40, lunge)],
-            "l": [FL(0), FL(12), FL(16, pitch=-8.0), FL(20), FL(apex, pitch=16.0), FL(43, lunge, ease="out")]}
-    return T.TeamClip("Combo1B", n, keys, travel=tr, feet=feet, notes="fase 2: martillazo en diagonal con amague; el golpe sale tarde",
-                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 39], hold=[26, apex], lunge=lunge,
-                                  windup=windup, state="Combo1B", reach=2.6, feint=[12, 20], armor_window=[6, 37], punish=[41, n],
+    feet = (planted_step if planted else lunge_step)(tr, apex, contact, n, pre={"l": [FL(16, pitch=-8.0), FL(20)]})
+    clip = T.TeamClip("Combo1B", n, keys, travel=tr, feet=feet, notes="fase 2: martillazo en diagonal con amague; el golpe sale tarde",
+                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 4], hold=[26, apex], lunge=lunge,
+                                  windup=windup, state="Combo1B", reach=2.6, feint=[12, 20], armor_window=[6, contact + 2],
+                                  punish=[contact + 6, n], **lt,
                                   # el amague arranca y frena como un golpe de verdad
                                   swing_ok=[[12, 19]]))
+    return planted_clip(clip, apex) if planted else clip
 
 
-def combo2b():
+def combo2b(planted=False):
     """Barrido bajo (fase 2, desviable): agachado y torcido a la izquierda, la cabeza del martillo apoyada en el piso a
     3 m a su izquierda (desde arriba: el martillo sale del contorno por la izquierda y abajo, nada que ver con el revés de
     Combo2 a la altura de la cadera). Barre de izquierda a derecha a ras del piso, a la altura de los tobillos de Kaito, y
-    la cabeza termina en el piso a la derecha. 1.53 s."""
+    la cabeza termina en el piso a la derecha. 1.7 s."""
     c2 = combo2().poses
-    n, apex, contact = 46, 18, 22
-    lunge, windup = 1.0, 0.7
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    n, apex, contact = 51, 18, 25
+    lunge, windup = 0.6, 0.7
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, planted=planted)
     GATHER = c2["GATHER"]
     hand = Vector((0.55, -0.75, 1.28))
     d = Vector((2.20, 0.15, -0.59)).normalized()
@@ -1345,40 +1629,48 @@ def combo2b():
     SMEAR = P2(hips=(0.02, -0.02, -0.34), hips_rot=(12.0, 0.0, 12.0), spine=(10.0, 0.0, 4.0), head=(-12.0, 0.0, -8.0),
                face=(-0.85, -0.52, 0.0), elbow_r=(-1.0, 0.0, -0.4), elbow_l=(0.8, 0.5, -0.4),
                **club((1.55, -2.97, 0.64), (0.55, -0.80, -0.24), sr=SR, sl=SL))
-    CONTACT = P2(hips=(0.0, -0.06, -0.34), hips_rot=(12.0, 0.0, -12.0), spine=(10.0, 0.0, -14.0), head=(-12.0, 0.0, 10.0),
+    CONTACT = P2(hips=(0.0, -0.01, -0.38), hips_rot=(12.0, 0.0, -10.0), spine=(10.0, 0.0, -15.0), head=(-12.0, 0.0, 10.0),
                  face=(-1.0, 0.0, 0.0), elbow_r=(-1.0, 0.0, -0.4), elbow_l=(0.8, 0.5, -0.4),
                  **club((-0.30, -3.68, 0.64), (-0.05, -0.97, -0.23), sr=SR, sl=SL))
-    FOLLOW = P2(hips=(0.0, -0.05, -0.32), hips_rot=(12.0, 0.0, -30.0), spine=(10.0, 0.0, -22.0), head=(-10.0, 0.0, 16.0),
-                face=(0.40, -0.92, 0.0), elbow_r=(-1.0, 0.0, -0.4), elbow_l=(0.8, 0.5, -0.4),
-                **club((-2.85, -2.00, 0.68), (-0.80, -0.55, -0.22), sr=SR, sl=SL))
-    PUNISH = dict(FOLLOW, hips=(0.0, -0.05, -0.30), face=flat_face((-0.86, -0.42, -0.28), (1.0, 0.0, 0.0)),
-                  **club((-2.95, -1.75, 0.56), (-0.86, -0.42, -0.28), sr=SR, sl=SL))
+    # el seguimiento como el de Combo2: frena siguiendo el arco a ras del piso, se pasa y vuelve, el cuerpo sigue girando
+    OVER = dict(turned(CONTACT, -24.0, (1.0, 0.0, 0.0)), hips_rot=(12.0, 0.0, -18.0), spine=(10.0, 0.0, -19.0), head=(-10.0, 0.0, 14.0))
+    FOLLOW = dict(turned(CONTACT, -21.0, (1.0, 0.0, 0.0)), hips=(0.0, -0.04, -0.34), hips_rot=(12.0, 0.0, -25.0), spine=(10.0, 0.0, -22.0),
+                  head=(-10.0, 0.0, 16.0))
+    PUNISH = dict(floored(turned(CONTACT, -28.0, (1.0, 0.0, 0.0)), 0.56), hips=(0.0, -0.05, -0.30), hips_rot=(12.0, 0.0, -24.0), spine=(10.0, 0.0, -21.0),
+                  head=(-10.0, 0.0, 16.0))
     TURN = c2["TURN"]
     tell = 14
     # la junta con claves (gather_keys) y el revoleo al barrido en una curva hasta el aviso
     # (por tween y no girando sobre las manos: con slerp la cabeza pasaba por debajo del piso)
     keys = gather_keys(GATHER) + path_keys([lambda u: tween(GATHER, TELL, u, 0.30, hand=(0.05, -0.18, 0.0))], GATHER_F, tell,
-                                           clock=windup_clock(n, apex, contact, windup))
-    keys += [Key(apex, HOLD, "sine"), Key(20, SMEAR, "in"), Key(contact, CONTACT, "lin"),
-            Key(25, FOLLOW, "out"), Key(29, dict(PUNISH, grip_r=1.0, fist_r=1.0), "out"), Key(33, tween(PUNISH, TURN, 0.5, 0.10, hand=(-0.15, 0.0, -0.08)), "sine"),
-            Key(37, TURN, "sine"), Key(41, dict(tween(TURN, P(), 0.6, 0.12), grip_r=0.5, fist_r=0.85), "sine"),
-            Key(n, P(grip_r=1.0, fist_r=1.0), "sine")]
-    feet = {"r": [FR(0), FR(apex), FR(24, lunge, pitch=-10.0), FR(26, lunge)],
-            "l": [FL(0), FL(10), FL(apex, pitch=14.0), FL(29, lunge, ease="out")]}
-    return T.TeamClip("Combo2B", n, keys, travel=tr, feet=feet, notes="fase 2: barrido a ras del piso de izquierda a derecha",
-                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, 26], hold=[tell, apex], lunge=lunge,
-                                  windup=windup, state="Combo2B", reach=2.8, armor_window=[4, 25], punish=[29, n], regrip=[[1, 3]]))
+                                           clock=windup_clock(n, apex, contact, windup, lt["release_rate"]))
+    # (las manos 6-8 cm más arriba en el medio de cada tramo: la cabeza barre a ras del piso y girando sobre las manos bajaba
+    # 2-3 cm de más entre las poses)
+    keys += [Key(apex, HOLD, "sine")] + downswing_keys([HOLD, SMEAR, CONTACT], apex, contact, lead=1.3,
+                                                       hands=[(0.0, 0.0, 0.08), (0.0, 0.0, 0.06)])
+    smooth_hips(keys, tr, apex, contact)
+    keys += path_keys([lambda u: swing(CONTACT, OVER, u)], contact, contact + 5, ease=decel)
+    keys += [Key(contact + 8, FOLLOW, "sine"), Key(contact + 11, dict(PUNISH, grip_r=1.0, fist_r=1.0), "inout"),
+             Key(contact + 14, tween(PUNISH, TURN, 0.5, 0.10, hand=(-0.15, 0.0, -0.08)), "sine"),
+             Key(contact + 18, TURN, "sine"), Key(contact + 22, dict(tween(TURN, P(), 0.6, 0.12), grip_r=0.5, fist_r=0.85), "sine"),
+             Key(n, P(grip_r=1.0, fist_r=1.0), "sine")]
+    feet = (planted_step if planted else lunge_step)(tr, apex, contact, n, up=(1, 6))
+    clip = T.TeamClip("Combo2B", n, keys, travel=tr, feet=feet, notes="fase 2: barrido a ras del piso de izquierda a derecha",
+                      timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 4], hold=[tell, apex], lunge=lunge,
+                                  windup=windup, state="Combo2B", reach=2.8, armor_window=[4, contact + 3], punish=[contact + 11, n],
+                                  regrip=[[1, 3]], **lt))
+    return planted_clip(clip, apex) if planted else clip
 
 
-def combo3b():
+def combo3b(planted=False):
     """Martillazo de arriba con bombeo (fase 2, desviable): lo levanta por encima de la cabeza como Combo3, lo baja hasta
     la cara como si pegara, lo vuelve a subir más alto con el pecho arqueado y recién ahí lo deja caer con un paso de
-    1.5 m. 1.8 s. Arriba el mango va inclinado ~18° a su derecha con las manos delante del lado derecho de la cara: derecho,
+    0.85 m. 2.1 s. Arriba el mango va inclinado ~18° a su derecha con las manos delante del lado derecho de la cara: derecho,
     desde la cámara del juego partía el casco y la cara en dos durante toda la pausa (los cuernos y la boca no se
     leían)."""
-    name, n, apex, contact, lunge, windup = "Combo3B", 57, 32, 35, 1.5, 1.2
+    name, n, apex, contact, lunge, windup = "Combo3B", 64, 32, 42, 0.85, 1.2
     c3 = combo3().poses
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup)
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, planted=planted)
     SMEAR, CONTACT = c3["SMEAR"], c3["CONTACT"]
     TELL = dict(c3["TELL"], hips_rot=(-8.0, 0.0, 10.0), spine=(-12.0, 0.0, 4.0), head=(6.0, 0.0, -6.0), face=(0.45, 0.55, -0.70),
                 **club((-1.12, 1.11, 4.97), (-0.30, 0.57, 0.76), sr=SR, sl=-0.85))
@@ -1386,19 +1678,22 @@ def combo3b():
     RISE = dict(TELL, hips=(0.0, 0.16, -0.06), hips_rot=(-10.0, 0.0, 12.0), spine=(-16.0, 0.0, 4.0), head=(8.0, 0.0, -8.0),
                 **club((-1.05, 1.30, 5.03), (-0.27, 0.62, 0.74), sr=SR, sl=-0.85))
     HOLD = dict(RISE, hips=(0.0, 0.17, -0.07), **club((-1.07, 1.35, 5.00), (-0.27, 0.64, 0.72), sr=SR, sl=-0.85))
-    HIT = dict(CONTACT, hips=(0.0, -0.05, -0.44), hips_rot=(16.0, 0.0, 4.0))
+    # (la cadera sobre el pie de atrás: 5 cm más adelante la pierna clavada en la punta no llegaba)
+    HIT = dict(CONTACT, hips=(0.0, 0.01, -0.44), hips_rot=(16.0, 0.0, 6.0))
     hold0 = apex - 6
     # la subida como la de Combo3 (18 cuadros, una sola curva: con las claves de antes la mano saltaba 1.1 m en f7-f8)
     tell = 18
-    keys = overhead_windup(TELL, tell, clock=windup_clock(n, apex, contact, windup)) + [Key(22, PUMP, "inout"), Key(hold0, RISE, "inout"), Key(apex, HOLD, "sine"), Key(apex + 1, SMEAR, "in"), Key(contact, HIT, "lin"),
-            Key(contact + 2, dict(HIT, hips=(0.0, -0.05, -0.47)), "out"), Key(contact + 6, dict(HIT, grip_r=1.0, fist_r=1.0), "sine")]
+    keys = overhead_windup(TELL, tell, clock=windup_clock(n, apex, contact, windup, lt["release_rate"])) + [Key(22, PUMP, "inout"), Key(hold0, RISE, "inout"), Key(apex, HOLD, "sine")]
+    keys += downswing_keys([HOLD, SMEAR, HIT], apex, contact, lead=1.3)
+    smooth_hips(keys, tr, apex, contact)
+    keys += [Key(contact + 2, dict(HIT, hips=(0.0, -0.01, -0.47)), "out"), Key(contact + 6, dict(HIT, grip_r=1.0, fist_r=1.0), "sine")]
     f = contact + 6
     keys += recovery_keys(HIT, f, n)
-    feet = {"r": [FR(0), FR(apex), FR(contact + 3, lunge, pitch=-10.0), FR(contact + 5, lunge)],
-            "l": [FL(0), FL(12), FL(apex, pitch=14.0), FL(contact + 7, lunge, ease="out")]}
-    return T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="fase 2: martillazo de arriba con bombeo; el golpe sale tarde",
+    feet = (planted_step if planted else lunge_step)(tr, apex, contact, n)
+    clip = T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="fase 2: martillazo de arriba con bombeo; el golpe sale tarde",
                       timing=dict(kind="heavy", apex=apex, contact=contact, active=[contact, contact + 3], hold=[hold0, apex], lunge=lunge,
-                                  windup=windup, state=name, reach=3.0, pump=[tell, hold0], armor_window=[5, contact + 2], punish=[f, n]))
+                                  windup=windup, state=name, reach=3.0, pump=[tell, hold0], armor_window=[5, contact + 2], punish=[f, n], **lt))
+    return planted_clip(clip, apex) if planted else clip
 
 
 def held(hand, d, sr):
@@ -1407,7 +1702,7 @@ def held(hand, d, sr):
     return club(tuple(Vector(hand) + d * (HEAD_C - GRIP_R + sr)), tuple(d), sr=sr)
 
 
-def slam_wave():
+def slam_wave(planted=False):
     """Onda de Kodoyama (fase 2, imparable): una silueta propia, que no se confunde con el martillazo de arriba desviable
     (Combo3B): se agacha hondo con las piernas abiertas en dos pisotones, suelta la izquierda (la mano adelante, abierta
     sobre la nieve) y ARRASTRA el martillo con la derecha, acostado en el piso a su derecha y un poco atrás, la cabeza a
@@ -1417,10 +1712,10 @@ def slam_wave():
     onda sale en línea recta desde el golpe (eventos 'wave' en el contacto y 'plow_end'). 2.1 s; apex f24 (el fin del
     arrastre), contacto f34. Con la mano en la punta del mango y el arrastre girado 40° de la junta (no 60: el antebrazo
     daba media vuelta) y el codo con la misma pista que en la junta."""
-    name, n, apex, contact, lunge, windup = "SlamWave", 64, 24, 34, 1.0, 1.25
+    name, n, apex, contact, lunge, windup = "SlamWave", 64, 24, 34, 0.7, 1.25
     c3 = combo3().poses
-    # la suelta (el molino, 10 cuadros) va a 1.2x y no a 1.6x: así se lee el giro (AttackDef.releaseRate en GoroPhase2)
-    tr, _ = T.lunge_travel(n, apex, contact, lunge, windup_min=windup, release_rate=1.2)
+    # la suelta (el molino, 10 cuadros) va a 1.2x, como la de los martillazos (HAMMER_RR): así se lee el giro
+    tr, lt = lunge_table(n, apex, contact, lunge, windup, planted=planted)
     SMEAR, CONTACT = c3["SMEAR"], c3["CONTACT"]
     crouch = dict(hips=(0.0, 0.06, -0.46), hips_rot=(18.0, 0.0, -24.0), spine=(14.0, 0.0, -10.0), head=(-22.0, 0.0, 22.0),
                   knee_r=(-1.0, -0.6, 0.0), knee_l=(1.0, -0.6, 0.0), grip_l=0.0, grip_r=1.0, fist_r=1.0,
@@ -1434,33 +1729,57 @@ def slam_wave():
     HOLD = P(face=COCK["face"], **dict(crouch, hips=(0.0, 0.08, -0.49), spine=(16.0, 0.0, -10.0), elbow_r=(-1.0, 0.3, -0.4),
                                        **held((-1.34, 0.09, 1.03), (-0.86, 0.41, -0.13), 1.55)))
     # el molino por el costado derecho (afuera de la hombrera): la cabeza se despega del piso y sube atrás
+    # (la mano 15-20 cm más afuera y el mango abierto hacia afuera: con la hombrera derecha agrandada como la izquierda
+    # el mango la atravesaba 7-10 cm en f28-f29)
     WIND1 = P(hips=(0.0, 0.04, -0.34), hips_rot=(10.0, 0.0, -18.0), spine=(4.0, 0.0, -8.0), head=(-14.0, 0.0, 14.0), grip_l=0.0,
               fist_l=0.6, hand_l=(0.80, -0.55, 1.30), hand_l_dir=(0.2, -0.5, -0.8), elbow_r=(-1.0, 0.2, -0.3), elbow_l=(1.0, -0.2, -0.3),
-              face=(1.0, 0.0, 0.0), **held((-1.30, 0.05, 1.85), (-0.20, 0.55, 0.81), 1.55))
+              face=(1.0, 0.0, 0.0), **held((-1.46, 0.02, 1.85), (-0.34, 0.52, 0.78), 1.55))
     WIND2 = P2(hips=(0.0, 0.06, -0.18), hips_rot=(-4.0, 0.0, -6.0), spine=(-10.0, 0.0, -4.0), head=(4.0, 0.0, 6.0), grip_l=0.5,
-               elbow_r=(-1.0, 0.0, -0.2), elbow_l=(0.8, -0.4, 0.0), face=(1.0, 0.0, 0.0), **held((-1.15, -0.40, 2.55), (0.05, -0.05, 1.0), 1.4))
+               elbow_r=(-1.0, 0.0, -0.2), elbow_l=(0.8, -0.4, 0.0), face=(1.0, 0.0, 0.0), **held((-1.38, -0.52, 2.45), (-0.20, -0.08, 0.98), 1.4))
     HIT = dict(CONTACT, hips=(0.0, -0.05, -0.46), hips_rot=(18.0, 0.0, 4.0))
     PLOW = dict(HIT, hips=(0.0, -0.20, -0.44), hips_rot=(20.0, 0.0, 4.0), spine=(14.0, 0.0, 0.0),
                 **club((0.05, -4.70, 0.95), (0.02, -0.97, -0.25), sr=SR, sl=SL))
+    if planted:
+        # en el lugar ara sin echarse encima: con la cadera 20 cm adelante y el pecho volcado, las rocas del pecho
+        # y los cuernos llegaban más lejos que en el aviso, justo donde está Kaito pegado (build_team_anims.body_reach)
+        PLOW = dict(PLOW, hips=(0.0, -0.10, -0.44), spine=(10.0, 0.0, 0.0))
     hold0 = 14
     keys = [Key(0, P()), Key(2.5, dict(tween(P(), GATHER, 0.45, 0.35, hand=(-0.25, -0.10, 0.0)), grip_r=0.7, fist_r=0.9), "inout"),
             Key(5, GATHER, "inout"),
             Key(9, tween(GATHER, COCK, 0.55, 0.15), "inout"), Key(hold0, COCK, "inout"), Key(apex, HOLD, "sine"),
-            Key(28, WIND1, "in"), Key(31, WIND2, "lin"), Key(32.5, SMEAR, "lin"), Key(contact, HIT, "lin"),
+            # (la cadera ya bajando en la mitad de la caída: de SMEAR, parado, al golpe agachado bajaba 28 cm en cuadro y
+            # medio y daba un tirón de 17 cm)
+            Key(28, WIND1, "in"), Key(31, WIND2, "lin"), Key(32.5, dict(SMEAR, hips=(0.0, -0.03, -0.32)), "lin"), Key(contact, HIT, "lin"),
             Key(contact + 3, dict(HIT, hips=(0.0, -0.08, -0.48)), "out"), Key(contact + 9, PLOW, "inout"),
             Key(contact + 14, dict(PLOW, grip_r=1.0, fist_r=1.0), "sine")]
     f = contact + 14
     keys += recovery_keys(PLOW, f, n)
-    # dos pisotones: el derecho atrás y afuera, el izquierdo adelante y afuera (la base ancha del arrastre)
-    feet = {"r": [FR(0), FR(4), FR(9, -0.22, dx=-0.28, ease="out", lift=0.10), FR(apex, -0.22, dx=-0.28),
-                  FR(contact + 3, lunge - 0.15, dx=-0.20, pitch=-10.0), FR(contact + 5, lunge - 0.15, dx=-0.20),
-                  FR(contact + 9, lunge + 0.10, dx=-0.20, lift=0.06), FR(contact + 12, lunge + 0.10, dx=-0.20)],
-            "l": [FL(0), FL(8), FL(13, 0.22, dx=0.26, ease="out", lift=0.10), FL(apex, 0.22, dx=0.26, pitch=8.0),
-                  FL(contact + 7, lunge + 0.2, dx=0.16, ease="out")]}
-    return T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="fase 2: arrastra el martillo atrás y lo clava adelante: la onda sale por el piso",
+    smooth_hips(keys, tr, apex, contact)
+    # dos pisotones: el derecho atrás y afuera, el izquierdo adelante y afuera (la base ancha del arrastre). En el molino
+    # (la embestida, f25-f34) el izquierdo da el paso largo con la rodilla arriba y apoya de talón con el golpe; el derecho
+    # queda clavado en la punta mientras el cuerpo le pasa por encima y se arrima en la arada (otro paso adelante); en la
+    # vuelta a la guardia los dos vuelven a su lugar (antes terminaba con los pies abiertos y el cruce al Idle los
+    # arrastraba). Antes el derecho se despegaba recién cuando el cuerpo se le había ido 0.5 m: con Kaito pegado el imán
+    # cortaba la embestida y la punta clavada se arrastraba 45 cm (magnet_curve_cm)
+    L = lunge
+    SR_, SL_ = (-0.28, -0.22), (0.26, 0.22)
+    r0 = [FR(0), FR(4), FR(5, z=0.06, ease="in", lift=0.0), FR(8, SR_[1], dx=SR_[0], z=0.05, lift=0.06), FR(9, SR_[1], dx=SR_[0], ease="in", lift=0.0)]
+    l0 = [FL(0), FL(8), FL(9, z=0.06, ease="in", lift=0.0), FL(12, SL_[1], dx=SL_[0], z=0.05, lift=0.06), FL(13, SL_[1], dx=SL_[0], ease="in", lift=0.0)]
+    if planted:
+        # en el lugar: el izquierdo pisa 18 cm adelante de la base ancha y el derecho queda atrás y afuera; en la vuelta
+        # vuelven de a uno (primero el de atrás, después el de adelante: juntos quedaba en el aire)
+        fl, fr = planted_feet(apex, contact, "l", sf=SL_, sb=SR_, over=0.40, knee=0.26)
+        feet = {"r": r0 + fr + [FR(n - 13, SR_[1], dx=SR_[0]), FR(n - 8, lift=0.06)],
+                "l": l0 + fl + [FL(n - 7, 0.40, dx=SL_[0]), FL(n - 2, lift=0.06)]}
+    else:
+        fl, fr = lunge_feet(tr, apex, contact, "l", sf=SL_, sb=SR_, over=0.40, knee=0.26, back=-0.10, up=(3, 9))
+        feet = {"r": r0 + fr + [FR(n - 9, L + 0.10, dx=SR_[0]), FR(n - 4, L, lift=0.05)],
+                "l": l0 + fl + [FL(n - 7, L + 0.40, dx=SL_[0]), FL(n - 2, L, lift=0.05)]}
+    clip = T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="fase 2: arrastra el martillo atrás y lo clava adelante: la onda sale por el piso",
                       timing=dict(kind="unblockable", apex=apex, contact=contact, active=[contact, contact + 3], hold=[hold0, apex], lunge=lunge,
-                                  windup=windup, release_rate=1.2, state=name, reach=3.0, armor_window=[5, contact + 2], punish=[f, n], plow=[contact, contact + 9],
-                                  impacts={"wave": [0.05, -3.90]}, events={"wave": contact, "plow_end": contact + 9}))
+                                  windup=windup, state=name, reach=3.0, armor_window=[5, contact + 2], punish=[f, n], plow=[contact, contact + 9],
+                                  impacts={"wave": [0.05, -3.90]}, events={"wave": contact, "plow_end": contact + 9}, **lt))
+    return planted_clip(clip, apex) if planted else clip
 
 
 def avalanche_summon():
@@ -1485,10 +1804,13 @@ def avalanche_summon():
               **club(H1, (-0.12, -0.96, -0.25), sr=SR, sl=SL))
     HIT2 = dict(HIT1, hips_rot=(18.0, 0.0, -2.0), **club(H2, (0.06, -0.97, -0.25), sr=SR, sl=SL))
     # al cielo: el martillo en la guardia (la cabeza apoyada en el piso, una mano), el pecho arqueado, la cabeza atrás y
-    # el brazo izquierdo arriba con el puño cerrado
+    # el brazo izquierdo arriba con el puño cerrado. La cabeza del martillo 15 cm más hacia adentro que en la guardia: así
+    # el mango se abre y la cola, que sube por detrás, pasa por afuera de las cumbres de la espalda (con el pecho
+    # arqueado se metía 4-6 cm en la de la derecha)
     CALL = P(hips=(0.0, 0.05, -0.06), hips_rot=(-10.0, 0.0, 6.0), spine=(-20.0, 0.0, 4.0), head=(-24.0, 0.0, -4.0), breath=1.0,
              hand_l=(0.95, -0.30, 3.05), hand_l_dir=(0.35, -0.15, 0.92), hand_l_palm=(0.0, -1.0, 0.0), fist_l=1.0, elbow_l=(1.0, 0.0, -0.3),
-             clav_l=(0.0, 0.0, 8.0))
+             clav_l=(0.0, 0.0, 8.0), **aim(STANCE["grip"], IDLE_HEAD + Vector((0.15, 0.0, 0.0))))
+    CALL["slide_r"] = round((IDLE_HEAD + Vector((0.15, 0.0, 0.0)) - Vector(STANCE["grip"])).length - (HEAD_C - GRIP_R), 3)
     # las dos subidas con una sola curva cada una en el tiempo del juego (como Combo3: con las claves sueltas la mano
     # saltaba 1.4 m en f6-f7 y la segunda subía del piso a arriba en 4 cuadros); la vuelta a la guardia, de un solo gesto
     # (recovery_keys)
@@ -1496,7 +1818,10 @@ def avalanche_summon():
     apex = call - 4
     clk = windup_clock(n, apex, call, 0.0, release_rate=1.0)
     HIT1H = dict(HIT1, hips=(0.0, -0.04, -0.44))
-    keys = overhead_windup(HIGH, s1 - 3, clock=clk) + [Key(s1 - 1.5, SMEAR, "in"), Key(s1, HIT1, "expo_in"), Key(s1 + 3, HIT1H, "out")]
+    # (la primera subida con la rampa más corta: el pico de velocidad baja 6 % y la mano derecha queda bajo los 0.5 m por
+    # cuadro del juego mientras la izquierda cierra sobre el mango)
+    keys = overhead_windup(HIGH, s1 - 3, ease=lambda u: trap(u, 0.2), clock=clk) + [Key(s1 - 1.5, SMEAR, "in"), Key(s1, HIT1, "expo_in"),
+                                                                              Key(s1 + 3, HIT1H, "out")]
     keys += path_keys([lambda u: swing(HIT1H, SMEAR, u, body=min(1.0, 1.4 * u)), lambda u: swing(SMEAR, HIGH, u)], s1 + 3, s2 - 3, clock=clk)
     keys += [Key(s2 - 1.5, SMEAR, "in"), Key(s2, HIT2, "expo_in"), Key(s2 + 3, dict(HIT2, hips=(0.0, -0.04, -0.44)), "out")]
     keys += recovery_keys(dict(HIT2, hips=(0.0, -0.04, -0.44)), s2 + 3, apex)

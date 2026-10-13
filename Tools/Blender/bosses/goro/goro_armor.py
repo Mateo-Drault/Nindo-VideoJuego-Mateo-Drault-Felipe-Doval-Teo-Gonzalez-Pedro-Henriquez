@@ -2,10 +2,13 @@
 
 Concepto (Docs/handoff/conceptos/goro_fase2_armado.jpg y goro_fase2_armadura*.jpg): cuando la primera barra se vacía,
 Gorō cae y la montaña se le pega encima. Exagerada a propósito: rocas de granito oscuro (carbón y pardo) facetadas, con
-vetas anchas de brasa (glow_fire) entre las rocas de cada pieza y nieve SOLO en las tapas. La cámara del juego (52°) ve
-sobre todo caras que miran arriba: con nieve desde n.z 0.45-0.78 la armadura se leía como cristales de hielo azulados,
-más clara que las rocas del mundo; ahora la nieve va de n.z 0.90 (0.85 en las agujas, 0.82 en la tapa de las hombreras) y las caras de arriba son de
-granito oscuro.
+vetas de brasa (glow_fire) metidas en las grietas entre las rocas de cada pieza. Sin nieve: es la roca caliente del
+cráter. La cámara del juego (52°) ve sobre todo caras que miran arriba y la luna del juego las aclara hacia el celeste:
+con nieve en las tapas (desde n.z 0.45-0.78 en C2, desde 0.90-0.95 en C3) y granito pardo claro arriba, la armadura se
+leía como cristales de hielo azulados, más clara que las rocas del mundo (las tapas de nieve de la hombrera y del pecho
+salían #abd2ff, como la tapa del casco); ahora las caras de arriba son solo de los dos granitos oscuros (carbón y pardo
+oscuro). Cada pieza sale 15-25 % más grande que lo modelado en build_pieces, agrandada desde donde apoya en el cuerpo,
+igual de los dos lados (GROW).
 
 Se lee desde la cámara del juego (52°, 24 m): la silueta crece arriba y a los costados (dos cumbres de agujas en la
 espalda que asoman por encima del casco, dos hombreras de 0.9 m, dos cuernos de piedra a los lados del casco) y el
@@ -66,9 +69,46 @@ PIECES = [
 PIECE = {p["name"]: p for p in PIECES}
 
 
+# ------------------------------------------------------------------ tamaño
+# Cuánto más grande que el modelado de build_pieces sale cada pieza y desde dónde crece (C3: en el juego la armadura se
+# leía chica al lado del concepto, Docs/handoff/conceptos/goro_fase2_armadura.jpg, sobre todo de la cintura para abajo y
+# las hombreras). (escala, ancla del lado izquierdo en el marco de autoría; la derecha es el espejo). El ancla es el
+# borde por donde la pieza toca el cuerpo o algo que tiene que quedar libre, así crece hacia afuera: escaladas desde el
+# centro (o desde el eje del hueso), las hombreras se metían en el casco, las cumbres cerraban el paso del medio por
+# donde pasa el mango y las canilleras bajaban al piso arrodillado. Las dos mitades crecen igual (simétricas: con el lado
+# del martillo más chico las hombreras quedaban 9 % distintas de frente); donde el mango pasaba cerca de la hombrera,
+# la cumbre, la rodilla o el pecho se corrió el camino del martillo (team_clips_goro), no la roca.
+GROW = {
+    # canillera: desde el costado de la canilla y el borde de abajo (arrodillado queda a ras del piso: goro_checks lo mide)
+    "Greave": (1.20, (0.54, -0.12, 0.33)),
+    # rodilla: desde el costado del muslo; adelante crece poco (la laja del frente pasa cerca del mango en la guardia)
+    "Knee": (1.18, (0.50, -0.45, 0.86)),
+    "Tasset": (1.18, (0.59, -0.02, 1.08)),
+    "Bracer": (1.15, (1.27, 0.10, 2.00)),
+    # pecho: desde el peto (y -0.41) hacia adelante (la cola del mango le pasa por delante cuando sube el martillo arriba
+    # de la cabeza)
+    "Chest_High": (1.15, (0.0, -0.41, 2.17)), "Chest_Low": (1.15, (0.0, -0.40, 1.90)),
+    # hombrera: desde el borde de adentro (x 0.47, el costado del casco) y la tapa del hombro: crece afuera y arriba
+    "Pauldron": (1.25, (0.47, 0.04, 2.36)),
+    # cumbre: desde el paso del medio (x 0.07) y la base: crece afuera, atrás y arriba, el paso queda igual de ancho
+    "Ridge": (1.25, (0.07, 0.40, 2.00)),
+    # cuerno: desde donde sale del casco
+    "Horn": (1.18, (0.30, 0.08, 2.70)),
+}
+
+
+def grown(piece, p):
+    """El punto 'p' de la pieza (marco de autoría, modelado) con la pieza agrandada desde su ancla (GROW)."""
+    kind, _, side = piece.partition("_")
+    k, a = GROW.get(piece) or GROW[kind]
+    a = Vector((-a[0] if side == "R" else a[0], a[1], a[2]))
+    return a + (Vector(p) - a) * k
+
+
 # ------------------------------------------------------------------ geometría en el marco de autoría
 class RockGeo:
-    """Junta las rocas de cada pieza en el marco de autoría (m) y las pasa al Geo del kit (mundo del FBX)."""
+    """Junta las rocas de cada pieza en el marco de autoría (m) y las pasa al Geo del kit (mundo del FBX), cada pieza
+    agrandada desde su ancla (GROW)."""
 
     def __init__(self, kit, ch):
         self.kit, self.ch, self.geo = kit, ch, (kit.geo if kit is not None else None)
@@ -80,7 +120,8 @@ class RockGeo:
         return self.ch.A @ self.ch.P(p)
 
     def faces(self, piece, verts, faces, color_fn):
-        """Agrega un poliedro (vértices en el marco de autoría, caras con su color por normal)."""
+        """Agrega un poliedro (vértices en el marco de autoría, caras con su color por normal), agrandado (GROW)."""
+        verts = [grown(piece, v) for v in verts]
         self.local.setdefault(piece, []).extend(verts)
         if color_fn is not ember:
             self.rocks.setdefault(piece, []).append(list(verts))
@@ -100,25 +141,22 @@ class RockGeo:
         self.parts.setdefault(piece, []).extend(idx)
 
 
-def rock_color(seed, snow_z=0.90):
-    """Color por cara: nieve solo en las tapas (las que miran casi derecho arriba), granito oscuro y pardo en el resto,
-    con alguna faceta de granito medio para que las caras se lean sin textura. Las de arriba (lo que más ve la cámara
-    del juego) van oscuras igual que los costados: la armadura es la roca del cráter, carbón con brasa, no hielo."""
+def rock_color(seed):
+    """Color por cara: granito oscuro y pardo, con alguna faceta de granito medio en los costados para que las caras se
+    lean sin textura. Las de arriba (lo que más ve la cámara del juego) van oscuras: la armadura es la roca del cráter,
+    carbón con brasa, no hielo."""
     rnd = random.Random(seed)
 
     def fn(n, c):
-        if n.z > snow_z:
-            return "snow" if rnd.random() < 0.8 else "snow_shade"
         u = rnd.random()
         if n.z < -0.3:
             return "rock_dark" if u < 0.6 else "rock_brown_dark"
-        # ~60 % oscuro (rock_dark, rock_brown_dark) en lo que ve la cámara: 52 % en las caras de arriba y 65 % en los
-        # costados. Toda oscura quedaba un 20 % más oscura que las rocas del mundo bajo la misma luz y se perdía contra la
-        # piel roja y el piso de noche; las caras claras de arriba son pardas (rock_brown, con algo de granito medio): con
-        # el granito claro, gris azulado, bajo la luna la armadura se leía como esquirlas de hielo y no como la roca
-        # oscura del concepto
+        # las caras de arriba (lo que más ve la cámara y lo que la luna aclara): solo los dos granitos oscuros, más pardo
+        # que carbón. Con pardo claro y granito medio arriba (C3) bajo la luna salían celestes (#add4ff en la hombrera,
+        # más claras que la tapa del casco): esquirlas de hielo y no la roca del cráter. Los costados, que la cámara ve de
+        # canto, llevan el pardo y el granito medio: ahí las caras se separan sin aclarar la silueta
         if n.z > 0.5:
-            return "rock_dark" if u < 0.3 else ("rock_brown_dark" if u < 0.52 else ("rock_brown" if u < 0.86 else "rock"))
+            return "rock_brown_dark" if u < 0.6 else "rock_dark"
         if u < 0.38:
             return "rock_brown_dark"
         if u < 0.65:
@@ -154,7 +192,7 @@ def hull_rock(rnd, n_pts, jitter):
     return vs, fs
 
 
-def rock(rg, piece, center, radii, rot=(0, 0, 0), seed=1, pts=16, jitter=0.16, flat_bottom=None, color=None, snow=0.90):
+def rock(rg, piece, center, radii, rot=(0, 0, 0), seed=1, pts=16, jitter=0.16, flat_bottom=None, color=None):
     """Roca facetada (hull_rock) escalada y girada (grados XYZ), determinista por 'seed'. flat_bottom: z local (-1..1)
     debajo del cual se aplasta (la cara que apoya en el cuerpo)."""
     rnd = random.Random(seed)
@@ -166,12 +204,12 @@ def rock(rg, piece, center, radii, rot=(0, 0, 0), seed=1, pts=16, jitter=0.16, f
         if flat_bottom is not None and p.z < flat_bottom:
             p.z = flat_bottom + (p.z - flat_bottom) * 0.15
         out.append(Vector(center) + R @ Vector((p.x * radii[0], p.y * radii[1], p.z * radii[2])))
-    rg.faces(piece, out, fs, color or rock_color(seed, snow_z=snow))
+    rg.faces(piece, out, fs, color or rock_color(seed))
 
 
 def spire(rg, piece, base, tip, r, sides=5, seed=1, kink=0.25):
     """Aguja de roca: prisma de 'sides' lados que se afina hasta la punta, con un quiebre a 'kink' del largo (las
-    agujas rectas parecen conos de plástico); nieve en las caras de arriba."""
+    agujas rectas parecen conos de plástico)."""
     rnd = random.Random(seed)
     base, tip = Vector(base), Vector(tip)
     ax = (tip - base)
@@ -200,17 +238,29 @@ def spire(rg, piece, base, tip, r, sides=5, seed=1, kink=0.25):
     for j in range(sides):
         faces.append((last + j, last + (j + 1) % sides, len(verts) - 1))
     faces.append(tuple(reversed(range(sides))))
-    rg.faces(piece, verts, faces, rock_color(seed + 7, snow_z=0.85))
+    rg.faces(piece, verts, faces, rock_color(seed + 7))
 
 
-# cuánto más grueso que el autorado es cada núcleo de brasa: asoma más por las vetas (con el de antes la brasa era una
-# línea fina entre rocas grises; el concepto tiene grietas al rojo anchas)
-CORE_GROW = 1.3
+# cuánto más chico que el autorado es cada núcleo de brasa y cuánto se mete hacia el cuerpo (m): asoma solo por las
+# grietas entre las rocas, como en el concepto (goro_fase2_armadura.jpg: costuras finas al rojo). Con 1.3 y a ras de la
+# roca (C2) la brasa salía como una banda naranja plana encima de cada hombrera y una estrella en el pecho; con 0.78 y
+# 2.5 cm adentro casi no se veía (la cuarta parte de los píxeles de brasa en la cámara del juego)
+CORE_GROW, CORE_SINK = 0.92, 0.015
+# las del pecho más adentro: de frente la cruz de la veta del esternón y la de entre las dos bandas se leía como una
+# estrella naranja encima del peto
+CHEST_SINK = 0.06
 
 
 def core(rg, piece, center, radii, rot=(0, 0, 0), seed=1):
-    """Núcleo de brasa: una roca más chica adentro de las de la pieza; asoma por las vetas entre ellas."""
-    rock(rg, piece, center, tuple(r * CORE_GROW for r in radii), rot, seed, pts=10, jitter=0.1, color=ember)
+    """Núcleo de brasa: una roca más chica adentro de las de la pieza, hundida hacia el cuerpo (hacia el ancla de la
+    pieza en GROW); asoma por las vetas entre ellas."""
+    kind, _, side = piece.partition("_")
+    a = (GROW.get(piece) or GROW[kind])[1]
+    a = Vector((-a[0] if side == "R" else a[0], a[1], a[2]))
+    c = Vector(center)
+    d = a - c
+    c = c + (d.normalized() * (CHEST_SINK if kind == "Chest" else CORE_SINK) if d.length > 1e-6 else Vector())
+    rock(rg, piece, tuple(c), tuple(r * CORE_GROW for r in radii), rot, seed, pts=10, jitter=0.1, color=ember)
 
 
 # ------------------------------------------------------------------ las piezas (marco de autoría, reposo)
@@ -226,20 +276,21 @@ def build_pieces(rg):
     for s, sx in (("L", 1.0), ("R", -1.0)):
         sd = 11 if s == "L" else 23
         m = lambda p: mirror(p, sx)
-        # tibia: una laja grande en el costado de afuera de la canilla con una púa hacia afuera y otra abajo, por encima
-        # del tobillo (la de abajo termina a 0.30 m: al frente se metían en el piso con el pie en punta de las estocadas
-        # y de rodillas en la muerte)
+        # tibia: una laja grande en el costado de afuera de la canilla con una púa corta hacia afuera y otra abajo, por
+        # encima del tobillo (la de abajo termina a 0.30 m: al frente se metían en el piso con el pie en punta de las
+        # estocadas y de rodillas en la muerte). Las púas de la canilla y de la rodilla son cortas y gruesas (C3): largas se
+        # leían como cristales y, de rodilla, la derecha tocaba la cabeza del martillo clavado
         g = "Greave_" + s
         rock(rg, g, m((0.67, -0.13, 0.50)), (0.12, 0.21, 0.16), (0, -10 * sx, 10 * sx), sd + 1, pts=18, jitter=0.12)
         rock(rg, g, m((0.63, -0.08, 0.38)), (0.10, 0.16, 0.08), (0, -6 * sx, -8 * sx), sd + 2, pts=12)
-        spire(rg, g, m((0.74, -0.10, 0.50)), m((0.97, -0.16, 0.60)), 0.08, sides=5, seed=sd * 3)
+        spire(rg, g, m((0.74, -0.10, 0.50)), m((0.90, -0.14, 0.57)), 0.09, sides=5, seed=sd * 3)
         core(rg, g, m((0.62, -0.10, 0.44)), (0.07, 0.16, 0.07), seed=sd + 4)
         # rodilla: canto rodado grande en el costado de afuera, justo arriba de la rodilla, con el muslo (en la tibia,
         # arrodillado en la muerte, quedaba debajo del piso), una púa afuera y una laja delante del muslo
         k = "Knee_" + s
-        rock(rg, k, m((0.67, -0.19, 0.88)), (0.16, 0.20, 0.17), (0, 0, 10 * sx), sd + 5, pts=20, jitter=0.12)
+        rock(rg, k, m((0.67, -0.19, 0.88)), (0.16, 0.20, 0.17), (0, 0, 10 * sx), sd + 5, pts=24, jitter=0.05)
         rock(rg, k, m((0.48, -0.44, 0.94)), (0.15, 0.10, 0.12), (12, 0, 0), sd + 6, pts=12)
-        spire(rg, k, m((0.80, -0.22, 0.92)), m((1.02, -0.30, 1.00)), 0.10, sides=5, seed=sd * 3 + 1)
+        spire(rg, k, m((0.80, -0.22, 0.92)), m((0.96, -0.28, 0.98)), 0.11, sides=5, seed=sd * 3 + 1)
         core(rg, k, m((0.58, -0.33, 0.90)), (0.09, 0.08, 0.10), seed=sd + 7)
         # muslo: escarcela de dos lajas anchas (0.5 m) colgando al costado de la cadera sobre el muslo
         t = "Tasset_" + s
@@ -256,10 +307,10 @@ def build_pieces(rg):
         # arriba, 0.75 m de ancho, apoyada en el hombro (z 2.41) y sin tocar el casco (x > 0.5). Va con la clavícula: con
         # el brazo, al bajarlo la roca giraba hasta el costado del brazo y el mango de la guardia la atravesaba
         p = "Pauldron_" + s
-        rock(rg, p, m((0.86, -0.17, 2.60)), (0.36, 0.23, 0.30), (0, -14 * sx, 6 * sx), sd + 16, pts=22, jitter=0.12,
-             flat_bottom=-0.55, snow=0.82)
-        rock(rg, p, m((0.84, 0.29, 2.56)), (0.34, 0.20, 0.28), (0, -16 * sx, -4 * sx), sd + 17, pts=20, jitter=0.12,
-             flat_bottom=-0.55, snow=0.82)
+        rock(rg, p, m((0.86, -0.17, 2.60)), (0.36, 0.23, 0.30), (0, -14 * sx, 6 * sx), sd + 16, pts=26, jitter=0.05,
+             flat_bottom=-0.55)
+        rock(rg, p, m((0.84, 0.29, 2.56)), (0.34, 0.20, 0.28), (0, -16 * sx, -4 * sx), sd + 17, pts=24, jitter=0.05,
+             flat_bottom=-0.55)
         core(rg, p, m((0.84, 0.06, 2.54)), (0.29, 0.11, 0.16), seed=sd + 19)
         # espalda: cumbre de tres agujas gruesas sobre el omóplato (x 0.20-0.60), inclinadas atrás y afuera; la más alta
         # pasa por encima del casco (z 3.45). El paso del medio (x < 0.16) queda libre para el mango
@@ -284,9 +335,10 @@ def build_pieces(rg):
     for x, sd in ((0.31, 101), (-0.31, 103)):
         rock(rg, "Chest_High", (x, -0.56, 2.20), (0.27, 0.15, 0.20), (-10, 0, 10 if x > 0 else -10), sd, pts=18, jitter=0.12)
         rock(rg, "Chest_Low", (x * 0.85, -0.54, 1.86), (0.22, 0.14, 0.14), (6, 0, -12 if x > 0 else 12), sd + 10, pts=13)
-    core(rg, "Chest_High", (0.0, -0.52, 2.18), (0.08, 0.10, 0.21), seed=105)
-    core(rg, "Chest_Low", (0.0, -0.50, 1.87), (0.07, 0.09, 0.14), seed=115)
-    core(rg, "Chest_Low", (0.0, -0.52, 2.02), (0.38, 0.09, 0.06), seed=116)
+    # (las vetas del pecho finas: de frente son una cruz, y anchas se leían como una estrella pegada encima del peto)
+    core(rg, "Chest_High", (0.0, -0.52, 2.18), (0.04, 0.10, 0.19), seed=105)
+    core(rg, "Chest_Low", (0.0, -0.50, 1.87), (0.04, 0.09, 0.13), seed=115)
+    core(rg, "Chest_Low", (0.0, -0.52, 2.02), (0.32, 0.09, 0.035), seed=116)
 
 
 # ------------------------------------------------------------------ armado sobre el personaje

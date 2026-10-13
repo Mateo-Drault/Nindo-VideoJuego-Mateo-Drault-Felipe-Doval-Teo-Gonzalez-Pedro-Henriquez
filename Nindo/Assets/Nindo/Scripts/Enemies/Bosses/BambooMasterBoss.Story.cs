@@ -192,9 +192,9 @@ namespace Nindo
         {
             var p = Game.Player;
             if (p == null || !p.IsAlive) return;
+            // (Heal ya muestra la cura si de verdad curó: otra HealBurst acá la duplicaba, como en Kokuyō y Mizuchi)
             p.Heal(TransitionHeal);
             p.AddSpirit(TransitionSpirit);
-            Game.FX?.HealBurst(p.transform.position);
             BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 1f);
         }
 

@@ -126,7 +126,7 @@ namespace Nindo
 
         public void ShowBossBar(Boss b)
         {
-            boss = b; bossGhostValue = 0f; bossGhostHold = 0f; bossIntro = 0f; bossEnrage = 0f; bossFlash = 0f; bossShownHp = 0f; bossLastHp = b.Health01;
+            boss = b; bossGhostValue = 0f; bossGhostHold = 0f; bossIntro = 0f; bossEnrage = 0f; bossFlash = 0f; bossShownHp = 0f; bossLastHp = b.BarFill01;
             bossLastPosture = b.Imbalance;
             bossName.text = b.title;
             bossSub.text = b.subtitle;
@@ -183,7 +183,7 @@ namespace Nindo
             bossIntro += dt;
             float wipe = UIAnim.OutCubic(bossIntro / 0.4f);
             bossBack.SetSize(new Vector2(Mathf.Lerp(120f, 1400f, wipe), 56f));
-            float hp = boss.Health01;
+            float hp = boss.BarFill01;
             float pour = Mathf.Clamp01((bossIntro - 0.35f) / 0.6f);
             // lo que se perdió queda en papel medio segundo y después se vacía despacio
             if (hp < bossLastHp - 0.0001f) { bossGhostValue = Mathf.Max(bossGhostValue, bossShownHp); bossGhostHold = 0.5f; }

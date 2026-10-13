@@ -28,6 +28,9 @@ TICK = {"H": 0.38, "L": 0.38, "P": 0.38, "U": 0.42}
 # combo: (daño, retraso del golpe desde el apretón, duración del corte, fin del tramo cortante)
 COMBO = [(10, 0.133, 0.433, 0.233), (11, 0.100, 0.367, 0.200), (18, 0.246, 0.702, 0.351)]
 TAP = 0.32
+# el daño de Kaito multiplicado por esto: la simulación calibrada con el bot de Unity (calibration.py, '{"calib": true}' en
+# mz_run.py y kk_fix_run.py) lo pone en 1/F
+DAMAGE_MUL = 1.0
 
 
 class Kaito:
@@ -159,7 +162,7 @@ class Kaito:
         return out
 
     def damage_mul(self, t):
-        m = 1.45 if t < self.rage_until else 1.0
+        m = (1.45 if t < self.rage_until else 1.0) * DAMAGE_MUL
         if t < self.riposte_until:
             m *= 1.5
             self.riposte_until = -1

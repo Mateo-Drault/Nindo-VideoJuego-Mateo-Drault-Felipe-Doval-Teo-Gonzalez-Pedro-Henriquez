@@ -382,7 +382,9 @@ NEUTRAL = {
     **hand_shape("r", "relaxed"), **hand_shape("l", "relaxed"),
     "foot_r": tuple(ANKLE), "foot_r_rot": (0.0, 0.0, 0.0), "knee_r": (-0.1, -1.0, 0.0), "toe_r": 0.0,
     "foot_l": tuple(mx(ANKLE)), "foot_l_rot": (0.0, 0.0, 0.0), "knee_l": (0.1, -1.0, 0.0), "toe_l": 0.0,
-    "travel": 0.0, "lift": 0.0, "breath": 0.0, "extra": {},
+    # turn: grados que giró el transform del juego (+ = hacia su izquierda; lo aplica el jefe como travel): lo clavado en
+    # el MUNDO del clip se pasa al espacio del personaje girado
+    "travel": 0.0, "turn": 0.0, "lift": 0.0, "breath": 0.0, "extra": {},
     # el saco tirado: 0 = guardado adentro del cuerpo; 1 = libre en el mundo (robe_pos/robe_rot/robe_fold)
     "robe_free": 0.0,
     # bastón: 0 = en reposo (oculto); 1 = libre (staff_pos = centro, staff_dir = de la punta de abajo a la de arriba,
@@ -458,8 +460,13 @@ class Solver:
         R = self.rig
         # el cuerpo (cadera, manos) se autora relativo al transform del juego; lo que queda clavado en el MUNDO (pies
         # apoyados, el saco tirado en el piso, el bastón apoyado) se corre con el avance del golpe
-        sh = Vector((0.0, c["travel"], c["lift"]))
         up = Vector((0.0, 0.0, c["lift"]))
+        # el transform avanzó 'travel' por el carril (-Y del clip) y giró 'turn': del mundo del clip al personaje
+        Tz = Matrix.Rotation(math.radians(-(c.get("turn") or 0.0)), 3, 'Z')
+        trav = Vector((0.0, c["travel"], 0.0))
+
+        def w2c(p):
+            return Tz @ (V(p) + trav) + up
         # ---- cadera y tronco
         hip_rest = R.rest["Hips"]
         Hm = compose(hip_rest.translation + V(c["hips"]) + up, euler_q(c["hips_rot"]).to_matrix() @ rot3(hip_rest))
@@ -469,7 +476,7 @@ class Solver:
         for s_ in ("r", "l"):
             S_ = s_.upper()
             J = (Hm @ R.rel["Thigh_" + S_]).translation
-            A = V(c["foot_" + s_]) + sh
+            A = w2c(c["foot_" + s_])
             reach = (R.length["Thigh_" + S_] + R.length["Shin_" + S_]) * 0.985
             dxy = Vector((J.x - A.x, J.y - A.y)).length
             if dxy < reach:
@@ -492,8 +499,10 @@ class Solver:
         if staff_on:
             # el bastón en la mano va relativo al personaje (como las manos); clavado en el piso o tirado va en el
             # MUNDO del clip (staff_world = 1: se corre con el avance, como un pie apoyado)
-            sw = sh if (c.get("staff_world") or 0.0) >= 0.5 else up
-            Ms = compose(V(c["staff_pos"]) + sw, basis_yz(c["staff_dir"], c["staff_up"]))
+            if (c.get("staff_world") or 0.0) >= 0.5:
+                Ms = compose(w2c(c["staff_pos"]), Tz @ basis_yz(c["staff_dir"], c["staff_up"]))
+            else:
+                Ms = compose(V(c["staff_pos"]) + up, basis_yz(c["staff_dir"], c["staff_up"]))
             sf = max(0.0, min(1.0, c.get("staff_follow") or 0.0))
             if sf > 1e-4 and c.get("staff_cpos") is not None:
                 # agarrado contra el pecho: el bastón acompaña al tronco (las reacciones de la fase 3 son las de las
@@ -577,10 +586,10 @@ class Solver:
         miss_legs = 0.0
         for s in ("r", "l"):
             S = s.upper()
-            ank = V(c["foot_" + s]) + sh
+            ank = w2c(c["foot_" + s])
             pr = c["foot_" + s + "_rot"]
-            Rf = (Matrix.Rotation(math.radians(pr[2]), 3, 'Z') @ Matrix.Rotation(math.radians(pr[0]), 3, 'X')
-                  @ Matrix.Rotation(math.radians(pr[1]), 3, 'Y')) @ rot3(R.rest["Foot_" + S])
+            Rf = Tz @ (Matrix.Rotation(math.radians(pr[2]), 3, 'Z') @ Matrix.Rotation(math.radians(pr[0]), 3, 'X')
+                       @ Matrix.Rotation(math.radians(pr[1]), 3, 'Y')) @ rot3(R.rest["Foot_" + S])
             miss_legs = max(miss_legs, pose.two_bone("Thigh_" + S, "Shin_" + S, ank, c["knee_" + s]))
             pose.place("Foot_" + S, compose(pose.tail("Shin_" + S), Rf))
             # punta del pie: + = los dedos se doblan hacia arriba (parado en punta); - = punta estirada (patada)
@@ -590,7 +599,7 @@ class Solver:
                 pose.delta("Toe_" + S, Quaternion(ax, math.radians(t)))
         # ---- el saco tirado: libre en el mundo (vuela y cae); los pliegues doblan el ruedo y las mangas
         if (c.get("robe_free", 0.0) or 0.0) >= 0.5:
-            Mr = compose(V(c["robe_pos"]) + sh, euler_q(c["robe_rot"]).to_matrix() @ rot3(R.rest["RobeT_Root"]))
+            Mr = compose(w2c(c["robe_pos"]), Tz @ euler_q(c["robe_rot"]).to_matrix() @ rot3(R.rest["RobeT_Root"]))
             pose.place("RobeT_Root", Mr)
             # robe_fold: (ruedo, mangas abiertas, mangas giradas[, tramo 2 del ruedo, tramo 3, codo de las mangas, mangas
             # hacia atrás]): con los tramos el ruedo ondea en el vuelo y queda arrugado en el piso

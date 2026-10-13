@@ -38,21 +38,46 @@ namespace Nindo
         public const float RiftDamage = 26f * DamageScale, RiftKnockback = 2.5f;
 
         /// <summary>
-        /// Las dos perillas del balance final: HealthScale multiplica la vida pedida (1800, el doble de antes; los actos y
-        /// sus tramos se reparten solos con cualquier vida) y DamageScale el daño de diseño de todo lo que pega (él, la
-        /// sombra, la grieta). Simulado con los bots de AutoPilot (el promedio recalibrado; Tools/Dev/boss_sims/kk_fix_run.py
-        /// largo VIDA DAÑO 40 bueno,promedio 60: minutos hasta ganar con los reintentos):
-        ///   vida 1800, daño 1.0:  bueno 2.4 min y 0.95 muertes; promedio 10.7 min y 10.5 muertes (no gana nunca);
-        ///   vida 2700, daño 0.8:  bueno 2.5 min y 1.0 muertes;  promedio 13 min y 11.6 muertes (la candidata de antes);
-        ///   vida 2700, daño 0.5:  bueno 2.0 min y 0.08 muertes; promedio 12.8 min y 7.5 muertes;
-        ///   vida 2700, daño 0.4:  bueno 2.0 min y 0.03 muertes; promedio 6.1 min, 3 muertes y 20 % gana sin morir (lo de hoy);
-        ///   vida 2700, daño 0.35: bueno 2.0 min y 0.02 muertes; promedio 4.3 min, 1.7 muertes y 27 % sin morir.
-        /// El bot promedio falla ~55 % de los golpes de Kokuyō (el cuerpo y la sombra se turnan sin respiro): con más daño
-        /// muere en el Acto 1. El perfil "humano" (ve el anillo) a 2700 / 0.4 casi no muere. Con 2700 (ThirdsFrom) cada
-        /// acto tiene sus tres tramos y la escalada de especiales. El tiempo real es ~1.4 veces el simulado: medirlo con
-        /// "bot on bueno" y "bot on promedio" y ajustar acá.
+        /// Las perillas del balance final, todas juntas: HealthScale multiplica la vida pedida (1800, el doble de antes; los
+        /// actos y sus tramos se reparten solos con cualquier vida), DamageScale el daño de diseño de todo lo que pega (él,
+        /// la sombra, la grieta) y el sustento de Kaito: StageHeal en cada corte de tramo de un acto (KokuyoBoss.Pacing,
+        /// como los tramos de la armadura de Gorō; con la vida de hoy son seis, dos por acto) y TransitionHeal /
+        /// TransitionSpirit en cada cambio de acto (también al levantarse para la última resistencia). Las simulaciones
+        /// leen estos números de acá (Tools/Dev/boss_sims/cs_knobs.py). Simulado con los bots de AutoPilot (kk_fix_run.py
+        /// largo bueno,promedio,humano 200 ['{"stage_heal": [0, 35, 35, 35]}']; minutos simulados hasta ganar con los
+        /// reintentos; "humano" = ve el anillo, se equivoca más de atrás y en la oscuridad):
+        ///   vida 2700, daño 0.4, sin cura de tramo (lo de C2): bueno 2.0 min; promedio 5.6 min, 2.9 muertes y 20 % gana
+        ///                          sin morir (corto para el bueno y el promedio se desgasta);
+        ///   vida 5400, daño 0.33, sin cura de tramo: bueno 3.4 min; promedio 25 min y 11.5 muertes (no termina);
+        ///   vida 5400, daño 0.33, tramos 35 / 35 / 35, el reintento por acto, el eclipse con sus dúos enteros y la
+        ///                          primera rodilla con un parry: promedio 1.73 muertes y 29 % sin morir, 0.3 de ellas en
+        ///                          el Último Desfile (llegaba sin vida; con la cura al levantarse, 1.23 y 39 %: el jefe final
+        ///                          era el más fácil de ganar de una);
+        ///   vida 5400, daño 0.33, tramos 35 / 35 / 20 (y 30 en el 2): promedio 2.16 muertes y 21 % (de más);
+        ///   vida 5400, daño 0.33, tramos 35 / 35 / 25: bueno 3.6 min (casi nunca muere); promedio 6.1 min (p90 9.8), 1.65
+        ///                          muertes y 28 % sin morir, 1.2 de ellas en el eclipse; humano 3.7 min.
+        /// En Unity el bot tarda 0.92 veces lo simulado con Kokuyō (medido con el PlayClock en main 76be027: 'bot on bueno'
+        /// 1:48 contra 1.96 min simulados; Tools/Dev/boss_sims/calibration.py): con 5400 el bueno ganaba en ~3.4 min de
+        /// juego, corto. En minutos de juego (kk_fix_run.py largo bueno,promedio 200 '{"calib": true}', el daño de Kaito a
+        /// 1/0.92):
+        ///   vida 7200, daño 0.33, tramos 35 / 35 / 25: bueno 4.35 min; promedio 10.2 min y 4.5 muertes (no alcanza el sustento);
+        ///   vida 7200, daño 0.33, tramos 60 / 60 / 50: promedio 6.9 min, 1.5 muertes (cura casi toda la vida en cada tramo);
+        ///   vida 6600, daño 0.30, tramos 40 / 40 / 30: bueno 4.1 min; promedio 6.4 min, 1.4 muertes;
+        ///   vida 7200, daño 0.31, tramos 50 / 50 / 45: bueno 4.35 min (p10-p90 4.05-4.7) sin morir; promedio 6.9 min (p90
+        ///                          10.5), 1.4 muertes y 29 % sin morir, 1.0 de ellas en el eclipse (lo de hoy). Los actos duran
+        ///                          ~72 / 87 / 80 s con el bueno; el eclipse sigue sirviendo el 99 % de los dúos. El promedio de verdad anduvo mejor que el calibrado (2:26 sin
+        ///                          morir con lo de C2, contra 5 min y 2.2 muertes): puede que muera menos.
+        /// PROVISORIO: el factor sale de una pelea por bot; medirlo de nuevo (tres por bot) y ajustar acá. Más vida alarga la
+        /// pelea del bueno casi en proporción; más StageHeal le baja las muertes al promedio sin acortarla (la del eclipse es
+        /// la que más pesa).
         /// </summary>
-        public const float HealthScale = 1.5f, DamageScale = 0.4f;
+        public const float HealthScale = 4f, DamageScale = 0.31f;
+        public const float TransitionHeal = 40f, TransitionSpirit = 30f;
+        /// <summary>La cura de cada corte de tramo, por acto (1..3): un poco menos en el eclipse, que es el final (con la
+        /// misma en los tres el bot promedio ganaba de una más seguido que contra los otros jefes).</summary>
+        static readonly float[] StageHeal = { 0f, 50f, 50f, 45f };
+
+        public static float StageHealOf(int act) => StageHeal[Mathf.Clamp(act, 1, 3)];
         /// <summary>Ichimonji: dentro de este radio la hoja pasa por encima de la cabeza de Kaito (la empuñadura va a
         /// 1.9 m y la punta baja a 0.97 m: a menos de ~2 m del centro la hoja corta arriba de 1.5 m). Sale del sidecar
         /// (safe_core_m), que es la única fuente: el disco pálido y el golpe usan el mismo número.</summary>
@@ -240,9 +265,8 @@ namespace Nindo
         {
             return new EnemyConfig
             {
-                // 1800 (antes 900): pedido de vida doble para que la partida dure ~1 h (HealthScale arriba, para el balance).
-                // Simulado con el bot "bueno": ~79 s
-                // por intento con las escenas de cambio de acto (antes ~52); cada acto cambia a la mitad (KokuyoBoss.Pacing)
+                // 1800 (antes 900, el pedido de vida doble) por HealthScale (arriba, el balance): con la vida de hoy el bot
+                // "bueno" pelea ~3.4 min simulados y cada acto cambia de ritmo en tercios (KokuyoBoss.Pacing)
                 id = "kage", displayName = "Kokuyō", maxHealth = 1800 * HealthScale, runSpeed = 3.0f, walkSpeed = 1.8f, turnSpeed = 4.5f,
                 radius = 1.1f, height = 4.2f, scale = 1f, tintStrength = 0f,
                 maxImbalance = 5, exhaustedTime = KokuyoTimings.Kneel.Seconds, exhaustedDamageMul = 1.3f, guardTime = 0.8f,

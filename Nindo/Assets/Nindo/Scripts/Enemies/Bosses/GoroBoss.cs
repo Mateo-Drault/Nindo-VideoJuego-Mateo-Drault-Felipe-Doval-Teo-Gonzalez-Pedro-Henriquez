@@ -27,28 +27,44 @@ namespace Nindo
     public class GoroBoss : Boss, ICameraProfile
     {
         public const string ArmorSeenFlag = "goro_armor_seen";
+
+        // ------------------------------------------------------------------------------------------- balance
         /// <summary>
-        /// Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth, 1000 en EnemyArchetypes.Goro). Las cinco
-        /// perillas salen de Tools/Dev/goro_fight_sim.py con el reintento armado, los tres tramos de armadura y los bots de
-        /// AutoPilot (el promedio recalibrado): bueno 3.4 min simulados (~4.8 reales, el modelo no cuenta lo que el bot
-        /// camina) casi sin morir; promedio 4.8 min, 1.45 muertes y 30 % gana al primer intento. Con 520 + 520 el bueno
-        /// ganaba en 1.6 min y con más vida sin reintento armado el promedio quedaba 20-50 min trabado.
+        /// EL BALANCE DE LA PELEA, EN UN SOLO LUGAR (EnemyArchetypes.Goro toma de acá la primera barra y
+        /// Tools/Dev/goro_fight_sim.py lee estos números de este archivo). Medido en Unity con el bot (main 76be027, barras
+        /// 1000 + 1600, daño x0.5 / x0.4, cura por tramo 25): 'bot on bueno' ganó en 2:24 sin morir y 'bot on promedio'
+        /// en 4:04 con 2 muertes; la simulación daba 3.4 y 5.2 min, así que con Gorō el bot real va 0.71x el modelo (se le
+        /// pega y le corta las vueltas a la guardia; con los otros jefes es otro número: Tools/Dev/boss_sims/calibration.py).
+        /// Objetivo: el bueno ~4.5 min reales, el promedio 1-2 muertes.
+        /// PROVISORIO: esa calibración sale de UNA pelea por bot con los clips de C2; hay que medir de nuevo en Unity
+        /// (3 peleas por bot, Core/PlayClock) con los clips de C3 antes de darlo por bueno.
+        /// Con 2000 + 3200 y el daño a x0.25 / x0.23 cada martillazo sacaba 5-7 de vida (un corte de ninja saca 12): el
+        /// golpe de un oni de 3.4 m no pesaba. Ahora el daño sube a x0.30 / x0.25 (Combo1 6.6, el golpe sísmico 11.4, la
+        /// onda 10), la vida baja un 5 % y cada tramo roto cura 55: lo más pesado que sigue en el objetivo
+        /// (Tools/Dev/goro_fight_sim.py, 1500 peleas, clips de C3): bueno 6.1 min simulados = ~4.3 reales, sin morir;
+        /// promedio 8.5 simulados = ~6.6 reales, 1.27 muertes simuladas = ~1.7 reales, 34 % gana al primer intento, un
+        /// tercio de las muertes armado. Con x0.35 / x0.30 el promedio ya muere 2.4-3 veces (reales) si la pelea del bueno
+        /// dura lo mismo.
+        ///  * FirstBarHealth: la barra falsa (fase 1, config.maxHealth) y ArmoredHealth la de la armadura (fase 2): se
+        ///    mantiene la proporción de antes (la falsa es ~40 % de la pelea), así la sorpresa llega a mitad de camino.
+        ///  * FirstBarDamage / ArmoredDamage: el daño de Gorō respecto del arquetipo en cada barra (golpes, onda y
+        ///    avalancha). Con más vida el daño baja: si no, la pelea larga se vuelve desgaste y el promedio muere en la
+        ///    fase 1, que el daño armado no toca. Son respecto del arquetipo, no uno del otro.
+        ///  * ShedHealAmount: lo que recupera Kaito con cada tramo de armadura roto (ShedAt), la única cura de la pelea
+        ///    larga además de TransitionHeal.
         /// </summary>
-        public float armoredHealth = 1600f;
-        /// <summary>
-        /// Daño de Gorō armado respecto del arquetipo (golpes, onda y avalancha). Perilla de balance: con más vida en las
-        /// barras el daño tiene que bajar, si no la pelea larga se vuelve desgaste (goro_fight_sim.py --p2dmg).
-        /// </summary>
-        public float armoredDamageScale = 0.4f;
-        /// <summary>
-        /// Daño de Gorō en la primera barra respecto de EnemyArchetypes.Goro (la otra perilla de balance: con la barra
-        /// falsa más larga, la mayoría de las muertes del bot promedio eran en la fase 1, que armoredDamageScale no toca).
-        /// Las dos perillas son respecto del arquetipo, no una de la otra.
-        /// </summary>
-        public float firstBarDamageScale = 0.5f;
-        /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (ShedAt): la única cura de una
-        /// pelea de varios minutos (goro_fight_sim.py --shed-heal).</summary>
-        public float shedHeal = 25f;
+        public const float FirstBarHealth = 1900f, ArmoredHealth = 3040f;
+        public const float FirstBarDamage = 0.30f, ArmoredDamage = 0.25f;
+        public const float ShedHealAmount = 55f;
+
+        /// <summary>Vida de la barra de la fase 2 (la de la fase 1 es config.maxHealth = FirstBarHealth).</summary>
+        public float armoredHealth = ArmoredHealth;
+        /// <summary>Daño de Gorō armado respecto del arquetipo (ArmoredDamage).</summary>
+        public float armoredDamageScale = ArmoredDamage;
+        /// <summary>Daño de Gorō en la primera barra respecto del arquetipo (FirstBarDamage).</summary>
+        public float firstBarDamageScale = FirstBarDamage;
+        /// <summary>Vida que recupera Kaito cada vez que le rompe un tramo de la armadura (ShedHealAmount).</summary>
+        public float shedHeal = ShedHealAmount;
         /// <summary>Fracciones de la segunda barra en que se le cae un tramo de la armadura y las piezas de cada uno: un
         /// cuerno y una rodilla, el brazo izquierdo con el faldón y el pecho, y al final una hombrera y una cumbre de la
         /// espalda (las grandes quedan para el último). Al morir se le cae el resto.</summary>
@@ -79,6 +95,10 @@ namespace Nindo
         // armadura recién armada es lo que se tiene que ver; Tools/Blender/bosses/goro/goro_rise_review)
         const float ShotStart = 7.2f, ShotNear = 6f, ShotFar = 10f, ShotFov = 42f;
         const float ShotFarUp = 2.6f, ShotFarLook = 2.9f;
+        // el alejamiento arranca ShotKneelLead s antes de que se arrodille y al arrodillarse ya mira a ShotKneelLook m: con
+        // la armadura agrandada (C3) el casco y las cumbres salían por arriba del cuadro justo después de arrodillarse
+        // (a 6 m mirando a 1.3 m) hasta que el plano se alejaba
+        const float ShotKneelLead = 0.35f, ShotKneelLook = 1.7f;
 
         public bool Armored => armored;
         bool armored, inCinematic, assembling, wideFrame;
@@ -539,10 +559,11 @@ namespace Nindo
             return Game.Camera.PlayShot(t =>
             {
                 float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / kneel));
-                float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - kneel) / Mathf.Max(0.1f, roar - kneel)));
+                float from = kneel - ShotKneelLead;
+                float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - from) / Mathf.Max(0.1f, roar - from)));
                 float dist = Mathf.Lerp(Mathf.Lerp(ShotStart, ShotNear, a), ShotFar, b);
                 Vector3 pos = c + dir * dist + Vector3.up * Mathf.Lerp(Mathf.Lerp(1.7f, 2.1f, a), ShotFarUp, b);
-                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, 1.3f, a), ShotFarLook, b);
+                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, ShotKneelLook, a), ShotFarLook, b);
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
             }, () => ShotFov, 0.9f, duration, 0.8f);
         }
@@ -735,6 +756,7 @@ namespace Nindo
             {
                 case "avalanche": TickAvalancheStep(a); break;
                 case "slamwave":
+                    ClearCrouch(dt);
                     if (!specialFired && stepNorm >= a.activeStart) { specialFired = true; FireSlamWave(a); }
                     // la onda ya no lo va a alcanzar (salió del carril, o el frente ya pasó): el aviso se deshace sin golpe
                     if (specialFired && !slamHit && float.IsInfinity(SlamWaveEta(a)))
@@ -746,6 +768,28 @@ namespace Nindo
                 default: base.TickSpecial(a, dt); break;
             }
         }
+
+        /// <summary>
+        /// El SlamWave agachado con la armadura es lo más adelante que llega el cuerpo de Gorō en la pelea: el pecho de roca a
+        /// 1.36 m del centro y la esquina de la hombrera izquierda, que baja con la mano que se apoya adelante, a 1.55 m
+        /// (GoroTimings.SlamWaveCrouchReach). Kaito pegado a la cápsula (1.35-1.45 m) quedaba con la hombrera en la cabeza.
+        /// Desde que se agacha (la pausa del aviso) hasta la suelta, si lo tiene enfrente el cuerpo lo corre lo justo, a lo
+        /// sumo a CrouchPushSpeed: como la panza del sumo, con PlayerController.Shove (contra la barrera no lo mueve; en el
+        /// dash tampoco). Lo que el paso hace después ya lo resuelven el imán y la variante en el lugar.
+        /// </summary>
+        void ClearCrouch(float dt)
+        {
+            if (target == null || stepNorm < GoroTimings.SlamWaveCrouchFrom || stepClock >= tl.ReleaseTime) return;
+            Vector3 fwd = transform.forward.Flat().normalized, to = (target.transform.position - transform.position).Flat();
+            float along = Vector3.Dot(to, fwd), lat = Mathf.Abs(Vector3.Dot(to, Vector3.Cross(Vector3.up, fwd)));
+            float need = GoroTimings.SlamWaveCrouchReach + CrouchPad - along;
+            if (along <= 0f || lat > CrouchHalfWidth || need <= 0f) return;
+            target.Shove(fwd * Mathf.Min(need, CrouchPushSpeed * dt));
+        }
+
+        /// <summary>El margen de ClearCrouch (los vértices rígidos con su hueso), el ancho de lo que tiene enfrente (de su
+        /// eje a la hombrera más el radio de Kaito) y lo más rápido que lo corre (m/s: 25 cm en ~0.2 s, mientras se agacha).</summary>
+        const float CrouchPad = 0.05f, CrouchHalfWidth = 0.65f, CrouchPushSpeed = 1.2f;
 
         /// <summary>Mientras ruedan rocas no arranca otro golpe (ni rondando ni persiguiendo): nunca carriles y martillazos a la vez.</summary>
         bool AvalancheBusy => avalanche != null && avalanche.Active;

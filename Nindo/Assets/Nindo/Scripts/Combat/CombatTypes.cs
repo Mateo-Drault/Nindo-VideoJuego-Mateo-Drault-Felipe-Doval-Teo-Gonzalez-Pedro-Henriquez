@@ -14,7 +14,8 @@ namespace Nindo
         Guarded,     // el enemigo estaba en guardia y contraatacó
         Blocked,     // el enemigo lo frenó con la guardia (o un jefe rugiendo) sin contraatacar: rebota y avisa
         Dodged,      // i-frames del dash
-        Killed
+        Killed,
+        Deflected    // un maestro le apartó la hoja con la palma (Chikuō fuera de sus huecos): sin clang ni castigo
     }
 
     public enum AttackKind { Light, Heavy, Unblockable, Ability, Finisher, Projectile }
@@ -90,6 +91,8 @@ namespace Nindo
         public float lungeFrom = -1f;
         [Tooltip("Enemigos: la embestida va por el aire (un salto): cuánto recorre se decide al despegar y el imán no la frena a mitad")]
         public bool lungeAir;
+        [Tooltip("Enemigos (con lungeFrom): cuadro del clip (normalizado) en que la embestida ya terminó (-1 = un poco después del golpe)")]
+        public float lungeTo = -1f;
         /// <summary>Enemigos: el clip de siempre (estado y tiempos) si el controller no tiene 'state' (Enemy.ResolveClipVariants).</summary>
         [NonSerialized] public AttackClipFallback fallback;
 

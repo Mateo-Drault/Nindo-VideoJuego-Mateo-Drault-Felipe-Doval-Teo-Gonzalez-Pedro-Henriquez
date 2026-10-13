@@ -14,11 +14,11 @@ namespace Nindo
     public partial class StoryDirector
     {
         // contrato con kaito-anim: "BandanaPower" (2.5 s): glow = la mano izquierda toca la bandana (f14), release = la palma
-        // empuja hacia el portón con un paso (f40 de 75, la mano a (-0.10, 0.73, 0.47) m de su raíz); si el clip no los
-        // trae, NGlow / NRelease (los del clip entregado)
+        // empuja hacia el portón con un paso (f40 de 75, la mano a (-0.06, 0.72, 0.56) m de su raíz: el 'hand_l_m' del
+        // sidecar); si el clip no los trae, NGlow / NRelease (los del clip entregado)
         public const string BandanaPowerState = "BandanaPower";
         const float NGlow = 0.187f, NRelease = 0.533f, BandanaPowerSeconds = 2.5f;
-        static readonly Vector3 BandanaReleaseHand = new Vector3(-0.1f, 0.73f, 0.47f);
+        static readonly Vector3 BandanaReleaseHand = new Vector3(-0.06f, 0.72f, 0.56f);
         // sin el clip: antes el "Pray" (de rodillas con la katana en alto, el mismo gesto que rezar) y el haz le salía de
         // la frente. Ahora Kaito junta la luz quieto y estira la mano izquierda abierta hacia adelante (el arranque de
         // "Interact", a 0.55x); la mano queda ahí mientras la luz fluye y después termina el gesto

@@ -309,11 +309,18 @@ MonoBehaviour:
     - Combo3B
     - SlamWave
     - AvalancheSummon
+    - Combo1Planted
+    - Combo2Planted
+    - Combo3Planted
+    - Combo1BPlanted
+    - Combo2BPlanted
+    - Combo3BPlanted
+    - SlamWavePlanted
     stateLengths:
     - 3.2
-    - 1.6
-    - 1.4
-    - 1.5667
+    - 1.8333
+    - 1.7333
+    - 1.7
     - 2.1333
     - 2.2
     - 2.0
@@ -327,11 +334,18 @@ MonoBehaviour:
     - 2.0
     - 2.6
     - 7.0
-    - 1.9667
-    - 1.5333
-    - 1.9
+    - 2.2333
+    - 1.7
+    - 2.1333
     - 2.1333
     - 3.0
+    - 1.8333
+    - 1.7333
+    - 1.7
+    - 2.2333
+    - 1.7
+    - 2.1333
+    - 2.1333
   - id: grandpa
     model: {fileID: 919132149155446097, guid: 1b406ff4438a21ba4c45f9adbb20ea7d, type: 3}
     controller: {fileID: 9100000, guid: be45274efe33497904d9a5dacd0d55a7, type: 2}
@@ -580,6 +594,7 @@ MonoBehaviour:
     - LeapKick_P2
     - Guard
     - GuardHit
+    - GuardHitL
     - Counter
     - CounterStrike
     - CounterStrike_Mid
@@ -595,6 +610,7 @@ MonoBehaviour:
     - ExhaustedRise
     - Guard_P2
     - GuardHit_P2
+    - GuardHitL_P2
     - Counter_P2
     - CounterStrike_P2
     - CounterStrike_Mid_P2
@@ -610,6 +626,7 @@ MonoBehaviour:
     - ExhaustedRise_P2
     - Guard_P3
     - GuardHit_P3
+    - GuardHitL_P3
     - Counter_P3
     - CounterStrike_P3
     - CounterStrike_Mid_P3
@@ -632,6 +649,7 @@ MonoBehaviour:
     - Sweep
     - QiWave
     - DashStrike
+    - DashStrike_Pass
     - BackHop
     - BackHop_P2
     - BackHop_P3
@@ -646,10 +664,14 @@ MonoBehaviour:
     - Sweep_P3
     - QiWave_P3
     - DashStrike_P3
+    - DashStrike_Pass_P3
     - PhaseStaff
     - Defeat
     - Meditate
     - SeatedBow
+    - GuardHitLow
+    - GuardHitLow_P2
+    - GuardHitLow_P3
     - PoseTest
     stateLengths:
     - 3.2
@@ -688,20 +710,6 @@ MonoBehaviour:
     - 1.8667
     - 0.6667
     - 0.5
-    - 0.5333
-    - 0.8667
-    - 0.8667
-    - 0.8667
-    - 2.0
-    - 0.6667
-    - 0.6
-    - 0.9
-    - 1.0
-    - 1.2
-    - 4.0
-    - 0.5333
-    - 0.7333
-    - 0.6667
     - 0.5
     - 0.5333
     - 0.8667
@@ -717,6 +725,23 @@ MonoBehaviour:
     - 0.5333
     - 0.7333
     - 0.6667
+    - 0.5
+    - 0.5
+    - 0.5333
+    - 0.8667
+    - 0.8667
+    - 0.8667
+    - 2.0
+    - 0.6667
+    - 0.6
+    - 0.9
+    - 1.0
+    - 1.2
+    - 4.0
+    - 0.5333
+    - 0.7333
+    - 0.6667
+    - 0.5
     - 0.5
     - 0.5333
     - 0.8667
@@ -740,6 +765,7 @@ MonoBehaviour:
     - 1.6
     - 1.8667
     - 1.2
+    - 1.2
     - 0.7333
     - 0.7333
     - 0.7333
@@ -754,10 +780,14 @@ MonoBehaviour:
     - 1.6
     - 1.8667
     - 1.2
+    - 1.2
     - 3.0
     - 5.0
     - 3.2
     - 2.3333
+    - 0.5
+    - 0.5
+    - 0.5
     - 7.7333
   kits:
   - id: goro_armor
@@ -1408,6 +1438,13 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 0
+  - key: palm_deflect
+    clips:
+    - {fileID: 8300000, guid: 33cdc3e221f0463a61660c63c04e2145, type: 3}
+    - {fileID: 8300000, guid: 1f8dd90067071ec6b78dd7072effd663, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: parry
     clips:
     - {fileID: 8300000, guid: 3996a0f0dbc6cce48be0e5ec2f1e88a3, type: 3}
