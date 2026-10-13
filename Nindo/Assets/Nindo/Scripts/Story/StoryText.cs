@@ -368,7 +368,7 @@ namespace Nindo
         }
 
         /// <summary>Lo que murmura Kaito tirado en el piso del prólogo, mientras se despierta (StoryDirector.Prologue).</summary>
-        public const string WakeMumble = "Ugh... mi cabeza... ¿Qué pasó?";
+        public const string WakeMumble = "Ay... mi cabeza... ¿Qué pasó?";
 
         /// <summary>Kaito llama al abuelo al ir hacia él en el final, antes de que lo suelten (StoryDirector.Ending).</summary>
         public const string EndingCall = "¡Abuelo!";

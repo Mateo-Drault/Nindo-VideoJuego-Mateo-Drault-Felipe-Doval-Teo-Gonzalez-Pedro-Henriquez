@@ -159,11 +159,12 @@ namespace Nindo
             // tirantes y las muñecas agarradas. Desde atrás, el abuelo sentado tapaba al ninja y no se leía el tirón
             int shot2 = Game.Camera.PlayFollowShot(grandpa.transform, new Vector3(4.6f, 2.4f, -3.4f), 0.7f, 32f, 0f, 0.9f, 0.9f, true);
             // el ninja le agarra la muñeca, lo tira al piso (el golpe y el polvo, de NPC) y se lo lleva hacia el bosque. Arranca
-            // kidnapLead después del corte: el contraplano de Kaito (StoryDirector.Prologue) se sostiene ~1.4 s encima de
-            // este plano y se mezcla en 0.8 s, así la carrera se ve desde Kaito y el agarre (0.57 s) y la caída (0.9 s) ya en
-            // este plano; arrancando en el corte, el secuestro entero pasaba en el contraplano a 17 m. Mientras, se miran
-            // (KidnapWait: el ninja agazapado, el abuelo respira)
-            const float kidnapLead = 1.2f;
+            // kidnapLead después del corte: el contraplano de Kaito (StoryDirector.Prologue) se sostiene 0.8 s encima de
+            // este plano y se mezcla en 0.5 s, así el agarre (0.57 s después de arrancar: a los 1.97 s) y la caída (0.9 s:
+            // a los 2.3 s) caen con este plano ya quieto. Con 1.2 s y el contraplano de 1.4 + 0.8 s pasaban a mitad de la
+            // mezcla; arrancando en el corte, el secuestro entero pasaba en el contraplano a 17 m. Mientras, se miran
+            // (KidnapWait: el ninja agazapado, el abuelo respira). Lo que falta hasta el diálogo no cambia (3.2 s)
+            const float kidnapLead = 1.4f;
             yield return new WaitForSecondsRealtime(kidnapLead);
             grandpa.Kidnap(exit);
             yield return new WaitForSecondsRealtime(2.4f - kidnapLead + 0.8f);

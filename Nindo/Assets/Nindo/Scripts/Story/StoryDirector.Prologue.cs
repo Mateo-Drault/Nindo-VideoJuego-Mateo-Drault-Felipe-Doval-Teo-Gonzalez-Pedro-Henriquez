@@ -22,12 +22,14 @@ namespace Nindo
         // plano del piso: de costado, bajo, a 2.8 m; mientras se arrodilla sube y se aleja un poco
         const float WakeCamDistance = 2.8f, WakeCamHeight = 0.7f, WakeCamDistanceEnd = 3.4f, WakeCamHeightEnd = 1.15f, WakeFov = 36f;
         /// <summary>
-        /// Lo que se sostiene el contraplano por encima del hombro (s) encima del plano del secuestro: el tackle del abuelo
-        /// entero desde los ojos de Kaito; después se mezcla en WakeRevealBlendOut (los dos caben en las 2.4 s que Intro
-        /// espera antes de hablar). Antes duraba lo que tardaba en mezclarse encima el plano del secuestro (~0.3 s limpio).
+        /// Lo que se sostiene el contraplano por encima del hombro (s) encima del plano del secuestro: desde los ojos de
+        /// Kaito se miran el ninja agazapado y el abuelo; después se mezcla en WakeRevealBlendOut y el plano de costado
+        /// queda quieto a los 1.3 s, antes de que el ninja arranque (Intro, kidnapLead). Con 1.4 + 0.8 el agarre y la
+        /// caída pasaban con la cámara todavía viajando de 17 m a 5.9 m. Antes de eso duraba lo que tardaba en mezclarse
+        /// encima el plano del secuestro (~0.3 s limpio).
         /// </summary>
-        public const float WakeRevealHold = 1.4f;
-        const float WakeRevealBlendOut = 0.8f;
+        public const float WakeRevealHold = 0.8f;
+        const float WakeRevealBlendOut = 0.5f;
         // sin WakeUp: de espaldas aturdido (el LieDown de antes), se incorpora hasta quedar de rodillas en 1 s (el pivote
         // sube mientras el cuerpo pasa a la rodilla al piso de "Pray", f10, quieto) y en el contraplano se para con el
         // final de "Pray" (f28-f40 a 0.6x). Antes el cuerpo entero giraba rígido del piso a parado, como una tabla
