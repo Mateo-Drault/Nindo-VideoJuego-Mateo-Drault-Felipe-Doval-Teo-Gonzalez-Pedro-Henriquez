@@ -210,9 +210,10 @@ namespace Nindo
                 case "Finta":
                 {
                     // en el aire mientras recorre el salto (Enemy lo mueve entre activeStart y activeEnd del clip); los clips
-                    // propios (HopBack, HopSide) ya saltan agachándose, despegando y cayendo: solo el de respaldo se levanta
+                    // propios (HopBack, HopSideR y su espejo HopSideL) ya saltan agachándose, despegando y cayendo: solo el de
+                    // respaldo (Spotted) se levanta
                     float k = Mathf.InverseLerp(a.activeStart, a.activeEnd, tl.NormAt(t));
-                    if (a.state != HopBackState && a.state != HopSideState) lift = (a.name == "Finta" ? 0.45f : 0.7f) * Mathf.Sin(Mathf.PI * k);
+                    if (a.state != HopBackState && a.state != HopSideRState && a.state != HopSideLState) lift = (a.name == "Finta" ? 0.45f : 0.7f) * Mathf.Sin(Mathf.PI * k);
                     break;
                 }
                 case "Remolino":
@@ -249,7 +250,8 @@ namespace Nindo
         }
 
         // golpes de zona con clip propio (EnemyArchetypes: el salto y el giro ya están en el clip)
-        const string LeapState = "Leap", WhirlState = "Whirl", HopBackState = "HopBack", HopSideState = "HopSide";
+        const string LeapState = "Leap", WhirlState = "Whirl", HopBackState = "HopBack",
+            HopSideRState = "HopSideR", HopSideLState = "HopSideL";
 
         static void Restore(Bone b)
         {

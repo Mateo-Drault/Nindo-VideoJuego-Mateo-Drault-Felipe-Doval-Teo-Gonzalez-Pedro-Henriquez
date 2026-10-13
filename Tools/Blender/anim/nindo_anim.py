@@ -738,7 +738,7 @@ class StepTimeline:
     autorado a 30 fps puede ser un teletransporte con la suelta comprimida."""
     ANTICIPATION_RATE, MAX_HOLD, FOLLOW_TAU = 0.85, 0.45, 0.06
 
-    def __init__(self, frames, apex, contact, release_rate=1.6, windup_min=0.65, extra_hold=0.0, speed=1.0):
+    def __init__(self, frames, apex, contact, release_rate=1.6, windup_min=0.65, extra_hold=0.0, speed=1.0, creep_in=False):
         n = float(frames)
         self.step_len = max(0.05, n / FPS) / max(0.05, speed)
         self.active = min(1.0, max(0.02, contact / n))
@@ -753,18 +753,20 @@ class StepTimeline:
         self.T = self.tA + self.hold + self.tR
         # sin pausa no hay deriva (StepTimeline.cs): con hold = 0 el clip saltaba del apex a apex + creep en un cuadro
         self.creep = min(0.01, (self.active - self.apex) * 0.25) if self.hold > 0.0 else 0.0
+        # creepIn de C# (los golpes con lungeFrom): la pausa deriva hasta el apex en vez de pasarlo
+        self.hold_from = self.apex - self.creep if creep_in else self.apex
 
     def norm_at(self, t):
         """Tiempo normalizado del clip a 't' segundos del inicio del paso (NormAt de C#)."""
         if t <= 0.0:
             return 0.0
         if t < self.tA:
-            return self.apex * math.sin(t / self.tA * math.pi * 0.5)
+            return self.hold_from * math.sin(t / self.tA * math.pi * 0.5)
         t -= self.tA
         if t < self.hold:
-            return self.apex + self.creep * t / self.hold
+            return self.hold_from + self.creep * t / self.hold
         t -= self.hold
-        frm = self.apex + self.creep
+        frm = self.hold_from + self.creep
         if t < self.tR:
             u = t / self.tR
             return frm + (self.active - frm) * u * u

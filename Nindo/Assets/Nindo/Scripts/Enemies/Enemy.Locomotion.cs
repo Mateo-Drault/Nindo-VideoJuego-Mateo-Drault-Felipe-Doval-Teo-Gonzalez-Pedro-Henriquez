@@ -50,6 +50,10 @@ namespace Nindo
         bool clipLunge, lungeDecided;
         float lungeLen, lungeTravel, shoved, lungeBrake;
         int lungeFrames;
+        // el recorrido con el que se autoró el clip (m) y lo que lleva hecho en el primer cuadro en el aire (lungeKeep): un
+        // salto decidido más corto recorre igual hasta ahí (ver Knot)
+        float lungeFull, lungeKeepAt;
+        int lungeKeep;
         // el estado del Animator del paso: el de AttackDef, o su espejo si el salto de costado va para el otro lado
         string stepState;
 
@@ -200,23 +204,38 @@ namespace Nindo
             lungeStartT = tl.TimeAt(a.lungeFrom);
             lungeEndT = hop ? tl.TimeAt(a.activeEnd)
                 : Mathf.Max(tl.T + 0.05f * tl.stepLen, lungeStartT + lungeLen * LungePeak(lungeBrake) / MaxClipLunge);
+            lungeFull = lungeLen;
+            lungeKeep = Mathf.Min(lungeFrames, Mathf.RoundToInt(a.lungeFrom * lungeFrames) + 1);
+            lungeKeepAt = ProfileLunge(tl.TimeAt(lungeKeep / (float)lungeFrames));
         }
 
         /// <summary>Velocidad máxima de la embestida respecto de la media (el trapecio de aceleración y frenada).</summary>
         static float LungePeak(float brake) => 1f / (1f - 0.5f * LungeAccel - 0.5f * brake);
 
-        /// <summary>Recorrido (m) a 't' s del paso: acelera parejo hasta LungeAccel, sigue a velocidad fija y frena parejo el
-        /// último 'lungeBrake' del tiempo.</summary>
+        /// <summary>Recorrido (m) a 't' s del paso con el largo autorado (lungeFull): acelera parejo hasta LungeAccel, sigue a
+        /// velocidad fija y frena parejo el último 'lungeBrake' del tiempo.</summary>
         float ProfileLunge(float t)
         {
             float u = Mathf.Clamp01((t - lungeStartT) / Mathf.Max(0.01f, lungeEndT - lungeStartT));
             float g = u < LungeAccel ? u * u / (2f * LungeAccel)
                 : u <= 1f - lungeBrake ? u - 0.5f * LungeAccel
                 : 1f - 0.5f * LungeAccel - 0.5f * lungeBrake - (1f - u) * (1f - u) / (2f * Mathf.Max(1e-4f, lungeBrake));
-            return lungeLen * g * LungePeak(lungeBrake);
+            return lungeFull * g * LungePeak(lungeBrake);
         }
 
-        float Knot(int k) => ProfileLunge(tl.TimeAt(Mathf.Clamp(k, 0, lungeFrames) / (float)lungeFrames));
+        /// <summary>Recorrido en el cuadro entero 'k' del clip. Un salto decidido más corto (lungeLen menor que lungeFull) hace
+        /// lo autorado hasta el primer cuadro en el aire (lungeKeep) y achica solo lo que sigue: escalado parejo desde el
+        /// despegue, la punta que todavía empujaba en el piso medio cuadro se corría lo que faltaba (2.5 cm en el Attack2 y 3.6
+        /// en la estocada con el salto al 35%, medido con fbx_skate.py).</summary>
+        float Knot(int k)
+        {
+            float full = ProfileLunge(tl.TimeAt(Mathf.Clamp(k, 0, lungeFrames) / (float)lungeFrames));
+            if (lungeLen >= lungeFull) return full;
+            // tan corto que ni llega a lo del despegue: parejo (el imán de todos modos ya lo frena contra Kaito)
+            if (lungeKeepAt >= lungeLen) return full * lungeLen / lungeFull;
+            if (k <= lungeKeep) return full;
+            return lungeKeepAt + (full - lungeKeepAt) * (lungeLen - lungeKeepAt) / Mathf.Max(1e-4f, lungeFull - lungeKeepAt);
+        }
 
         /// <summary>Recorrido del transform a 'clock' s del paso: ProfileLunge tomado en cada cuadro entero del clip (como lo
         /// hornea clip_lunge_travel) e interpolado entre cuadros con una curva como la que Unity le pone al clip (cúbica con
@@ -252,7 +271,7 @@ namespace Nindo
             {
                 lungeDecided = true;
                 // en el aire: cae más corto si Kaito está cerca (cortado a mitad, el salto chocaba contra una pared invisible
-                // y caía derecho); el clip es el mismo, la escala del recorrido cambia
+                // y caía derecho); el clip es el mismo, lo que se achica es el recorrido después del despegue (Knot)
                 if (a.lungeAir && !hop)
                     lungeLen = Mathf.Clamp(DistToTarget - Radius - target.Radius - 0.3f, a.lunge * AirMinShare, a.lunge);
             }

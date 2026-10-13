@@ -44,6 +44,12 @@ El FBX de animación lleva solo la armadura, con los mismos padres que el modelo
 de otro padre, si una ruta no empieza en `Armature/` o si el nodo `Armature` se anima (el bug de los enemigos
 invisibles: un FBX con un solo nodo raíz que Unity aplana).
 
+Después de exportar, `fbx_skate.py` re-importa el FBX sobre el modelo y repasa cada embestida y cada salto con el reloj
+del juego (StepTimeline y la embestida de Enemy.Locomotion portados del C#) a 120 Hz, con las curvas evaluadas entre
+cuadros: falla si una suela apoyada se corre más de 3 cm o más de 2 cm en una muestra. Es la medida que ve lo que hace
+una pierna cuando la cadera gira mucho en un cuadro (el despegue del Whirl barría 16 cm entre f11 y f11.6 y entre
+cuadros enteros daba 0). Suelto: `blender -b --factory-startup --python Tools/Blender/anim/fbx_skate.py -- ninja`.
+
 `SumoPoser` (Unity) sirve para los dos esqueletos: con FK la mano sigue al antebrazo y el pie conserva el giro que le
 dio el clip.
 

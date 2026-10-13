@@ -72,7 +72,7 @@ def clip_lunge_travel(n, apex, contact, lunge, windup, lunge_from, speed=1.0, en
     """(recorrido del transform en cada cuadro 0..n, StepTimeline) de Enemy.SetupLunge/LungeAt: de lunge_from al golpe más
     0.05 del paso (sin pasar de MAX_CLIP_LUNGE) o, en los saltos sin daño, hasta el cuadro en que cae ('end_frame'). 'air'
     (AttackDef.lungeAir): no frena al final."""
-    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed)
+    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed, creep_in=True)
     brake = 0.0 if air else LUNGE_BRAKE
     s = time_at(tl, lunge_from / float(n))
     e = time_at(tl, end_frame / float(n)) if end_frame is not None else max(tl.T + 0.05 * tl.step_len, s + lunge * lunge_peak(brake) / MAX_CLIP_LUNGE)
@@ -102,8 +102,9 @@ def knot_curve(tr, f):
 
 # ============================================================================== saltos con el reloj del juego
 def frame_times(n, apex, contact, windup, speed=1.0, hz=2400.0):
-    """Segundo del paso (reloj de Enemy: StepTimeline) en que se muestra cada cuadro entero del clip, 0..n."""
-    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed)
+    """Segundo del paso (reloj de Enemy: StepTimeline, con la pausa que deriva hasta el apex de los golpes con lungeFrom) en
+    que se muestra cada cuadro entero del clip, 0..n."""
+    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed, creep_in=True)
     out, t, f = [0.0], 0.0, 1
     while f <= n:
         t += 1.0 / hz
@@ -402,11 +403,14 @@ def ninja_whirl(ch, N):
     del Attack1 que no para. Aviso: agachado y enroscado 70° a SU derecha (la contra del giro) con la hoja horizontal
     afuera a la derecha a la altura de la cintura y la mano libre recogida al pecho; desde arriba, una barra que sale del
     contorno a la derecha, más baja y más girada que el aviso del Attack1 (que es parado y apunta con la mano libre). En
-    f11 empuja sobre las puntas con el transform quieto (la cadera ya arranca el giro sobre los pies) y despega girando a
-    la izquierda (antihorario visto desde arriba) 470°: la hoja barre el círculo entero y pega cuando vuelve a pasar por
-    delante (f20: el disco de 360° de Enemy), sigue 40° y cae en la guardia (f26) frenando el giro. Los pies giran con el
-    cuerpo en el aire, ninguno apoyado mientras gira. VariantMotion ya no lo gira si existe este estado. La pose del brazo
-    es la del contacto del Attack1 (validada: el antebrazo cerca de neutro), girada con el cuerpo."""
+    f11 empuja sobre las puntas (la cadera ya pre-gira 14° sobre los pies), en f12 los dos pies dejan el piso SIN girar
+    y recién ahí gira a la izquierda (antihorario visto desde arriba) 470°: la hoja barre el círculo entero, el disco de
+    360° de Enemy pega en f20 y la hoja vuelve a pasar por delante en f21, sigue 40° y cae en la guardia (f26) frenando
+    el giro. Los pies giran con el cuerpo en el aire, ninguno apoyado mientras gira. Antes el giro arrancaba en f11 con
+    la punta derecha todavía en el piso: 107° de cadera en un cuadro, y la rotación interpolada de la pierna barría la
+    suela apoyada 16 cm entre f11 y f11.6 (medido en el FBX con fbx_skate.py; entre cuadros enteros no se veía).
+    VariantMotion ya no lo gira si existe este estado. La pose del brazo es la del contacto del Attack1 (validada: el
+    antebrazo cerca de neutro), girada con el cuerpo."""
     m = WHIRL
     n, apex, to, contact, land, lunge = m["n"], m["apex"], m["to"], m["contact"], m["land"], m["lunge"]
     tr, _ = clip_lunge_travel(n, apex, contact, lunge, m["windup"], to, air=True)
@@ -415,17 +419,21 @@ def ninja_whirl(ch, N):
     P, FR, FL = N.P, N.FR, N.FL
     coil, after, pre = -70.0, 40.0, 14.0
     total = 360.0 - coil + after
+    # el giro (cuerpo y pies) arranca en el primer cuadro en el aire, to + 1, y frena con esta potencia: con 2.5 la hoja
+    # vuelve a pasar por delante en f21.3 como cuando arrancaba un cuadro antes con 2.2, y el cuadro más rápido gira 104°
+    # (eran 107°)
+    spin_from, spin_ease = to + 1, 2.5
 
     def g(f):
-        u = min(1.0, max(0.0, (times[f] - times[to]) / (times[land] - times[to])))
-        return 1.0 - (1.0 - u) ** 2.2
+        u = min(1.0, max(0.0, (times[f] - times[spin_from]) / (times[land] - times[spin_from])))
+        return 1.0 - (1.0 - u) ** spin_ease
 
     def turn(f):
-        """Giro del cuerpo respecto del tajo del Attack1 (°): enroscado en el apex, un poco sobre los pies al empujar, la
-        vuelta entera en el aire y 40° más al caer."""
+        """Giro del cuerpo respecto del tajo del Attack1 (°): enroscado en el apex, un poco sobre los pies al empujar (y así
+        en el cuadro que despega), la vuelta entera en el aire y 40° más al caer."""
         if f <= apex:
             return coil
-        if f <= to:
+        if f <= spin_from:
             return coil + pre
         return coil + pre + (total - pre) * g(f)
 
@@ -461,9 +469,9 @@ def ninja_whirl(ch, N):
 
     def foot(stance, f, z):
         """Un pie en el aire: su lugar de la guardia girado con el cuerpo (una vuelta entera hasta caer) y con el avance. Gira
-        recién un cuadro después de despegar (girando mientras dejaba el piso, la punta barría el suelo)."""
-        u = min(1.0, max(0.0, (times[f] - times[to + 1]) / (times[land] - times[to + 1])))
-        d = 360.0 * (1.0 - (1.0 - u) ** 2.2)
+        recién desde el primer cuadro en el aire, a la par del cuerpo (girando mientras dejaba el piso, la punta barría
+        el suelo)."""
+        d = 360.0 * g(f)
         x0, y0, yaw0 = stance
         p = Matrix.Rotation(math.radians(d), 3, 'Z') @ NA.V((x0, y0, 0.0))
         # la punta sigue para abajo los primeros cuadros del vuelo (aplanada de golpe al despegar, barría el piso)

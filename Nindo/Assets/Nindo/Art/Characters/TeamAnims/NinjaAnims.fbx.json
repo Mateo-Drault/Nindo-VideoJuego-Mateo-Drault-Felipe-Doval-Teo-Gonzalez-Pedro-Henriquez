@@ -240,12 +240,12 @@
     "lunge_from": 13,
     "lunge_air": true,
     "replay_skate_cm": {
-     "clip": 1.0,
-     "Ninja": 1.0,
-     "NinjaElite": 0.5,
-     "NinjaMountainMoves": 0.4,
-     "NinjaLakeMoves": 1.0,
-     "NinjaBambooMoves": 1.0
+     "clip": 1.9,
+     "Ninja": 1.9,
+     "NinjaElite": 0.9,
+     "NinjaMountainMoves": 0.9,
+     "NinjaLakeMoves": 1.9,
+     "NinjaBambooMoves": 1.9
     }
    },
    "normalized": {
@@ -314,24 +314,24 @@
     "peak_frame": 13,
     "variant_skate_cm": {
      "Ninja": 0.0,
-     "NinjaElite": 7.6,
-     "NinjaMountainMoves": 0.0,
+     "NinjaElite": 9.8,
+     "NinjaMountainMoves": 6.4,
      "NinjaLakeMoves": 0.0,
      "NinjaBambooMoves": 0.0
     },
-    "magnet_skate_cm": 0.0,
+    "magnet_skate_cm": 8.5,
     "magnet_curve_cm": {
      "0.0": [
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
-      0.0,
+      8.5,
+      8.5,
+      8.5,
+      8.5,
+      8.5,
+      8.5,
+      8.5,
+      8.5,
+      8.5,
+      8.0,
       0.0
      ],
      "0.15": [
@@ -365,7 +365,7 @@
     "game_hold_s": 0.158,
     "contact_tip_m": [
      -0.1,
-     -1.47,
+     -1.44,
      0.96
     ],
     "floor_skate_cm": {
@@ -402,9 +402,9 @@
     "replay_skate_cm": {
      "clip": 0.8,
      "Ninja": 0.8,
-     "NinjaElite": 0.9,
-     "NinjaMountainMoves": 0.9,
-     "NinjaLakeMoves": 5.3,
+     "NinjaElite": 0.7,
+     "NinjaMountainMoves": 0.8,
+     "NinjaLakeMoves": 13.1,
      "NinjaBambooMoves": 0.8
     }
    },
@@ -476,7 +476,7 @@
      "Ninja": 0.0,
      "NinjaElite": 0.0,
      "NinjaMountainMoves": 0.0,
-     "NinjaLakeMoves": 9.1,
+     "NinjaLakeMoves": 19.1,
      "NinjaBambooMoves": 0.0
     },
     "magnet_skate_cm": 0.0,
@@ -525,7 +525,7 @@
     "game_hold_s": 0.083,
     "contact_tip_m": [
      -0.13,
-     -1.57,
+     -1.54,
      1.39
     ],
     "floor_skate_cm": {
@@ -758,9 +758,9 @@
      31
     ],
     "replay_skate_cm": {
-     "clip": 1.9,
-     "Ninja": 1.9,
-     "NinjaLakeMoves": 1.9
+     "clip": 2.4,
+     "Ninja": 2.4,
+     "NinjaLakeMoves": 2.4
     }
    },
    "normalized": {
@@ -781,7 +781,7 @@
      "hands": 0.0,
      "legs": 0.0
     },
-    "hip_drop_cm": 0.9,
+    "hip_drop_cm": 0.8,
     "wrists": {
      "r": {
       "excess": 0.75,
@@ -799,7 +799,7 @@
      },
      "l": {
       "excess": 0.85,
-      "twist": 19.2,
+      "twist": 19.1,
       "fore": 92.8,
       "swivel": 23.0,
       "clamp": 16.3,
@@ -812,7 +812,7 @@
     },
     "solver_jump_deg": 14.0,
     "local_pop_deg": 0.0,
-    "local_max_deg": 64.5,
+    "local_max_deg": 64.9,
     "grip_gap_cm": {
      "r": {
       "ref": 6.0,
@@ -877,16 +877,16 @@
     "game_hold_s": 0.06,
     "contact_tip_m": [
      -0.09,
-     -3.74,
+     -3.52,
      0.69
     ],
     "floor_skate_cm": {
      "r": [
       [
-       27,
+       28,
        33,
-       0.94,
-       0.64
+       1.36,
+       1.36
       ]
      ],
      "l": []
@@ -2704,7 +2704,7 @@
      "20": 0.79
     },
     "hold_tip_mps": 2.4,
-    "peak_frame": 12,
+    "peak_frame": 13,
     "variant_skate_cm": {
      "NinjaLakeMoves": 0.0
     },
@@ -2753,8 +2753,8 @@
     "game_T_s": 0.6,
     "game_hold_s": 0.0,
     "contact_tip_m": [
-     -0.57,
-     -1.95,
+     -0.6,
+     -1.93,
      1.25
     ],
     "floor_skate_cm": {
@@ -2793,7 +2793,11 @@
      29,
      32
     ],
-    "replay_skate_cm": 0.1
+    "replay_skate_cm": 0.1,
+    "travel_dir": [
+     0.0,
+     1.0
+    ]
    },
    "normalized": {},
    "notes": "repliegue: salto de 3 m para atrás en arco",

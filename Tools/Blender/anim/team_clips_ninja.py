@@ -433,14 +433,17 @@ def thrust():
     # (cuadro, delante de su lugar en la guardia respecto de lo que avanzó el transform, altura)
     w = -0.08                                    # el paso afuera del aviso (base más ancha)
     # el de adelante despega último y en el primer cuadro del vuelo queda atrás de lo que avanzó el transform (sale del
-    # piso sin arrastrarse); el de atrás se soltó antes de que el transform se moviera
-    fly_r = [(13, -0.17, 0.07), (14, -0.10, 0.11), (15, -0.04, 0.12), (16, 0.0, 0.12), (18, 0.04, 0.11), (19, 0.07, 0.10),
-             (20, 0.10, 0.09), (21, 0.14, 0.08), (22, 0.18, 0.06), (23, 0.22, 0.05), (24, 0.24, 0.05), (25, 0.22, 0.04), (26, 0.20, 0.02)]
+    # piso sin arrastrarse); el de atrás se soltó antes de que el transform se moviera. El de adelante apoya el talón en
+    # f28, cuando el transform ya terminó (f27): en f26 al transform le quedan 10 cm y la curva de Unity los recorre hasta
+    # f27, así que en f27 el pie todavía está 2 cm arriba de su lugar y baja derecho
+    fly_r = [(13, -0.12, 0.07), (14, -0.10, 0.11), (15, -0.04, 0.12), (16, 0.0, 0.12), (18, 0.04, 0.11), (19, 0.07, 0.10),
+             (20, 0.10, 0.09), (21, 0.14, 0.08), (22, 0.18, 0.06), (23, 0.22, 0.05), (24, 0.24, 0.05), (25, 0.22, 0.04), (26, 0.20, 0.035),
+             (27, 0.20, 0.02)]
     fly_l = [(13, -0.10, 0.08), (14, -0.20, 0.10), (16, -0.20, 0.11), (18, -0.19, 0.10), (19, -0.19, 0.10), (21, -0.18, 0.09),
              (23, -0.17, 0.07), (25, -0.17, 0.04)]
     feet = {"r": [FR(0), FR(7, dx=w, lift=0.06), FR(apex, dx=w), FR(to, dx=w, pitch=34.0, lift=0.0)]
                  + [FR(f, tr[f] + o, dx=w if f < 16 else 0.0, z=z, ease="lin", lift=0.0) for f, o, z in fly_r]
-                 + [FR(27, lunge + 0.20, pitch=-10.0, ease="lin", lift=0.0), FR(29, lunge + 0.20), FR(33, lunge + 0.20), FR(37, lunge)],
+                 + [FR(28, lunge + 0.20, pitch=-10.0, ease="lin", lift=0.0), FR(29, lunge + 0.20), FR(33, lunge + 0.20), FR(37, lunge)],
             "l": [FL(0), FL(9), FL(apex, pitch=30.0), FL(to, pitch=50.0, z=0.05, ease="out", lift=0.0)]
                  + [FL(f, tr[f] + o, z=z, ease="lin", lift=0.0) for f, o, z in fly_l]
                  + [FL(27, lunge - 0.15, pitch=28.0, ease="out"), FL(33, lunge - 0.15, pitch=28.0), FL(n - 2, lunge)]}

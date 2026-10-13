@@ -237,7 +237,7 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             dh = max(held[:ap + 1])
             check(dh <= 0.02, f"{clip.name}: con 0.45 s de pausa no avanza con la pose del apex quieta ({dh * 100:.1f} cm)")
         # con el reloj del juego: segundos desde que arranca el paso hasta el golpe
-        tl = NA.StepTimeline(n, ap, a, windup_min=t.get("windup", 0.55))
+        tl = NA.StepTimeline(n, ap, a, windup_min=t.get("windup", 0.55), creep_in=lf is not None)
         rep["game_T_s"] = round(tl.T, 3)
         rep["game_hold_s"] = round(tl.hold, 3)
         rep["contact_tip_m"] = [round(x, 2) for x in tip[a]]
@@ -283,7 +283,7 @@ def replay_skate(clip, pts, roots_auth, tdir, n, apex, contact, windup, lunge, f
     en Unity (cúbica) y el transform como lo mueve Enemy (lineal entre cuadros en LungeAt). Medido así, la estocada
     patinaba 34-45 cm aunque los cuadros enteros dieran 0. Devuelve (peor total cm, peor por muestra cm, dónde)."""
     import numpy as np
-    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed)
+    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed, creep_in=frm is not None)
     import team_moves as TM
     knots = game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame, air=air)
     lin = None
@@ -1079,6 +1079,7 @@ def main():
     if lo:
         locomotion_weapon(ch, by_name, [nm for nm, _ in lo], [th for _, th in lo])
     last = max(b for a, b in ranges.values())
+    exported = False
     if EXPORT and (not ONLY or opt("--fbx")):
         if failures:
             print("NO SE EXPORTA: fallaron chequeos")
@@ -1099,6 +1100,9 @@ def main():
             for clip, frames in baked:
                 a, b = ranges[clip.name]
                 t = dict(clip.timing)
+                if getattr(clip, "travel_dir", None) is not None:
+                    # los saltos para atrás o de costado: fbx_skate mueve el transform en esa dirección (marco de autoría)
+                    t["travel_dir"] = [float(x) for x in clip.travel_dir]
                 nn = float(clip.frames)
                 norm = {k: round(t[k] / nn, 4) for k in ("apex", "contact") if k in t}
                 for k in ("hold", "active"):
@@ -1113,6 +1117,7 @@ def main():
             with open(FBX + ".json", "w", encoding="utf-8", newline="\n") as fh:
                 json.dump(info, fh, indent=1, ensure_ascii=False)
             print("EXPORTADO", FBX, "cuadros 1 ..", last, f"{os.path.getsize(FBX) / 1e6:.2f} MB")
+            exported = True
     if RENDERS:
         import team_review as TR
         rv = TR.Review(ch, RENDERS, partner=any(getattr(c, "partner", None) is not None for c, _ in baked))
@@ -1124,6 +1129,13 @@ def main():
             print(rv.clip_sheet(clip, ranges[clip.name][0], rootsd[clip.name], fs, [frame_label(clip, f) for f in fs], kaito_dist=kd))
         with open(os.path.join(RENDERS, CHAR + "_lint.json"), "w", encoding="utf-8") as fh:
             json.dump(reports, fh, indent=0)
+    if exported:
+        # al final porque vacía la escena: el FBX re-importado con sus curvas evaluadas entre cuadros (fbx_skate.py), la
+        # medida que no se engaña con una cadera que gira mucho en un cuadro sobre un pie apoyado
+        import fbx_skate as FS
+        fs_fail, fs_warn, _ = FS.run(CHAR, FBX, hits=hits)
+        failures.extend("FBX re-importado: " + m for m in fs_fail)
+        warnings.extend(fs_warn)
     print(f"listo en {time.time() - t0:.1f} s; avisos {len(warnings)}")
     if failures:
         print("FALLARON", len(failures), "chequeos:")

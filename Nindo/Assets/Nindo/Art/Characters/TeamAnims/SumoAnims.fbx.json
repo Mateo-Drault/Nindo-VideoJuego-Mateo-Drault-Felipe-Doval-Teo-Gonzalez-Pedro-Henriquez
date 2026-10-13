@@ -334,8 +334,8 @@
     "reach": 2.2,
     "lunge_from": 12,
     "replay_skate_cm": {
-     "clip": 1.2,
-     "Sumo": 1.2,
+     "clip": 1.3,
+     "Sumo": 1.3,
      "Ozeki": 90.2,
      "SumoLakeMoves": 95.9
     }
@@ -1746,7 +1746,11 @@
      29,
      36
     ],
-    "replay_skate_cm": 0.0
+    "replay_skate_cm": 0.0,
+    "travel_dir": [
+     -1.0,
+     0.0
+    ]
    },
    "normalized": {},
    "notes": "finta: salto pesado de 2.6 m hacia su derecha",
@@ -1822,7 +1826,11 @@
      29,
      36
     ],
-    "replay_skate_cm": 0.0
+    "replay_skate_cm": 0.0,
+    "travel_dir": [
+     1.0,
+     0.0
+    ]
    },
    "normalized": {},
    "notes": "finta: salto pesado de 2.6 m hacia su izquierda",

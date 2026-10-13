@@ -219,7 +219,11 @@ def harite_r(n, apex, contact, lunge, windup, name, state):
     # mientras el transform avanza, los pies se apoyan y se despegan en vertical (un cuadro antes ya están sobre su lugar,
     # a 2 cm; un cuadro después del despegue todavía ahí): Unity interpola el clip con curvas suaves entre cuadros y un pie
     # que llegaba todavía yendo se corría ~2 cm después de apoyar
-    feet = {"r": [FR(0), FR(apex), FR(contact, lunge + 0.11, pitch=-6.0, z=0.02, lift=0.08), FR(contact + 1, lunge + 0.12, pitch=-10.0, lift=0.0),
+    # el pie que da el paso despega primero para ARRIBA (apex + 1: el talón sube, la punta 4-5 cm y apenas 3 cm adelante):
+    # yendo derecho del apex al contacto salía 2.7 veces más rápido adelante que arriba y, en la curva que Unity pone entre
+    # el apex y el cuadro siguiente, la punta se arrastraba 3 cm antes de dejar el piso (más con una pausa del director)
+    feet = {"r": [FR(0), FR(apex), FR(apex + 1, 0.03, pitch=18.0, z=0.045, ease="in", lift=0.0),
+                  FR(contact, lunge + 0.11, pitch=-6.0, z=0.02, lift=0.08), FR(contact + 1, lunge + 0.12, pitch=-10.0, lift=0.0),
                   FR(contact + 3, lunge + 0.12), FR(n - 1, lunge, lift=0.04)],
             "l": [FL(0), FL(8), FL(apex, pitch=14.0), FL(done, pitch=22.0), FL(min(n, done + 4), lunge)]}
     return T.TeamClip(name, n, keys, travel=tr, feet=feet, notes="harite largo; aviso: la mano abierta junto a la oreja",
