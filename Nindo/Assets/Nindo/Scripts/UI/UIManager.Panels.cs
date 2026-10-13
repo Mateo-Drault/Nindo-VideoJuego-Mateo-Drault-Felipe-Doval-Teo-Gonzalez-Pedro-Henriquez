@@ -593,7 +593,8 @@ namespace Nindo
             rows = WithTargetSwitch(rows);   // UIControls.cs: "Cambiar objetivo" también se reasigna
             for (int i = 0; i < rows.Length; i++)
             {
-                // nueve renglones de 50 en la misma tarjeta (el último termina en -558: abajo queda lugar para una nota)
+                // diez renglones de 50 con "Cambiar objetivo" (el último en -586); la tarjeta crece hasta la nota de abajo
+                // (FitPauseRows)
                 float y = -136f - i * 50f;
                 UIFactory.Text("Row", pauseCard, rows[i].label, 28, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(100f, y + 20f), new Vector2(300, 40), TextAlignmentOptions.Left);
                 if (i == 0) { moveKey = UIFactory.KeyCap(pauseCard, "WASD", 44f, new Vector2(0f, 1f), new Vector2(420f, y)); continue; }
