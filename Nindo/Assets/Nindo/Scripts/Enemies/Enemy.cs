@@ -1332,16 +1332,6 @@ namespace Nindo
         public bool Asleep { get; private set; }
 
         /// <summary>
-        /// Contrato con EnemyAmbient (idles de ambiente: meditar, sparring, dormir): mientras pasa un loop de ambiente
-        /// en su puesto (en Scripted, porque en Idle Update le vuelve a poner la locomoción) lo marca con true, y vuelve a
-        /// false en AmbientAlert. Así un campamento de ambiente se duerme igual que uno en Idle, todo junto y quieto: el
-        /// sparring se hace en el lugar con el Animator, sin mover el agente (moviéndose no se duerme nunca). Mientras
-        /// esté dormido (Asleep), EnemyAmbient no corre su lógica y no lleva su fase contra Time.time: al despertar,
-        /// los dos del sparring siguen juntos donde quedaron.
-        /// </summary>
-        public bool AmbientIdle;
-
-        /// <summary>
         /// Prohíbe dormirlo mientras haya algún dueño anotado (un momento de guion de una sola vez; NO un loop de
         /// ambiente, que se duerme y se despierta con todo su campamento). Varios dueños conviven: cada uno saca el suyo.
         /// Si ya dormía, se lo despierta en el acto.
@@ -1358,11 +1348,13 @@ namespace Nindo
         List<object> sleepVetoes;
 
         /// <summary>
-        /// ¿Se puede dormir? Solo quieto en su puesto (Idle o en su loop de ambiente): vivo y ya arrancado (Start le dio
-        /// la vida y el lugar al que vuelve si se reinicia el encuentro), sin aggro (un jefe en pelea lo tiene) ni otro
-        /// guion, sin moverse (si volvía a su lugar después de perder a Kaito, primero termina de llegar) y sin vetos.
+        /// ¿Se puede dormir? Solo quieto en su puesto (Idle): vivo y ya arrancado (Start le dio la vida y el lugar al que
+        /// vuelve si se reinicia el encuentro), sin aggro (un jefe en pelea lo tiene) ni guion, sin moverse (si volvía a su
+        /// lugar después de perder a Kaito, primero termina de llegar) y sin vetos. Los idles de ambiente (EnemyAmbient:
+        /// meditar, el sparring en el lugar, dormir) corren en Idle (HoldsPose), así que se duermen con su campamento; el
+        /// sobresalto ya es Alert y los despierta.
         /// </summary>
-        public virtual bool CanSleep => (State == EnemyState.Idle || (State == EnemyState.Scripted && AmbientIdle))
+        public virtual bool CanSleep => State == EnemyState.Idle
                                         && !IsAggro && Health > 0f && knock.sqrMagnitude < 0.0001f
                                         && (agent == null || !agent.enabled || agent.velocity.sqrMagnitude < 0.01f)
                                         && (sleepVetoes == null || sleepVetoes.Count == 0);

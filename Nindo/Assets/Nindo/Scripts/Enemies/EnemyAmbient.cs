@@ -453,7 +453,9 @@ namespace Nindo
 
         void Update()
         {
-            if (enemy == null) return;
+            // dormido por ZoneCulling (lejos y fuera de cuadro) su Animator está apagado y congelado junto con el de su
+            // pareja: ni seguir el reloj del otro ni los eventos de los loops, así al despertar siguen donde quedaron
+            if (enemy == null || enemy.Asleep) return;
             if (pending) { pending = false; Begin(0f); }
             if (!holding)
             {
