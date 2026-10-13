@@ -59,8 +59,8 @@ namespace Nindo
             // Kokuyō suelta la espada, pierde la máscara y la luna vuelve antes del fundido (KokuyoBoss.FinaleSeconds)
             yield return new WaitForSecondsRealtime(FinalBoss() != null ? KokuyoBoss.FinaleSeconds : 3.5f);
             yield return Cutscene(EndingScene());
-            // el tema del final ya suena desde el reencuentro (si no llegó a entrar, entra acá)
-            Game.Audio?.PlayMusic("ending", 3f);
+            // el tema del final ya suena desde el reencuentro (si no llegó a entrar, entra acá; si suena, no se reinicia)
+            Game.Audio?.PlayEnding();
             Game.UI.ShowEnding();
         }
 
@@ -77,10 +77,10 @@ namespace Nindo
             // sostiene; si terminaba después, AudioManager ponía la música del dojo encima del reencuentro
             while (Game.Combat != null && Game.Combat.InCombat) yield return null;
             yield return null;
-            // PlayMusic no hace nada si ese tema sigue sonando; si la del dojo alcanzó a entrar, el final vuelve a entrar
-            // encima con un fundido. El silencio se funde en 1.5 s, no de golpe: con la música por fases (rama de música)
-            // Boss.Die toca el golpe final del tema de Kokuyō y lo que quede de su cola se apaga, no se corta
-            if (endingMusic) Game.Audio?.PlayMusic("ending", 1.5f);
+            // PlayEnding no reinicia el tema si ya suena; si la del dojo alcanzó a entrar, se funde debajo del final. El
+            // silencio se funde en 1.5 s, no de golpe: Boss.Die toca el golpe final del tema de Kokuyō (EndBossMusic) y lo
+            // que quede de su cola se apaga, no se corta
+            if (endingMusic) Game.Audio?.PlayEnding();
             else Game.Audio?.StopMusic(1.5f);
         }
 
@@ -157,7 +157,9 @@ namespace Nindo
                 yield return Wait(0.35f);
             }
             endingMusic = true;
-            Game.Audio?.PlayMusic("ending", 6f);
+            // el tema del final por el director de música: suena una vez entero (2 min 20 s) y deja el silencio, sin
+            // devolver la música de la zona
+            Game.Audio?.PlayEnding();
             yield return FreeGrandpa(grandpa);
 
             // 4) el reencuentro; 5) Kokuyō y el abuelo, los tres en cuadro

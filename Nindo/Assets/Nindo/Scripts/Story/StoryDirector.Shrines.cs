@@ -17,19 +17,20 @@ namespace Nindo
     {
         // ---- contrato con kaito-anim (Kaito.controller). Los momentos son fracciones de la duración del clip, la que
         // da anim.Length: los eventos del sidecar (KaitoTimings, lo genera Tools/Unity/kaito_timings.py) y, si la tabla no
-        // está regenerada, estos, que son los del clip entregado (PrayIncense: katana_down f27, incense_take f70,
-        // incense_light f88, incense_place f116, palms f128, rise f165 de 186; PrayQuick: kneel f11, palms f16 de 60).
-        // La katana la dejan y la retoman los clips (el hueso del arma): KatanaRest es solo para el "Pray" de antes
+        // está regenerada, estos, que son los del clip entregado (PrayIncense: katana_down f28, incense_take f70,
+        // incense_light f88, incense_place f116, palms f128, katana_up f159, rise f166 de 188; PrayQuick: kneel f11,
+        // katana_down f21, palms f28, katana_up f49, rise f57 de 70).
+        // La katana la dejan y la retoman los dos clips (el hueso del arma): KatanaRest es solo para el "Pray" de antes
         public const string PrayIncenseState = "PrayIncense", PrayQuickState = "PrayQuick", PrayOldState = "Pray";
-        const float NTake = 0.376f, NLight = 0.473f, NPlace = 0.624f, NPalms = 0.688f, NRise = 0.887f;
-        const float NQuickKneel = 0.183f, NQuickPalms = 0.267f;
+        const float NTake = 0.372f, NLight = 0.468f, NPlace = 0.617f, NPalms = 0.681f, NRise = 0.883f;
+        const float NQuickKneel = 0.157f, NQuickPalms = 0.4f;
         /// <summary>
         /// La llama del incienso se apaga con el segundo abanico de la izquierda (f98: un 36 % del tramo entre prenderlo y
         /// clavarlo); queda la brasa.
         /// </summary>
         const float FlameOutAlong = 0.36f;
-        /// <summary>Duraciones si Length no las conoce (el entero 6.2 s, el corto 2 s; el "Pray" de antes, 1.33 s).</summary>
-        const float PrayIncenseSeconds = 6.2f, PrayQuickSeconds = 2f, OldPraySeconds = 1.333f;
+        /// <summary>Duraciones si Length no las conoce (el entero 6.27 s, el corto 2.33 s; el "Pray" de antes, 1.33 s).</summary>
+        const float PrayIncenseSeconds = 6.267f, PrayQuickSeconds = 2.333f, OldPraySeconds = 1.333f;
         /// <summary>
         /// Rezo corto en un santuario nuevo: Kaito se arrodilla a un costado de la línea que va de la cámara de juego a la
         /// ceniza (m). Derecho delante del incensario, con la cámara a 52° la brasa caía justo detrás de su cabeza y el
@@ -239,7 +240,9 @@ namespace Nindo
             // si lo encontraron mientras rodeaba el santuario, ni se arrodilla
             if (!PrayInterrupted)
             {
-                // PrayQuick reza con la izquierda delante del pecho y la katana en la derecha: no hay que dejarla
+                // PrayQuick deja la katana en el piso a su derecha y la retoma él mismo (como PrayIncense). Corrido al
+                // costado y girado a medias hacia la ceniza, la hoja queda a 5.6 cm o más de la base de piedra en todo
+                // el rango de QuickReachFor (a 9.2 cm sin corrimiento)
                 int shot = PushInShot();
                 a.Play(state, 0.2f);
                 float t = 0f, n = 0f;
