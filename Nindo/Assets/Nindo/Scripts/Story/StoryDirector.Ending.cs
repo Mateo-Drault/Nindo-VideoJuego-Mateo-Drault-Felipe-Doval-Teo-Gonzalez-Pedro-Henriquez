@@ -56,10 +56,45 @@ namespace Nindo
             Game.Save.SetFlag(Flags.FinalBossDone);
             SaveSystem.Save();
             StartCoroutine(HoldSilence());
-            // Kokuyō suelta la espada, pierde la máscara y la luna vuelve antes del fundido (KokuyoBoss.FinaleSeconds)
-            yield return new WaitForSecondsRealtime(FinalBoss() != null ? KokuyoBoss.FinaleSeconds : 3.5f);
+            // Kokuyō suelta la espada, pierde la máscara y la luna vuelve antes del fundido (KokuyoBoss.FinaleSeconds).
+            // El final ya empezó: sin pausa ni mapa (estos planos corren en tiempo real y se vencían detrás del panel) y
+            // sin control. Antes Kaito podía correr esos 6.6 s hasta cp_dojo (a 19 m) y empezar un rezo corto encima del
+            // final. El golpe o el remate que lo venció termina solo; recién ahí queda quieto en la guardia
+            float start = Time.unscaledTime, finale = FinalBoss() != null ? KokuyoBoss.FinaleSeconds : 3.5f;
+            Game.InCutscene = true;
+            if (Game.Input != null) Game.Input.GameplayBlocked = true;
+            while (P != null && P.IsAlive && P.State != PlayerState.Locomotion && P.State != PlayerState.Scripted && Time.unscaledTime - start < finale)
+                yield return null;
+            P?.EnterScripted();
+            yield return Wait(finale - (Time.unscaledTime - start));
             yield return Cutscene(EndingScene());
             // el tema del final ya suena desde el reencuentro (si no llegó a entrar, entra acá; si suena, no se reinicia)
+            Game.Audio?.PlayEnding();
+            Game.UI.ShowEnding();
+        }
+
+        /// <summary>
+        /// La partida se guardó con Kokuyō vencido y sin el final visto (se salió al menú, se cerró el juego o se cortó el
+        /// Play entre el último golpe y la salida con el abuelo). Boss.Start apagó a Kokuyō y KageArenaFX dejó al abuelo
+        /// parado y sin cuerdas: Kokuyō vuelve en seiza sin espada ni máscara, el abuelo de rodillas ante el poste (las
+        /// cuerdas ya se deshicieron; Freed lo levanta igual) y el final entra desde el negro, en silencio.
+        /// </summary>
+        IEnumerator ResumeEnding()
+        {
+            Game.UI.SetFade(1f);
+            Game.InCutscene = true;
+            if (Game.Input != null) Game.Input.GameplayBlocked = true;
+            P.EnterScripted();
+            Zone.ForceRefresh();
+            FinalBoss()?.RestoreDefeated();
+            var gp = Game.World.Point("npc_grandpa_dojo");
+            var npc = gp != null ? gp.GetComponent<NPC>() : null;
+            if (npc != null) npc.KneelBound();
+            // la zona elige su música en el próximo cuadro (la del patio del dojo): el final arranca del silencio
+            yield return null;
+            yield return null;
+            Game.Audio?.StopMusic(0.5f);
+            yield return Cutscene(EndingScene());
             Game.Audio?.PlayEnding();
             Game.UI.ShowEnding();
         }

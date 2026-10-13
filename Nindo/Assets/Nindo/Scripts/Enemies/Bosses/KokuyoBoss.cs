@@ -1172,6 +1172,21 @@ namespace Nindo
         /// <summary>La reverencia en seiza (Kaito le devuelve su media cinta).</summary>
         public void Bow() => anim.Play(KokuyoTimings.SeizaBow.State, 0.25f);
 
+        /// <summary>
+        /// Vencido en una partida que se cerró en medio del final (StoryDirector.ResumeEnding): Boss.Start lo había
+        /// apagado. Vuelve al patio como lo deja la pelea (en seiza, la espada y la máscara en el piso: DefeatLoop), fuera
+        /// del combate (sin vida: OnEnable no lo registra) y sin colisiones.
+        /// </summary>
+        public void RestoreDefeated()
+        {
+            if (gameObject.activeSelf) return;
+            Health = 0f;
+            State = EnemyState.Dead;
+            gameObject.SetActive(true);
+            foreach (var c in GetComponentsInChildren<Collider>()) c.enabled = false;
+            anim.Play(KokuyoTimings.DefeatLoop.State, 0f);
+        }
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         /// <summary>Pruebas (AutoPilot "kokuyo act N"): salta al acto 2, 3 o a la última resistencia (4) en plena pelea.</summary>
         public void DebugJump(int act)

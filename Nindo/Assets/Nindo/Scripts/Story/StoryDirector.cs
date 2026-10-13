@@ -50,6 +50,9 @@ namespace Nindo
             P.SetKatanaVisible(s.HasFlag(Flags.KatanaObtained));
             UpdateObjective();
             if (!s.HasFlag(Flags.IntroDone)) StartCoroutine(Intro());
+            // se salió entre el último golpe a Kokuyō y la salida con el abuelo (FinalBossDone se guarda al caer él y
+            // Ending recién al irse): sin esto esa partida nunca volvía a ver el reencuentro ni el cartel del final
+            else if (s.HasFlag(Flags.FinalBossDone) && !s.HasFlag(Flags.Ending)) StartCoroutine(ResumeEnding());
             else
             {
                 StartCoroutine(Game.UI.Fade(0f, 1.2f));
@@ -60,17 +63,29 @@ namespace Nindo
         public void UpdateObjective() => Game.UI?.SetObjective(StoryText.Objective(Game.Save));
 
         // ================================================================== cinemáticas
+        // cinemáticas abiertas y cuántas pidieron franjas: dos que se pisan (el diálogo de una derrota mientras corre otra)
+        // no se devuelven el control una a la otra. Antes la primera en terminar sacaba las franjas, soltaba a Kaito y
+        // apagaba InCutscene con la otra todavía en el medio
+        int cutsceneDepth, letterboxDepth;
+
         IEnumerator Cutscene(IEnumerator body, bool letterbox = true)
         {
             // si justo estaba en pausa (p. ej. Esc durante la cámara lenta de la muerte de un jefe) la
-            // cinemática espera: si no, corría detrás del panel y el diálogo avanzaba con los clics del menú
-            while (Game.IsPaused) yield return null;
+            // cinemática espera: si no, corría detrás del panel y el diálogo avanzaba con los clics del menú.
+            // El rezo corto no es una cinemática: una que arrancaba en el medio (el diálogo de la derrota de Chikuō, la
+            // cascada) pasaba a Kaito de rodillas a la guardia con la katana del piso a la mano y, al terminar, lo
+            // dejaba congelado con el controlador apagado hasta que el rezo terminaba. Espera a que se levante (≤ 2.3 s);
+            // el rezo entero corre adentro de su propia cinemática, así que no se espera a sí mismo
+            while (Game.IsPaused || praying) yield return null;
+            bool first = cutsceneDepth++ == 0;
             Game.InCutscene = true;
             if (Game.Input != null) Game.Input.GameplayBlocked = true;
-            if (letterbox) Game.UI?.Letterbox(true);
-            P?.EnterScripted();
+            if (letterbox && letterboxDepth++ == 0) Game.UI?.Letterbox(true);
+            // la de adentro no vuelve a tomar a Kaito: EnterScripted lo pasa a la guardia y le cortaba la pose a la de afuera
+            if (first) P?.EnterScripted();
             yield return body;
-            if (letterbox) Game.UI?.Letterbox(false);
+            if (letterbox && --letterboxDepth == 0) Game.UI?.Letterbox(false);
+            if (--cutsceneDepth > 0) yield break;
             Game.Camera?.CancelAllShots();
             P?.ExitScripted();
             Game.InCutscene = false;
