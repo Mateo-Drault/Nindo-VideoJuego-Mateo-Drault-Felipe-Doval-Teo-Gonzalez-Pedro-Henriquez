@@ -1058,6 +1058,15 @@ namespace Nindo
             anim.Play(config.animHit, 0.03f);
         }
 
+        /// <summary>No vuelve a atacar hasta 't' (Time.time), sin cortar lo que está haciendo: el zanshin de las habilidades
+        /// de Kaito (él es invulnerable; GiveRoom aturdía como un golpe a los que estaban atacando).</summary>
+        public void HoldAttacksUntil(float t)
+        {
+            if (!IsAlive) return;
+            if (committed) CancelCommit();
+            nextAttackTime = Mathf.Max(nextAttackTime, t);
+        }
+
         // ---------------------------------------------------------------- recibir golpes
         public virtual HitResult ReceiveHit(in DamageInfo info)
         {
