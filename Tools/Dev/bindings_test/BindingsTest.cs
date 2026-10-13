@@ -22,7 +22,7 @@ namespace Nindo.Tests
             if (!ok) { fails++; Console.WriteLine("FALLA: " + what); }
         }
 
-        static BindingTable New(string[] acts) => new BindingTable(BindingCatalog.Build(acts), BindingCatalog.Reserved, BindingCatalog.MenuReserved, BindingCatalog.Spares);
+        static BindingTable New(string[] acts) => new BindingTable(BindingCatalog.Build(acts), BindingCatalog.Reserved, BindingCatalog.MenuReserved, BindingCatalog.MapReserved, BindingCatalog.Spares);
 
         static int R(BindingTable t, string id) { int r = t.IndexOf(id); if (r < 0) throw new Exception("sin fila " + id); return r; }
         static int K(Key k) => (int)k;
@@ -36,6 +36,8 @@ namespace Nindo.Tests
             Swaps();
             Refusals();
             MenuInputs();
+            MapInputs();
+            Touchpad();
             ClearRules();
             Persistence();
             NewActionMerge();
@@ -64,7 +66,7 @@ namespace Nindo.Tests
             }
         }
 
-        /// <summary>Lo de fábrica hace lo mismo que el InputReader de antes (salvo las terceras teclas L y Tab).</summary>
+        /// <summary>Lo de fábrica hace lo mismo que el InputReader de antes (salvo las terceras teclas, que no se veían: la L del dash y el clic medio de fijar).</summary>
         static void SameAsOldReader()
         {
             var old = new Dictionary<int, string>
@@ -101,7 +103,10 @@ namespace Nindo.Tests
             }
             foreach (var kv in now) if (!old.ContainsKey(kv.Key)) diffs.Add(BindingCatalog.CodeId(kv.Key) + ": nueva para " + string.Join(",", kv.Value));
             Console.WriteLine("Diferencias con el InputReader de antes:\n  " + string.Join("\n  ", diffs));
-            Check(diffs.Count == 2 && diffs.Any(x => x.StartsWith("Key.L:")) && diffs.Any(x => x.StartsWith("Key.Tab:")), "solo cambian L y Tab");
+            Check(diffs.Count == 2 && diffs.Any(x => x.StartsWith("Key.L:")) && diffs.Any(x => x.StartsWith("Mouse.Middle:")), "solo cambian L y el clic medio");
+            // las que mostraba la tarjeta de la pausa (Glyph y GlyphAlt de antes) siguen siendo la principal y la alternativa
+            int dash = R(t, "Dash"), lk = R(t, "Lock");
+            Check(t.Get(dash, Kb, 0) == K(Key.Space) && t.Get(dash, Kb, 1) == K(Key.LeftShift) && t.Get(lk, Kb, 0) == K(Key.Q) && t.Get(lk, Kb, 1) == K(Key.Tab), "dash Espacio / Shift, fijar Q / Tab");
         }
 
         static void Swaps()
@@ -168,11 +173,11 @@ namespace Nindo.Tests
             res = t.Assign(next, Kb, 0, K(Key.W));   // la casilla de la rueda: W era de Mover arriba
             Check(res.outcome == BindOutcome.Taken && t.Get(up, Kb, 0) == 0 && t.Get(up, Kb, 1) == K(Key.UpArrow), "W a Siguiente objetivo: arriba se queda con la flecha");
             Check(t.FindProblem() == null, "sin choques");
-            // lo mismo con fijar: Q a la casilla de la rueda de Siguiente objetivo deja a fijar con el clic medio
+            // lo mismo con fijar: Q a la casilla de la rueda de Siguiente objetivo deja a fijar con Tab
             t.Reset(-1);
             int lock_ = R(t, "Lock");
             res = t.Assign(next, Kb, 0, K(Key.Q));
-            Check(res.outcome == BindOutcome.Taken && res.other == lock_ && t.Get(lock_, Kb, 0) == 0 && t.Get(lock_, Kb, 1) == BindCode.MouseMiddle, "Q a Siguiente objetivo: fijar se queda con el clic medio");
+            Check(res.outcome == BindOutcome.Taken && res.other == lock_ && t.Get(lock_, Kb, 0) == 0 && t.Get(lock_, Kb, 1) == K(Key.Tab), "Q a Siguiente objetivo: fijar se queda con Tab");
             Check(t.FindProblem() == null, "sin choques");
         }
 
@@ -263,6 +268,74 @@ namespace Nindo.Tests
             // y al cargar (preferencias editadas a mano) también se ignoran
             var problems = t.Load("1|Pause.k1=Mouse.Left|Map.k0=Key.UpArrow|Map.p0=Pad.West|Pause.p1=Pad.RStickDown", BindingCatalog.ParseCode);
             Check(problems.Count == 4 && t.IsDefault(Kb) && t.IsDefault(Pd), "lo de menú cargado a mano se ignora: " + string.Join("; ", problems));
+        }
+
+        /// <summary>
+        /// Fijar (centra en Kaito) y moverse (corre el cursor) también se leen con el mapa abierto: nada de lo que el mapa
+        /// usa por su cuenta (el clic arrastra, la rueda, + y - y los gatillos acercan), ni directo ni por intercambio.
+        /// </summary>
+        static void MapInputs()
+        {
+            var t = New(ActsMap);
+            int lk = R(t, "Lock"), up = R(t, "MoveUp"), atk = R(t, "Attack"), a1 = R(t, "Ability1"), par = R(t, "Parry");
+            foreach (int c in new[] { BindCode.MouseLeft, K(Key.Equals), K(Key.Minus), K(Key.NumpadPlus), K(Key.NumpadMinus) })
+            {
+                var res = t.Assign(lk, Kb, 0, c);
+                Check(!res.Ok && res.refusal == BindRefusal.Reserved && res.reason == "mapa", "Fijar no toma " + BindingCatalog.CodeId(c));
+                res = t.Assign(up, Kb, 1, c);
+                Check(!res.Ok && res.refusal == BindRefusal.Reserved && res.reason == "mapa", "Mover arriba no toma " + BindingCatalog.CodeId(c));
+            }
+            foreach (int c in new[] { P(GamepadButton.LeftTrigger), P(GamepadButton.RightTrigger) })
+            {
+                var res = t.Assign(lk, Pd, 1, c);
+                Check(!res.Ok && res.reason == "mapa", "Fijar no toma " + BindingCatalog.CodeId(c));
+            }
+            // la B cierra el mapa (Volver): fijar no la puede tener
+            var r2 = t.Assign(lk, Pd, 0, P(GamepadButton.East));
+            Check(!r2.Ok && r2.refusal == BindRefusal.LockedElsewhere && r2.other == R(t, "Cancel"), "B no fija (cerraría el mapa)");
+            Check(t.IsDefault(Kb) && t.IsDefault(Pd), "lo rechazado no cambió nada");
+            // lo que el mapa no usa sí: el clic medio y el clic derecho para fijar, RB en el mando
+            Check(t.Assign(lk, Kb, 1, BindCode.MouseMiddle).outcome == BindOutcome.Assigned, "fijar con el clic medio");
+            t.Reset(-1);
+            var r3 = t.Assign(lk, Kb, 1, BindCode.MouseRight);
+            Check(r3.outcome == BindOutcome.Taken && r3.other == par && t.Get(par, Kb, 1) == K(Key.K), "fijar con el clic derecho: Parry se queda con K");
+            Check(t.Assign(lk, Pd, 1, P(GamepadButton.RightShoulder)).Ok, "fijar con RB");
+            // por intercambio tampoco: Q a Atacar le daría a fijar el clic izquierdo; se queda con su otra
+            t.Reset(-1);
+            var r4 = t.Assign(atk, Kb, 0, K(Key.Q));
+            Check(r4.outcome == BindOutcome.Taken && t.Get(lk, Kb, 0) == 0 && t.Get(lk, Kb, 1) == K(Key.Tab), "Q a Atacar: fijar no recibe el clic");
+            // RS a la habilidad del gatillo: fijar no recibe RT, y con RS como único botón se rechaza
+            t.Reset(-1);
+            var r5 = t.Assign(a1, Pd, 0, P(GamepadButton.RightStick));
+            Check(!r5.Ok && r5.refusal == BindRefusal.OnlyKey && r5.other == lk, "RS a Corte del Viento: fijar no puede quedarse con RT");
+            // las que no se leen con el mapa siguen tomando el clic
+            Check(t.Assign(par, Kb, 0, BindCode.MouseLeft).outcome == BindOutcome.Swapped, "Parry toma el clic izquierdo (no se lee con el mapa)");
+            Check(t.FindProblem() == null, "sin choques: " + t.FindProblem());
+            // y al cargar (preferencias editadas a mano) también se ignoran
+            var problems = New(ActsMap).Load("1|Lock.k1=Mouse.Left|MoveUp.k1=Key.NumpadPlus|Lock.p1=Pad.LeftTrigger", BindingCatalog.ParseCode);
+            Check(problems.Count == 3, "lo del mapa cargado a mano se ignora: " + string.Join("; ", problems));
+        }
+
+        /// <summary>El panel táctil (PlayStation) abre el mapa: fijo, solo para mostrar, y no cuenta como un botón que sirve en todo mando.</summary>
+        static void Touchpad()
+        {
+            var t = New(ActsMap);
+            int map = R(t, "Map"), atk = R(t, "Attack");
+            Check(t.Get(map, Pd, 1) == BindCode.PadTouchpad && t.Locked(map, Pd, 1), "el táctil es la alternativa fija del mapa");
+            Check(t.Usable(map, Pd) == 1 && t.Count(map, Pd) == 2, "el táctil no cuenta como usable");
+            Check(t.Clear(map, Pd, 0).refusal == BindRefusal.LastKey, "no se le puede quitar Vista al mapa (en un Xbox no tendría nada)");
+            Check(t.Assign(atk, Pd, 1, BindCode.PadTouchpad).refusal == BindRefusal.WrongDevice, "el táctil no se asigna");
+            Check(t.Assign(map, Pd, 1, P(GamepadButton.North)).refusal == BindRefusal.Locked, "la casilla del táctil es fija");
+            // Vista a la alternativa (RB) de Atacar: el mapa pasa a RB y conserva el táctil
+            var res = t.Assign(atk, Pd, 1, P(GamepadButton.Select));
+            Check(res.outcome == BindOutcome.Swapped && t.Get(map, Pd, 0) == P(GamepadButton.RightShoulder) && t.Get(map, Pd, 1) == BindCode.PadTouchpad, "Vista a Atacar: el mapa pasa a RB");
+            Check(t.Save(BindingCatalog.CodeId) == "1|Attack.p1=Pad.Select|Map.p0=Pad.RightShoulder", "el táctil no se guarda: " + t.Save(BindingCatalog.CodeId));
+            // lo guardado le saca Vista al mapa (se la dio a la pausa antes de que existiera): recibe LS aunque tenga el táctil
+            var u = New(ActsMap);
+            u.Load("1|Pause.p1=Pad.Select", BindingCatalog.ParseCode);
+            Check(u.Get(map, Pd, 0) == P(GamepadButton.LeftStick) && u.Rescued.Count == 1, "sin Vista, el mapa recibe LS");
+            var bad = New(ActsMap).Load("1|Map.p1=Pad.North", BindingCatalog.ParseCode);
+            Check(bad.Count == 1, "la casilla del táctil no se carga");
         }
 
         static void ClearRules()
@@ -385,7 +458,9 @@ namespace Nindo.Tests
                     for (int dd = 0; dd < 2; dd++)
                     {
                         if (!t.Row(q).shown[dd]) continue;
-                        if (t.Count(q, dd) < 1) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} sin teclas"); badAt = i; }
+                        bool hasUsable = false;
+                        for (int ss = 0; ss < 2; ss++) { int dc = t.Default(q, dd, ss); hasUsable |= dc != 0 && !BindCode.IsDisplayOnly(dc); }
+                        if (hasUsable && t.Usable(q, dd) < 1) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} sin teclas que sirvan"); badAt = i; }
                         for (int ss = 0; ss < 2; ss++)
                         {
                             int c = t.Get(q, dd, ss);
@@ -393,6 +468,7 @@ namespace Nindo.Tests
                             if (c != 0 && BindCode.DeviceOf(c) != dd) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} tiene un control del otro dispositivo"); badAt = i; }
                             if (c != 0 && t.Row(q).hold && BindCode.IsImpulse(c)) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} se mantiene con un impulso"); badAt = i; }
                             if (c != 0 && !t.Locked(q, dd, ss) && BindingCatalog.Reserved(c) != null) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} tiene una reservada"); badAt = i; }
+                            if (c != 0 && !t.Locked(q, dd, ss) && BindCode.IsDisplayOnly(c)) { Check(false, $"fuzz {seed} paso {i}: {t.Row(q).id} tiene uno que solo se muestra"); badAt = i; }
                         }
                     }
                 if (i % 997 == 0)

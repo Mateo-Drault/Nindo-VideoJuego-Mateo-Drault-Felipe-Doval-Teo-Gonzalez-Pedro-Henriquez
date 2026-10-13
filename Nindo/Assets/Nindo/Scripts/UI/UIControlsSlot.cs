@@ -10,7 +10,7 @@ namespace Nindo
     /// papel y, debajo, un trazo de pincel que se enciende en dorado cuando está elegida. Confirmar o clic espera la
     /// tecla nueva; clic derecho la quita. La dibuja UIManager (UIControls.cs) en cada cuadro con <see cref="Animate"/>.
     /// </summary>
-    public class UIControlsSlot : Selectable, ISubmitHandler, IPointerClickHandler
+    public class UIControlsSlot : Selectable, ISubmitHandler, IPointerClickHandler, IPointerMoveHandler
     {
         public int row, dev, slot;
         public RectTransform key;
@@ -45,9 +45,25 @@ namespace Nindo
             Selected = false;
         }
 
-        public override void OnPointerEnter(PointerEventData e)
+        /// <summary>
+        /// Al ocultarse la página con una casilla elegida el EventSystem no le avisa (no manda eventos a lo inactivo): si
+        /// no, al volver a abrir quedaban dos filas con el kunai.
+        /// </summary>
+        protected override void OnDisable()
         {
-            base.OnPointerEnter(e);
+            base.OnDisable();
+            Selected = false;
+            byPointer = false;
+            silent = false;
+        }
+
+        /// <summary>
+        /// El mouse elige la casilla cuando se mueve sobre ella, no cuando ella llega abajo del mouse quieto: el módulo de
+        /// la UI manda "entrar" también si la lista se corre (o la página se abre) debajo del puntero, y la casilla que
+        /// pasaba por ahí se robaba la selección (con el teclado, Abajo saltaba dos filas).
+        /// </summary>
+        public void OnPointerMove(PointerEventData e)
+        {
             if (!IsInteractable() || EventSystem.current == null || EventSystem.current.currentSelectedGameObject == gameObject) return;
             selectingByPointer = true;
             EventSystem.current.SetSelectedGameObject(gameObject);

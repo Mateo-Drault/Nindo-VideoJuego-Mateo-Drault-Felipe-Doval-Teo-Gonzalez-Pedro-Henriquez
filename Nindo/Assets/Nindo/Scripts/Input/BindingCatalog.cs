@@ -13,8 +13,8 @@ namespace Nindo
     /// </summary>
     public static class BindingCatalog
     {
-        /// <summary>Contextos: en juego (explorar, pelear) y en menús y diálogos.</summary>
-        public const int Play = 1, Menu = BindingTable.MenuContext;
+        /// <summary>Contextos: en juego (explorar, pelear), en menús y diálogos y con el mapa abierto (UI/UIMap.cs).</summary>
+        public const int Play = 1, Menu = BindingTable.MenuContext, MapView = BindingTable.MapContext;
         public const int GroupMove = 0, GroupCombat = 1, GroupExplore = 2, GroupMenu = 3;
         public static readonly string[] GroupNames = { "Movimiento", "Combate", "Exploración", "Menú" };
 
@@ -34,16 +34,17 @@ namespace Nindo
         static int K(Key k) => (int)k;
         static int P(GamepadButton b) => BindCode.Pad((int)b);
 
-        // Las de fábrica son las de siempre, con dos por dispositivo: el dash tenía además L y fijar, Tab (eran
-        // terceras teclas escondidas; quien las quiera las asigna). Fijar queda con el clic de la rueda, que va
-        // con la rueda para cambiar de objetivo.
+        // Las de fábrica son las de siempre, con dos por dispositivo: quedan las dos que mostraba la tarjeta de la pausa
+        // (dash: Espacio y Shift; fijar: Q y Tab). Las terceras, que no se veían en ningún lado (la L del dash y el clic
+        // de la rueda para fijar), se asignan a mano.
         static readonly Spec[] Specs =
         {
             new Spec("Attack", "Atacar", GroupCombat, Play, 0, BindCode.MouseLeft, K(Key.J), P(GamepadButton.West), P(GamepadButton.RightShoulder)),
             new Spec("Parry", "Parry", GroupCombat, Play, 0, BindCode.MouseRight, K(Key.K), P(GamepadButton.LeftShoulder), 0),
             new Spec("Dash", "Esquivar (dash)", GroupCombat, Play, 0, K(Key.Space), K(Key.LeftShift), P(GamepadButton.East), P(GamepadButton.South)),
-            // fijar se suelta manteniéndolo (PlayerController.UpdateTargeting): la rueda o un toque del stick no sirven
-            new Spec("Lock", "Fijar objetivo", GroupCombat, Play, 0, K(Key.Q), BindCode.MouseMiddle, P(GamepadButton.RightStick), 0) { hold = true },
+            // fijar se suelta manteniéndolo (PlayerController.UpdateTargeting): la rueda o un toque del stick no sirven. Con
+            // el mapa abierto centra en Kaito: no puede ser nada de lo que usa el mapa
+            new Spec("Lock", "Fijar objetivo", GroupCombat, Play | MapView, 0, K(Key.Q), K(Key.Tab), P(GamepadButton.RightStick), 0) { hold = true },
             new Spec("LockNext", "Siguiente objetivo", GroupCombat, Play, 0, BindCode.WheelDown, 0, BindCode.RStickRight, 0),
             new Spec("LockPrev", "Objetivo anterior", GroupCombat, Play, 0, BindCode.WheelUp, 0, BindCode.RStickLeft, 0),
             new Spec("Finisher", "Ejecutar", GroupCombat, Play, ShareFinish, K(Key.F), 0, P(GamepadButton.North), 0),
@@ -51,21 +52,25 @@ namespace Nindo
             new Spec("Ability2", "Torbellino de Hojas", GroupCombat, Play, 0, K(Key.Digit2), K(Key.I), P(GamepadButton.LeftTrigger), 0),
             new Spec("Interact", "Interactuar", GroupExplore, Play, ShareFinish, K(Key.E), K(Key.F), P(GamepadButton.North), 0),
             // el mapa se abre desde la pausa y se cierra con su misma tecla (UI/UIMap.cs): también es de menú, así que ni
-            // Enter / A / B ni nada de lo que usan los menús y el mapa abierto (el clic arrastra, la rueda acerca)
-            new Spec("Map", "Mapa", GroupExplore, Play | Menu, 0, K(Key.M), 0, P(GamepadButton.Select), 0),
+            // Enter / A / B ni nada de lo que usan los menús y el mapa abierto (el clic arrastra, la rueda acerca). En los
+            // de PlayStation el panel táctil también lo abre, como en sus juegos: fijo y solo para mostrar (en un Xbox no
+            // hay, y esa casilla queda vacía)
+            new Spec("Map", "Mapa", GroupExplore, Play | Menu | MapView, 0, K(Key.M), 0, P(GamepadButton.Select), BindCode.PadTouchpad | L),
             // Esc y Start pausan siempre: así nunca se puede quedar sin forma de abrir el menú
-            new Spec("Pause", "Pausa", GroupMenu, Play | Menu, ShareBack, K(Key.Escape) | L, K(Key.P), P(GamepadButton.Start) | L, 0),
+            new Spec("Pause", "Pausa", GroupMenu, Play | Menu | MapView, ShareBack, K(Key.Escape) | L, K(Key.P), P(GamepadButton.Start) | L, 0),
             // confirmar y volver son los de la navegación de los menús (el EventSystem usa Enter / A y Esc / B)
             new Spec("Submit", "Confirmar", GroupMenu, Menu, 0, K(Key.Enter) | L, L, P(GamepadButton.South) | L, L),
-            new Spec("Cancel", "Volver", GroupMenu, Menu, ShareBack, K(Key.Escape) | L, L, P(GamepadButton.East) | L, L),
+            // también cierra el mapa: fijar no puede tener la B (cerraría el mapa y centraría a la vez)
+            new Spec("Cancel", "Volver", GroupMenu, Menu | MapView, ShareBack, K(Key.Escape) | L, L, P(GamepadButton.East) | L, L),
         };
 
+        // con el mapa abierto el movimiento corre el cursor de la lámina
         static readonly Spec[] MoveSpecs =
         {
-            new Spec("MoveUp", "Mover arriba", GroupMove, Play, 0, K(Key.W), K(Key.UpArrow), 0, 0),
-            new Spec("MoveDown", "Mover abajo", GroupMove, Play, 0, K(Key.S), K(Key.DownArrow), 0, 0),
-            new Spec("MoveLeft", "Mover a la izquierda", GroupMove, Play, 0, K(Key.A), K(Key.LeftArrow), 0, 0),
-            new Spec("MoveRight", "Mover a la derecha", GroupMove, Play, 0, K(Key.D), K(Key.RightArrow), 0, 0),
+            new Spec("MoveUp", "Mover arriba", GroupMove, Play | MapView, 0, K(Key.W), K(Key.UpArrow), 0, 0),
+            new Spec("MoveDown", "Mover abajo", GroupMove, Play | MapView, 0, K(Key.S), K(Key.DownArrow), 0, 0),
+            new Spec("MoveLeft", "Mover a la izquierda", GroupMove, Play | MapView, 0, K(Key.A), K(Key.LeftArrow), 0, 0),
+            new Spec("MoveRight", "Mover a la derecha", GroupMove, Play | MapView, 0, K(Key.D), K(Key.RightArrow), 0, 0),
         };
 
         /// <summary>
@@ -91,7 +96,7 @@ namespace Nindo
                 row.shown[BindingTable.Pad] = false;
                 rows.Add(row);
             }
-            var pad = new BindRow { id = "MovePad", label = "Moverse", group = GroupMove, order = 0, context = Play };
+            var pad = new BindRow { id = "MovePad", label = "Moverse", group = GroupMove, order = 0, context = Play | MapView };
             pad.shown[BindingTable.Pad] = true;
             pad.defaults[2] = BindCode.PadMoveStick; pad.defaults[3] = BindCode.PadMoveDpad;
             for (int s = 0; s < 4; s++) pad.locked[s] = true;
@@ -150,11 +155,30 @@ namespace Nindo
             return null;
         }
 
+        /// <summary>
+        /// Lo que el mapa abierto lee por su cuenta (UI/UIMap.cs MapControls): el clic izquierdo arrastra la lámina, la
+        /// rueda, + y - (también los del teclado numérico) y los gatillos acercan y alejan, y el stick derecho hacia arriba
+        /// o abajo también. Lo que se lee con el mapa abierto (fijar, moverse) no lo puede tener: un clic para arrastrar
+        /// también centraría en Kaito. El + y el - de la distribución del teclado los suma InputBindings.
+        /// </summary>
+        public static string MapReserved(int code)
+        {
+            switch (code)
+            {
+                case BindCode.MouseLeft: case BindCode.WheelUp: case BindCode.WheelDown:
+                case (int)Key.Equals: case (int)Key.Minus: case (int)Key.NumpadPlus: case (int)Key.NumpadMinus:
+                case BindCode.PadBase + (int)GamepadButton.LeftTrigger: case BindCode.PadBase + (int)GamepadButton.RightTrigger:
+                case BindCode.RStickUp: case BindCode.RStickDown:
+                    return "mapa";
+            }
+            return null;
+        }
+
         // teclas que nadie usa de fábrica, de las más a mano a las menos (BindingTable.Load las da en este orden)
         static readonly int[] SpareKeys =
         {
             K(Key.N), K(Key.B), K(Key.G), K(Key.H), K(Key.T), K(Key.R), K(Key.Z), K(Key.X), K(Key.C), K(Key.V),
-            K(Key.Tab), K(Key.CapsLock), K(Key.Digit3), K(Key.Digit4), K(Key.Digit5), K(Key.L), K(Key.O), K(Key.Y),
+            K(Key.CapsLock), K(Key.Digit3), K(Key.Digit4), K(Key.Digit5), K(Key.L), K(Key.O), K(Key.Y),
         };
         static readonly int[] SparePad =
         {

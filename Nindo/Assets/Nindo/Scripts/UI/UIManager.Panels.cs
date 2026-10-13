@@ -590,6 +590,7 @@ namespace Nindo
                 ("Moverse", Act.Submit), ("Atacar", Act.Attack), ("Parry", Act.Parry), ("Esquivar (dash)", Act.Dash), ("Fijar objetivo", Act.Lock),
                 ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact), ("Mapa", Act.Map),
             };
+            rows = WithTargetSwitch(rows);   // UIControls.cs: "Cambiar objetivo" también se reasigna
             for (int i = 0; i < rows.Length; i++)
             {
                 // nueve renglones de 50 en la misma tarjeta (el último termina en -558: abajo queda lugar para una nota)
@@ -597,9 +598,9 @@ namespace Nindo
                 UIFactory.Text("Row", pauseCard, rows[i].label, 28, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(100f, y + 20f), new Vector2(300, 40), TextAlignmentOptions.Left);
                 if (i == 0) { moveKey = UIFactory.KeyCap(pauseCard, "WASD", 44f, new Vector2(0f, 1f), new Vector2(420f, y)); continue; }
                 controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(420f, y)), rows[i].act, false));
-                controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(520f, y)), rows[i].act == Act.Ability1 ? Act.Ability2 : rows[i].act, rows[i].act != Act.Ability1));
+                controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(520f, y)), PauseSecondAct(rows[i].act), PauseSecondIsAlt(rows[i].act)));
             }
-            UIFactory.Text("Hint", pauseCard, "Se cambian en Opciones › Controles", 22, UIFactory.PaperDim, new Vector2(0f, 1f), new Vector2(100f, -584f), new Vector2(660, 30), TextAlignmentOptions.Left);
+            UIFactory.Text("Hint", pauseCard, "Se cambian en Opciones › Controles", 22, UIFactory.PaperDim, new Vector2(0f, 1f), new Vector2(100f, FitPauseRows()), new Vector2(660, 30), TextAlignmentOptions.Left);
             pausePanel.SetActive(false);
         }
 
@@ -680,7 +681,8 @@ namespace Nindo
                 rt.anchoredPosition = new Vector2(106f - 24f * (1f - k), rt.anchoredPosition.y);
             }
             float ck = UIAnim.OutCubic((pauseOpenT - 0.1f) / 0.2f);
-            pauseCard.anchoredPosition = new Vector2(370f + 120f * (1f - ck), -20f);
+            var at = FitCard(pauseCard, new Vector2(370f, -20f));   // UIControls.cs: que entre en 21:9, 32:9 y 4:3
+            pauseCard.anchoredPosition = new Vector2(at.x + 120f * (1f - ck), at.y);
             pauseCardImg.color = new Color(1f, 1f, 1f, ck);
             RefreshControls();
         }
@@ -761,7 +763,8 @@ namespace Nindo
             optionsOpenT += dt;
             optionsColumn.fillAmount = UIAnim.OutCubic(optionsOpenT / 0.18f);
             float ck = UIAnim.OutCubic((optionsOpenT - 0.05f) / 0.2f);
-            optionsCard.anchoredPosition = new Vector2(330f + 120f * (1f - ck), -10f);
+            var at = FitCard(optionsCard, new Vector2(330f, -10f));
+            optionsCard.anchoredPosition = new Vector2(at.x + 120f * (1f - ck), at.y);
             optionsCardImg.color = new Color(1f, 1f, 1f, ck);
         }
 

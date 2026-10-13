@@ -24,10 +24,16 @@ namespace Nindo
         // (0.48 del alto: 21 px a 1080p, 14 a 720p), que acá es donde hay que leerlos; la fila crece a 52 para que entren
         const float CtlRowH = 52f, CtlHeadH = 50f, CtlLabelX = 130f, CtlSlot0X = 580f, CtlSlot1X = 790f;
         const float CtlKeyH = 44f, CtlKeyLong = 0.48f;
-        // la lista empieza 20 px debajo de "Principal / Alternativa" y se esfuma en los bordes; se detiene siempre con el
-        // borde de arriba sobre el comienzo de una fila o de un grupo (CtlStopPad más abajo, fuera de lo esfumado: nunca
-        // queda una fila cortada al medio bajo los títulos de las columnas)
-        const float CtlViewX = 60f, CtlViewTop = -204f, CtlViewW = 940f, CtlViewH = 546f, CtlSoft = 24f, CtlStopPad = 12f;
+        // la lista empieza 8 px debajo de "Principal / Alternativa" y se esfuma en los bordes (CtlSoft); se detiene
+        // siempre con la fila o el grupo de arriba justo debajo de lo esfumado (CtlStopPad = CtlSoft): nunca queda una
+        // fila cortada al medio bajo los títulos de las columnas, y lo que asoma de la anterior en la franja esfumada se
+        // apaga del todo (ControlsRow.group, ver FadeControlsRows)
+        const float CtlViewX = 60f, CtlViewTop = -192f, CtlViewW = 940f, CtlViewH = 558f, CtlSoft = 24f, CtlStopPad = CtlSoft;
+        // la primera fila arranca donde arrancaba con la lista 12 px más abajo: arriba de todo tampoco se esfuma nada
+        const float CtlListTop = 18f;
+        // las tarjetas de Opciones, Controles y la pausa se achican si la pantalla no las deja entrar (21:9, 32:9, 4:3):
+        // margen a los bordes y dónde termina la columna de tinta de la izquierda
+        const float CardMargin = 24f, CardLeft = 680f;
         // la rueda corre la lista una fila y media por muesca, con la misma suavidad que el teclado y el mando
         const float CtlWheelStops = 1.5f;
         static readonly Color CtlDim = new Color(0.62f, 0.59f, 0.53f, 1f);       // como los ítems no elegidos
@@ -40,6 +46,7 @@ namespace Nindo
             public RectTransform rt;
             public TextMeshProUGUI label, unbound;
             public Image band, cursor;
+            public CanvasGroup group;
             public readonly UIControlsSlot[] slots = new UIControlsSlot[BindingTable.Slots];
             public float k;
         }
@@ -50,7 +57,13 @@ namespace Nindo
         RectTransform controlsCard, controlsViewport, controlsTrack, controlsThumb, controlsInfoRoot;
         Image controlsCardImg, controlsBlocker;
         CanvasGroup controlsInfoGroup;
-        TextMeshProUGUI controlsInfo, controlsInfoSub, controlsResetLabel;
+        TextMeshProUGUI controlsInfo, controlsInfoSub, controlsResetLabel, controlsPadNote;
+        // la línea de ayuda (Cambiar, Quitar, Volver) con las teclas de papel de la lista, no con fichas en el texto
+        RectTransform controlsHintRoot;
+        readonly RectTransform[] controlsHintKeys = new RectTransform[4];
+        readonly TextMeshProUGUI[] controlsHintLabels = new TextMeshProUGUI[3];
+        readonly float[] controlsHintLabelW = new float[3];
+        static readonly string[] ControlsHintWords = { "Cambiar", "Quitar", "Volver" };
         NindoSelector controlsDevice;
         readonly RectTransform[] controlsContent = new RectTransform[BindingTable.Devices];
         readonly List<ControlsRow>[] controlsRows = { new List<ControlsRow>(), new List<ControlsRow>() };
@@ -133,6 +146,15 @@ namespace Nindo
             controlsInfo.rectTransform.pivot = new Vector2(0.5f, 0.5f);
             controlsInfoSub = UIFactory.Text("Sub", controlsInfoRoot, "", 22, UIFactory.Paper, new Vector2(0.5f, 0.5f), new Vector2(0f, -19f), new Vector2(920f, 32f), TextAlignmentOptions.Center);
             controlsInfoSub.rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            controlsHintRoot = UIFactory.Rect("Hint", controlsInfoRoot, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(920f, 44f));
+            for (int i = 0; i < controlsHintKeys.Length; i++) controlsHintKeys[i] = UIFactory.KeyCap(controlsHintRoot, "?", 38f, new Vector2(0.5f, 0.5f), Vector2.zero);
+            for (int i = 0; i < controlsHintLabels.Length; i++)
+            {
+                var l = UIFactory.NoWrap(UIFactory.Text("Label", controlsHintRoot, ControlsHintWords[i], 24, CtlDim, new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(200f, 40f), TextAlignmentOptions.Left));
+                l.rectTransform.pivot = new Vector2(0f, 0.5f);
+                controlsHintLabels[i] = l;
+                controlsHintLabelW[i] = l.GetPreferredValues(ControlsHintWords[i], 9999f, 40f).x;
+            }
 
             controlsBack = UIFactory.MenuItem("Back", controlsCard, "Volver", new Vector2(300, 66), CloseControls, 36f);
             controlsReset = UIFactory.MenuItem("Reset", controlsCard, "Restablecer", new Vector2(360, 66), ResetControls, 36f);
@@ -163,7 +185,7 @@ namespace Nindo
             var order = new List<int>();
             for (int r = 0; r < t.RowCount; r++) if (t.Row(r).shown[dev]) order.Add(r);
             order.Sort((a, b) => t.Row(a).group != t.Row(b).group ? t.Row(a).group.CompareTo(t.Row(b).group) : t.Row(a).order != t.Row(b).order ? t.Row(a).order.CompareTo(t.Row(b).order) : a.CompareTo(b));
-            float y = 6f;
+            float y = CtlListTop;
             int group = -1;
             foreach (int r in order)
             {
@@ -189,9 +211,9 @@ namespace Nindo
             // por qué hay teclas apagadas (en el mando la primera apagada es el movimiento, que no es por los menús)
             y += 10f;
             stops.Add(y - CtlStopPad);
-            string note = dev == BindingTable.Keys ? "Las teclas apagadas son fijas: así siempre podés pausar, confirmar y volver."
-                                                   : "Los botones apagados son fijos: el stick y la cruceta mueven a Kaito,\ny así siempre podés pausar, confirmar y volver.";
-            UIFactory.Text("Note", content, note, 21, CtlDim, new Vector2(0f, 1f), new Vector2(70f, -y), new Vector2(820, dev == BindingTable.Keys ? 30f : 60f), TextAlignmentOptions.TopLeft);
+            string note = dev == BindingTable.Keys ? "Las teclas apagadas son fijas: así siempre podés pausar, confirmar y volver." : ControlsPadNote(false);
+            var noteText = UIFactory.Text("Note", content, note, 21, CtlDim, new Vector2(0f, 1f), new Vector2(70f, -y), new Vector2(820, dev == BindingTable.Keys ? 30f : 60f), TextAlignmentOptions.TopLeft);
+            if (dev == BindingTable.Pad) controlsPadNote = noteText;
             y += dev == BindingTable.Keys ? 44f : 74f;
             // el final también es una parada: se agrega aire abajo hasta la parada siguiente al final justo
             float end = y - CtlViewH, max = 0f;
@@ -203,11 +225,17 @@ namespace Nindo
             content.gameObject.SetActive(false);
         }
 
+        /// <summary>Por qué hay botones apagados en el mando; en los de PlayStation, también el panel táctil del mapa.</summary>
+        static string ControlsPadNote(bool touchpad) => touchpad
+            ? "Los botones apagados son fijos: el stick y la cruceta mueven a Kaito,\nel panel táctil abre el mapa y siempre podés pausar, confirmar y volver."
+            : "Los botones apagados son fijos: el stick y la cruceta mueven a Kaito,\ny así siempre podés pausar, confirmar y volver.";
+
         ControlsRow BuildControlsRow(RectTransform content, int r, int dev, float y)
         {
             var t = InputBindings.Table;
             var ui = new ControlsRow { row = r, y = y };
             ui.rt = UIFactory.Rect("Row " + t.Row(r).id, content, new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(0f, -y), new Vector2(CtlViewW, CtlRowH));
+            ui.group = ui.rt.gameObject.AddComponent<CanvasGroup>();
             // la fila elegida: un trazo apenas claro detrás y el kunai apuntando al nombre (como en los menús)
             ui.band = UIFactory.Centered("Band", ui.rt, new Color(UIFactory.Paper.r, UIFactory.Paper.g, UIFactory.Paper.b, 0f), new Vector2(0f, 0.5f), new Vector2(470f, 0f), new Vector2(900f, 58f), UISprites.BrushBanner);
             ui.cursor = UIFactory.Centered("Cursor", ui.rt, UIFactory.Gold, new Vector2(0f, 0.5f), new Vector2(CtlLabelX - 64f, 0f), new Vector2(86f, 30f), UISprites.Kunai);
@@ -313,6 +341,10 @@ namespace Nindo
             captureReturn = null;
             controlsBlocker.gameObject.SetActive(false);
             controlsOpen = false;
+            // la casilla elegida se suelta antes de ocultarla: oculta ya no recibe el aviso (UIControlsSlot.OnDisable
+            // también lo cubre si la pausa se cerró de golpe)
+            var es = EventSystem.current;
+            if (es != null && es.currentSelectedGameObject != null && es.currentSelectedGameObject.transform.IsChildOf(controlsCard)) es.SetSelectedGameObject(null);
             controlsCard.gameObject.SetActive(false);
             optionsCard.gameObject.SetActive(true);
             SetResetArmed(false);
@@ -396,6 +428,8 @@ namespace Nindo
             var t = InputBindings.Table;
             controlsShownVersion = InputBindings.Version;
             controlsShownFamily = InputBindings.PadFamily();
+            int map = t.IndexOf("Map");
+            controlsPadNote.text = ControlsPadNote(controlsShownFamily == 2 && map >= 0 && t.Get(map, BindingTable.Pad, 1) == BindCode.PadTouchpad);
             for (int d = 0; d < BindingTable.Devices; d++)
             {
                 int fam = ControlsFamily(d);
@@ -421,30 +455,61 @@ namespace Nindo
             return UIFactory.KeyChip(InputBindings.Display(code, fam) ?? "?", fam);
         }
 
-        /// <summary>Las teclas de la página en el dispositivo que se está usando (Enter / A cambia, Supr o clic derecho / X quita, Esc / B vuelve).</summary>
+        /// <summary>
+        /// Las teclas de la página en el dispositivo que se está usando (Enter / A cambia, Supr o clic derecho / X quita,
+        /// Esc / B vuelve), dibujadas como las de la lista: en una página de teclas, la misma tecla de dos formas se leía a
+        /// medio hacer. Las fichas en el texto quedan para los avisos de dos renglones.
+        /// </summary>
         void ControlsHint()
         {
             var t = InputBindings.Table;
             controlsHintPad = Game.Input != null && Game.Input.UsingGamepad;
             int dev = controlsHintPad ? BindingTable.Pad : BindingTable.Keys, fam = ControlsFamily(dev);
-            string change = ControlsChip(t.Get((int)Act.Submit, dev, 0), dev);
+            UIFactory.SetKeyCap(controlsHintKeys[0], InputBindings.Display(t.Get((int)Act.Submit, dev, 0), fam) ?? "?", fam, CtlKeyLong);
             // con el mouse se quita con el clic derecho sobre la casilla (UIControlsSlot): si no se dice, nadie lo encuentra
-            string clear = controlsHintPad ? UIFactory.KeyChip(fam == 2 ? "□" : "X", fam) : UIFactory.KeyChip("Supr", 0) + " " + UIFactory.KeyChip("Clic der.", 0);
-            string back = ControlsChip(t.Get((int)Act.Cancel, dev, 0), dev);
-            controlsInfo.text = change + " Cambiar        " + clear + " Quitar        " + back + " Volver";
-            controlsInfo.color = CtlDim;
-            controlsInfo.fontSize = 24f;
+            UIFactory.SetKeyCap(controlsHintKeys[1], controlsHintPad ? (fam == 2 ? "□" : "X") : "Supr", fam, CtlKeyLong);
+            UIFactory.SetKeyCap(controlsHintKeys[2], "Clic der.", 0, CtlKeyLong);
+            controlsHintKeys[2].gameObject.SetActive(!controlsHintPad);
+            UIFactory.SetKeyCap(controlsHintKeys[3], InputBindings.Display(t.Get((int)Act.Cancel, dev, 0), fam) ?? "?", fam, CtlKeyLong);
+            // tecla, nombre, aire; todo centrado en el renglón
+            const float keyGap = 8f, labelGap = 10f, groupGap = 44f;
+            float w = 0f;
+            for (int g = 0; g < 3; g++)
+            {
+                w += controlsHintKeys[g == 0 ? 0 : g == 1 ? 1 : 3].sizeDelta.x + labelGap + controlsHintLabelW[g];
+                if (g == 1 && !controlsHintPad) w += keyGap + controlsHintKeys[2].sizeDelta.x;
+                if (g < 2) w += groupGap;
+            }
+            float x = -w * 0.5f;
+            for (int g = 0; g < 3; g++)
+            {
+                int k = g == 0 ? 0 : g == 1 ? 1 : 3;
+                x = PlaceHintKey(controlsHintKeys[k], x);
+                if (g == 1 && !controlsHintPad) x = PlaceHintKey(controlsHintKeys[2], x + keyGap);
+                controlsHintLabels[g].rectTransform.anchoredPosition = new Vector2(x + labelGap, 0f);
+                x += labelGap + controlsHintLabelW[g] + groupGap;
+            }
+            controlsHintRoot.gameObject.SetActive(true);
+            controlsInfo.text = "";
             controlsInfoSub.text = "";
             controlsInfoLife = 0f;
             controlsHintShown = true;
         }
 
+        /// <summary>Pone la tecla con su borde izquierdo en x y devuelve dónde termina.</summary>
+        static float PlaceHintKey(RectTransform key, float x)
+        {
+            float w = key.sizeDelta.x;
+            key.anchoredPosition = new Vector2(x + w * 0.5f, 0f);
+            return x + w;
+        }
+
         /// <param name="life">Segundos a la vista; 0 = hasta el próximo aviso (la espera de una tecla).</param>
         void ControlsInfo(string title, string sub, Color c, float life)
         {
+            controlsHintRoot.gameObject.SetActive(false);
             controlsInfo.text = title;
             controlsInfo.color = c;
-            controlsInfo.fontSize = 27f;
             controlsInfoSub.text = sub ?? "";
             controlsInfoT = 0f;
             controlsInfoLife = life;
@@ -465,6 +530,7 @@ namespace Nindo
                 return;
             }
             capture = CaptureState.Arming;
+            InputBindings.BeginCapture();
             captureSlot = s;
             captureByPointer = byPointer;
             captureT = 0f;
@@ -492,21 +558,18 @@ namespace Nindo
                     // contaría como apretado ahora). Tomar es por flanco, así que pasado medio segundo ya no hay riesgo
                     // aunque algo siga apretado (un gatillo que no vuelve del todo no traba la espera)
                     captureT += dt;
-                    if (InputBindings.CaptureCancelPressed(captureSlot.dev)) { CancelCapture(); break; }
+                    if (CaptureInterrupted()) break;
                     if (!InputBindings.AnyHeld() || captureT > 0.5f) { capture = CaptureState.Listening; captureT = 0f; }
                     break;
                 case CaptureState.Listening:
+                    // sin tiempo límite: Esc y Start cancelan siempre, y quien busca la tecla o agarra el mando no tiene
+                    // que volver a empezar
                     captureT += dt;
-                    if (InputBindings.CaptureCancelPressed(captureSlot.dev)) { CancelCapture(); break; }
+                    if (CaptureInterrupted()) break;
                     // abierta con un clic, el mouse cuenta recién pasado el tiempo de un doble clic: si no, el segundo
                     // clic le daba el clic izquierdo a la acción (y le sacaba el ataque al mouse)
                     int code = InputBindings.Capture(captureSlot.dev, !captureByPointer || captureT >= 0.4f);
                     if (code != BindCode.None) { ApplyCapture(captureSlot, code); EndCapture(); }
-                    else if (captureT > 8f)
-                    {
-                        ControlsInfo("Sin cambios", captureSlot.dev == BindingTable.Keys ? "No llegó ninguna tecla" : "No llegó ningún botón", UIFactory.Paper, 3f);
-                        EndCapture();
-                    }
                     break;
                 case CaptureState.Releasing:
                     // la tecla tomada (Enter, la A) no puede confirmar nada en el menú al volver la navegación; confirmar
@@ -542,6 +605,23 @@ namespace Nindo
         {
             var es = EventSystem.current;
             if (captureReturn != null && es != null && es.currentSelectedGameObject == null) SelectControlsSlot(captureReturn);
+        }
+
+        /// <summary>
+        /// Cancelar la espera: Esc o Start, la ventana que pierde el foco (Alt+Tab: el Alt quedaba asignado) o el mando
+        /// que se desconecta mientras se esperaba uno de sus botones.
+        /// </summary>
+        bool CaptureInterrupted()
+        {
+            if (InputBindings.CaptureCancelPressed(captureSlot.dev) || !Application.isFocused) { CancelCapture(); return true; }
+            if (captureSlot.dev == BindingTable.Pad && !InputBindings.PadConnected)
+            {
+                Game.Audio?.Play("denied", null, 0.5f);
+                ControlsInfo("Se desconectó el mando", "Sin cambios", CtlWarn, 4f);
+                EndCapture();
+                return true;
+            }
+            return false;
         }
 
         void CancelCapture()
@@ -653,6 +733,8 @@ namespace Nindo
                     else if (res.reason == "cruceta") ControlsInfo("La cruceta mueve a Kaito", pick, CtlWarn, 4f);
                     // la pausa y el mapa también se leen con un menú abierto: el clic o las flechas harían dos cosas
                     else if (res.reason == "menu") ControlsInfo(chip + " se usa en los menús", label + (dev == BindingTable.Keys ? " necesita otra tecla" : " necesita otro botón"), CtlWarn, 4f);
+                    // fijar y moverse también se leen con el mapa abierto: el clic lo arrastra, la rueda y los gatillos acercan
+                    else if (res.reason == "mapa") ControlsInfo(chip + " se usa en el mapa", label + (dev == BindingTable.Keys ? " necesita otra tecla" : " necesita otro botón"), CtlWarn, 4f);
                     else ControlsInfo(chip + " es del sistema", pick, CtlWarn, 4f);
                     break;
                 case BindRefusal.LockedElsewhere:
@@ -697,7 +779,8 @@ namespace Nindo
             if (!optionsPanel.activeSelf) { ResetControlsPage(); return; }
             controlsOpenT += dt;
             float ck = UIAnim.OutCubic(controlsOpenT / 0.2f);
-            controlsCard.SetPos(new Vector2(330f + 90f * (1f - ck), -10f));
+            var at = FitCard(controlsCard, new Vector2(330f, -10f));
+            controlsCard.SetPos(new Vector2(at.x + 90f * (1f - ck), at.y));
             controlsCardImg.color = new Color(1f, 1f, 1f, ck);
 
             UpdateCapture(dt);
@@ -759,6 +842,7 @@ namespace Nindo
                 content.anchoredPosition = p;
             }
             UpdateControlsThumb(content);
+            FadeControlsRows(content.anchoredPosition.y);
 
             // el aviso se va y vuelven las teclas de la página (cambian con el dispositivo que se usa)
             bool padUser = Game.Input != null && Game.Input.UsingGamepad;
@@ -783,7 +867,8 @@ namespace Nindo
         {
             if (sel == controlsLastSel) return;
             controlsLastSel = sel;
-            if (sel == null || InputBindings.PointerOver((RectTransform)sel.transform)) return;
+            // con el mouse encima de la casilla ya se ve; solo si está dentro de la lista (debajo, tapada, también la "toca")
+            if (sel == null || (InputBindings.PointerOver((RectTransform)sel.transform) && InputBindings.PointerOver(controlsViewport))) return;
             var content = controlsContent[controlsDev];
             float viewH = controlsViewport.rect.height, max = Mathf.Max(0f, content.sizeDelta.y - viewH);
             if (sel == controlsDevice.gameObject) { controlsScrollTarget = 0f; return; }
@@ -817,6 +902,68 @@ namespace Nindo
                 }
                 return;
             }
+        }
+
+        /// <summary>
+        /// Las filas que se van por arriba se apagan solas: en una parada la anterior queda entera dentro de la franja
+        /// esfumada del borde (CtlStopPad) y no asoma ni el pie de sus teclas; al correrse se va apagando con su alto.
+        /// Apagada tampoco se puede elegir con el mouse (estaría ahí sin verse).
+        /// </summary>
+        void FadeControlsRows(float scroll)
+        {
+            foreach (var row in controlsRows[controlsDev])
+            {
+                float a = Mathf.Clamp01((row.y + CtlRowH - scroll - CtlStopPad) / CtlRowH);
+                row.group.SetAlpha(a);
+                bool hit = a > 0.5f;
+                if (row.group.blocksRaycasts != hit) row.group.blocksRaycasts = hit;
+            }
+        }
+
+        /// <summary>
+        /// Posición (y escala) de una tarjeta del panel para que entre en la pantalla: el canvas es de 1920 x 1080 con
+        /// mitad ancho y mitad alto, así que en 21:9 queda de 935 de alto (la de Opciones mide 930) y en 4:3 de 1663 de
+        /// ancho. Se achica lo justo y se corre sin pisar la columna de tinta; en 16:9 queda igual que siempre.
+        /// </summary>
+        Vector2 FitCard(RectTransform card, Vector2 pos)
+        {
+            float W = root.rect.width, H = root.rect.height;
+            if (W < 1f || H < 1f) return pos;
+            Vector2 size = card.sizeDelta;
+            float k = Mathf.Min(1f, (H - 2f * CardMargin) / size.y, (W - CardMargin - CardLeft) / size.x);
+            card.SetScale(k);
+            float hw = size.x * k * 0.5f, hh = size.y * k * 0.5f;
+            pos.x = Mathf.Min(Mathf.Max(pos.x, CardLeft + hw - W * 0.5f), W * 0.5f - CardMargin - hw);
+            pos.y = Mathf.Min(Mathf.Max(pos.y, -(H * 0.5f - CardMargin - hh)), H * 0.5f - CardMargin - hh);
+            return pos;
+        }
+
+        // ================================================================== tarjeta de la pausa
+        /// <summary>
+        /// La tarjeta de controles de la pausa también dice cómo se cambia de objetivo, debajo de fijar: se reasigna como
+        /// todo, y si no estuviera ahí lo que el jugador cambió solo se veía en Opciones › Controles.
+        /// </summary>
+        static (string label, Act act)[] WithTargetSwitch((string label, Act act)[] rows)
+        {
+            var list = new List<(string label, Act act)>(rows);
+            list.Insert(list.FindIndex(r => r.act == Act.Lock) + 1, ("Cambiar objetivo", Act.LockPrev));
+            return list.ToArray();
+        }
+
+        /// <summary>La segunda tecla de un renglón de la pausa: la de la otra habilidad, la de la otra dirección o la alternativa.</summary>
+        static Act PauseSecondAct(Act a) => a == Act.Ability1 ? Act.Ability2 : a == Act.LockPrev ? Act.LockNext : a;
+        static bool PauseSecondIsAlt(Act a) => a != Act.Ability1 && a != Act.LockPrev;
+
+        /// <summary>
+        /// La nota va un renglón debajo del último y la tarjeta crece hasta ahí (con ocho renglones de 56 queda como
+        /// antes: 640). El paso entre renglones se mide de las teclas ya puestas, así sirve con cualquier armado.
+        /// </summary>
+        float FitPauseRows()
+        {
+            float pitch = controlKeys[0].row.anchoredPosition.y - controlKeys[2].row.anchoredPosition.y;
+            float hint = controlKeys[controlKeys.Count - 1].row.anchoredPosition.y - pitch;
+            pauseCard.sizeDelta = new Vector2(pauseCard.sizeDelta.x, 56f - hint);
+            return hint;
         }
 
         /// <summary>'n' paradas más abajo (o más arriba si es negativo) desde 'from', sin salirse de la lista.</summary>
