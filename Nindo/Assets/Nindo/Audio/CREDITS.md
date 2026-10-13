@@ -29,6 +29,9 @@ abajo) o sintetizado por `Tools/Audio/build_audio.py`.
 | `boss_final*` | [Revenge](https://opengameart.org/content/revenge) | TAD | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | cortado en compases y reordenado: intro, un loop por acto (el acto 3 medio tono arriba y el 4 dos semitonos arriba), dos compases de entrada por acto y el golpe final (c74) como cierre en los dos tonos; estante de +6 dB arriba de 3.5 kHz, ganancia por acto (acto 1 +1.5 dB, acto 3 +0.4 dB, acto 4 +0.8 dB), limitador a -1.3 dBFS |
 | `ending` | [Sakuya4](https://peritune.com/blog/2018/12/21/sakuya4/) | PeriTune | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | silencios recortados, fundido de 1 s al final, sonoridad normalizada |
 
+Aprobación: Felipe aprobó por escrito, el 11 de octubre de 2026, bajar y usar en el juego la música de jefes
+y del final elegida en la fase C2 (los temas de esta tabla, con sus cortes por fase).
+
 El crédito de los temas CC BY 4.0 sale en el cartel del final del juego (UIManager.Panels, BuildEnd): la
 licencia pide nombrar autor, licencia y que se modificaron en todo lo que se distribuye, y este archivo no
 viaja en la build.
