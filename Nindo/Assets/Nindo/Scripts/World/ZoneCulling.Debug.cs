@@ -96,17 +96,25 @@ namespace Nindo
             else if (!hudWanted && hud != null) Destroy(hud);
         }
 
-        /// <summary>Partículas en loop (del mundo y las de AddDynamic) que están simulando ahora (las pausadas por estar
-        /// escondidas no).</summary>
+        /// <summary>Partículas en loop (del mundo y las de AddDynamic) que están simulando ahora: ni las pausadas por estar
+        /// escondidas ni las que pausa el culling de Unity (ver Simulating).</summary>
         public static int ParticlesSimulating => Instance != null ? Instance.CountSimulating() : 0;
         public static int ParticlesTotal => Instance != null ? Instance.totalParticles + Instance.dynLoops : 0;
 
         int CountSimulating()
         {
             int n = CountDynamicSimulating();
-            if (items != null) for (int i = 0; i < items.Length; i++) if (items[i].ps != null && items[i].ps.isPlaying) n++;
+            if (items != null) for (int i = 0; i < items.Length; i++) if (items[i].ps != null && items[i].r != null && Simulating(items[i].ps, items[i].r)) n++;
             return n;
         }
+
+        /// <summary>
+        /// ¿Simula ahora? En pausa no (isPlaying es false). Con el modo de serie de Unity (Automatic, que en un loop es
+        /// Pause) Unity tampoco lo simula si nadie lo dibujó en el último frame: isVisible, que cuenta cualquier cámara, la
+        /// vista Scene y las sombras. Sin esto, con On = false se contaban como simulando todas las de fuera de cuadro.
+        /// </summary>
+        static bool Simulating(ParticleSystem ps, Renderer r) =>
+            ps.isPlaying && (ps.main.cullingMode == ParticleSystemCullingMode.AlwaysSimulate || r.isVisible);
 
         /// <summary>
         /// Los renderers que pide solo la cámara de juego en el último frame (sin el Linger ni las otras cámaras): con
@@ -139,7 +147,7 @@ namespace Nindo
             sb.Append(" | renderers ").Append(litRenderers).Append('/').Append(totalRenderers);
             if (On && camCount > 1 && mainCam >= 0) sb.Append(" (cámara de juego sola ").Append(CountMainCamera()).Append(')');
             if (!HideBatched) sb.Append(" (lote estático siempre prendido)");
-            sb.Append(" | dinámicos ").Append(dynLit).Append('/').Append(dynCount);
+            sb.Append(" | dinámicos ").Append(CountDynamicOn()).Append('/').Append(dynCount);
             sb.Append(" | casters de sombra ").Append(litCasters).Append('/').Append(totalCasters);
             sb.Append(" | celdas en cuadro ").Append(litCells).Append('/').Append(cells != null ? cells.Length : 0);
             sb.Append(twoLines ? "\n" : " | ").Append("enemigos despiertos ").Append(awake).Append('/').Append(sleepers.Count);
@@ -452,8 +460,8 @@ namespace Nindo
             {
                 RenderInto(cam, ref checkA);
                 stats = Describe(false);
-                // "sin": todo prendido sin despertar a nadie; el próximo LateUpdate vuelve a apagar lo que sobra
-                ShowItems();
+                // "sin": todo dibujado sin prender nada (ni despertar a nadie, ni reanudar partículas) y vuelto a esconder
+                ShowItemsForCheck();
                 foreach (var s in sleepers)
                     if (s.e != null && s.e.Asleep) foreach (var r in s.e.SleepHidden) if (r != null) r.forceRenderingOff = false;
                 RenderInto(cam, ref checkB);
@@ -462,6 +470,8 @@ namespace Nindo
             {
                 foreach (var s in sleepers)
                     if (s.e != null && s.e.Asleep) foreach (var r in s.e.SleepHidden) if (r != null) r.forceRenderingOff = true;
+                foreach (var r in checkShown) if (r != null) r.forceRenderingOff = true;
+                checkShown.Clear();
                 foreach (var c in checkCanvases) if (c != null) c.enabled = true;
             }
             var pa = checkA.GetPixelData<Color32>(0);
@@ -513,19 +523,27 @@ namespace Nindo
             Destroy(t);
         }
 
-        /// <summary>Los renderers del mundo y los dinámicos prendidos (sin tocar enemigos ni la cascada), para el "sin" de
-        /// CheckFrame.</summary>
-        void ShowItems()
+        /// <summary>
+        /// El "sin" de CheckFrame: lo escondido del mundo y lo dinámico se dibuja (sin tocar enemigos ni la cascada) pero
+        /// no se prende: ni cambian las cuentas ni se reanudan las partículas pausadas (se dibujan quietas, y fuera de cuadro
+        /// da igual). Antes se prendían de verdad: con CheckEvery corriendo, las partículas dinámicas escondidas se ponían
+        /// al día en cada prueba y nunca quedaban en pausa más que el intervalo, así que lo que se miraba no era lo que ve
+        /// quien juega. RunCheck las vuelve a esconder.
+        /// </summary>
+        void ShowItemsForCheck()
         {
-            for (int c = 0; c < cells.Length; c++)
+            checkShown.Clear();
+            for (int i = 0; i < items.Length; i++)
             {
-                ref var cell = ref cells[c];
-                int end = cell.start + cell.count;
-                for (int i = cell.start; i < end; i++)
-                    if (!items[i].on) Set(ref items[i], ref cell, true);
+                ref var it = ref items[i];
+                if (it.on || it.r == null) continue;
+                it.r.forceRenderingOff = false;
+                checkShown.Add(it.r);
             }
-            ShowDynamic();
+            ShowDynamicForCheck(checkShown);
         }
+
+        readonly List<Renderer> checkShown = new List<Renderer>(256);
 
         /// <summary>La cámara con el estado de culling de ahora, en una textura del tamaño de la pantalla (se reusa).</summary>
         static void RenderInto(Camera cam, ref Texture2D tex)
