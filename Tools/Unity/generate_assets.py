@@ -1136,7 +1136,8 @@ def audio_entries():
     for k in sorted(sfx):
         clips = [g(p) for p in sfx[k] if g(p)]
         if clips:
-            entries.append((k, clips, vols.get(k, 1.0), 0.06, k not in ("ui_select", "ui_move", "ui_open", "ui_close", "ui_start", "area_title", "dialogue", "denied", "lock", "seal")))
+            entries.append((k, clips, vols.get(k, 1.0), 0.06, k not in ("ui_select", "ui_move", "ui_open", "ui_close", "ui_start", "area_title", "dialogue", "denied", "lock", "seal",
+                                                                         "map_unroll", "map_roll", "map_reveal")))
     music = {}
     for p in glob.glob(os.path.join(P_AUDIO, "Music", "*.*")):
         if p.endswith(".meta"):

@@ -32,6 +32,9 @@ namespace Nindo
         {
             get { int n = 0; if (seals != null) foreach (var s in seals) if (s) n++; return n; }
         }
+        /// <summary>Niebla del mapa: lo que Kaito ya vio, en bits (MapFog). Vacío en las partidas de antes del mapa.
+        /// Al final: es el renglón largo del JSON.</summary>
+        public string mapFog = "";
     }
 
     /// <summary>Guardado en JSON (Application.persistentDataPath/nindo_save.json).</summary>
@@ -73,6 +76,7 @@ namespace Nindo
 
         public static void Save()
         {
+            MapFog.Store(Data);
             try { File.WriteAllText(PathFile, JsonUtility.ToJson(Data, true)); }
             catch (Exception e) { Debug.LogWarning("[Nindo] No se pudo guardar: " + e.Message); return; }
             GameEvents.RaiseSaved();
@@ -108,6 +112,9 @@ namespace Nindo
         public static bool ShowParryAids => CombatAids >= 2;
         public static bool ShowUnblockableAids => CombatAids >= 1;
         public static bool Fullscreen { get => Screen.fullScreen; set => Screen.fullScreen = value; }
+        /// <summary>Teclas y botones elegidos en Opciones › Controles: versión del formato y solo lo que no es de
+        /// fábrica (BindingTable.Save), así una acción nueva llega con sus teclas y no hay que migrar nada.</summary>
+        public static string ControlBindings { get => PlayerPrefs.GetString("nindo.controls", ""); set => PlayerPrefs.SetString("nindo.controls", value); }
         public static void Save() => PlayerPrefs.Save();
     }
 }

@@ -69,6 +69,7 @@ namespace Nindo
             BuildOverlay();
             BuildPanels();
             BuildSaveIndicator();
+            BuildMap();
         }
 
         void OnEnable() => GameEvents.Saved += OnGameSaved;
@@ -289,6 +290,7 @@ namespace Nindo
             UpdateHUD(dt);
             UpdateBossBar(dt);
             UpdateOverlay(dt);
+            UpdateMap(dt);   // antes que los paneles: con el mapa abierto Esc lo cierra y no abre la pausa
             UpdatePanels(dt);
             UpdateSaveIndicator(dt);
         }

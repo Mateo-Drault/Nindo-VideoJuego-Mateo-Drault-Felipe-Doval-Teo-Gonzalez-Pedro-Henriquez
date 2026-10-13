@@ -7,21 +7,27 @@ namespace Nindo
 {
     public enum Act
     {
-        Attack, Parry, Dash, Lock, Finisher, Interact, Ability1, Ability2, Pause, LockNext, LockPrev, Submit, Cancel
+        Attack, Parry, Dash, Lock, Finisher, Interact, Ability1, Ability2, Pause, LockNext, LockPrev, Submit, Cancel,
+        Map   // mapa del mundo (UI/UIMap.cs)
     }
 
     /// <summary>
     /// Lectura de input unificada: teclado+mouse y gamepad (Input System), con fallback al
     /// Input Manager clásico. Incluye buffer de acciones para que los combos/parrys se sientan
     /// precisos (si apretás un poco antes de que termine el golpe, igual entra).
+    /// Las teclas de cada acción son las que eligió el jugador en Opciones › Controles (InputBindings).
     /// </summary>
     [DefaultExecutionOrder(-800)]
     public class InputReader : MonoBehaviour
     {
-        const int ActCount = 13;
+        // sale del enum: una acción nueva (Map) no deja los arreglos cortos
+        static readonly int ActCount = System.Enum.GetValues(typeof(Act)).Length;
+        // el mapa (Act.Map, UI/UIMap.cs) va por nombre: este archivo compila y anda con o sin esa acción (-1 si no está)
+        static readonly int MapAct = System.Array.IndexOf(System.Enum.GetNames(typeof(Act)), "Map");
         readonly float[] pressedAt = new float[ActCount];
         readonly bool[] pressedNow = new bool[ActCount];
         readonly bool[] consumed = new bool[ActCount];
+        readonly bool[] actHeld = new bool[ActCount];
 
         public Vector2 Move { get; private set; }
         public bool ParryHeld { get; private set; }
@@ -57,64 +63,51 @@ namespace Nindo
             var kb = Keyboard.current;
             var mouse = Mouse.current;
             var pad = Gamepad.current;
-            if (kb != null)
+            if (kb != null && kb.anyKey.wasPressedThisFrame) UsingGamepad = false;
+            if (mouse != null && (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame)) UsingGamepad = false;
+            // cada acción (y cada dirección del teclado) con sus dos teclas y sus dos botones del mando
+            var table = InputBindings.Table;
+            float wheel = mouse != null ? mouse.scroll.ReadValue().y : 0f;
+            int flick = pad != null ? StickFlick(pad.rightStick.ReadValue()) : 0;
+            for (int r = 0; r < table.RowCount; r++)
             {
-                if (kb.wKey.isPressed || kb.upArrowKey.isPressed) move.y += 1;
-                if (kb.sKey.isPressed || kb.downArrowKey.isPressed) move.y -= 1;
-                if (kb.dKey.isPressed || kb.rightArrowKey.isPressed) move.x += 1;
-                if (kb.aKey.isPressed || kb.leftArrowKey.isPressed) move.x -= 1;
-                if (kb.jKey.wasPressedThisFrame) Press(Act.Attack, false);
-                if (kb.kKey.wasPressedThisFrame) Press(Act.Parry, false);
-                if (kb.spaceKey.wasPressedThisFrame || kb.leftShiftKey.wasPressedThisFrame || kb.lKey.wasPressedThisFrame) Press(Act.Dash, false);
-                if (kb.qKey.wasPressedThisFrame || kb.tabKey.wasPressedThisFrame) Press(Act.Lock, false);
-                if (kb.fKey.wasPressedThisFrame) { Press(Act.Finisher, false); }
-                if (kb.eKey.wasPressedThisFrame || kb.fKey.wasPressedThisFrame) Press(Act.Interact, false);
-                if (kb.digit1Key.wasPressedThisFrame || kb.uKey.wasPressedThisFrame) Press(Act.Ability1, false);
-                if (kb.digit2Key.wasPressedThisFrame || kb.iKey.wasPressedThisFrame) Press(Act.Ability2, false);
-                if (kb.escapeKey.wasPressedThisFrame || kb.pKey.wasPressedThisFrame) Press(Act.Pause, false);
-                if (kb.enterKey.wasPressedThisFrame) Press(Act.Submit, false);
-                if (kb.escapeKey.wasPressedThisFrame) Press(Act.Cancel, false);
-                parryHeld |= kb.kKey.isPressed;
-                attackHeld |= kb.jKey.isPressed;
-                lockHeld |= kb.qKey.isPressed || kb.tabKey.isPressed;
-                if (kb.anyKey.wasPressedThisFrame) UsingGamepad = false;
+                bool held = false, keyPress = false, padPress = false;
+                for (int s = 0; s < BindingTable.Slots; s++)
+                {
+                    int k = table.Get(r, BindingTable.Keys, s);
+                    if (k != BindCode.None && InputBindings.PollKeys(k, kb, mouse, wheel, ref held)) keyPress = true;
+                    int p = table.Get(r, BindingTable.Pad, s);
+                    if (p != BindCode.None && InputBindings.PollPad(p, pad, flick, ref held)) padPress = true;
+                }
+                var row = table.Row(r);
+                if (row.act >= 0)
+                {
+                    if (keyPress) Press((Act)row.act, false);
+                    if (padPress) Press((Act)row.act, true);
+                    actHeld[row.act] = held;
+                }
+                else if (held)
+                {
+                    if (row.move == 1) move.y += 1;
+                    else if (row.move == 2) move.y -= 1;
+                    else if (row.move == 3) move.x -= 1;
+                    else if (row.move == 4) move.x += 1;
+                }
             }
-            if (mouse != null)
-            {
-                if (mouse.leftButton.wasPressedThisFrame) Press(Act.Attack, false);
-                if (mouse.rightButton.wasPressedThisFrame) Press(Act.Parry, false);
-                if (mouse.middleButton.wasPressedThisFrame) Press(Act.Lock, false);
-                float wheel = mouse.scroll.ReadValue().y;
-                if (wheel > 0.1f) Press(Act.LockPrev, false);
-                if (wheel < -0.1f) Press(Act.LockNext, false);
-                parryHeld |= mouse.rightButton.isPressed;
-                lockHeld |= mouse.middleButton.isPressed;
-                attackHeld |= mouse.leftButton.isPressed;
-                if (mouse.leftButton.wasPressedThisFrame || mouse.rightButton.wasPressedThisFrame) UsingGamepad = false;
-            }
+            parryHeld = actHeld[(int)Act.Parry];
+            attackHeld = actHeld[(int)Act.Attack];
+            lockHeld = actHeld[(int)Act.Lock];
             if (pad != null)
             {
+                // el movimiento del mando es fijo: stick izquierdo y cruceta (la cruceta no se puede asignar)
                 Vector2 ls = pad.leftStick.ReadValue();
                 if (ls.sqrMagnitude < 0.04f) ls = Vector2.zero;
                 ls += pad.dpad.ReadValue();
                 if (ls.sqrMagnitude > 0.01f) { move += ls; UsingGamepad = true; }
-                if (pad.buttonWest.wasPressedThisFrame || pad.rightShoulder.wasPressedThisFrame) Press(Act.Attack, true);
-                if (pad.leftShoulder.wasPressedThisFrame) Press(Act.Parry, true);
-                if (pad.buttonEast.wasPressedThisFrame || pad.buttonSouth.wasPressedThisFrame) Press(Act.Dash, true);
-                if (pad.rightStickButton.wasPressedThisFrame) Press(Act.Lock, true);
-                if (pad.buttonNorth.wasPressedThisFrame) { Press(Act.Finisher, true); Press(Act.Interact, true); }
-                if (pad.rightTrigger.wasPressedThisFrame) Press(Act.Ability1, true);
-                if (pad.leftTrigger.wasPressedThisFrame) Press(Act.Ability2, true);
-                if (pad.startButton.wasPressedThisFrame) Press(Act.Pause, true);
-                if (pad.buttonSouth.wasPressedThisFrame) Press(Act.Submit, true);
-                if (pad.buttonEast.wasPressedThisFrame) Press(Act.Cancel, true);
-                Vector2 rs = pad.rightStick.ReadValue();
-                if (rs.x > 0.7f && !stickFlicked) { Press(Act.LockNext, true); stickFlicked = true; }
-                else if (rs.x < -0.7f && !stickFlicked) { Press(Act.LockPrev, true); stickFlicked = true; }
-                else if (Mathf.Abs(rs.x) < 0.3f) stickFlicked = false;
-                parryHeld |= pad.leftShoulder.isPressed;
-                lockHeld |= pad.rightStickButton.isPressed;
-                attackHeld |= pad.buttonWest.isPressed || pad.rightShoulder.isPressed;
+                // el panel táctil de los de PlayStation también abre el mapa, como en sus juegos: fijo y fuera de la
+                // tabla (los demás mandos no lo tienen y no se toma al reasignar, así que no choca con nada)
+                if (MapAct >= 0 && pad is UnityEngine.InputSystem.DualShock.DualShockGamepad ds && ds.touchpadButton.wasPressedThisFrame)
+                    Press((Act)MapAct, true);
             }
 #elif ENABLE_LEGACY_INPUT_MANAGER
             move.x = Input.GetAxisRaw("Horizontal");
@@ -129,6 +122,7 @@ namespace Nindo
             if (Input.GetKeyDown(KeyCode.Alpha2)) Press(Act.Ability2, false);
             if (Input.GetKeyDown(KeyCode.Escape)) { Press(Act.Pause, false); Press(Act.Cancel, false); }
             if (Input.GetKeyDown(KeyCode.Return)) Press(Act.Submit, false);
+            if (Input.GetKeyDown(KeyCode.M)) Press(Act.Map, false);
             float wheel = Input.mouseScrollDelta.y;
             if (wheel > 0.1f) Press(Act.LockPrev, false);
             if (wheel < -0.1f) Press(Act.LockNext, false);
@@ -159,6 +153,18 @@ namespace Nindo
 
 #if ENABLE_INPUT_SYSTEM
         bool stickFlicked;
+
+        /// <summary>Toque del stick derecho (cambiar de objetivo): cuenta una vez por eje dominante y se rearma al volver al centro.</summary>
+        int StickFlick(Vector2 rs)
+        {
+            if (rs.sqrMagnitude < 0.09f) { stickFlicked = false; return 0; }
+            if (stickFlicked) return 0;
+            bool horizontal = Mathf.Abs(rs.x) >= Mathf.Abs(rs.y);
+            float v = horizontal ? rs.x : rs.y;
+            if (Mathf.Abs(v) < 0.7f) return 0;
+            stickFlicked = true;
+            return horizontal ? (v > 0f ? BindCode.RStickRight : BindCode.RStickLeft) : (v > 0f ? BindCode.RStickUp : BindCode.RStickDown);
+        }
 #endif
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -238,94 +244,34 @@ namespace Nindo
         // ---------------------------------------------------------------- glyphs
         /// <summary>Familia de botones que se muestra: 0 teclado y mouse, 1 mando Xbox / genérico, 2 PlayStation.</summary>
         public int GlyphFamily { get; private set; }
-        /// <summary>Cambia cada vez que cambia la familia (los textos con teclas se rehacen al verlo distinto).</summary>
+        /// <summary>Cambia cada vez que cambia la familia o el jugador reasigna una tecla (los textos con teclas se
+        /// rehacen al verlo distinto: consejos, diálogos, la tarjeta de controles, los carteles sobre el mundo).</summary>
         public int GlyphVersion { get; private set; }
+        int bindingsVersion = -1;
 
         void LateUpdate()
         {
-            int fam = 0;
-#if ENABLE_INPUT_SYSTEM
-            if (UsingGamepad)
+            // por el layout (DualShock4GamepadHID, DualSenseGamepadHID...): sin depender del plugin de Sony
+            int fam = UsingGamepad ? InputBindings.PadFamily() : 0;
+            if (fam != GlyphFamily || bindingsVersion != InputBindings.Version)
             {
-                // por el layout (DualShock4GamepadHID, DualSenseGamepadHID...): sin depender del plugin de Sony
-                string layout = Gamepad.current != null ? Gamepad.current.layout : "";
-                fam = layout.Contains("DualShock") || layout.Contains("DualSense") ? 2 : 1;
+                GlyphFamily = fam;
+                bindingsVersion = InputBindings.Version;
+                GlyphVersion++;
             }
-#endif
-            if (fam != GlyphFamily) { GlyphFamily = fam; GlyphVersion++; }
         }
 
         /// <summary>
-        /// Símbolo de la acción en el dispositivo que se está usando. Uno solo: antes salía "□ / X" para
-        /// cualquier mando (mezclaba PlayStation y Xbox) y "Click izq. / J" en teclado. La UI lo dibuja como
-        /// tecla (UIFactory.KeyCap / RichKeys): □ ○ △ × en los de PlayStation, A B X Y en los demás.
+        /// Símbolo de la acción en el dispositivo que se está usando: la tecla que eligió el jugador (la principal o,
+        /// si no tiene, la otra; "?" si quedó sin ninguna). La UI lo dibuja como tecla (UIFactory.KeyCap / RichKeys):
+        /// □ ○ △ × en los de PlayStation, A B X Y en los demás.
         /// </summary>
-        public string Glyph(Act a)
-        {
-            if (GlyphFamily == 2)
-                switch (a)
-                {
-                    case Act.Attack: return "□";
-                    case Act.Parry: return "L1";
-                    case Act.Dash: return "○";
-                    case Act.Lock: return "R3";
-                    case Act.Finisher: case Act.Interact: return "△";
-                    case Act.Ability1: return "R2";
-                    case Act.Ability2: return "L2";
-                    case Act.Pause: return "Options";
-                    case Act.LockNext: case Act.LockPrev: return "Stick der.";
-                    case Act.Submit: return "×";
-                    case Act.Cancel: return "○";
-                }
-            else if (GlyphFamily == 1)
-                switch (a)
-                {
-                    case Act.Attack: return "X";
-                    case Act.Parry: return "LB";
-                    case Act.Dash: return "B";
-                    case Act.Lock: return "RS";
-                    case Act.Finisher: case Act.Interact: return "Y";
-                    case Act.Ability1: return "RT";
-                    case Act.Ability2: return "LT";
-                    case Act.Pause: return "Menu";
-                    case Act.LockNext: case Act.LockPrev: return "Stick der.";
-                    case Act.Submit: return "A";
-                    case Act.Cancel: return "B";
-                }
-            else
-                switch (a)
-                {
-                    case Act.Attack: return "Clic izq.";
-                    case Act.Parry: return "Clic der.";
-                    case Act.Dash: return "Espacio";
-                    case Act.Lock: return "Q";
-                    case Act.Finisher: return "F";
-                    case Act.Interact: return "E";
-                    case Act.Ability1: return "1";
-                    case Act.Ability2: return "2";
-                    case Act.Pause: return "Esc";
-                    case Act.LockNext: case Act.LockPrev: return "Rueda";
-                    case Act.Submit: return "Enter";
-                    case Act.Cancel: return "Esc";
-                }
-            return a.ToString();
-        }
+        public string Glyph(Act a) => InputBindings.Glyph((int)a, GlyphFamily);
 
         /// <summary>Segunda tecla de la misma acción, si hay (la tarjeta de controles de la pausa muestra las dos).</summary>
-        public string GlyphAlt(Act a)
-        {
-            if (GlyphFamily == 2) return a == Act.Attack ? "R1" : a == Act.Dash ? "×" : null;
-            if (GlyphFamily == 1) return a == Act.Attack ? "RB" : a == Act.Dash ? "A" : null;
-            switch (a)
-            {
-                case Act.Attack: return "J";
-                case Act.Parry: return "K";
-                case Act.Dash: return "Shift";
-                case Act.Lock: return "Tab";
-                case Act.Ability1: return "U";
-                case Act.Ability2: return "I";
-                default: return null;
-            }
-        }
+        public string GlyphAlt(Act a) => InputBindings.GlyphAlt((int)a, GlyphFamily);
+
+        /// <summary>Las teclas de moverse ("WASD", o las que eligió) o el stick.</summary>
+        public string MoveGlyph => InputBindings.MoveGlyph(GlyphFamily);
     }
 }

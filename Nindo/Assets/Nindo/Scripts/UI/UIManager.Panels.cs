@@ -90,6 +90,7 @@ namespace Nindo
             BuildDeath();
             BuildPause();
             BuildOptions();
+            BuildControls();
             BuildEnd();
         }
 
@@ -566,8 +567,8 @@ namespace Nindo
             bg.raycastTarget = true;
             pausePanel = bg.gameObject;
             pauseColumn = MenuColumn(bg.transform, "Pausa", out _);
-            string[] labels = { "Continuar", "Opciones", "Volver al menú", "Salir del juego" };
-            UnityEngine.Events.UnityAction[] actions = { () => SetPaused(false), () => OpenOptions(true), () => { SetPaused(false); SaveSystem.Save(); SceneFlow.LoadMenu(); }, Application.Quit };
+            string[] labels = { "Continuar", "Mapa", "Opciones", "Volver al menú", "Salir del juego" };
+            UnityEngine.Events.UnityAction[] actions = { () => SetPaused(false), () => OpenMap(true), () => OpenOptions(true), () => { SetPaused(false); SaveSystem.Save(); SceneFlow.LoadMenu(); }, Application.Quit };
             pauseItemGroups = new CanvasGroup[labels.Length];
             for (int i = 0; i < labels.Length; i++)
             {
@@ -587,16 +588,18 @@ namespace Nindo
             (string label, Act act)[] rows =
             {
                 ("Moverse", Act.Submit), ("Atacar", Act.Attack), ("Parry", Act.Parry), ("Esquivar (dash)", Act.Dash), ("Fijar objetivo", Act.Lock),
-                ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact),
+                ("Ejecutar", Act.Finisher), ("Habilidades", Act.Ability1), ("Interactuar", Act.Interact), ("Mapa", Act.Map),
             };
             for (int i = 0; i < rows.Length; i++)
             {
-                float y = -136f - i * 56f;
+                // nueve renglones de 50 en la misma tarjeta (el último termina en -558: abajo queda lugar para una nota)
+                float y = -136f - i * 50f;
                 UIFactory.Text("Row", pauseCard, rows[i].label, 28, UIFactory.Paper, new Vector2(0f, 1f), new Vector2(100f, y + 20f), new Vector2(300, 40), TextAlignmentOptions.Left);
                 if (i == 0) { moveKey = UIFactory.KeyCap(pauseCard, "WASD", 44f, new Vector2(0f, 1f), new Vector2(420f, y)); continue; }
                 controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(420f, y)), rows[i].act, false));
                 controlKeys.Add((UIFactory.KeyCap(pauseCard, "?", 44f, new Vector2(0f, 1f), new Vector2(520f, y)), rows[i].act == Act.Ability1 ? Act.Ability2 : rows[i].act, rows[i].act != Act.Ability1));
             }
+            UIFactory.Text("Hint", pauseCard, "Se cambian en Opciones › Controles", 22, UIFactory.PaperDim, new Vector2(0f, 1f), new Vector2(100f, -584f), new Vector2(660, 30), TextAlignmentOptions.Left);
             pausePanel.SetActive(false);
         }
 
@@ -621,11 +624,12 @@ namespace Nindo
                 key.anchoredPosition = new Vector2(x + w * 0.5f, key.anchoredPosition.y);
                 x += w + 14f;
             }
-            UIFactory.SetKeyCap(moveKey, input.GlyphFamily == 0 ? "WASD" : "Stick izq.");
+            UIFactory.SetKeyCap(moveKey, input.MoveGlyph);
             moveKey.anchoredPosition = new Vector2(400f + moveKey.sizeDelta.x * 0.5f, moveKey.anchoredPosition.y);
         }
 
-        public bool PauseOpen => pausePanel.activeSelf || optionsPanel.activeSelf;
+        // el mapa también es una pausa: el HUD, los avisos y el título de zona esperan detrás
+        public bool PauseOpen => pausePanel.activeSelf || optionsPanel.activeSelf || MapOpen;
 
         public void SetPaused(bool p)
         {
@@ -647,6 +651,7 @@ namespace Nindo
                 pauseOpenT = 0f;
                 SizeColumn(pauseColumn);
                 RefreshControls();
+                RefreshPauseMapItem();
                 Select(pauseFirst);
             }
             Cursor.visible = p; Cursor.lockState = CursorLockMode.None;
@@ -692,7 +697,7 @@ namespace Nindo
             optionsCard = card.rectTransform;
             optionsCardImg = card;
             card.pixelsPerUnitMultiplier = 1f;
-            Place(optionsCard, new Vector2(0.5f, 0.5f), new Vector2(330f, -10f), new Vector2(1060, 860));
+            Place(optionsCard, new Vector2(0.5f, 0.5f), new Vector2(330f, -10f), new Vector2(1060, 930));
             optionsCard.pivot = new Vector2(0.5f, 0.5f);
             var rows = new List<Selectable>();
             var size = new Vector2(860, 62);
@@ -708,6 +713,8 @@ namespace Nindo
             Row(UIFactory.OptionSelector("Aids", optionsCard, "Avisos de combate", new[] { "Ninguno", "Solo imparables", "Todos" }, Settings.CombatAids, i => Settings.CombatAids = i, size));
             Row(UIFactory.OptionSelector("Fullscreen", optionsCard, "Pantalla completa", new[] { "No", "Sí" }, Screen.fullScreen ? 1 : 0, i => Settings.Fullscreen = i == 1, size));
             Row(UIFactory.OptionSelector("Quality", optionsCard, "Calidad", QualitySettings.names, QualitySettings.GetQualityLevel(), i => { QualitySettings.SetQualityLevel(i, true); Settings.Quality = i; }, size));
+            // las teclas y botones de cada acción (UIControls.cs)
+            Row(controlsEntry = ControlsEntry(optionsCard, size));
             var back = UIFactory.MenuItem("Back", optionsCard, "Volver", new Vector2(300, 66), CloseOptions, 36f);
             rows.Add(back);
             for (int i = 0; i < rows.Count; i++)
@@ -878,8 +885,10 @@ namespace Nindo
             UpdateDialogue(dt);
             UpdatePause(dt);
             UpdateOptions(dt);
+            UpdateControls(dt);
 
             var input = Game.Input;
+            if (ControlsTakeBack(input)) return;
             if (input != null && input.Pressed(Act.Pause) && SceneManager.GetActiveScene().name != "Menu")
             {
                 if (optionsPanel.activeSelf) CloseOptions();
