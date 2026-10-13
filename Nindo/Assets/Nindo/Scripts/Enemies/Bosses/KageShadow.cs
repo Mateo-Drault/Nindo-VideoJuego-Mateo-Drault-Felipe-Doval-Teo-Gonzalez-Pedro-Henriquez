@@ -58,6 +58,8 @@ namespace Nindo
         float vanishAt = -1f, emergeLead = KokuyoMoves.EmergeLead;
         Light glow;
         Transform tipMark;
+        LineRenderer edge;
+        float edgeAt = -99f;
 
         public const float SlideSpeed = 9f, NuiHold = 0.8f, NuiRadius = 2.2f, SlideMax = 1.0f;
         public const float CrossSpeed = 24f, CrossLength = 16f, CrossHalfWidth = 1.2f, LineUpDistance = 8f;
@@ -83,6 +85,13 @@ namespace Nindo
         /// punta en el "¡ahora!".
         /// </summary>
         const float DarkRim = 2.5f, DarkGlow = 3f;
+        /// <summary>
+        /// Al salir de la oscuridad la hoja levantada es lo que hay que leer (la pose del aviso del corte), y con el filo de
+        /// 2.5 seguía siendo una raya fina hasta el destello de la punta: un trazo violeta claro a lo largo de la hoja, de
+        /// 0.12 m (~10 px con la cámara de juego), los primeros EdgeHold s del adelanto, y se apaga en EdgeFade s.
+        /// </summary>
+        const float EdgeWidth = 0.12f, EdgeHold = 0.4f, EdgeFade = 0.2f;
+        static readonly Color EdgeColor = new Color(0.82f, 0.68f, 1f);
 
         public Shape Form { get; private set; } = Shape.Bound;
         public bool Pinned => mode == Mode.Pinned;
@@ -150,6 +159,18 @@ namespace Nindo
             glow = lg.AddComponent<Light>();
             glow.type = LightType.Point; glow.color = GlowColor; glow.range = 4.5f; glow.intensity = 0f;
             glow.shadows = LightShadows.None; glow.enabled = false;
+            var eg = new GameObject("FiloDeTinta");
+            eg.transform.SetParent(transform, false);
+            edge = eg.AddComponent<LineRenderer>();
+            edge.useWorldSpace = true;
+            edge.positionCount = 2;
+            edge.alignment = LineAlignment.View;
+            edge.numCapVertices = 2;
+            edge.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            edge.receiveShadows = false;
+            edge.sharedMaterial = FXMaterials.Additive;
+            edge.widthMultiplier = EdgeWidth;
+            edge.enabled = false;
         }
 
         /// <summary>Los golpes del acto (las pausas en el apex son las del cuerpo).</summary>
@@ -487,6 +508,7 @@ namespace Nindo
             }
             Game.FX?.FlashLight(transform.position + Vector3.up * 2f, GlowColor, 3.5f, 7f, 0.35f);
             Game.FX?.SmokePuff(transform.position + Vector3.up * 0.6f, 1.6f);
+            edgeAt = Time.time;
             // "la cinta ve por vos": la bandana late cuando la sombra sale de la oscuridad
             if (Game.Player != null) BandanaGlow.Ensure(Game.Player)?.Pulse(BandanaGlow.Gold, 0.6f);
             owner?.OnShadowEmerged();
@@ -495,6 +517,7 @@ namespace Nindo
         void Vanish(float seconds)
         {
             emerged = false;
+            edgeAt = -99f;
             vanishAt = -1f;
             ink?.FadeTo(0f, seconds);
         }
@@ -971,6 +994,24 @@ namespace Nindo
             UpdateNobiInk(dt);
             UpdatePose(dt);
             UpdateTipMark();
+            UpdateEdge();
+        }
+
+        /// <summary>El trazo de la hoja recién salida de la oscuridad (EdgeHold + EdgeFade), sobre la pose ya evaluada.</summary>
+        void UpdateEdge()
+        {
+            if (edge == null) return;
+            float k = Time.time - edgeAt;
+            var tip = ink.BladeTip;
+            var bas = ink.BladeBase;
+            bool on = emerged && tip != null && bas != null && k < EdgeHold + EdgeFade;
+            if (edge.enabled != on) edge.enabled = on;
+            if (!on) return;
+            float a = (k < EdgeHold ? 1f : 1f - (k - EdgeHold) / EdgeFade) * ink.Visibility;
+            var c = new Color(EdgeColor.r, EdgeColor.g, EdgeColor.b, a);
+            edge.startColor = edge.endColor = c;
+            edge.SetPosition(0, bas.position);
+            edge.SetPosition(1, tip.position);
         }
 
         /// <summary>

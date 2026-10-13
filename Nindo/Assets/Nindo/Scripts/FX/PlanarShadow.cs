@@ -53,7 +53,7 @@ namespace Nindo
         /// <summary>Multiplicador del filo violeta de la figura parada (a oscuras, KageShadow lo sube).</summary>
         public float RimGain = 1f;
 
-        Transform body, holder, doubleRoot, bladeTip;
+        Transform body, holder, doubleRoot, bladeTip, bladeBase;
         Animator doubleAnim, bodyAnim;
         Material mat;
         readonly List<(Transform src, Transform dst)> bones = new List<(Transform, Transform)>();
@@ -218,6 +218,7 @@ namespace Nindo
             Transform basePt = Find(root, "KatanaBase"), tipPt = Find(root, "KatanaTip");
             if ((basePt == null || tipPt == null) && !KatanaRig.Find(root, WeaponNames, out basePt, out tipPt)) return null;
             bladeTip = tipPt;
+            bladeBase = basePt;
             Transform w = basePt.parent;
             Vector3 a = basePt.localPosition, b = tipPt.localPosition;
             Vector3 axis = b - a;
@@ -408,6 +409,8 @@ namespace Nindo
 
         /// <summary>Punta de la hoja del doble (en el aire si está parada; null si el arma no se encontró).</summary>
         public Transform BladeTip => bladeTip;
+        /// <summary>Base de la hoja del doble (la guarda), con BladeTip el filo entero.</summary>
+        public Transform BladeBase => bladeBase;
 
         /// <summary>Dónde cae en el piso, según la luz de la sombra, un punto del cuerpo (p. ej. la punta de la espada).</summary>
         public Vector3 ProjectToGround(Vector3 p)
