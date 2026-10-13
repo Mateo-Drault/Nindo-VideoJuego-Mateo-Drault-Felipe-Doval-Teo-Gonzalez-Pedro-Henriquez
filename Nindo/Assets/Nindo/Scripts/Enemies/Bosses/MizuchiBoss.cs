@@ -708,7 +708,7 @@ namespace Nindo
             Game.Audio?.Play("koi_roar", transform.position, 0.9f);
             Game.Camera?.Shake(0.35f);
             body?.FlareSeal(2.5f, 1.2f);
-            Game.UI?.ShowAreaTitle(title, subtitle);
+            Game.UI?.ShowBossTitle(title, subtitle);
             yield return new WaitForSeconds((90f - 76f) / 30f + 0.9f);
             // la toma sigue en el koi durante el título y el diálogo: cortada antes, el título y la charla salían con la
             // cámara de juego y el koi afuera del cuadro, arriba

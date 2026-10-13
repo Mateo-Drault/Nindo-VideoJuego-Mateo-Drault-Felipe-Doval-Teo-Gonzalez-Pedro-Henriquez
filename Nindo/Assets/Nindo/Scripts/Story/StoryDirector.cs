@@ -606,7 +606,7 @@ namespace Nindo
             b.ScriptedPlay(b.introAnim, 0.2f);
             Game.Audio?.Play("boss_roar", b.transform.position, 1f);
             Game.Camera.Shake(0.35f);
-            Game.UI.ShowAreaTitle(b.title, b.subtitle);
+            Game.UI.ShowBossTitle(b.title, b.subtitle);
             yield return new WaitForSecondsRealtime(2.6f);
             yield return Say(b.bossId + "_intro");
             Game.Camera.CancelShot(shot);

@@ -50,7 +50,7 @@ namespace Nindo
             yield return new WaitForSeconds(0.9f);
             anim.Play(intro.State, 0.05f, 0f, 1f);
             yield return new WaitForSeconds(intro.Event("HeadRise") * intro.Seconds);
-            Game.UI.ShowAreaTitle(title, subtitle);
+            Game.UI.ShowBossTitle(title, subtitle);
             yield return new WaitForSeconds((intro.Event("Salute") - intro.Event("HeadRise")) * intro.Seconds);
             Game.Audio?.Play("spar_clash", transform.position, 0.6f, 0.02f);   // puño contra palma, seco
             yield return new WaitForSeconds((intro.Event("Guard") - intro.Event("Salute")) * intro.Seconds + 0.4f);

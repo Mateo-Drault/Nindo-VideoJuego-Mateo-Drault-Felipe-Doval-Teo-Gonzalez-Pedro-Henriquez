@@ -242,11 +242,25 @@ namespace Nindo
         public void ShowAreaTitle(string title, string subtitle) => ShowAreaTitle(title, subtitle, ResolveStamp(title));
 
         /// <param name="stampIcon">Nombre del pictograma del sello rojo (ZoneLake, IconBoss...); null = sin sello.</param>
-        public void ShowAreaTitle(string title, string subtitle, string stampIcon)
+        /// <param name="lowerThird">Abajo, sobre la franja de cine (el nombre de un jefe: ShowBossTitle).</param>
+        public void ShowAreaTitle(string title, string subtitle, string stampIcon, bool lowerThird = false)
         {
             if (titleRoutine != null) StopCoroutine(titleRoutine);
-            titleRoutine = StartCoroutine(AreaTitle(title, subtitle, UISprites.Hanko(stampIcon)));
+            // arriba, el lugar; abajo, el jefe. En las presentaciones la cámara se acerca de frente y sube con el jefe:
+            // arriba el nombre le caía encima de la cabeza (Gorō, de 3.2 m: la cabeza del 27 al 15 % de la pantalla con
+            // el título del 16 al 40 %). Abajo tapa las piernas, como en las peleas de jefe de siempre
+            var anchor = new Vector2(0.5f, lowerThird ? 0f : 1f);
+            titleRoot.anchorMin = titleRoot.anchorMax = anchor;
+            titleRoot.anchoredPosition = new Vector2(0f, lowerThird ? BossTitleY : -300f);
+            titleRoutine = StartCoroutine(AreaTitle(title, subtitle, UISprites.Hanko(stampIcon), lowerThird));
         }
+
+        /// <summary>El nombre de un jefe en su presentación, en el tercio de abajo y con el sello del jefe.</summary>
+        public void ShowBossTitle(string title, string subtitle) => ShowAreaTitle(title, subtitle, "IconBoss", true);
+
+        /// <summary>Centro del título de jefe desde abajo (px de 1080): el trazo termina justo encima de la franja de cine
+        /// (120 px) y el subtítulo queda entero adentro.</summary>
+        const float BossTitleY = 255f;
 
         static string ResolveStamp(string title)
         {
@@ -258,7 +272,7 @@ namespace Nindo
             return title == "..." ? null : "ZoneMoon";
         }
 
-        IEnumerator AreaTitle(string title, string subtitle, Sprite stamp)
+        IEnumerator AreaTitle(string title, string subtitle, Sprite stamp, bool low)
         {
             titleText.text = title; titleSub.text = subtitle;
             // el ancho se mide con el espaciado final (4): antes se medía con el que tuviera el texto (0 en el
@@ -276,14 +290,17 @@ namespace Nindo
             titleStamp.enabled = false;
             titleRule.fillAmount = 0f; titleSub.alpha = 0f; titleText.alpha = 0f; titleSwash.fillAmount = 0f;
             Game.Audio?.Play("area_title", null, 0.7f);
-            float t = 0f;
+            float t = 0f, fadeFrom = 3.6f, fadeLen = 0.6f;
             bool thumped = false;
-            while (t < 4.2f)
+            while (t < fadeFrom + fadeLen)
             {
                 // en pausa el título espera escondido (seguía pintándose debajo del panel)
                 if (PauseOpen) { titleGroup.alpha = 0f; yield return null; continue; }
                 t += Time.unscaledDeltaTime;
-                titleGroup.alpha = t > 3.6f ? 1f - (t - 3.6f) / 0.6f : 1f;
+                // el de un jefe va donde después salen el diálogo y la barra del jefe: cuando entra uno de los dos, el
+                // nombre se va en 0.25 s (en la fase 2 de Gorō la barra vuelve 2 s después del cartel)
+                if (low && (DialogueOpen || BossBarAlpha > 0.05f) && t < fadeFrom) { fadeFrom = t; fadeLen = 0.25f; }
+                titleGroup.alpha = t > fadeFrom ? 1f - (t - fadeFrom) / fadeLen : 1f;
                 // el trazo se pinta de izquierda a derecha, el nombre aparece y se junta
                 titleSwash.fillAmount = UIAnim.OutCubic(t / 0.35f);
                 titleText.alpha = Mathf.Clamp01((t - 0.1f) / 0.5f);

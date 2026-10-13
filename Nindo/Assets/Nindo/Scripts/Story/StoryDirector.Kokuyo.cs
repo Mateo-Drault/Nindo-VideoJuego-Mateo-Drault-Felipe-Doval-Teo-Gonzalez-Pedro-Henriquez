@@ -57,7 +57,7 @@ namespace Nindo
             k.EyesIgnite();
             Game.Audio?.Play("boss_roar", k.transform.position, first ? 1f : 0.8f);
             Game.Camera.Shake(0.3f);
-            Game.UI.ShowAreaTitle(k.title, k.subtitle);
+            Game.UI.ShowBossTitle(k.title, k.subtitle);
             yield return Wait((1f - eyes) * sec);
             Game.Camera.CancelShot(crane);
             if (first)

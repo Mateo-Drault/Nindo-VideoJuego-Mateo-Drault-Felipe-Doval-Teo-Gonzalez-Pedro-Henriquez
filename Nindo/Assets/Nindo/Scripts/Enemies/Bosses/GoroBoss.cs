@@ -416,7 +416,7 @@ namespace Nindo
                 if (!titled && c >= GoroTimings.RiseStand)
                 {
                     titled = true;
-                    Game.UI?.ShowAreaTitle(StoryText.Goro, StoryText.GoroEpithet, "IconBoss");
+                    Game.UI?.ShowBossTitle(StoryText.Goro, StoryText.GoroEpithet);
                 }
                 if (!roared && c >= GoroTimings.RiseRoar)
                 {
