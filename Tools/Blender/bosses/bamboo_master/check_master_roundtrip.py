@@ -34,21 +34,30 @@ for f, bones in ref.items():
 print(f"RT error máx {worst[0] * 100:.2f} cm en {worst[1]} f{worst[2]}")
 mats = sorted({m.name for o in bpy.data.objects if o.type == 'MESH' for m in o.data.materials if m})
 print("MESHES", sorted(o.name for o in bpy.data.objects if o.type == 'MESH'), "MATERIALES", mats)
-# la forma CoatSlip del saco puesto vuelve con su animación (el peso llega a 1 en CoatOff de PhaseCoat)
-robe = bpy.data.objects.get("Master_Robe")
-keys = robe.data.shape_keys if robe is not None else None
-kb = keys.key_blocks.get("CoatSlip") if keys is not None else None
-peak = 0.0
-if kb is not None and keys.animation_data and keys.animation_data.action:
+# las formas del saco vuelven con su animación (cada etapa de CoatSlip llega a 1 en PhaseCoat; Collapse al caer)
+
+
+def shape_peak(obj_name, shape):
+    o = bpy.data.objects.get(obj_name)
+    keys = o.data.shape_keys if o is not None else None
+    kb = keys.key_blocks.get(shape) if keys is not None else None
+    if kb is None or not (keys.animation_data and keys.animation_data.action):
+        return None if kb is None else 0.0
     act_k = keys.animation_data.action
     try:
         fcs = act_k.fcurves                      # Blender 4.x
     except AttributeError:                       # Blender 5: las curvas viven en la channelbag del slot
         from bpy_extras import anim_utils
         fcs = anim_utils.action_get_channelbag_for_slot(act_k, keys.animation_data.action_slot).fcurves
-    peak = max((k.co[1] for fc in fcs if "CoatSlip" in fc.data_path for k in fc.keyframe_points), default=0.0)
-slip_ok = kb is not None and peak > 0.99
-print(f"CoatSlip {'presente' if kb is not None else 'FALTA'}, peso máx. {peak:.2f}")
+    return max((k.co[1] for fc in fcs if f'"{shape}"' in fc.data_path for k in fc.keyframe_points), default=0.0)
+
+
+slip_ok = True
+# las etapas del medio pasan de una a la siguiente entre dos cuadros (no llegan solas a 1); la última y Collapse sí
+for obj_name, shape, need in [("Master_Robe", "CoatSlip%d" % k, 0.5) for k in range(1, 4)] +         [("Master_Robe", "CoatSlip4", 0.99), ("Master_RobeThrown", "Collapse", 0.99)]:
+    pk = shape_peak(obj_name, shape)
+    print(f"{shape} ({obj_name}) {'FALTA' if pk is None else 'presente'}, peso máx. {pk or 0.0:.2f}")
+    slip_ok = slip_ok and pk is not None and pk > need
 ok = worst[0] < 0.01 and slip_ok
 print("ROUNDTRIP", "OK" if ok else "FALLA")
 sys.exit(0 if ok else 1)

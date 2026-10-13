@@ -27,18 +27,24 @@ namespace Nindo
         /// <summary>Las variantes de paso más corto del mismo golpe, de la más larga a la más corta (vacío = no tiene):
         /// mismos cuadros, tiempos y poses hasta la suelta; el jefe pasa a la que entra hasta Kaito en la suelta.</summary>
         public readonly string[] Variants;
+        /// <summary>Grados que gira el transform en cada cuadro del clip (+ = hacia su izquierda, como en Blender; null =
+        /// no gira): el paso del viento que pasa al costado gira en el vuelo y el jefe lo aplica como el avance.</summary>
+        public readonly float[] Turn;
+        /// <summary>La variante del paso del viento que le pasa al costado a Kaito (mismos cuadros hasta la suelta; null =
+        /// no tiene).</summary>
+        public readonly string Pass;
         readonly string[] eventNames;
         readonly float[] eventTimes;
 
         public MasterClip(string state, int frames, float seconds, float apex, float contact, float activeEnd, float releaseRate,
             float reach, int kind, string[] glow, float ringM, float markerM, float knockM, float airStart, float airEnd,
             float[] travel, string chainFrom, string chainTo, float chainFromDeg, string[] variants, string[] eventNames,
-            float[] eventTimes)
+            float[] eventTimes, float[] turn = null, string pass = null)
         {
             State = state; Frames = frames; Seconds = seconds; Apex = apex; Contact = contact; ActiveEnd = activeEnd;
             ReleaseRate = releaseRate; Reach = reach; Kind = kind; Glow = glow; RingM = ringM; MarkerM = markerM; KnockM = knockM;
             AirStart = airStart; AirEnd = airEnd; Travel = travel; ChainFrom = chainFrom; ChainTo = chainTo;
-            ChainFromDeg = chainFromDeg; Variants = variants;
+            ChainFromDeg = chainFromDeg; Variants = variants; Turn = turn; Pass = pass;
             this.eventNames = eventNames; this.eventTimes = eventTimes;
         }
 
@@ -60,6 +66,16 @@ namespace Nindo
             int i = UnityEngine.Mathf.Min((int)x, Travel.Length - 1);
             int j = UnityEngine.Mathf.Min(i + 1, Travel.Length - 1);
             return Travel[i] + (Travel[j] - Travel[i]) * (x - i);
+        }
+
+        /// <summary>Grados girados en el tiempo normalizado 'n' (0 si el clip no gira).</summary>
+        public float TurnAt(float n)
+        {
+            if (Turn == null) return 0f;
+            float x = UnityEngine.Mathf.Clamp(n, 0f, 1f) * Frames;
+            int i = UnityEngine.Mathf.Min((int)x, Turn.Length - 1);
+            int j = UnityEngine.Mathf.Min(i + 1, Turn.Length - 1);
+            return Turn[i] + (Turn[j] - Turn[i]) * (x - i);
         }
 
         /// <summary>Lo que avanza el cuerpo hasta el golpe (para saber desde qué distancia llega).</summary>
@@ -422,7 +438,11 @@ namespace Nindo
         public static readonly MasterClip DashStrike = new MasterClip("DashStrike", 36, 1.2f, 0.2222f, 0.4722f, 0.5278f, 0.68f, 1.52f, 2, new[] { "Master_GlintHandR" },
             0.0f, 0.0f, 0.0f, 0.2778f, 0.4444f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 1.4805f, 2.3863f, 3.15f, 3.8228f, 4.431f, 4.9904f, 5.511f, 6.0f, 6.1312f, 6.225f, 6.2812f, 6.3f, 6.3111f, 6.3397f, 6.3787f, 6.4213f, 6.4603f, 6.4889f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f },
-            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "DashStart", "DashEnd", "Strike", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.4722f, 0.6667f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "DashStart", "DashEnd", "Strike", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.4722f, 0.6667f }, pass: "DashStrike_Pass");
+        public static readonly MasterClip DashStrike_Pass = new MasterClip("DashStrike_Pass", 36, 1.2f, 0.2222f, 0.4722f, 0.5278f, 0.68f, 1.04f, 2, new[] { "Master_GlintHandR" },
+            0.0f, 0.0f, 0.0f, 0.2778f, 0.5556f,
+            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.7648f, 1.2328f, 1.7021f, 2.1708f, 2.6369f, 3.0984f, 3.5535f, 4.0f, 4.4354f, 4.8708f, 5.2354f, 5.6f, 5.8778f, 6.0444f, 6.1f, 6.2111f, 6.2778f, 6.3f, 6.313f, 6.337f, 6.35f, 6.35f, 6.35f, 6.35f, 6.35f, 6.35f, 6.35f },
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "DashStart", "Strike", "DashEnd", "Step", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.5833f, 0.5833f, 0.6667f }, turn: new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -5.875f, -14.0f, -28.625f, -46.0f, -62.5f, -82.0f, -110.0f, -138.0f, -157.0f, -176.0f, -178.815f, -179.852f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f });
         public static readonly MasterClip BackHop = new MasterClip("BackHop", 22, 0.7333f, 0.2727f, 0.6818f, 0.6818f, 1.0f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.4091f, 0.6818f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.5494f, -1.0335f, -1.4711f, -1.8736f, -2.2482f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f, -2.6f },
@@ -478,7 +498,11 @@ namespace Nindo
         public static readonly MasterClip DashStrike_P3 = new MasterClip("DashStrike_P3", 36, 1.2f, 0.2222f, 0.4722f, 0.5278f, 0.68f, 2.43f, 2, new[] { "Master_GlintStaff" },
             0.0f, 0.0f, 0.0f, 0.2778f, 0.4444f,
             new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 1.4805f, 2.3863f, 3.15f, 3.8228f, 4.431f, 4.9904f, 5.511f, 6.0f, 6.1312f, 6.225f, 6.2812f, 6.3f, 6.3111f, 6.3397f, 6.3787f, 6.4213f, 6.4603f, 6.4889f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f, 6.5f },
-            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "DashStart", "DashEnd", "Strike", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.4722f, 0.6667f });
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "DashStart", "DashEnd", "Strike", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.4722f, 0.6667f }, pass: "DashStrike_Pass_P3");
+        public static readonly MasterClip DashStrike_Pass_P3 = new MasterClip("DashStrike_Pass_P3", 36, 1.2f, 0.2222f, 0.4722f, 0.5278f, 0.68f, 0.99f, 2, new[] { "Master_GlintStaff" },
+            0.0f, 0.0f, 0.0f, 0.2778f, 0.5556f,
+            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.3f, 0.7648f, 1.2328f, 1.7021f, 2.1708f, 2.6369f, 3.0984f, 3.5535f, 4.0f, 4.4354f, 4.8708f, 5.2354f, 5.6f, 5.8778f, 6.0444f, 6.1f, 6.2111f, 6.2778f, 6.3f, 6.313f, 6.337f, 6.35f, 6.35f, 6.35f, 6.35f, 6.35f, 6.35f, 6.35f },
+            "READY", "READY", 0.0f, new string[0], new[] { "Apex", "DashStart", "Strike", "DashEnd", "Step", "Step" }, new[] { 0.2222f, 0.25f, 0.4722f, 0.5833f, 0.5833f, 0.6667f }, turn: new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -5.875f, -14.0f, -28.625f, -46.0f, -62.5f, -82.0f, -110.0f, -138.0f, -157.0f, -176.0f, -178.815f, -179.852f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f, -180.0f });
         public static readonly MasterClip PhaseStaff = new MasterClip("PhaseStaff", 90, 3.0f, 0.0f, 0.0f, 0.0f, 1.6f, 0.0f, 0, new string[0],
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             null,
@@ -507,7 +531,7 @@ namespace Nindo
             if (all == null)
             {
                 all = new Dictionary<string, MasterClip>();
-                foreach (var c in new[] { Idle, Walk, Run, StrafeL, StrafeR, WalkBack, Idle_P2, Walk_P2, Run_P2, StrafeL_P2, StrafeR_P2, WalkBack_P2, Idle_P3, Walk_P3, Run_P3, StrafeL_P3, StrafeR_P3, WalkBack_P3, Palm, Palm_Mid, Palm_Close, ChopPalm, ChopPalm_Mid, ChopPalm_Close, CraneKick, LeapKick, Palm_P2, Palm_Mid_P2, Palm_Close_P2, ChopPalm_P2, ChopPalm_Mid_P2, ChopPalm_Close_P2, CraneKick_P2, LeapKick_P2, Guard, GuardHit, Counter, CounterStrike, CounterStrike_Mid, CounterStrike_Close, Taunt, Stance, Hit, HitHeavy, Parried, ParriedPerfect, Exhausted, ExhaustedHit, ExhaustedRise, Guard_P2, GuardHit_P2, Counter_P2, CounterStrike_P2, CounterStrike_Mid_P2, CounterStrike_Close_P2, Taunt_P2, Stance_P2, Hit_P2, HitHeavy_P2, Parried_P2, ParriedPerfect_P2, Exhausted_P2, ExhaustedHit_P2, ExhaustedRise_P2, Guard_P3, GuardHit_P3, Counter_P3, CounterStrike_P3, CounterStrike_Mid_P3, CounterStrike_Close_P3, Taunt_P3, Stance_P3, Hit_P3, HitHeavy_P3, Parried_P3, ParriedPerfect_P3, Exhausted_P3, ExhaustedHit_P3, ExhaustedRise_P3, Intro, PhaseCoat, TwinPalm, TwinPalm_Mid, TwinPalm_Close, SpinKick, Sweep, QiWave, DashStrike, BackHop, BackHop_P2, BackHop_P3, Palm_P3, Palm_Mid_P3, Palm_Close_P3, ChopPalm_P3, ChopPalm_Mid_P3, ChopPalm_Close_P3, CraneKick_P3, LeapKick_P3, Sweep_P3, QiWave_P3, DashStrike_P3, PhaseStaff, Defeat, Meditate, SeatedBow, PoseTest })
+                foreach (var c in new[] { Idle, Walk, Run, StrafeL, StrafeR, WalkBack, Idle_P2, Walk_P2, Run_P2, StrafeL_P2, StrafeR_P2, WalkBack_P2, Idle_P3, Walk_P3, Run_P3, StrafeL_P3, StrafeR_P3, WalkBack_P3, Palm, Palm_Mid, Palm_Close, ChopPalm, ChopPalm_Mid, ChopPalm_Close, CraneKick, LeapKick, Palm_P2, Palm_Mid_P2, Palm_Close_P2, ChopPalm_P2, ChopPalm_Mid_P2, ChopPalm_Close_P2, CraneKick_P2, LeapKick_P2, Guard, GuardHit, Counter, CounterStrike, CounterStrike_Mid, CounterStrike_Close, Taunt, Stance, Hit, HitHeavy, Parried, ParriedPerfect, Exhausted, ExhaustedHit, ExhaustedRise, Guard_P2, GuardHit_P2, Counter_P2, CounterStrike_P2, CounterStrike_Mid_P2, CounterStrike_Close_P2, Taunt_P2, Stance_P2, Hit_P2, HitHeavy_P2, Parried_P2, ParriedPerfect_P2, Exhausted_P2, ExhaustedHit_P2, ExhaustedRise_P2, Guard_P3, GuardHit_P3, Counter_P3, CounterStrike_P3, CounterStrike_Mid_P3, CounterStrike_Close_P3, Taunt_P3, Stance_P3, Hit_P3, HitHeavy_P3, Parried_P3, ParriedPerfect_P3, Exhausted_P3, ExhaustedHit_P3, ExhaustedRise_P3, Intro, PhaseCoat, TwinPalm, TwinPalm_Mid, TwinPalm_Close, SpinKick, Sweep, QiWave, DashStrike, DashStrike_Pass, BackHop, BackHop_P2, BackHop_P3, Palm_P3, Palm_Mid_P3, Palm_Close_P3, ChopPalm_P3, ChopPalm_Mid_P3, ChopPalm_Close_P3, CraneKick_P3, LeapKick_P3, Sweep_P3, QiWave_P3, DashStrike_P3, DashStrike_Pass_P3, PhaseStaff, Defeat, Meditate, SeatedBow, PoseTest })
                     all[c.State] = c;
             }
             return state != null && all.TryGetValue(state, out var r) ? r : null;

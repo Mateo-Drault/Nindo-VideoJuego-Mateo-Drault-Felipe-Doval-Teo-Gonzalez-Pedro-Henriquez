@@ -212,6 +212,15 @@ namespace Nindo
                     Push(-info.direction, 0.3f);
                     if (State == PlayerState.Attack && currentAttack != null) lungeDone = currentAttack.lunge;   // no sigue avanzando contra la guardia
                     break;
+                case HitResult.Deflected:
+                    // le apartaron la hoja con la mano (Chikuō): el corte se frena en el roce, sin clang ni empujón (con el
+                    // corte en curso, cualquier deslizamiento le patinaba los pies apoyados). El que insiste sí rebota (Guarded)
+                    Game.Audio?.Play("parry", p, 0.45f, 0.1f);
+                    Game.Time?.HitStop(0.03f);
+                    Game.Input?.Rumble(0.18f, 0.12f, 0.06f);
+                    anim.Freeze(0.05f);
+                    if (State == PlayerState.Attack && currentAttack != null) lungeDone = currentAttack.lunge;
+                    break;
                 case HitResult.Guarded:
                     // el enemigo desvió el golpe: Kaito rebota
                     Game.FX?.Clash(p, -info.direction, false);

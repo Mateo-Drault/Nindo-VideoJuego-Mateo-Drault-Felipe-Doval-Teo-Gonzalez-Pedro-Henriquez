@@ -563,6 +563,7 @@ def define_clips():
     sweep()
     qi_wave()
     dash_strike()
+    dash_pass()
     for ph in (1, 2, 3):
         back_hop(ph)
     # fase 3 (el bastón), el cambio de fase 2 -> 3 y la derrota: master_clips_p3.py
@@ -1659,6 +1660,46 @@ def intro():
                      "reverencia (f70) y toma la guardia de una mano (f104)")
 
 
+# cuánto salió el saco puesto en cada cuadro de PhaseCoat (0 = puesto, 1 = la copia que vuela en CoatOff, f41): lo abre con
+# los puños (f30-35) y se le desliza cada vez más rápido por la espalda y los brazos, así llega a CoatOff a toda velocidad y
+# la copia sigue el movimiento (con una sola clave 'inout' en f38 frenaba ahí y saltaba 32 % en el cuadro siguiente).
+# master_coat.write_coat_slip lo pasa a las etapas CoatSlip1..4
+SLIP_CURVE = [[30, 0.0], [31, 0.01], [32, 0.03], [33, 0.05], [34, 0.08], [35, 0.12], [36, 0.18], [37, 0.3], [38, 0.46],
+              [39, 0.62], [40, 0.81], [41, 1.0]]
+
+
+def add3(a, b):
+    return tuple(x + y for x, y in zip(a, b))
+
+
+def mixf(a, b, w):
+    return tuple(x + (y - x) * w for x, y in zip(a, b))
+
+
+def coat_off_place(p):
+    """(robe_pos, robe_rot, robe_fold) que dejan los RobeT_* donde los pondría el cuerpo de la pose p como al saco puesto:
+    RobeT_Root con el pecho, las mangas con los brazos (desde su reposo). En CoatOff la copia es el saco puesto (skin
+    inverso), así que con esto las mangas giran alrededor de los hombros del saco y el ruedo cuelga del cuello."""
+    W = solved(p)
+    R = SOLVER.rig
+    Mr = W["Chest"] @ R.rest_inv["Chest"] @ R.rest["RobeT_Root"]
+    rr = (NA.rot3(Mr) @ NA.rot3(R.rest["RobeT_Root"]).inverted()).to_euler('XYZ')
+    A = Mr @ R.rest_inv["RobeT_Root"]
+    want = NA.rot3(W["UpperArm_R"] @ R.rest_inv["UpperArm_R"] @ R.rest["RobeT_ArmR"])
+    ea = (NA.rot3(A).inverted() @ want @ NA.rot3(R.rest["RobeT_ArmR"]).inverted()).to_euler('XYZ')
+    # el antebrazo: solo el codo (fold[5] gira RobeT_ArmR_2 sobre su x desde el tramo de arriba)
+    Wa = A @ Matrix.Translation(R.head_rest("RobeT_ArmR")) @ ea.to_matrix().to_4x4() @ Matrix.Translation(-R.head_rest("RobeT_ArmR")) \
+        @ R.rest["RobeT_ArmR"]
+    want2 = NA.rot3(W["Forearm_R"] @ R.rest_inv["Forearm_R"] @ R.rest["RobeT_ArmR_2"])
+    e2 = (NA.rot3(Wa @ R.rest_inv["RobeT_ArmR"]).inverted() @ want2 @ NA.rot3(R.rest["RobeT_ArmR_2"]).inverted()).to_euler('XYZ')
+    d = math.degrees
+    return tuple(Mr.translation), (d(rr.x), d(rr.y), d(rr.z)), (0.0, d(ea.y), -d(ea.z), 0.0, 0.0, d(e2.x), d(ea.x))
+
+
+# la copia que vuela se aplana (forma Collapse de Master_RobeThrown) del cuadro de CoatOff a la caída (CoatLand, f64)
+COLLAPSE_CURVE = [[41, 0.0], [43, 0.12], [46, 0.42], [49, 0.66], [54, 0.86], [64, 1.0]]
+
+
 def phase_coat():
     """Fase 1 -> 2 (solo base): se endereza, los ojos se encienden en jade (EyesIgnite), saca la izquierda de la espalda,
     agarra el saco por el pecho, lo abre y lo tira hacia atrás de un tirón (CoatOff: el juego apaga Master_Robe y prende
@@ -1701,13 +1742,17 @@ def phase_coat():
                      "r", (-0.4, -0.5, 1.5), (0.1, -0.3, 1.0), (-0.3, 1.0, 0.2), elbow=(-0.7, 0.3, -0.7), shape="palm"),
                 "l", (0.42, -0.4, 1.36), (0.2, -0.3, 1.0), (0.3, 1.0, 0.2), elbow=(0.7, 0.3, -0.7), shape="palm")
     POSES["círculo tai chi"] = rise
-    # el saco tirado: libre en el mundo desde CoatOff (encima de donde estaba el puesto, con las mangas por los brazos que
-    # van atrás); sale de los brazos hacia arriba y atrás, vuela a su izquierda ondeando el ruedo y cae arrugado (el ruedo
-    # doblado en zigzag, las mangas quebradas), no como una tabla
+    # el saco tirado: en CoatOff (f41) es el mismo saco puesto (master_coat.rebuild_thrown), con los RobeT_* donde los
+    # pone el cuerpo en esa pose (coat_off_place: el cuello con el pecho, las mangas con los brazos); de ahí se le va de los
+    # brazos hacia atrás y abajo (las manos salen por los puños), sale volando hacia arriba y atrás con el tirón, vuela a
+    # su izquierda ondeando el ruedo, se aplana (Collapse) y cae arrugado detrás a su izquierda (el ruedo doblado en zigzag,
+    # las mangas quebradas). robe_pos/robe_rot = cabeza y giro de RobeT_Root desde su reposo
     # robe_fold = (ruedo, mangas abiertas, mangas giradas, tramo 2, tramo 3, codo de las mangas, mangas atrás)
-    path = [(41, (0.0, 0.3, 1.92), (16.0, 0.0, 0.0), (8.0, -20.0, 0.0, 6.0, 4.0, 10.0, 34.0)),
-            (43, (0.02, 0.46, 2.14), (30.0, 2.0, 6.0), (14.0, 6.0, 8.0, 10.0, 8.0, 24.0, 20.0)),
-            (47, (0.14, 0.78, 2.5), (62.0, 10.0, 26.0), (22.0, 36.0, 18.0, 26.0, -18.0, 30.0, 0.0)),
+    p41, r41, f41 = coat_off_place(slip)
+    path = [(41, p41, r41, f41),
+            (43, add3(p41, (0.0, 0.13, -0.07)), add3(r41, (6.0, 0.0, 1.0)), mixf(f41, (4.0, 0.0, 2.0, 4.0, 2.0, 8.0, 12.0), 0.3)),
+            (45, add3(p41, (0.03, 0.34, 0.06)), add3(r41, (22.0, 3.0, 8.0)), mixf(f41, (12.0, 10.0, 8.0, 8.0, 6.0, 18.0, 18.0), 0.7)),
+            (48, (0.14, 0.8, 2.42), (58.0, 10.0, 26.0), (22.0, 36.0, 18.0, 26.0, -18.0, 30.0, 0.0)),
             (52, (0.44, 1.36, 2.48), (98.0, 20.0, 60.0), (34.0, 52.0, 20.0, -24.0, 30.0, 18.0, 0.0)),
             (56, (0.74, 1.88, 1.86), (116.0, 25.0, 90.0), (20.0, 40.0, 15.0, 30.0, -20.0, 34.0, 0.0)),
             (60, (0.95, 2.26, 0.92), (104.0, 15.0, 110.0), (10.0, 30.0, 12.0, -18.0, 26.0, 22.0, 0.0)),
@@ -1719,15 +1764,14 @@ def phase_coat():
     track = [(0, dict(robe_free=0.0, robe_pos=path[0][1], robe_rot=path[0][2], robe_fold=path[0][3]), "lin"),
              (40, dict(robe_free=0.0, robe_pos=path[0][1], robe_rot=path[0][2], robe_fold=path[0][3]), "lin")] + track + \
             [(110, dict(robe_free=1.0, robe_pos=path[-1][1], robe_rot=path[-1][2], robe_fold=path[-1][3]), "lin")]
-    # robe_slip: el peso de la forma CoatSlip del saco puesto (master_model). Se abre un poco con los puños (f35) y en
-    # seis cuadros se le desliza por la espalda y los brazos hasta CoatOff (f41), donde ya es casi la copia que vuela
     keys = [(0, ready(1), "sine"), (10, tall, "inout"), (18, mod(tall, breath=0.8), "sine"), (24, out_l, "inout"),
-            (30, mod(grab, robe_slip=0.0), "inout"), (35, mod(opn, robe_slip=0.12), "inout"), (38, mod(shrug, robe_slip=0.55), "inout"),
-            (41, mod(slip, robe_slip=1.0), "out"), (44, fling, "expo_out"),
+            (30, grab, "inout"), (35, opn, "inout"), (38, shrug, "inout"),
+            (41, slip, "out"), (44, fling, "expo_out"),
             (48, mod(fling, spine=(-4.0, 0.0, 2.0), breath=0.7), "out"), (57, roll, "inout"), (66, rise, "inout"), (78, sink, "inout"),
             (92, mod(READY2, hips=(0.02, 0.065, -0.09)), "inout"), (110, ready(2), "sine")]
     return add("PhaseCoat", 110, keys, ph=1, lag={"head": 2.0, "neck": 1.0}, steps=track,
-               timing={"kind": "none", "robe_off": 41, "chain_from": "READY", "chain_to": "READY2", "next_phase": 2},
+               timing={"kind": "none", "robe_off": 41, "chain_from": "READY", "chain_to": "READY2", "next_phase": 2,
+                       "slip_curve": SLIP_CURVE, "collapse_curve": COLLAPSE_CURVE},
                events=[{"frame": 18, "fn": "EyesIgnite"}, {"frame": 30, "fn": "CoatGrab"}, {"frame": 38, "fn": "Shrug"},
                        {"frame": 41, "fn": "CoatOff"}, {"frame": 64, "fn": "CoatLand"}, {"frame": 72, "fn": "CoatRest"},
                        {"frame": 92, "fn": "Guard"}],
@@ -2071,6 +2115,7 @@ def dash_strike():
     push = feet(mod(set_, hips=(0.0, -0.1, -0.3), spine=(26.0, 0.0, 6.0), travel=0.3), r=air(RX, RY - 0.5, 0.2, pitch=-10.0),
                 l=tiptoe(LX, LY, LYAW, heel=50.0, toe=14.0))
     push["_left_p2"] = dict(set_["_left_p2"])
+    DASH_EARLY.update(set=set_, hold=hold, push=push)
 
     def glide(w):
         trv = 0.3 + (D - 0.3) * w
@@ -2113,8 +2158,140 @@ def dash_strike():
                timing={"tell": [0, APEX], "apex": APEX, "hold": [6, APEX], "contact": CONTACT, "active": [CONTACT, 19],
                        "recover": [19, N], "lunge": [APEX, 28, round(T_END, 3)], "air": [PUSH + 1, CONTACT - 1], "release_rate": RR,
                        "root_max": 26.0, "kind": RED, "glow": "Master_GlintHandR", "strike": PALM_R, "spin": True,
-                       "chain_from": "READY", "chain_to": "READY"},
+                       "chain_from": "READY", "chain_to": "READY", "pass_variant": "DashStrike_Pass"},
                events=[{"frame": APEX, "fn": "Apex"}, {"frame": PUSH, "fn": "DashStart"}, {"frame": CONTACT, "fn": "DashEnd"},
                        {"frame": CONTACT, "fn": "Strike"}, {"frame": 24, "fn": "Step"}],
                notes=f"embestida: se agacha (aviso f{APEX}), sale en f{PUSH} a ~20 m/s en el reloj del juego (releaseRate {RR}) y "
                      f"clava los dedos de espada frenando sobre el pie derecho (f{CONTACT}); imágenes residuales en DashStart-DashEnd")
+
+
+# las poses del paso del viento hasta la suelta (dash_strike): la variante que pasa al costado arranca igual
+DASH_EARLY = {}
+
+
+def at_pose(p, travel, turn):
+    """La misma pose (en el espacio del personaje) con el transform corrido 'travel' por el carril y girado 'turn' grados:
+    lo que está en el mundo (pies) se pasa al mundo del clip."""
+    q = copy.deepcopy(p)
+    R = Matrix.Rotation(math.radians(turn), 3, 'Z')
+    for k in ("foot_r", "foot_l"):
+        if q.get(k) is None:
+            continue
+        w = R @ Vector(q[k])
+        q[k] = (w.x, w.y - travel, w.z)
+        r = q.get(k + "_rot")
+        if r is not None:
+            q[k + "_rot"] = (r[0], r[1], r[2] + turn)
+    q["travel"], q["turn"] = travel, turn
+    return q
+
+
+def dash_pass():
+    """DashStrike_Pass, el paso del viento que le pasa al COSTADO a Kaito (rojo): la variante que el jefe elige en la
+    suelta cuando Kaito quedó demasiado cerca para frenar de frente (BambooMasterBoss.PlanDash). Hasta la suelta es
+    DashStrike cuadro por cuadro; sale volando por al lado de Kaito (que queda a su derecha) y el transform GIRA en el
+    vuelo (turn, como el avance: lo aplica el jefe): en el cruce (el contacto, f17) ya lo mira y le clava los dedos de
+    espada de frente; sigue de largo girando en el aire hasta quedar de espaldas al carril, de frente a Kaito, y frena hacia
+    atrás en dos pasos hasta la guardia. Antes la embestida que lo atravesaba era la estocada de frente: en el impacto la
+    mano roja apuntaba lejos de Kaito, el cuerpo le pasaba por adentro y terminaba de espaldas a él. El jefe escala el
+    avance de DashStart a DashEnd para que el cruce caiga sobre Kaito."""
+    N, APEX, PUSH, CONTACT, LAND = 36, 8, 9, 17, 21
+    RR = 0.68
+    TC = 4.0                         # avance en el cruce con el vuelo autorado (el jefe lo escala: 0.3 + k * 3.7)
+    TL = 5.6                         # y al apoyar (DashEnd)
+    T_END = TL + 0.75                # frenando hacia atrás después de apoyar
+    RX, RY, RYAW = land_xy(RF0)
+    LX, LY, LYAW = land_xy(LF0)
+    E = DASH_EARLY
+
+    def turn_at(f):
+        return curve([(11, 0.0), (13, -14.0), (15, -46.0), (CONTACT, -82.0), (19, -138.0), (LAND, -176.0), (23, -180.0)], f)
+
+    def trav(f):
+        return curve([(PUSH, 0.3), (CONTACT, TC), (LAND, TL), (24, TL + 0.5), (27, TL + 0.7), (30, T_END)], f)
+
+    def air_feet(p, f, r, l):
+        """Pies en el aire autorados en el espacio del personaje (se pasan al mundo con el avance y el giro del cuadro)."""
+        q = feet(p, r=r, l=l)
+        return at_pose(q, trav(f), turn_at(f))
+
+    def body(f, hips, hrot, spine, chest, neck, head, hr, hr_dir, hr_up, el_r, hl, hl_dir, hl_up, el_l, r, l, **kw):
+        p = hand(mod(R0, hips=hips, hips_rot=hrot, spine=spine, chest=chest, neck=neck, head=head, **kw),
+                 "r", hr, hr_dir, hr_up, elbow=el_r, shape="sword")
+        p["_left_p2"] = dict(pos=hl, fingers=hl_dir, dorsum=hl_up, elbow=el_l, shape="palm")
+        return air_feet(p, f, r, l)
+
+    keys = [(0, ready(2), "sine"), (6, E["set"], "inout"), (APEX, E["hold"], "sine"), (PUSH, E["push"], "in2", {"travel": "lin"})]
+    # el vuelo: bajo y estirado hacia el costado de Kaito, la derecha recogida en la cadera para el corte, la izquierda
+    # atrás; desde f13 el cuerpo gira hacia él (los pies quedan colgando del lado de afuera del giro)
+    for f in range(PUSH + 1, CONTACT):
+        w = (f - PUSH) / (CONTACT - PUSH)
+        g = smooth(0.35, 1.0, w)
+        p = body(f, hips=(0.0, -0.18, -0.36 - 0.02 * g), hrot=(16.0 - 4.0 * g, 6.0 * g, 24.0 - 12.0 * g),
+                 spine=(26.0 - 6.0 * g, 0.0, 6.0 - 12.0 * g), chest=(6.0, 0.0, 4.0 - 10.0 * g), neck=(-16.0, 0.0, -14.0 + 10.0 * g),
+                 head=(-20.0 + 4.0 * g, 0.0, -14.0 + 12.0 * g),
+                 hr=(-0.36 + 0.14 * g, 0.05 - 0.2 * g, 1.3 - 0.06 * g), hr_dir=(0.1 * g, -1.0, 0.1), hr_up=(-0.3, 0.0, 1.0),
+                 el_r=(-0.6, 0.7, -0.1), hl=(0.34 + 0.08 * g, -0.45 + 0.85 * g, 1.48), hl_dir=(0.2 * g, -0.4 + 1.2 * g, 0.6),
+                 hl_up=(0.6 * g, 0.4, 0.6), el_l=(0.7, 0.2, -0.6),
+                 r=air(-0.22 - 0.2 * g, -0.6 + 0.4 * g, 0.22 + 0.08 * g, pitch=-14.0 + 10.0 * g, yaw=0.0),
+                 l=air(0.22 - 0.24 * g, 0.5 - 0.1 * g, 0.42 + 0.04 * g, pitch=28.0 - 8.0 * g, yaw=LYAW * (1.0 - g)))
+        keys.append((f, p, "lin", {"turn": "lin", "travel": "lin"}))
+    # el cruce: de frente a Kaito (que va a su derecha, un poco atrás), los dedos de espada clavados a la altura de su
+    # pecho; la izquierda abierta atrás para el equilibrio y las piernas recogidas del lado de afuera
+    cut = body(CONTACT, hips=(0.0, -0.1, -0.42), hrot=(10.0, 8.0, 6.0), spine=(18.0, 0.0, -10.0), chest=(6.0, 0.0, -12.0),
+               neck=(-12.0, 0.0, 8.0), head=(-14.0, 0.0, 10.0), clav_r=(0.0, -4.0, 8.0),
+               hr=(-0.34, -0.98, 1.18), hr_dir=(-0.3, -1.0, 0.0), hr_up=(0.0, 0.0, 1.0), el_r=(-0.3, 0.3, -0.9),
+               hl=(0.5, 0.42, 1.42), hl_dir=(0.4, 0.8, -0.2), hl_up=(0.5, -0.2, 0.85), el_l=(0.8, 0.2, -0.4),
+               r=air(-0.44, -0.18, 0.32, pitch=-6.0, yaw=-20.0), l=air(-0.06, 0.34, 0.5, pitch=24.0, yaw=10.0))
+    POSES["paso del viento al costado"] = arms(cut, 2, left=cut["_left_p2"])
+    keys.append((CONTACT, cut, "lin", {"turn": "lin", "travel": "lin"}))
+    # sigue de largo girando en el aire: la derecha barre hasta su derecha y atrás, la izquierda viene adelante y las
+    # piernas pasan por debajo para apoyar de espaldas al carril
+    spin = body(19, hips=(0.0, 0.02, -0.41), hrot=(8.0, 4.0, -8.0), spine=(14.0, 0.0, -14.0), chest=(4.0, 0.0, -10.0),
+                neck=(-10.0, 0.0, 10.0), head=(-12.0, 0.0, 12.0),
+                hr=(-0.8, -0.1, 1.3), hr_dir=(-1.0, 0.1, 0.1), hr_up=(0.0, -0.2, 1.0), el_r=(-0.3, 0.6, -0.7),
+                hl=(0.32, -0.46, 1.38), hl_dir=(-0.2, -1.0, 0.2), hl_up=(0.3, 0.0, 1.0), el_l=(0.8, 0.1, -0.5),
+                r=air(-0.3, 0.12, 0.26, pitch=4.0, yaw=-8.0), l=air(0.18, 0.4, 0.3, pitch=10.0, yaw=20.0))
+    keys.append((19, spin, "out", {"turn": "lin", "travel": "lin"}))
+    # apoya (DashEnd): el derecho adelante del frenado (detrás de él, para donde va), el izquierdo todavía en el aire;
+    # los pies quedan clavados donde termina en la guardia (el cuerpo frena pasando por encima)
+    fin = at_pose(arms(BODY, 2, right=True), T_END, -180.0)
+    RF, LF = fin["foot_r"], fin["foot_l"]
+    land = body(LAND, hips=(0.0, 0.1, -0.45), hrot=(12.0, 0.0, 12.0), spine=(18.0, 0.0, 0.0), chest=(6.0, 0.0, 0.0),
+                neck=(-10.0, 0.0, -6.0), head=(-14.0, 0.0, -8.0),
+                hr=(-0.4, -0.5, 1.5), hr_dir=(0.0, -0.4, 1.0), hr_up=(-0.3, 1.0, 0.2), el_r=(-0.7, 0.3, -0.6),
+                hl=(0.42, -0.36, 1.32), hl_dir=(0.2, -0.3, 1.0), hl_up=(0.25, 1.0, 0.25), el_l=(0.7, 0.3, -0.7),
+                r=None, l=air(0.26, 0.1, 0.24, pitch=-8.0, yaw=34.0))
+    land["foot_r"], land["foot_r_rot"], land["toe_r"] = RF, fin["foot_r_rot"], 0.0
+    keys.append((LAND, land, "out", {"turn": "lin", "travel": "lin"}))
+    absorb = mod(land, hips=(0.0, 0.08, -0.36), spine=(10.0, 0.0, 2.0))
+    keys.append((24, mod(absorb, travel=trav(24)), "out", {"travel": "out2"}))
+    settle = mod(fin, hips=(0.02, 0.07, -0.16), travel=trav(27))
+    settle["foot_r"], settle["foot_l"] = RF, LF
+    keys.append((27, settle, "inout", {"travel": "out2"}))
+    keys.append((30, mod(fin, hips=(0.02, 0.065, -0.1)), "inout"))
+    keys.append((N, fin, "sine"))
+    for k in keys:
+        if k[0] > PUSH:
+            k[1]["turn"] = turn_at(k[0])
+    # los apoyos (pista aparte de los pies, una clave por cuadro): el derecho baja ENCIMA de su huella en f20 y apoya en
+    # f21; el izquierdo, en f24 sobre su lugar de la guardia
+    s19 = keys[[k[0] for k in keys].index(19)][1]
+    rtrack = [(19, (s19["foot_r"], s19["foot_r_rot"], 0.0), "lin"),
+              (20, (tuple(Vector(RF) + Vector((0.0, 0.0, 0.06))), fin["foot_r_rot"], 0.0), "out"),
+              (LAND, (tuple(RF), fin["foot_r_rot"], 0.0), "in2"), (N, (tuple(RF), fin["foot_r_rot"], 0.0), "lin")]
+    ltrack = [(19, (s19["foot_l"], s19["foot_l_rot"], 0.0), "lin"), (LAND, (land["foot_l"], land["foot_l_rot"], 0.0), "lin"),
+              (23, (tuple(Vector(LF) + Vector((0.0, 0.08, 0.05))), fin["foot_l_rot"], 0.0), "out"),
+              (24, (tuple(LF), fin["foot_l_rot"], 0.0), "inout"), (N, (tuple(LF), fin["foot_l_rot"], 0.0), "lin")]
+    steps = [(f, st, e) for f, st, e in feet_track(rtrack, ltrack, N, r0=rtrack[0][1], l0=ltrack[0][1]) if f >= 19]
+    keys = [(k[0], arms(k[1], 2, left=k[1].get("_left_p2")) if k[0] < 27 else arms(k[1], 2, right=True)) + tuple(k[2:]) for k in keys]
+    return add("DashStrike_Pass", N, keys, ph=2, variant=False, steps=steps,
+               timing={"tell": [0, APEX], "apex": APEX, "hold": [6, APEX], "contact": CONTACT, "active": [CONTACT, 19],
+                       "recover": [19, N], "lunge": [APEX, 30, round(T_END, 3)], "air": [PUSH + 1, LAND - 1], "release_rate": RR,
+                       "root_max": 26.0, "kind": RED, "glow": "Master_GlintHandR", "strike": PALM_R, "spin": True,
+                       "chain_from": "READY", "chain_to": "READY"},
+               events=[{"frame": APEX, "fn": "Apex"}, {"frame": PUSH, "fn": "DashStart"}, {"frame": CONTACT, "fn": "Strike"},
+                       {"frame": LAND, "fn": "DashEnd"}, {"frame": LAND, "fn": "Step"}, {"frame": 24, "fn": "Step"}],
+               notes=f"paso del viento al costado: igual que DashStrike hasta la suelta (f{APEX}), vuela por al lado de Kaito "
+                     f"girando hacia él (turn, el jefe gira el transform), lo corta de frente en el cruce (f{CONTACT}), gira en "
+                     f"el aire hasta quedar de espaldas al carril y apoya en f{LAND} y f24 frenando hacia atrás hasta la guardia")

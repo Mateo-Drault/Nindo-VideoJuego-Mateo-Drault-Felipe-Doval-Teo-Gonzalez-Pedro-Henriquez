@@ -83,6 +83,8 @@ def p3_from(base, track, body=None, notes="", glow="Master_GlintStaff", strike=S
     t.update(phase=3, glow=glow, strike=strike)
     if "reach_variants" in t:
         t["reach_variants"] = MC.reach_names(base, 3)
+    if "pass_variant" in t:
+        t["pass_variant"] = t["pass_variant"] + "_P3"
     t.update(timing or {})
     # los pasos del clip base (su pista de pies) siguen valiendo: los brazos y el bastón van encima
     c = MC.MClip(base + "_P3", b.frames, keys, phase=3, base=base, loop=b.loop, lag=dict(b.lag), timing=t,
@@ -344,6 +346,33 @@ def dash_p3():
                    notes="embestida con el bastón: tsuki recogido (aviso f8), sale en f9 y clava la punta al frenar (f17)")
 
 
+def dash_pass_p3():
+    """DashStrike_Pass_P3, el paso del viento al costado con el bastón (rojo): el cuerpo de DashStrike_Pass y, hasta la
+    suelta, los brazos de DashStrike_P3. En el vuelo lo lleva bajo y en diagonal por delante y en el cruce se lo clava a
+    Kaito con la punta de abajo, las dos manos cerca de ella y el resto del bastón hacia atrás por afuera de su cadera
+    izquierda (de frente a Kaito, la punta llega a ~0.9 m: lo toca sin que el cuerpo pase por él); gira con él en el aire y
+    lo recoge a la guardia al frenar."""
+    B = MC.BODY
+    er, el = dict(elbow_r=(-0.8, 0.2, -0.6), elbow_l=(0.8, 0.5, -0.4)), dict(elbow_r=(-0.6, 0.1, -0.8), elbow_l=(0.5, 0.3, -0.8))
+    coil = line(B, (0.11, -0.46, 1.02), (0.5, 0.28, 1.0), 0.42, **er)
+    track = [(0, G3(), "lin"), (6, coil, "inout"), (8, line(B, (0.11, -0.45, 1.01), (0.5, 0.29, 1.0), 0.41, **er), "sine"),
+             # sale como DashStrike_P3 (el bastón bajo, adelante a su izquierda) y lo lleva así todo el vuelo: el cuerpo
+             # gira hacia Kaito por encima y el bastón queda en diagonal por delante
+             (10, line(B, (0.15, -0.7, 0.95), (0.5, -0.06, 0.95), 0.8, **er), "in2"),
+             (13, line(B, (0.08, -0.7, 1.0), (0.45, -0.12, 0.98), 0.6, **er), "inout"),
+             (15, line(B, (0.06, -0.6, 1.06), (0.4, -0.1, 1.0), 0.5, **el), "inout"),
+             # el cruce: la punta de abajo a la altura del pecho de Kaito, las manos cerca de ella y el resto del bastón
+             # hacia atrás por afuera de su cadera izquierda
+             (17, line(B, (0.05, -0.52, 1.12), (0.32, -0.08, 1.02), 0.42, **el), "expo_in"),
+             # gira con él y lo recoge al apoyar
+             (19, line(B, (-0.1, -0.46, 1.12), (0.3, 0.04, 1.06), 0.55, **el), "out"),
+             (21, line(B, (0.0, -0.66, 1.04), (0.38, 0.0, 1.02), 0.7, **er), "inout"),
+             (27, line(B, (0.08, -0.56, 1.13), (0.27, 0.12, 1.27), 0.82, **er), "inout"), (36, G3(), "sine")]
+    return p3_from("DashStrike_Pass", track, glow="Master_GlintStaff",
+                   notes="paso del viento al costado con el bastón: tsuki recogido (aviso f8), vuela por al lado de Kaito "
+                         "y se lo clava de frente en el cruce (f17); gira en el aire y apoya frenando hacia atrás")
+
+
 # ============================================================================ derrota: se sienta a meditar y saluda
 # rendido, apoya la punta del bastón en el piso adelante a su izquierda y lo suelta: cae de costado (gira sobre esa
 # punta) y queda en el piso a su izquierda apuntando a Kaito, como quien deja la espada al costado
@@ -569,6 +598,7 @@ def define():
     sweep_p3()
     qi_p3()
     dash_p3()
+    dash_pass_p3()
     phase_staff()
     defeat()
     meditate()

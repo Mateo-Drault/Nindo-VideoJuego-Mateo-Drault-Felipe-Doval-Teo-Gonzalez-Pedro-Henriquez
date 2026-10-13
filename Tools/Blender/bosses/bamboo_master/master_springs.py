@@ -127,6 +127,30 @@ def run_springs(rig, frames, springs, root_offsets, loop=False, preroll=1.0, sub
         frames[n - 1] = dict(frames[0])
 
 
+def turn_matrices(ctrls):
+    """El giro del transform de cada cuadro (control 'turn', grados alrededor de Z) o None si el clip no gira."""
+    ts = [c.get("turn") or 0.0 for c in ctrls]
+    if not any(abs(t) > 1e-6 for t in ts):
+        return None
+    return [Matrix.Rotation(math.radians(t), 4, 'Z') for t in ts]
+
+
+def spun(frames, mats):
+    for W, M in zip(frames, mats):
+        for n in list(W):
+            W[n] = M @ W[n]
+
+
+def world_frames(frames, ctrls):
+    """Los cuadros con el giro del transform (para medir pies y golpes en el mundo junto con el avance 'roots')."""
+    mats = turn_matrices(ctrls)
+    if not mats:
+        return frames
+    out = [dict(W) for W in frames]
+    spun(out, mats)
+    return out
+
+
 def bake_clip(rig, clip, solve, springs=(), preroll=1.0):
     """nindo_anim.bake_clip con estos resortes."""
     frames, ctrls, roots = [], [], []
@@ -142,7 +166,14 @@ def bake_clip(rig, clip, solve, springs=(), preroll=1.0):
         ctrls.append(c)
         roots.append(Vector((0.0, -(c.get("travel") or 0.0), 0.0)) + clip.root_vel * (f / FPS))
     lifts = [min(0.0, c.get("lift") or 0.0) for c in ctrls]
+    # un clip que gira el transform (turn) hace los resortes en el mundo (con el giro: las colas se abren al girar) y
+    # vuelve al espacio del personaje para exportar
+    spin = turn_matrices(ctrls)
+    if spin:
+        spun(frames, spin)
     run_springs(rig, frames, list(springs), roots, loop=clip.loop, preroll=preroll, floor_offsets=lifts)
+    if spin:
+        spun(frames, [m.inverted() for m in spin])
     if clip.loop:
         frames[-1] = {nme: m.copy() for nme, m in frames[0].items()}
     return frames, ctrls, roots

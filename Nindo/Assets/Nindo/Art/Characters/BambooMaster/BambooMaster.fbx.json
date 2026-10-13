@@ -5,8 +5,8 @@
  "bind_height_note": "alto que mide CharacterFactory.NormalizeHeight en la pose por defecto del FBX (el reposo, con el saco tirado y el bastón ocultos incluidos): con este valor en NindoContent la escala es 1",
  "tris": {
   "body": 3962,
-  "robe": 1024,
-  "thrown": 440,
+  "robe": 1072,
+  "thrown": 1072,
   "staff": 386
  },
  "facing": "frente +Z en Unity (Blender -Y): modelYaw 0",
@@ -10980,6 +10980,82 @@
     "chain_from": "READY",
     "chain_to": "READY2",
     "next_phase": 2,
+    "slip_curve": [
+     [
+      30,
+      0.0
+     ],
+     [
+      31,
+      0.01
+     ],
+     [
+      32,
+      0.03
+     ],
+     [
+      33,
+      0.05
+     ],
+     [
+      34,
+      0.08
+     ],
+     [
+      35,
+      0.12
+     ],
+     [
+      36,
+      0.18
+     ],
+     [
+      37,
+      0.3
+     ],
+     [
+      38,
+      0.46
+     ],
+     [
+      39,
+      0.62
+     ],
+     [
+      40,
+      0.81
+     ],
+     [
+      41,
+      1.0
+     ]
+    ],
+    "collapse_curve": [
+     [
+      41,
+      0.0
+     ],
+     [
+      43,
+      0.12
+     ],
+     [
+      46,
+      0.42
+     ],
+     [
+      49,
+      0.66
+     ],
+     [
+      54,
+      0.86
+     ],
+     [
+      64,
+      1.0
+     ]
+    ],
     "phase": 1
    },
    "normalized": {},
@@ -11089,7 +11165,89 @@
      "Hand_L",
      0.0
     ],
-    "max_height_m": 3.06,
+    "coat_penetration": {
+     "3716": [
+      0,
+      0.2,
+      19,
+      6.0
+     ],
+     "3717": [
+      0,
+      0.6,
+      6,
+      2.1
+     ],
+     "3718": [
+      2,
+      1.3,
+      6,
+      3.1
+     ],
+     "3719": [
+      1,
+      1.1,
+      6,
+      6.0
+     ],
+     "3720": [
+      1,
+      1.3,
+      5,
+      2.3
+     ],
+     "3721": [
+      0,
+      0.0,
+      4,
+      2.5
+     ],
+     "3722": [
+      0,
+      0.0,
+      7,
+      2.3
+     ],
+     "3723": [
+      0,
+      0.0,
+      3,
+      3.2
+     ],
+     "3724": [
+      0,
+      0.0,
+      0,
+      0.3
+     ],
+     "3725": [
+      0,
+      0.0,
+      0,
+      0.2
+     ],
+     "3726": [
+      0,
+      0.0,
+      0,
+      0.3
+     ]
+    },
+    "coat_swap": {
+     "juego": [
+      0.931,
+      0.956,
+      5853,
+      5595
+     ],
+     "pelea": [
+      0.928,
+      0.951,
+      8364,
+      7953
+     ]
+    },
+    "max_height_m": 3.38,
     "min_z_m": -0.0
    }
   },
@@ -12343,6 +12501,7 @@
     "spin": true,
     "chain_from": "READY",
     "chain_to": "READY",
+    "pass_variant": "DashStrike_Pass",
     "phase": 2
    },
    "normalized": {
@@ -12517,14 +12676,295 @@
      "Hand_L",
      0.0
     ],
+    "reach_same_deg": {
+     "DashStrike_Pass": [
+      0.14,
+      "Forearm_L",
+      8
+     ]
+    },
+    "max_height_m": 2.59,
+    "min_z_m": -0.009,
+    "tell_silhouette_change": 0.225
+   }
+  },
+  "DashStrike_Pass": {
+   "first": 4173,
+   "last": 4209,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 2,
+   "variant_of": null,
+   "timing": {
+    "tell": [
+     0,
+     8
+    ],
+    "apex": 8,
+    "hold": [
+     6,
+     8
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     8,
+     30,
+     6.35
+    ],
+    "air": [
+     10,
+     20
+    ],
+    "release_rate": 0.68,
+    "root_max": 26.0,
+    "kind": "dodge",
+    "glow": "Master_GlintHandR",
+    "strike": [
+     "Hand_R",
+     [
+      0.0,
+      0.05999999865889549,
+      -0.02199999988079071
+     ]
+    ],
+    "spin": true,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 2
+   },
+   "normalized": {
+    "apex": 0.2222,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.2222
+    ],
+    "hold": [
+     0.1667,
+     0.2222
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "air": [
+     0.2778,
+     0.5556
+    ],
+    "lunge": [
+     0.2222,
+     0.8333,
+     6.35
+    ]
+   },
+   "events": [
+    {
+     "frame": 8,
+     "t": 0.2222,
+     "fn": "Apex"
+    },
+    {
+     "frame": 9,
+     "t": 0.25,
+     "fn": "DashStart"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 21,
+     "t": 0.5833,
+     "fn": "DashEnd"
+    },
+    {
+     "frame": 21,
+     "t": 0.5833,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.6667,
+     "fn": "Step"
+    }
+   ],
+   "notes": "paso del viento al costado: igual que DashStrike hasta la suelta (f8), vuela por al lado de Kaito girando hacia él (turn, el jefe gira el transform), lo corta de frente en el cruce (f17), gira en el aire hasta quedar de espaldas al carril y apoya en f21 y f24 frenando hacia atrás hasta la guardia",
+   "reach_m": 1.04,
+   "strike_height_m": [
+    1.18,
+    1.3
+   ],
+   "release_rate": 0.68,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.3,
+    0.7648,
+    1.2328,
+    1.7021,
+    2.1708,
+    2.6369,
+    3.0984,
+    3.5535,
+    4.0,
+    4.4354,
+    4.8708,
+    5.2354,
+    5.6,
+    5.8778,
+    6.0444,
+    6.1,
+    6.2111,
+    6.2778,
+    6.3,
+    6.313,
+    6.337,
+    6.35,
+    6.35,
+    6.35,
+    6.35,
+    6.35,
+    6.35,
+    6.35
+   ],
+   "turn_deg": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -5.875,
+    -14.0,
+    -28.625,
+    -46.0,
+    -62.5,
+    -82.0,
+    -110.0,
+    -138.0,
+    -157.0,
+    -176.0,
+    -178.815,
+    -179.852,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.66,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       8
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.4,
+      [
+       0,
+       8
+      ],
+      0.7
+     ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 0.94,
+      "at": 3,
+      "flex": -17.4,
+      "dev": 22.4,
+      "twist": -6.2,
+      "grip": false,
+      "twist_max": 23.6,
+      "jump_deg": 30.5,
+      "jump_at": 18
+     },
+     "L": {
+      "excess": 0.95,
+      "at": 23,
+      "flex": -61.2,
+      "dev": 2.9,
+      "twist": 15.5,
+      "grip": false,
+      "twist_max": 18.1,
+      "jump_deg": 42.2,
+      "jump_at": 19
+     }
+    },
+    "self_clearance_cm": {
+     "antebrazo L / tronco": [
+      1.4,
+      18
+     ]
+    },
+    "root_peak_mps_60hz": 17.7,
+    "reach_m": 1.04,
+    "strike_height_m": [
+     1.18,
+     1.3
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.04,
+     "Hand_L",
+     0.0
+    ],
     "max_height_m": 2.59,
     "min_z_m": -0.009,
     "tell_silhouette_change": 0.225
    }
   },
   "BackHop": {
-   "first": 4173,
-   "last": 4195,
+   "first": 4219,
+   "last": 4241,
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
@@ -12680,8 +13120,8 @@
    }
   },
   "BackHop_P2": {
-   "first": 4205,
-   "last": 4227,
+   "first": 4251,
+   "last": 4273,
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
@@ -12837,8 +13277,8 @@
    }
   },
   "BackHop_P3": {
-   "first": 4237,
-   "last": 4259,
+   "first": 4283,
+   "last": 4305,
    "frames": 22,
    "seconds": 0.7333,
    "loop": false,
@@ -13003,8 +13443,8 @@
    }
   },
   "Palm_P3": {
-   "first": 4269,
-   "last": 4303,
+   "first": 4315,
+   "last": 4349,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -13241,8 +13681,8 @@
    }
   },
   "Palm_Mid_P3": {
-   "first": 4313,
-   "last": 4347,
+   "first": 4359,
+   "last": 4393,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -13463,8 +13903,8 @@
    }
   },
   "Palm_Close_P3": {
-   "first": 4357,
-   "last": 4391,
+   "first": 4403,
+   "last": 4437,
    "frames": 34,
    "seconds": 1.1333,
    "loop": false,
@@ -13685,8 +14125,8 @@
    }
   },
   "ChopPalm_P3": {
-   "first": 4401,
-   "last": 4437,
+   "first": 4447,
+   "last": 4483,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -13926,8 +14366,8 @@
    }
   },
   "ChopPalm_Mid_P3": {
-   "first": 4447,
-   "last": 4483,
+   "first": 4493,
+   "last": 4529,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -14151,8 +14591,8 @@
    }
   },
   "ChopPalm_Close_P3": {
-   "first": 4493,
-   "last": 4529,
+   "first": 4539,
+   "last": 4575,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -14376,8 +14816,8 @@
    }
   },
   "CraneKick_P3": {
-   "first": 4539,
-   "last": 4581,
+   "first": 4585,
+   "last": 4627,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -14611,8 +15051,8 @@
    }
   },
   "LeapKick_P3": {
-   "first": 4591,
-   "last": 4647,
+   "first": 4637,
+   "last": 4693,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -14881,8 +15321,8 @@
    }
   },
   "Sweep_P3": {
-   "first": 4657,
-   "last": 4705,
+   "first": 4703,
+   "last": 4751,
    "frames": 48,
    "seconds": 1.6,
    "loop": false,
@@ -15057,8 +15497,8 @@
    }
   },
   "QiWave_P3": {
-   "first": 4715,
-   "last": 4771,
+   "first": 4761,
+   "last": 4817,
    "frames": 56,
    "seconds": 1.8667,
    "loop": false,
@@ -15235,8 +15675,8 @@
    }
   },
   "DashStrike_P3": {
-   "first": 4781,
-   "last": 4817,
+   "first": 4827,
+   "last": 4863,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -15285,6 +15725,7 @@
     "spin": true,
     "chain_from": "READY",
     "chain_to": "READY",
+    "pass_variant": "DashStrike_Pass_P3",
     "phase": 3
    },
    "normalized": {
@@ -15467,14 +15908,303 @@
      "",
      0.0
     ],
+    "reach_same_deg": {
+     "DashStrike_Pass_P3": [
+      0.1,
+      "UpperArm_L",
+      8
+     ]
+    },
     "max_height_m": 2.59,
     "min_z_m": -0.009,
     "tell_silhouette_change": 0.238
    }
   },
+  "DashStrike_Pass_P3": {
+   "first": 4873,
+   "last": 4909,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "phase": 3,
+   "variant_of": "DashStrike_Pass",
+   "timing": {
+    "tell": [
+     0,
+     8
+    ],
+    "apex": 8,
+    "hold": [
+     6,
+     8
+    ],
+    "contact": 17,
+    "active": [
+     17,
+     19
+    ],
+    "recover": [
+     19,
+     36
+    ],
+    "lunge": [
+     8,
+     30,
+     6.35
+    ],
+    "air": [
+     10,
+     20
+    ],
+    "release_rate": 0.68,
+    "root_max": 26.0,
+    "kind": "dodge",
+    "glow": "Master_GlintStaff",
+    "strike": [
+     "Staff",
+     [
+      0.0,
+      0.0,
+      0.0
+     ]
+    ],
+    "spin": true,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "phase": 3
+   },
+   "normalized": {
+    "apex": 0.2222,
+    "contact": 0.4722,
+    "tell": [
+     0.0,
+     0.2222
+    ],
+    "hold": [
+     0.1667,
+     0.2222
+    ],
+    "active": [
+     0.4722,
+     0.5278
+    ],
+    "recover": [
+     0.5278,
+     1.0
+    ],
+    "air": [
+     0.2778,
+     0.5556
+    ],
+    "lunge": [
+     0.2222,
+     0.8333,
+     6.35
+    ]
+   },
+   "events": [
+    {
+     "frame": 8,
+     "t": 0.2222,
+     "fn": "Apex"
+    },
+    {
+     "frame": 9,
+     "t": 0.25,
+     "fn": "DashStart"
+    },
+    {
+     "frame": 17,
+     "t": 0.4722,
+     "fn": "Strike"
+    },
+    {
+     "frame": 21,
+     "t": 0.5833,
+     "fn": "DashEnd"
+    },
+    {
+     "frame": 21,
+     "t": 0.5833,
+     "fn": "Step"
+    },
+    {
+     "frame": 24,
+     "t": 0.6667,
+     "fn": "Step"
+    }
+   ],
+   "notes": "paso del viento al costado con el bastón: tsuki recogido (aviso f8), vuela por al lado de Kaito y se lo clava de frente en el cruce (f17); gira en el aire y apoya frenando hacia atrás",
+   "reach_m": 0.99,
+   "strike_height_m": [
+    1.17,
+    1.2
+   ],
+   "release_rate": 0.68,
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.3,
+    0.7648,
+    1.2328,
+    1.7021,
+    2.1708,
+    2.6369,
+    3.0984,
+    3.5535,
+    4.0,
+    4.4354,
+    4.8708,
+    5.2354,
+    5.6,
+    5.8778,
+    6.0444,
+    6.1,
+    6.2111,
+    6.2778,
+    6.3,
+    6.313,
+    6.337,
+    6.35,
+    6.35,
+    6.35,
+    6.35,
+    6.35,
+    6.35,
+    6.35
+   ],
+   "turn_deg": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -5.875,
+    -14.0,
+    -28.625,
+    -46.0,
+    -62.5,
+    -82.0,
+    -110.0,
+    -138.0,
+    -157.0,
+    -176.0,
+    -178.815,
+    -179.852,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0,
+    -180.0
+   ],
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "plant_drift_cm": 0.66,
+    "sole_slip_cm": {
+     "Foot_R": [
+      1.1,
+      [
+       0,
+       8
+      ],
+      0.4
+     ],
+     "Foot_L": [
+      1.4,
+      [
+       0,
+       8
+      ],
+      0.7
+     ]
+    },
+    "wrists": {
+     "R": {
+      "excess": 1.11,
+      "at": 9,
+      "flex": -71.8,
+      "dev": 1.9,
+      "twist": -39.7,
+      "grip": true,
+      "twist_max": 39.7,
+      "jump_deg": 31.5,
+      "jump_at": 9
+     },
+     "L": {
+      "excess": 1.08,
+      "at": 9,
+      "flex": 24.8,
+      "dev": 25.6,
+      "twist": -3.1,
+      "grip": true,
+      "twist_max": 20.6,
+      "jump_deg": 24.3,
+      "jump_at": 9
+     }
+    },
+    "self_clearance_cm": {
+     "bastón / tronco": [
+      0.4,
+      19
+     ],
+     "bastón / muslo L": [
+      2.2,
+      1
+     ],
+     "antebrazo R / tronco": [
+      1.2,
+      9
+     ]
+    },
+    "root_peak_mps_60hz": 17.7,
+    "reach_m": 0.99,
+    "strike_height_m": [
+     1.17,
+     1.2
+    ],
+    "chain_chain_from_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "chain_chain_to_deg": [
+     0.0,
+     "",
+     0.0
+    ],
+    "max_height_m": 2.59,
+    "min_z_m": -0.009,
+    "tell_silhouette_change": 0.237
+   }
+  },
   "PhaseStaff": {
-   "first": 4827,
-   "last": 4917,
+   "first": 4919,
+   "last": 5009,
    "frames": 90,
    "seconds": 3.0,
    "loop": false,
@@ -15591,8 +16321,8 @@
    }
   },
   "Defeat": {
-   "first": 4927,
-   "last": 5077,
+   "first": 5019,
+   "last": 5169,
    "frames": 150,
    "seconds": 5.0,
    "loop": false,
@@ -15740,8 +16470,8 @@
    }
   },
   "Meditate": {
-   "first": 5087,
-   "last": 5183,
+   "first": 5179,
+   "last": 5275,
    "frames": 96,
    "seconds": 3.2,
    "loop": true,
@@ -15827,8 +16557,8 @@
    }
   },
   "SeatedBow": {
-   "first": 5193,
-   "last": 5263,
+   "first": 5285,
+   "last": 5355,
    "frames": 70,
    "seconds": 2.3333,
    "loop": false,
@@ -15946,8 +16676,8 @@
    }
   },
   "PoseTest": {
-   "first": 5273,
-   "last": 5505,
+   "first": 5365,
+   "last": 5597,
    "frames": 232,
    "seconds": 7.7333,
    "loop": false,
@@ -16078,6 +16808,9 @@
   "DashStrike": {
    "3": "DashStrike_P3"
   },
+  "DashStrike_Pass": {
+   "3": "DashStrike_Pass_P3"
+  },
   "Exhausted": {
    "2": "Exhausted_P2",
    "3": "Exhausted_P3"
@@ -16192,7 +16925,7 @@
    "Master_RobeThrown",
    "Master_Staff"
   ],
-  "notes": "Master_Robe es el saco de la fase 1 (se apaga al tirarlo: evento CoatOff de PhaseCoat); Master_RobeThrown es la copia aplanada que vuela en el cambio de fase (huesos RobeT_*, en reposo adentro de la espalda: se enciende en CoatOff y, cuando queda en el piso (CoatRest), conviene hornearla con SkinnedMeshRenderer.BakeMesh en un objeto quieto y apagarla, porque los demás clips la guardan otra vez en la espalda); Master_Staff es el bastón (hueso Staff, hijo de Root: lo mueve el clip y las manos lo agarran), visible desde StaffAppear de PhaseStaff y en todos los clips _P3, Defeat, Meditate y SeatedBow. Los slots Master_Glint* se encienden por nombre con CharacterGlint.SetGlow (timing.glow de cada golpe; dorado = parry, rojo = dash) y Master_Eyes en jade desde EyesIgnite. Ninguno se llama 'Glint': Enemy no prende nada solo, el jefe elige el miembro que pega."
+  "notes": "Master_Robe es el saco de la fase 1 (se apaga al tirarlo: evento CoatOff de PhaseCoat; antes se le desliza con las formas CoatSlip1..4); Master_RobeThrown es la copia que vuela en el cambio de fase: la misma malla, que en CoatOff queda exactamente donde estaba el saco puesto (huesos RobeT_*, en reposo alrededor del cuerpo; se aplana al caer con la forma Collapse). Se enciende en CoatOff y, cuando queda en el piso (CoatRest), conviene hornearla con SkinnedMeshRenderer.BakeMesh en un objeto quieto y apagarla, porque los demás clips la guardan otra vez en el cuerpo; Master_Staff es el bastón (hueso Staff, hijo de Root: lo mueve el clip y las manos lo agarran), visible desde StaffAppear de PhaseStaff y en todos los clips _P3, Defeat, Meditate y SeatedBow. Los slots Master_Glint* se encienden por nombre con CharacterGlint.SetGlow (timing.glow de cada golpe; dorado = parry, rojo = dash) y Master_Eyes en jade desde EyesIgnite. Ninguno se llama 'Glint': Enemy no prende nada solo, el jefe elige el miembro que pega."
  },
  "chains": {
   "runtime": [

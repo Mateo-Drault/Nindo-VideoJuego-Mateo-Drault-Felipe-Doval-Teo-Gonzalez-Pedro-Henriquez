@@ -632,6 +632,7 @@ MonoBehaviour:
     - Sweep
     - QiWave
     - DashStrike
+    - DashStrike_Pass
     - BackHop
     - BackHop_P2
     - BackHop_P3
@@ -646,6 +647,7 @@ MonoBehaviour:
     - Sweep_P3
     - QiWave_P3
     - DashStrike_P3
+    - DashStrike_Pass_P3
     - PhaseStaff
     - Defeat
     - Meditate
@@ -740,6 +742,7 @@ MonoBehaviour:
     - 1.6
     - 1.8667
     - 1.2
+    - 1.2
     - 0.7333
     - 0.7333
     - 0.7333
@@ -753,6 +756,7 @@ MonoBehaviour:
     - 1.8667
     - 1.6
     - 1.8667
+    - 1.2
     - 1.2
     - 3.0
     - 5.0

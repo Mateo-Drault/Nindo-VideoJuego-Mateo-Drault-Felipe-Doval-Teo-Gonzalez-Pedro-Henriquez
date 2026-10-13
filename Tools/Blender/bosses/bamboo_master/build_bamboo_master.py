@@ -15,6 +15,8 @@ Un solo comando, determinista:
     --roundtrip PATH    con --export: dónde quedan algunos huesos cuadro a cuadro, para check_master_roundtrip.py
     --slipdump A,B      la altura de la suela y el pivote de cada pie cuadro a cuadro (iterar los apoyos)
     --frames 1,5,9      con --sheets: esos cuadros en las hojas (en vez de las claves)
+    --dump PATH         por clip: primer cuadro en la toma, avance y giro del transform por cuadro, eventos y tiempos (para
+                        medir un clip con el reloj del juego fuera del build, con el .blend de --blend)
 Falla (código 1) si un chequeo no pasa: frente, apoyo en el piso, presupuesto de triángulos, altura de la silueta, nada
 bajo el piso, alcance de manos y pies, deriva de los pies apoyados, costura de los loops, cuerpo contra sí mismo,
 avance que se teletransporta con el reloj del juego, punta rápida fuera del golpe, aviso que no cambia la silueta,
@@ -36,6 +38,7 @@ import master_rig as MR
 import master_model as MM
 import master_lint as ML
 import master_springs as MS
+import master_coat as MCo
 
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 
@@ -56,7 +59,7 @@ OUT_DIR = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Art", "Characters", "B
 FBX = os.path.join(OUT_DIR, "BambooMaster.fbx")
 HEIGHT_CAP = 3.6         # con el bastón arriba o una patada alta; el reposo mide ~2.7
 GAP = 10                 # cuadros vacíos entre clips en la toma única
-BUDGET = {"body": 4800, "robe": 2400, "thrown": 500, "staff": 450}
+BUDGET = {"body": 4800, "robe": 2400, "thrown": 2400, "staff": 450}
 ROUNDTRIP = opt("--roundtrip")
 SLIPDUMP = opt("--slipdump")
 SHEET_FRAMES = opt("--frames")
@@ -318,7 +321,7 @@ def main():
     # las variantes de paso corto siguen el camino de los brazos de su base hasta la suelta (lint_reach)
     paths, reach_of = {}, {}
     for c in clips:
-        for v in c.timing.get("reach_variants") or ():
+        for v in (c.timing.get("reach_variants") or []) + ([c.timing["pass_variant"]] if c.timing.get("pass_variant") else []):
             reach_of[v] = (c.name, reach_upto(c))
     for clip in clips:
         misses = []
@@ -337,7 +340,8 @@ def main():
         frames, ctrls, roots = MS.bake_clip(rig, clip, solve, sprs)
         solver.begin_clip("free")
         print(f"-- {clip.name} ({clip.frames} cuadros)")
-        reports[clip.name] = lint_clip(rig, clip, frames, ctrls, roots, misses) if clip is not lab else {}
+        # (los pies y lo que pega se miden en el mundo: con el giro del transform si el clip gira)
+        reports[clip.name] = lint_clip(rig, clip, MS.world_frames(frames, ctrls), ctrls, roots, misses) if clip is not lab else {}
         baked.append((clip, frames))
         rootsd[clip.name], ctrlsd[clip.name], framesd[clip.name] = roots, ctrls, frames
     if not lab:
@@ -346,7 +350,29 @@ def main():
         lint_reach(rig, clips, framesd, reports)
     act, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
     last = max(b for a, b in ranges.values())
-    write_coat_slip(meshes["Master_Robe"], baked, ranges, ctrlsd, last)
+    # el saco que se desliza (etapas CoatSlip), corregido contra el cuerpo cuadro a cuadro (master_coat)
+    slip_on = MCo.write_coat_slip(meshes["Master_Robe"], baked, ranges, last)
+    if "--no-refine" not in argv:
+        MCo.refine_slip(scn, arm, meshes["Master_Robe"], meshes["Master_Body"], slip_on)
+    lint_coat(scn, meshes, slip_on, reports)
+    # la copia que vuela: el mismo saco en CoatOff (y aplanándose mientras cae)
+    pc = next((c for c, _ in baked if c.timing.get("robe_off") is not None), None)
+    if pc is not None:
+        F_off = ranges[pc.name][0] + pc.timing["robe_off"]
+        MCo.rebuild_thrown(scn, arm, meshes, F_off)
+        MCo.write_collapse(meshes["Master_RobeThrown"], baked, ranges, last)
+        objs[:] = list(meshes.values())
+        zlo2, zhi2 = bind_height(objs)
+        check(abs((zhi2 - zlo2) - info["bind_height"]) < 0.0015 and zlo2 >= -0.005,
+              f"la copia del saco no cambia el alto de bind ({zhi2 - zlo2:.3f} m, min z {zlo2:.3f})")
+        tris["thrown"] = MM.tri_count(meshes["Master_RobeThrown"])
+        check(tris["thrown"] <= BUDGET["thrown"], f"thrown: {tris['thrown']} tris (presupuesto {BUDGET['thrown']})")
+        sw = MCo.swap_report(scn, meshes, F_off)
+        reports.setdefault(pc.name, {})["coat_swap"] = sw
+        for nm, (iou, ratio, pa, pb) in sw.items():
+            check(iou >= MCo.IOU_MIN and ratio >= MCo.COAT_RATIO_MIN,
+                  f"{pc.name}: el cambio de malla en CoatOff no se ve desde la cámara de {nm} (silueta IoU {iou:.2f}, el saco "
+                  f"{pa} -> {pb} px)")
     # techo y piso de la silueta en todos los cuadros (mallas evaluadas, solo las que se ven en ese cuadro)
     for clip, frames in ([] if lab else baked):
         a, b = ranges[clip.name]
@@ -372,6 +398,12 @@ def main():
     if not lab:
         lint_tells(scn, arm, meshes, baked, ranges, rootsd, reports)
     scn.frame_set(0)
+    if opt("--dump"):
+        dump = {c.name: {"first": ranges[c.name][0], "frames": c.frames, "timing": c.timing, "events": c.events,
+                         "travel": [cc.get("travel") or 0.0 for cc in ctrlsd[c.name]],
+                         "turn": [cc.get("turn") or 0.0 for cc in ctrlsd[c.name]]} for c, _ in baked}
+        with open(opt("--dump"), "w", encoding="utf-8", newline=chr(10)) as fh:
+            json.dump(dump, fh)
     if RENDERS or REPORT:
         path = REPORT or os.path.join(RENDERS, "lint_report.json")
         os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
@@ -392,11 +424,12 @@ def main():
                 "skinned": ["Master_Body", "Master_Robe", "Master_RobeThrown"], "rigid": {"Master_Staff": "Staff"},
                 "materials": ["Nindo_Palette"] + MM.EXTRA_MATS,
                 "hidden_at_spawn": ["Master_RobeThrown", "Master_Staff"],
-                "notes": "Master_Robe es el saco de la fase 1 (se apaga al tirarlo: evento CoatOff de PhaseCoat); Master_RobeThrown "
-                         "es la copia aplanada que vuela en el cambio de fase (huesos RobeT_*, en reposo adentro de la espalda: "
-                         "se enciende en CoatOff y, cuando queda en el piso (CoatRest), conviene hornearla con "
-                         "SkinnedMeshRenderer.BakeMesh en un objeto quieto y apagarla, porque los demás clips la guardan otra "
-                         "vez en la espalda); Master_Staff es el bastón (hueso Staff, hijo de Root: lo mueve el clip y las "
+                "notes": "Master_Robe es el saco de la fase 1 (se apaga al tirarlo: evento CoatOff de PhaseCoat; antes se le "
+                         "desliza con las formas CoatSlip1..4); Master_RobeThrown es la copia que vuela en el cambio de fase: "
+                         "la misma malla, que en CoatOff queda exactamente donde estaba el saco puesto (huesos RobeT_*, en "
+                         "reposo alrededor del cuerpo; se aplana al caer con la forma Collapse). Se enciende en CoatOff y, "
+                         "cuando queda en el piso (CoatRest), conviene hornearla con SkinnedMeshRenderer.BakeMesh en un objeto "
+                         "quieto y apagarla, porque los demás clips la guardan otra vez en el cuerpo; Master_Staff es el bastón (hueso Staff, hijo de Root: lo mueve el clip y las "
                          "manos lo agarran), visible desde StaffAppear de PhaseStaff y en todos los clips _P3, Defeat, "
                          "Meditate y SeatedBow. Los slots Master_Glint* se encienden por nombre con CharacterGlint.SetGlow "
                          "(timing.glow de cada golpe; dorado = parry, rojo = dash) y Master_Eyes en jade desde EyesIgnite. "
@@ -441,37 +474,21 @@ def main():
     finish(t0)
 
 
-def write_coat_slip(robe, baked, ranges, ctrlsd, last):
-    """El peso de la forma CoatSlip del saco puesto en la toma única: el control 'robe_slip' de los clips que lo
-    animan (PhaseCoat) y 0 en todos los demás cuadros. Desde robe_off el saco puesto ya está apagado: queda en 1 hasta el
-    final del clip. El FBX lo lleva como DeformPercent y Unity como blendShape.CoatSlip de Master_Robe."""
-    keys = shape_keys(robe)
-    if keys is None or MM.COAT_SLIP not in keys.key_blocks:
+def lint_coat(scn, meshes, slip_on, reports):
+    """El saco que se desliza no se mete en el cuerpo más que puesto (master_coat.penetration_report)."""
+    if not slip_on:
         return
-    kb = keys.key_blocks[MM.COAT_SLIP]
-    vals = {0: 0.0, last: 0.0}
-    for clip, frames in baked:
-        cs = ctrlsd[clip.name]
-        if not any(c.get("robe_slip") for c in cs):
-            continue
-        a, b = ranges[clip.name]
-        off = clip.timing.get("robe_off")
-        vals[a - 1] = 0.0
-        for i, c in enumerate(cs):
-            v = c.get("robe_slip")
-            vals[a + i] = 1.0 if off is not None and i >= off else (v or 0.0)
-        vals[b + 1] = 0.0
-    for f in sorted(vals):
-        kb.value = vals[f]
-        kb.keyframe_insert("value", frame=f)
-    kb.value = 0.0
-    # lineal: entre las claves de cada cuadro no hay nada que suavizar y afuera de PhaseCoat queda en 0 parejo
-    ad = keys.animation_data
-    if ad is not None and ad.action is not None:
-        for fc in ad.action.fcurves:      # (bl_compat: la channelbag del slot de la forma)
-            for kp in fc.keyframe_points:
-                kp.interpolation = 'LINEAR'
-    print(f"  {robe.name}: {MM.COAT_SLIP} animada en {sum(1 for v in vals.values() if v > 0.0)} cuadros")
+    robe = meshes["Master_Robe"]
+    rep = MCo.penetration_report(scn, robe, meshes["Master_Body"], slip_on)
+    n = len(robe.data.vertices)
+    worst_f = max(rep, key=lambda f: rep[f][1])
+    many_f = max(rep, key=lambda f: rep[f][0])
+    reports.setdefault("PhaseCoat", {})["coat_penetration"] = {str(f): [v[0], round(v[1] * 100, 1), v[2], round(v[3] * 100, 1)]
+                                                              for f, v in rep.items()}
+    check(rep[worst_f][1] <= MCo.PEN_WORSE_MAX, f"PhaseCoat: el saco que se desliza no se mete en el cuerpo más que puesto "
+                                                f"(peor {rep[worst_f][1] * 100:.1f} cm en el cuadro {worst_f} de la toma)")
+    check(rep[many_f][0] <= MCo.PEN_SHARE_MAX * n, f"PhaseCoat: vértices del saco 1 cm más adentro que puesto: "
+                                                  f"{rep[many_f][0]} de {n} en el cuadro {many_f}")
 
 
 def shape_keys(o):
@@ -514,13 +531,14 @@ def lint_variants(clips, ctrlsd, reports):
         o = by[b]
         # el miembro que pega y su brillo pueden cambiar (la palma de la fase 1 es el bastón de la 3); los tiempos no
         # (el anillo y el bastón alto también: la barrida con el bastón llega más lejos que la de la pierna sola)
-        own = ("phase", "glow", "notes", "strike", "tip_ratio_max", "ring_m", "staff_high", "reach_variants", "height_cap")
+        own = ("phase", "glow", "notes", "strike", "tip_ratio_max", "ring_m", "staff_high", "reach_variants", "pass_variant",
+               "height_cap")
         tc = {k: v for k, v in c.timing.items() if k not in own}
         to = {k: v for k, v in o.timing.items() if k not in own}
         same = c.frames == o.frames and c.loop == o.loop and tc == to and \
             [(e["frame"], e["fn"]) for e in c.events] == [(e["frame"], e["fn"]) for e in o.events]
-        tr_c = [round(x.get("travel") or 0.0, 4) for x in ctrlsd[c.name]]
-        tr_o = [round(x.get("travel") or 0.0, 4) for x in ctrlsd[b]]
+        tr_c = [(round(x.get("travel") or 0.0, 4), round(x.get("turn") or 0.0, 3)) for x in ctrlsd[c.name]]
+        tr_o = [(round(x.get("travel") or 0.0, 4), round(x.get("turn") or 0.0, 3)) for x in ctrlsd[b]]
         same = same and tr_c == tr_o and (c.root_vel - o.root_vel).length < 1e-6
         check(same, f"{c.name}: variante de {b} con los mismos cuadros, tiempos, eventos y avance")
 
@@ -537,7 +555,8 @@ def lint_reach(rig, clips, framesd, reports):
     sin fundido en el cuadro de la suelta (BambooMasterBoss.PickReach), así que hasta el final de la pausa del aviso
     no puede haber diferencia de giro en ningún hueso."""
     for c in clips:
-        vs = c.timing.get("reach_variants")
+        # (las de paso corto y la del paso del viento que pasa al costado)
+        vs = (c.timing.get("reach_variants") or []) + ([c.timing["pass_variant"]] if c.timing.get("pass_variant") else [])
         if not vs:
             continue
         upto = reach_upto(c)
@@ -642,6 +661,9 @@ def sidecar_clips(baked, ranges, ctrlsd, reports):
         tr = [round(c.get("travel") or 0.0, 4) for c in ctrlsd[clip.name]]
         if any(abs(v) > 1e-4 for v in tr) and not clip.root_vel.length:
             rec["travel_m"] = tr
+        tu = [round(c.get("turn") or 0.0, 3) for c in ctrlsd[clip.name]]
+        if any(abs(v) > 1e-3 for v in tu):
+            rec["turn_deg"] = tu
         if clip.root_vel.length > 0:
             rec["root_velocity_mps"] = round(clip.root_vel.length, 3)
         rec["lint"] = {k: v for k, v in rep.items() if k not in ("plants",)}
