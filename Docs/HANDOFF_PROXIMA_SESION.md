@@ -20,7 +20,8 @@
   * Están Mizuchi (el koi), Kokuyō (el jefe final), Gorō con barra falsa y armadura de roca, y **Chikuō**, que reemplazó a Ōzeki (el arquetipo y el bossId siguen siendo `ozeki`: partidas, flags y sello del bambú no cambian).
   * Las variantes por zona tienen ataques propios; ninjas y sumos tienen idles de ambiente.
   * Kaito y los personajes del equipo tienen animaciones nuevas, con las muñecas medidas en el lint de cada pipeline.
-* **Lo pendiente**: la fase C2 hizo casi toda la lista de la sección 4 en la rama `c2/integration` (13 frentes `c2/*`, sección 5). Cada pedido dice ahí su estado; lo que quedó abierto está juntado en la sección 4b. C2 ya está en main (`76be027`) y la probó el lead. La fase C3 (seis frentes `c3/*`, sección 5a) arregló lo abierto de C2 y está integrada en `c3/integration`, con una ronda de huecos de la integración encima (`reportes/c3_reports.md`, sección 5): **falta probar C3 en Unity y llevarla a main.**
+* **Lo pendiente**: la fase C2 hizo casi toda la lista de la sección 4 en la rama `c2/integration` (13 frentes `c2/*`, sección 5). Cada pedido dice ahí su estado; lo que quedó abierto está juntado en la sección 4b. C2 ya está en main (`76be027`) y la probó el lead. La fase C3 (seis frentes `c3/*`, sección 5a) arregló lo abierto de C2 y está integrada en `c3/integration`, con una ronda de huecos de la integración encima (`reportes/c3_reports.md`, sección 5). El lead la probó en Unity el 13 de octubre (Gorō, Mizuchi y Kokuyō con los dos bots), rebalanceó con esas peleas y está en main (`a080043`).
+* **En curso, fase C4: Chikuō nuevo.** El usuario lo encontró aburrido (la guardia, esperar, ataques muy espaciados) y eligió un concepto nuevo, el ermitaño excéntrico (`handoff/conceptos/chikuo_v2/elegido_*.jpg`): trepa las cañas, tira dardos, se cambia de caña rápido, baja a pegar y vuelve a subir (no toda la pelea), y Kaito lo baja desde el piso con una mecánica nueva. Ramas `c4/chikuo` (diseño, modelo, animaciones, pelea) y `c4/arena` (las cañas trepables); el diseño queda en `handoff/diseno/chikuo_v2.md`.
 * **El usuario pide**: calidad de juego publicado, autocrítica, respetar el estilo de arte, y que la partida dure cerca de **una hora**. `Core/PlayClock` la mide de verdad en la consola (por zona y por jefe) y el cartel del final la muestra. Con el factor real/simulado medido para cada jefe (`Tools/Dev/boss_sims/calibration.py`) los cuatro jefes suman ~18 min para el bot "bueno" (~4.5 cada uno) y ~28 min para el "promedio"; el resto de la partida no está medido.
 
 ---
@@ -218,6 +219,16 @@ Están casi en sus palabras, con notas. Al final de cada uno, entre corchetes, *
     * Después balancear en Unity con `bot on bueno` / `bot on promedio`: el bueno gana en unos 4-6 min por jefe, el promedio muere alguna vez.
     * **[C2 hecho en simulación (`Tools/Dev/goro_fight_sim.py`, `sim_bamboo_master.py`, `boss_sims/`): Gorō 1000 + 1600, Mizuchi y Kokuyō x1.5 (2160 y 2700, con el daño que aguanta el promedio), Chikuō ~2000; el bot promedio se recalibró (falla 15 %, se confunde 7 %, ataca apurado 15 %). Falta medir en Unity con PlayClock.]**
     * **[C3: con las ocho peleas del bot que el lead corrió sobre C2 el factor real/simulado es Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92 y Chikuō 1.42 (`boss_sims/calibration.py`); con eso Gorō 1900 + 3040, Mizuchi x2.5, Kokuyō x4 y Chikuō 1900 dan ~4.5 min de juego para el bueno y 1-1.6 muertes para el promedio en cada jefe. Provisorio: medir tres peleas por bot con lo de C3 (`reportes/c3_reports.md` 5.1).]**
+    * **[Medido en Unity el 13 de octubre (C3 integrada, PlayClock).** Con lo de C3 el bot promedio no moría con ningún jefe
+      (Gorō 5:11, Mizuchi 5:01, Kokuyō 6:29, los tres sin morir) y Mizuchi duraba poco para el bueno (3:29). Rebalanceado
+      con más peleas, en minutos de juego:
+      * Gorō (daño x0.35 / x0.30): bueno 4:19 sin morir (antes del cambio de daño; la vida no cambió), promedio 6:36 con 1 muerte.
+      * Mizuchi (vida x2.9, daño x0.37, postura 17): bueno 4:31 sin morir, promedio 7:17 con 1 muerte. El promedio salta mucho
+        con el daño: con x0.39 y postura 15 fueron 14:59 y 5 muertes; con x0.35, 4:53 sin morir.
+      * Kokuyō (vida x4.2, tramos 40 / 40 / 35): bueno 5:04 sin morir con daño x0.37; promedio 11:33 con 3 muertes con x0.37, y
+        el daño quedó en x0.35 (sin medir todavía con ese número).
+      * Chikuō: se rehace en C4; el viejo no se re-midió.
+      Una pelea por bot y por número: el promedio varía mucho, conviene medir dos o tres más antes de darlo por cerrado.]**
 11. **Kokuyō**:
     * **La sombra viva casi nunca ataca.** El usuario la considera la mejor mecánica: tiene que estar en todos los actos.
     * En la fase de luna llena, donde la sombra no se ve, cuando ataca **tiene que hacerse visible un segundo antes y poder pararse** (difícil pero justo).
