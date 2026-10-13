@@ -64,6 +64,7 @@ namespace Nindo
                 if (data.seals == null || data.seals.Length != 3) data.seals = new bool[3];
                 if (data.shrines == null) data.shrines = new List<string>();
                 if (data.sealsPlaced == null || data.sealsPlaced.Length != 3) data.sealsPlaced = new bool[3];
+                MigrateWallGate(data);
                 return true;
             }
             catch (Exception e)
@@ -73,6 +74,31 @@ namespace Nindo
                 return false;
             }
         }
+
+        /// <summary>
+        /// El portón de la muralla ya no se abre solo: lo abre Kaito con la bandana desde el sur (WallSeal), después de la
+        /// pelea de la muralla. Una partida de antes que ya pasó al otro lado sin 'wall_gate_open' (la del juego completo
+        /// del equipo no lo tiene) cargaba con el sello puesto detrás de Kaito, un santuario al norte desde el que no se
+        /// puede volver y medio mapa en niebla para siempre (MapFog la ve cerrada). Si la partida prueba que cruzó, el
+        /// portón queda abierto y la pelea ganada. Directo en la lista: al cargar no hay nadie escuchando GameEvents.
+        /// </summary>
+        static void MigrateWallGate(SaveData d)
+        {
+            if (d.HasFlag(Flags.WallGateOpen)) return;
+            bool crossed = d.SealCount > 0 || d.HasFlag(Flags.DojoGateSeen);
+            foreach (var f in d.flags)
+            {
+                if (crossed) break;
+                if (f == null) continue;
+                crossed = f.StartsWith("boss_", StringComparison.Ordinal) || Array.IndexOf(NorthOfWall, f) >= 0;
+            }
+            if (!crossed) return;
+            d.flags.Add(Flags.WallGateOpen);
+            if (!d.HasFlag(Flags.Encounter("wall"))) d.flags.Add(Flags.Encounter("wall"));
+        }
+
+        /// <summary>Zonas que solo se pisan del otro lado de la muralla.</summary>
+        static readonly string[] NorthOfWall = { "zone_jardin", "zone_montana", "zone_lago", "zone_lago_cascada", "zone_bambu", "zone_dojo" };
 
         public static void Save()
         {

@@ -714,7 +714,6 @@ namespace Nindo
         public const string AbilitiesUnlocked = "abilities_unlocked";
         public const string WallGateOpen = "wall_gate_open";
         public const string ForestSeen = "forest_seen";
-        public const string SumoIntro = "sumo_intro";
         public const string DojoGateSeen = "dojo_gate_seen";
         public const string DojoOpen = "dojo_open";
         public const string FinalBossDone = "final_boss_done";

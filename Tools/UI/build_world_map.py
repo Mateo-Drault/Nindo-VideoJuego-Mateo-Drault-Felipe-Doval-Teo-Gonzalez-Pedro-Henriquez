@@ -167,7 +167,8 @@ LEGACY = [
     (["zone_jardin", "wall_gate_open"], [("camino_hogar", 0, 9), ("camino_jardin", 0, 3)], ["muralla_n", "jardin_c"]),
     (["enc_garden1"], [("rodeo_jardin_o", 0, 2)], ["jardin_o"]),
     (["enc_garden2"], [("rodeo_jardin_e", 0, 2)], ["jardin_e"]),
-    (["sumo_intro", "enc_sumo"], [("camino_jardin", 0, 5)], ["jardin_n", "jardin_ne", "jardin_no"]),
+    # el disparador del sumo deja 'trig_sumo_intro' (StoryDirector.OnTrigger): 'sumo_intro' no lo escribe nadie
+    (["trig_sumo_intro", "enc_sumo"], [("camino_jardin", 0, 5)], ["jardin_n", "jardin_ne", "jardin_no"]),
     (["dojo_gate_seen", "enc_dojo_guards"], [("camino_jardin", 0, 6)], ["dojo_puerta"]),
     (["zone_montana"], [("camino_oeste", 0, 4)], ["mont_base"]),
     (["enc_mountain1"], [("camino_oeste", 0, 4), ("subida_monte", 0, 3)], ["mont_arena"]),
