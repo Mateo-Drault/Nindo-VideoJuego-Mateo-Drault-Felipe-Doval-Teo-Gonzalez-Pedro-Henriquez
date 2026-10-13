@@ -68,14 +68,22 @@ def time_at(tl, norm):
     return hi
 
 
-def clip_lunge_travel(n, apex, contact, lunge, windup, lunge_from, speed=1.0, end_frame=None, air=False):
+def clip_lunge_travel(n, apex, contact, lunge, windup, lunge_from, speed=1.0, end_frame=None, air=False, lunge_to=None,
+                      release_rate=1.6):
     """(recorrido del transform en cada cuadro 0..n, StepTimeline) de Enemy.SetupLunge/LungeAt: de lunge_from al golpe más
     0.05 del paso (sin pasar de MAX_CLIP_LUNGE) o, en los saltos sin daño, hasta el cuadro en que cae ('end_frame'). 'air'
-    (AttackDef.lungeAir): no frena al final."""
-    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed, creep_in=True)
+    (AttackDef.lungeAir): no frena al final. 'lunge_to' (AttackDef.lungeTo, en cuadros): termina en ese cuadro, sin pasar
+    de MAX_CLIP_LUNGE (los martillazos de Gorō llegan con el golpe). 'release_rate': AttackDef.releaseRate."""
+    tl = NA.StepTimeline(n, apex, contact, release_rate=release_rate, windup_min=windup, speed=speed, creep_in=True)
     brake = 0.0 if air else LUNGE_BRAKE
     s = time_at(tl, lunge_from / float(n))
-    e = time_at(tl, end_frame / float(n)) if end_frame is not None else max(tl.T + 0.05 * tl.step_len, s + lunge * lunge_peak(brake) / MAX_CLIP_LUNGE)
+    guard = s + lunge * lunge_peak(brake) / MAX_CLIP_LUNGE
+    if end_frame is not None:
+        e = time_at(tl, end_frame / float(n))
+    elif lunge_to is not None:
+        e = max(time_at(tl, lunge_to / float(n)), guard)
+    else:
+        e = max(tl.T + 0.05 * tl.step_len, guard)
     return [round(lunge * lunge_profile((time_at(tl, k / float(n)) - s) / max(0.01, e - s), brake), 4) for k in range(n + 1)], tl
 
 

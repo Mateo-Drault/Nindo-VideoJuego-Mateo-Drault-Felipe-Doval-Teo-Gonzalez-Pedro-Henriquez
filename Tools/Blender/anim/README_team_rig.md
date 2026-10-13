@@ -190,6 +190,14 @@ en el sidecar). Ese número no ve lo que tapa el cuerpo: para comparar de verdad
   embestida y la velocidad de cada `Hit(...)` que reusa el clip (antes era un aviso por diferencia de números).
   `magnet_skate_cm` y `magnet_curve_cm`: lo mismo si el imán del golpe (Kaito pegado) deja avanzar al transform solo una
   parte (0..100 %), sin y con el `lungeSlack` del arquetipo (Enemy.Locomotion.cs: el modelo hace los últimos metros).
+  `magnet_config_cm`, `magnet_noshove_cm` y `magnet_partial_cm`: con lo que tiene el arquetipo (`lungeShove`, `lungeSlack`)
+  y Kaito que se deja arrastrar, que no (contra la barrera, una pared, en el dash) o que se deja un poco; si el paso no
+  entra y el clip tiene variante en el lugar (`<clip>Planted`), el golpe sale en ella (Enemy.DecidePlant) y ese caso no
+  patina. Con `MAGNET_STRICT` en el módulo de clips (Gorō) pasar de 3 cm es una falla.
+* Variantes en el lugar (`team_clips_goro.planted_clip`, `timing['planted_of']` y `timing['fork']`): el mismo clip hasta
+  el apex (el juego cruza a ellas un poco antes de la suelta; `planted_checks` mide que hasta ahí no se separen más de
+  1.5 cm) y el mismo golpe sin recorrido. `body_reach_m`: lo más cerca que puede estar Kaito (radio visible 0.30 m) sin
+  que el cuerpo del enemigo se le meta; con Kaito pegado no puede llegar más lejos que en el aviso.
 
 ## Dos personajes en el mismo FBX (el abuelo y el ninja del secuestro)
 

@@ -20,7 +20,9 @@ namespace Nindo
     ///  * el imán del golpe: si Kaito está pegado, la embestida del transform se corta (no lo atraviesa). En el aire (saltos)
     ///    el recorrido se decide al despegar y cae más corto; en el piso el sumo arrastra a Kaito con la panza (lungeShove) y
     ///    lo que igual no entra lo sigue el MODELO hasta 'lungeSlack' metros (el cuerpo visible está más adentro que la
-    ///    cápsula), que se le devuelve al transform en cuanto hay lugar, sin que nada se mueva en pantalla.
+    ///    cápsula), que se le devuelve al transform en cuanto hay lugar, sin que nada se mueva en pantalla;
+    ///  * el golpe en el lugar: si Kaito no se deja arrastrar (contra la barrera, una pared u otro enemigo, en el dash) y
+    ///    el paso no entra, un golpe con variante '<estado>Planted' sale en ella, sin avanzar (DecidePlant).
     /// </summary>
     public partial class Enemy
     {
@@ -39,6 +41,13 @@ namespace Nindo
         const float LungeAccel = 0.2f, LungeBrake = 0.2f;
         // un salto con Kaito cerca cae donde lo frenaría el imán, nunca más corto que esta parte de su embestida
         const float AirMinShare = 0.35f;
+        // la variante en el lugar de un golpe con paso (TeamAnims/GoroAnims: '<estado>Planted', el mismo clip hasta la
+        // suelta): se elige este tiempo (s) antes de la suelta y se cruza en ese tiempo, con los dos clips todavía iguales.
+        // Un paso que no entra por menos de PlantSlack (m) sigue con el paso: el imán corta ese resto
+        public const string PlantedSuffix = "Planted";
+        const float PlantLead = 0.1f, PlantSlack = 0.03f;
+        // el imán frena el transform a esta distancia (m) de la cápsula de Kaito
+        const float MagnetGap = 0.3f;
 
         float stillFor;
         int idleMode = -1;          // 1 = el blend tree es direccional y existe el estado Idle (se mira una vez)
@@ -49,13 +58,19 @@ namespace Nindo
         // embestida en cuadros del clip: recorrido total (m), lo que ya pidió el clip, lo que arrastró a Kaito
         bool clipLunge, lungeDecided;
         float lungeLen, lungeTravel, shoved, lungeBrake;
+        // el margen del imán en esta embestida: MagnetGap o, si Kaito ya estaba más cerca (se le metió encima atacando), el
+        // que había. Con los 0.3 m de siempre el empujón primero lo corría hasta recuperarlos con el transform quieto, y eso
+        // que no avanzaba lo patinaba el pie de atrás (30 cm con Kaito pegado a la cápsula de Gorō)
+        float lungeGap = MagnetGap;
         int lungeFrames;
         // el recorrido con el que se autoró el clip (m) y lo que lleva hecho en el primer cuadro en el aire (lungeKeep): un
         // salto decidido más corto recorre igual hasta ahí (ver Knot)
         float lungeFull, lungeKeepAt;
         int lungeKeep;
-        // el estado del Animator del paso: el de AttackDef, o su espejo si el salto de costado va para el otro lado
+        // el estado del Animator del paso: el de AttackDef, o su espejo si el salto de costado va para el otro lado, o su
+        // variante en el lugar (planted)
         string stepState;
+        bool plantDecided, planted;
 
         /// <summary>Corrimiento local del modelo respecto de su pose base (la embestida cortada por el imán): VariantMotion
         /// lo suma cuando escribe la posición del modelo (los saltos de zona).</summary>
@@ -196,14 +211,17 @@ namespace Nindo
             lungeLen = hop ? a.specialParam : a.lunge;
             clipLunge = a.lungeFrom >= 0f && lungeLen > 0f;
             lungeTravel = shoved = 0f;
-            lungeDecided = false;
+            lungeDecided = plantDecided = planted = false;
             if (!clipLunge) return;
             lungeFrames = Mathf.Max(1, Mathf.RoundToInt(clipLen * ClipFps));
             // en el aire no frena (cae cuando ya terminó de avanzar); en el piso y al caer de un salto sin daño, sí
             lungeBrake = a.lungeAir ? 0f : LungeBrake;
             lungeStartT = tl.TimeAt(a.lungeFrom);
+            // lungeTo: la embestida termina en ese cuadro (el martillo de Gorō pega el piso con el cuerpo ya llegado; si
+            // seguía avanzando después del golpe, la cabeza clavada se arrastraba por el piso con él)
             lungeEndT = hop ? tl.TimeAt(a.activeEnd)
-                : Mathf.Max(tl.T + 0.05f * tl.stepLen, lungeStartT + lungeLen * LungePeak(lungeBrake) / MaxClipLunge);
+                : Mathf.Max(a.lungeTo > 0f ? tl.TimeAt(a.lungeTo) : tl.T + 0.05f * tl.stepLen,
+                    lungeStartT + lungeLen * LungePeak(lungeBrake) / MaxClipLunge);
             lungeFull = lungeLen;
             lungeKeep = Mathf.Min(lungeFrames, Mathf.RoundToInt(a.lungeFrom * lungeFrames) + 1);
             lungeKeepAt = ProfileLunge(tl.TimeAt(lungeKeep / (float)lungeFrames));
@@ -267,9 +285,14 @@ namespace Nindo
             if (!clipLunge) return a.lunge > 0f ? TickLinearLunge(a, dt) : 0f;
             if (anim.Frozen || target == null) return lungeLen - lungeTravel;
             bool hop = IsHop(a);
+            // (nunca después de que arrancó la embestida: desde ahí los dos clips ya son distintos)
+            if (!plantDecided && !hop && !a.lungeAir && stepClock >= Mathf.Min(lungeStartT, Mathf.Max(0.1f, tl.ReleaseTime - PlantLead)))
+                DecidePlant(a);
+            if (planted) return 0f;
             if (!lungeDecided && stepClock >= lungeStartT)
             {
                 lungeDecided = true;
+                lungeGap = Mathf.Clamp(DistToTarget - Radius - target.Radius, 0f, MagnetGap);
                 // en el aire: cae más corto si Kaito está cerca (cortado a mitad, el salto chocaba contra una pared invisible
                 // y caía derecho); el clip es el mismo, lo que se achica es el recorrido después del despegue (Knot)
                 if (a.lungeAir && !hop)
@@ -284,7 +307,7 @@ namespace Nindo
                 MoveBy((a.special == "hop_back" ? -transform.forward : transform.right * hopSide).Flat().normalized * want);
                 return 0f;
             }
-            float room = DistToTarget - Radius - target.Radius - 0.3f;
+            float room = DistToTarget - Radius - target.Radius - lungeGap;
             if (room < want && config.lungeShove > shoved && !a.lungeAir)
             {
                 float push = Mathf.Min(want - Mathf.Max(0f, room), config.lungeShove - shoved);
@@ -292,10 +315,50 @@ namespace Nindo
                 shoved += moved;
                 room += moved;
             }
-            float go = Mathf.Clamp(room, 0f, want);
+            float go = Mathf.Clamp(room, 0f, want), cut = want - go;
             if (go > 0f) MoveBy(transform.forward * go);
-            WarpLunge(want - go, lungeLen - lungeTravel);   // lo que cortó el imán: el modelo sigue el final
+            if (cut > 0f && config.lungeShove > 0f && !a.lungeAir && !target.Shovable)
+            {
+                // Kaito en el dash no se deja empujar: se va solo. Lo cortado lo sigue el modelo mientras no quede más cerca de
+                // Kaito que donde lo deja el imán con lungeSlack: de costado se abre lugar enseguida y el paso sale entero;
+                // metiéndose contra el cuerpo del enemigo es como una pared. Solo con lungeSlack, un dash en medio del paso le
+                // corría a Gorō el pie de atrás 7-34 cm, y un dash cerca del golpe es justo lo que hace el que esquiva
+                float near = Radius + target.Radius + MagnetGap - config.lungeSlack * Mathf.Max(0.5f, config.scale);
+                lungeWarp += Mathf.Clamp(DistToTarget - lungeWarp - near, 0f, cut);
+            }
+            else WarpLunge(cut, lungeLen - lungeTravel);   // lo que cortó el imán: el modelo sigue el final
             return lungeLen - lungeTravel;
+        }
+
+        /// <summary>
+        /// Un poco antes de la suelta de un golpe con paso: ¿entra el paso? Con Kaito pegado el imán corta la embestida y
+        /// el cuerpo lo arrastra (lungeShove); si Kaito no se deja (pegado a la barrera de la arena, a una pared o a otro
+        /// enemigo, en el dash) el pie de atrás, clavado en la punta mientras el cuerpo le pasa por encima, se corría lo
+        /// cortado (25-50 cm en los martillazos de Gorō), y que el modelo siguiera de largo le metía la panza y la armadura
+        /// en Kaito (hasta 18 cm; en una cadena, encima). Si lo libre, más lo que se lo puede correr, más lo que el modelo
+        /// todavía puede seguir (lungeSlack menos lo que ya va adelantado) no llega a la embestida, el golpe sale en su
+        /// variante en el lugar: el mismo clip hasta la suelta y el mismo golpe sin avanzar, pisando fuerte. El cruce dura
+        /// lo que falta para la suelta, con los dos clips todavía iguales: no se ve.
+        /// </summary>
+        void DecidePlant(AttackDef a)
+        {
+            plantDecided = true;
+            // (con Kaito más cerca que el margen, el transform lo acompaña empujándolo: lungeGap)
+            float room = Mathf.Max(0f, DistToTarget - Radius - target.Radius - MagnetGap);
+            float follow = Mathf.Max(0f, config.lungeSlack * Mathf.Max(0.5f, config.scale) - lungeWarp);
+            if (room + follow >= lungeLen - PlantSlack) return;
+            string st = stepState + PlantedSuffix;
+            if (!anim.HasState(st)) return;
+            Vector3 dir = (target.transform.position - transform.position).Flat().normalized;
+            float push = config.lungeShove > 0f ? target.ShoveRoom(dir, config.lungeShove, transform) : 0f;
+            if (room + push + follow >= lungeLen - PlantSlack) return;
+            planted = true;
+            stepState = st;
+            anim.Play(st, Mathf.Clamp(tl.ReleaseTime - stepClock, 0.03f, PlantLead), tl.NormAt(stepClock));
+            // (pasa pocas veces por pelea: el Editor.log dice cuándo y por qué, para probarlo contra la barrera)
+            var inv = System.Globalization.CultureInfo.InvariantCulture;
+            Debug.Log($"[Nindo] {config.displayName}: {a.state} en el lugar (libre {room.ToString("0.00", inv)} m, " +
+                      $"se lo puede correr {push.ToString("0.00", inv)} m, embestida {lungeLen.ToString("0.00", inv)} m)");
         }
 
         /// <summary>La embestida de siempre (golpes sin lungeFrom: los jefes): lineal en el tiempo de lungeStartT a lungeEndT.</summary>
@@ -325,7 +388,8 @@ namespace Nindo
             float cap = config.lungeSlack * Mathf.Max(0.5f, config.scale);
             if (meters <= 0f || cap <= 0f) return;
             float within = Mathf.Clamp(cap - left, 0f, meters);
-            lungeWarp = Mathf.Min(cap, lungeWarp + within);
+            // (sin achicar lo que ya sigue de más: el dash de Kaito, TickLunge)
+            lungeWarp = Mathf.Max(lungeWarp, Mathf.Min(cap, lungeWarp + within));
         }
 
         /// <summary>Devuelve el adelanto del modelo al transform apenas hay lugar (nada se mueve en pantalla); caminando lo
@@ -375,7 +439,9 @@ namespace Nindo
     public class AttackClipFallback
     {
         public string state;
-        public float activeStart, activeEnd, apex, lungeFrom = -1f;
+        // lungeTo es de cada clip como lungeFrom: una variante con 'to:' que cae al clip de siempre se quedaba con el cuadro
+        // del suyo y terminaba la embestida en cualquier lado
+        public float activeStart, activeEnd, apex, lungeFrom = -1f, lungeTo = -1f;
         public bool lungeAir;
 
         public void ApplyTo(AttackDef a)
@@ -385,6 +451,7 @@ namespace Nindo
             a.activeEnd = activeEnd;
             a.apex = apex;
             a.lungeFrom = lungeFrom;
+            a.lungeTo = lungeTo;
             a.lungeAir = lungeAir;
             a.fallback = null;
         }

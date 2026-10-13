@@ -1,7 +1,8 @@
 """Clips nuevos de los personajes del equipo: autoría, chequeos, FBX de animación y hojas de revisión.
 
   blender -b --factory-startup --python Tools/Blender/anim/build_team_anims.py -- <ninja|sumo|goro|grandpa> [opciones]
-    --export        escribe Nindo/Assets/Nindo/Art/Characters/TeamAnims/<Personaje>Anims.fbx (+ .json)
+    --export        escribe Nindo/Assets/Nindo/Art/Characters/TeamAnims/<Personaje>Anims.fbx (+ .json), solo si pasan
+                    todos los chequeos (también los del FBX re-importado: hasta entonces queda en una carpeta temporal)
     --renders DIR   una hoja por clip (cámara del juego de frente y de perfil, perfil ortográfico)
     --only A,B      solo esos clips (para iterar; no exporta)
     --frames F      con --renders: cuadros de la hoja (si no, los del timing del clip)
@@ -46,6 +47,11 @@ FBX = opt("--fbx") or os.path.join(OUT_DIR, CHAR.capitalize() + "Anims.fbx")
 ARCHETYPES = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Scripts", "Enemies", "EnemyArchetypes.cs")
 GAP = 10
 failures, warnings = [], []
+# la variante en el lugar de un golpe con paso (Enemy.PlantedSuffix) y el margen con que Enemy.DecidePlant la elige: un
+# paso que no entra por menos de PLANT_SLACK m sigue con el paso (el imán corta ese resto). CLIP_NAMES: todos los clips del
+# personaje (también con --only)
+PLANT_SUFFIX, PLANT_SLACK = "Planted", 0.03
+CLIP_NAMES = set()
 
 
 def check(ok, msg, warn=False):
@@ -55,35 +61,88 @@ def check(ok, msg, warn=False):
 
 
 # ------------------------------------------------------------------------------- golpes del juego
+class ArchHit(tuple):
+    """Un golpe de EnemyArchetypes.cs: (activeStart, activeEnd, apex, función, embestida, velocidad, lungeFrom, aire,
+    lungeTo), más 'rr' (AttackDef.releaseRate, 1.6 por omisión) y 'var' (la variable del C#)."""
+
+    def __new__(cls, items, rr=1.6, var=""):
+        o = tuple.__new__(cls, items)
+        o.rr, o.var = rr, var
+        return o
+
+
 def archetype_hits(func_names):
-    """Hit("Estado", ...) de las funciones dadas de EnemyArchetypes.cs:
-    {estado: [(activeStart, activeEnd, apex, función, embestida, velocidad, lungeFrom), ...]}.
-    Los apex y lungeFrom con nombre (NinjaApex1 = 0.50f) se resuelven con las constantes del archivo; embestida y
-    velocidad, con los valores por omisión de Hit() (0.8 m, 1); lungeFrom None = sin 'from:' (embestida lineal)."""
+    """Los golpes de las funciones dadas de EnemyArchetypes.cs: {estado: [ArchHit, ...]}. Cada 'var x = Hit("Estado",
+    ...)' con lo que se le cambia después ('x.speed = 1.1f', 'x.releaseRate = 1.2f', 'x.lunge = ...') y cada variante
+    'var y = x.Clone()' con sus cambios (c1f, c2f, c3f de Gorō: antes no se medían y tocan el clip a otra velocidad). Las
+    funciones comparten las variables en orden (GoroPhase2 clona los golpes que arma Goro). Los apex, lungeFrom y
+    lungeTo con nombre (NinjaApex1 = 0.50f) se resuelven con las constantes del archivo; embestida y velocidad, con los
+    valores por omisión de Hit() (0.8 m, 1); lungeFrom None = sin 'from:' (embestida lineal); lungeTo None = sin 'to:'
+    (termina un poco después del golpe)."""
     src = open(ARCHETYPES, encoding="utf-8").read()
     consts = {m.group(1): float(m.group(2)) for m in re.finditer(r"(\w+)\s*=\s*([\d.]+)f", src)}
-    out = {}
+    out, defs, order = {}, {}, []
     for fn in func_names:
         m = re.search(r"public static \w+ " + fn + r"\([^)]*\)\s*\{(.*?)\n        \}", src, re.S)
         if not m:
             continue
-        for h in re.finditer(r'Hit\("(\w+)",\s*[\d.]+,\s*([\d.]+)f,\s*([\d.]+)f(.*?)\);', m.group(1)):
-            st, a0, a1, rest = h.group(1), float(h.group(2)), float(h.group(3)), h.group(4)
-            am = re.search(r"apex:\s*([\w.]+)", rest)
-            apex = None
-            if am:
-                v = am.group(1).rstrip("f")
-                apex = consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
-            lm = re.search(r"lunge:\s*([\d.]+)f", rest)
-            sm = re.search(r"speed:\s*([\d.]+)f", rest)
-            fm = re.search(r"from:\s*([\w.]+)", rest)
-            air = bool(re.search(r"air:\s*true", rest))
-            frm = None
-            if fm:
-                v = fm.group(1).rstrip("f")
-                frm = consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
-            out.setdefault(st, []).append((a0, a1, apex, fn, float(lm.group(1)) if lm else 0.8, float(sm.group(1)) if sm else 1.0, frm, air))
+        body = m.group(1)
+        tok = re.compile(r'(?:var\s+(\w+)\s*=\s*)?Hit\("(\w+)",\s*[\d.]+,\s*([\d.]+)f,\s*([\d.]+)f(.*?)\);'
+                         r'|var\s+(\w+)\s*=\s*(\w+)\.Clone\(\);'
+                         r'|(\w+)\.(speed|releaseRate|lunge)\s*=\s*([\d.]+)f;', re.S)
+        for h in tok.finditer(body):
+            if h.group(2):
+                var, st, a0, a1, rest = h.group(1) or f"_{len(order)}", h.group(2), float(h.group(3)), float(h.group(4)), h.group(5)
+                am = re.search(r"apex:\s*([\w.]+)", rest)
+                apex = None
+                if am:
+                    v = am.group(1).rstrip("f")
+                    apex = consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
+                lm = re.search(r"lunge:\s*([\d.]+)f", rest)
+                sm = re.search(r"speed:\s*([\d.]+)f", rest)
+                air = bool(re.search(r"air:\s*true", rest))
+
+                def named(key):
+                    fm = re.search(key + r":\s*([\w.]+)", rest)
+                    if not fm:
+                        return None
+                    v = fm.group(1).rstrip("f")
+                    return consts.get(v, None) if not re.match(r"[\d.]+$", v) else float(v)
+                defs[var] = dict(st=st, var=var, items=[a0, a1, apex, fn, float(lm.group(1)) if lm else 0.8,
+                                                        float(sm.group(1)) if sm else 1.0, named("from"), air, named(r"\bto")], rr=1.6)
+                order.append(defs[var])
+            elif h.group(6):
+                var, base = h.group(6), h.group(7)
+                if base in defs:
+                    d = defs[base]
+                    defs[var] = dict(st=d["st"], var=var, items=list(d["items"]), rr=d["rr"])
+                    defs[var]["items"][3] = f"{fn}:{var}"
+                    order.append(defs[var])
+            elif h.group(8) in defs:
+                d, k, v = defs[h.group(8)], h.group(9), float(h.group(10))
+                if k == "releaseRate":
+                    d["rr"] = v
+                else:
+                    d["items"][5 if k == "speed" else 4] = v
+    for d in order:
+        out.setdefault(d["st"], []).append(ArchHit(d["items"], d["rr"], d["var"]))
     return out
+
+
+def config_float(fn, key):
+    """Un número del EnemyConfig que arma la función 'fn' de EnemyArchetypes.cs (0 si no lo pone)."""
+    src = open(ARCHETYPES, encoding="utf-8").read()
+    m = re.search(r"public static \w+ " + fn + r"\([^)]*\)\s*\{(.*?)\n        \}", src, re.S)
+    return float(next(iter(re.findall(r"\b" + key + r"\s*=\s*([\d.]+)f", m.group(1) if m else "")), 0.0))
+
+
+def config_lunge(fn):
+    """(lungeShove, lungeSlack) del EnemyConfig que arma la función 'fn' de EnemyArchetypes.cs (0 si no los pone)."""
+    src = open(ARCHETYPES, encoding="utf-8").read()
+    m = re.search(r"public static \w+ " + fn + r"\([^)]*\)\s*\{(.*?)\n        \}", src, re.S)
+    body = m.group(1) if m else ""
+    get = lambda k: float(next(iter(re.findall(k + r"\s*=\s*([\d.]+)f", body)), 0.0))
+    return get("lungeShove"), get("lungeSlack")
 
 
 # las variantes de zona reusan los clips con sus propios números: también tienen que coincidir
@@ -195,20 +254,41 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         # el golpe del juego: activeStart = contacto / largo (±1 cuadro), apex = fin de la pausa
         st = t.get("state", clip.name)
         lf = t.get("lunge_from")
-        for a0, a1, apex, fn, hl, hs, frm, air in hits.get(st, []):
+        lt = t.get("lunge_to")
+        rr = t.get("release_rate", 1.6)
+        for h in hits.get(st, []):
+            a0, a1, apex, fn, hl, hs, frm, air, to = h
             ok = abs(a0 - a / n) <= 1.0 / n + 1e-3 and (apex is None or abs(apex - ap / n) <= 1.0 / n + 1e-3)
             check(ok, f"{clip.name}: {fn}() Hit(\"{st}\") activo {a0:.2f}-{a1:.2f} apex {apex} vs clip contacto "
                       f"{a / n:.3f} apex {ap / n:.3f}")
+            # el reloj de la suelta: el clip se autoró (y sus embestidas se midieron) con este releaseRate
+            if lf is not None:
+                check(abs(h.rr - rr) <= 1e-3, f"{clip.name}: {fn}() Hit(\"{st}\") releaseRate {h.rr:g} vs clip {rr:g}")
+            # la embestida que termina en un cuadro (lungeTo) tiene que durar más que el tope de velocidad del juego
+            # (Enemy.SetupLunge: MaxClipLunge) a la velocidad de cada variante: si no, el tope la estira hasta después del
+            # golpe y la cabeza del martillo ya clavada se arrastra con el cuerpo (c1f a 1.1x quedaba a 4 ms)
+            if frm is not None and to is not None and hl > 0.0:
+                import team_moves as TM
+                tlv = NA.StepTimeline(n, ap, a, release_rate=h.rr, windup_min=t.get("windup", 0.55), speed=hs, creep_in=True)
+                span = TM.time_at(tlv, to) - TM.time_at(tlv, frm)
+                guard = hl * TM.lunge_peak(0.0 if air else TM.LUNGE_BRAKE) / TM.MAX_CLIP_LUNGE
+                rep.setdefault("lunge_span_s", {})[fn] = [round(span, 3), round(guard, 3)]
+                check(span >= guard + 0.01, f"{clip.name}: {fn}() Hit(\"{st}\") x{hs:g}: la embestida dura {span * 1000:.0f} ms, más "
+                                            f"que el tope de {TM.MAX_CLIP_LUNGE:g} m/s ({guard * 1000:.0f} ms + 10)")
             # la embestida en cuadros del clip arranca donde el clip la autoró (sin 'from:' es la lineal de siempre: se
             # mide abajo como variante, el Ōzeki que se reemplaza)
             if lf is not None and hl > 0.0:
                 check(frm is None or abs(frm - lf / n) <= 0.5 / n, f"{clip.name}: {fn}() Hit(\"{st}\") from {frm} vs clip "
                       f"lunge_from {lf / n:.4f} (f{lf})", warn=frm is None)
+                # y termina donde el clip la autoró (lunge_to: el martillo de Gorō pega con el cuerpo ya llegado)
+                if lt is not None:
+                    check(to is not None and abs(to - lt / n) <= 0.5 / n, f"{clip.name}: {fn}() Hit(\"{st}\") to {to} vs clip "
+                          f"lunge_to {lt / n:.4f} (f{lt})")
             # las variantes que reusan el clip con otra embestida (o con otra velocidad): lo que se corre un pie apoyado
             # con el avance que aplica el juego, medido sobre los apoyos del clip (aviso, no falla: es su número). Un clip
             # cuyos pies vuelan durante la embestida aguanta cualquier largo; uno con un pie clavado patina la diferencia
             if t.get("lunge") is not None and hl > 0.0 and clip.travel_table is not None:
-                trv = game_travel(n, ap, a, hl, t.get("windup", 0.55), hs, frm, air=air)
+                trv = game_travel(n, ap, a, hl, t.get("windup", 0.55), hs, frm, air=air, lunge_to=to, rr=rr)
                 sk = variant_skate(touch, clip.travel_table, trv)
                 rep.setdefault("variant_skate_cm", {})[fn] = round(sk * 100.0, 1)
                 check(sk <= 0.02, f"{clip.name}: {fn}() embestida {hl:.2f} m (clip {t['lunge']:.2f}): los pies apoyados "
@@ -218,11 +298,48 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
         if t.get("lunge") and clip.travel_table is not None:
             rep["magnet_skate_cm"] = round(variant_skate(touch, clip.travel_table, [0.0] * len(clip.travel_table)) * 100.0, 1)
             # y si el transform alcanza a avanzar una parte (Kaito un poco más lejos): el corte cae al final de la embestida
-            # con lungeSlack (Enemy.Locomotion.cs) el modelo hace los últimos 'slack' m de lo que el imán cortó
+            # con lungeSlack (Enemy.Locomotion.cs) el modelo hace los últimos 'slack' m de lo que el imán cortó, y con
+            # lungeShove el cuerpo empuja a Kaito antes (agranda el lugar que hay)
             L = t["lunge"]
-            rep["magnet_curve_cm"] = {str(sl): [round(variant_skate(touch, clip.travel_table, [
-                min(x, L * q / 10.0) + max(0.0, x - max(L * q / 10.0, L - sl)) for x in clip.travel_table]) * 100.0, 1) for q in range(11)]
-                for sl in (0.0, 0.15, 0.35)}
+
+            def magnet(q, sl, sh=0.0):
+                room = min(L, L * q / 10.0 + sh)
+                return [min(x, room) + max(0.0, x - max(room, L - sl)) for x in clip.travel_table]
+            rep["magnet_curve_cm"] = {str(sl): [round(variant_skate(touch, clip.travel_table, magnet(q, sl)) * 100.0, 1) for q in range(11)]
+                                      for sl in (0.0, 0.15, 0.35)}
+            # con lo que tiene el personaje (EnemyConfig): un pie apoyado que se corre más de 3 cm con Kaito en cualquier
+            # lugar de la embestida (el SlamWave de Gorō arrastraba 45 cm y solo lo decía el informe). Falla en los personajes
+            # cuyo módulo de clips lo pide (MAGNET_STRICT: Gorō); en los demás avisa (sus clips se autoraron antes de esta
+            # regla). Tres casos: Kaito que se deja empujar lungeShove m, Kaito que no (pegado a la barrera, una pared u otro
+            # enemigo, o en el dash) y Kaito que se deja empujar un poco (la barrera a unos centímetros). Si lo libre más lo
+            # que se puede empujar más lungeSlack (lo que sigue el modelo) no llega a la embestida (Enemy.DecidePlant, antes
+            # de la suelta) y el clip tiene variante en el lugar ('<clip>Planted'), el golpe sale en esa variante: no hay
+            # recorrido que patine (sus pies se miden en su propio clip) y en una cadena contra la barrera el modelo no se le
+            # sube encima
+            sh, sl = MAGNET
+            planted = clip.name + PLANT_SUFFIX in CLIP_NAMES
+
+            def game(q, push):
+                room = L * q / 10.0
+                if planted and room + push + sl < L - PLANT_SLACK:
+                    return None
+                return variant_skate(touch, clip.travel_table, magnet(q, sl, push))
+            cfg = [game(q, sh) for q in range(11)]
+            nos = [game(q, 0.0) for q in range(11)]
+            part = [game(q, min(sh, L) * j / 10.0) for j in range(11) for q in range(11)]
+            mc, mn, mp = (max(x or 0.0 for x in v) * 100.0 for v in (cfg, nos, part))
+            rep["magnet_config_cm"] = round(mc, 1)
+            rep["magnet_noshove_cm"] = round(mn, 1)
+            rep["magnet_partial_cm"] = round(mp, 1)
+            rep["magnet_noshove_raw_cm"] = round(max(variant_skate(touch, clip.travel_table, magnet(q, sl)) for q in range(11)) * 100.0, 1)
+            # en qué lugares de Kaito (décimos de la embestida libres) sale la variante en el lugar
+            rep["magnet_planted_q"] = {"empuja": [q for q, x in enumerate(cfg) if x is None], "no": [q for q, x in enumerate(nos) if x is None]}
+            strict = getattr(mod, "MAGNET_STRICT", False)
+            check(mc <= 3.0, f"{clip.name}: con Kaito pegado (el imán corta la embestida; empuja {sh:g} m y el modelo sigue {sl:g} m) "
+                             f"los pies apoyados no patinan ({mc:.1f} cm)", warn=not strict)
+            check(max(mn, mp) <= 3.0, f"{clip.name}: con Kaito que no se deja empujar o se deja un poco (pared, barrera, dash) los pies "
+                                      f"apoyados no patinan ({max(mn, mp):.1f} cm; sin variante en el lugar {rep['magnet_noshove_raw_cm']:.1f} cm"
+                                      f"{'' if planted else ': falta ' + clip.name + PLANT_SUFFIX})", warn=not strict)
         # la embestida del clip tiene que arrancar en la suelta: si arranca antes, con cualquier pausa del juego en el
         # apex (CombatDirector la estira hasta 0.6 s) el ninja se desliza con la pose quieta y los pies clavados. En
         # cuadros del clip (lunge_from) arranca después del apex por construcción
@@ -234,18 +351,19 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             else:
                 check(lf > ap, f"{clip.name}: la embestida arranca después del apex (f{lf}, apex f{ap})")
             # lo mismo medido con el reloj: con 0.45 s más de pausa, lo que avanzó hasta el apex (la pose congelada)
-            held = game_travel(n, ap, a, t["lunge"], t.get("windup", 0.55) + 0.45, 1.0, None if lf is None else lf / n, air=t.get("lunge_air", False))
+            held = game_travel(n, ap, a, t["lunge"], t.get("windup", 0.55) + 0.45, 1.0, None if lf is None else lf / n,
+                               air=t.get("lunge_air", False), lunge_to=None if lt is None else lt / n, rr=rr)
             dh = max(held[:ap + 1])
             check(dh <= 0.02, f"{clip.name}: con 0.45 s de pausa no avanza con la pose del apex quieta ({dh * 100:.1f} cm)")
         # con el reloj del juego: segundos desde que arranca el paso hasta el golpe
-        tl = NA.StepTimeline(n, ap, a, windup_min=t.get("windup", 0.55), creep_in=lf is not None)
+        tl = NA.StepTimeline(n, ap, a, release_rate=rr, windup_min=t.get("windup", 0.55), creep_in=lf is not None)
         rep["game_T_s"] = round(tl.T, 3)
         rep["game_hold_s"] = round(tl.hold, 3)
         rep["contact_tip_m"] = [round(x, 2) for x in tip[a]]
     if "hop" in t:
         # saltos sin daño (HopBack, HopSide): el Hit del juego despega y cae en los cuadros del clip
         hp = t["hop"]
-        for a0, a1, apex, fn, hl, hs, frm, air in hits.get(t.get("state", clip.name), []):
+        for a0, a1, apex, fn, hl, hs, frm, air, to in hits.get(t.get("state", clip.name), []):
             ok = (abs(a0 - hp["takeoff"] / n) <= 0.5 / n and abs(a1 - hp["land"] / n) <= 0.5 / n
                   and apex is not None and abs(apex - hp["apex"] / n) <= 0.5 / n and frm is not None and abs(frm - hp["takeoff"] / n) <= 0.5 / n)
             check(ok, f"{clip.name}: {fn}() Hit despega {a0:.3f} cae {a1:.3f} apex {apex} from {frm} vs clip "
@@ -253,13 +371,15 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
     return rep
 
 
-def game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame=None, air=False):
+def game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame=None, air=False, lunge_to=None, rr=1.6):
     """Lo que avanza el transform del juego en cada cuadro del clip: en cuadros del clip desde 'frm' (normalizado,
-    AttackDef.lungeFrom: team_moves.clip_lunge_travel) o la lineal de siempre si no tiene."""
+    AttackDef.lungeFrom: team_moves.clip_lunge_travel; 'lunge_to', normalizado: AttackDef.lungeTo) o la lineal de siempre
+    si no tiene. 'rr': AttackDef.releaseRate."""
     import team_moves as TM
     if frm is None:
-        return T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed)[0]
-    return TM.clip_lunge_travel(n, apex, contact, lunge, windup, round(frm * n), speed=speed, end_frame=end_frame, air=air)[0]
+        return T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed, release_rate=rr)[0]
+    return TM.clip_lunge_travel(n, apex, contact, lunge, windup, round(frm * n), speed=speed, end_frame=end_frame, air=air,
+                                lunge_to=None if lunge_to is None else round(lunge_to * n), release_rate=rr)[0]
 
 
 def _hermite(P, i, s):
@@ -278,18 +398,19 @@ def _hermite(P, i, s):
     return (2 * s3 - 3 * s2 + 1) * a + (s3 - 2 * s2 + s) * ma + (-2 * s3 + 3 * s2) * b + (s3 - s2) * mb
 
 
-def replay_skate(clip, pts, roots_auth, tdir, n, apex, contact, windup, lunge, frm, speed=1.0, end_frame=None, air=False, floor_tol=0.01, hz=240.0):
+def replay_skate(clip, pts, roots_auth, tdir, n, apex, contact, windup, lunge, frm, speed=1.0, end_frame=None, air=False, floor_tol=0.01,
+                 hz=240.0, lunge_to=None, rr=1.6):
     """El golpe con el reloj del juego (StepTimeline a 240 Hz, cuadros fraccionarios) y la embestida del juego (en cuadros
     del clip o lineal): lo que se corre en el mundo la suela que toca el piso, con el clip interpolado entre cuadros como
     en Unity (cúbica) y el transform como lo mueve Enemy (lineal entre cuadros en LungeAt). Medido así, la estocada
     patinaba 34-45 cm aunque los cuadros enteros dieran 0. Devuelve (peor total cm, peor por muestra cm, dónde)."""
     import numpy as np
-    tl = NA.StepTimeline(n, apex, contact, windup_min=windup, speed=speed, creep_in=frm is not None)
+    tl = NA.StepTimeline(n, apex, contact, release_rate=rr, windup_min=windup, speed=speed, creep_in=frm is not None)
     import team_moves as TM
-    knots = game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame, air=air)
+    knots = game_travel(n, apex, contact, lunge, windup, speed, frm, end_frame, air=air, lunge_to=lunge_to, rr=rr)
     lin = None
     if frm is None:
-        tr0 = T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed)[1]
+        tr0 = T.lunge_travel(n, apex, contact, lunge, windup_min=windup, speed=speed, release_rate=rr)[1]
         end = tr0.T + 0.05 * tr0.step_len
         start = max(0.0, end - max(end - (tr0.tA + tr0.hold), lunge / 12.0))
         lin = (start, end)
@@ -717,6 +838,112 @@ def chain_checks(ch, baked_by_name):
             check(d <= tol, f"{name}: en f{f:g} empalma con {other} f{fo:g} (peor punto {d * 100:.1f} cm, tope {tol * 100:.0f})")
 
 
+# Kaito, para medir cuánto se le mete el cuerpo de un enemigo: el radio de su cuerpo visible (kaitooo.fbx: 0.26-0.37 m por
+# franja de altura, el pelo y la cabeza grande arriba) y lo que mide de alto; el radio de su CharacterController
+# (CharacterFactory.BuildPlayer) y el margen del imán (Enemy.TickLunge: lo frena a 0.3 m de la cápsula)
+KAITO_BODY_R, KAITO_HEIGHT, KAITO_CC_R, MAGNET_GAP, REACH_MARGIN = 0.30, 1.55, 0.35, 0.3, 0.05
+_REACH = {}
+
+
+def body_cloud(ch):
+    """Los puntos del cuerpo por hueso, en el espacio del hueso en reposo (rígidos con él, el hueso que más pesa en cada
+    vértice), sin el arma ni los brazos (el golpe los lleva adonde está Kaito: eso es pegarle). Una vez por personaje."""
+    import numpy as np
+    if "body" in _REACH:
+        return _REACH["body"]
+    R = ch.rig
+    arms = set()
+    for k in "rl":
+        arms.update(R.subtree(ch.side[k]["upper"]))
+    wm = (ch.spec.get("weapon") or {}).get("mesh", "\0")
+    # lo que cuelga o sale del contorno (los shide de papel, el maedate de Gorō: REACH_SKIP_MATS del módulo de clips)
+    skip_mats = getattr(mod, "REACH_SKIP_MATS", ())
+    pts = {}
+    for o in ch.meshes:
+        if o.name.startswith(wm) or not o.vertex_groups:
+            continue
+        skip = set()
+        for poly in o.data.polygons:
+            m = o.material_slots[poly.material_index].material if poly.material_index < len(o.material_slots) else None
+            if m is not None and any(m.name.startswith(x) or m.name.startswith("rv_" + x) for x in skip_mats):
+                skip.update(poly.vertices)
+        Mw = o.matrix_world
+        for v in o.data.vertices:
+            if v.index in skip:
+                continue
+            b = dominant_group(o, v.index)
+            if b and b in R.names and b not in arms:
+                pts.setdefault(b, []).append(R.rest_inv[b] @ (ch.Ai @ (Mw @ v.co)))
+    _REACH["body"] = {b: np.array([[q.x, q.y, q.z, 1.0] for q in v]) for b, v in pts.items()}
+    return _REACH["body"]
+
+
+def body_reach(ch, clip, frames, roots, f0=0, f1=None):
+    """Lo más cerca (m, adelante del transform del cuadro 0) que puede estar el centro de Kaito sin que el cuerpo del
+    clip se le meta en el suyo (radio KAITO_BODY_R, del piso a KAITO_HEIGHT), de f0 a f1, con el avance 'roots'. Las
+    rocas de la armadura las da el módulo de clips (body_extras). Devuelve (metros, cuadro, qué: hueso o 'roca hueso')."""
+    import numpy as np
+    R = ch.rig
+    cloud = [(b, b, L) for b, L in body_cloud(ch).items()]
+    for b, P in (getattr(mod, "body_extras", lambda ch, clip: [])(ch, clip)):
+        cloud.append(("roca " + b, b, np.array([list(R.rest_inv[b] @ ch.P(Vector(p))) + [1.0] for p in P])))
+    A = np.array(ch.A)
+    Rt = np.array(ch.Rcw).T / ch.u
+    O = np.array(ch.O)
+    rk = KAITO_BODY_R
+    best, at, what = -9.0, -1, ""
+    for f in range(f0, len(frames) if f1 is None else f1 + 1):
+        W, r = frames[f], np.array(roots[f])
+        for label, b, L in cloud:
+            P = ((((L @ np.array(W[b]).T)[:, :3] + r) @ A[:3, :3].T + A[:3, 3] - O) @ Rt.T)
+            m = (P[:, 2] > 0.02) & (P[:, 2] < KAITO_HEIGHT) & (np.abs(P[:, 0]) < rk)
+            if m.any():
+                v = float((-P[m, 1] + np.sqrt(rk * rk - P[m, 0] ** 2)).max())
+                if v > best:
+                    best, at, what = v, f, label
+    return best, at, what
+
+
+def planted_checks(ch, by_name, roots_by, reports):
+    """Las variantes en el lugar ('<clip>Planted', timing['planted_of']): Enemy.DecidePlant cruza a ellas un poco antes de
+    la suelta, así que hasta el apex tienen que ser el mismo clip (peor punto de body_points, incluida la cabeza del
+    martillo, a lo sumo 1.5 cm) y tener los mismos tiempos (el reloj del golpe sigue igual). Y como salen con Kaito pegado
+    y quieto a la distancia del imán (radio del enemigo + el de Kaito + MAGNET_GAP, menos lungeSlack: lo que el modelo
+    pudo quedar adelantado de un golpe anterior), su cuerpo no se le puede meter en el de Kaito más que lo que ya se le
+    mete en el aviso (body_reach)."""
+    radius = config_float(ARCH_FUNCS[CHAR][0], "radius") if ARCH_FUNCS.get(CHAR) else 0.0
+    for name, (clip, frames) in by_name.items():
+        t = clip.timing
+        base = t.get("planted_of")
+        if not base or base not in by_name:
+            continue
+        bc, bf = by_name[base]
+        bt = bc.timing
+        same = [k for k in ("apex", "contact", "active", "hold", "windup", "release_rate", "kind", "armor_window", "punish")
+                if bt.get(k) != t.get(k)]
+        check(clip.frames == bc.frames and not same, f"{name}: los mismos tiempos que {base} ({clip.frames} vs {bc.frames} cuadros"
+                                                     f"{'; distinto ' + ', '.join(same) if same else ''})")
+        fork = t["fork"]
+        # (no exacto: el Catmull-Rom de la cadera en la pausa mira la primera clave de la suelta, que ya es otra; en el
+        # martillazo de Combo1 eso corre la mano derecha 0.9 cm, y el cruce de 0.1 s lo mezcla)
+        d = max(max((p - q).length for p, q in zip(body_points(ch, frames[f]), body_points(ch, bf[f]))) for f in range(fork))
+        reports[name]["planted_prefork_cm"] = round(d * 100.0, 2)
+        check(d <= 0.015, f"{name}: hasta el apex (f0-f{fork - 1}) es {base} ({d * 100:.2f} cm el peor punto)")
+        dk = max((p - q).length for p, q in zip(body_points(ch, frames[fork]), body_points(ch, bf[fork])))
+        # (informe: en el cuadro en que se separan ya se ve solo la variante, el cruce terminó antes de la suelta)
+        reports[name]["planted_fork_cm"] = round(dk * 100.0, 1)
+        if radius > 0.0:
+            reach, at, what = body_reach(ch, clip, frames, roots_by[name], f0=fork)
+            pre = body_reach(ch, clip, frames, roots_by[name], f1=fork)[0]
+            near = radius + KAITO_CC_R + MAGNET_GAP - MAGNET[1]
+            reports[name]["body_reach_m"] = {"golpe": round(reach, 3), "aviso": round(pre, 3), "kaito": round(near, 3)}
+            # (con REACH_MARGIN por los vértices rígidos con su hueso; lo que ya llega en el aviso no lo cambia la variante:
+            # el SlamWave agachado con la armadura llega a 1.55 m)
+            check(reach <= max(near - REACH_MARGIN, pre), f"{name}: con Kaito pegado a {near:.2f} m el cuerpo no se le mete más que en el aviso "
+                                                   f"(le llega a {reach:.2f} m en f{at}, {what}; el aviso, a {pre:.2f})",
+                  warn=not getattr(mod, "MAGNET_STRICT", False))
+
+
 def blend_index(n, loop, f):
     """Cuadro f de un clip de n cuadros (negativo: desde el final; en un loop el último es el primero)."""
     last = n - 1 if loop else n
@@ -935,6 +1162,8 @@ def floor_checks(clip, low_body, low_weapon, low_where):
         ww = min(range(len(low_weapon)), key=lambda i: low_weapon[i])
         check(not bad, f"{clip.name}: el arma no se mete en el piso (f{ww} {low_weapon[ww]:.1f} cm"
                        f"{'; ' + str(len(bad)) + ' cuadros de más' if bad else ''})")
+        if bad:
+            print("       cuadro a cuadro (cm):", " ".join(f"{i}:{v:.1f}" for i, v in enumerate(low_weapon) if v < 0.0))
 
 
 def replay_checks(ch, clip, soles, hits):
@@ -957,16 +1186,18 @@ def replay_checks(ch, clip, soles, hits):
         return
     ap, a = t["apex"], t["contact"]
     roots = [Vector((td[0], td[1], 0.0)) * x for x in clip.travel_table]
-    lf = t.get("lunge_from")
+    lf, lt, rr = t.get("lunge_from"), t.get("lunge_to"), t.get("release_rate", 1.6)
     w, p, at = replay_skate(clip, soles, roots, td, n, ap, a, t.get("windup", 0.55), t["lunge"], None if lf is None else lf / n,
-                            air=t.get("lunge_air", False))
+                            air=t.get("lunge_air", False), lunge_to=None if lt is None else lt / n, rr=rr)
     check(w <= 3.0 and p <= 2.0, f"{clip.name}: con el reloj del juego los pies apoyados no patinan en la embestida ({w:.1f} cm, peor "
                                  f"muestra {p:.1f} cm, {at})")
     out = {"clip": round(w, 1)}
-    for a0, a1, apex, fn, hl, hs, frm, air in hits.get(t.get("state", clip.name), []):
+    for h in hits.get(t.get("state", clip.name), []):
+        a0, a1, apex, fn, hl, hs, frm, air, to = h
         if hl <= 0.0:
             continue
-        wv, pv, atv = replay_skate(clip, soles, roots, td, n, ap, a, t.get("windup", 0.55), hl, frm, speed=hs, air=air)
+        wv, pv, atv = replay_skate(clip, soles, roots, td, n, ap, a, t.get("windup", 0.55), hl, frm, speed=hs, air=air,
+                                   lunge_to=to, rr=getattr(h, "rr", rr))
         out[fn] = round(wv, 1)
         check(wv <= 2.0, f"{clip.name}: {fn}() ({hl:.2f} m, velocidad {hs:g}{', lineal' if frm is None else ''}) con el reloj del "
                          f"juego: {wv:.1f} cm ({atv})", warn=True)
@@ -1056,11 +1287,14 @@ def main():
     print("PERSONAJE", CHAR, json.dumps(ch.report()))
     mod = importlib.import_module("team_clips_" + CHAR)
     clips = mod.clips(ch)
+    CLIP_NAMES.update(c.name for c in clips)
     if ONLY:
         keep = ONLY.split(",")
         clips = [c for c in clips if c.name in keep]
     solver = T.TeamSolver(ch)
     hits = archetype_hits(ARCH_FUNCS.get(CHAR, []))
+    global MAGNET
+    MAGNET = config_lunge(ARCH_FUNCS[CHAR][0]) if ARCH_FUNCS.get(CHAR) else (0.0, 0.0)
     baked, reports, rootsd, rootsa = [], {}, {}, {}
     blends = getattr(mod, "BLENDS", ())
     rows_by = {}
@@ -1107,22 +1341,28 @@ def main():
         replay_checks(ch, clip, soles, hits)
     by_name = {c.name: (c, fr) for c, fr in baked}
     chain_checks(ch, by_name)
+    planted_checks(ch, by_name, rootsa, reports)
     blend_checks(ch, by_name, blends)
     lo = getattr(mod, "LOCOMOTION", None)
     if lo:
         locomotion_weapon(ch, by_name, [nm for nm, _ in lo], [th for _, th in lo])
     last = max(b for a, b in ranges.values())
     exported = False
+    # el FBX y su sidecar se escriben en una carpeta temporal y recién pasan a su lugar (TeamAnims o --fbx) cuando pasaron
+    # sus propios chequeos (verify_fbx y fbx_skate, al final): antes quedaban en Assets aunque fbx_skate fallara y, con el
+    # .meta todavía viejo, el worktree tuvo 20 minutos un FBX mal cortado que Unity o el resto podían tomar
+    import tempfile, shutil
     if EXPORT and (not ONLY or opt("--fbx")):
         if failures:
             print("NO SE EXPORTA: fallaron chequeos")
         else:
-            export_fbx(ch, FBX, 1, last)
+            stage = os.path.join(tempfile.mkdtemp(prefix="nindo_" + CHAR + "_"), os.path.basename(FBX))
+            export_fbx(ch, stage, 1, last)
             nfail = len(failures)
-            verify_fbx(ch, FBX, last)
+            verify_fbx(ch, stage, last)
             if len(failures) > nfail:
-                os.remove(FBX)
-                print("FBX BORRADO: no coincide con el modelo")
+                shutil.rmtree(os.path.dirname(stage), ignore_errors=True)
+                print("FBX DESCARTADO: no coincide con el modelo")
                 sys.exit(1)
             info = {"fps": T.FPS, "take": "Scene", "character": CHAR, "model": ch.spec["fbx"], "units_per_meter": round(ch.u, 5),
                     "clips": {}}
@@ -1147,9 +1387,9 @@ def main():
                 if clip.root_vel.length > 0:
                     rec["root_velocity_mps"] = round(clip.root_vel.length, 3)
                 info["clips"][clip.name] = rec
-            with open(FBX + ".json", "w", encoding="utf-8", newline="\n") as fh:
+            with open(stage + ".json", "w", encoding="utf-8", newline="\n") as fh:
                 json.dump(info, fh, indent=1, ensure_ascii=False)
-            print("EXPORTADO", FBX, "cuadros 1 ..", last, f"{os.path.getsize(FBX) / 1e6:.2f} MB")
+            print("ARMADO", stage, "cuadros 1 ..", last, f"{os.path.getsize(stage) / 1e6:.2f} MB")
             exported = True
     if RENDERS:
         import team_review as TR
@@ -1166,9 +1406,16 @@ def main():
         # al final porque vacía la escena: el FBX re-importado con sus curvas evaluadas entre cuadros (fbx_skate.py), la
         # medida que no se engaña con una cadera que gira mucho en un cuadro sobre un pie apoyado
         import fbx_skate as FS
-        fs_fail, fs_warn, _ = FS.run(CHAR, FBX, hits=hits)
+        fs_fail, fs_warn, _ = FS.run(CHAR, stage, hits=hits)
         failures.extend("FBX re-importado: " + m for m in fs_fail)
         warnings.extend(fs_warn)
+        if failures:
+            print("NO SE COPIA el FBX: fallaron chequeos (queda en", stage, "para mirarlo)")
+        else:
+            shutil.copyfile(stage, FBX)
+            shutil.copyfile(stage + ".json", FBX + ".json")
+            shutil.rmtree(os.path.dirname(stage), ignore_errors=True)
+            print("EXPORTADO", FBX)
     print(f"listo en {time.time() - t0:.1f} s; avisos {len(warnings)}")
     if failures:
         print("FALLARON", len(failures), "chequeos:")

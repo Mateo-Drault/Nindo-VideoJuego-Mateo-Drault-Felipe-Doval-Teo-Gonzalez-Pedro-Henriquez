@@ -108,12 +108,14 @@ class Lunge:
     """Enemy.SetupLunge / ProfileLunge / Knot / LungeAt (la embestida en cuadros del clip). 'decided': el largo que decide
     un salto al despegar con Kaito cerca (TickLunge; None = el autorado)."""
 
-    def __init__(s, tl, frames, length, frm, air, hop_end=None, decided=None):
+    def __init__(s, tl, frames, length, frm, air, hop_end=None, decided=None, to=None):
         s.tl, s.N, s.len = tl, frames, length
         s.brake = 0.0 if air else LUNGE_BRAKE
         s.start = tl.time_at(frm)
+        guard = s.start + length * _peak(s.brake) / MAX_CLIP_LUNGE
+        # 'to' (AttackDef.lungeTo, normalizado): termina en ese cuadro (los martillazos de Gorō)
         s.end = (tl.time_at(hop_end) if hop_end is not None
-                 else max(tl.T + 0.05 * tl.step, s.start + length * _peak(s.brake) / MAX_CLIP_LUNGE))
+                 else max(tl.time_at(to) if to is not None else tl.T + 0.05 * tl.step, guard))
         s.decided = length if decided is None else decided
         s.keep = min(frames, int(round(frm * frames)) + 1)
         s.keep_at = s.profile(tl.time_at(s.keep / frames))
@@ -280,21 +282,26 @@ def cases(clip, hits=()):
                     hop_end=h["land"] / n, length=t["lunge"])
     else:
         base = dict(apex=t["apex"] / n, a0=t["contact"] / n, a1=t["active"][1] / n, frm=t["lunge_from"] / n,
-                    air=bool(t.get("lunge_air")), hop_end=None, length=t["lunge"])
+                    air=bool(t.get("lunge_air")), hop_end=None, length=t["lunge"],
+                    to=t["lunge_to"] / n if t.get("lunge_to") is not None else None)
+    base["release"] = t.get("release_rate", 1.6)
     out = [("clip", dict(base, windup=w, speed=1.0), True), ("pausa", dict(base, windup=w + 0.35, speed=1.0), True)]
     if base["air"]:
         out.append(("corto", dict(base, windup=w, speed=1.0, decided=base["length"] * 0.35), True))
-    for a0, a1, apex, fn, hl, hs, frm, air in hits:
-        if frm is None or hl <= 0.0 or (abs(hs - 1.0) < 1e-3 and abs(hl - base["length"]) < 1e-3):
+    for h in hits:
+        a0, a1, apex, fn, hl, hs, frm, air, to = h
+        rr = getattr(h, "rr", base["release"])
+        if frm is None or hl <= 0.0 or (abs(hs - 1.0) < 1e-3 and abs(hl - base["length"]) < 1e-3 and abs(rr - base["release"]) < 1e-3):
             continue
-        out.append((f"{fn} {hl:g} m x{hs:g}", dict(base, windup=w, speed=hs, length=hl), abs(hl - base["length"]) < 1e-3))
+        # las variantes con la misma embestida a otra velocidad (c1f de Gorō a 1.1x) también fallan: son el clip mismo
+        out.append((f"{fn} {hl:g} m x{hs:g}", dict(base, windup=w, speed=hs, length=hl, release=rr), abs(hl - base["length"]) < 1e-3))
     return out
 
 
 def measure(sc, name, clip, c):
     n = clip["frames"]
-    tl = Timeline(n / 30.0, c["speed"], c["apex"], c["a0"], c["a1"], c["windup"])
-    L = Lunge(tl, n, c["length"], c["frm"], c["air"], c["hop_end"], c.get("decided"))
+    tl = Timeline(n / 30.0, c["speed"], c["apex"], c["a0"], c["a1"], c["windup"], release=c.get("release", 1.6))
+    L = Lunge(tl, n, c["length"], c["frm"], c["air"], c["hop_end"], c.get("decided"), c.get("to"))
     d = sc.world_dir(clip["timing"].get("travel_dir", (0.0, -1.0)))
     samples, t = [], 0.0
     while True:

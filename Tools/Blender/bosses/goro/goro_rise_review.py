@@ -24,6 +24,7 @@ import nindo_anim as NA      # noqa: E402
 FPS = 30.0
 RIM = 17.5
 SHOT_START, SHOT_NEAR, SHOT_FAR = 7.2, 6.0, 10.0
+KNEEL_LEAD, KNEEL_LOOK = 0.35, 1.7     # GoroBoss.ShotKneelLead / ShotKneelLook
 SIDE_DIST, SIDE_BACK, SIDE_ARC = 4.6, 0.38, 1.3   # GoroArmor: las que se tiran de costado
 FLIGHT_SCALE = 1.2                 # GoroArmor.FlightScale
 # GoroArmor.Specs: giro (grados), eje y dirección de salida en el marco de Gorō de Unity (+Z adelante, +X derecha)
@@ -121,11 +122,12 @@ def lerp(a, b, k):
 
 
 def side_camera(cam, cam_dir, ts, kneel, roar):
-    """GoroBoss.PlayRiseShot: cerca y bajo mientras está tirado; desde que se arrodilla se aleja y sube hasta el rugido."""
-    a, b = ss(ts / kneel), ss((ts - kneel) / max(0.1, roar - kneel))
+    """GoroBoss.PlayRiseShot: cerca y bajo mientras está tirado; un poco antes de que se arrodille se aleja y sube hasta
+    el rugido."""
+    a, b = ss(ts / kneel), ss((ts - kneel + KNEEL_LEAD) / max(0.1, roar - kneel + KNEEL_LEAD))
     c = Vector((0.0, 0.0, 0.0))
     pos = c + cam_dir * lerp(lerp(SHOT_START, SHOT_NEAR, a), SHOT_FAR, b) + Vector((0, 0, lerp(lerp(1.7, 2.1, a), 2.6, b)))
-    look = c + Vector((0, 0, lerp(lerp(0.7, 1.3, a), 2.9, b)))
+    look = c + Vector((0, 0, lerp(lerp(0.7, KNEEL_LOOK, a), 2.9, b)))
     cd = cam.data
     cd.type = 'PERSP'
     cd.sensor_fit = 'VERTICAL'
