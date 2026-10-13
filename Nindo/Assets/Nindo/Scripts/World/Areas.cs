@@ -242,7 +242,9 @@ namespace Nindo
 
         void Update()
         {
-            if (Boss == null || Boss.Defeated || started || Game.Player == null || Game.InCutscene) return;
+            if (Boss == null || Boss.Defeated || Game.Player == null) return;
+            if (started) { WatchPlayer(); return; }
+            if (Game.InCutscene) return;
             if (CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < triggerRadius)
             {
                 started = true;
@@ -251,10 +253,52 @@ namespace Nindo
             }
         }
 
+        // Rescate: la barrera son cajas que arrancan a la altura del piso. En la plataforma de Mizuchi un empujón lo tiraba
+        // al agua por un hueco de la baranda (la entrada, la cascada) y desde el lecho, 4 m abajo, Kaito salía caminando
+        // por debajo del anillo: el koi quedaba arriba sin poder pegarle ni recibir golpes y la pelea no terminaba nunca.
+        // Ningún piso de arena baja más de 0.7 m de su centro (la ladera de Gorō), así que 2 m abajo o afuera del anillo
+        // es haberse caído: después de un instante vuelve adentro del lado por el que salió, con humo, sin daño.
+        const float RescueDelay = 0.35f, RescueDrop = 2f;
+        float outsideFor;
+
+        void WatchPlayer()
+        {
+            var p = Game.Player;
+            if (!Boss.Fighting || !p.IsAlive || Game.InCutscene || p.State == PlayerState.Finisher || p.State == PlayerState.Scripted)
+            {
+                outsideFor = 0f;
+                return;
+            }
+            Vector3 c = transform.position, pos = p.transform.position;
+            bool outside = CombatMath.FlatDistance(pos, c) > radius + 0.4f || pos.y < c.y - RescueDrop;
+            outsideFor = outside ? outsideFor + Time.deltaTime : 0f;
+            if (outsideFor < RescueDelay) return;
+            outsideFor = 0f;
+            Vector3 dir = (pos - c).Flat();
+            dir = dir.sqrMagnitude > 0.01f ? dir.normalized : Vector3.back;
+            Vector3 to = RescuePoint(c, dir);
+            // encima del jefe no: del otro lado del centro
+            if (CombatMath.FlatDistance(Boss.HurtCenter(to), to) < Boss.Radius + 1.2f) { dir = -dir; to = RescuePoint(c, dir); }
+            Game.FX?.SmokePuff(pos + Vector3.up, 1f);
+            p.Teleport(to, Quaternion.LookRotation(-dir));
+            Game.FX?.SmokePuff(to + Vector3.up, 1f);
+            Game.Audio?.Play("teleport", to, 0.5f);
+        }
+
+        Vector3 RescuePoint(Vector3 c, Vector3 dir)
+        {
+            Vector3 to = c + dir * (radius * 0.55f);
+            int mask = ~(LayerMask.GetMask("Player", "Enemy"));
+            if (Physics.Raycast(to + Vector3.up * 6f, Vector3.down, out var hit, 12f, mask, QueryTriggerInteraction.Ignore)) return hit.point + Vector3.up * 0.05f;
+            to.y = c.y + 0.1f;
+            return to;
+        }
+
         public void OnPlayerDied()
         {
             if (Boss == null || Boss.Defeated) return;
             started = false;
+            outsideFor = 0f;
             if (barrier != null) { Destroy(barrier); barrier = null; }
             Boss.ResetEnemy();
         }
