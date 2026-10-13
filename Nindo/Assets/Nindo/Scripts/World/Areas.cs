@@ -121,10 +121,17 @@ namespace Nindo
         {
             if (completed || Game.Player == null) return;
             // con alguno en su idle ambiental (meditando, practicando, dormido) el radio del centro no vale: el encuentro arranca
-            // cuando uno de ellos nota a Kaito de cerca (Enemy.TickIdle) y avisa al resto (EnemyAmbient.NoticeRadius)
-            if (!manualActivation && !active && CombatMath.FlatDistance(Game.Player.transform.position, transform.position) < activationRadius && !Game.InCutscene
-                && !EnemyAmbient.AnyHolding(members))
-                Activate();
+            // cuando uno de ellos nota a Kaito de cerca (Enemy.TickIdle) y avisa al resto (EnemyAmbient.NoticeRadius). Con
+            // dos redes: en el medio del campamento (la mitad del radio) arranca igual, y los que la historia necesita
+            // ganados (la muralla abre el sello, el sumo da el dash) arrancan con el radio entero: si el camino pasaba a
+            // 8-12 m de todos, la pelea no empezaba nunca y la muralla no ofrecía "Abrir con la bandana"
+            if (!manualActivation && !active && !Game.InCutscene)
+            {
+                float d = CombatMath.FlatDistance(Game.Player.transform.position, transform.position);
+                bool gate = StoryDirector.GatesProgress(id);
+                if (d < activationRadius && (gate || d < activationRadius * 0.5f || !EnemyAmbient.AnyHolding(members)))
+                    Activate();
+            }
             if (active && wantBarrier && barrier == null && !Game.InCutscene) TryCloseArea();
         }
 

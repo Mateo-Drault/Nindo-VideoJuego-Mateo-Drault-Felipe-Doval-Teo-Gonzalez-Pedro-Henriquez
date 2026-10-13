@@ -432,6 +432,13 @@ namespace Nindo
         }
 
         // ================================================================== triggers del mapa
+        /// <summary>
+        /// Encuentros que la historia necesita ganados para seguir: la muralla (WallSeal pide enc_wall para abrir el sello)
+        /// y el sumo (enc_done_sumo da el dash y las habilidades). Encounter los arranca con su radio entero aunque
+        /// estén en su idle ambiental: el resto de los campamentos son de paso y esperan a que uno note a Kaito.
+        /// </summary>
+        public static bool GatesProgress(string encounterId) => encounterId == "wall" || encounterId == "sumo";
+
         public void OnTrigger(string id, StoryTrigger t)
         {
             if (!id.StartsWith("enc_done_")) Game.Save.SetFlag("trig_" + id);
