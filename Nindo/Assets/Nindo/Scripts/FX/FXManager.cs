@@ -15,12 +15,12 @@ namespace Nindo
         public ScreenFX Screen { get; private set; }
         /// <summary>Avisos de ataque en el suelo (ensō).</summary>
         public CombatTelegraphs Tells { get; private set; }
-        /// <summary>Media luna de la ventana de parry de Kaito.</summary>
+        /// <summary>Línea de acero de la ventana de parry de Kaito (la clase conserva el nombre de la media luna vieja).</summary>
         public ParryCrescent Crescent { get; private set; }
         /// <summary>"TEMPRANO" / "TARDE" sobre Kaito cuando erra un parry por poco.</summary>
         public TimingCoach Coach { get; private set; }
 
-        GameObject sparksGold, sparksWhite, sparksRed, flashWhite, flashGold, flashRed, flashParry, dust, smoke, smokeDark,
+        GameObject sparksGold, sparksWhite, sparksRed, flashWhite, flashGold, flashRed, dust, smoke, smokeDark,
             leaves, petals, heal, rage, inward, splash, debris, embers, ink, goldInk;
         readonly Dictionary<VisualEffectAsset, GameObject> vfxTemplates = new Dictionary<VisualEffectAsset, GameObject>();
         readonly List<AfterImage> afterImages = new List<AfterImage>();
@@ -58,8 +58,6 @@ namespace Nindo
             flashWhite = FXFactory.FlashSprite(new Color(1f, 1f, 1f, 0.9f), 1.8f, 0.09f, "FlashWhite");
             flashGold = FXFactory.FlashSprite(new Color(1f, 0.85f, 0.45f, 0.9f), 2.6f, 0.13f, "FlashGold");
             flashRed = FXFactory.FlashSprite(new Color(1f, 0.25f, 0.2f, 0.8f), 2.2f, 0.18f, "FlashRed");
-            // destello del parry: corto (≤ 0.1 s) para no tapar el golpe siguiente; la luz la pone ScreenFX.ParryLight
-            flashParry = FXFactory.FlashSprite(new Color(1f, 0.88f, 0.55f, 0.9f), 2.6f, 0.09f, "FlashParry");
             dust = FXFactory.Puff(new Color(0.65f, 0.58f, 0.48f, 0.45f), 6, 0.7f, 0.6f, 1.2f, false, "Dust");
             smoke = FXFactory.Puff(new Color(0.72f, 0.72f, 0.8f, 0.55f), 10, 1.3f, 1.1f, 1.4f, false, "Smoke", -0.15f);
             smokeDark = FXFactory.Puff(new Color(0.2f, 0.15f, 0.28f, 0.7f), 12, 1.4f, 1.2f, 1.6f, false, "SmokeDark", -0.2f);
@@ -144,17 +142,18 @@ namespace Nindo
 
         /// <summary>
         /// El parry ILUMINA la escena: luz cálida fuerte y corta, golpe de exposición/bloom (ScreenFX.ParryLight),
-        /// tinta dorada que sale del choque hacia el atacante. El destello es chico y corto (antes un sprite de
-        /// 4.7 m tapaba a los dos y al golpe siguiente). 'dir' = de Kaito hacia el atacante.
+        /// destello de ACERO en el choque (FX/ParrySteel: aguja horizontal, líneas de impacto; el perfecto con estrella
+        /// y púas de tinta), chispas y tinta dorada hacia el atacante (hacia los costados en pantalla caían justo sobre
+        /// el anillo de la sombra que viene del flanco en los dúos de Kokuyō). Ya no hay anillo dorado en el piso ni
+        /// destello redondo: con la forma del aviso ensō, el parry se leía como otro aviso. El VFX ParryEffect del
+        /// equipo queda detrás de ParrySteel.TeamParryVfx (decisión del líder). 'dir' = de Kaito hacia el atacante.
         /// </summary>
         public void ParryFlash(Vector3 p, Vector3 dir, bool perfect)
         {
-            if (C != null) PlayVfx(C.vfxParry, p, Quaternion.identity);
-            Emit(flashParry, p, Quaternion.identity, 0.2f, perfect ? 1.0f : 0.7f);
+            ParrySteel.Spawn(p, dir, perfect);
+            if (perfect && ParrySteel.TeamParryVfx && C != null) PlayVfx(C.vfxParry, p, Quaternion.identity);
             Emit(sparksWhite, p, Dir(dir), 0.6f, perfect ? 1.2f : 0.9f);
             Emit(goldInk, p, Dir(dir), 1f, perfect ? 1.4f : 1f);
-            RingWave.Spawn(new Vector3(p.x, Game.Player != null ? Game.Player.transform.position.y : p.y, p.z), perfect ? 3.5f : 2.2f, new Color(1f, 0.85f, 0.45f, 0.8f), 0.35f);
-            if (perfect) Emit(inward, p, Quaternion.identity, 0.6f, 0.6f);
             FlashLight(p, new Color(1f, 0.9f, 0.68f), perfect ? 28f : 12f, perfect ? 14f : 9f, perfect ? 0.22f : 0.15f);
             Screen?.ParryLight(perfect, 0.15f);
         }

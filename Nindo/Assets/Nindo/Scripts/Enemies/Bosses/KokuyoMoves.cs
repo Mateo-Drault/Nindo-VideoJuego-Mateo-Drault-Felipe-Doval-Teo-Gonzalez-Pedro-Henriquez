@@ -26,12 +26,30 @@ namespace Nindo
         const float PhaseWindupMul = 0.9f;
 
         public const string Cut = "k_cut", Thrust = "k_thrust", Sweep = "k_sweep", Rift = "k_rift", Sink = "k_sink", NoHit = "k_none";
-        /// <summary>Kage, la sombra suelta: se desliza bajo Kaito y estalla / cruza el patio.</summary>
-        public const string Nui = "kage_nui", Watari = "kage_watari";
+        /// <summary>
+        /// Los golpes de la sombra (KageShadow). Nobi (Acto 1): pegada a sus pies, se estira por el piso hasta Kaito y
+        /// corta. Giri (Actos 2 y 3): la figura de tinta corta como él (en el eclipse sale de la oscuridad). Nui y
+        /// Watari (Acto 2): se desliza bajo Kaito y estalla / cruza el patio. Nobi y Giri se desvían (dorado).
+        /// </summary>
+        public const string Nobi = "kage_nobi", Giri = "kage_giri", Nui = "kage_nui", Watari = "kage_watari";
 
         /// <summary>Grieta de obsidiana del Rompecascos: carril de 14 x 2 m que avanza a 28 m/s desde el golpe.</summary>
         public const float RiftLength = 14f, RiftHalfWidth = 1.0f, RiftSpeed = 28f;
-        public const float RiftDamage = 26f, RiftKnockback = 2.5f;
+        public const float RiftDamage = 26f * DamageScale, RiftKnockback = 2.5f;
+
+        /// <summary>
+        /// Las dos perillas del balance final: HealthScale multiplica la vida pedida (1800, el doble de antes; los actos y
+        /// sus tramos se reparten solos con cualquier vida) y DamageScale el daño de diseño de todo lo que pega (él, la
+        /// sombra, la grieta). Simulado (pelea entera con la distancia a la que pelea el bot, minutos hasta ganar con los
+        /// reintentos, 40 peleas por punto; "humano" = ve el aviso, con más errores si viene de atrás o de la oscuridad):
+        ///   vida 1800, daño 1.0:  bueno 2.4 min y 0.8 muertes; humano 1.8 min y 0.9 muertes   (lo de hoy);
+        ///   vida 1800, daño 0.85: bueno 1.5 min y 0.5 muertes (con menos daño se muere menos y la pelea se ACORTA);
+        ///   vida 2700, daño 0.8:  bueno 3.2 min y 1.2 muertes; humano 3.0 min y 1.5 muertes   (tres tercios por acto);
+        ///   vida 3600, daño 0.6:  bueno 2.6 min y 0.9 muertes; humano 4.2 min y 1.2 muertes.
+        /// El tiempo real es ~1.4 veces el simulado (un solo dato: medirlo con "bot on bueno"). Para 4-6 min reales la
+        /// candidata es HealthScale 1.5 con DamageScale 0.8.
+        /// </summary>
+        public const float HealthScale = 1f, DamageScale = 1f;
         /// <summary>Ichimonji: dentro de este radio la hoja pasa por encima de la cabeza de Kaito (la empuñadura va a
         /// 1.9 m y la punta baja a 0.97 m: a menos de ~2 m del centro la hoja corta arriba de 1.5 m). Sale del sidecar
         /// (safe_core_m), que es la única fuente: el disco pálido y el golpe usan el mismo número.</summary>
@@ -63,7 +81,7 @@ namespace Nindo
             float travel = c.Travel != null ? c.Travel[c.Travel.Length - 1] : 0f;
             return new AttackDef
             {
-                name = name, state = c.State, damage = dmg, kind = kind, arc = arc, knockback = kb,
+                name = name, state = c.State, damage = dmg * DamageScale, kind = kind, arc = arc, knockback = kb,
                 range = c.Reach + travel, activeStart = c.Contact, activeEnd = c.ActiveEnd, apex = c.Apex, releaseRate = c.ReleaseRate,
                 windup = windup, lunge = 0f, tracking = false, hitStop = 0.12f, shake = 0.4f, imbalance = 1f,
                 sfx = "enemy_swing_heavy", special = special,
@@ -100,10 +118,25 @@ namespace Nindo
         static AttackPattern P(string name, float weight, float maxRange, float cooldown, params AttackDef[] steps) =>
             new AttackPattern { name = name, steps = steps, weight = weight, maxRange = maxRange, cooldown = cooldown };
 
+        static ShadowCue Cue(int step, string move, ShadowSide side, bool before) => new ShadowCue { step = step, move = move, side = side, before = before };
+
+        static DuetPattern D(string name, float weight, float maxRange, float cooldown, ShadowCue cue, params AttackDef[] steps) =>
+            new DuetPattern { name = name, steps = steps, weight = weight, maxRange = maxRange, cooldown = cooldown, cues = new[] { cue } };
+
+        /// <summary>Nombre del dúo del Acto 1 (KokuyoBoss lo deja en peso 0 hasta que la sombra atacó sola una vez).</summary>
+        public const string DuetTeachName = "Sombra y Acero";
+
         /// <summary>
         /// Patrones de cada acto. Acto 1 enseña de a una cosa; el 2 suma la Escuela del Abuelo (corte, corte, estocada:
         /// el mismo ritmo del combo de Kaito, más lento) y el Paso de Sombra; el 3 encadena el Desfile (cuatro parries y
         /// un dash) y la Media Luna. Mezcla: ~70 % desviables, ~30 % imparables.
+        /// Los dúos (DuetPattern) meten a la sombra en el combo del cuerpo, uno por acto como mínimo:
+        ///  * Acto 1 "Sombra y Acero": la sombra se estira y corta mientras él levanta la nodachi despacio; después él.
+        ///  * Acto 2 "Pinza": él corta, la sombra corta del otro lado de Kaito, él vuelve a cortar. "Amago": él carga y
+        ///    corta la sombra primero. "Clavo y Colmillo": la sombra estalla bajo Kaito y él cruza con la estocada.
+        ///  * Acto 3 "Media Luna Negra": él corta, la sombra sale de la oscuridad del otro lado, él barre (rojo).
+        ///    "Eclipse Doble": sale de la oscuridad de costado y corta mientras él carga (los turnos de la sombra sola
+        ///    alternan de lado: KokuyoBoss.Shadow).
         /// </summary>
         public static AttackPattern[] Act(int act)
         {
@@ -113,18 +146,73 @@ namespace Nindo
             var colmillo = P("Colmillo", 1.2f, 8.5f, 4f, s.tsuki, tsukiRecover); colmillo.minRange = 4f;
             var horizonte = P("Horizonte", 1.0f, 5.5f, 7f, s.ichi);
             var rompe = P("Rompecascos", 0.9f, 10f, 9f, s.kabuto); rompe.minRange = 2.5f;
-            if (act <= 1) return new[] { monje, doble, colmillo, horizonte, rompe };
+            if (act <= 1)
+            {
+                var acero = D(DuetTeachName, 0.9f, 5.0f, 12f, Cue(0, Nobi, ShadowSide.Any, true), s.kesa, recoverL);
+                return new AttackPattern[] { monje, doble, colmillo, horizonte, rompe, acero };
+            }
             var escuela = P("Escuela del Abuelo", 1.6f, 5.0f, 0f, s.kesa, s.gyaku, s.tsuki, tsukiRecover);
             var paso = P("Paso de Sombra", 1.2f, 16f, 8f, sink, s.emerge, recoverHR);
             if (act == 2)
             {
-                doble.weight = 1.4f; colmillo.weight = 1.0f; horizonte.weight = 0.8f; rompe.weight = 0.8f;
-                return new[] { doble, colmillo, horizonte, rompe, escuela, paso };
+                doble.weight = 1.2f; colmillo.weight = 0.9f; horizonte.weight = 0.7f; rompe.weight = 0.7f; escuela.weight = 1.3f; paso.weight = 1.0f;
+                var pinza = D("Pinza", 1.2f, 5.0f, 8f, Cue(0, Giri, ShadowSide.Opposite, false), s.kesa, s.gyaku, recoverHR);
+                var amago = D("Amago", 1.0f, 5.0f, 9f, Cue(0, Giri, ShadowSide.Flank, true), s.kesa, recoverL);
+                var clavo = D("Clavo y Colmillo", 0.8f, 8.5f, 10f, Cue(0, Nui, ShadowSide.Any, true), s.tsuki, tsukiRecover); clavo.minRange = 4f;
+                return new AttackPattern[] { doble, colmillo, horizonte, rompe, escuela, paso, pinza, amago, clavo };
             }
-            doble.weight = 1.0f; colmillo.weight = 0.8f; horizonte.weight = 0.6f; rompe.weight = 0.6f; escuela.weight = 1.2f; paso.weight = 1.0f;
-            var desfile = P("Desfile de los Cien Demonios", 1.5f, 5.0f, 10f, s.kesa, s.gyaku, s.kesa, s.tsuki, s.kabuto);
-            var media = P("Media Luna", 1.2f, 5.0f, 6f, s.gyaku, s.ichi);
-            return new[] { doble, colmillo, horizonte, rompe, escuela, paso, desfile, media };
+            doble.weight = 0.9f; colmillo.weight = 0.7f; horizonte.weight = 0.5f; rompe.weight = 0.5f; escuela.weight = 1.0f; paso.weight = 0.9f;
+            var desfile = P("Desfile de los Cien Demonios", 1.3f, 5.0f, 10f, s.kesa, s.gyaku, s.kesa, s.tsuki, s.kabuto);
+            var media = P("Media Luna", 1.0f, 5.0f, 6f, s.gyaku, s.ichi);
+            var negra = D("Media Luna Negra", 1.1f, 5.0f, 9f, Cue(0, Giri, ShadowSide.Opposite, false), s.gyaku, s.ichi);
+            var doble3 = D("Eclipse Doble", 1.0f, 5.0f, 9f, Cue(0, Giri, ShadowSide.Flank, true), s.kesa, recoverL);
+            return new AttackPattern[] { doble, colmillo, horizonte, rompe, escuela, paso, desfile, media, negra, doble3 };
+        }
+
+        /// <summary>
+        /// Lo que se suma en cada tramo de un acto (KokuyoBoss.Pacing): con la vida doble cada acto dura el doble y repetía
+        /// lo mismo. En cada corte entra un patrón que mezcla lo que el acto ya enseñó, encadenando poses que coinciden.
+        /// Tramo 1 (la mitad; con la vida de hoy, el único):
+        ///  * Acto 1 "Luna y Horizonte": dos cortes dorados y el barrido rojo (READY, LOW_L, READY, READY): cambiar de parry
+        ///    a dash en el ritmo.
+        ///  * Acto 2 "Escuela de la Sombra": la Escuela del Abuelo con la sombra cortando del otro lado entre el gyakugiri y
+        ///    la estocada.
+        ///  * Acto 3 "Luna Nueva": el barrido rojo, el corte, y la sombra sale de la oscuridad de costado (una dirección
+        ///    que el acto todavía no usaba en sus dúos) antes del gyakugiri.
+        /// Tramo 2 (solo si la vida llega a KokuyoBoss.ThirdsFrom):
+        ///  * Acto 1 "Sombra Larga": su corte y, mientras levanta el segundo, la sombra se estira y corta primero.
+        ///  * Acto 2 "Clavo y Horizonte": la sombra estalla bajo Kaito y él barre: dos rojos seguidos (dash, dash).
+        ///  * Acto 3 "Eclipse Cruzado": corte, la sombra de costado, corte, la sombra del lado opuesto, corte.
+        /// La regla del dúo (KokuyoDuet) estira los windups igual que en los otros dúos.
+        /// </summary>
+        public static AttackPattern Escalation(int act, int stage)
+        {
+            var s = new Set(Mathf.Clamp(act, 1, 3));
+            if (stage >= 2)
+            {
+                if (act <= 1) return D("Sombra Larga", 1.1f, 5.0f, 11f, Cue(1, Nobi, ShadowSide.Any, true), s.kesa, s.gyaku, recoverHR);
+                if (act == 2) return D("Clavo y Horizonte", 1.0f, 5.5f, 11f, Cue(0, Nui, ShadowSide.Any, true), s.ichi);
+                // la segunda salida va dos pasos después: antes la sombra todavía está volviendo a la oscuridad de la
+                // primera (CanStrike) y el dúo quedaba en un combo del cuerpo solo
+                var cruz = D("Eclipse Cruzado", 1.1f, 5.0f, 12f, Cue(0, Giri, ShadowSide.Flank, false), s.kesa, s.gyaku, s.kesa, s.gyaku, recoverHR);
+                cruz.cues = new[] { cruz.cues[0], Cue(2, Giri, ShadowSide.Opposite, false) };
+                return cruz;
+            }
+            if (act <= 1) return P("Luna y Horizonte", 1.1f, 5.0f, 9f, s.kesa, s.gyaku, s.ichi);
+            if (act == 2) return D("Escuela de la Sombra", 1.2f, 5.0f, 10f, Cue(1, Giri, ShadowSide.Opposite, false), s.kesa, s.gyaku, s.tsuki, tsukiRecover);
+            return D("Luna Nueva", 1.2f, 5.0f, 10f, Cue(2, Giri, ShadowSide.Flank, true), s.ichi, s.kesa, s.gyaku, recoverHR);
+        }
+
+        /// <summary>En cada tramo los especiales (estocada, barrido, Rompecascos, Paso de Sombra) vuelven antes: la espera
+        /// se multiplica por esto. Lo que cambia es cuántas veces salen, nunca su aviso.</summary>
+        public const float StageCooldownMul = 0.75f;
+
+        /// <summary>¿El patrón abre con un especial? (los que la segunda mitad trae más seguido)</summary>
+        public static bool OpensWithSpecial(AttackPattern p)
+        {
+            if (p == null || p.steps == null || p.steps.Length == 0) return false;
+            string sp = p.steps[0].special;
+            return sp == Thrust || sp == Sweep || sp == Rift || sp == Sink;
         }
 
         /// <summary>Contraataque (Kaito le pegó dos veces a la guardia): el Counter termina en LOW_L y sigue un gyakugiri.</summary>
@@ -149,7 +237,10 @@ namespace Nindo
         {
             return new EnemyConfig
             {
-                id = "kage", displayName = "Kokuyō", maxHealth = 900, runSpeed = 3.0f, walkSpeed = 1.8f, turnSpeed = 4.5f,
+                // 1800 (antes 900): pedido de vida doble para que la partida dure ~1 h (HealthScale arriba, para el balance).
+                // Simulado con el bot "bueno": ~79 s
+                // por intento con las escenas de cambio de acto (antes ~52); cada acto cambia a la mitad (KokuyoBoss.Pacing)
+                id = "kage", displayName = "Kokuyō", maxHealth = 1800 * HealthScale, runSpeed = 3.0f, walkSpeed = 1.8f, turnSpeed = 4.5f,
                 radius = 1.1f, height = 4.2f, scale = 1f, tintStrength = 0f,
                 maxImbalance = 5, exhaustedTime = KokuyoTimings.Kneel.Seconds, exhaustedDamageMul = 1.3f, guardTime = 0.8f,
                 poiseHits = 4, hyperArmor = true, knockbackResist = 0.95f, staggerTime = 0.3f, parriedRecoil = 0.55f,
@@ -162,17 +253,51 @@ namespace Nindo
             };
         }
 
-        /// <summary>Kage, la sombra arrancada (Acto 2): no se puede fijar ni cortar; solo las habilidades la clavan.</summary>
+        // ------------------------------------------------------------------ la sombra
+        /// <summary>Nobi: la sombra pegada a sus pies se estira hasta Kaito (cargando su corte) y pega en 1.2 s.</summary>
+        public const float NobiWindup = 1.2f;
+        /// <summary>Nobi: el corte de la sombra cae sobre el punto trabado en el "¡ahora!" (disco de este radio).</summary>
+        public const float NobiRadius = 1.7f;
+        /// <summary>Nobi: hasta dónde lo alcanza la sombra (su largo con la luna a 35°, ~6.4 m, más la hoja). Más cerca no
+        /// hay mínimo: la sombra se acorta (KageShadow.UpdateNobiInk) y su hoja le barre por encima.</summary>
+        public const float NobiMaxRange = 8.5f;
+        /// <summary>Giri: la figura de tinta corta desde acá (el alcance de la hoja de Kesagiri es 3.88 m).</summary>
+        public const float GiriDistance = 3.2f;
+        /// <summary>En el eclipse la sombra se ve al menos esto antes de su golpe (sale de la oscuridad).</summary>
+        public const float EmergeLead = 1.05f;
+        /// <summary>Daño de los cortes de la sombra (Nobi; Giri en los Actos 2 y 3).</summary>
+        static readonly float[] ShadowCutDamage = { 0f, 16f, 18f, 20f };
+
+        /// <summary>Los golpes de la sombra en un acto (1..3): las pausas en el apex son las del cuerpo en ese acto.</summary>
+        public sealed class ShadowSet
+        {
+            public readonly AttackDef nobi, giri;
+            public readonly AttackPattern nobiP, giriP;
+            public ShadowSet(int act)
+            {
+                act = Mathf.Clamp(act, 1, 3);
+                var c = KokuyoTimings.Kesagiri;
+                // el Nobi es el mismo kesagiri de la sombra con la carga larga: la luz gira hacia Kaito mientras sube la hoja
+                nobi = K(c, "Sombra que se Estira", ShadowCutDamage[1], AttackKind.Heavy, 360f, 1.4f, ParryHold[1], 1, Nobi);
+                nobi.windup = NobiWindup;
+                nobi.range = NobiMaxRange;
+                giri = K(c, "Corte de Sombra", ShadowCutDamage[Mathf.Max(2, act)], AttackKind.Heavy, 120f, 1.5f, ParryHold[act], act, Giri);
+                nobiP = new AttackPattern { name = nobi.name, steps = new[] { nobi }, maxRange = 99f };
+                giriP = new AttackPattern { name = giri.name, steps = new[] { giri }, maxRange = 99f };
+            }
+        }
+
+        /// <summary>Kage, la sombra (desde el Acto 1): no se puede fijar ni cortar; solo las habilidades la clavan.</summary>
         public static EnemyConfig Shadow()
         {
             var nui = new AttackDef
             {
-                name = "Kage-nui", state = "", damage = 18, kind = AttackKind.Unblockable, knockback = 2.2f, lunge = 0f, tracking = false,
+                name = "Kage-nui", state = "", damage = 18 * DamageScale, kind = AttackKind.Unblockable, knockback = 2.2f, lunge = 0f, tracking = false,
                 activeStart = 0.5f, activeEnd = 0.6f, apex = 0.35f, hitStop = 0.1f, sfx = "kokuyo_whisper", special = Nui,
             };
             var watari = new AttackDef
             {
-                name = "Kage-watari", state = "", damage = 20, kind = AttackKind.Unblockable, knockback = 2.4f, lunge = 0f, tracking = false,
+                name = "Kage-watari", state = "", damage = 20 * DamageScale, kind = AttackKind.Unblockable, knockback = 2.4f, lunge = 0f, tracking = false,
                 activeStart = 0.5f, activeEnd = 0.6f, apex = 0.35f, hitStop = 0.1f, sfx = "kokuyo_whisper", special = Watari,
                 windup = 0.6f,
             };
@@ -180,6 +305,8 @@ namespace Nindo
             {
                 id = "kage_shadow", displayName = "Kage", maxHealth = 1, runSpeed = 7f, walkSpeed = 7f, turnSpeed = 8f,
                 radius = 0.8f, height = 4.2f, scale = 1f, maxImbalance = 99, detectRadius = 0f, finisherHealth = 0f,
+                // desviada retrocede lo del cuerpo (el clip Parried entero se comprime en esto)
+                parriedRecoil = 0.55f,
                 attackCooldown = new Vector2(2.5f, 4f),
                 patterns = new[]
                 {

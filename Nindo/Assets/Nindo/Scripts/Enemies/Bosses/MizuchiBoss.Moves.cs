@@ -50,16 +50,18 @@ namespace Nindo
         RedCue leapCue;
 
         // ------------------------------------------------------------------ ola de la cascada
-        // la ola nace sobre el agua al norte (11 m) y cruza a 8 m/s; dos canales de 3 m (medio ancho 1.5) sin cresta
+        // la ola nace sobre el agua al norte (11 m) y cruza a 8 m/s (9 en la fase 3, MizuchiBoss.Pacing); dos canales de
+        // 3 m (medio ancho 1.5) sin cresta
         const float GapHalf = 1.5f, WaveSpeed = 8f, WaveStartZ = 11f, BandWarn = 1.2f, BandNear = 8.4f, BandDepth = 2.4f, BandHalfWidth = 5.4f;
         bool waveArmed;
-        float waveLaunch, gap0, gap1;
+        // la de esta ola (WaveSpeeds por fase): se fija al armarla, así la ETA y el frente no cambian a mitad de camino
+        float waveLaunch, gap0, gap1, waveSpeed = WaveSpeed;
         RedCue waveCue;
         readonly MizuchiMarks.Mark[] bandMarks = new MizuchiMarks.Mark[3];
         readonly MizuchiMarks.Mark[] laneMarks = new MizuchiMarks.Mark[2];
 
         // ------------------------------------------------------------------ pilares
-        const float PillarRadius = 2.2f, PillarWarn = 1.1f, PillarFall = 0.35f, PillarGap = 0.45f;
+        const float PillarRadius = 2.2f, PillarWarn = 1.1f, PillarFall = 0.35f;
         // 6.5 + 2.2 de disco + el radio de Kaito deja ~0.35 m libres contra la baranda (9.8 m al lado del octógono).
         // Simulado con la baranda: el que huye del disco más próximo solo se come el primero si corre derecho contra la
         // baranda; el que se queda quieto, todos.
@@ -163,7 +165,7 @@ namespace Nindo
                 case "rally": TickRally(a, dt); break;
                 case "jet": TickJet(a, dt, false); break;
                 case "jetsweep": TickJet(a, dt, true); break;
-                case "dive": case "greatwave": case "pillars": break;   // los lleva su rutina
+                case "dive": case "greatwave": case "pillars": case "retreat": break;   // los lleva su rutina
                 default: base.TickSpecial(a, dt); break;
             }
         }
@@ -700,7 +702,7 @@ namespace Nindo
             float b0 = Bearing(exit);
             float b1 = Bearing(PickRing(target.transform.position, false));
             float arc = Mathf.Abs(b1 - b0) * Mathf.Deg2Rad * WaterRing;
-            float travel = Mathf.Clamp(arc / 12f, 0.6f, 1.4f);
+            float travel = Mathf.Clamp(arc / 12f, 0.6f, 1.4f) * SwimPaceNow;
             // los dos rumbos están entre -110° y 110°: se nada por el norte (por el sur sería fuera de cuadro)
             float sense = b1 >= b0 ? 1f : -1f;
             ghost.Show(true);
@@ -742,10 +744,10 @@ namespace Nindo
             if (InTrough(LocalX(k))) return float.PositiveInfinity;
             float zk = LocalZ(k);
             float toLaunch = waveLaunch - Time.time;
-            float front = toLaunch > 0f ? WaveStartZ : WaveStartZ + WaveSpeed * toLaunch;
+            float front = toLaunch > 0f ? WaveStartZ : WaveStartZ + waveSpeed * toLaunch;
             float dist = front - (zk + 0.6f);
             if (dist < -1.2f) return float.PositiveInfinity;
-            return Mathf.Max(0f, toLaunch) + Mathf.Max(0f, dist) / WaveSpeed;
+            return Mathf.Max(0f, toLaunch) + Mathf.Max(0f, dist) / waveSpeed;
         }
 
         /// <summary>
@@ -829,6 +831,7 @@ namespace Nindo
             Game.Camera?.Shake(0.6f);
             PickGaps();
             waveFx.Build(gap0, gap1, GapHalf);
+            waveSpeed = WaveSpeeds[PhaseIndex];
             waveArmed = true;
             waveLaunch = Time.time + BandWarn;
             waveCue = default;
@@ -854,7 +857,7 @@ namespace Nindo
             while (true)
             {
                 float t = Time.time - waveLaunch;
-                float front = WaveStartZ - WaveSpeed * t;
+                float front = WaveStartZ - waveSpeed * t;
                 if (front < -RailRadius - 3f) break;
                 float vis = Mathf.Clamp01(t / 0.25f) * Mathf.Clamp01((front + RailRadius + 3f) / 2.5f);
                 waveFx.Place(Center + North * front, -North, vis);
@@ -978,7 +981,7 @@ namespace Nindo
                 float now = Time.time;
                 // rugido en loop (cuadros 14-30) mientras caen
                 if (anim.TryNormalizedTime("Roar", out float nt) && nt > 30f / 48f) anim.Play("Roar", 0.08f, 14f / 48f);
-                while (pillarCount < n && now >= t0 + 0.35f + pillarCount * PillarGap) PlacePillar(pillarCount++);
+                while (pillarCount < n && now >= t0 + 0.35f + pillarCount * PillarGapNow) PlacePillar(pillarCount++);
                 bool pending = pillarCount < n;
                 for (int i = 0; i < pillarCount; i++)
                 {

@@ -573,7 +573,7 @@ namespace Nindo
         {
             var a = pattern.steps[step];
             EndTell(TellOutcome.Struck);   // (el paso anterior ya pegó; por las dudas no queda un anillo colgado)
-            clipLen = anim.Length(a.state, 0.8f);
+            clipLen = StepClipLength(a);
             stepNorm = 0f;
             stepClock = 0f;
             stepHit = specialFired = released = armored = false;
@@ -587,7 +587,7 @@ namespace Nindo
             // windup mínimo solo para lo que pega: teletransporte, invocaciones... van a su ritmo natural.
             // "Encadenado" = viene después de otro golpe (el jugador ya está en ritmo); tras un teletransporte no
             float windup = a.damage > 0f
-                ? StepTimeline.MinWindup(a, step > 0 && pattern.steps[step - 1].damage > 0f, counterAttack && step == 0, CurrentPhase, config.windupScale)
+                ? PlanWindup(a, StepTimeline.MinWindup(a, step > 0 && pattern.steps[step - 1].damage > 0f, counterAttack && step == 0, CurrentPhase, config.windupScale))
                 : a.telegraph;
             tl = StepTimeline.Build(a, clipLen, windup, 0f);
             tellActive = StepHasTell(a);
@@ -629,6 +629,14 @@ namespace Nindo
         }
 
         protected virtual void OnStepStarted(AttackDef a) { }
+
+        /// <summary>Duración del clip del paso (s). Quien no tiene Animator propio (la sombra de Kokuyō imita los clips
+        /// del cuerpo) da la del clip que imita: con el respaldo de 0.8 s su golpe no caía cuando lo muestra.</summary>
+        protected virtual float StepClipLength(AttackDef a) => anim.Length(a.state, 0.8f);
+
+        /// <summary>Windup de un paso que pega, antes de armar su línea de tiempo: un jefe con dos atacantes lo estira
+        /// para que sus golpes nunca caigan pegados (Kokuyō y su sombra). Por defecto, el mínimo de su tipo.</summary>
+        protected virtual float PlanWindup(AttackDef a, float windup) => windup;
 
         /// <summary>Lo que tarda el golpe en llegar a Kaito después de soltarse (embestidas, ondas): el aviso arranca
         /// antes por eso y la agenda de golpes lo reserva para cuando de verdad llega.</summary>

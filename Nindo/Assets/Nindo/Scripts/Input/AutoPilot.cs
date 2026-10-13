@@ -25,6 +25,9 @@ namespace Nindo
     ///   goto X Z [max]         camina hasta el punto (x, z) del mundo (o hasta 'max' s)
     ///   kokuyo act N           en plena pelea con Kokuyō, salta al acto N (2, 3; 4 = última resistencia)
     ///   chikuo fase N          en plena pelea con Chikuō (el jefe del bambú), salta a la fase N (2 = sin saco, 3 = bastón)
+    ///   kokuyo sombra MOV [l]  su sombra ataca ya: nobi (Acto 1), giri, nui, watari; lado flanco u opuesto
+    ///   kokuyo mitad           salta a la segunda mitad del acto en curso (rugido y patrón nuevo al terminar su combo)
+    ///   kokuyo patron NOMBRE   usa ya ese patrón del acto ("Pinza", "Media Luna Negra"...) si no está atacando
     ///   pose ESTADO [vel]      Kaito toca ese estado de su Animator quieto (modo guionado) y vuelve: para revisar
     ///                          clips en Play (p. ej. "pose Death; pose Finisher 1.7; pose WindSlash")
     /// ACT = nombre de <see cref="Act"/> (Attack, Parry, Dash, Lock, Finisher, Interact, Ability1,
@@ -194,6 +197,13 @@ namespace Nindo
                 // Con el alcance del golpe: la estocada de Kokuyō llega desde 8 m
                 if (e.InTell && d < Mathf.Max(7f, e.StrikeReach + 2f)) threatened = true;
             }
+            // un atacante que no se fija ni entra en la pelea (la sombra de Kokuyō) también avisa con su anillo
+            var all = Game.Combat.All;
+            for (int i = 0; i < all.Count && !threatened; i++)
+            {
+                var e = all[i];
+                if (e != null && e.IsAlive && e.InTell && !e.Targetable && e.StrikeCanReach(p.transform.position, p.Radius + 1f)) threatened = true;
+            }
             // defensa: aprieta cuando se cumple su tiempo de reacción (no depende del cooldown de acciones)
             for (int i = pending.Count - 1; i >= 0; i--)
             {
@@ -264,7 +274,23 @@ namespace Nindo
                 case "kokuyo":
                 {
                     var k = Game.Combat != null ? Game.Combat.ActiveBoss as KokuyoBoss : null;
-                    if (k == null || t.Length < 3 || t[1].ToLowerInvariant() != "act") throw new System.ArgumentException("uso: kokuyo act N (en plena pelea)");
+                    string sub = t.Length > 1 ? t[1].ToLowerInvariant() : "";
+                    // "kokuyo sombra nobi|giri|nui|watari [flanco|opuesto]": la sombra ataca ya con ese golpe
+                    if (k != null && sub == "sombra" && t.Length > 2)
+                    {
+                        if (!k.DebugShadow(t[2].ToLowerInvariant(), t.Length > 3 ? t[3].ToLowerInvariant() : "")) Debug.LogWarning("[AutoPilot] la sombra no puede atacar con " + t[2] + " ahora (forma, distancia o turno)");
+                        return null;
+                    }
+                    // "kokuyo mitad": la vida justo debajo de la mitad del acto (rugido, patrón nuevo, especiales más seguidos)
+                    if (k != null && sub == "mitad") { k.DebugSecondHalf(); return null; }
+                    // "kokuyo patron Media Luna Negra": usa ya ese patrón del acto (con los golpes de su sombra)
+                    if (k != null && sub == "patron" && t.Length > 2)
+                    {
+                        string pn = string.Join(" ", t, 2, t.Length - 2);
+                        if (!k.DebugPattern(pn)) Debug.LogWarning("[AutoPilot] Kokuyō no puede usar '" + pn + "' ahora (no es de este acto o está atacando)");
+                        return null;
+                    }
+                    if (k == null || t.Length < 3 || sub != "act") throw new System.ArgumentException("uso: kokuyo act N | kokuyo sombra MOV [lado] | kokuyo patron NOMBRE | kokuyo mitad (en plena pelea)");
                     k.DebugJump(int.Parse(t[2], CultureInfo.InvariantCulture));
                     return null;
                 }
