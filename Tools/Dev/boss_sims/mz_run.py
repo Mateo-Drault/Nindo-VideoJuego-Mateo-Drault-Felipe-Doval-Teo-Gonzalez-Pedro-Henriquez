@@ -34,6 +34,13 @@ def cfg_of(name, extra=None):
 if __name__ == "__main__":
     runs = int(sys.argv[3]) if len(sys.argv) > 3 else 100
     extra = json.loads(sys.argv[4]) if len(sys.argv) > 4 else None
+    # '{"calib": true}' (o un número): el daño de Kaito a 1/F, el factor real/simulado medido con el bot de Unity
+    # (calibration.py): los minutos y las muertes que da son los del juego
+    cal = extra.pop("calib", None) if extra else None
+    if cal:
+        import calibration, kaito
+        kaito.DAMAGE_MUL = 1.0 / (calibration.factor("mizuchi") if cal is True else float(cal))
+        print("calibrado con el bot de Unity: daño de Kaito x%.3f" % kaito.DAMAGE_MUL, flush=True)
     for pn in sys.argv[1].split(","):
         for lv in sys.argv[2].split(","):
             print(json.dumps(M.report(lv, runs, cfg_of(pn, extra), pn), ensure_ascii=False))

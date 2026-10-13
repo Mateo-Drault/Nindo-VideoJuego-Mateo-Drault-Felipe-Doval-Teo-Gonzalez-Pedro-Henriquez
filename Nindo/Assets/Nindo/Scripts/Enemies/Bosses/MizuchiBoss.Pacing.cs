@@ -37,12 +37,20 @@ namespace Nindo
         ///   vida 2880, daño 0.33, postura 14: bueno 3.2 min; promedio 4.4 min, 0.7 muertes y 50 % sin morir;
         ///   vida 3240, daño 0.33, postura 10: bueno 3.6 min; promedio 6.1 min, 1.7 muertes;
         ///   vida 3240, daño 0.33, postura 14: bueno 3.6 min; promedio 5.6 min, 1.1 muertes y 29 % sin morir; humano
-        ///                          3.8 min y 0.1 muertes (lo de hoy: ~11 posturas rotas por pelea el bueno, ~9 el promedio).
-        /// El bot promedio falla ~45 % de los golpes del koi (el bueno 25 %). El tiempo real es ~1.4 veces el simulado
-        /// (un solo dato): medirlo con "bot on bueno" y "bot on promedio" y ajustar acá. Más vida alarga la pelea del bueno
-        /// casi en proporción; más PostureHeal le baja las muertes al promedio sin acortarla.
+        ///                          3.8 min y 0.1 muertes (~11 posturas rotas por pelea el bueno, ~9 el promedio).
+        /// El bot promedio falla ~45 % de los golpes del koi (el bueno 25 %).
+        /// En Unity el bot tarda 1.19 veces lo simulado con Mizuchi (medido con el PlayClock en main 76be027: 'bot on
+        /// bueno' 2:49 contra 2.37 min simulados; Tools/Dev/boss_sims/calibration.py). Con eso, en minutos de juego
+        /// (mz_run.py tuning bueno,promedio 200 '{"calib": true}', el daño de Kaito a 1/1.19):
+        ///   vida 3240, postura 14: bueno 4.0 min (p10 3.6); promedio 7.1 min, 1.7 muertes;
+        ///   vida 3456, postura 18: bueno 4.4 min; promedio 7.0 min, 1.15 muertes;
+        ///   vida 3600, postura 18: bueno 4.5 min (p10-p90 3.9-5.0) sin morir; promedio 7.3 min, 1.25 muertes y 32 % sin
+        ///                          morir (lo de hoy). El promedio de verdad anduvo mejor que el calibrado (3:27 y 1 muerte
+        ///                          con lo de C2, contra 7.1 min y 3.3 muertes): puede que muera menos.
+        /// PROVISORIO: el factor sale de una pelea por bot; medirlo de nuevo (tres por bot) y ajustar acá. Más vida alarga la
+        /// pelea del bueno casi en proporción; más PostureHeal le baja las muertes al promedio sin acortarla.
         /// </summary>
-        public const float HealthScale = 2.25f, DamageScale = 0.33f, PostureHeal = 14f;
+        public const float HealthScale = 2.5f, DamageScale = 0.33f, PostureHeal = 18f;
         /// <summary>Cura y Espíritu a Kaito al entrar a la fase 2 (corrupción) y a la 3 (la cascada responde). Pesa menos
         /// que la de la postura: el reintento arranca en la fase y no la cobra.</summary>
         static readonly float[] PhaseHeal = { 0f, 25f, 20f };

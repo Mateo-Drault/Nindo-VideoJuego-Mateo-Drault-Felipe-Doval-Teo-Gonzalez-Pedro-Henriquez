@@ -168,6 +168,13 @@ def _num(x):
 if __name__ == "__main__":
     a = sys.argv
     over = json.loads(a[-1]) if len(a) > 2 and a[-1].startswith("{") else {}
+    # '{"calib": true}' (o un número): el daño de Kaito a 1/F, el factor real/simulado medido con el bot de Unity
+    # (calibration.py): los minutos y las muertes que da son los del juego
+    cal = over.pop("calib", None)
+    if cal:
+        import calibration, kaito
+        kaito.DAMAGE_MUL = 1.0 / (calibration.factor("kokuyo") if cal is True else float(cal))
+        print("calibrado con el bot de Unity: daño de Kaito x%.3f" % kaito.DAMAGE_MUL, flush=True)
     if a[1] == "actos":
         actos(a[2] if len(a) > 2 and not a[2].startswith("{") else "bueno",
               int(a[3]) if len(a) > 3 and _num(a[3]) else 80, **over)

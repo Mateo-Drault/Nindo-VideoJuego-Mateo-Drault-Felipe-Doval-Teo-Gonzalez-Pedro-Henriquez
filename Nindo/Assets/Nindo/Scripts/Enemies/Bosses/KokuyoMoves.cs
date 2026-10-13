@@ -55,17 +55,27 @@ namespace Nindo
         ///                          era el más fácil de ganar de una);
         ///   vida 5400, daño 0.33, tramos 35 / 35 / 20 (y 30 en el 2): promedio 2.16 muertes y 21 % (de más);
         ///   vida 5400, daño 0.33, tramos 35 / 35 / 25: bueno 3.6 min (casi nunca muere); promedio 6.1 min (p90 9.8), 1.65
-        ///                          muertes y 28 % sin morir, 1.2 de ellas en el eclipse; humano 3.7 min. Lo de hoy: los actos
-        ///                          duran ~60 / 73 / 66 s con el bueno y lo más difícil es el final.
-        /// Más vida alarga la pelea del bueno casi en proporción; más StageHeal le baja las muertes al promedio sin
-        /// acortarla (la del eclipse es la que más pesa). El tiempo real es ~1.4 veces el simulado (un solo dato): medirlo
-        /// con "bot on bueno" y "bot on promedio" y ajustar acá.
+        ///                          muertes y 28 % sin morir, 1.2 de ellas en el eclipse; humano 3.7 min.
+        /// En Unity el bot tarda 0.92 veces lo simulado con Kokuyō (medido con el PlayClock en main 76be027: 'bot on bueno'
+        /// 1:48 contra 1.96 min simulados; Tools/Dev/boss_sims/calibration.py): con 5400 el bueno ganaba en ~3.4 min de
+        /// juego, corto. En minutos de juego (kk_fix_run.py largo bueno,promedio 200 '{"calib": true}', el daño de Kaito a
+        /// 1/0.92):
+        ///   vida 7200, daño 0.33, tramos 35 / 35 / 25: bueno 4.35 min; promedio 10.2 min y 4.5 muertes (no alcanza el sustento);
+        ///   vida 7200, daño 0.33, tramos 60 / 60 / 50: promedio 6.9 min, 1.5 muertes (cura casi toda la vida en cada tramo);
+        ///   vida 6600, daño 0.30, tramos 40 / 40 / 30: bueno 4.1 min; promedio 6.4 min, 1.4 muertes;
+        ///   vida 7200, daño 0.31, tramos 50 / 50 / 45: bueno 4.35 min (p10-p90 4.05-4.7) sin morir; promedio 6.9 min (p90
+        ///                          10.5), 1.4 muertes y 29 % sin morir, 1.0 de ellas en el eclipse (lo de hoy). Los actos duran
+        ///                          ~72 / 87 / 80 s con el bueno; el eclipse sigue sirviendo el 99 % de los dúos. El promedio de verdad anduvo mejor que el calibrado (2:26 sin
+        ///                          morir con lo de C2, contra 5 min y 2.2 muertes): puede que muera menos.
+        /// PROVISORIO: el factor sale de una pelea por bot; medirlo de nuevo (tres por bot) y ajustar acá. Más vida alarga la
+        /// pelea del bueno casi en proporción; más StageHeal le baja las muertes al promedio sin acortarla (la del eclipse es
+        /// la que más pesa).
         /// </summary>
-        public const float HealthScale = 3f, DamageScale = 0.33f;
+        public const float HealthScale = 4f, DamageScale = 0.31f;
         public const float TransitionHeal = 40f, TransitionSpirit = 30f;
-        /// <summary>La cura de cada corte de tramo, por acto (1..3): menos en el eclipse, que es el final (con 35 en los
-        /// tres el bot promedio ganaba de una el 39 % de las veces, más que contra los otros jefes).</summary>
-        static readonly float[] StageHeal = { 0f, 35f, 35f, 25f };
+        /// <summary>La cura de cada corte de tramo, por acto (1..3): un poco menos en el eclipse, que es el final (con la
+        /// misma en los tres el bot promedio ganaba de una más seguido que contra los otros jefes).</summary>
+        static readonly float[] StageHeal = { 0f, 50f, 50f, 45f };
 
         public static float StageHealOf(int act) => StageHeal[Mathf.Clamp(act, 1, 3)];
         /// <summary>Ichimonji: dentro de este radio la hoja pasa por encima de la cabeza de Kaito (la empuñadura va a

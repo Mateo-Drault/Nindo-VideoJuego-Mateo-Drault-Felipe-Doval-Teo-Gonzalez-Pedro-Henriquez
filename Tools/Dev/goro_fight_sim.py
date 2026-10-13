@@ -373,7 +373,8 @@ def stats(bot, p1, p2, p1dmg, p2dmg, shed, runs, seed, heal=40.0, sheds=(0.75, 0
 # Calibrado con el bot de verdad en Unity (main 76be027, 1000 + 1600, daño x0.5 / x0.4, cura por tramo 25): el bueno
 # ganó en 2:24 reales sin morir (acá 3.4 min) y el promedio en 4:04 con 2 muertes (acá 5.2 min y 1.46 muertes). El bot
 # real es MÁS rápido que el modelo con Gorō (0.71x: se le pega y le mete los cortes de la vuelta a la guardia que el
-# modelo no cuenta), al revés que con los otros jefes. (tiempo real / simulado, muertes reales / simuladas)
+# modelo no cuenta), al revés que con Mizuchi (1.19x) y Chikuō (1.42x); Kokuyō 0.92x (la tabla de los cuatro, con el mismo
+# dato: boss_sims/calibration.py). (tiempo real / simulado, muertes reales / simuladas)
 REAL_PER_SIM = {"bueno": (0.71, 1.0), "promedio": (0.78, 1.37)}
 # objetivo del diseño: el bueno gana en ~4.5 min reales (4-5) casi sin morir; el promedio muere 1-2 veces
 TARGET_MIN, TARGET_MAX = 4.0 / REAL_PER_SIM["bueno"][0], 5.0 / REAL_PER_SIM["bueno"][0]
