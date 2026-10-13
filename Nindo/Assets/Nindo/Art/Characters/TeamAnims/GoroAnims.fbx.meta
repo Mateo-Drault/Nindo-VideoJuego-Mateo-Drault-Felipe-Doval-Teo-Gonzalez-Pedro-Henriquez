@@ -37,7 +37,7 @@ ModelImporter:
       takeName: Scene
       internalID: 60329845989656605
       firstFrame: 1
-      lastFrame: 81
+      lastFrame: 97
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -65,8 +65,8 @@ ModelImporter:
       name: Walk
       takeName: Scene
       internalID: 1115551300564398976
-      firstFrame: 91
-      lastFrame: 115
+      firstFrame: 107
+      lastFrame: 131
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -94,8 +94,8 @@ ModelImporter:
       name: Run
       takeName: Scene
       internalID: 1133126400809267710
-      firstFrame: 125
-      lastFrame: 145
+      firstFrame: 141
+      lastFrame: 161
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -123,8 +123,8 @@ ModelImporter:
       name: Combo1
       takeName: Scene
       internalID: 763175419158581928
-      firstFrame: 155
-      lastFrame: 191
+      firstFrame: 171
+      lastFrame: 219
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -152,8 +152,8 @@ ModelImporter:
       name: Combo2
       takeName: Scene
       internalID: 863915759717458116
-      firstFrame: 201
-      lastFrame: 237
+      firstFrame: 229
+      lastFrame: 271
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -181,8 +181,8 @@ ModelImporter:
       name: Combo3
       takeName: Scene
       internalID: 150624608784040956
-      firstFrame: 247
-      lastFrame: 277
+      firstFrame: 281
+      lastFrame: 328
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -210,8 +210,8 @@ ModelImporter:
       name: Heavy
       takeName: Scene
       internalID: 96202929600578661
-      firstFrame: 287
-      lastFrame: 347
+      firstFrame: 338
+      lastFrame: 402
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -239,8 +239,8 @@ ModelImporter:
       name: Spin
       takeName: Scene
       internalID: 474340523197511367
-      firstFrame: 357
-      lastFrame: 423
+      firstFrame: 412
+      lastFrame: 478
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -268,8 +268,8 @@ ModelImporter:
       name: StunSpin
       takeName: Scene
       internalID: 596894670851483028
-      firstFrame: 433
-      lastFrame: 493
+      firstFrame: 488
+      lastFrame: 548
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -297,8 +297,8 @@ ModelImporter:
       name: ExhaustedHit
       takeName: Scene
       internalID: 139154594955789551
-      firstFrame: 503
-      lastFrame: 515
+      firstFrame: 558
+      lastFrame: 570
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -326,8 +326,8 @@ ModelImporter:
       name: Parried
       takeName: Scene
       internalID: 234637049272809079
-      firstFrame: 525
-      lastFrame: 535
+      firstFrame: 580
+      lastFrame: 596
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -355,8 +355,8 @@ ModelImporter:
       name: ParriedPerfect
       takeName: Scene
       internalID: 423045990972328149
-      firstFrame: 545
-      lastFrame: 560
+      firstFrame: 606
+      lastFrame: 629
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -384,8 +384,8 @@ ModelImporter:
       name: Hit
       takeName: Scene
       internalID: 208930882649529804
-      firstFrame: 570
-      lastFrame: 585
+      firstFrame: 639
+      lastFrame: 654
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -413,8 +413,8 @@ ModelImporter:
       name: HitHeavy
       takeName: Scene
       internalID: 664197911944182152
-      firstFrame: 595
-      lastFrame: 610
+      firstFrame: 664
+      lastFrame: 679
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -442,8 +442,8 @@ ModelImporter:
       name: Spotted
       takeName: Scene
       internalID: 20407951057934453
-      firstFrame: 620
-      lastFrame: 662
+      firstFrame: 689
+      lastFrame: 731
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -471,8 +471,8 @@ ModelImporter:
       name: Death
       takeName: Scene
       internalID: 536744046599192327
-      firstFrame: 672
-      lastFrame: 732
+      firstFrame: 741
+      lastFrame: 801
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -500,8 +500,211 @@ ModelImporter:
       name: Intro
       takeName: Scene
       internalID: 886532016550439255
-      firstFrame: 742
-      lastFrame: 819
+      firstFrame: 811
+      lastFrame: 895
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: FakeDefeat
+      takeName: Scene
+      internalID: 598275582299285731
+      firstFrame: 905
+      lastFrame: 983
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: ArmorRise
+      takeName: Scene
+      internalID: 668201777733492500
+      firstFrame: 993
+      lastFrame: 1203
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Combo1B
+      takeName: Scene
+      internalID: 404029917611568586
+      firstFrame: 1213
+      lastFrame: 1272
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Combo2B
+      takeName: Scene
+      internalID: 805720265195626732
+      firstFrame: 1282
+      lastFrame: 1328
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: Combo3B
+      takeName: Scene
+      internalID: 383128363825556590
+      firstFrame: 1338
+      lastFrame: 1395
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: SlamWave
+      takeName: Scene
+      internalID: 699656378742373158
+      firstFrame: 1405
+      lastFrame: 1469
+      wrapMode: 0
+      orientationOffsetY: 0
+      level: 0
+      cycleOffset: 0
+      loop: 0
+      hasAdditiveReferencePose: 0
+      loopTime: 0
+      loopBlend: 0
+      loopBlendOrientation: 0
+      loopBlendPositionY: 0
+      loopBlendPositionXZ: 0
+      keepOriginalOrientation: 0
+      keepOriginalPositionY: 1
+      keepOriginalPositionXZ: 0
+      heightFromFeet: 0
+      mirror: 0
+      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
+      curves: []
+      events: []
+      transformMask: []
+      maskType: 3
+      maskSource: {instanceID: 0}
+      additiveReferencePoseFrame: 0
+    - serializedVersion: 16
+      name: AvalancheSummon
+      takeName: Scene
+      internalID: 827317883458804229
+      firstFrame: 1479
+      lastFrame: 1569
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

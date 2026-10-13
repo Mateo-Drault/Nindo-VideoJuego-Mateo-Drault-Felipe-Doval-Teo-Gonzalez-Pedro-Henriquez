@@ -828,7 +828,8 @@ namespace Nindo
         }
 
         // ---------------------------------------------------------------- especiales comunes
-        Vector3 SlamCenter(AttackDef a) => transform.position + transform.forward * Mathf.Max(0.5f, a.range * 0.4f);
+        /// <summary>Centro del pisotón (los jefes con un arma larga lo ponen donde pega: el martillo de Gorō cae a 3.7 m).</summary>
+        protected virtual Vector3 SlamCenter(AttackDef a) => transform.position + transform.forward * Mathf.Max(0.5f, a.range * 0.4f);
         static float SlamRadius(AttackDef a) => a.specialParam > 0f ? a.specialParam : 4f;
         static float ChargeSpeed(AttackDef a) => a.specialParam > 0f ? a.specialParam : 14f;
         float ChargeContact => Radius + (target != null ? target.Radius : 0.35f) + 0.6f;

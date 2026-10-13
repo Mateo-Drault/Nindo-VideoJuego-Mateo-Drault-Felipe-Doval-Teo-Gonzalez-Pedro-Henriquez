@@ -342,6 +342,9 @@ namespace Nindo
 
             var anim = CharacterFactory.BuildModel(CharacterFor(archetype), root.transform, cfg.scale);
             EnemyVariants.Apply(archetype, cfg, anim, pos);     // kit de la zona (apaga el tinte si lo viste)
+            // la armadura de roca de la fase 2 se viste ya (escondida: GoroArmor la arma pieza por pieza), así el destello
+            // de golpe y la silueta de rayos X la incluyen
+            if (archetype == "goro" && anim != null) CharacterKits.Attach(anim.transform, "goro_armor");
             if (cfg.tintStrength > 0f) CharacterFactory.Tint(anim.transform, cfg.id, cfg.tint, cfg.tintStrength, archetype.StartsWith("kage"));
             if (layer >= 0) foreach (var t in root.GetComponentsInChildren<Transform>(true)) t.gameObject.layer = layer;
 
@@ -360,6 +363,8 @@ namespace Nindo
                 Boss b = archetype switch
                 {
                     "ozeki" => root.AddComponent<OzekiBoss>(),
+                    // barra falsa, armadura de roca y avalancha (fase 2)
+                    "goro" => root.AddComponent<GoroBoss>(),
                     "kage" => root.AddComponent<KokuyoBoss>(),
                     // Mizuchi es un koi de 7.5 m: su propia IA de jefe (zambullidas, perlas, cascada)
                     "mizuchi" => root.AddComponent<MizuchiBoss>(),
@@ -382,7 +387,8 @@ namespace Nindo
             {
                 case "goro":
                     b.bossId = "goro"; b.title = "Gorō"; b.subtitle = "El Martillo de Kodoyama";
-                    b.introAnim = "Intro"; b.phaseAnim = "Spotted"; b.musicKey = "boss"; b.phaseThresholds = new[] { 0.5f };
+                    // sin el enfurecido genérico al 50 %: la fase 2 es la armadura, después de la barra falsa (GoroBoss)
+                    b.introAnim = "Intro"; b.phaseAnim = "Spotted"; b.musicKey = "boss_goro"; b.phaseThresholds = new float[0];
                     break;
                 case "mizuchi":
                     b.bossId = "mizuchi"; b.title = "Mizuchi"; b.subtitle = "El Gran Koi del Lago Kohan";

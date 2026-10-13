@@ -154,30 +154,88 @@ namespace Nindo
                 radius = 1.0f, height = 3.2f, scale = 1f, maxImbalance = 4, exhaustedTime = 4f, guardTime = 0.6f,
                 poiseHits = 5, hyperArmor = true, knockbackResist = 0.9f, preferredDistance = 4.2f, detectRadius = 30f, loseRadius = 80f,
                 finisherHealth = 0.12f, attackCooldown = new Vector2(0.9f, 1.8f),
+                // el martillo rebota, se le resbala en la mano y cae por su peso (GoroAnims Parried: 16 cuadros); con los
+                // 0.32 s de siempre daba la vuelta por encima en dos cuadros
+                parriedRecoil = 0.5f,
                 animGuard = "Idle", animCounter = "Combo1", animExhausted = "StunSpin", animHit = "Hit",
                 animSpotted = "Spotted", animDeath = "Death", animParried = "Parried", deathClipFalls = true,
             };
             // contacto = activeStart de los clips nuevos (TeamAnims/GoroAnims.fbx): la cabeza del martillo llega en ese
-            // cuadro; el golpe sísmico pega al aterrizar del salto, no al despegar
-            var c1 = Hit("Combo1", 22, 0.667f, 0.778f, range: 3.4f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, telegraph: 0.2f, kb: 1.8f, apex: 0.583f);
-            var c2 = Hit("Combo2", 24, 0.583f, 0.667f, range: 3.4f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, kb: 1.8f, apex: 0.5f);
-            var c3 = Hit("Combo3", 28, 0.633f, 0.733f, range: 3.6f, arc: 160, kind: AttackKind.Heavy, lunge: 1.0f, kb: 2.4f, apex: 0.533f);
-            var slam = Hit("Heavy", 38, 0.667f, 0.7f, range: 3.4f, arc: 360, kind: AttackKind.Unblockable, lunge: 0.5f, telegraph: 0.3f, kb: 3f, apex: 0.533f);
+            // cuadro; el golpe sísmico pega al aterrizar del salto, no al despegar. Alcance = dónde cae la cabeza del
+            // martillo (GoroAnims.fbx.json, 3.66-3.90 m del centro) más medio ancho de la cabeza: con 3.4 el martillo se
+            // veía pasar por encima de Kaito sin pegarle
+            var c1 = Hit("Combo1", 22, 0.5f, 0.5833f, range: 3.8f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, telegraph: 0.2f, kb: 1.8f, apex: 0.4375f);
+            var c2 = Hit("Combo2", 24, 0.5f, 0.5714f, range: 3.9f, arc: 130, kind: AttackKind.Heavy, lunge: 1.2f, kb: 1.8f, apex: 0.4286f);
+            var c3 = Hit("Combo3", 28, 0.5319f, 0.5957f, range: 4.0f, arc: 160, kind: AttackKind.Heavy, lunge: 1.0f, kb: 2.4f, apex: 0.4681f);
+            var slam = Hit("Heavy", 38, 0.625f, 0.6563f, range: 3.4f, arc: 360, kind: AttackKind.Unblockable, lunge: 0.5f, telegraph: 0.3f, kb: 3f, apex: 0.5f);
             slam.special = "slam"; slam.specialParam = 4.6f;
-            var spin = Hit("Spin", 20, 0.288f, 0.848f, range: 2.8f, arc: 360, kind: AttackKind.Unblockable, lunge: 0f, telegraph: 0.15f, kb: 2.5f, apex: 0.242f);
+            // el giro barre con la cabeza a ~3.9 m del eje: 2.8 dejaba pasar el martillo por Kaito sin daño
+            var spin = Hit("Spin", 20, 0.288f, 0.848f, range: 3.6f, arc: 360, kind: AttackKind.Unblockable, lunge: 0f, telegraph: 0.15f, kb: 2.5f, apex: 0.242f);
             spin.special = "spin"; spin.specialParam = 3.8f;
             var slam2 = slam.Clone(); slam2.specialParam = 6f; slam2.damage = 42;
+            // fase 1 = la primera barra (la que se "gana"); 'Terremoto' recién en su segunda mitad (GoroBoss.CurrentPhase 1).
+            // La armadura de roca (fase 2) pelea con GoroPhase2
             c.patterns = new[]
             {
-                new AttackPattern { name = "Martillazo", steps = new[] { c1 }, weight = 1.2f, maxRange = 4f },
-                new AttackPattern { name = "Doble martillazo", steps = new[] { c1, c2 }, weight = 1.5f, maxRange = 4f },
-                new AttackPattern { name = "Combo completo", steps = new[] { c1, c2, c3 }, weight = 1.2f, maxRange = 4f, minPhase = 0 },
-                new AttackPattern { name = "Golpe sísmico", steps = new[] { slam }, weight = 1f, maxRange = 5f, cooldown = 6f },
-                new AttackPattern { name = "Torbellino", steps = new[] { spin }, weight = 1f, maxRange = 9f, cooldown = 9f, exhaustAfter = true },
-                new AttackPattern { name = "Terremoto", steps = new[] { c1, slam2 }, weight = 1.3f, maxRange = 5f, cooldown = 7f, minPhase = 1 },
+                new AttackPattern { name = "Martillazo", steps = new[] { c1 }, weight = 1.2f, maxRange = 4f, maxPhase = 1 },
+                new AttackPattern { name = "Doble martillazo", steps = new[] { c1, c2 }, weight = 1.5f, maxRange = 4f, maxPhase = 1 },
+                new AttackPattern { name = "Combo completo", steps = new[] { c1, c2, c3 }, weight = 1.2f, maxRange = 4f, minPhase = 0, maxPhase = 1 },
+                new AttackPattern { name = "Torbellino", steps = new[] { spin }, weight = 1f, maxRange = 9f, cooldown = 9f, exhaustAfter = true, maxPhase = 1 },
+                new AttackPattern { name = "Terremoto", steps = new[] { c1, slam2 }, weight = 1.3f, maxRange = 5f, cooldown = 7f, minPhase = 1, maxPhase = 1 },
             };
+            GoroPhase2(c, c1, c2, c3, slam, slam2, spin);
             return c;
         }
+
+        /// <summary>
+        /// Gorō armado (fase 2, GoroBoss.CurrentPhase 2): los mismos golpes más pesados y con variantes (GoroAnims.fbx.json):
+        /// Combo1B amaga y pega 0.6 s tarde, Combo2B barre a ras del piso desde la izquierda, Combo3B bombea arriba antes de
+        /// bajar, combos de tres y cuatro golpes, el SlamWave clava el martillo y la onda sale por el piso (imparable, carril
+        /// rojo) y la AVALANCHA: dos martillazos al piso, ruge al cielo y la montaña le tira rocas por carriles rojos
+        /// (GoroAvalanche). La armadura rebota los cortes mientras carga cada golpe (GoroBoss.ArmorWindow).
+        /// </summary>
+        public static void GoroPhase2(EnemyConfig c, AttackDef c1, AttackDef c2, AttackDef c3, AttackDef slam, AttackDef slam2, AttackDef spin)
+        {
+            // normalizados de los clips de la fase 2 (apex / contacto-fin): la cabeza cae a 3.66-3.90 m
+            var c1b = Hit("Combo1B", 26, 0.5932f, 0.661f, range: 3.8f, arc: 130, kind: AttackKind.Heavy, lunge: 1.4f, kb: 2f, apex: 0.5424f);
+            c1b.windup = 1.2f;
+            var c2b = Hit("Combo2B", 24, 0.4783f, 0.5652f, range: 3.8f, arc: 170, kind: AttackKind.Heavy, lunge: 1.0f, kb: 2.2f, apex: 0.3913f);
+            c2b.windup = 0.7f;
+            var c3b = Hit("Combo3B", 30, 0.614f, 0.6667f, range: 4.0f, arc: 160, kind: AttackKind.Heavy, lunge: 1.5f, kb: 2.6f, apex: 0.5614f);
+            c3b.windup = 1.2f;
+            // la onda: el martillo cae a 3.9 m y la onda sale por el piso hasta 'specialParam' m más (GoroBoss "slamwave").
+            // La fase activa es la arada entera (f34-f43): GoroBoss la estira lo que tarda la onda en llegar al final. El
+            // aviso es el martillo arrastrado en el piso (apex f24); la suelta es el molino por el costado (10 cuadros) a 1.2x
+            var wave = Hit("SlamWave", 40, 0.5312f, 0.6719f, range: 3.9f, arc: 60, kind: AttackKind.Unblockable, lunge: 1.0f, kb: 3f, apex: 0.375f);
+            wave.special = "slamwave"; wave.specialParam = 10f; wave.windup = 1.25f; wave.releaseRate = 1.2f;
+            // la avalancha no pega con el martillo: el aviso y el golpe son de cada roca (GoroAvalanche). Contacto = "call"
+            // (f60 de 90) y apex al final de la vuelta a la guardia (f56): con el apex en el segundo martillazo la vuelta
+            // caía en la suelta y se tocaba acelerando hasta 1.7x
+            var aval = Hit("AvalancheSummon", 0, 0.6667f, 0.8333f, range: 30f, arc: 360, kind: AttackKind.Unblockable, lunge: 0f, kb: 2.6f, apex: 0.6222f);
+            aval.special = "avalanche"; aval.specialParam = 24f; aval.releaseRate = 1f; aval.tracking = false;
+            var spin2 = spin.Clone(); spin2.specialParam = 4.4f; spin2.damage = 24;
+            var c1f = c1.Clone(); c1f.speed = 1.1f;
+            var c2f = c2.Clone(); c2f.speed = 1.1f;
+            var c3f = c3.Clone(); c3f.speed = 1.05f;
+            var list = new System.Collections.Generic.List<AttackPattern>(c.patterns)
+            {
+                new AttackPattern { name = "Amague de piedra", steps = new[] { c1b }, weight = 1.0f, maxRange = 4.2f, minPhase = 2 },
+                new AttackPattern { name = "Barrido bajo", steps = new[] { c1f, c2b }, weight = 1.1f, maxRange = 4.2f, minPhase = 2 },
+                new AttackPattern { name = "Derrumbe", steps = new[] { c1f, c2b, c3b }, weight = 1.3f, maxRange = 4.2f, minPhase = 2 },
+                new AttackPattern { name = "Cuatro martillazos", steps = new[] { c1b, c2f, c3f, c2b }, weight = 0.9f, maxRange = 4.2f, minPhase = 2, cooldown = 6f },
+                new AttackPattern { name = "Onda de Kodoyama", steps = new[] { wave }, weight = 1.0f, maxRange = 7f, minPhase = 2, cooldown = 6f },
+                new AttackPattern { name = "Martillo y onda", steps = new[] { c1f, wave }, weight = 1.0f, maxRange = 4.5f, minPhase = 2, cooldown = 8f },
+                new AttackPattern { name = "Terremoto de piedra", steps = new[] { c2b, slam2 }, weight = 0.9f, maxRange = 5f, minPhase = 2, cooldown = 8f },
+                new AttackPattern { name = "Torbellino de piedra", steps = new[] { spin2 }, weight = 0.8f, maxRange = 9f, minPhase = 2, cooldown = 11f, exhaustAfter = true },
+                new AttackPattern { name = GoroAvalanchePattern, steps = new[] { aval }, weight = 1.2f, maxRange = 40f, minPhase = 2, cooldown = 20f },
+                // en las dos fases y al final: Enemy.PickPattern cae en el último patrón si el sorteo se pasa por redondeo
+                new AttackPattern { name = "Golpe sísmico", steps = new[] { slam }, weight = 1f, maxRange = 5f, cooldown = 6f },
+            };
+            c.patterns = list.ToArray();
+        }
+
+        /// <summary>Nombre del patrón de la avalancha (GoroBoss la fuerza al empezar la fase 2 y le da su pausa al final).</summary>
+        public const string GoroAvalanchePattern = "Avalancha";
 
         /// <summary>
         /// Mizuchi, el Gran Koi de la Cascada Kohan (jefe del lago): un koi espíritu de 7.5 m con el Sello del Agua clavado

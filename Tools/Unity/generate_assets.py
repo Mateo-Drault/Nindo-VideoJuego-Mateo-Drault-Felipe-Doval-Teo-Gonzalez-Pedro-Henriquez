@@ -767,10 +767,26 @@ def kit_metas(mats):
     las necesita."""
     remap = {"Nindo_Palette": mats["palette"], "Nindo_Emissive": mats["emissive"]}
     for p in sorted(glob.glob(os.path.join(P_KITS, "Kit_*.fbx"))):
-        body = model_meta(remap=remap, readable=False, anim_type=2).replace("optimizeBones: 1", "optimizeBones: 0")
-        write_meta(p, body, force=True)
+        kid = os.path.splitext(os.path.basename(p))[0][4:]
+        body = model_meta(remap=remap, readable=False, anim_type=2, global_scale=kit_global_scale(kid))
+        write_meta(p, body.replace("optimizeBones: 1", "optimizeBones: 0"), force=True)
+        if os.path.exists(p + ".json"):
+            write_meta(p + ".json", TEXT_META)
     if os.path.exists(os.path.join(P_KITS, "kits.json")):
         write_meta(os.path.join(P_KITS, "kits.json"), TEXT_META)
+
+
+# kits de un personaje que no importa a escala 1 (Gorō, x2): el kit importa con la escala de su modelo, si no los huesos
+# Acc_* quedan a la mitad de distancia de su padre vivo (Tools/Blender/bosses/goro/build_goro_armor.py)
+KIT_MODEL = {"goro_armor": "Models/Minijefe.fbx"}
+
+
+def kit_global_scale(kid):
+    if kid not in KIT_MODEL:
+        return 1.0
+    mm = open(A(KIT_MODEL[kid]) + ".meta", encoding="utf-8").read()
+    sc = re.search(r"\n  meshes:\n    lODScreenPercentages: \[\]\n    globalScale: ([\d.]+)", mm)
+    return float(sc.group(1)) if sc else 1.0
 
 
 def kit_guids():

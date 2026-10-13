@@ -88,7 +88,7 @@ def archetype_hits(func_names):
 
 # las variantes de zona reusan los clips con sus propios números: también tienen que coincidir
 ARCH_FUNCS = {"ninja": ["Ninja", "NinjaElite", "NinjaMountainMoves", "NinjaLakeMoves", "NinjaBambooMoves"],
-              "sumo": ["Sumo", "Ozeki", "SumoMountainMoves", "SumoLakeMoves", "SumoBambooMoves"], "goro": ["Goro"], "grandpa": []}
+              "sumo": ["Sumo", "Ozeki", "SumoMountainMoves", "SumoLakeMoves", "SumoBambooMoves"], "goro": ["Goro", "GoroPhase2"], "grandpa": []}
 
 
 # ------------------------------------------------------------------------------- mediciones
@@ -1064,6 +1064,11 @@ def main():
         reports[clip.name]["lowest_body_cm"] = min(lb)
         reports[clip.name]["lowest_weapon_cm"] = min(lw) if min(lw) < 800 else None
         floor_checks(clip, lb, lw, lwh)
+        # chequeos propios del personaje sobre la malla deformada (team_clips_<personaje>.mesh_checks: el martillo de
+        # Gorō contra su cuerpo)
+        mc = getattr(mod, "mesh_checks", None)
+        if mc:
+            reports[clip.name].update(mc(ch, clip, ranges[clip.name][0], check))
         allow = clip.timing.get("slide_ok", 0.0)
         runs = [r for v in sk.values() for r in v]
         tot = max([r[2] for r in runs] or [0.0])
