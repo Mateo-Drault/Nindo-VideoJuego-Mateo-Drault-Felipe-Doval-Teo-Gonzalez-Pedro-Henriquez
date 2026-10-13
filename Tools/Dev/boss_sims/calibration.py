@@ -24,7 +24,11 @@ goro_fight_sim.py usa el mismo dato a su manera (REAL_PER_SIM: el tiempo y las m
 
 Medir de nuevo: 'bot on bueno' y 'bot on promedio' tres veces por jefe con las partidas de Docs/handoff/partidas
 (prueba_goro, prueba_mizuchi, prueba_bambu, prueba_kokuyo), pegar acá las líneas del PlayClock (en segundos) y las
-simulaciones de ese mismo código, y el factor se actualiza solo.
+simulaciones de ese mismo código, y el factor se actualiza solo. Con el código de c3/integration (después de la ronda
+de huecos), la simulación cruda del bueno da (mediana): Gorō 366 s (goro_fight_sim --runs 400), Mizuchi 232 s (mz_run
+tuning), Kokuyō 283 s (kk_fix_run largo), Chikuō 203 s (sim_bamboo_master --seed 3); y lo que se espera ver en Unity con
+los factores de hoy: el bueno 4.3 / 4.5 / 4.4 / 4.6 min, el promedio 6.1 / 7.3 / 6.9 / 7.3 min con ~1.3 / 1.25 / 1.4 / 1
+muertes.
 """
 
 # jefe: el bot bueno y el promedio en Unity (segundos del PlayClock, muertes) y la simulación del mismo código (segundos:

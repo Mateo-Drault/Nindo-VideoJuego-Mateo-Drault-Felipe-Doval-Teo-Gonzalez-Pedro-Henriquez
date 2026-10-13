@@ -87,10 +87,12 @@ dos partes:
 * **El factor real/simulado no está medido para Mizuchi ni Kokuyō.** Gorō midió 0.71x con el bot de Unity sobre
   76be027 (el bueno ganó en 2:24 con 3.4 simulados). Mizuchi y Kokuyō suponen 1.4x. Si van a ~0.7x como Gorō, el
   bueno les gana en ~2.5 min reales y la hora de juego no llega. Es lo primero que hay que medir (ver 3, paso 9).
+  *(Resuelto en la ronda de huecos, sección 5: el Editor.log tenía las ocho peleas del bot; los factores son Gorō
+  0.71, Mizuchi 1.19, Kokuyō 0.92 y Chikuō 1.42, y la tabla de arriba quedó vieja: la de hoy está en 5.1.)*
 
 ### 1.4 Lo que encontró la integración
 
-1. **[medio, abierto] El desvío de Chikuō no encuentra la hoja del Corte final nuevo.** chikuo-feel ajustó
+1. **[medio, arreglado en la sección 5: `GuardHitLow`] El desvío de Chikuō no encuentra la hoja del Corte final nuevo.** chikuo-feel ajustó
    `GuardHit` contra el Corte final de antes; kaito-snaps lo rehízo en paralelo (en el impacto la hoja va adelante y
    17° abajo, con las dos manos). Re-medido sobre la integración con el `swat2.py` del frente (scratch
    `c3/integration/swat`), cm de la palma (o del bastón) a la hoja y cuadros de 60 Hz a 15 cm o menos:
@@ -204,8 +206,9 @@ controller lo usa. `PlayerController.Shovable` y `PlayerController.ShoveRoom(dir
   (`GuardHit`, o `GuardHitL` para el revés). El primer corte contesta a los 0.6 s, el segundo seguido a los 0.12 s
   (aunque esté descansando) y recién el tercero se contragolpea. Suena `palm_deflect` (sintetizado,
   `Tools/Audio/sfx_chikuo.py`).
-* Paso del viento: vuela como poco la mitad del autorado; el carril sigue a Kaito hasta que despega y ahí se vuelve
-  a planear el vuelo; el que pasa al costado (`DashStrike_Pass[_P3]`) nunca frena en el aire, se abre de costado
+* Paso del viento: el de frente vuela como poco la mitad del autorado; el que pasa al costado (el que sale contra el
+  bot, que corre hacia él durante el salto atrás) volaba x0.3, ~2.7 m, hasta la ronda de huecos (sección 5.3); el
+  carril sigue a Kaito hasta que despega y ahí se vuelve a planear el vuelo; el que pasa al costado (`DashStrike_Pass[_P3]`) nunca frena en el aire, se abre de costado
   (`PassAside`), sostiene la mano sobre Kaito de f17 a f20 y cae mirándolo. El golpe se prueba en el primer cuadro
   que pasa el contacto.
 * El saco se desliza (formas `CoatSlip1..4` de `Master_Robe`, blend shapes) antes del cambio de malla.
@@ -318,29 +321,151 @@ la presentación del jefe salga entera. Restaurar la partida del usuario (`nindo
 6. Mizuchi con `prueba_mizuchi.json` y Kokuyō con `prueba_kokuyo.json`: pruebas de 2.4.
 7. ZoneCulling: pruebas de 2.5.
 8. Chikuō herido en un cambio de fase: un solo destello de cura (`d083588`).
-9. **Balance**: `bot on bueno` y `bot on promedio` en los cuatro jefes (una pelea por bot como mínimo, mejor tres) y
-   pegar las líneas `[Nindo] ... vencido en`. Con eso se calibra el factor de Mizuchi y Kokuyō y se ve si la partida
-   llega a la hora (hoy, con 1.4x, la suma da ~1 h para el promedio; con 0.7x no llega).
-10. Restaurar la partida del usuario.
+9. **Balance**: `bot on bueno` y `bot on promedio` en los cuatro jefes (tres peleas por bot) y pegar las líneas
+   `[Nindo] ... vencido en` en `Tools/Dev/boss_sims/calibration.py` (sección 5.1).
+10. Las pruebas de la ronda de huecos (5.6).
+11. Restaurar la partida del usuario.
 
 ---
 
 ## 4. Abierto después de C3
 
-* **El desvío de Chikuō contra el Corte final** (1.4, punto 1): rehacer el encuentro de `GuardHit` para la hoja más
-  baja o volver la hoja de Kaito a la altura de antes.
-* **El factor real/simulado de Mizuchi y Kokuyō** y la hora total: sin medir.
-* **Gorō**: el balance es provisorio (una pelea por bot); con Kaito pegado (1.35-1.55 m) el aviso agachado del
-  SlamWave con armadura le mete las rocas del pecho; el golpe en el lugar le roza la cabeza 0-3 cm con Kaito pegado
-  a la cápsula; un dash derecho contra el cuerpo de Gorō todavía patina el pie de atrás 33-65 cm; el martillo del
-  golpe en el lugar cae 0.6-0.85 m más cerca (le pega el mango).
+* *(La ronda de huecos de la sección 5 cerró el desvío del Corte final, el factor real/simulado de los cuatro jefes,
+  el dash contra el cuerpo de Gorō y la hombrera del SlamWave. Lo que sigue abierto está en 5.7.)*
+* **Gorō**: el balance es provisorio (una pelea por bot); el golpe en el lugar le roza la cabeza 0-3 cm con Kaito
+  pegado a la cápsula; el martillo del golpe en el lugar cae 0.6-0.85 m más cerca (le pega el mango).
 * **Kaito**: el brazo izquierdo del Corte final en f6-7 sigue en 83° (eximido por ir en la empuñadura); avisos a x1.12
   con furia (61-67°) en los cortes, el parry y los golpes recibidos; el remate corto a x2.8 avisa 68°.
-* **Chikuō**: los cortes rechazados siguen en ~59 % con `--human 0.5`; con Kaito pegado a 1.15 m de costado la cola
-  del lazo y la canilla entran 2-7 cm en su cápsula (no en su malla); no es chibi (decisión de Felipe).
+* **Chikuō**: con Kaito pegado a 1.15 m de costado la cola del lazo y la canilla entran 2-7 cm en su cápsula (no en su
+  malla); no es chibi (decisión de Felipe).
 * **Kokuyō**: la silueta de los cerros cercanos en el plano de la muerte (24 niveles) es una decisión de look
   (densidad de la niebla del eclipse).
 * **ZoneCulling**: la ganancia sigue sin medir en Unity.
 * De antes: Amenoshita y Sakuya4 (PeriTune) se usan con la licencia general del autor, porque sus páginas no dicen
   licencia (la aprobación de Felipe para la música ya está en main, `e3fa891`); el pase de ambiente de Felipe (los
   basaltos que se leen como hielo); el kit y los clips del Ōzeki que ya no se usan.
+
+---
+
+## 5. La ronda de huecos de la integración (C3-A1 a C3-A5)
+
+La auditoría de C3 dejó cinco huecos; los cerró la integración, en `c3/integration`, sin Unity (simulaciones, lints
+de Blender, swat2.py y renders). Commits: `aebdb1d` (Gorō), `1ac3bef` (el factor real/simulado, Mizuchi y Kokuyō),
+`74f62b1` (Chikuō: el roce, el paso del viento, las variantes de paso, la vida), `a278ead` (`GuardHitLow`).
+
+### 5.1 El factor real/simulado de cada jefe (C3-A1)
+
+En el Editor.log del lead (13 de octubre, main `76be027`, la fase C2) estaban las ocho peleas del bot: el PlayClock
+y el resumen del driver. Corrí las simulaciones de ese mismo código (las de `76be027`) con las perillas de entonces:
+
+| Jefe | bueno en Unity | bueno simulado (p10-p90) | F | promedio en Unity | promedio simulado | promedio calibrado |
+|---|---|---|---|---|---|---|
+| Gorō | 2:24, 0 muertes | 3.4 min (3.1-3.6) | **0.71** | 4:04, 2 muertes | 4.8 min, 1.45 | (goro_fight_sim: 0.78 y x1.37 en las muertes) |
+| Mizuchi | 2:49, 0 | 2.37 min (2.04-2.82) | **1.19** | 3:27, 1 | 5.12 min, 2.0 | 7.1 min, 3.3 |
+| Kokuyō | 1:48, 0 | 1.96 min (1.78-2.24) | **0.92** | 2:26, 0 | 6.06 min, 3.2 | 4.96 min, 2.2 (30 % sin morir) |
+| Chikuō | 6:01, 0 | 254 s (235-277) | **1.42** | 15:50, 4 | 400 s, 1.0 | 758 s (p90 1107), 3.1 |
+
+* El factor sale del bueno: su pelea casi no varía (±8 %), así que una pelea ya lo mide. No es uno solo: con Gorō el
+  bot real le pega más que el modelo (se le pega a la cápsula) y con Chikuō menos (en Unity lo agarran el doble:
+  24 golpes contra 12.5 simulados). El 1.4 que suponían Mizuchi y Kokuyō era el de Chikuō.
+* La simulación calibrada pone el daño de Kaito en 1/F: reproduce el tiempo del bueno y predice el del promedio. Con
+  Chikuō y Kokuyō lo medido cae adentro de lo calibrado; con Mizuchi el promedio de verdad anduvo mejor (lo calibrado
+  es pesimista ahí). Todo en `Tools/Dev/boss_sims/calibration.py`; `--calib` en `sim_bamboo_master.py` y
+  `'{"calib": true}'` en `mz_run.py` / `kk_fix_run.py`.
+* Con eso, lo de hoy en minutos de juego (simulación calibrada, 200-300 peleas):
+
+| Jefe | Perillas | bueno | promedio |
+|---|---|---|---|
+| Gorō | 1900 + 3040, daño x0.30 / x0.25, tramo 55 (sin cambios) | ~4.3 min | ~6.1 min, ~1.3 muertes |
+| Mizuchi | vida x2.5 (3600), daño 0.33, postura que cura 18 (antes x2.25 y 14) | 4.5 min (3.9-5.0) | 7.3 min, 1.25 muertes, 32 % sin morir |
+| Kokuyō | vida x4 (7200), daño 0.31, tramos 50 / 50 / 45 (antes x3, 0.33, 35 / 35 / 25) | 4.35 min (4.05-4.7) | 6.9 min (p90 10.5), 1.4 muertes, 29 % sin morir |
+| Chikuō | 1900 (antes 2200) | 4.6 min (p90 5.0) | 7.3 min (p90 9.9), 1.0 muertes, 21 % sin morir |
+
+* Kokuyō con 5400 ganaba en ~3.4 min de juego: subirle la vida sola dejaba al promedio en 4.5 muertes, por eso los
+  tramos curan más. Los actos duran ~72 / 87 / 80 s con el bueno; el eclipse sigue sirviendo el 99 % de los dúos,
+  ningún anillo se encima y la sombra hace el ~41 % de los golpes (`kk_fix_run.py actos`).
+* Los cuatro jefes suman ~18 min para el bueno y ~28 min para el promedio. El resto de la partida no está medido.
+* **Es provisorio**: una pelea por bot, y la de Chikuō con los rebotes de C2. Para medir de nuevo, con la partida del
+  usuario respaldada: cargar `prueba_goro` / `prueba_mizuchi` / `prueba_bambu` / `prueba_kokuyo` (`partidas/README.md`),
+  `bot on bueno` tres veces y `bot on promedio` tres veces por jefe, y pegar las líneas `[Nindo] ... vencido en` (en
+  segundos) en `calibration.py`. Su docstring tiene la simulación cruda del código de hoy para sacar el factor nuevo
+  (el bueno: Gorō 366 s, Mizuchi 232, Kokuyō 283, Chikuō 203) y lo que se espera ver.
+
+### 5.2 Chikuō: el desvío del Corte final (C3-A2)
+
+* `GuardHitLow`, `GuardHitLow_P2`, `GuardHitLow_P3` (nuevos, 0.5 s, `Deflect` en f3, `swat_meet` 3, de GUARD a GUARD):
+  GuardHit con la reverencia más honda y la palma (la mano baja en la fase 2, el bastón en la 3) a la altura de la
+  rodilla en f3, donde cruza la hoja del Corte final (0.59 m del piso, 0.65 m adelante).
+* `BambooMasterBoss.PlaySwat(left, guarding, cut)` lo elige con `CutName == "Corte final"` (y `GuardHit` si el
+  controller no lo tiene); la estela de jade y la chispa del desvío van a la altura de esa hoja (`SwatHighFinal` 0.59).
+* swat2.py con el reloj del juego, palma (o bastón) a la hoja en el contacto: a 1.25 / 1.4 / 1.6 m, 2.8 / 5.8 / 12.2 cm
+  (fases 1 y 2) y 4.2 / 5.7 / 11.3 cm (bastón), y 4 cuadros de 60 Hz a 15 cm o menos en los nueve casos (antes 17.5 cm
+  y 1 cuadro a 1.4 m).
+* `BambooMaster.fbx` re-exportado con 5.2: 115 clips, los 112 de antes con los mismos cuadros, tiempos y avance (solo
+  `PoseTest` corrido), 0 avisos, FBX OK, ROUNDTRIP OK.
+* Cuándo se ve: sobre todo como el tercer corte del contraataque después de un parry normal (el que ya no entra).
+
+### 5.3 Chikuō: el paso del viento y las variantes de paso (C3-A3)
+
+* La que pasa al costado sale casi siempre con Kaito a ~2 m (el bot corre hacia él durante el salto atrás: hacerlo
+  despegar más lejos no cambia nada) y hasta el cruce vuela x0.3. Lo que estaba mal era el tramo de después: se
+  escalaba con el mismo x0.3 y frenaba en seco al cortarlo (de 9.5 a 2.6 m/s). Ahora después del cruce vuela lo
+  autorado (`PassTail` 1, sin salirse de la arena: `PassTailFor`) y cae ~2.4 m detrás de Kaito, mirándolo. Simulado:
+  3.8 m de vuelo (antes 2.66, de 6.35 autorados), el cruce a su alcance siempre.
+* Variantes de paso: contra el bot, que pelea a 1.2 m (el imán de su corte) o a 2.2 (donde para), el corto salía 9
+  de cada 10 veces y por distancia era lo correcto. El golpe que abre un combo, una de cada cinco veces (`DriveChance`
+  0.2), entra con el paso largo y corre a Kaito con el pecho hasta 0.45 m (`StepShove`), solo si hay lugar detrás
+  (`ShoveRoom`) y si no viene con su corte ni en su dash. Bueno: 41 cortos, 8 medios y 7 enteros por pelea (2.8 a 1).
+
+### 5.4 Chikuō: el roce del primer corte (C3-A4)
+
+* El primero de una tanda que aparta con la palma igual lo roza: un cuarto del daño, un destello de 0.04 s y sin
+  reacción (`Graze`, `GrazeShare` 0.25); nunca cruza el piso de la fase ni lo deja vencido. El segundo sigue haciéndolo
+  contestar y el tercero se contragolpea.
+* `sim_bamboo_master --human 0.5` (el que corta apenas lo ve): rechazados 59 % -> 36 % (bueno) y 62 % -> 37 %
+  (promedio); el bot de AutoPilot, 43 % -> 23 %.
+* Probé también un hueco al arrancar la respuesta (los cortes entran a x0.5 los primeros 0.35 s): 1-6 cortes por
+  pelea y el rechazo casi igual. Quedó afuera.
+
+### 5.5 Gorō (C3-A5)
+
+* El dash contra el cuerpo: con Kaito en el dash se cruzan y el paso sale entero (`Enemy.TickLunge`, `crossing`; vale
+  para todos los que avanzan en cuadros del clip). `build_team_anims` mide el caso (`dash_into_body_cm`, con Kaito
+  empujado o no antes y el dash en cualquier décimo del paso): 0.0 cm en los 8 golpes con paso; 0 FAIL, 39 avisos.
+* El aviso agachado del SlamWave llega a 1.55 m, pero no con el pecho (1.36 m, de f8 al apex): es la esquina de la
+  hombrera izquierda, que baja con la mano que se apoya adelante, en el borde del radio de Kaito y a la altura de su
+  cabeza (diagnóstico cuadro a cuadro de body_reach; el lint ahora anota el cuadro y la parte). Desde la pausa del aviso
+  hasta la suelta, si Kaito está enfrente el cuerpo lo corre lo justo (`GoroBoss.ClearCrouch`, a lo sumo 1.2 m/s, con
+  `Shove`), con los números del sidecar (`GoroTimings.SlamWaveCrouchFrom` / `SlamWaveCrouchReach`). GoroAnims.fbx
+  no cambia.
+
+### 5.6 Pruebas en Play de la ronda
+
+1. Reimportar `BambooMaster.fbx` (115 clips): consola sin errores; el controller tiene `GuardHitLow`, `_P2` y `_P3`.
+2. Chikuō, `prueba_bambu.json`: un parry normal a una palma y el combo entero: el tercer corte (el Corte final) se
+   aparta con la palma baja, a la altura de la rodilla, y la estela de jade va sobre la hoja. Lo mismo en `chikuo fase
+   2` (la mano izquierda) y `chikuo fase 3` (el bastón). Desde la cámara del juego queda detrás de Kaito: mirarlo de
+   costado.
+3. Un corte suelto a su guardia: la palma lo aparta, la barra baja un poco (2.5 de 1900 por corte) y destella. Tres
+   seguidos: el tercero se contragolpea como antes.
+4. Fases 2 y 3, el paso del viento con Kaito a ~2 m: le pasa al costado sin frenar en el cruce y cae ~2.4 m detrás de
+   él, mirándolo. Cerca del borde de la arena vuela menos (no sale de la arena).
+5. Palmas con Kaito pegado: una de cada cinco que abren un combo entra con el paso largo y lo corre hasta 0.45 m; contra
+   la barrera nunca (el pie apoyado no patina).
+6. Gorō, `prueba_goro.json`: en medio de un martillazo con paso, dash derecho contra su cuerpo: se cruzan y el pie de
+   atrás no patina (mirar que el CharacterController de Kaito no salte al salir de la cápsula de Gorō). Fase 2
+   (`DebugArmor()`), SlamWave con Kaito pegado enfrente: lo corre ~0.2 m mientras se agacha y la hombrera no le entra
+   en la cabeza; contra la barrera no lo mueve.
+7. Balance: lo de 5.1, tres peleas por bot y por jefe.
+
+### 5.7 Lo que sigue abierto
+
+* El balance es provisorio hasta medir con lo de C3 (5.1). El factor de Chikuō se midió con los rebotes de C2 y con
+  Mizuchi el promedio calibrado es pesimista.
+* La hora de juego: los jefes suman ~28 min para el promedio; el resto de la partida no está medido.
+* SlamWave contra la barrera: con Kaito pegado ahí `ClearCrouch` no lo puede correr y la esquina de la hombrera le
+  queda sobre la cabeza (unos centímetros adentro de su radio de 0.30 m, en el borde).
+* El roce casi no se ve en la barra (2.5 de 1900): se nota por el destello.
+* `GuardHitLow` a 1.6 m: 12.2 cm en el contacto (el objetivo era 12).
+* El paso largo de las palmas sale al azar (una de cada cinco): el tiempo del golpe es el mismo, cambia solo cuánto
+  corre a Kaito.
