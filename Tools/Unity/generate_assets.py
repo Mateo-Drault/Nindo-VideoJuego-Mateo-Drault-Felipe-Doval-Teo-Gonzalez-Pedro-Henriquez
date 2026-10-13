@@ -1127,9 +1127,14 @@ def audio_entries():
     for k, v in gen.items():
         sfx.setdefault(k, [])
         sfx[k] = sorted(set(sfx[k] + v)) if k not in ("step",) else sorted(v)
+    # el acero de adorno (los que practican en pareja, el saludo y el bastón de Chikuō): los mismos clips que "clang"
+    # pero con su clave. "clang" es un aviso (nivel Cue, casi 2D, puede sacarle la voz a un golpe) y comparte el
+    # anti-repetición de 40 ms con los choques de guardia y parry de verdad: uno de adorno a 20 m tapaba uno real
+    if "clang" in sfx:
+        sfx["spar_clash"] = list(sfx["clang"])
     # mezcla por niveles (con el volumen de cada llamada): avisos y parry 1.0, golpes ~0.85, silbidos de los enemigos
     # ~0.6, cortes de Kaito ~0.5, pasos ~0.35 (AudioManager.Tier decide además pitch, voces y 2D/3D)
-    vols = {"swing": 0.8, "enemy_swing": 0.85, "enemy_swing_heavy": 0.85, "hurt": 0.9, "ui_select": 0.6, "clang": 0.85,
+    vols = {"swing": 0.8, "enemy_swing": 0.85, "enemy_swing_heavy": 0.85, "hurt": 0.9, "ui_select": 0.6, "clang": 0.85, "spar_clash": 0.5,
             # cascada Kohan: loops 3D largos, por debajo de los avisos de combate
             "falls_roar": 0.8, "falls_spray": 0.5, "falls_gust": 0.7, "water_splash": 0.9}
     entries = []
@@ -1218,7 +1223,6 @@ def content_asset(mats, ctrls, props, zones, manifest, sprites, fonts_g, audio):
             # kuwagata de Gorō asoman por encima de la cabeza (export_sumo/export_goro.py), así que su altura
             # crece en esa misma proporción y el cuerpo sigue midiendo 2.5 m y 3.2 m
             ("kaito", read_guid(A("Animations teo/kaitooo.fbx")), ctrls["kaito"], 1.5, 90),
-            ("kage", read_guid(A("Animations teo/kaitooo.fbx")), ctrls["kaito"], 1.6, 90),
             ("ninja", read_guid(A("Models/Ninja/Ninja 1.fbx")), ctrls["ninja"], 1.7, 90),
             ("sumo", read_guid(A("Characters/Sumo/luchadorsumo.fbx")), ctrls["sumo"], 2.6, 180),
             ("goro", read_guid(A("Models/Minijefe.fbx")), ctrls["goro"], 3.41, 0),

@@ -52,7 +52,7 @@ namespace Nindo
             yield return new WaitForSeconds(intro.Event("HeadRise") * intro.Seconds);
             Game.UI.ShowAreaTitle(title, subtitle);
             yield return new WaitForSeconds((intro.Event("Salute") - intro.Event("HeadRise")) * intro.Seconds);
-            Game.Audio?.Play("clang", transform.position, 0.35f, 0.02f);   // puño contra palma, seco
+            Game.Audio?.Play("spar_clash", transform.position, 0.6f, 0.02f);   // puño contra palma, seco
             yield return new WaitForSeconds((intro.Event("Guard") - intro.Event("Salute")) * intro.Seconds + 0.4f);
             // la charla con los dos en cuadro: detrás de Kaito, él arriba en el claro
             Vector3 kp = p != null ? p.transform.position : b + f * 10f;
@@ -162,7 +162,7 @@ namespace Nindo
             Game.Audio?.Play("step_wood", at, 1f, 0.1f);
             Game.Audio?.Play("ability_wind", at, 0.6f, 0.05f);
             yield return WaitEvent(c, "StaffCatch");
-            Game.Audio?.Play("clang", transform.position, 0.6f, 0.04f);
+            Game.Audio?.Play("spar_clash", transform.position, 1f, 0.04f);
             Game.Audio?.SetBossMusicPhase(3);
             Game.Camera?.Shake(0.3f);
             yield return WaitEvent(c, "StaffPresent");
@@ -248,7 +248,7 @@ namespace Nindo
             float toLand = land > defeatFrom ? (land - defeatFrom) * d.Seconds : 0.35f;
             yield return new WaitForSeconds(toLand);
             Game.Audio?.Play("step_wood", transform.position, land > defeatFrom ? 0.9f : 0.5f, 0.1f);
-            Game.Audio?.Play("clang", transform.position, land > defeatFrom ? 0.25f : 0.12f, 0.15f);
+            Game.Audio?.Play("spar_clash", transform.position, land > defeatFrom ? 0.42f : 0.2f, 0.15f);
             yield return new WaitForSeconds(Mathf.Max(0f, (1f - defeatFrom) * d.Seconds * 0.98f - toLand));
             anim.Play(BambooMasterTimings.Meditate.State, 0.3f);
             // los dos en cuadro, de costado, cuando terminó el plano de la muerte

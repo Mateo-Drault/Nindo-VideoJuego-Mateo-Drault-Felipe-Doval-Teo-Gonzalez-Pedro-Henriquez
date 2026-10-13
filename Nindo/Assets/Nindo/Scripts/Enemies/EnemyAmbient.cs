@@ -529,7 +529,7 @@ namespace Nindo
             if (!Near(out float k)) return;
             Vector3 p = striker.TransformPoint(ClashLocal * enemy.config.scale);
             Game.FX?.DodgeSpark(p);
-            Game.Audio?.Play("clang", p, 0.25f * k);
+            Game.Audio?.Play("spar_clash", p, 0.42f * k);
         }
 
         void Stomp(Vector3 footLocal)
