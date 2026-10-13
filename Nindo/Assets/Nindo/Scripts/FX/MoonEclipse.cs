@@ -12,7 +12,8 @@ namespace Nindo
     ///    niebla violeta #1e1430, ambiente apagado, el cielo se apaga con la niebla (DriveSky) y la tinta tapa la luna del
     ///    cielo... y la del piso.
     ///  - ParryPulse: cada parry del Acto 3 le devuelve un instante la luz a la escena ("el parry ilumina").
-    ///  - MoonReturn: al caer Kokuyō la luna vuelve de golpe (1.4 -> 1.05 en 3 s) y caen pétalos sobre el patio.
+    ///  - MoonReturn: al caer Kokuyō la luz de la luna vuelve de golpe (1.4 -> 1.05 en 3 s), la niebla del eclipse se va
+    ///    en esos 3 s y caen pétalos sobre el patio.
     ///  - ExitArena / ResetAll: deja todo como lo encontró (reintentos y salida).
     /// La cámara del juego (45-55° hacia abajo, FOV 30) nunca ve el cielo: el disco (Nindo/Moon, un quad lejano que
     /// sigue a la cámara) solo entra en PlaySkyShot. Por eso el eclipse también se juega en el piso: la media luna
@@ -51,10 +52,14 @@ namespace Nindo
             IdCloud = Shader.PropertyToID("_CloudColor"), IdStars = Shader.PropertyToID("_StarBrightness");
         /// <summary>
         /// El cielo en el eclipse (DriveSky): el horizonte y el suelo del cielo toman el color de la niebla, el medio se tiñe
-        /// en parte, el cenit y las nubes se apagan y las estrellas brillan más (sin luna se ven más). Medido en
-        /// Tools/Dev/boss_sims/moon_sky_check.py (las mezclas de la cámara de juego al cielo).
+        /// en parte, el cenit y las nubes se apagan y las estrellas brillan más (sin luna se ven más). El horizonte va
+        /// adelante de la niebla (SkyHorizonLead: 1-(1-k)^12, con 6 % de eclipse ya va 52 % y con 25 % el 97 %): el
+        /// terreno lejano toma la niebla de ese momento entera, y un horizonte que la seguía a la par quedaba atrás y lo
+        /// recortaba en toda la transición. Medido en Tools/Dev/boss_sims/moon_sky_check.py (las mezclas de la cámara de
+        /// juego al cielo).
         /// </summary>
-        const float SkyHorizonToFog = 1f, SkyMidToFog = 0.45f, SkyZenithDark = 0.55f, SkyCloudDark = 0.6f, SkyStarsBoost = 1.3f;
+        const float SkyHorizonToFog = 1f, SkyMidToFog = 0.45f, SkyZenithDark = 0.55f, SkyCloudDark = 0.6f, SkyStarsBoost = 1.3f,
+            SkyHorizonLead = 12f;
         // media luna dorada del medallón (props_dojo.build_dojo_courtyard_floor): círculo A menos círculo B corrido
         // hacia el dojo, con la cara de arriba 7 cm sobre el origen del piso
         const float CrescentOuter = 2.55f, CrescentInner = 2.2f, CrescentOffset = 0.95f, CrescentHalo = 0.4f;
@@ -262,7 +267,12 @@ namespace Nindo
             EclipseTo(1f, seconds);
         }
 
-        /// <summary>La luna vuelve (Kokuyō cae): golpe de luz a 1.4 que se asienta en 1.05 en 'settle' s, sin tinta, y pétalos.</summary>
+        /// <summary>
+        /// La luna vuelve (Kokuyō cae): su luz vuelve de golpe (1.4, con el color de la luna, que se asienta en 1.05 en
+        /// 'settle' s), la tinta se va y caen pétalos. La niebla y el ambiente del eclipse se van en esos mismos 'settle' s
+        /// y el cielo los sigue (DriveSky): con la niebla de golpe el terreno lejano pasaba a la del dojo en un cuadro y se
+        /// recortaba contra el cielo del eclipse en pleno plano al cielo.
+        /// </summary>
         public void MoonReturn(float settle = 3f, float petalSeconds = 9f)
         {
             if (!InArena) EnterArena(0f);
@@ -270,7 +280,7 @@ namespace Nindo
             Eclipsed = false;
             EclipseTo(0f, 0.35f);
             flash = 1.5f;
-            current = Look.Lerp(current, arena, 1f);
+            current.color = arena.color;
             current.intensity = arena.intensity * (1.4f / 1.05f);
             Apply(current);
             TweenTo(arena, settle);
@@ -473,8 +483,9 @@ namespace Nindo
         /// apagan y las estrellas se ven más. Con el cielo de siempre (azul y el doble de claro que la niebla) el terreno
         /// lejano, pintado por la niebla, se recortaba contra el horizonte como el borde de una capa al subir la cámara al
         /// cielo (las mezclas de PlaySkyShot), y el puño sobre la luna apagaba todo menos el cielo. Va con la niebla y no con
-        /// la tinta de la luna: en el final la luna vuelve en 0.35 s pero la niebla tarda 3 s, y un cielo azul sobre la
-        /// niebla violeta volvía a recortar.
+        /// la tinta de la luna: en el final la tinta se va en 0.35 s pero la niebla tarda 3 s (MoonReturn), y un cielo azul
+        /// sobre la niebla violeta volvía a recortar. Sin eclipse (k = 0) el cielo es el de siempre: el plano de la
+        /// presentación no cambia.
         /// </summary>
         void DriveSky()
         {
@@ -484,10 +495,13 @@ namespace Nindo
             float k = span.sqrMagnitude > 1e-6f
                 ? Mathf.Clamp01(Vector3.Dot(new Vector3(fog.r, fog.g, fog.b) - a, span) / span.sqrMagnitude)
                 : Eclipsed ? 1f : 0f;
-            if (Mathf.Abs(k - skyK) < 0.002f) return;
+            // fino (al empezar el horizonte se mueve hasta 12 veces más rápido que k) y los extremos exactos: el cielo de
+            // siempre tiene que volver entero al final
+            if (k == skyK || (Mathf.Abs(k - skyK) < 0.0005f && k > 0f && k < 1f)) return;
             skyK = k;
-            skyCopy.SetColor(IdHorizon, Color.Lerp(skyHorizon, fog, k * SkyHorizonToFog));
-            skyCopy.SetColor(IdGround, Color.Lerp(skyGround, fog, k * SkyHorizonToFog));
+            float wh = 1f - Mathf.Pow(1f - k, SkyHorizonLead);
+            skyCopy.SetColor(IdHorizon, Color.Lerp(skyHorizon, fog, wh * SkyHorizonToFog));
+            skyCopy.SetColor(IdGround, Color.Lerp(skyGround, fog, wh * SkyHorizonToFog));
             skyCopy.SetColor(IdMid, Color.Lerp(skyMid, fog, k * SkyMidToFog));
             skyCopy.SetColor(IdZenith, skyZenith * Mathf.Lerp(1f, SkyZenithDark, k));
             skyCopy.SetColor(IdCloud, skyCloud * Mathf.Lerp(1f, SkyCloudDark, k));

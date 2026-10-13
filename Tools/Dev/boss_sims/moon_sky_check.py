@@ -7,9 +7,16 @@ Mide:
   1) en cada estado de la luna (llena, eclipse 0..1, destellos, nubes, aparición) cuánto suma la luna en la franja del borde
      del quad y el salto en 8 bits al cruzarlo (el rectángulo de C2);
   2) en las mezclas de la cámara al cielo con terreno (la transición al eclipse con sus tiempos reales, el plano de la muerte
-     y de la ejecución, que miran casi horizontal en plena oscuridad, y el final con la luna que vuelve) el salto en 8 bits
-     entre el borde de arriba del terreno y el cielo justo encima, con el cielo de siempre y con el que sigue a la niebla.
-Uso: python moon_sky_check.py CARPETA_DE_SALIDA     (escribe .png y un resumen .json; necesita numpy y PIL)
+     y de la ejecución, que miran casi horizontal en plena oscuridad, y el final con la luna que vuelve) dos saltos en 8 bits
+     en el borde de arriba del terreno, "antes" (la build de C2: el cielo de siempre y la niebla del final de golpe) y "hoy":
+       capa    = el cielo justo encima contra el color de la niebla. Es lo que ve un terreno lejano, que la niebla ya pintó
+                 entero: si no es ~0, el terreno se recorta contra el cielo como el borde de una capa. Es el defecto.
+       silueta = el terreno dos píxeles abajo contra el cielo dos arriba. La cresta que se ve en estos planos está a 40-60 m
+                 y la niebla exp2 le deja 60-85 % de su color: es la silueta de un cerro (más oscuro que la niebla en el
+                 eclipse), como la del plano de la presentación con luna llena. Se informa; el cielo no la puede borrar
+                 sin recortar lo lejano (eso sería otra capa).
+Uso: python moon_sky_check.py CARPETA_DE_SALIDA     (escribe .png y un resumen .json; necesita numpy y PIL). Sale con 1 si
+la capa pasa de CAPA_MAX en algún cuadro del eclipse o del final desde que el plano llegó al cielo.
 """
 import os, sys, json, math, re
 import numpy as np
@@ -161,13 +168,24 @@ ECLIPSE_FOG = np.array([0.118, 0.078, 0.188])    # MoonEclipse.EclipseFog (#1e14
 # El salto del borde del terreno depende de esto: los números sirven para comparar cielos, no como valor absoluto
 TERRAIN_LIT = np.array([0.14, 0.137, 0.18])
 TERRAIN_ECLIPSE = np.array([0.062, 0.053, 0.089])
+# Para el final, las mismas estimaciones partidas en luz directa y ambiente (con luna llena 64 % / 36 %; en el eclipse, con la
+# luz a 0.35, 44 % / 56 %): MoonReturn vuelve la luz de golpe (1.4 con el color de la luna, que baja a 1.05 en 3 s) y lleva
+# el ambiente del eclipse al de la arena en esos 3 s.
+DIRECT_LIT, AMB_LIT, AMB_ECLIPSE = 0.64 * TERRAIN_LIT, 0.36 * TERRAIN_LIT, 0.56 * TERRAIN_ECLIPSE
+CAPA_MAX = 6.0
+
+
+def finale_ground(r, snap=False):
+    """El terreno r s después de MoonReturn (hoy); snap = la build de C2, que llevaba la niebla y el ambiente de golpe."""
+    s = 1.0 if snap else ss(r / 3.0)
+    return (1.05 + 0.35 * (1 - ss(r / 3.0))) * DIRECT_LIT / 1.05 + AMB_ECLIPSE + (AMB_LIT - AMB_ECLIPSE) * s
 
 
 def _knobs():
     """Las perillas de MoonEclipse.DriveSky leídas del C# (si se cambian allá, la réplica las sigue)."""
     src = open(os.path.join(REPO, "Nindo", "Assets", "Nindo", "Scripts", "FX", "MoonEclipse.cs"), encoding="utf-8").read()
     out = {}
-    for name in ("SkyHorizonToFog", "SkyMidToFog", "SkyZenithDark", "SkyCloudDark", "SkyStarsBoost"):
+    for name in ("SkyHorizonToFog", "SkyMidToFog", "SkyZenithDark", "SkyCloudDark", "SkyStarsBoost", "SkyHorizonLead"):
         m = re.search(r"\b%s\s*=\s*(-?[0-9.]+)f?" % name, src)
         if not m:
             raise SystemExit("moon_sky_check: falta %s en MoonEclipse.cs" % name)
@@ -179,9 +197,11 @@ DRIVE = _knobs()
 
 
 def sky_colors(k, fog):
-    """MoonEclipse.DriveSky: k = cuánto eclipse tiene la niebla (0..1), fog = el color de la niebla ahora."""
+    """MoonEclipse.DriveSky: k = cuánto eclipse tiene la niebla (0..1), fog = el color de la niebla ahora. El horizonte va
+    adelante (1-(1-k)^SkyHorizonLead)."""
     lerp = lambda a, b, t: a + (b - a) * t
-    return dict(hor=lerp(SKY["hor"], fog, k * DRIVE["SkyHorizonToFog"]), gnd=lerp(SKY["gnd"], fog, k * DRIVE["SkyHorizonToFog"]),
+    wh = 1 - (1 - k) ** DRIVE["SkyHorizonLead"]
+    return dict(hor=lerp(SKY["hor"], fog, wh * DRIVE["SkyHorizonToFog"]), gnd=lerp(SKY["gnd"], fog, wh * DRIVE["SkyHorizonToFog"]),
                 mid=lerp(SKY["mid"], fog, k * DRIVE["SkyMidToFog"]), zen=SKY["zen"] * lerp(1, DRIVE["SkyZenithDark"], k),
                 cloud=SKY["cloud"] * lerp(1, DRIVE["SkyCloudDark"], k), stars=SKY["stars"] * lerp(1, DRIVE["SkyStarsBoost"], k))
 
@@ -352,9 +372,10 @@ def post(scene, bloom=True):
     return np.where(c <= 0.0031308, c * 12.92, 1.055 * np.power(c, 1 / 2.4) - 0.055)
 
 
-def render(pose, st, grid=None, old=False):
-    """st: t, eclipse (tinta de la luna), veil, flash, alpha, fog (0..1: de la niebla del dojo a la del eclipse) y
-    drive (el cielo sigue a la niebla como MoonEclipse.DriveSky)."""
+def render(pose, st, grid=None, old=False, terr=None):
+    """st: t, eclipse (tinta de la luna), veil, flash, alpha, fog (0..1: de la niebla del dojo a la del eclipse), drive (el
+    cielo sigue a la niebla como MoonEclipse.DriveSky) y ground (el color del terreno iluminado, si no sale de fog). terr:
+    las distancias al terreno de esta pose si ya se marcharon (no dependen del estado)."""
     pos, fwd, fov = pose
     dirs, f = rays(pos, fwd, fov)
     e = st.get("fog", 0.0)
@@ -366,18 +387,19 @@ def render(pose, st, grid=None, old=False):
     mc, ma = moon_frag(p, aa, st["t"], st["eclipse"], st["veil"], st["flash"], st["alpha"], old)
     moon_add = np.where(inside[..., None], mc, 0.0)
     moon_a = np.where(inside, ma, 0.0)
-    terr = np.full(dirs.shape[:2], np.inf) if grid is None else terrain(pos, dirs, grid)
+    if terr is None:
+        terr = np.full(dirs.shape[:2], np.inf) if grid is None else terrain(pos, dirs, grid)
     occl = terr < tt
     col_sky = col.copy()
     col = np.where(occl[..., None], col, moon_add + col * (1 - moon_a)[..., None])
     if grid is not None:
         dens = 0.010 * (1 + 0.15 * e)
         vd = terr * (dirs @ f)
-        ground = TERRAIN_LIT * (1 - e) + TERRAIN_ECLIPSE * e
+        ground = st["ground"] if "ground" in st else TERRAIN_LIT * (1 - e) + TERRAIN_ECLIPSE * e
         fogf = np.exp(-(dens * vd) ** 2)[..., None]
         tc = fogc + (ground - fogc) * fogf
         col = np.where(np.isfinite(terr)[..., None], tc, col)
-    return col, col_sky, inside, p, occl, terr
+    return col, col_sky, inside, p, occl, terr, fogc
 
 
 def edge_metrics(col, col_sky, inside, p, occl):
@@ -390,12 +412,15 @@ def edge_metrics(col, col_sky, inside, p, occl):
     return float(diff[band].max()) if band.any() else 0.0, float(step[band].max()) if band.any() else 0.0
 
 
-def skyline_step(col, terr):
-    """El borde de arriba del terreno contra el cielo: en cada columna, el salto en 8 bits (canal que más cambia) entre
-    el terreno dos píxeles abajo del borde y el cielo dos arriba. Devuelve (mediana, p90, columnas) o None."""
+def skyline_step(col, terr, fogc, dens):
+    """El borde de arriba del terreno contra el cielo, por columna (canal que más cambia, en 8 bits): silueta = terreno dos
+    píxeles abajo contra el cielo dos arriba; capa = ese cielo contra el color de la niebla. Devuelve un dict con la
+    mediana y el p90 de cada uno, las columnas y la cresta (distancia mediana y cuánto de su color le deja la niebla) o
+    None si el cuadro no tiene borde."""
     img = (post(col, bloom=False) * 255).round()
+    fog8 = (post(fogc[None, None, :], bloom=False)[0, 0] * 255).round()
     hit = np.isfinite(terr)
-    steps = []
+    sil, cap, dist = [], [], []
     for x in range(hit.shape[1]):
         rows = np.nonzero(hit[:, x])[0]
         if len(rows) == 0:
@@ -403,11 +428,16 @@ def skyline_step(col, terr):
         r = rows[0]
         if r < 3 or r > hit.shape[0] - 4:
             continue
-        steps.append(float(np.abs(img[r + 2, x] - img[r - 2, x]).max()))
-    if not steps:
+        sil.append(float(np.abs(img[r + 2, x] - img[r - 2, x]).max()))
+        cap.append(float(np.abs(img[r - 2, x] - fog8).max()))
+        dist.append(float(terr[r + 2, x]))
+    if not sil:
         return None
-    steps.sort()
-    return round(steps[len(steps) // 2], 1), round(steps[9 * len(steps) // 10], 1), len(steps)
+    med = lambda v: round(sorted(v)[len(v) // 2], 1)
+    p90 = lambda v: round(sorted(v)[9 * len(v) // 10], 1)
+    d = med(dist)
+    return dict(silueta=[med(sil), p90(sil)], capa=[med(cap), p90(cap)], columnas=len(sil), cresta_m=round(d),
+                cresta_sin_niebla=round(math.exp(-(dens * d) ** 2), 2))
 
 
 def save(img, path):
@@ -422,43 +452,59 @@ def label(img, text):
 
 
 def timeline_frames(grid, summary, out):
-    """Las mezclas con terreno, con sus tiempos reales, con el cielo de siempre (antes) y el que sigue a la niebla (hoy)."""
+    """Las mezclas con terreno, con sus tiempos reales: "antes" es la build de C2 (el cielo de siempre y, en el final, la
+    niebla y el ambiente de golpe) y "hoy" la de ahora (el cielo sigue a la niebla y el final la lleva en 3 s). Devuelve
+    los cuadros de "hoy" que pasan CAPA_MAX con la niebla al menos 20 % eclipsada (antes de eso es la noche de luna llena,
+    la del plano de la presentación, que no se toca)."""
     sp, gp, dp = sky_pose(), game_pose(), death_pose()
     seqs = []
     # (a) KokuyoBoss.Eclipse: fx.Eclipse() (niebla, luz y tinta de la luna en 2 s, smoothstep) y PlaySkyShot(0.9, 0.5,
     #     0.6) en el mismo instante: entra en 0.5 s, queda 0.9 y vuelve en 0.6 a la cámara de juego (que no ve el cielo)
     ecl = []
-    for t in (0.15, 0.3, 0.45, 0.9, 1.4, 1.6, 1.75):
+    for t in (0.15, 0.3, 0.45, 0.5, 0.6, 0.75, 0.9, 1.2, 1.4, 1.5, 1.6, 1.75):
         w = min(1.0, t / 0.5) if t <= 1.4 else max(0.0, 1 - (t - 1.4) / 0.6)
         k = ss(t / 2.0)
-        ecl.append(("eclipse t=%.2f s" % t, blend_pose(gp, sp, w), dict(t=3 + t, eclipse=k, veil=0.0, flash=0.0, alpha=1.0, fog=k)))
+        st = dict(t=3 + t, eclipse=k, veil=0.0, flash=0.0, alpha=1.0, fog=k)
+        ecl.append(("eclipse t=%.2f s" % t, blend_pose(gp, sp, w), st, st))
     seqs.append(("transicion_eclipse", ecl))
     # (b) el plano de la muerte (y el de la ejecución, parecido) en pleno eclipse: casi horizontal, ve el horizonte
-    seqs.append(("muerte_ejecucion", [("muerte, eclipse", dp, dict(t=5.0, eclipse=1.0, veil=0.0, flash=0.0, alpha=1.0, fog=1.0))]))
-    # (c) el final: desde el plano de la muerte, PlaySkyShot(1.0, 0.6, 0.8); a los 0.6 s MoonReturn (la tinta se va en
-    #     0.35 s, destello 1.5 que baja 4/s, niebla de vuelta en 3 s)
+    st = dict(t=5.0, eclipse=1.0, veil=0.0, flash=0.0, alpha=1.0, fog=1.0)
+    seqs.append(("muerte_ejecucion", [("muerte, eclipse", dp, st, st)]))
+    # (c) el final: desde el plano de la muerte, PlaySkyShot(1.0, 0.6, 0.8); a los 0.6 s MoonReturn: la tinta se va en
+    #     0.35 s, destello 1.5 que baja 4/s, la luz de la luna de golpe (finale_ground) y la niebla y el ambiente del
+    #     eclipse a los de la arena en 3 s (TweenTo(arena, 3) desde el eclipse). En C2 la niebla volvía en un cuadro.
     fin = []
-    for t in (0.2, 0.4, 0.6, 0.8, 1.2, 1.6, 2.0):
+    for t in (0.2, 0.4, 0.6, 0.8, 1.2, 1.6, 1.8, 2.0, 2.2):
         w = min(1.0, t / 0.6) if t <= 1.6 else max(0.0, 1 - (t - 1.6) / 0.8)
         r = max(0.0, t - 0.6)
-        ink = 1.0 - ss(r / 0.35) if t >= 0.6 else 1.0
-        flash = max(0.0, 1.5 - 4 * r) if t >= 0.6 else 0.0
-        fog = 1.0 - ss(r / 3.0) if t >= 0.6 else 1.0
-        fin.append(("final t=%.1f s" % t, blend_pose(dp, sp, w), dict(t=8 + t, eclipse=ink, veil=0.0, flash=flash, alpha=1.0, fog=fog)))
+        back = t >= 0.6
+        ink = 1.0 - ss(r / 0.35) if back else 1.0
+        flash = max(0.0, 1.5 - 4 * r) if back else 0.0
+        base = dict(t=8 + t, eclipse=ink, veil=0.0, flash=flash, alpha=1.0)
+        hoy = dict(base, fog=1.0 - ss(r / 3.0) if back else 1.0)
+        c2 = dict(base, fog=0.0 if back else 1.0)
+        if back:
+            hoy["ground"], c2["ground"] = finale_ground(r), finale_ground(r, snap=True)
+        fin.append(("final t=%.1f s" % t, blend_pose(dp, sp, w), c2, hoy))
     seqs.append(("final_luna_vuelve", fin))
     summary["borde_terreno_cielo_8bit"] = {}
+    fails = []
     for name, frames in seqs:
         rows, res = [], {}
-        for lab, pose, st in frames:
-            pair = []
-            for tag, drive in (("antes", False), ("hoy", True)):
-                col, cs, ins, p, oc, terr = render(pose, dict(st, drive=drive), grid)
-                m = skyline_step(col, terr)
+        for lab, pose, st_c2, st_hoy in frames:
+            pair, terr = [], None
+            for tag, st, drive in (("antes", st_c2, False), ("hoy", st_hoy, True)):
+                col, cs, ins, p, oc, terr, fogc = render(pose, dict(st, drive=drive), grid, terr=terr)
+                m = skyline_step(col, terr, fogc, 0.010 * (1 + 0.15 * st["fog"]))
                 res.setdefault(lab, {})[tag] = m
-                pair.append(label(post(col), "%s  %s  borde %s" % (tag, lab, "-" if m is None else "%.0f/%.0f" % m[:2])))
+                if tag == "hoy" and m is not None and st["fog"] >= 0.2 and m["capa"][0] > CAPA_MAX:
+                    fails.append("%s: capa %.0f" % (lab, m["capa"][0]))
+                txt = "-" if m is None else "capa %.0f  silueta %.0f" % (m["capa"][0], m["silueta"][0])
+                pair.append(label(post(col), "%s  %s  %s" % (tag, lab, txt)))
             rows.append(np.concatenate(pair, 1))
         summary["borde_terreno_cielo_8bit"][name] = res
         save(np.concatenate(rows, 0), os.path.join(out, "cielo_%s.png" % name))
+    return fails
 
 
 def main(out):
@@ -480,7 +526,7 @@ def main(out):
     for st in states:
         row = {"estado": st["name"]}
         for tag, old in (("hoy", False), ("antes", True)):
-            col, cs, ins, p, oc, _ = render(sp, st, None, old)
+            col, cs, ins, p, oc, _, _ = render(sp, st, None, old)
             m, s8 = edge_metrics(col, cs, ins, p, oc)
             row[tag] = {"luz_en_el_borde": round(m, 5), "salto_8bit": s8}
             worst[tag][0] = max(worst[tag][0], m); worst[tag][1] = max(worst[tag][1], s8)
@@ -493,7 +539,7 @@ def main(out):
         tiles, diffs = [], []
         for e in seq:
             st = dict(eclipse=e, veil=0.0, flash=0.0, alpha=1.0, t=3.0, fog=e, drive=not old)
-            col, cs, ins, p, oc, _ = render(sp, st, None, old)
+            col, cs, ins, p, oc, _, _ = render(sp, st, None, old)
             tiles.append(label(post(col), "%s  eclipse %.2f" % (tag, e)))
             diffs.append(label(np.clip(np.abs(col - cs).max(-1, keepdims=True) * 40, 0, 1).repeat(3, -1),
                                "luz de la luna x40 (borde del quad = rectangulo)"))
@@ -503,14 +549,19 @@ def main(out):
     for tag, old in (("antes", True), ("hoy", False)):
         for st in (dict(eclipse=0.0, veil=0.0, flash=1.5, alpha=1.0, t=5.0, fog=1.0, drive=not old),
                    dict(eclipse=1.0, veil=0.0, flash=1.0, alpha=1.0, t=5.0, fog=1.0, drive=not old)):
-            col, cs, ins, p, oc, _ = render(sp, st, None, old)
+            col, cs, ins, p, oc, _, _ = render(sp, st, None, old)
             tiles.append(label(post(col), "%s  %s" % (tag, "vuelve la luna" if st["eclipse"] == 0 else "parry en el eclipse")))
     save(np.concatenate([np.concatenate(tiles[:2], 1), np.concatenate(tiles[2:], 1)], 0), os.path.join(out, "cielo_destellos.png"))
     # 4) los planos con terreno (horizonte y borde del mapa) con sus tiempos reales
-    timeline_frames(height_grid(), summary, out)
+    fails = timeline_frames(height_grid(), summary, out)
+    summary["capa_maxima"] = CAPA_MAX
+    summary["capa_fuera_de_rango"] = fails
     json.dump(summary, open(os.path.join(out, "moon_sky_check.json"), "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     print(json.dumps({k: v for k, v in summary.items() if k != "estados"}, ensure_ascii=False, indent=1))
+    if fails:
+        print("moon_sky_check: el cielo recorta al terreno lejano en " + "; ".join(fails))
+    return 1 if fails else 0
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "out_moon"))
+    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else os.path.join(HERE, "out_moon")))
