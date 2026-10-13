@@ -8,8 +8,8 @@ de la pared del cráter de la cumbre (radio 17.5 m alrededor del centro de la ar
 6.5-9 m, las que vendrían del lado de la cámara espejadas al otro lado, con arco 2.2 + 0.3 d. Vuelan 0.8-1.2 s, 2.2
 veces más grandes al salir, y llegan pegadas en el cuadro 'slam_<Pieza>' de ArmorRise. La cámara
 es el plano de costado del juego (GoroBoss.PlayRiseShot: por su IZQUIERDA, el lado contrario al martillo clavado, 85 % de
-costado y 45 % de frente; de 7.2 a 6 m mientras está tirado y desde que se arrodilla hasta el rugido se aleja a 12.5 m
-mirando a 3.4 m de altura; FOV 42). Hoja: OUT/goro_ArmorRise_juego.png
+costado y 45 % de frente; de 7.2 a 6 m mientras está tirado y desde que se arrodilla hasta el rugido se aleja a 10 m
+mirando a 2.9 m de altura desde 2.6 m; FOV 42). Hoja: OUT/goro_ArmorRise_juego.png
 """
 import bpy, os, sys, math, json
 from mathutils import Vector, Matrix, Quaternion
@@ -23,7 +23,7 @@ import nindo_anim as NA      # noqa: E402
 
 FPS = 30.0
 RIM = 17.5
-SHOT_START, SHOT_NEAR, SHOT_FAR = 7.2, 6.0, 12.5
+SHOT_START, SHOT_NEAR, SHOT_FAR = 7.2, 6.0, 10.0
 SIDE_DIST, SIDE_BACK, SIDE_ARC = 4.6, 0.38, 1.3   # GoroArmor: las que se tiran de costado
 FLIGHT_SCALE = 1.2                 # GoroArmor.FlightScale
 # GoroArmor.Specs: giro (grados), eje y dirección de salida en el marco de Gorō de Unity (+Z adelante, +X derecha)
@@ -124,8 +124,8 @@ def side_camera(cam, cam_dir, ts, kneel, roar):
     """GoroBoss.PlayRiseShot: cerca y bajo mientras está tirado; desde que se arrodilla se aleja y sube hasta el rugido."""
     a, b = ss(ts / kneel), ss((ts - kneel) / max(0.1, roar - kneel))
     c = Vector((0.0, 0.0, 0.0))
-    pos = c + cam_dir * lerp(lerp(SHOT_START, SHOT_NEAR, a), SHOT_FAR, b) + Vector((0, 0, lerp(lerp(1.7, 2.1, a), 3.0, b)))
-    look = c + Vector((0, 0, lerp(lerp(0.7, 1.3, a), 3.4, b)))
+    pos = c + cam_dir * lerp(lerp(SHOT_START, SHOT_NEAR, a), SHOT_FAR, b) + Vector((0, 0, lerp(lerp(1.7, 2.1, a), 2.6, b)))
+    look = c + Vector((0, 0, lerp(lerp(0.7, 1.3, a), 2.9, b)))
     cd = cam.data
     cd.type = 'PERSP'
     cd.sensor_fit = 'VERTICAL'

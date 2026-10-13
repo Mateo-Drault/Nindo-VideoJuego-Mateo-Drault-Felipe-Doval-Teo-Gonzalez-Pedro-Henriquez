@@ -74,8 +74,11 @@ namespace Nindo
         const float ReintroTime = 1.2f;
         // el plano de costado: tirado cerca y bajo (de 7.2 a 6 m: Gorō tirado ocupa dos tercios del ancho y las rocas que se
         // tiran de costado entran por los bordes, GoroArmor.PlanAssembly); desde que se arrodilla se aleja para que entren
-        // las cumbres de la espalda y el martillo del rugido
-        const float ShotStart = 7.2f, ShotNear = 6f, ShotFar = 12.5f, ShotFov = 42f;
+        // las cumbres de la espalda y el martillo del rugido, hasta 10 m, mirando a 2.9 m desde 2.6 m: entero, del piso al
+        // martillo en alto (a 12.5 m y mirando a 3.4 m el rugido quedaba chico, una figura en el medio de la cumbre: la
+        // armadura recién armada es lo que se tiene que ver; Tools/Blender/bosses/goro/goro_rise_review)
+        const float ShotStart = 7.2f, ShotNear = 6f, ShotFar = 10f, ShotFov = 42f;
+        const float ShotFarUp = 2.6f, ShotFarLook = 2.9f;
 
         public bool Armored => armored;
         bool armored, inCinematic, assembling, wideFrame;
@@ -538,8 +541,8 @@ namespace Nindo
                 float a = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / kneel));
                 float b = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01((t - kneel) / Mathf.Max(0.1f, roar - kneel)));
                 float dist = Mathf.Lerp(Mathf.Lerp(ShotStart, ShotNear, a), ShotFar, b);
-                Vector3 pos = c + dir * dist + Vector3.up * Mathf.Lerp(Mathf.Lerp(1.7f, 2.1f, a), 3.0f, b);
-                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, 1.3f, a), 3.4f, b);
+                Vector3 pos = c + dir * dist + Vector3.up * Mathf.Lerp(Mathf.Lerp(1.7f, 2.1f, a), ShotFarUp, b);
+                Vector3 look = c + Vector3.up * Mathf.Lerp(Mathf.Lerp(0.7f, 1.3f, a), ShotFarLook, b);
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
             }, () => ShotFov, 0.9f, duration, 0.8f);
         }
