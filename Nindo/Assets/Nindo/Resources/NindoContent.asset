@@ -309,6 +309,13 @@ MonoBehaviour:
     - Combo3B
     - SlamWave
     - AvalancheSummon
+    - Combo1Planted
+    - Combo2Planted
+    - Combo3Planted
+    - Combo1BPlanted
+    - Combo2BPlanted
+    - Combo3BPlanted
+    - SlamWavePlanted
     stateLengths:
     - 3.2
     - 1.8333
@@ -332,6 +339,13 @@ MonoBehaviour:
     - 2.1333
     - 2.1333
     - 3.0
+    - 1.8333
+    - 1.7333
+    - 1.7
+    - 2.2333
+    - 1.7
+    - 2.1333
+    - 2.1333
   - id: grandpa
     model: {fileID: 919132149155446097, guid: 1b406ff4438a21ba4c45f9adbb20ea7d, type: 3}
     controller: {fileID: 9100000, guid: be45274efe33497904d9a5dacd0d55a7, type: 2}

@@ -386,7 +386,21 @@
      ]
     },
     "magnet_config_cm": 0.0,
-    "magnet_noshove_cm": 40.0,
+    "magnet_noshove_cm": 2.5,
+    "magnet_partial_cm": 2.5,
+    "magnet_noshove_raw_cm": 55.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
     "game_T_s": 1.046,
     "game_hold_s": 0.0,
     "contact_tip_m": [
@@ -573,7 +587,21 @@
      ]
     },
     "magnet_config_cm": 0.0,
-    "magnet_noshove_cm": 25.0,
+    "magnet_noshove_cm": 0.0,
+    "magnet_partial_cm": 0.0,
+    "magnet_noshove_raw_cm": 40.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
     "game_T_s": 0.928,
     "game_hold_s": 0.0,
     "contact_tip_m": [
@@ -754,7 +782,21 @@
      ]
     },
     "magnet_config_cm": 0.0,
-    "magnet_noshove_cm": 25.0,
+    "magnet_noshove_cm": 0.0,
+    "magnet_partial_cm": 0.0,
+    "magnet_noshove_raw_cm": 40.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
     "game_T_s": 1.057,
     "game_hold_s": 0.0,
     "contact_tip_m": [
@@ -942,6 +984,12 @@
     },
     "magnet_config_cm": 0.0,
     "magnet_noshove_cm": 0.0,
+    "magnet_partial_cm": 0.0,
+    "magnet_noshove_raw_cm": 0.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": []
+    },
     "game_T_s": 1.422,
     "game_hold_s": 0.0,
     "contact_tip_m": [
@@ -2348,7 +2396,22 @@
      ]
     },
     "magnet_config_cm": 0.0,
-    "magnet_noshove_cm": 50.0,
+    "magnet_noshove_cm": 0.0,
+    "magnet_partial_cm": 0.0,
+    "magnet_noshove_raw_cm": 65.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ]
+    },
     "game_T_s": 1.505,
     "game_hold_s": 0.0,
     "contact_tip_m": [
@@ -2537,7 +2600,21 @@
      ]
     },
     "magnet_config_cm": 0.0,
-    "magnet_noshove_cm": 25.0,
+    "magnet_noshove_cm": 0.0,
+    "magnet_partial_cm": 0.0,
+    "magnet_noshove_raw_cm": 40.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
     "game_T_s": 0.9,
     "game_hold_s": 0.0,
     "contact_tip_m": [
@@ -2724,7 +2801,22 @@
      ]
     },
     "magnet_config_cm": 0.0,
-    "magnet_noshove_cm": 50.0,
+    "magnet_noshove_cm": 0.0,
+    "magnet_partial_cm": 0.0,
+    "magnet_noshove_raw_cm": 65.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+     ]
+    },
     "game_T_s": 1.533,
     "game_hold_s": 0.0,
     "contact_tip_m": [
@@ -2921,7 +3013,21 @@
      ]
     },
     "magnet_config_cm": 0.0,
-    "magnet_noshove_cm": 35.0,
+    "magnet_noshove_cm": 1.0,
+    "magnet_partial_cm": 1.0,
+    "magnet_noshove_raw_cm": 50.0,
+    "magnet_planted_q": {
+     "empuja": [],
+     "no": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6
+     ]
+    },
     "game_T_s": 1.25,
     "game_hold_s": 0.031,
     "contact_tip_m": [
@@ -3073,6 +3179,946 @@
     "arm_pop_deg": 0.0,
     "hand_step_max_m": 0.438,
     "hammer_head_step_max_m": 1.644
+   }
+  },
+  "Combo1Planted": {
+   "first": 1620,
+   "last": 1675,
+   "frames": 55,
+   "seconds": 1.8333,
+   "loop": false,
+   "timing": {
+    "kind": "heavy",
+    "apex": 21,
+    "contact": 29,
+    "active": [
+     29,
+     33
+    ],
+    "hold": [
+     12,
+     21
+    ],
+    "windup": 0.85,
+    "state": "Combo1Planted",
+    "reach": 2.5,
+    "release_rate": 1.2,
+    "planted_of": "Combo1",
+    "fork": 22,
+    "armored": true
+   },
+   "normalized": {
+    "apex": 0.3818,
+    "contact": 0.5273,
+    "hold": [
+     0.2182,
+     0.3818
+    ],
+    "active": [
+     0.5273,
+     0.6
+    ]
+   },
+   "notes": "martillazo en diagonal; aviso: martillo arriba a la derecha (en el lugar: Kaito no se deja empujar)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.2,
+    "wrists": {
+     "r": {
+      "excess": 0.97,
+      "twist": 23.8,
+      "fore": 100.0,
+      "swivel": 87.0,
+      "clamp": 28.5,
+      "swing": 37.2,
+      "pinned": 0.0,
+      "pron": [
+       -61.5,
+       84.4
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.55,
+      "twist": 25.8,
+      "fore": 103.1,
+      "swivel": 58.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "swing": 22.3,
+      "pinned": 0.15,
+      "pron": [
+       0.9,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 26.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 38.4,
+    "hip_acc_cm": 3.7,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 15.1,
+      "min": 9.3,
+      "max": 15.6
+     },
+     "l": {
+      "ref": 15.1,
+      "min": 11.7,
+      "max": 14.3
+     }
+    },
+    "hold_tip_mps": 0.75,
+    "peak_frame": 24,
+    "game_T_s": 1.046,
+    "game_hold_s": 0.0,
+    "contact_tip_m": [
+     0.75,
+     -3.66,
+     0.9
+    ],
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": -0.6,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
+    "weapon_in_body_frames": [],
+    "armor_lowest_cm": 4.3,
+    "hammer_turn_max_deg": 25.0,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.431,
+    "hammer_head_step_max_m": 1.24,
+    "planted_prefork_cm": 0.92,
+    "planted_fork_cm": 3.4,
+    "body_reach_m": {
+     "golpe": 1.264,
+     "aviso": 0.959,
+     "kaito": 1.45
+    }
+   }
+  },
+  "Combo2Planted": {
+   "first": 1685,
+   "last": 1737,
+   "frames": 52,
+   "seconds": 1.7333,
+   "loop": false,
+   "timing": {
+    "kind": "heavy",
+    "apex": 18,
+    "contact": 26,
+    "active": [
+     26,
+     29
+    ],
+    "hold": [
+     13,
+     18
+    ],
+    "windup": 0.5,
+    "state": "Combo2Planted",
+    "reach": 2.7,
+    "regrip": [
+     [
+      1,
+      3
+     ]
+    ],
+    "release_rate": 1.2,
+    "planted_of": "Combo2",
+    "fork": 19,
+    "armored": true
+   },
+   "normalized": {
+    "apex": 0.3462,
+    "contact": 0.5,
+    "hold": [
+     0.25,
+     0.3462
+    ],
+    "active": [
+     0.5,
+     0.5577
+    ]
+   },
+   "notes": "revés horizontal; aviso: martillo atrás a la izquierda (en el lugar: Kaito no se deja empujar)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.96,
+      "twist": 25.2,
+      "fore": 98.4,
+      "swivel": 82.0,
+      "clamp": 24.6,
+      "swing": 36.9,
+      "pinned": 0.0,
+      "pron": [
+       -62.3,
+       82.8
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.85,
+      "twist": 43.2,
+      "fore": 103.1,
+      "swivel": 61.0,
+      "clamp": 3.0,
+      "asked_over": 0.0,
+      "swing": 54.6,
+      "pinned": 0.24,
+      "pron": [
+       21.3,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 47.9,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 41.6,
+    "hip_acc_cm": 2.8,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 15.1,
+      "min": 9.6,
+      "max": 12.5
+     },
+     "l": {
+      "ref": 15.1,
+      "min": 15.1,
+      "max": 15.7
+     }
+    },
+    "hold_tip_mps": 0.66,
+    "peak_frame": 22,
+    "game_T_s": 0.928,
+    "game_hold_s": 0.0,
+    "contact_tip_m": [
+     0.15,
+     -3.85,
+     1.1
+    ],
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": 0.7,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
+    "weapon_in_body_frames": [],
+    "armor_lowest_cm": 6.5,
+    "hammer_turn_max_deg": 27.2,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.38,
+    "hammer_head_step_max_m": 1.584,
+    "planted_prefork_cm": 0.21,
+    "planted_fork_cm": 2.8,
+    "body_reach_m": {
+     "golpe": 1.378,
+     "aviso": 1.136,
+     "kaito": 1.45
+    }
+   }
+  },
+  "Combo3Planted": {
+   "first": 1747,
+   "last": 1798,
+   "frames": 51,
+   "seconds": 1.7,
+   "loop": false,
+   "timing": {
+    "kind": "heavy",
+    "apex": 22,
+    "contact": 29,
+    "active": [
+     29,
+     32
+    ],
+    "hold": [
+     17,
+     22
+    ],
+    "windup": 0.5,
+    "state": "Combo3Planted",
+    "reach": 2.9,
+    "release_rate": 1.2,
+    "planted_of": "Combo3",
+    "fork": 23,
+    "armored": true
+   },
+   "normalized": {
+    "apex": 0.4314,
+    "contact": 0.5686,
+    "hold": [
+     0.3333,
+     0.4314
+    ],
+    "active": [
+     0.5686,
+     0.6275
+    ]
+   },
+   "notes": "martillazo de arriba; aviso: martillo atrás de la cabeza (en el lugar: Kaito no se deja empujar)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.97,
+      "twist": 26.4,
+      "fore": 100.1,
+      "swivel": 81.1,
+      "clamp": 22.4,
+      "swing": 37.8,
+      "pinned": 0.0,
+      "pron": [
+       -61.7,
+       84.5
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.59,
+      "twist": 28.0,
+      "fore": 103.1,
+      "swivel": 69.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "swing": 24.5,
+      "pinned": 0.17,
+      "pron": [
+       16.0,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 25.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 33.4,
+    "hip_acc_cm": 3.4,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 15.1,
+      "min": 9.3,
+      "max": 14.6
+     },
+     "l": {
+      "ref": 15.1,
+      "min": 11.7,
+      "max": 15.7
+     }
+    },
+    "hold_tip_mps": 1.11,
+    "peak_frame": 28,
+    "game_T_s": 1.057,
+    "game_hold_s": 0.0,
+    "contact_tip_m": [
+     0.05,
+     -3.9,
+     0.92
+    ],
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": 0.7,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
+    "weapon_in_body_frames": [],
+    "armor_lowest_cm": 1.3,
+    "hammer_turn_max_deg": 18.3,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.458,
+    "hammer_head_step_max_m": 0.922,
+    "planted_prefork_cm": 0.25,
+    "planted_fork_cm": 3.9,
+    "body_reach_m": {
+     "golpe": 1.319,
+     "aviso": 0.909,
+     "kaito": 1.45
+    }
+   }
+  },
+  "Combo1BPlanted": {
+   "first": 1808,
+   "last": 1875,
+   "frames": 67,
+   "seconds": 2.2333,
+   "loop": false,
+   "timing": {
+    "kind": "heavy",
+    "apex": 32,
+    "contact": 41,
+    "active": [
+     41,
+     45
+    ],
+    "hold": [
+     26,
+     32
+    ],
+    "windup": 1.2,
+    "state": "Combo1BPlanted",
+    "reach": 2.6,
+    "feint": [
+     12,
+     20
+    ],
+    "armor_window": [
+     6,
+     43
+    ],
+    "punish": [
+     47,
+     67
+    ],
+    "release_rate": 1.2,
+    "swing_ok": [
+     [
+      12,
+      19
+     ]
+    ],
+    "planted_of": "Combo1B",
+    "fork": 33,
+    "armored": true
+   },
+   "normalized": {
+    "apex": 0.4776,
+    "contact": 0.6119,
+    "hold": [
+     0.3881,
+     0.4776
+    ],
+    "active": [
+     0.6119,
+     0.6716
+    ]
+   },
+   "notes": "fase 2: martillazo en diagonal con amague; el golpe sale tarde (en el lugar: Kaito no se deja empujar)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 7.6,
+    "wrists": {
+     "r": {
+      "excess": 0.97,
+      "twist": 23.8,
+      "fore": 100.8,
+      "swivel": 87.0,
+      "clamp": 28.5,
+      "swing": 37.2,
+      "pinned": 0.0,
+      "pron": [
+       -61.5,
+       85.2
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.55,
+      "twist": 31.9,
+      "fore": 103.1,
+      "swivel": 57.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "swing": 22.7,
+      "pinned": 0.12,
+      "pron": [
+       1.1,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 26.6,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 37.4,
+    "hip_acc_cm": 7.2,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 15.1,
+      "min": 9.2,
+      "max": 15.6
+     },
+     "l": {
+      "ref": 15.1,
+      "min": 10.7,
+      "max": 15.7
+     }
+    },
+    "hold_tip_mps": 0.97,
+    "peak_frame": 39,
+    "game_T_s": 1.505,
+    "game_hold_s": 0.0,
+    "contact_tip_m": [
+     0.75,
+     -3.66,
+     0.9
+    ],
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": -0.6,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
+    "weapon_in_body_frames": [],
+    "armor_lowest_cm": 1.6,
+    "hammer_turn_max_deg": 25.8,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.425,
+    "hammer_head_step_max_m": 1.326,
+    "planted_prefork_cm": 0.92,
+    "planted_fork_cm": 3.9,
+    "body_reach_m": {
+     "golpe": 1.264,
+     "aviso": 1.143,
+     "kaito": 1.45
+    }
+   }
+  },
+  "Combo2BPlanted": {
+   "first": 1885,
+   "last": 1936,
+   "frames": 51,
+   "seconds": 1.7,
+   "loop": false,
+   "timing": {
+    "kind": "heavy",
+    "apex": 18,
+    "contact": 25,
+    "active": [
+     25,
+     29
+    ],
+    "hold": [
+     14,
+     18
+    ],
+    "windup": 0.7,
+    "state": "Combo2BPlanted",
+    "reach": 2.8,
+    "armor_window": [
+     4,
+     28
+    ],
+    "punish": [
+     36,
+     51
+    ],
+    "regrip": [
+     [
+      1,
+      3
+     ]
+    ],
+    "release_rate": 1.2,
+    "planted_of": "Combo2B",
+    "fork": 19,
+    "armored": true
+   },
+   "normalized": {
+    "apex": 0.3529,
+    "contact": 0.4902,
+    "hold": [
+     0.2745,
+     0.3529
+    ],
+    "active": [
+     0.4902,
+     0.5686
+    ]
+   },
+   "notes": "fase 2: barrido a ras del piso de izquierda a derecha (en el lugar: Kaito no se deja empujar)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.96,
+      "twist": 24.9,
+      "fore": 105.6,
+      "swivel": 90.0,
+      "clamp": 21.8,
+      "swing": 39.3,
+      "pinned": 0.06,
+      "pron": [
+       -63.9,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.69,
+      "twist": 40.1,
+      "fore": 103.1,
+      "swivel": 75.0,
+      "clamp": 3.0,
+      "asked_over": 0.0,
+      "swing": 30.2,
+      "pinned": 0.18,
+      "pron": [
+       21.9,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 47.9,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 41.6,
+    "hip_acc_cm": 1.9,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 15.1,
+      "min": 9.6,
+      "max": 13.5
+     },
+     "l": {
+      "ref": 15.1,
+      "min": 11.7,
+      "max": 15.8
+     }
+    },
+    "hold_tip_mps": 0.35,
+    "peak_frame": 21,
+    "game_T_s": 0.9,
+    "game_hold_s": 0.0,
+    "contact_tip_m": [
+     -0.3,
+     -3.68,
+     0.64
+    ],
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": 1.3,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
+    "weapon_in_body_frames": [],
+    "armor_lowest_cm": 3.6,
+    "hammer_turn_max_deg": 20.7,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.466,
+    "hammer_head_step_max_m": 0.95,
+    "planted_prefork_cm": 0.31,
+    "planted_fork_cm": 7.0,
+    "body_reach_m": {
+     "golpe": 1.373,
+     "aviso": 1.228,
+     "kaito": 1.45
+    }
+   }
+  },
+  "Combo3BPlanted": {
+   "first": 1946,
+   "last": 2010,
+   "frames": 64,
+   "seconds": 2.1333,
+   "loop": false,
+   "timing": {
+    "kind": "heavy",
+    "apex": 32,
+    "contact": 42,
+    "active": [
+     42,
+     45
+    ],
+    "hold": [
+     26,
+     32
+    ],
+    "windup": 1.2,
+    "state": "Combo3BPlanted",
+    "reach": 3.0,
+    "pump": [
+     18,
+     26
+    ],
+    "armor_window": [
+     5,
+     44
+    ],
+    "punish": [
+     48,
+     64
+    ],
+    "release_rate": 1.2,
+    "planted_of": "Combo3B",
+    "fork": 33,
+    "armored": true
+   },
+   "normalized": {
+    "apex": 0.5,
+    "contact": 0.6562,
+    "hold": [
+     0.4062,
+     0.5
+    ],
+    "active": [
+     0.6562,
+     0.7031
+    ]
+   },
+   "notes": "fase 2: martillazo de arriba con bombeo; el golpe sale tarde (en el lugar: Kaito no se deja empujar)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.2,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.97,
+      "twist": 27.6,
+      "fore": 105.6,
+      "swivel": 81.1,
+      "clamp": 22.4,
+      "swing": 37.6,
+      "pinned": 0.05,
+      "pron": [
+       -61.9,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.59,
+      "twist": 33.7,
+      "fore": 103.1,
+      "swivel": 70.0,
+      "clamp": 0.0,
+      "asked_over": 0.0,
+      "swing": 24.5,
+      "pinned": 0.17,
+      "pron": [
+       14.8,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 25.3,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 35.0,
+    "hip_acc_cm": 5.6,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 15.1,
+      "min": 9.3,
+      "max": 14.2
+     },
+     "l": {
+      "ref": 15.1,
+      "min": 11.2,
+      "max": 15.1
+     }
+    },
+    "hold_tip_mps": 0.75,
+    "peak_frame": 40,
+    "game_T_s": 1.533,
+    "game_hold_s": 0.0,
+    "contact_tip_m": [
+     0.05,
+     -3.9,
+     0.92
+    ],
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": 0.6,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
+    "weapon_in_body_frames": [],
+    "armor_lowest_cm": -0.6,
+    "hammer_turn_max_deg": 17.9,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.468,
+    "hammer_head_step_max_m": 0.947,
+    "planted_prefork_cm": 0.37,
+    "planted_fork_cm": 2.7,
+    "body_reach_m": {
+     "golpe": 1.333,
+     "aviso": 0.912,
+     "kaito": 1.45
+    }
+   }
+  },
+  "SlamWavePlanted": {
+   "first": 2020,
+   "last": 2084,
+   "frames": 64,
+   "seconds": 2.1333,
+   "loop": false,
+   "timing": {
+    "kind": "unblockable",
+    "apex": 24,
+    "contact": 34,
+    "active": [
+     34,
+     37
+    ],
+    "hold": [
+     14,
+     24
+    ],
+    "windup": 1.25,
+    "state": "SlamWavePlanted",
+    "reach": 3.0,
+    "armor_window": [
+     5,
+     36
+    ],
+    "punish": [
+     48,
+     64
+    ],
+    "plow": [
+     34,
+     43
+    ],
+    "impacts": {
+     "wave": [
+      0.05,
+      -3.9
+     ]
+    },
+    "events": {
+     "wave": 34,
+     "plow_end": 43
+    },
+    "release_rate": 1.2,
+    "planted_of": "SlamWave",
+    "fork": 25,
+    "armored": true
+   },
+   "normalized": {
+    "apex": 0.375,
+    "contact": 0.5312,
+    "hold": [
+     0.2188,
+     0.375
+    ],
+    "active": [
+     0.5312,
+     0.5781
+    ]
+   },
+   "notes": "fase 2: arrastra el martillo atrás y lo clava adelante: la onda sale por el piso (en el lugar: Kaito no se deja empujar)",
+   "lint": {
+    "reach_miss_cm": {
+     "hands": 0.0,
+     "legs": 0.0
+    },
+    "hip_drop_cm": 0.0,
+    "wrists": {
+     "r": {
+      "excess": 0.97,
+      "twist": 26.9,
+      "fore": 105.6,
+      "swivel": 87.0,
+      "clamp": 31.5,
+      "swing": 38.3,
+      "pinned": 0.28,
+      "pron": [
+       -61.5,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     },
+     "l": {
+      "excess": 0.99,
+      "twist": 36.3,
+      "fore": 103.1,
+      "swivel": 72.5,
+      "clamp": 10.6,
+      "asked_over": 0.0,
+      "swing": 51.5,
+      "pinned": 0.31,
+      "pron": [
+       15.1,
+       90.0
+      ],
+      "clamp_tell": 0.0
+     }
+    },
+    "solver_jump_deg": 28.0,
+    "local_pop_deg": 0.0,
+    "local_max_deg": 40.0,
+    "hip_acc_cm": 11.4,
+    "grip_gap_cm": {
+     "r": {
+      "ref": 15.1,
+      "min": 9.8,
+      "max": 12.8
+     },
+     "l": {
+      "ref": 15.1,
+      "min": 11.5,
+      "max": 14.4
+     }
+    },
+    "hold_tip_mps": 0.88,
+    "peak_frame": 34,
+    "game_T_s": 1.25,
+    "game_hold_s": 0.031,
+    "contact_tip_m": [
+     0.05,
+     -3.9,
+     0.92
+    ],
+    "floor_skate_cm": {
+     "r": [],
+     "l": []
+    },
+    "lowest_body_cm": 0.0,
+    "lowest_weapon_cm": -2.1,
+    "weapon_in_body_cm": 0.0,
+    "weapon_in_body_frame": -1,
+    "weapon_in_body_frames": [],
+    "armor_lowest_cm": 11.6,
+    "hammer_turn_max_deg": 30.9,
+    "arm_pop_deg": 0.0,
+    "hand_step_max_m": 0.48,
+    "hammer_head_step_max_m": 1.368,
+    "planted_prefork_cm": 0.54,
+    "planted_fork_cm": 0.3,
+    "body_reach_m": {
+     "golpe": 1.44,
+     "aviso": 1.549,
+     "kaito": 1.45
+    }
    }
   }
  },

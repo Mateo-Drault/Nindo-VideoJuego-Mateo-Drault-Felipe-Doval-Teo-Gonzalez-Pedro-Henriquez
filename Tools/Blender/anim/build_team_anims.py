@@ -47,6 +47,11 @@ FBX = opt("--fbx") or os.path.join(OUT_DIR, CHAR.capitalize() + "Anims.fbx")
 ARCHETYPES = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Scripts", "Enemies", "EnemyArchetypes.cs")
 GAP = 10
 failures, warnings = [], []
+# la variante en el lugar de un golpe con paso (Enemy.PlantedSuffix) y el margen con que Enemy.DecidePlant la elige: un
+# paso que no entra por menos de PLANT_SLACK m sigue con el paso (el imán corta ese resto). CLIP_NAMES: todos los clips del
+# personaje (también con --only)
+PLANT_SUFFIX, PLANT_SLACK = "Planted", 0.03
+CLIP_NAMES = set()
 
 
 def check(ok, msg, warn=False):
@@ -122,6 +127,13 @@ def archetype_hits(func_names):
     for d in order:
         out.setdefault(d["st"], []).append(ArchHit(d["items"], d["rr"], d["var"]))
     return out
+
+
+def config_float(fn, key):
+    """Un número del EnemyConfig que arma la función 'fn' de EnemyArchetypes.cs (0 si no lo pone)."""
+    src = open(ARCHETYPES, encoding="utf-8").read()
+    m = re.search(r"public static \w+ " + fn + r"\([^)]*\)\s*\{(.*?)\n        \}", src, re.S)
+    return float(next(iter(re.findall(r"\b" + key + r"\s*=\s*([\d.]+)f", m.group(1) if m else "")), 0.0))
 
 
 def config_lunge(fn):
@@ -298,14 +310,36 @@ def lint(ch, clip, frames, ctrls, roots, drops, misses, hits):
             # con lo que tiene el personaje (EnemyConfig): un pie apoyado que se corre más de 3 cm con Kaito en cualquier
             # lugar de la embestida (el SlamWave de Gorō arrastraba 45 cm y solo lo decía el informe). Falla en los personajes
             # cuyo módulo de clips lo pide (MAGNET_STRICT: Gorō); en los demás avisa (sus clips se autoraron antes de esta
-            # regla). Sin poder empujarlo (Kaito en el dash o contra una pared) queda en el informe
+            # regla). Tres casos: Kaito que se deja empujar lungeShove m, Kaito que no (pegado a la barrera, una pared u otro
+            # enemigo, o en el dash) y Kaito que se deja empujar un poco (la barrera a unos centímetros). Si lo libre más lo
+            # que se puede empujar más lungeSlack (lo que sigue el modelo) no llega a la embestida (Enemy.DecidePlant, antes
+            # de la suelta) y el clip tiene variante en el lugar ('<clip>Planted'), el golpe sale en esa variante: no hay
+            # recorrido que patine (sus pies se miden en su propio clip) y en una cadena contra la barrera el modelo no se le
+            # sube encima
             sh, sl = MAGNET
-            mc = max(variant_skate(touch, clip.travel_table, magnet(q, sl, sh)) for q in range(11)) * 100.0
+            planted = clip.name + PLANT_SUFFIX in CLIP_NAMES
+
+            def game(q, push):
+                room = L * q / 10.0
+                if planted and room + push + sl < L - PLANT_SLACK:
+                    return None
+                return variant_skate(touch, clip.travel_table, magnet(q, sl, push))
+            cfg = [game(q, sh) for q in range(11)]
+            nos = [game(q, 0.0) for q in range(11)]
+            part = [game(q, min(sh, L) * j / 10.0) for j in range(11) for q in range(11)]
+            mc, mn, mp = (max(x or 0.0 for x in v) * 100.0 for v in (cfg, nos, part))
             rep["magnet_config_cm"] = round(mc, 1)
-            rep["magnet_noshove_cm"] = round(max(variant_skate(touch, clip.travel_table, magnet(q, sl)) for q in range(11)) * 100.0, 1)
+            rep["magnet_noshove_cm"] = round(mn, 1)
+            rep["magnet_partial_cm"] = round(mp, 1)
+            rep["magnet_noshove_raw_cm"] = round(max(variant_skate(touch, clip.travel_table, magnet(q, sl)) for q in range(11)) * 100.0, 1)
+            # en qué lugares de Kaito (décimos de la embestida libres) sale la variante en el lugar
+            rep["magnet_planted_q"] = {"empuja": [q for q, x in enumerate(cfg) if x is None], "no": [q for q, x in enumerate(nos) if x is None]}
+            strict = getattr(mod, "MAGNET_STRICT", False)
             check(mc <= 3.0, f"{clip.name}: con Kaito pegado (el imán corta la embestida; empuja {sh:g} m y el modelo sigue {sl:g} m) "
-                             f"los pies apoyados no patinan ({mc:.1f} cm; sin empujarlo {rep['magnet_noshove_cm']:.1f} cm)",
-                  warn=not getattr(mod, "MAGNET_STRICT", False))
+                             f"los pies apoyados no patinan ({mc:.1f} cm)", warn=not strict)
+            check(max(mn, mp) <= 3.0, f"{clip.name}: con Kaito que no se deja empujar o se deja un poco (pared, barrera, dash) los pies "
+                                      f"apoyados no patinan ({max(mn, mp):.1f} cm; sin variante en el lugar {rep['magnet_noshove_raw_cm']:.1f} cm"
+                                      f"{'' if planted else ': falta ' + clip.name + PLANT_SUFFIX})", warn=not strict)
         # la embestida del clip tiene que arrancar en la suelta: si arranca antes, con cualquier pausa del juego en el
         # apex (CombatDirector la estira hasta 0.6 s) el ninja se desliza con la pose quieta y los pies clavados. En
         # cuadros del clip (lunge_from) arranca después del apex por construcción
@@ -804,6 +838,112 @@ def chain_checks(ch, baked_by_name):
             check(d <= tol, f"{name}: en f{f:g} empalma con {other} f{fo:g} (peor punto {d * 100:.1f} cm, tope {tol * 100:.0f})")
 
 
+# Kaito, para medir cuánto se le mete el cuerpo de un enemigo: el radio de su cuerpo visible (kaitooo.fbx: 0.26-0.37 m por
+# franja de altura, el pelo y la cabeza grande arriba) y lo que mide de alto; el radio de su CharacterController
+# (CharacterFactory.BuildPlayer) y el margen del imán (Enemy.TickLunge: lo frena a 0.3 m de la cápsula)
+KAITO_BODY_R, KAITO_HEIGHT, KAITO_CC_R, MAGNET_GAP, REACH_MARGIN = 0.30, 1.55, 0.35, 0.3, 0.05
+_REACH = {}
+
+
+def body_cloud(ch):
+    """Los puntos del cuerpo por hueso, en el espacio del hueso en reposo (rígidos con él, el hueso que más pesa en cada
+    vértice), sin el arma ni los brazos (el golpe los lleva adonde está Kaito: eso es pegarle). Una vez por personaje."""
+    import numpy as np
+    if "body" in _REACH:
+        return _REACH["body"]
+    R = ch.rig
+    arms = set()
+    for k in "rl":
+        arms.update(R.subtree(ch.side[k]["upper"]))
+    wm = (ch.spec.get("weapon") or {}).get("mesh", "\0")
+    # lo que cuelga o sale del contorno (los shide de papel, el maedate de Gorō: REACH_SKIP_MATS del módulo de clips)
+    skip_mats = getattr(mod, "REACH_SKIP_MATS", ())
+    pts = {}
+    for o in ch.meshes:
+        if o.name.startswith(wm) or not o.vertex_groups:
+            continue
+        skip = set()
+        for poly in o.data.polygons:
+            m = o.material_slots[poly.material_index].material if poly.material_index < len(o.material_slots) else None
+            if m is not None and any(m.name.startswith(x) or m.name.startswith("rv_" + x) for x in skip_mats):
+                skip.update(poly.vertices)
+        Mw = o.matrix_world
+        for v in o.data.vertices:
+            if v.index in skip:
+                continue
+            b = dominant_group(o, v.index)
+            if b and b in R.names and b not in arms:
+                pts.setdefault(b, []).append(R.rest_inv[b] @ (ch.Ai @ (Mw @ v.co)))
+    _REACH["body"] = {b: np.array([[q.x, q.y, q.z, 1.0] for q in v]) for b, v in pts.items()}
+    return _REACH["body"]
+
+
+def body_reach(ch, clip, frames, roots, f0=0, f1=None):
+    """Lo más cerca (m, adelante del transform del cuadro 0) que puede estar el centro de Kaito sin que el cuerpo del
+    clip se le meta en el suyo (radio KAITO_BODY_R, del piso a KAITO_HEIGHT), de f0 a f1, con el avance 'roots'. Las
+    rocas de la armadura las da el módulo de clips (body_extras). Devuelve (metros, cuadro, qué: hueso o 'roca hueso')."""
+    import numpy as np
+    R = ch.rig
+    cloud = [(b, b, L) for b, L in body_cloud(ch).items()]
+    for b, P in (getattr(mod, "body_extras", lambda ch, clip: [])(ch, clip)):
+        cloud.append(("roca " + b, b, np.array([list(R.rest_inv[b] @ ch.P(Vector(p))) + [1.0] for p in P])))
+    A = np.array(ch.A)
+    Rt = np.array(ch.Rcw).T / ch.u
+    O = np.array(ch.O)
+    rk = KAITO_BODY_R
+    best, at, what = -9.0, -1, ""
+    for f in range(f0, len(frames) if f1 is None else f1 + 1):
+        W, r = frames[f], np.array(roots[f])
+        for label, b, L in cloud:
+            P = ((((L @ np.array(W[b]).T)[:, :3] + r) @ A[:3, :3].T + A[:3, 3] - O) @ Rt.T)
+            m = (P[:, 2] > 0.02) & (P[:, 2] < KAITO_HEIGHT) & (np.abs(P[:, 0]) < rk)
+            if m.any():
+                v = float((-P[m, 1] + np.sqrt(rk * rk - P[m, 0] ** 2)).max())
+                if v > best:
+                    best, at, what = v, f, label
+    return best, at, what
+
+
+def planted_checks(ch, by_name, roots_by, reports):
+    """Las variantes en el lugar ('<clip>Planted', timing['planted_of']): Enemy.DecidePlant cruza a ellas un poco antes de
+    la suelta, así que hasta el apex tienen que ser el mismo clip (peor punto de body_points, incluida la cabeza del
+    martillo, a lo sumo 1.5 cm) y tener los mismos tiempos (el reloj del golpe sigue igual). Y como salen con Kaito pegado
+    y quieto a la distancia del imán (radio del enemigo + el de Kaito + MAGNET_GAP, menos lungeSlack: lo que el modelo
+    pudo quedar adelantado de un golpe anterior), su cuerpo no se le puede meter en el de Kaito más que lo que ya se le
+    mete en el aviso (body_reach)."""
+    radius = config_float(ARCH_FUNCS[CHAR][0], "radius") if ARCH_FUNCS.get(CHAR) else 0.0
+    for name, (clip, frames) in by_name.items():
+        t = clip.timing
+        base = t.get("planted_of")
+        if not base or base not in by_name:
+            continue
+        bc, bf = by_name[base]
+        bt = bc.timing
+        same = [k for k in ("apex", "contact", "active", "hold", "windup", "release_rate", "kind", "armor_window", "punish")
+                if bt.get(k) != t.get(k)]
+        check(clip.frames == bc.frames and not same, f"{name}: los mismos tiempos que {base} ({clip.frames} vs {bc.frames} cuadros"
+                                                     f"{'; distinto ' + ', '.join(same) if same else ''})")
+        fork = t["fork"]
+        # (no exacto: el Catmull-Rom de la cadera en la pausa mira la primera clave de la suelta, que ya es otra; en el
+        # martillazo de Combo1 eso corre la mano derecha 0.9 cm, y el cruce de 0.1 s lo mezcla)
+        d = max(max((p - q).length for p, q in zip(body_points(ch, frames[f]), body_points(ch, bf[f]))) for f in range(fork))
+        reports[name]["planted_prefork_cm"] = round(d * 100.0, 2)
+        check(d <= 0.015, f"{name}: hasta el apex (f0-f{fork - 1}) es {base} ({d * 100:.2f} cm el peor punto)")
+        dk = max((p - q).length for p, q in zip(body_points(ch, frames[fork]), body_points(ch, bf[fork])))
+        # (informe: en el cuadro en que se separan ya se ve solo la variante, el cruce terminó antes de la suelta)
+        reports[name]["planted_fork_cm"] = round(dk * 100.0, 1)
+        if radius > 0.0:
+            reach, at, what = body_reach(ch, clip, frames, roots_by[name], f0=fork)
+            pre = body_reach(ch, clip, frames, roots_by[name], f1=fork)[0]
+            near = radius + KAITO_CC_R + MAGNET_GAP - MAGNET[1]
+            reports[name]["body_reach_m"] = {"golpe": round(reach, 3), "aviso": round(pre, 3), "kaito": round(near, 3)}
+            # (con REACH_MARGIN por los vértices rígidos con su hueso; lo que ya llega en el aviso no lo cambia la variante:
+            # el SlamWave agachado con la armadura llega a 1.55 m)
+            check(reach <= max(near - REACH_MARGIN, pre), f"{name}: con Kaito pegado a {near:.2f} m el cuerpo no se le mete más que en el aviso "
+                                                   f"(le llega a {reach:.2f} m en f{at}, {what}; el aviso, a {pre:.2f})",
+                  warn=not getattr(mod, "MAGNET_STRICT", False))
+
+
 def blend_index(n, loop, f):
     """Cuadro f de un clip de n cuadros (negativo: desde el final; en un loop el último es el primero)."""
     last = n - 1 if loop else n
@@ -1147,6 +1287,7 @@ def main():
     print("PERSONAJE", CHAR, json.dumps(ch.report()))
     mod = importlib.import_module("team_clips_" + CHAR)
     clips = mod.clips(ch)
+    CLIP_NAMES.update(c.name for c in clips)
     if ONLY:
         keep = ONLY.split(",")
         clips = [c for c in clips if c.name in keep]
@@ -1200,6 +1341,7 @@ def main():
         replay_checks(ch, clip, soles, hits)
     by_name = {c.name: (c, fr) for c, fr in baked}
     chain_checks(ch, by_name)
+    planted_checks(ch, by_name, rootsa, reports)
     blend_checks(ch, by_name, blends)
     lo = getattr(mod, "LOCOMOTION", None)
     if lo:

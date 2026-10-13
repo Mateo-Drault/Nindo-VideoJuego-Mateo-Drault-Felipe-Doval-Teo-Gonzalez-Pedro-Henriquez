@@ -287,11 +287,57 @@ namespace Nindo
             // la panza lo arrastra aunque esté invulnerable: después de un golpe (0.7 s) el segundo cachetazo de las
             // Bofetadas no lo podía mover, el imán cortaba la embestida y el pie de atrás del sumo patinaba hasta 25 cm
             // (build_team_anims, magnet_curve_cm). En el dash, el remate, la muerte o una escena no se lo mueve
-            if (cc == null || !cc.enabled || State == PlayerState.Dash || State == PlayerState.Finisher || State == PlayerState.Dead
-                || Game.InCutscene || delta.sqrMagnitude < 1e-8f) return 0f;
+            if (!Shovable || delta.sqrMagnitude < 1e-8f) return 0f;
             Vector3 before = transform.position;
             cc.Move(delta);
             return CombatMath.FlatDistance(before, transform.position);
+        }
+
+        /// <summary>Shove lo puede correr (no esquivando, rematando, muerto ni en una escena).</summary>
+        public bool Shovable => cc != null && cc.enabled && State != PlayerState.Dash && State != PlayerState.Finisher
+                                && State != PlayerState.Dead && !Game.InCutscene;
+
+        // lo que choca con Kaito (la matriz de capas de la suya: el CharacterController no atraviesa nada de eso)
+        static int shoveMask, shoveLayer = -1;
+        static readonly RaycastHit[] shoveHits = new RaycastHit[8];
+
+        /// <summary>Cuánto lo correría Shove en 'dir' (m, hasta 'max') antes de chocar con algo: la barrera de la arena, una
+        /// pared, otro enemigo (Gorō decide antes de la suelta si su paso entra o pega en el lugar). Barre su cápsula sin la
+        /// parte de abajo que sube escalones: un desnivel del piso no lo frena, el CharacterController lo sube. 'mover' (el
+        /// que empuja) no cuenta.</summary>
+        public float ShoveRoom(Vector3 dir, float max, Transform mover = null)
+        {
+            dir.y = 0f;
+            if (!Shovable || max <= 0f || dir.sqrMagnitude < 1e-6f) return 0f;
+            dir.Normalize();
+            if (gameObject.layer != shoveLayer)
+            {
+                shoveLayer = gameObject.layer;
+                shoveMask = 0;
+                for (int i = 0; i < 32; i++)
+                    if (!Physics.GetIgnoreLayerCollision(shoveLayer, i)) shoveMask |= 1 << i;
+            }
+            Vector3 c = transform.TransformPoint(cc.center);
+            float half = Mathf.Max(0f, cc.height * 0.5f - cc.radius);
+            Vector3 top = c + Vector3.up * half, bottom = c - Vector3.up * (half - Mathf.Min(cc.stepOffset, half));
+            // arranca 10 cm más atrás y un poco más fina: pegado a la barrera (a skinWidth) el barrido arrancaba metido en
+            // ella y no la veía; 'lead' es lo que hay de su cara a la del CharacterController
+            const float Back = 0.1f;
+            float r = cc.radius * 0.85f, lead = Back + cc.radius - r;
+            Vector3 o = -dir * Back;
+            int n = Physics.CapsuleCastNonAlloc(bottom + o, top + o, r, dir, shoveHits, max + lead + cc.skinWidth, shoveMask,
+                QueryTriggerInteraction.Ignore);
+            float room = max, walkable = Mathf.Cos(cc.slopeLimit * Mathf.Deg2Rad);
+            for (int i = 0; i < n; i++)
+            {
+                var h = shoveHits[i];
+                // él mismo, el que empuja y el piso que se puede subir (un choque de arranque, ya metido en algo, viene con la
+                // normal contra el barrido y distancia 0: no hay lugar)
+                var t = h.collider.transform;
+                if (t.IsChildOf(transform) || (mover != null && t.IsChildOf(mover)) || h.normal.y >= walkable) continue;
+                room = Mathf.Min(room, h.distance - lead - cc.skinWidth);
+            }
+            return Mathf.Max(0f, room);
         }
 
         /// <summary>Teletransporte seguro (desactiva el CharacterController un frame).</summary>

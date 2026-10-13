@@ -159,10 +159,13 @@ namespace Nindo
                 // 0.32 s de siempre daba la vuelta por encima en dos cuadros
                 parriedRecoil = 0.5f,
                 // con Kaito pegado el imán corta la embestida y el pie de atrás, clavado en la punta mientras el cuerpo pasa,
-                // se correría lo cortado: lo empuja con el cuerpo hasta 0.5 m y el modelo sigue 0.35 m más (build_team_anims,
-                // magnet_config_cm: 0 cm). Si no lo puede empujar (Kaito en el dash o contra una pared) el pie de atrás se
-                // corre lo que el modelo no alcanza (25-50 cm, magnet_noshove_cm)
-                lungeShove = 0.5f, lungeSlack = 0.35f,
+                // se correría lo cortado: el paso lo arrastra entero (el martillazo más largo, 0.85 m) y el modelo sigue los
+                // últimos 0.2 m de lo que no entre. Si así no entra (pegado a la barrera, a una pared u otro enemigo, en el
+                // dash) el golpe sale en su variante en el lugar (Enemy.DecidePlant, '<estado>Planted'). Con 0.35 m el modelo
+                // podía quedar a 1.30 m de Kaito y el golpe siguiente en el lugar le metía las rocas del pecho 3-8 cm en la
+                // cabeza; a 1.45 m no le llega (build_team_anims: body_reach). magnet_config_cm, magnet_noshove_cm y
+                // magnet_partial_cm hasta 3 cm
+                lungeShove = 0.85f, lungeSlack = 0.2f,
                 animGuard = "Idle", animCounter = "Combo1", animExhausted = "StunSpin", animHit = "Hit",
                 animSpotted = "Spotted", animDeath = "Death", animParried = "Parried", deathClipFalls = true,
             };
