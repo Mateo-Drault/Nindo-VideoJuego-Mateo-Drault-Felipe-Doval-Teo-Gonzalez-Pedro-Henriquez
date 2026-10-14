@@ -14,8 +14,8 @@ namespace Nindo
     /// </summary>
     public sealed class BambooMasterLook
     {
-        public const string Robe = "Master_Robe", RobeThrown = "Master_RobeThrown", Staff = "Master_Staff";
-        public const string HandR = "Master_GlintHandR", HandL = "Master_GlintHandL", StaffGlow = "Master_GlintStaff", Eyes = "Master_Eyes";
+        public const string Robe = "Master_Robe", RobeThrown = "Master_RobeThrown", Staff = "Chikuo_Staff";
+        public const string HandR = "Master_GlintHandR", HandL = "Master_GlintHandL", StaffGlow = "Chikuo_GlintStaff", Eyes = "Master_Eyes";
         /// <summary>Jade de los ojos (el sidecar: 0.45, 1, 0.8) y de la postura del bambú: no es dorado ni rojo, no pide nada.</summary>
         public static readonly Color Jade = new Color(0.45f, 1f, 0.8f);
 
@@ -54,19 +54,15 @@ namespace Nindo
                 else if (r.name == RobeThrown) robeThrown = r;
                 else if (r.name == Staff) staff = r;
             }
+            // el hueso de la flauta-bastón va de la punta de abajo a la de arriba; la de arriba es el enchufe Staff_Mouth
+            // del ermitaño (BambooMaster.fbx de la fase C4): de ahí sale la estela
             foreach (var t in model.GetComponentsInChildren<Transform>(true))
-                if (t.name == "Staff") { staffBone = t; break; }
-            if (staffBone != null)
             {
-                // el hueso va de la punta de abajo (su cabeza) a la de arriba: cabeza + Y * largo (en metros del modelo)
-                var tip = new GameObject("StaffTip").transform;
-                tip.SetParent(staffBone, false);
-                Vector3 local = staffBone.InverseTransformPoint(staffBone.position + staffBone.up * BambooMasterTimings.StaffLength * model.lossyScale.y);
-                tip.localPosition = local;
-                staffTip = tip;
+                if (t.name == "Staff") staffBone = t;
+                else if (t.name == "Staff_Mouth") staffTip = t;
             }
             BuildLimbTrails(model);
-            // los bigotes y las colas de la faja con la física del juego (perfil 'Tie' de SpringChain)
+            // la barba, la ramita del moño, las colas de la faja y los cascabeles con la física del juego (SpringChain)
             var body = model.GetComponentInChildren<SkinnedMeshRenderer>();
             var spring = model.GetComponentInChildren<Animator>()?.gameObject.AddComponent<SpringChain>();
             spring?.Rebuild(body);
@@ -91,7 +87,8 @@ namespace Nindo
         {
             if (robe != null) robe.enabled = phase == 0;
             if (robeThrown != null) robeThrown.enabled = false;
-            if (staff != null) staff.enabled = phase >= 2;
+            // el ermitaño lleva la flauta-bastón siempre (el modelo viejo la sacaba en la fase 3)
+            if (staff != null) staff.enabled = true;
             if (phase >= 1) IgniteEyes(1f);
         }
 
@@ -184,8 +181,8 @@ namespace Nindo
             foreach (var t in model.GetComponentsInChildren<Transform>(true))
             {
                 // el slot del brillo, el hueso de la base y cuánto se estira la punta por su eje (m del modelo)
-                string slot = t.name == "Hand_R" ? HandR : t.name == "Hand_L" ? HandL : t.name == "Toe_R" ? "Master_GlintFootR"
-                            : t.name == "Toe_L" ? "Master_GlintFootL" : null;
+                string slot = t.name == "Hand_R" ? HandR : t.name == "Hand_L" ? HandL : t.name == "Toe_R" ? "Chikuo_GlintFootR"
+                            : t.name == "Toe_L" ? "Chikuo_GlintFootL" : null;
                 if (slot == null || limbTrails.ContainsKey(slot)) continue;
                 bool foot = t.name.StartsWith("Toe");
                 Transform basePt = foot ? t.parent : t;

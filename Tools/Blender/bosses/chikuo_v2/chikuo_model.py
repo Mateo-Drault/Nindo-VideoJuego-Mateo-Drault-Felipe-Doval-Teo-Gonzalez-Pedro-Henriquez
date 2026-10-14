@@ -28,35 +28,39 @@ from chikuo_kit import (Kit, mirror_kit, mirror_weights, tri_count, smooth01, al
                         blend, side_name)
 
 # --------------------------------------------------------------------------- materiales propios
-SLOT_SKIN, SLOT_CHIME_HI, SLOT_CHIME_LO, SLOT_STAFF, SLOT_FOOT_R, SLOT_FOOT_L = 4, 5, 6, 7, 8, 9
+SLOT_SKIN, SLOT_CHIME_HI, SLOT_CHIME_LO, SLOT_STAFF, SLOT_FOOT_R, SLOT_FOOT_L, SLOT_GI = 4, 5, 6, 7, 8, 9, 10
 EXTRA_MATS = ["Chikuo_Skin", "Chikuo_GlintChimesHi", "Chikuo_GlintChimesLo", "Chikuo_GlintStaff", "Chikuo_GlintFootR",
-              "Chikuo_GlintFootL"]
+              "Chikuo_GlintFootL", "Chikuo_Gi"]
 # piel curtida de ermitaño (la del concepto: #dda982 a la luz, #98694f en la sombra); las sombras van con la paleta
-SKIN_RGB = (0.84, 0.62, 0.45)
+SKIN_RGB = (0.82, 0.63, 0.49)
+# el gi salvia del concepto (#5b6856 a la luz: gris verdoso, más azulado y apagado que las hojas oliva de la capa); la
+# paleta no tiene un salvia que no se confunda con las hojas o el pantalón
+GI_RGB = (0.40, 0.47, 0.38)
 # cascabeles paja-oro (el concepto: #e1a96c) y la flauta paja-amarilla, más verde (bambú seco): se distinguen entre sí
 CHIME_RGB = (0.86, 0.64, 0.38)
 STAFF_RGB = (0.80, 0.74, 0.35)
 # las sandalias-zapato: negro azulado (con 0.13 en el canal más alto CharacterFactory.LiftBlacks no las toca)
 SHOE_RGB = (0.115, 0.11, 0.13)
 MAT_RGB = {"Chikuo_Skin": SKIN_RGB, "Chikuo_GlintChimesHi": CHIME_RGB, "Chikuo_GlintChimesLo": CHIME_RGB,
-           "Chikuo_GlintStaff": STAFF_RGB, "Chikuo_GlintFootR": SHOE_RGB, "Chikuo_GlintFootL": SHOE_RGB}
+           "Chikuo_GlintStaff": STAFF_RGB, "Chikuo_GlintFootR": SHOE_RGB, "Chikuo_GlintFootL": SHOE_RGB, "Chikuo_Gi": GI_RGB}
 # el señuelo de hojas (Tricks: la misma malla con todos los slots en este material, sin brillo): no está en el FBX,
 # generate_assets escribe su .mat desde el sidecar
 DECOY_MAT, DECOY_RGB = "Chikuo_Decoy", (0.30, 0.54, 0.24)
 
 C = dict(skin="lantern_paper", skin2="wood_pale", skin3="clay", mouth="wood_dark",
          white="white", white2="cloth_white", white3="plaster_shade",
-         gi="stone_moss", gi2="tatami_edge", gi3="leaf_pine_dark",
+         gi="copper_green", gi2="tatami_edge", gi3="leaf_pine_dark",
          trim="straw", trim2="thatch",
-         sash="leaf", sash2="leaf_dark", sash3="bamboo",
+         sash="moss", sash2="bamboo_dark", sash3="grass_dry",
          pants="tatami_edge", pants2="leaf_pine_dark",
          leg="stone_moss", leg2="tatami_edge",
          wrap="cloth_black", wrap2="stone_dark",
          sole="rope", sole2="thatch", strap="straw",
-         leaf1="moss", leaf1b="bamboo", leaf1c="grass_dry", leaf2="bamboo_dark", leaf3="leaf_dark", shell="leaf_dark",
+         leaf1="stone_moss", leaf1b="grass_dry", leaf1c="reed", leaf2="bamboo_dark", leaf3="tatami_edge", shell="tatami_edge",
+         leafu="bamboo_dark",
          cord="rope", hole="gold_dark", node="wheat_dark",
-         staff_node="bamboo_dry", staff_cord="leaf", staff_grip="ink", staff_grip2="iron", staff_hole="wood_dark",
-         eye="ink", eyew="paper", knot="leaf", knot2="leaf_dark")
+         staff_node="bamboo_dry", staff_cord="leaf_dark", staff_grip="ink", staff_grip2="iron", staff_hole="wood_dark",
+         eye="ink", eyew="paper", knot="moss", knot2="leaf_dark")
 
 KB = {b.name: b for b in CR.bones()}
 
@@ -196,8 +200,8 @@ def build_head(kits):
         build_eye(kits, s)
         build_ear(k, s)
         # el surco de la nariz a la comisura (las arrugas de la sonrisa pícara)
-        k.strip([Vector((0.024 * s, -0.112, 2.104)), Vector((0.040 * s, -0.098, 2.099)), Vector((0.054 * s, -0.080, 2.094))],
-                [0.006, 0.007, 0.006], [(0.4 * s, -1, 0.3)] * 3, C["skin3"], thick=0.004)
+        k.strip([Vector((0.026 * s, -0.114, 2.110)), Vector((0.041 * s, -0.101, 2.104)), Vector((0.055 * s, -0.083, 2.100))],
+                [0.0045, 0.005, 0.0045], [(0.4 * s, -1, 0.3)] * 3, C["skin3"], thick=0.003)
     build_mouth(kits)
     # cuello flaco (casi todo tapado por la barba y el cuello de la capa)
     kn = kits["Neck"] = Kit("part_Neck", "Neck", weights=lambda co: (
@@ -247,32 +251,35 @@ def build_eye(kits, s):
     side = Vector((0, 0, 1)).cross(fwd).normalized()
     # el blanco: rombo chato inclinado (la punta de afuera más alta)
     tilt = Matrix.Rotation(math.radians(-14.0 * s), 3, fwd)
-    pts = [E + tilt @ (side * dx + Vector((0, 0, dz))) for dx, dz in ((0.021, 0.0), (0.0, 0.0102), (-0.021, 0.0), (0.0, -0.0086))]
-    vc = k.bm.verts.new(E + fwd * 0.0075)
+    pts = [E + tilt @ (side * dx + Vector((0, 0, dz))) for dx, dz in ((0.019, 0.0), (0.0, 0.0110), (-0.019, 0.0), (0.0, -0.0090))]
+    vc = k.bm.verts.new(E + fwd * 0.0060)
     vr = [k.bm.verts.new(p) for p in pts]
     for i in range(4):
         k.bm.faces.new((vr[i], vr[(i + 1) % 4], vc))
     k.bm.faces.new(list(reversed(vr)))
     k._new(vr + [vc], C["eyew"], None, None)
-    k.gem(E + fwd * 0.0068 + side * (0.002 * s), 0.0094, C["eye"], sides=6, height=0.0034, axis=fwd)
-    k.gem(E + fwd * 0.0092 + side * (-0.0025 * s) + Vector((0, 0, 0.0028)), 0.0021, C["white"], sides=4, height=0.0011, axis=fwd)
+    # el iris oscuro más chico que el blanco (se ve el blanco alrededor: la mirada de costado) y el punto de luz
+    k.gem(E + fwd * 0.0052 + side * (0.003 * s), 0.0072, C["eye"], sides=6, height=0.0024, axis=fwd)
+    k.gem(E + fwd * 0.0074 + side * (0.0010 * s) + Vector((0, 0, 0.0024)), 0.0018, C["white"], sides=4, height=0.0009, axis=fwd)
     # la bolsa de abajo
     k.strip([E + tilt @ (side * 0.016 + Vector((0, 0, -0.010))) + fwd * 0.004, E + Vector((0, 0, -0.012)) + fwd * 0.006,
              E + tilt @ (side * -0.016 + Vector((0, 0, -0.008))) + fwd * 0.004], [0.006, 0.007, 0.006], [fwd] * 3, C["skin3"],
             thick=0.004)
-    # el párpado: casquete de un cuarto de esfera alrededor del centro del ojo (más grande que el ojo)
+    # el párpado: casquete de esfera alrededor del pivote (1 cm detrás del ojo), de 20° sobre el ojo a 105° (adentro de
+    # la frente): en reposo tapa la parte de arriba del ojo y girado 60° lo cierra entero
     kl = kits["Lid_" + S] = Kit("part_Lid_" + S, "Lid_" + S)
-    R = 0.0150
+    E = CR.LID_R if S == "R" else CR.mx(CR.LID_R)
+    R = 0.0235
     rows = []
-    for el in (18.0, 46.0, 78.0):
+    for el in (20.0, 50.0, 80.0, 105.0):
         row = []
-        for az in (-64.0, -32.0, 0.0, 32.0, 64.0):
+        for az in (-78.0, -39.0, 0.0, 39.0, 78.0):
             e, a = math.radians(el), math.radians(az)
             d = Vector((math.sin(a) * math.cos(e), -math.cos(a) * math.cos(e), math.sin(e)))
             d = Matrix.Rotation(math.radians(-17.0 * s), 3, 'Z') @ Matrix.Rotation(math.radians(-12.0 * s), 3, 'Y') @ d
             row.append(E + d * R)
         rows.append(row)
-    inner = [[E + (p - E) * 0.86 for p in row] for row in rows]
+    inner = [[E + (p - E) * 0.90 for p in row] for row in rows]
     vo = [[kl.bm.verts.new(p) for p in r] for r in rows]
     vi = [[kl.bm.verts.new(p) for p in r] for r in inner]
     fo, fi = [], []
@@ -281,6 +288,10 @@ def build_eye(kits, s):
             fo.append(kl.bm.faces.new((vo[r][i], vo[r][i + 1], vo[r + 1][i + 1], vo[r + 1][i])))
             fi.append(kl.bm.faces.new((vi[r][i + 1], vi[r][i], vi[r + 1][i], vi[r + 1][i + 1])))
     rim = [kl.bm.faces.new((vo[0][i + 1], vo[0][i], vi[0][i], vi[0][i + 1])) for i in range(4)]
+    rim += [kl.bm.faces.new((vo[-1][i], vo[-1][i + 1], vi[-1][i + 1], vi[-1][i])) for i in range(4)]
+    for r in range(len(rows) - 1):
+        rim.append(kl.bm.faces.new((vo[r][0], vo[r + 1][0], vi[r + 1][0], vi[r][0])))
+        rim.append(kl.bm.faces.new((vo[r + 1][4], vo[r][4], vi[r][4], vi[r + 1][4])))
     kl._new([v for row in vo + vi for v in row], C["skin2"], None, None)
     kl.tag(rim, C["mouth"])
     kl.tag(fi, C["skin3"])
@@ -338,7 +349,7 @@ def build_mouth(kits):
         u = min(1.0, abs(x) / 0.056)
         p = grin_point(x, 1)
         base = p + Vector((0, 0.001, 0.0045))
-        kh.spike(base, base + Vector((0.0, -0.0012, -0.0150 + 0.004 * u)), 0.0047, C["white"], sides=3, side_hint=(0, -1, 0),
+        kh.spike(base, base + Vector((0.0, -0.0012, -0.0125 + 0.003 * u)), 0.0050, C["white"], sides=3, side_hint=(0, -1, 0),
                  flat=0.55, phase=math.pi / 2)
     n_lo = 12
     for i in range(n_lo):
@@ -346,7 +357,7 @@ def build_mouth(kits):
         u = min(1.0, abs(x) / 0.056)
         p = grin_point(x, 0) + Vector((0.0, 0.0022, 0.0))
         base = p - Vector((0, 0, 0.0045))
-        kj.spike(base, base + Vector((0.0, -0.0008, 0.0128 - 0.004 * u)), 0.0044, C["white2"], sides=3, side_hint=(0, -1, 0),
+        kj.spike(base, base + Vector((0.0, -0.0008, 0.0085 - 0.002 * u)), 0.0044, C["white2"], sides=3, side_hint=(0, -1, 0),
                  flat=0.55, phase=math.pi / 2)
     # la garganta: placas oscuras detrás de los dientes (arriba en la cabeza, abajo en la quijada)
     for kk, row, dz in ((kh, 1, 0.006), (kj, 0, -0.006)):
@@ -374,11 +385,11 @@ def build_brows_hair(kits):
         spikes = [((-0.014, -0.107, 2.168), (-0.002, -0.122, 2.200), 0.012),
                   ((-0.028, -0.106, 2.175), (-0.030, -0.128, 2.232), 0.015),
                   ((-0.044, -0.102, 2.184), (-0.066, -0.124, 2.262), 0.016),
-                  ((-0.058, -0.096, 2.191), (-0.106, -0.112, 2.272), 0.016),
-                  ((-0.072, -0.090, 2.198), (-0.146, -0.094, 2.262), 0.016),
-                  ((-0.084, -0.082, 2.204), (-0.180, -0.070, 2.236), 0.015),
-                  ((-0.090, -0.078, 2.204), (-0.192, -0.050, 2.198), 0.014),
-                  ((-0.088, -0.076, 2.196), (-0.168, -0.040, 2.160), 0.012)]
+                  ((-0.058, -0.096, 2.191), (-0.104, -0.098, 2.272), 0.016),
+                  ((-0.072, -0.090, 2.198), (-0.146, -0.070, 2.262), 0.016),
+                  ((-0.084, -0.082, 2.204), (-0.180, -0.042, 2.236), 0.015),
+                  ((-0.090, -0.078, 2.204), (-0.192, -0.018, 2.198), 0.014),
+                  ((-0.088, -0.076, 2.196), (-0.166, -0.004, 2.160), 0.012)]
         for i, (b, t, r) in enumerate(spikes):
             kb.spike(m(b), m(t), r * 1.25, C["white"] if i % 2 == 0 else C["white2"], sides=4, side_hint=(0, -0.3, 1), flat=0.45,
                      phase=math.pi / 4)
@@ -398,7 +409,7 @@ def build_hair(kits):
     mechones en surcos y puntas que caen sobre la nuca; arriba adelante queda la calva."""
     k = kits["Hair"] = Kit("part_Hair", "Head", weights=lambda co: {"Head": 1.0} if co.z > 2.06 else {"Head": 0.6, "Neck": 0.4})
     zs = [2.060, 2.092, 2.128, 2.162, 2.194, 2.222, 2.244, 2.258, 2.266]
-    a0 = [118.0, 100.0, 70.0, 50.0, 46.0, 42.0, 40.0, 50.0, 80.0]
+    a0 = [118.0, 104.0, 82.0, 64.0, 56.0, 48.0, 42.0, 50.0, 80.0]
     cols = 20
     vo, vi = [], []
     for zi, (z, a) in enumerate(zip(zs, a0)):
@@ -491,7 +502,7 @@ def build_topknot(kits):
                                 (-1, 0.25, 0.10, 0.12, C["leaf1b"]), (-1, 0.45, -0.25, 0.11, C["leaf1"])):
         d = Vector((sx, dy, dz)).normalized()
         b = root + Vector((0.030 * sx, 0.01, 0.0))
-        kl.leaf(b, b + d * ln, Vector((0, 0, 1)), 0.032, col, ridge=0.3, under=C["leaf3"])
+        kl.leaf(b, b + d * ln, Vector((0, 0, 1)), 0.032, col, ridge=0.3, under=C["leafu"])
 
 
 # =========================================================================== barba
@@ -1079,16 +1090,19 @@ def build_cloak(kits):
     k.tag(fi, C["gi3"])
     # hileras de hojas: (fracción de la caída, largo relativo, tono de arriba, tono de abajo)
     # seis hileras (tejas que se tapan un tercio: de cada hoja se ve la parte ancha, como en la hoja de la espalda)
-    rows = [(0.03, 0.55, "leaf1", "leaf1c"), (0.10, 0.62, "leaf1", "leaf1c"), (0.26, 0.85, "leaf1", "leaf1b"),
-            (0.43, 0.95, "leaf2", "leaf1"), (0.60, 1.0, "leaf2", "leaf1"), (0.76, 1.0, "leaf3", "leaf2"),
-            (0.90, 1.0, "leaf3", "leaf2")]
+    # la gola (hojas paradas alrededor de la nuca), el yugo de los hombros (hojas que salen hacia afuera en estrella: la
+    # silueta en púas) y cinco hileras que cuelgan como tejas que se tapan un tercio: de cada hoja se ve la parte ancha.
+    # Los tonos como en la hoja de la espalda: oliva amarillento arriba, oliva al medio, verde oscuro abajo
+    rows = [(0.03, 0.55, "leaf1b", "leaf1"), (0.11, 0.70, "leaf1b", "leaf1c"), (0.27, 0.92, "leaf1", "leaf1b"),
+            (0.45, 1.0, "leaf2", "leaf1"), (0.62, 1.0, "leaf2", "leaf1"), (0.78, 1.0, "leaf3", "leaf2"),
+            (0.91, 1.0, "leaf3", "leaf2")]
     for ri_, (s, lr, ca, cb) in enumerate(rows):
         # largo de arco de la hilera para repartir las hojas cada ~5.6 cm
         phis = [a0 + (a1 - a0) * i / 120.0 for i in range(121)]
         arc = [0.0]
         for p0, p1 in zip(phis[:-1], phis[1:]):
             arc.append(arc[-1] + (CR.cloak_point(p1, s) - CR.cloak_point(p0, s)).length)
-        spacing = (0.088 if s < 0.5 else 0.078) if ri_ > 0 else 0.06
+        spacing = (0.10 if s < 0.5 else 0.088) if ri_ > 0 else 0.065
         n = max(6, int(arc[-1] / spacing))
         for j in range(n):
             u = (j + 0.5 + rng.uniform(-0.3, 0.3)) / n
@@ -1098,11 +1112,15 @@ def build_cloak(kits):
             phi = phis[idx] + (phis[idx + 1] - phis[idx]) * (d - arc[idx]) / max(1e-9, arc[idx + 1] - arc[idx])
             D = drop_len(phi)
             sb = s + rng.uniform(-0.015, 0.015)
-            ln = (0.14 + 0.22 * min(1.0, D / 1.45)) * lr * rng.uniform(0.88, 1.12)
+            ln = (0.16 + 0.24 * min(1.0, D / 1.45)) * lr * rng.uniform(0.9, 1.1)
             out_b = 0.006 + 0.026 * (1.0 - sb)
             side = max(0.0, 1.0 - abs(abs(((phi + 180.0) % 360.0) - 180.0) - 90.0) / 38.0)
-            # en los hombros las hojas de arriba se paran hacia afuera: la silueta en púas del concepto
-            lift = 0.012 + 0.03 * rng.random() + (0.16 * side * (1.0 - min(1.0, sb / 0.45)) if ri_ > 0 else 0.0)
+            # el yugo sale hacia afuera en todo el contorno y más en los hombros (la silueta en púas del concepto)
+            lift = 0.012 + 0.025 * rng.random()
+            if ri_ == 1:
+                lift += 0.10 + 0.10 * side
+            elif ri_ == 2:
+                lift += 0.08 * side
             col = C[ca] if (j + ri_) % 3 else C[cb]
             if ri_ == 0:
                 # la gola: hojas paradas alrededor del cuello, apuntando arriba y afuera (no adelante)
@@ -1110,7 +1128,7 @@ def build_cloak(kits):
                     base = CR.cloak_point(phi, 0.02, 0.01)
                     outv = Vector((base.x, base.y - CR.CLOAK_Y0, 0.0)).normalized()
                     tip = base + (outv * 0.75 + Vector((0, 0, 0.75))).normalized() * ln
-                    k.leaf(base, tip, outv - Vector((0, 0, 0.6)), 0.042, col, ridge=0.3, under=C["leaf3"])
+                    k.leaf(base, tip, outv - Vector((0, 0, 0.6)), 0.042, col, ridge=0.3, under=C["leafu"])
                 continue
             base = CR.cloak_point(phi, sb, out_b)
             ts = sb + ln / D
@@ -1122,7 +1140,7 @@ def build_cloak(kits):
                 tan = (CR.cloak_point(phi, 1.0) - CR.cloak_point(phi, 0.96)).normalized()
                 tip = end + tan * (ts - 1.0) * D
             nrm = CR.cloak_normal(phi, min(1.0, sb + 0.5 * ln / D))
-            k.leaf(base, tip, nrm, max(0.05, ln * 0.31), col, ridge=0.22, under=C["leaf3"], wide=0.45)
+            k.leaf(base, tip, nrm, max(0.055, ln * 0.36), col, ridge=0.16, under=C["leafu"], wide=0.45)
 
 
 def hole_mark(k, c, ax, side, nrm, h, w, color=None):
@@ -1207,12 +1225,16 @@ def build_staff():
 
 # =========================================================================== armado
 def finish_kit(kit):
-    # la piel se autora con 'lantern_paper' (que ninguna otra pieza usa) y acá pasa a Chikuo_Skin
-    uv = L.P.uv_of(C["skin"])
+    # la piel y el gi se autoran con colores de la paleta que ninguna otra pieza usa ('lantern_paper', 'copper_green') y
+    # acá pasan a sus materiales propios
+    marks = [(Vector(L.P.uv_of(C["skin"])), SLOT_SKIN), (Vector(L.P.uv_of(C["gi"])), SLOT_GI)]
     lay = kit.uv
     for f in kit.bm.faces:
-        if f.material_index == L.SLOT_PALETTE and f.loops and (f.loops[0][lay].uv - Vector(uv)).length < 1e-4:
-            f.material_index = SLOT_SKIN
+        if f.material_index == L.SLOT_PALETTE and f.loops:
+            uv = f.loops[0][lay].uv
+            for mk, slot in marks:
+                if (uv - mk).length < 1e-4:
+                    f.material_index = slot
     obj = kit.finish()
     for n in EXTRA_MATS:
         m = bpy.data.materials.get(n) or bpy.data.materials.new(n)

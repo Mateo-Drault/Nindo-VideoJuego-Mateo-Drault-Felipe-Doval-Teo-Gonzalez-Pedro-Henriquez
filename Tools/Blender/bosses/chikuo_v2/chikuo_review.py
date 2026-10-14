@@ -502,10 +502,10 @@ class Review:
             ko[0].location = (1.6, 0.0, ko[1])
         tiles = []
         self.look.set_moon(STUDIO)
-        self.ortho((0.1, 0, 1.3), 4.6, 0, 3)
+        self.ortho((0.1, 0, 2.3), 5.2, 0, 3)
         tiles.append({"img": self.render(self.tile("lineup_front"), res=(1280, 720)), "label": "Kaito, Chikuō, Kokuyō (luz de estudio)"})
         self.look.set_moon(None)
-        self.game_view(focus=(0.1, -1.0, 1.0))
+        self.game_view(focus=(0.1, -1.0, 1.4))
         tiles.append({"img": self.render(self.tile("lineup_game"), res=(1280, 720)), "label": "cámara del juego, luna del mundo"})
         if ko:
             for o in ko[2]:

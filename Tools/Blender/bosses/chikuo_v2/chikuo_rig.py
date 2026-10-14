@@ -61,6 +61,8 @@ THUMB_LEN = (0.052, 0.045)
 
 # cara (lado derecho): ojo (hundido bajo el arco de la ceja), ceja, cachete, comisura de la sonrisa ancha
 EYE_R = Vector((-0.036, -0.083, 2.154))
+# el pivote del párpado, 1 cm detrás del ojo: desde ahí el ojo entero entra en el casquete (cerrado lo tapa todo)
+LID_R = EYE_R + Vector((0.0, 0.010, 0.0))
 BROW_R = (Vector((-0.014, -0.106, 2.176)), Vector((-0.092, -0.080, 2.198)))
 CHEEK_R = (Vector((-0.058, -0.062, 2.108)), Vector((-0.068, -0.088, 2.108)))
 CORNER_R = (Vector((-0.050, -0.074, 2.090)), Vector((-0.054, -0.094, 2.092)))
@@ -283,7 +285,7 @@ def bones():
         BoneDef("Topknot_1", TOPKNOT[0], TOPKNOT[1], "Head", True, (0, -1, 0)),
         BoneDef("Topknot_2", TOPKNOT[1], TOPKNOT[2], "Topknot_1", True, (0, -1, 0)),
         # párpado: el pivote en el centro del ojo, Y hacia adelante (gira en X para cerrar)
-        BoneDef("Lid_R", EYE_R, EYE_R + Vector((0, -0.03, 0)), "Head", True, (0, 0, 1)),
+        BoneDef("Lid_R", LID_R, LID_R + Vector((0, -0.03, 0)), "Head", True, (0, 0, 1)),
         BoneDef("Brow_R", BROW_R[0], BROW_R[1], "Head", True, (0, -0.3, 1)),
         BoneDef("Cheek_R", CHEEK_R[0], CHEEK_R[1], "Head", True, (0, 0, 1)),
         BoneDef("MouthCorner_R", CORNER_R[0], CORNER_R[1], "Head", True, (0, 0, 1)),
@@ -379,6 +381,7 @@ def hand_shape(S, name):
     return {f"fing_{s}": h["fing"], f"tip_{s}": h["tip"], f"spread_{s}": h["spread"], f"thumb_{s}": h["thumb"]}
 
 
+LID_CLOSED_DEG = 60.0
 # caras: (quijada abierta en grados, párpados 0 abiertos .. 1 cerrados, cejas en grados (+ arriba), cachetes 0..1
 # inflados, comisuras (adentro m, arriba m))
 FACES = {
@@ -556,9 +559,9 @@ class Poser:
         pose.delta("Jaw", Quaternion(ax, -math.radians(f["jaw"])))
         for S in "RL":
             sg = 1.0 if S == "R" else -1.0
-            # párpado: el reposo es el ojo abierto entero; cerrar es girar hacia abajo 38°
+            # párpado: el reposo deja el ojo entrecerrado (el casquete tapa arriba); cerrar es girar hacia abajo 60°
             ax = rot3(R.rest["Lid_" + S]).col[0]
-            pose.delta("Lid_" + S, Quaternion(ax, -math.radians(38.0 * f["lids"])))
+            pose.delta("Lid_" + S, Quaternion(ax, -math.radians(LID_CLOSED_DEG * f["lids"])))
             # ceja: gira alrededor del eje de adelante y la punta de afuera sube (+) o baja
             pose.delta("Brow_" + S, Quaternion(Vector((0, 1, 0)), math.radians(f["brows"]) * sg))
             out = rot3(R.rest["Cheek_" + S]).col[1]

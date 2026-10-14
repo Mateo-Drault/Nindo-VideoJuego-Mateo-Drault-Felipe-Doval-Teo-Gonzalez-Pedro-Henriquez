@@ -3,8 +3,9 @@
 Un solo comando, determinista:
   blender -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/build_chikuo.py -- [opciones]
     --export            escribe Nindo/Assets/Nindo/Art/Characters/BambooMaster/BambooMaster.fbx (+ BambooMaster.fbx.json):
-                        el modelo nuevo con los clips de este paso ('Idle' = el reposo, 'PoseTest' = las poses de prueba);
-                        los clips de la pelea los agrega el paso de animación sobre este mismo esqueleto
+                        el modelo nuevo con los clips de este paso ('BindPose' = el reposo, 'Idle' = parado relajado,
+                        'PoseTest' = las poses de prueba); los de la pelea los agrega el paso de animación sobre este
+                        mismo esqueleto
     --renders DIR       hojas de revisión en DIR (todas, o las de --sheets)
     --sheets A,B        turnaround, head, details, game, poses, lineup
     --blend PATH        guarda el .blend resultante (para mirar a mano)
@@ -155,13 +156,15 @@ def main():
     rest = NA.Pose(rig)
     for n in rig.names:
         rest.get(n)
-    idle = HeldClip("Idle", [rest.W] * 31, True, "el reposo (pose A): el estado por defecto hasta que lleguen los clips")
+    bind = HeldClip("BindPose", [rest.W] * 31, True, "el reposo (pose A, la del skin): para revisar el modelo en Unity")
+    idle = HeldClip("Idle", [posed["relaxed"]] * 31, True, "parado relajado con la flauta en la derecha (la pose 'relaxed' "
+                    "quieta): el estado por defecto y la locomoción hasta que el paso de animación traiga los clips")
     ptW = []
     for name, *_ in CP.ORDER:
         ptW += [posed[name]] * HOLD
     pt = HeldClip("PoseTest", ptW, False, "las poses de prueba de la deformación, " + str(HOLD) + " cuadros cada una: "
                   + ", ".join(n for n, *_ in CP.ORDER))
-    baked = [(idle, idle.W), (pt, pt.W)]
+    baked = [(bind, bind.W), (idle, idle.W), (pt, pt.W)]
     act, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
     last = max(b for a, b in ranges.values())
     scn.frame_set(0)
@@ -213,7 +216,8 @@ def write_sidecar(ranges, baked, tris, bh):
         "bind_height_note": "alto que mide CharacterFactory.NormalizeHeight en la pose por defecto del FBX (el reposo, con la "
                             "flauta parada a la derecha): con este valor en NindoContent la escala es 1",
         "tris": tris, "facing": "frente +Z en Unity (Blender -Y): modelYaw 0",
-        "stage": "modelo (fase C4): solo los clips Idle (reposo) y PoseTest; los de la pelea los agrega el paso de animación",
+        "stage": "modelo (fase C4): solo los clips BindPose, Idle (parado relajado) y PoseTest; los de la pelea los agrega el "
+                 "paso de animación",
         "clips": clips,
         "pose_test": [n for n, *_ in CP.ORDER], "pose_test_hold_frames": HOLD,
         "contract_bones": CONTRACT_BONES,

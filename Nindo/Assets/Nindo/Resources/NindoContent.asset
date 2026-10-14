@@ -519,276 +519,52 @@ MonoBehaviour:
   - id: bamboo_master
     model: {fileID: 919132149155446097, guid: 191c5633648e5611746e668f0421a7c7, type: 3}
     controller: {fileID: 9100000, guid: 00038a893675a4c699be298472f4a7fd, type: 2}
-    height: 2.67
+    height: 2.45
     modelYaw: 0
     materialSwaps:
-    - material: Master_GlintHandR
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.1
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintHandL
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.1
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintFootR
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.12
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintFootL
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.12
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_Eyes
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.45
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintStaff
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.3
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_Skin
+    - material: Chikuo_Skin
       color: {r: 1, g: 1, b: 1, a: 0}
       smoothness: 0.14
       emission: {r: 0, g: 0, b: 0, a: 1}
       clearBaseMap: 0
+    - material: Chikuo_GlintChimesHi
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.35
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintChimesLo
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.35
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintStaff
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.3
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintFootR
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintFootL
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_Gi
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.1
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
     stateNames:
+    - BindPose
     - Idle
-    - Walk
-    - Run
-    - StrafeL
-    - StrafeR
-    - WalkBack
-    - Idle_P2
-    - Walk_P2
-    - Run_P2
-    - StrafeL_P2
-    - StrafeR_P2
-    - WalkBack_P2
-    - Idle_P3
-    - Walk_P3
-    - Run_P3
-    - StrafeL_P3
-    - StrafeR_P3
-    - WalkBack_P3
-    - Palm
-    - Palm_Mid
-    - Palm_Close
-    - ChopPalm
-    - ChopPalm_Mid
-    - ChopPalm_Close
-    - CraneKick
-    - LeapKick
-    - Palm_P2
-    - Palm_Mid_P2
-    - Palm_Close_P2
-    - ChopPalm_P2
-    - ChopPalm_Mid_P2
-    - ChopPalm_Close_P2
-    - CraneKick_P2
-    - LeapKick_P2
-    - Guard
-    - GuardHit
-    - GuardHitL
-    - Counter
-    - CounterStrike
-    - CounterStrike_Mid
-    - CounterStrike_Close
-    - Taunt
-    - Stance
-    - Hit
-    - HitHeavy
-    - Parried
-    - ParriedPerfect
-    - Exhausted
-    - ExhaustedHit
-    - ExhaustedRise
-    - Guard_P2
-    - GuardHit_P2
-    - GuardHitL_P2
-    - Counter_P2
-    - CounterStrike_P2
-    - CounterStrike_Mid_P2
-    - CounterStrike_Close_P2
-    - Taunt_P2
-    - Stance_P2
-    - Hit_P2
-    - HitHeavy_P2
-    - Parried_P2
-    - ParriedPerfect_P2
-    - Exhausted_P2
-    - ExhaustedHit_P2
-    - ExhaustedRise_P2
-    - Guard_P3
-    - GuardHit_P3
-    - GuardHitL_P3
-    - Counter_P3
-    - CounterStrike_P3
-    - CounterStrike_Mid_P3
-    - CounterStrike_Close_P3
-    - Taunt_P3
-    - Stance_P3
-    - Hit_P3
-    - HitHeavy_P3
-    - Parried_P3
-    - ParriedPerfect_P3
-    - Exhausted_P3
-    - ExhaustedHit_P3
-    - ExhaustedRise_P3
-    - Intro
-    - PhaseCoat
-    - TwinPalm
-    - TwinPalm_Mid
-    - TwinPalm_Close
-    - SpinKick
-    - Sweep
-    - QiWave
-    - DashStrike
-    - DashStrike_Pass
-    - BackHop
-    - BackHop_P2
-    - BackHop_P3
-    - Palm_P3
-    - Palm_Mid_P3
-    - Palm_Close_P3
-    - ChopPalm_P3
-    - ChopPalm_Mid_P3
-    - ChopPalm_Close_P3
-    - CraneKick_P3
-    - LeapKick_P3
-    - Sweep_P3
-    - QiWave_P3
-    - DashStrike_P3
-    - DashStrike_Pass_P3
-    - PhaseStaff
-    - Defeat
-    - Meditate
-    - SeatedBow
-    - GuardHitLow
-    - GuardHitLow_P2
-    - GuardHitLow_P3
     - PoseTest
     stateLengths:
-    - 3.2
-    - 1.2
-    - 0.7333
-    - 0.8
-    - 0.8
-    - 1.2
-    - 3.2
-    - 1.2
-    - 0.7333
-    - 0.8
-    - 0.8
-    - 1.2
-    - 3.2
-    - 1.2
-    - 0.7333
-    - 0.8
-    - 0.8
-    - 1.2
-    - 1.1333
-    - 1.1333
-    - 1.1333
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.4
-    - 1.8667
-    - 1.1333
-    - 1.1333
-    - 1.1333
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.4
-    - 1.8667
-    - 0.6667
-    - 0.5
-    - 0.5
-    - 0.5333
-    - 0.8667
-    - 0.8667
-    - 0.8667
-    - 2.0
-    - 0.6667
-    - 0.6
-    - 0.9
     - 1.0
-    - 1.2
-    - 4.0
-    - 0.5333
-    - 0.7333
-    - 0.6667
-    - 0.5
-    - 0.5
-    - 0.5333
-    - 0.8667
-    - 0.8667
-    - 0.8667
-    - 2.0
-    - 0.6667
-    - 0.6
-    - 0.9
     - 1.0
-    - 1.2
-    - 4.0
-    - 0.5333
-    - 0.7333
-    - 0.6667
-    - 0.5
-    - 0.5
-    - 0.5333
-    - 0.8667
-    - 0.8667
-    - 0.8667
-    - 2.0
-    - 0.6667
-    - 0.6
-    - 0.9
-    - 1.0
-    - 1.2
-    - 4.0
-    - 0.5333
-    - 0.7333
-    - 4.0
-    - 3.6667
-    - 1.2667
-    - 1.2667
-    - 1.2667
-    - 1.4667
-    - 1.6
-    - 1.8667
-    - 1.2
-    - 1.2
-    - 0.7333
-    - 0.7333
-    - 0.7333
-    - 1.1333
-    - 1.1333
-    - 1.1333
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.4
-    - 1.8667
-    - 1.6
-    - 1.8667
-    - 1.2
-    - 1.2
-    - 3.0
-    - 5.0
-    - 3.2
-    - 2.3333
-    - 0.5
-    - 0.5
-    - 0.5
-    - 7.7333
+    - 5.9667
   kits:
   - id: goro_armor
     model: {fileID: 919132149155446097, guid: d9163b055f46bf9cf1a218a4e55a6dee, type: 3}

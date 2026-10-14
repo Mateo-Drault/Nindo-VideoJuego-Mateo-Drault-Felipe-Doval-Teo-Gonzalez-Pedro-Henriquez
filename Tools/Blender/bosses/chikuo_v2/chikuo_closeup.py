@@ -39,12 +39,23 @@ if what == "pose":
     arm.location = (0, 0, up)
     views = [(c + Vector((0, 0, up)), sc, a, e) for a, e in ((0, 5), (70, 5), (160, 10), (250, 5))]
     tag = f"{name}_{argv[3]}"
+elif what == "cara":
+    # las caras de cerca, de frente y de 3/4 (sonrisa, soplando, riéndose, tocando con los ojos cerrados)
+    views = []
+    for face in CP.FACE_POSES:
+        views += [(face, (0, -0.02, 2.15), 0.30, a, e) for a, e in ((0, 3), (35, 4))]
 else:
     views = {"cabeza": [((0, 0.0, 2.22), 0.54, a, e) for a, e in ((0, 3), (90, 2), (35, 5), (-90, 2), (180, 8), (0, 60))],
              "cuerpo": [((0, 0, 1.55), 1.2, a, e) for a, e in ((0, 3), (90, 2), (35, 5), (180, 8))],
              "pies": [((-0.24, -0.06, 0.2), 0.6, a, e) for a, e in ((0, 3), (90, 2), (35, 15), (180, 8))]}[what]
 tiles = []
-for i, (c, s, a, e) in enumerate(views):
+for i, v in enumerate(views):
+    if len(v) == 5:
+        face, c, s, a, e = v
+        rv.apply(CP.face_pose(rig, face))
+        tag = "cara " + face
+    else:
+        c, s, a, e = v
     rv.set_studio_light(RV.STUDIO if abs(a) < 150 else Vector((0.4, 0.75, 0.7)))
     rv.ortho(c, s, a, e)
     tiles.append({"img": rv.render(rv.tile(f"cu_{i}"), res=(640, 640)), "label": f"{tag} {a}° / {e}°"})
