@@ -16,7 +16,9 @@ argv = sys.argv[sys.argv.index("--") + 1:]
 ref = json.load(open(argv[0], encoding="utf-8"))
 FBX = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Art", "Characters", "BambooMaster", "BambooMaster.fbx")
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bpy.ops.import_scene.fbx(filepath=FBX)
+# sin el corrimiento de un cuadro que el importador de Blender pone por defecto (anim_offset 1): la toma 1..N queda en
+# los mismos cuadros que en el armado
+bpy.ops.import_scene.fbx(filepath=FBX, anim_offset=0.0)
 arm = next(o for o in bpy.data.objects if o.type == 'ARMATURE')
 body = bpy.data.objects["Chikuo_Body"]
 scn = bpy.context.scene

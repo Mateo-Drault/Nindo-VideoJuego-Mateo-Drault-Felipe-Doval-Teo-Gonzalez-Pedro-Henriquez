@@ -362,6 +362,42 @@ class Review:
                                             {"label": "", "tiles": rows[2]["tiles"] + rows[3]["tiles"]}]})
         return out
 
+    # vistas a escala de la hoja de modelado (píxeles del original): todas paradas en la misma suela (y 1313) a 1.95 mm por
+    # píxel (2.45 m de la suela a la punta del moño); el eje es el centro entre los pies (de perfil, el tobillo)
+    METRIC = {"front": ((40, 40, 690, 1330), 374, 0, 0.6), "side": ((1380, 40, 1840, 1330), 1571, 90, 0.6),
+              "q34": ((740, 40, 1280, 1330), 955, 42, 0.6), "back": ((1900, 40, 2640, 1330), 2267, 180, 0.6),
+              "head_front": ((255, 40, 495, 360), 374, 0, 2.0), "head_side": ((1440, 60, 1720, 400), 1571, 90, 2.0),
+              "head_back": ((2120, 40, 2420, 400), 2267, 180, 2.0)}
+    SOLE_Y, MM_PX = 1313, 1.95
+
+    def metric_sheet(self, keys, name, W=None):
+        """El modelo y el concepto en el mismo rectángulo del mundo, con la grilla en metros y superpuestos
+        (chikuo_overlay.py): las proporciones se comparan medidas."""
+        import subprocess
+        self.use("studio")
+        self.floor()
+        self.apply(W)
+        s = self.MM_PX / 1000.0
+        views = []
+        for key in keys:
+            (x0, y0, x1, y1), xc, az, zoom = self.METRIC[key]
+            u = ((x0 + x1) * 0.5 - xc) * s
+            zc = (self.SOLE_Y - (y0 + y1) * 0.5) * s
+            right = Matrix.Rotation(math.radians(az), 3, 'Z') @ Vector((1.0, 0.0, 0.0))
+            # la luz gira con la cámara: cada vista se ilumina como la de la hoja (de adelante, arriba y a la izquierda)
+            self.set_studio_light(Matrix.Rotation(math.radians(az), 3, 'Z') @ STUDIO)
+            self.ortho(right * u + Vector((0, 0, zc)), (y1 - y0) * s, az, 0.0)
+            p = self.render(self.tile("m_" + key), res=(int((x1 - x0) * zoom), int((y1 - y0) * zoom)))
+            views.append({"label": key, "concept": os.path.join(CONCEPT, "elegido_modelado.jpg"), "crop": [x0, y0, x1, y1],
+                          "model": p, "sole_y": self.SOLE_Y, "center_x": xc, "mm_px": self.MM_PX, "zoom": zoom})
+        out = os.path.join(self.out, name + ".png")
+        lay = os.path.join(self.out, "_metric.json")
+        json.dump({"out": out, "title": "Chikuō ermitaño a escala contra la hoja de modelado (grilla de 10 cm)",
+                   "views": views}, open(lay, "w", encoding="utf-8"), indent=1)
+        r = subprocess.run(["python", os.path.join(HERE, "chikuo_overlay.py"), lay], capture_output=True, text=True)
+        print(r.stdout.strip() or r.stderr.strip()[-400:])
+        return out
+
     def head_sheet(self, faces):
         """La cabeza de frente, de perfil y de 3/4 (sonrisa pícara) y las caras (soplando, tocando, riéndose) junto al
         concepto. faces = {nombre: W de la pose con esa cara}."""
@@ -374,7 +410,7 @@ class Review:
                                        ("head_laugh", 25, 4, "laugh", "riéndose")):
             self.apply(faces.get(face))
             hb = self.arm.matrix_world @ self.arm.pose.bones["Head"].head
-            self.ortho(hb + Vector((0, 0, 0.12)), 0.62, az, el)
+            self.ortho(hb + Vector((0, 0, 0.17)), 0.68, az, el)
             p = self.render(self.tile("head_" + key), res=(560, 640))
             tiles_c.append(concept_tile(key, lab))
             tiles_m.append({"img": p, "label": "modelo: " + lab + ("" if face == "grin" else " (" + face + ")")})

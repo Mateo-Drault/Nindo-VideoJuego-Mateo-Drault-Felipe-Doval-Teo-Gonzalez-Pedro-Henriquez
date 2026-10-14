@@ -12,12 +12,14 @@ una sola raíz 'Root' que ningún clip anima). Además de la cadena humana (Hips
     'Staff_Muzzle' (la punta de abajo, de donde salen los dardos), 'Staff_Mouth' (la punta de arriba, la boquilla de
     la cerbatana), 'Staff_Flute' (el agujero de soplar de costado) y 'Staff_Grip' (el centro del vendado);
   * cadenas que el juego puede mover con SpringChain ('Acc_<Nombre>_0..n' + '_end', la convención de los kits):
-    la barba ('TasselBeard', 4 tramos), la ramita de hojas del moño ('LeafKnot'), las colas de la faja
-    ('TieSashA/B') y un hueso por cascabel ('ChimesHi00..09' en los hombros, 'ChimesLo00..11' en la espalda: el
-    perfil 'Chimes' de SpringChain), con las esferas 'AccCol_*' del pecho, la panza, la espalda y los muslos;
+    la barba ('TasselBeard', 4 tramos, cuelga de la cabeza), la ramita de hojas del moño ('LeafKnot'), las colas de la
+    faja ('TieSashA/B') y un hueso por cascabel ('ChimesHi00..09' en los hombros, 'ChimesLo00..13' en la espalda: el
+    perfil 'Chimes' de SpringChain), con las esferas 'AccCol_*' del pecho, la panza, la espalda de la capa, la cadera,
+    los muslos, los brazos y la flauta (ninguna cadena queda adentro de una esfera en reposo: build_chikuo lo mide);
   * cadenas horneadas en los clips (sin el prefijo Acc_, a propósito): el moño ('Topknot_1..2'), las mangas
     ('Sleeve_*_1..2'), los cuatro paños de la falda del gi ('Skirt_<ángulo>') y los doce paños de la capa
-    ('Cloak_<ángulo>_1..2'). SpringChain saltea toda cadena que cuelgue de otra Acc_ (SpringChain.Rebuild): si la
+    ('Cloak_<ángulo>_1..2' adelante y en los hombros, '_1..3' detrás del brazo y en la espalda: se doblan en el posado,
+    colgado y en las patadas). SpringChain saltea toda cadena que cuelgue de otra Acc_ (SpringChain.Rebuild): si la
     capa fuera Acc_ los cascabeles, que cuelgan de ella y tienen que sonar y moverse solos, quedarían quietos.
 
 Ejes: Blender Z arriba, frente -Y, derecha del personaje = -X. Los ángulos alrededor del cuerpo se miden desde el frente
@@ -38,7 +40,7 @@ BALL = Vector((-0.245, -0.17, 0.035))        # bola del pie: de acá dobla la pu
 TOE_TIP = Vector((-0.258, -0.295, 0.03))
 SOLE_TOE_Y, SOLE_HEEL_Y = -0.305, 0.115      # punta y talón de la suela (pies de 42 cm: los de alguien que trepa)
 SHOULDER = Vector((-0.20, 0.03, 1.85))
-UPPER_LEN, FORE_LEN, HAND_LEN = 0.39, 0.36, 0.115
+UPPER_LEN, FORE_LEN, HAND_LEN = 0.39, 0.36, 0.135
 ARM_OUT_DEG = 35.0                           # pose A: el brazo abierto 35° (deforma limpio el hombro)
 _u = Vector((-math.sin(math.radians(ARM_OUT_DEG)), 0.0, -math.cos(math.radians(ARM_OUT_DEG))))
 ELBOW = SHOULDER + _u * UPPER_LEN
@@ -50,33 +52,71 @@ KNUCKLE = WRIST + _h * HAND_LEN
 _DORS = (Vector((-1.0, 0.0, 0.0)) - _h * Vector((-1.0, 0.0, 0.0)).dot(_h)).normalized()
 _THUMB_SIDE = -(_h.cross(_DORS)).normalized()
 # centro de la palma y punto por donde pasa un caño agarrado con el puño (espacio del hueso de la mano: Y dedos, Z dorso)
-PALM_LOCAL = Vector((0.0, 0.065, -0.026))
-GRIP_LOCAL = Vector((0.0, 0.095, -0.052))
-# dedos: (nombre, corrimiento hacia el pulgar desde el centro de los nudillos, falange 1, falange 2)
-FINGERS = [("Index", 0.034, 0.060, 0.050), ("Middle", 0.011, 0.066, 0.054),
-           ("Ring", -0.012, 0.062, 0.050), ("Pinky", -0.034, 0.050, 0.040)]
-THUMB_BASE_LOCAL = Vector((-0.036, 0.024, -0.020))
+PALM_LOCAL = Vector((0.0, 0.076, -0.029))
+GRIP_LOCAL = Vector((0.0, 0.110, -0.057))
+# dedos: (nombre, corrimiento hacia el pulgar desde el centro de los nudillos, falange 1, falange 2): las manos grandes y
+# huesudas del concepto (un 20 % más que una mano de su alto)
+FINGERS = [("Index", 0.038, 0.072, 0.060), ("Middle", 0.012, 0.079, 0.065),
+           ("Ring", -0.013, 0.074, 0.060), ("Pinky", -0.038, 0.060, 0.048)]
+# en el reposo los dedos ya vienen doblados 10° por falange (la mano relajada de la hoja, no una tabla): las formas de
+# HAND_SHAPES miden desde ahí
+FINGER_REST_CURL = 10.0
+THUMB_BASE_LOCAL = Vector((-0.040, 0.028, -0.022))
 THUMB_DIR_LOCAL = Vector((-0.55, 0.78, -0.30))
-THUMB_LEN = (0.052, 0.045)
+THUMB_LEN = (0.060, 0.052)
 
-# cara (lado derecho): ojo (hundido bajo el arco de la ceja), ceja, cachete, comisura de la sonrisa ancha
-EYE_R = Vector((-0.036, -0.083, 2.154))
-# el pivote del párpado, 1 cm detrás del ojo: desde ahí el ojo entero entra en el casquete (cerrado lo tapa todo)
-LID_R = EYE_R + Vector((0.0, 0.010, 0.0))
-BROW_R = (Vector((-0.014, -0.106, 2.176)), Vector((-0.092, -0.080, 2.198)))
-CHEEK_R = (Vector((-0.058, -0.062, 2.108)), Vector((-0.068, -0.088, 2.108)))
-CORNER_R = (Vector((-0.050, -0.074, 2.090)), Vector((-0.054, -0.094, 2.092)))
-JAW = (Vector((0.0, -0.004, 2.126)), Vector((0.0, -0.072, 2.036)))
-# el moño arriba y atrás, inclinado 25° hacia atrás (de perfil se va para la nuca)
-TOPKNOT_AXIS = Vector((0.0, math.sin(math.radians(25.0)), math.cos(math.radians(25.0))))
-TOPKNOT_BASE = Vector((0.0, 0.046, 2.247))
-TOPKNOT = [TOPKNOT_BASE, TOPKNOT_BASE + TOPKNOT_AXIS * 0.09, TOPKNOT_BASE + TOPKNOT_AXIS * 0.215]
-LEAF_KNOT = [TOPKNOT_BASE + TOPKNOT_AXIS * 0.022 + Vector((0, 0.03, 0)), Vector((0.0, 0.12, 2.258)),
-             Vector((0.0, 0.16, 2.232)), Vector((0.0, 0.19, 2.205))]
-# la barba cuelga delante del pecho con aire (de perfil se separa del gi, como en la hoja)
-BEARD = [Vector((0.0, -0.078, 2.035)), Vector((0.0, -0.150, 1.905)), Vector((0.0, -0.174, 1.79)),
-         Vector((0.0, -0.180, 1.69)), Vector((0.0, -0.182, 1.585)), Vector((0.0, -0.178, 1.52))]
-MOUTH = Vector((0.0, -0.106, 2.080))          # entre los labios: donde va la boquilla de la cerbatana
+# cabeza: se autora en un marco propio (los anillos y los rasgos de chikuo_model, las medidas *_S de acá abajo) y
+# head_t la lleva a su lugar. Medida sobre la hoja de modelado a escala (chikuo_overlay), la cara del concepto es tan
+# alta como la autorada pero 18 % más ancha (0.22 m de pómulo a pómulo) y más honda, y está 4 cm adelante y 2 abajo:
+# el cuello se inclina hacia adelante (el viejo encorvado del perfil) y la barba cuelga delante del pecho
+HEAD_SRC = Vector((0.0, 0.005, 2.02))        # el pivote de la cabeza en el marco de autoría
+HEAD_J = Vector((0.0, -0.035, 2.0))          # el pivote de la cabeza en el modelo (la base del cráneo)
+HEAD_S = Vector((1.18, 1.10, 1.06))
+HEAD_SX_TOP = 1.00                           # el ancho se estira en la cara; el cráneo, arriba de las sienes, casi no
+
+
+def head_sx(z_src):
+    t = max(0.0, min(1.0, (z_src - 2.13) / 0.09))
+    return HEAD_S.x + (HEAD_SX_TOP - HEAD_S.x) * t * t * (3.0 - 2.0 * t)
+
+
+def head_t(p):
+    """Del marco de autoría de la cabeza al modelo."""
+    p = Vector(p)
+    d = p - HEAD_SRC
+    return HEAD_J + Vector((d.x * head_sx(p.z), d.y * HEAD_S.y, d.z * HEAD_S.z))
+
+
+def head_t_inv(p):
+    d = Vector(p) - HEAD_J
+    z = HEAD_SRC.z + d.z / HEAD_S.z
+    return Vector((d.x / head_sx(z), HEAD_SRC.y + d.y / HEAD_S.y, z))
+
+
+# cara en el marco de autoría (lado derecho): ojo (hundido bajo el arco de la ceja), ceja, cachete, comisura de la
+# sonrisa en medialuna (sube hasta el pómulo, como en la hoja de detalles)
+EYE_S = Vector((-0.040, -0.083, 2.154))
+# el pivote del párpado, 1.2 cm detrás del ojo: desde ahí el ojo entero entra en el casquete (cerrado lo tapa todo)
+LID_S = EYE_S + Vector((0.0, 0.012, 0.0))
+BROW_S = (Vector((-0.014, -0.105, 2.170)), Vector((-0.090, -0.080, 2.200)))
+CHEEK_S = (Vector((-0.066, -0.054, 2.110)), Vector((-0.078, -0.078, 2.110)))
+CORNER_S = (Vector((-0.064, -0.071, 2.0955)), Vector((-0.068, -0.091, 2.0965)))
+JAW_S = (Vector((0.0, -0.004, 2.126)), Vector((0.0, -0.072, 2.030)))
+MOUTH_S = Vector((0.0, -0.104, 2.0625))      # entre los labios: donde va la boquilla de la cerbatana
+EYE_R, LID_R, MOUTH = head_t(EYE_S), head_t(LID_S), head_t(MOUTH_S)
+BROW_R, CHEEK_R, CORNER_R, JAW = [tuple(head_t(p) for p in pr) for pr in (BROW_S, CHEEK_S, CORNER_S, JAW_S)]
+# el moño en la coronilla, atrás de la calva, apenas inclinado hacia la nuca: de frente es una llama derecha (la hoja
+# de modelado) y de perfil se va un poco atrás (la hoja original y la de detalles); se autora ya en el modelo
+TOPKNOT_AXIS = Vector((0.0, math.sin(math.radians(18.0)), math.cos(math.radians(18.0))))
+TOPKNOT_BASE = Vector((0.0, 0.016, 2.256))
+TOPKNOT = [TOPKNOT_BASE, TOPKNOT_BASE + TOPKNOT_AXIS * 0.075, TOPKNOT_BASE + TOPKNOT_AXIS * 0.195]
+# la ramita del cordón: hacia atrás y a los costados (de espaldas es un moño de hojas)
+LEAF_KNOT = [TOPKNOT_BASE + TOPKNOT_AXIS * 0.03 + Vector((0, 0.03, 0)), TOPKNOT_BASE + Vector((0, 0.10, 0.012)),
+             TOPKNOT_BASE + Vector((0, 0.15, -0.012)), TOPKNOT_BASE + Vector((0, 0.18, -0.04))]
+# la barba cuelga del mentón delante del pecho con aire (de perfil se separa del gi, como en la hoja) y termina en el
+# nudo trenzado y la punta a la altura de la faja
+BEARD = [Vector((0.0, -0.140, 2.030)), Vector((0.0, -0.182, 1.915)), Vector((0.0, -0.188, 1.810)),
+         Vector((0.0, -0.183, 1.720)), Vector((0.0, -0.176, 1.625)), Vector((0.0, -0.170, 1.555))]
 # faja: el nudo al frente, de donde cuelgan las dos colas color paja
 SASH_Z = (1.395, 1.495)
 SASH_KNOT = Vector((0.012, -0.176, 1.447))
@@ -89,30 +129,58 @@ SKIRT_ANGLES = [40.0, 140.0, 220.0, 320.0]
 SKIRT_TOP_Z, SKIRT_HEM_Z = 1.40, 0.86
 SKIRT_TOP_R = (0.205, 0.158)
 SKIRT_HEM_R = (0.345, 0.285)
-# capa: doce paños de dos tramos por los hombros y la espalda; abierta adelante (de -25° a 25° se ve el gi)
-CLOAK_ANGLES = [38.0, 64.0, 90.0, 116.0, 142.0, 168.0, 192.0, 218.0, 244.0, 270.0, 296.0, 322.0]
-CLOAK_OPEN = 25.0
+# capa: doce paños por los hombros y la espalda, abierta adelante como en la hoja: entre los dos bordes (a 56° del frente:
+# 0.19 m del eje en el pecho) se ve el gi entero con las solapas, y de perfil la barba queda delante de todo. Los dos
+# del frente de cada lado son capas cortas de hombro; detrás del brazo y en la espalda cuelgan derecho hasta las corvas
+# (la parva del concepto: de atrás angosta y a plomo, sin campana)
+CLOAK_ANGLES = [58.0, 80.0, 102.0, 124.0, 146.0, 168.0, 192.0, 214.0, 236.0, 258.0, 280.0, 302.0]
+CLOAK_OPEN = 56.0
 CLOAK_Y0 = 0.02                              # eje de la capa (la nuca, apenas atrás del eje del cuerpo)
-# perfil de la caída (distancia al eje, altura) del cuello al ruedo, por ángulo. Como en el concepto: adelante cuelga a
-# los lados del pecho hasta la faja (por dentro del brazo); al costado cubre el hombro y el brazo (en la pose A la
-# manga queda 5-9 cm abajo); atrás del brazo baja hasta la cadera y en la espalda hasta las corvas
+# perfil de la caída (distancia al eje, altura) del cuello al ruedo, por ángulo. Medido sobre la hoja de modelado a
+# escala: adelante la capa de hombro baja hasta 1.53 sin pasar de y -0.10 (la barba de perfil se ve entera); sobre el
+# hombro cubre el brazo de la pose A (la manga queda 3-5 cm abajo) hasta el codo; detrás del brazo baja hasta la
+# cadera y en la espalda hasta media pantorrilla, a plomo
 CLOAK_PROFILES = [
-    (38.0, [(0.105, 1.975), (0.17, 1.945), (0.22, 1.86), (0.245, 1.70), (0.255, 1.50), (0.265, 1.32)]),
-    (64.0, [(0.11, 1.975), (0.21, 1.95), (0.30, 1.87), (0.34, 1.70), (0.35, 1.50), (0.36, 1.34)]),
-    (90.0, [(0.11, 1.975), (0.25, 1.955), (0.38, 1.87), (0.50, 1.72), (0.58, 1.55)]),
-    (116.0, [(0.11, 1.975), (0.24, 1.95), (0.35, 1.85), (0.40, 1.65), (0.42, 1.40), (0.44, 1.16)]),
-    (140.0, [(0.105, 1.975), (0.22, 1.94), (0.32, 1.82), (0.37, 1.60), (0.39, 1.30), (0.41, 0.98)]),
-    (180.0, [(0.10, 1.975), (0.19, 1.925), (0.235, 1.76), (0.255, 1.46), (0.29, 1.10), (0.33, 0.72)]),
+    (58.0, [(0.12, 1.985), (0.185, 1.955), (0.215, 1.88), (0.225, 1.76), (0.23, 1.64), (0.232, 1.53)]),
+    (80.0, [(0.12, 1.985), (0.25, 1.96), (0.36, 1.90), (0.45, 1.80), (0.51, 1.68), (0.55, 1.55)]),
+    (104.0, [(0.12, 1.985), (0.25, 1.955), (0.37, 1.885), (0.44, 1.75), (0.47, 1.56), (0.48, 1.34), (0.48, 1.05)]),
+    (135.0, [(0.115, 1.985), (0.235, 1.95), (0.33, 1.86), (0.38, 1.70), (0.40, 1.45), (0.40, 1.15), (0.40, 0.78)]),
+    (180.0, [(0.105, 1.985), (0.20, 1.935), (0.255, 1.80), (0.28, 1.55), (0.29, 1.20), (0.29, 0.80), (0.29, 0.42)]),
 ]
-CLOAK_SPLIT = 0.46                           # dónde se parte cada paño en sus dos tramos (fracción de la caída)
-# cascabeles: (grupo, ángulo, fracción de la caída donde se ata el cordón, largo del cordón, largo del tubo, radio)
+# tramos por paño y dónde se parten (fracción de la caída)
+CLOAK_SPLITS = {2: (0.46,), 3: (0.34, 0.66)}
+
+
+def cloak_segs(a):
+    """Los paños del frente y de los hombros, cortos, tienen dos tramos; los de detrás del brazo y la espalda, tres."""
+    return 3 if abs(((a + 180.0) % 360.0) - 180.0) > 95.0 else 2
+
+
+def cloak_seg_of(a, s):
+    return 1 + sum(1 for x in CLOAK_SPLITS[cloak_segs(a)] if s >= x)
+
+
+def cloak_bones():
+    return [cloak_name(a, i) for a in CLOAK_ANGLES for i in range(1, cloak_segs(a) + 1)]
+
+
+# cascabeles, uno por uno (sin espejo: racimos de dos y tres a alturas distintas, como en la hoja): (grupo, ángulo,
+# altura del nudo del cordón, largo del cordón, largo del tubo, radio). Los agudos, cortos, en los dos hombros adelante
+# (los que ve la cámara del juego); los graves, largos, en tres hileras por la espalda alta y uno abajo: medidos sobre
+# la hoja de modelado, cuelgan entre 1.9 y 1.0 m (de espaldas, la mitad de arriba de la parva)
 CHIMES = [
-    # los agudos: tres adelante en el hombro (los que ve la cámara del juego) y dos arriba de la espalda
-    ("Hi", 42.0, 0.30, 0.035, 0.150, 0.033), ("Hi", 62.0, 0.36, 0.05, 0.165, 0.034), ("Hi", 84.0, 0.40, 0.04, 0.155, 0.033),
-    ("Hi", 150.0, 0.24, 0.045, 0.160, 0.034), ("Hi", 170.0, 0.21, 0.035, 0.145, 0.033),
-    # los graves: dos hileras en la espalda, más largos y gruesos
-    ("Lo", 120.0, 0.50, 0.05, 0.205, 0.036), ("Lo", 140.0, 0.56, 0.065, 0.23, 0.037), ("Lo", 160.0, 0.50, 0.05, 0.24, 0.037),
-    ("Lo", 176.0, 0.62, 0.06, 0.22, 0.037), ("Lo", 132.0, 0.80, 0.05, 0.25, 0.038), ("Lo", 156.0, 0.78, 0.045, 0.21, 0.037),
+    # los hombros: cuatro de cada lado justo debajo del yugo de hojas en punta (que queda arriba y atrás, como en la hoja)
+    # y uno más a cada costado, detrás del brazo
+    ("Hi", 58.0, 1.835, 0.035, 0.200, 0.031), ("Hi", 72.0, 1.840, 0.050, 0.210, 0.032), ("Hi", 87.0, 1.830, 0.035, 0.220, 0.031),
+    ("Hi", 101.0, 1.800, 0.050, 0.210, 0.032), ("Hi", 120.0, 1.675, 0.040, 0.210, 0.031),
+    ("Hi", 302.0, 1.830, 0.045, 0.200, 0.031), ("Hi", 288.0, 1.845, 0.035, 0.215, 0.032), ("Hi", 273.0, 1.825, 0.050, 0.210, 0.031),
+    ("Hi", 259.0, 1.805, 0.040, 0.220, 0.032), ("Hi", 243.0, 1.660, 0.045, 0.215, 0.031),
+    # la espalda: tres hileras que no se pisan en altura (los de abajo entre los de arriba) y uno más abajo
+    ("Lo", 168.0, 1.860, 0.050, 0.210, 0.033), ("Lo", 193.0, 1.855, 0.060, 0.215, 0.034), ("Lo", 149.0, 1.845, 0.040, 0.205, 0.033),
+    ("Lo", 211.0, 1.860, 0.045, 0.210, 0.034), ("Lo", 130.0, 1.825, 0.055, 0.200, 0.033), ("Lo", 230.0, 1.835, 0.040, 0.205, 0.033),
+    ("Lo", 180.0, 1.585, 0.040, 0.260, 0.034), ("Lo", 158.0, 1.575, 0.030, 0.250, 0.034), ("Lo", 203.0, 1.590, 0.050, 0.255, 0.035),
+    ("Lo", 139.0, 1.560, 0.040, 0.240, 0.033), ("Lo", 221.0, 1.570, 0.035, 0.250, 0.034),
+    ("Lo", 170.0, 1.240, 0.040, 0.265, 0.035), ("Lo", 196.0, 1.250, 0.035, 0.270, 0.035), ("Lo", 183.0, 0.950, 0.040, 0.260, 0.035),
 ]
 # flauta-bastón: 2.1 m, Ø 6 cm; en reposo parada a la derecha (el juego la mueve; no cambia el alto de bind)
 STAFF_LEN = 2.10
@@ -120,11 +188,18 @@ STAFF_R = 0.030
 STAFF_BOTTOM = Vector((-0.86, -0.06, 0.0))
 STAFF_GRIP = (0.08, 0.38)                    # el vendado, metros desde la punta de abajo
 STAFF_FLUTE = 0.075                          # el agujero de soplar, metros desde la punta de arriba
-# esferas de colisión de las cadenas (nombre, hueso, centro en el mundo de reposo, radio)
-CHAIN_COLLIDERS = [("Chest", "Spine2", Vector((0.0, -0.02, 1.75)), 0.16), ("Belly", "Spine", Vector((0.0, -0.03, 1.40)), 0.17),
-                   ("Back", "Spine2", Vector((0.0, 0.0, 1.56)), 0.26), ("Rump", "Hips", Vector((0.0, 0.05, 1.06)), 0.28),
+# esferas de colisión de las cadenas de SpringChain (nombre, hueso, centro en el mundo de reposo, radio). Todas las
+# cadenas chocan con todas: ninguna cadena puede quedar adentro de una esfera en reposo (la empujaría y temblaría), y
+# build_chikuo lo mide. La del pecho deja la barba delante del gi; la de la espalda de la capa está detrás del cuerpo
+# (deja los graves afuera de las hojas sin tocar la barba); los brazos y la flauta apartan la barba y los cascabeles
+CHAIN_COLLIDERS = [("Chest", "Spine2", Vector((0.0, 0.01, 1.72)), 0.13), ("Belly", "Spine", Vector((0.0, 0.0, 1.38)), 0.16),
+                   ("CloakBack", "Spine2", Vector((0.0, 0.10, 1.36)), 0.22), ("Rump", "Hips", Vector((0.0, 0.08, 1.04)), 0.26),
                    ("ThighR", "Thigh_R", Vector((-0.15, -0.06, 0.90)), 0.17),
                    ("ThighL", "Thigh_L", Vector((0.15, -0.06, 0.90)), 0.17)]
+# las de los brazos y la flauta van a mitad de hueso y a 0.12 y 0.30 m de la boquilla (las calcula bones())
+LIMB_COLLIDERS = [("UpperArmR", "UpperArm_R", 0.5, 0.09), ("UpperArmL", "UpperArm_L", 0.5, 0.09),
+                  ("ForearmR", "Forearm_R", 0.5, 0.07), ("ForearmL", "Forearm_L", 0.5, 0.07)]
+STAFF_COLLIDERS = [("StaffA", 0.12, 0.05), ("StaffB", 0.30, 0.05)]
 
 
 def mx(v):
@@ -148,13 +223,38 @@ def chime_name(group, i):
 
 
 def chimes_full():
-    """Los cascabeles de los dos lados: [(nombre del hueso sin _0, grupo, ángulo, caída, cordón, tubo, radio)]; los de
-    su izquierda son los de la tabla y los de su derecha su espejo, numerados por grupo."""
+    """Los cascabeles: [(nombre del hueso sin _0, grupo, ángulo, caída, cordón, tubo, radio)], numerados por grupo en el
+    orden de la tabla; la caída es la fracción del perfil de la capa donde el nudo queda a la altura de la tabla."""
     out, n = [], {"Hi": 0, "Lo": 0}
-    for side in (1, -1):
-        for g, a, s, cord, ln, r in CHIMES:
-            out.append((chime_name(g, n[g]), g, a if side > 0 else 360.0 - a, s, cord, ln, r))
-            n[g] += 1
+    for g, a, z, cord, ln, r in CHIMES:
+        out.append((chime_name(g, n[g]), g, a, chime_drop(a, z), cord, ln, r))
+        n[g] += 1
+    return out
+
+
+def chime_drop(phi, z):
+    """La fracción de la caída de la capa en el ángulo phi donde el nudo del cordón (afuera de las hojas) queda a la
+    altura z."""
+    lo, hi = 0.0, 1.0
+    for _ in range(30):
+        m = (lo + hi) * 0.5
+        if cloak_point(phi, m, CHIME_OUT).z > z:
+            lo = m
+        else:
+            hi = m
+    return round((lo + hi) * 0.5, 4)
+
+
+def collider_specs():
+    """Todas las esferas: (nombre del hueso AccCol_..., hueso padre, centro en el reposo, radio)."""
+    out = [(f"AccCol_{n}_{int(round(r * 100)):02d}", b, c, r) for n, b, c, r in CHAIN_COLLIDERS]
+    for n, b, t, r in LIMB_COLLIDERS:
+        h, tl = (ELBOW, WRIST) if b.startswith("Forearm") else (SHOULDER, ELBOW)
+        p = h.lerp(tl, t)
+        out.append((f"AccCol_{n}_{int(round(r * 100)):02d}", b, p if b.endswith("_R") else mx(p), r))
+    top = STAFF_BOTTOM + Vector((0, 0, STAFF_LEN))
+    for n, d, r in STAFF_COLLIDERS:
+        out.append((f"AccCol_{n}_{int(round(r * 100)):02d}", "Staff", top - Vector((0, 0, d)), r))
     return out
 
 
@@ -251,7 +351,7 @@ def sleeve_points(S):
     return (m(a), m(a + down * 0.13)), (m(b), m(b + down * 0.15))
 
 
-CHIME_OUT = 0.058                            # el cordón se ata sobre las hojas (la hoja de arriba de esa hilera)
+CHIME_OUT = 0.090                            # el cordón se ata 2-3 cm afuera de las hojas: el tubo cuelga entero a la vista
 
 
 def chime_attach(phi, s):
@@ -259,17 +359,45 @@ def chime_attach(phi, s):
     return cloak_point(phi, s, CHIME_OUT)
 
 
-def chime_axis(phi, s):
-    """Hacia dónde cuelga en reposo: casi vertical, apenas apoyado en la capa (la sigue cuando se abre hacia el ruedo)."""
-    e = 0.03
-    t = (cloak_point(phi, min(1.0, s + e), CHIME_OUT) - cloak_point(phi, max(0.0, s - e), CHIME_OUT)).normalized()
-    return (Vector((0.0, 0.0, -1.0)) * 0.55 + t * 0.45).normalized()
+CHIME_CLEAR = 0.075                          # lo que el tubo queda afuera de la cáscara en todo su largo (las hojas)
+
+
+def chime_axis(phi, s, length):
+    """Hacia dónde cuelga en reposo: a plomo en la espalda; en los hombros, donde la capa se abre hacia abajo, se aparta
+    lo justo (de a 2°, hasta 45°) para que todo el tubo quede afuera de las hojas."""
+    r0, z0 = cloak_rz(phi, s) + Vector((cloak_normal(phi, s).dot(Vector((math.sin(math.radians(phi)), -math.cos(math.radians(phi)), 0))),
+                                        cloak_normal(phi, s).z)) * CHIME_OUT
+    hem = cloak_rz(phi, 1.0).y
+
+    def r_at(z):
+        lo, hi = 0.0, 1.0
+        for _ in range(24):
+            m = (lo + hi) * 0.5
+            if cloak_rz(phi, m).y > z:
+                lo = m
+            else:
+                hi = m
+        return cloak_rz(phi, (lo + hi) * 0.5).x
+    th = 0.0
+    for k in range(23):
+        th = math.radians(2.0 * k)
+        ok = True
+        for i in range(1, 7):
+            t = length * i / 6.0
+            r, z = r0 + t * math.sin(th), z0 - t * math.cos(th)
+            if z > hem and r - r_at(z) < CHIME_CLEAR:
+                ok = False
+                break
+        if ok:
+            break
+    ar = math.radians(phi)
+    return Vector((math.sin(ar) * math.sin(th), -math.cos(ar) * math.sin(th), -math.cos(th)))
 
 
 def chime_parent(phi, s):
     """El paño (y tramo) de la capa que lleva el punto de atadura: el ángulo más cercano y el tramo según la caída."""
     a = min(CLOAK_ANGLES, key=lambda x: abs(((phi - x + 180.0) % 360.0) - 180.0))
-    return cloak_name(a, 1 if s < CLOAK_SPLIT else 2)
+    return cloak_name(a, cloak_seg_of(a, s))
 
 
 def bones():
@@ -279,8 +407,8 @@ def bones():
         BoneDef("Spine", (0, 0, 1.24), (0, 0.0, 1.42), "Hips"),
         BoneDef("Spine1", (0, 0, 1.42), (0, 0.01, 1.62), "Spine"),
         BoneDef("Spine2", (0, 0.01, 1.62), (0, 0.03, 1.86), "Spine1"),
-        BoneDef("Neck", (0, 0.03, 1.88), (0, 0.005, 2.02), "Spine2"),
-        BoneDef("Head", (0, 0.005, 2.02), (0, 0.005, 2.27), "Neck"),
+        BoneDef("Neck", (0, 0.03, 1.88), HEAD_J, "Spine2"),
+        BoneDef("Head", HEAD_J, HEAD_J + Vector((0, 0, 0.25)), "Neck"),
         BoneDef("Jaw", JAW[0], JAW[1], "Head", True, (0, -1, 0)),
         BoneDef("Topknot_1", TOPKNOT[0], TOPKNOT[1], "Head", True, (0, -1, 0)),
         BoneDef("Topknot_2", TOPKNOT[1], TOPKNOT[2], "Topknot_1", True, (0, -1, 0)),
@@ -301,11 +429,14 @@ def bones():
     (s1h, s1t), (s2h, s2t) = sleeve_points("R")
     B.append(BoneDef("Sleeve_R_1", s1h, s1t, "UpperArm_R", True, (0, -1, 0)))
     B.append(BoneDef("Sleeve_R_2", s2h, s2t, "Forearm_R", True, (0, -1, 0)))
+    c1, c2 = math.radians(FINGER_REST_CURL), math.radians(FINGER_REST_CURL * 2.0)
+    d1, z1 = _h * math.cos(c1) - _DORS * math.sin(c1), _DORS * math.cos(c1) + _h * math.sin(c1)
+    d2, z2 = _h * math.cos(c2) - _DORS * math.sin(c2), _DORS * math.cos(c2) + _h * math.sin(c2)
     for name, off, l1, l2 in FINGERS:
         base = KNUCKLE + _THUMB_SIDE * off - _DORS * 0.005
-        mid = base + _h * l1
-        B.append(BoneDef(f"{name}_R_1", base, mid, "Hand_R", True, tuple(_DORS)))
-        B.append(BoneDef(f"{name}_R_2", mid, mid + _h * l2, f"{name}_R_1", True, tuple(_DORS)))
+        mid = base + d1 * l1
+        B.append(BoneDef(f"{name}_R_1", base, mid, "Hand_R", True, tuple(z1)))
+        B.append(BoneDef(f"{name}_R_2", mid, mid + d2 * l2, f"{name}_R_1", True, tuple(z2)))
     Rm = basis_yz(_h, _DORS)
     tb = WRIST + Rm @ THUMB_BASE_LOCAL
     td = (Rm @ THUMB_DIR_LOCAL).normalized()
@@ -315,7 +446,8 @@ def bones():
     B.append(BoneDef("Thumb_R_2", tb + td * THUMB_LEN[0], tb + td * THUMB_LEN[0] + t2 * THUMB_LEN[1], "Thumb_R_1", True, tuple(tz)))
     B = NA.mirrored(B)
     # cadenas con física posible (Acc_): la barba cuelga de la quijada, la ramita del cordón del moño, las colas de la faja
-    B += chain_bones("TasselBeard", BEARD, "Jaw")
+    # la barba cuelga de la cabeza (la quijada solo lleva las hileras del mentón): al reírse no se levanta entera
+    B += chain_bones("TasselBeard", BEARD, "Head")
     B += chain_bones("LeafKnot", LEAF_KNOT, "Head")
     B += chain_bones("TieSashA", SASH_A, "Hips")
     B += chain_bones("TieSashB", SASH_B, "Hips")
@@ -324,21 +456,23 @@ def bones():
         h, t = skirt_frame(a)
         out = Vector((math.sin(math.radians(a)), -math.cos(math.radians(a)), 0.0))
         B.append(BoneDef(skirt_name(a), h, t, "Hips", True, tuple(out)))
-    # capa: el primer tramo cuelga del pecho (Spine2), el segundo del primero; Z del hueso hacia afuera
+    # capa: el primer tramo cuelga del pecho (Spine2), cada uno del anterior; Z del hueso hacia afuera
     for a in CLOAK_ANGLES:
-        p0, p1, p2 = cloak_point(a, 0.10), cloak_point(a, CLOAK_SPLIT), cloak_point(a, 1.0)
-        nrm = cloak_normal(a, 0.3)
-        B.append(BoneDef(cloak_name(a, 1), p0, p1, "Spine2", True, tuple(nrm)))
-        B.append(BoneDef(cloak_name(a, 2), p1, p2, cloak_name(a, 1), True, tuple(cloak_normal(a, 0.75))))
+        n = cloak_segs(a)
+        ss = [0.10] + list(CLOAK_SPLITS[n]) + [1.0]
+        parent = "Spine2"
+        for i in range(n):
+            nrm = cloak_normal(a, (ss[i] + ss[i + 1]) * 0.5)
+            B.append(BoneDef(cloak_name(a, i + 1), cloak_point(a, ss[i]), cloak_point(a, ss[i + 1]), parent, True, tuple(nrm)))
+            parent = cloak_name(a, i + 1)
     # cascabeles: un hueso por tubo, del nudo del cordón a la punta de abajo del tubo, hijo del tramo de capa que lo lleva
     for name, _, a, s, cord, ln, _r in chimes_full():
         top = chime_attach(a, s)
-        ax = chime_axis(a, s)
+        ax = chime_axis(a, s, cord + ln)
         bot = top + ax * (cord + ln)
         nrm = cloak_normal(a, s)
         B += chain_bones(name[len("Acc_"):], [top, bot], chime_parent(a, s), roll=tuple(nrm))
-    for name, parent, c, r in CHAIN_COLLIDERS:
-        bn = f"AccCol_{name}_{int(round(r * 100))}"
+    for bn, parent, c, r in collider_specs():
         B.append(BoneDef(bn, c, c + Vector((0, 0, 0.05)), parent, True, (0, -1, 0)))
         B.append(BoneDef(bn + "_r", c + Vector((r, 0, 0)), c + Vector((r, 0, 0.05)), bn, True, (0, -1, 0)))
     # flauta-bastón: Y a lo largo, de la punta de abajo (la boca de los dardos) a la de arriba (la boquilla)
@@ -358,19 +492,19 @@ def bones():
 
 FINGER_BONES = [f"{n}_{S}_{i}" for S in "RL" for n, *_ in FINGERS for i in (1, 2)] + [f"Thumb_{S}_{i}" for S in "RL" for i in (1, 2)]
 
-# formas de la mano: curva de la falange 1 y de la 2 por dedo (índice, medio, anular, meñique; grados hacia la palma),
-# apertura (grados, + = abanico) y pulgar (base, punta)
+# formas de la mano: curva de la falange 1 y de la 2 por dedo (índice, medio, anular, meñique; grados hacia la palma,
+# desde el reposo ya doblado FINGER_REST_CURL), apertura (grados, + = abanico) y pulgar (base, punta)
 HAND_SHAPES = {
-    "relaxed": dict(fing=(16, 20, 24, 28), tip=(18, 22, 26, 30), spread=3.0, thumb=(12, 10)),
-    "open": dict(fing=(2, 2, 4, 6), tip=(4, 4, 6, 8), spread=10.0, thumb=(0, 0)),
+    "relaxed": dict(fing=(6, 10, 14, 18), tip=(8, 12, 16, 20), spread=3.0, thumb=(12, 10)),
+    "open": dict(fing=(-8, -8, -6, -4), tip=(-6, -6, -4, -2), spread=10.0, thumb=(0, 0)),
     # la garra del ermitaño (manos huesudas que se abren: el concepto en el salto)
-    "claw": dict(fing=(18, 16, 18, 22), tip=(62, 66, 68, 70), spread=14.0, thumb=(28, 36)),
-    "fist": dict(fing=(88, 92, 94, 96), tip=(100, 102, 104, 106), spread=-2.0, thumb=(48, 58)),
+    "claw": dict(fing=(8, 6, 8, 12), tip=(52, 56, 58, 60), spread=14.0, thumb=(28, 36)),
+    "fist": dict(fing=(78, 82, 84, 86), tip=(90, 92, 94, 96), spread=-2.0, thumb=(48, 58)),
     # puño en la caña (culmo de ~0.2 m: los dedos abrazan sin cerrarse) y en el bastón (6 cm)
-    "grip_stalk": dict(fing=(46, 50, 54, 58), tip=(52, 56, 58, 62), spread=-1.0, thumb=(34, 26)),
-    "grip_staff": dict(fing=(70, 74, 78, 82), tip=(82, 84, 86, 88), spread=-1.0, thumb=(42, 34)),
+    "grip_stalk": dict(fing=(36, 40, 44, 48), tip=(42, 46, 48, 52), spread=-1.0, thumb=(34, 26)),
+    "grip_staff": dict(fing=(60, 64, 68, 72), tip=(72, 74, 76, 78), spread=-1.0, thumb=(42, 34)),
     # tocando la flauta: los dedos estirados apoyados en los agujeros
-    "flute": dict(fing=(22, 26, 30, 34), tip=(14, 16, 18, 22), spread=-2.0, thumb=(30, 16)),
+    "flute": dict(fing=(12, 16, 20, 24), tip=(4, 6, 8, 12), spread=-2.0, thumb=(30, 16)),
 }
 
 
@@ -382,14 +516,17 @@ def hand_shape(S, name):
 
 
 LID_CLOSED_DEG = 60.0
-# caras: (quijada abierta en grados, párpados 0 abiertos .. 1 cerrados, cejas en grados (+ arriba), cachetes 0..1
-# inflados, comisuras (adentro m, arriba m))
+CHEEK_PUFF = 0.024           # cuánto sale el cachete inflado (m, a lo largo del hueso: afuera y adelante)
+# caras: (quijada abierta en grados, párpados 0 = el reposo (ya tapa el 40 % de arriba) .. 1 cerrados, cejas en grados
+# (+ la punta de afuera sube), cachetes 0..1 inflados, comisuras (adentro m, arriba m) en el marco de la cabeza)
 FACES = {
-    "grin": dict(jaw=0.0, lids=0.25, brows=0.0, cheeks=0.0, corners=(0.0, 0.0)),
-    "blow": dict(jaw=-1.5, lids=0.45, brows=6.0, cheeks=1.0, corners=(0.014, -0.004)),
-    "laugh": dict(jaw=19.0, lids=1.0, brows=12.0, cheeks=0.0, corners=(-0.004, 0.006)),
-    "flute": dict(jaw=1.0, lids=1.0, brows=4.0, cheeks=0.35, corners=(0.008, -0.002)),
-    "surprise": dict(jaw=12.0, lids=0.0, brows=16.0, cheeks=0.0, corners=(0.006, -0.004)),
+    "grin": dict(jaw=0.0, lids=0.0, brows=0.0, cheeks=0.0, corners=(0.0, 0.0)),
+    "blow": dict(jaw=-1.0, lids=0.45, brows=6.0, cheeks=1.0, corners=(0.018, -0.006)),
+    # la risa del concepto: la boca en medialuna abierta (las comisuras arriba), los ojos apretados en arcos, las cejas
+    # arriba; la cabeza va hacia atrás en el clip del cuerpo
+    "laugh": dict(jaw=14.0, lids=1.0, brows=12.0, cheeks=0.3, corners=(-0.004, 0.015)),
+    "flute": dict(jaw=1.0, lids=1.0, brows=4.0, cheeks=0.35, corners=(0.010, -0.003)),
+    "surprise": dict(jaw=12.0, lids=-0.25, brows=16.0, cheeks=0.0, corners=(0.008, -0.004)),
 }
 
 
@@ -407,11 +544,13 @@ def chains():
         out.append(([f"Sleeve_{S}_2"], 80.0, 0.6, 70.0))
     for a in SKIRT_ANGLES:
         out.append(([skirt_name(a)], 160.0, 0.35, 60.0))
-    # la capa de hojas pesa: cuelga de los hombros casi a plomo aunque el tronco se incline (agachado, colgado)
+    # la capa de hojas pesa: cuelga de los hombros casi a plomo aunque el tronco se incline (agachado; colgado cabeza
+    # abajo cae hacia el piso alrededor de la cabeza: tres tramos de hasta 95° cada uno)
     for a in CLOAK_ANGLES:
-        out.append(([cloak_name(a, 1), cloak_name(a, 2)], 90.0, 0.72, 85.0))
+        out.append(([cloak_name(a, i) for i in range(1, cloak_segs(a) + 1)], 90.0, 0.72, 95.0))
+    # los cascabeles cuelgan a plomo (colgado, del revés: el clip hornea su giro y SpringChain lo mueve alrededor)
     for name, *_ in chimes_full():
-        out.append(([name + "_0"], 40.0, 0.9, 80.0))
+        out.append(([name + "_0"], 40.0, 0.9, 175.0))
     return out
 
 
@@ -515,8 +654,11 @@ class Poser:
         self.misses = misses
         return misses
 
-    # cuánto del giro del brazo se lleva cada paño de la capa (el primer tramo): los de los costados cubren el brazo
-    CLOAK_FOLLOW = {38.0: 0.15, 64.0: 0.28, 90.0: 0.38, 116.0: 0.25, 142.0: 0.08}
+    # cuánto del giro del brazo se lleva cada paño de la capa (el primer tramo): los del hombro cubren el brazo. El giro
+    # que se lleva tiene tope: con los brazos arriba los paños se levantan lo justo para no atravesarlos, sin mostrarle
+    # a la cámara alta el revés de la capa
+    CLOAK_FOLLOW = {58.0: 0.15, 80.0: 0.34, 102.0: 0.30, 124.0: 0.14, 146.0: 0.04}
+    CLOAK_FOLLOW_MAX = 38.0
 
     def follow_cloak(self, pose):
         """Los paños de la capa que cubren el brazo lo siguen cuando se levanta o se abre (si no, el brazo los atraviesa),
@@ -529,7 +671,11 @@ class Poser:
             q = (Ds2.transposed() @ Dua).to_quaternion()
             for a, f in self.CLOAK_FOLLOW.items():
                 ang = a if sg > 0 else 360.0 - a
-                pose.delta(cloak_name(ang, 1), Quaternion().slerp(q, f))
+                qf = Quaternion().slerp(q, f)
+                axv, rad = qf.to_axis_angle()
+                if math.degrees(rad) > self.CLOAK_FOLLOW_MAX:
+                    qf = Quaternion(axv, math.radians(self.CLOAK_FOLLOW_MAX))
+                pose.delta(cloak_name(ang, 1), qf)
 
     def fingers(self, pose, S, shape):
         h = HAND_SHAPES[shape]
@@ -554,6 +700,9 @@ class Poser:
     def face(self, pose, name):
         f = FACES[name] if isinstance(name, str) else name
         R = self.rig
+        # los corrimientos de los cachetes y las comisuras van en el marco de la cabeza (colgado cabeza abajo el cachete
+        # sale igual hacia afuera de la cara)
+        Hd = rot3(pose.get("Head") @ R.rest_inv["Head"])
         # la X de la quijada mira a su derecha: abrir (el mentón baja) es girar en negativo
         ax = rot3(R.rest["Jaw"]).col[0]
         pose.delta("Jaw", Quaternion(ax, -math.radians(f["jaw"])))
@@ -565,9 +714,9 @@ class Poser:
             # ceja: gira alrededor del eje de adelante y la punta de afuera sube (+) o baja
             pose.delta("Brow_" + S, Quaternion(Vector((0, 1, 0)), math.radians(f["brows"]) * sg))
             out = rot3(R.rest["Cheek_" + S]).col[1]
-            pose.delta("Cheek_" + S, (0.0, 0.0, 0.0), loc=out * 0.014 * f["cheeks"] + Vector((sg * -0.006 * f["cheeks"], 0, 0)))
+            pose.delta("Cheek_" + S, (0.0, 0.0, 0.0), loc=Hd @ (out * CHEEK_PUFF * f["cheeks"] + Vector((sg * -0.008 * f["cheeks"], 0, 0))))
             ci, cu = f["corners"]
-            pose.delta("MouthCorner_" + S, (0.0, 0.0, 0.0), loc=Vector((sg * ci, -0.4 * ci, cu)))
+            pose.delta("MouthCorner_" + S, (0.0, 0.0, 0.0), loc=Hd @ Vector((sg * ci, -0.4 * ci, cu)))
 
     def reach_with_clavicle(self, pose, S, target, max_deg=26.0):
         """Si la muñeca no llega, el hombro se adelanta (la clavícula gira hacia el objetivo)."""
