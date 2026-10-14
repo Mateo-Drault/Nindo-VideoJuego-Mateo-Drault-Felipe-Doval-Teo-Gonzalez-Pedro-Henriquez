@@ -15,6 +15,80 @@
    ]
   },
   {
+   "id": "arena_stalk_inner",
+   "collider": {
+    "type": "none"
+   },
+   "tags": [
+    "occluder",
+    "nonstatic"
+   ],
+   "size": [
+    0.34,
+    7.5,
+    0.34
+   ]
+  },
+  {
+   "id": "arena_stalk_mother",
+   "collider": {
+    "type": "none"
+   },
+   "tags": [
+    "occluder",
+    "nonstatic"
+   ],
+   "size": [
+    0.52,
+    10.0,
+    0.52
+   ]
+  },
+  {
+   "id": "arena_stalk_north",
+   "collider": {
+    "type": "none"
+   },
+   "tags": [
+    "occluder",
+    "nonstatic"
+   ],
+   "size": [
+    0.34,
+    7.5,
+    0.34
+   ]
+  },
+  {
+   "id": "arena_stalk_outer",
+   "collider": {
+    "type": "none"
+   },
+   "tags": [
+    "occluder",
+    "nonstatic"
+   ],
+   "size": [
+    0.34,
+    8.5,
+    0.34
+   ]
+  },
+  {
+   "id": "arena_stalk_stump",
+   "collider": {
+    "type": "none"
+   },
+   "tags": [
+    "nonstatic"
+   ],
+   "size": [
+    0.4,
+    1.1,
+    0.4
+   ]
+  },
+  {
    "id": "bamboo_cluster_a",
    "collider": {
     "center": [

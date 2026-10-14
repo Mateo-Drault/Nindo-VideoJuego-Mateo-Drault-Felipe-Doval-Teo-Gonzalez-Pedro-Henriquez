@@ -454,6 +454,31 @@ def wet(x, z, r):
     return False
 
 
+# el claro de Chikuō (W.BOSS_STALKS): lo único que queda adentro es lo bajo del piso, el campanario del borde y el arco
+STALK_XZ = [W.boss_stalk_xz(b, r) for sid, kind, b, r in W.BOSS_STALKS]
+ARENA_KEEP = {"grass_tuft_a", "grass_tuft_b", "flowers_yellow", "flowers_pink", "flowers_blue", "mushroom_cluster",
+              "temple_bell", "arch_bamboo_gate"}
+
+
+def arena_keeps(base, x, z, scale):
+    """¿Queda este prop o decoración en el claro de las cañas? Nada a menos de STALK_CLEAR m (más su radio) del pie de una
+    caña, y adentro de ARENA_CLEAR_R solo lo de ARENA_KEEP: el bambú joven, las piedras y los faroles del camino que
+    caían en el claro eran obstáculos en una pelea que salta y rueda. Lo que no queda igual ocupa su lugar en el sorteo."""
+    if math.hypot(x - W.OZEKI_CENTER[0], z - W.OZEKI_CENTER[1]) >= W.ARENA_CLEAR_R:
+        return True
+    if base not in ARENA_KEEP:
+        return False
+    r = prop_radius(base) * scale * 0.6
+    return all(math.hypot(x - sx, z - sz) >= W.STALK_CLEAR + r for sx, sz in STALK_XZ)
+
+
+def arena_scale(base, x, z, scale):
+    """Pasto y flores del claro más bajos (las matas de 1.8 tapaban los anillos del piso)."""
+    if base in DECOR and math.hypot(x - W.OZEKI_CENTER[0], z - W.OZEKI_CENTER[1]) < W.ARENA_CLEAR_R:
+        return min(scale, 1.15)
+    return scale
+
+
 def place(pid, x, z, yaw=0.0, scale=1.0, y=None, radius=None, block=True, ground=True):
     """ground=True: 'y' es relativa a H (o None = H) y se corrige a la malla triangulada.
     ground=False: altura absoluta (agua, '@altura', parches de arroz)."""
@@ -473,8 +498,9 @@ def place(pid, x, z, yaw=0.0, scale=1.0, y=None, radius=None, block=True, ground
     # el patio de losas del dojo no lleva pasto ni piedras encima, y la decoración de tierra no cae adentro del agua
     # (las matas en grupito se abren hasta 0.7 m del punto sorteado y quedaban flotando en el estanque); igual
     # ocupan su lugar: el sorteo no cambia
-    if not (base in DECOR and (W.on_courtyard(x, z, 0.3) or (ground and base not in WATER_PLANTS and wet(x, z, prop_radius(base) * scale * 0.6)))):
-        (DECOR_PLACED if base in DECOR else PLACED).append((base, x, z, yaw, scale, y))
+    if not (base in DECOR and (W.on_courtyard(x, z, 0.3) or (ground and base not in WATER_PLANTS and wet(x, z, prop_radius(base) * scale * 0.6)))) \
+            and arena_keeps(base, x, z, scale):
+        (DECOR_PLACED if base in DECOR else PLACED).append((base, x, z, yaw, arena_scale(base, x, z, scale), y))
     if block:
         occ_add(x, z, (radius if radius is not None else prop_radius(base)) * scale)
 
@@ -700,6 +726,16 @@ def place_checkpoint_landings():
         place(pid, x, z, yaw, sc)
 
 
+def place_arena_props():
+    """Faroles del claro de Chikuō (W.ARENA_PROPS), mirando al centro. Después del sorteo, como los muelles."""
+    cx, cz = W.OZEKI_CENTER
+    for pid, b, r in W.ARENA_PROPS:
+        x, z = W.boss_stalk_xz(b, r)
+        if not occ_free(x, z, prop_radius(pid)):
+            print(f"aviso: el farol del claro en ({x}, {z}) pisa algo del sorteo")
+        place(pid, x, z, math.degrees(math.atan2(cx - x, cz - z)) % 360, 1.0)
+
+
 # =========================================================================== decoración fusionada
 _PROP_FNS = None
 
@@ -796,6 +832,11 @@ def build_markers():
         y = (W.WATER_LAKE + 1.0) if arch == "mizuchi" else None
         marker(f"M__BossArena__{arch}__{r}", ax, az, y=y)
         marker(f"M__Boss__{arch}", bx, bz, yaw, y=y)
+    # las cañas del claro de Chikuō, apoyadas en la malla que pisa Unity y con yaw 0 (ArenaStalk gira sus anclas hacia el
+    # centro); no ocupan lugar en el sorteo: arena_keeps despeja su pie
+    for sid, kind, b, r in W.BOSS_STALKS:
+        x, z = W.boss_stalk_xz(b, r)
+        marker(f"M__Stalk__{sid}__{kind}", x, z, 0.0, y=mesh_H(x, z))
     for pid, x, z, yaw, flag in W.PORTALS:
         y = (W.WATER_LAKE + 1.0) if pid == "p_lake" else None
         marker(f"M__Portal__{pid}__{flag}__cp_dojo_gate", x, z, yaw, y=y)
@@ -815,10 +856,15 @@ def build_markers():
 
 
 # =========================================================================== exportación
+# --only-export=terrain,bambu: solo esos archivos (cada exportación cambia el FBX entero aunque su contenido sea igual)
+ONLY_EXPORT = next((set(a.split("=", 1)[1].split(",")) for a in argv if a.startswith("--only-export=")), None)
+
+
 def export():
     os.makedirs(OUT_DIR, exist_ok=True)
     # --- terreno
-    L.export_fbx(TERRAIN_OBJS, os.path.join(OUT_DIR, "World_Terrain.fbx"))
+    if ONLY_EXPORT is None or "terrain" in ONLY_EXPORT:
+        L.export_fbx(TERRAIN_OBJS, os.path.join(OUT_DIR, "World_Terrain.fbx"))
     # --- props y marcadores por región
     groups = {}
     for i, (pid, x, z, yaw, sc, y) in enumerate(PLACED):
@@ -826,6 +872,8 @@ def export():
     for i, (name, x, z, y, yaw) in enumerate(MARKERS):
         groups.setdefault(T.region(x, z), []).append((name + f"__n{i}" if name.count("__") < 1 else name, x, z, y, yaw, 1.0))
     for reg, items in groups.items():
+        if ONLY_EXPORT is not None and reg not in ONLY_EXPORT:
+            continue
         objs = []
         used = set()
         for name, x, z, y, yaw, sc in items:
@@ -961,22 +1009,38 @@ def preview(shots):
 
 
 # =========================================================================== main
-L.clear_scene()
-place_landmarks()
-build_markers()
-scatter()
-place_checkpoint_landings()
-TERRAIN_OBJS = build_terrain() + build_water() + build_decor()
-WALL_OBJS = build_walls()
-TERRAIN_OBJS += WALL_OBJS
-print(f"placed {len(PLACED)} props, {len(MARKERS)} markers")
-if "--export" in argv:
-    export()
-if "--preview" in argv or "--map" in argv:
-    shots = [("map", 0, -5), ("map_sur", 0, -110, 150), ("map_centro", 0, 30, 150), ("map_oeste", -150, 80, 150), ("map_este", 140, 80, 150)] if "--map" in argv else []
-    if "--preview" in argv:
-        shots += [("hogar", -30, -164), ("campos", 10, -118), ("bosque", 6, -62), ("muralla", 0, -38),
-                  ("jardin", 0, 24), ("jardin_e", 30, 40), ("dojo_puerta", 0, 100), ("dojo_patio", 0, 136),
-                  ("montana", -140, 70), ("cumbre", -200, 124), ("lago", 120, 14), ("lago_jefe", 182, 70),
-                  ("bambu", 96, 126), ("bambu_arena", 124, 160), ("cinematica_dojo", 0, 120, 40, 34, 14, 0)]
-    preview(shots)
+TERRAIN_OBJS, WALL_OBJS = [], []
+
+
+def build_all():
+    """Arma la escena entera (terreno, agua, decoración, límites, props y marcadores). Separado del main para que las
+    vistas de la arena de Chikuō (arena_preview.py) armen el mismo mundo sin exportar nada."""
+    global TERRAIN_OBJS, WALL_OBJS
+    L.clear_scene()
+    place_landmarks()
+    build_markers()
+    scatter()
+    place_checkpoint_landings()
+    place_arena_props()
+    TERRAIN_OBJS = build_terrain() + build_water() + build_decor()
+    WALL_OBJS = build_walls()
+    TERRAIN_OBJS += WALL_OBJS
+    print(f"placed {len(PLACED)} props, {len(MARKERS)} markers")
+
+
+def main():
+    build_all()
+    if "--export" in argv:
+        export()
+    if "--preview" in argv or "--map" in argv:
+        shots = [("map", 0, -5), ("map_sur", 0, -110, 150), ("map_centro", 0, 30, 150), ("map_oeste", -150, 80, 150), ("map_este", 140, 80, 150)] if "--map" in argv else []
+        if "--preview" in argv:
+            shots += [("hogar", -30, -164), ("campos", 10, -118), ("bosque", 6, -62), ("muralla", 0, -38),
+                      ("jardin", 0, 24), ("jardin_e", 30, 40), ("dojo_puerta", 0, 100), ("dojo_patio", 0, 136),
+                      ("montana", -140, 70), ("cumbre", -200, 124), ("lago", 120, 14), ("lago_jefe", 182, 70),
+                      ("bambu", 96, 126), ("bambu_arena", 124, 160), ("cinematica_dojo", 0, 120, 40, 34, 14, 0)]
+        preview(shots)
+
+
+if __name__ == "__main__":
+    main()
