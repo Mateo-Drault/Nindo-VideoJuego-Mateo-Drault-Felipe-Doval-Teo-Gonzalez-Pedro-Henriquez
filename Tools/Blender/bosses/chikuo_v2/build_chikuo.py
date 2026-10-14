@@ -1,19 +1,26 @@
-"""Chikuō ermitaño (fase C4): modelo, esqueleto, poses de prueba, chequeos, FBX y renders de revisión.
+"""Chikuō ermitaño (fase C4): modelo, esqueleto, clips de pelea, chequeos, FBX y renders de revisión.
 
 Un solo comando, determinista:
   blender -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/build_chikuo.py -- [opciones]
     --export            escribe Nindo/Assets/Nindo/Art/Characters/BambooMaster/BambooMaster.fbx (+ BambooMaster.fbx.json):
-                        el modelo nuevo con los clips de este paso ('BindPose' = el reposo, 'Idle' = parado relajado,
-                        'PoseTest' = las poses de prueba); los de la pelea los agrega el paso de animación sobre este
-                        mismo esqueleto
-    --renders DIR       hojas de revisión en DIR (todas, o las de --sheets)
-    --sheets A,B        turnaround, head, details, game, poses, lineup, metric (a escala contra la hoja de modelado)
+                        el modelo con 'BindPose' (el reposo) y todos los clips del contrato (chikuo_clips)
+    --only A,B          solo esos clips (iterar; no exporta). Acepta '*' (Perch*)
+    --model-only        sin clips: el modelo con BindPose, Idle (la pose relajada) y PoseTest (las poses de prueba), para
+                        revisar el modelado
+    --renders DIR       hojas de revisión en DIR: una por clip (o las de --sheets) y los avisos con la cámara del juego
+    --sheets A,B        con --renders: solo las hojas de esos clips ('none' = ninguna); 'model' suma las del modelo
+    --model-sheets A,B  con --renders: hojas del modelo (turnaround, head, details, game, poses, lineup, metric)
     --blend PATH        guarda el .blend resultante (para mirar a mano)
     --roundtrip PATH    con --export: huesos y malla deformada en algunos cuadros, para check_chikuo_roundtrip.py
-Falla (código 1) si un chequeo no pasa: presupuesto de triángulos, alto y piso del reposo, frente, pesos (todo vértice
-con hueso, a lo sumo 4 influencias), huesos del contrato, alcance del IK en las poses de prueba.
+    --report PATH       las mediciones de cada clip en JSON
+    --allow-fail        con --export: exporta aunque fallen chequeos de los clips (los fallidos quedan en el sidecar,
+                        'lint_failures', para que se vean en la revisión); los del modelo y del FBX siguen bloqueando
+    --lab A,B           con --renders: las poses madre de chikuo_clips.LAB desde cuatro lados (iterar poses sueltas)
+Falla (código 1) si un chequeo no pasa: presupuesto de triángulos, alto y piso del reposo, frente, pesos, huesos del
+contrato, y en cada clip las mediciones de chikuo_lint (alcance, costura, patinaje, caña, tirones, muñecas, el cuerpo
+contra sí mismo, encadenado, piso y culmo atravesados, eventos del contrato).
 """
-import sys, os, json, time
+import sys, os, json, time, fnmatch
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", "..", "..", ".."))
 for p in (HERE, os.path.join(ROOT, "Tools", "Blender"), os.path.join(ROOT, "Tools", "Blender", "anim")):
@@ -38,9 +45,15 @@ def opt(name, default=None):
 
 EXPORT = "--export" in argv
 RENDERS = opt("--renders")
-SHEETS = set((opt("--sheets") or "turnaround,head,details,game,poses,lineup,metric").split(","))
+ONLY = opt("--only")
+MODEL_ONLY = "--model-only" in argv
+SHEETS = opt("--sheets")
+MODEL_SHEETS = opt("--model-sheets")
 BLEND = opt("--blend")
 ROUNDTRIP = opt("--roundtrip")
+REPORT = opt("--report")
+LAB = opt("--lab")
+ALLOW_FAIL = "--allow-fail" in argv
 RT_BONES = ("Hips", "Head", "Jaw", "Hand_R", "Index_L_2", "Thumb_R_2", "Foot_L", "Toe_R", "Staff", "Staff_Muzzle",
             "Acc_TasselBeard_3", "Cloak_168_2", "Acc_ChimesLo03_0", "Sleeve_L_2", "Lid_R", "Topknot_2")
 OUT_DIR = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Art", "Characters", "BambooMaster")
@@ -51,8 +64,8 @@ FBX = os.path.join(OUT_DIR, "BambooMaster.fbx")
 # pantalla). Por grupo, lo que costó llegar al concepto
 BUDGET = {"body": 5650, "cloak": 2500, "chimes": 1900, "staff": 480}
 TOTAL_BUDGET = 10450
-HOLD = 20                   # cuadros de cada pose en PoseTest
-GAP = 10
+HOLD = 20                   # cuadros de cada pose en PoseTest (--model-only)
+GAP = 4                     # cuadros vacíos entre clips en la toma única (Unity corta por cuadros: no se mezclan)
 # huesos de los que dependen el código y los pasos que siguen (animación, pelea): si falta uno, no se exporta
 CONTRACT_BONES = (["Root", "Hips", "Spine", "Spine1", "Spine2", "Neck", "Head", "Jaw", "Topknot_1", "Topknot_2", "Staff",
                    "Staff_Muzzle", "Staff_Mouth", "Staff_Flute", "Staff_Grip", "Facing"] +
@@ -65,12 +78,17 @@ CONTRACT_BONES = (["Root", "Hips", "Spine", "Spine1", "Spine2", "Neck", "Head", 
                   [CR.skirt_name(a) for a in CR.SKIRT_ANGLES] + CR.cloak_bones() +
                   [n + sfx for n, *_ in CR.chimes_full() for sfx in ("_0", "_end")])
 failures, warnings = [], []
+MODEL_FAILS = []
 
 
 def check(ok, msg, warn=False):
     print(("  ok   " if ok else ("  WARN " if warn else "  FAIL ")) + msg)
     if not ok:
         (warnings if warn else failures).append(msg)
+
+
+def wanted(name, pattern):
+    return any(fnmatch.fnmatch(name, p.strip()) for p in pattern.split(","))
 
 
 class HeldClip:
@@ -80,6 +98,7 @@ class HeldClip:
         self.name, self.loop, self.notes = name, loop, notes
         self.frames = len(frames_W) - 1
         self.W = frames_W
+        self.timing, self.events = {"space": "ground"}, []
 
 
 def bind_height(meshes):
@@ -165,65 +184,7 @@ def check_chime_spacing(W, label):
     check(not bad, f"{label}: cascabeles separados (ejes a 2.2 r o más; {len(bad)} pares: {bad[:4]})")
 
 
-def overlap_pairs(body, staff, frame, scn):
-    """Triángulos que se cruzan en un cuadro, por pieza (la pieza de cada cara es el hueso que más pesa en ella): cascabel
-    contra cascabel, cascabel contra la capa y la flauta contra el cuerpo."""
-    from mathutils.bvhtree import BVHTree
-    from collections import defaultdict
-    scn.frame_set(frame)
-    bpy.context.view_layer.update()
-    dg = bpy.context.evaluated_depsgraph_get()
-
-    def mesh_of(o):
-        oe = o.evaluated_get(dg)
-        me = oe.to_mesh()
-        co = [oe.matrix_world @ v.co for v in me.vertices]
-        polys = [tuple(p.vertices) for p in me.polygons]
-        oe.to_mesh_clear()
-        return co, polys
-    co, polys = mesh_of(body)
-    vg = {g.index: g.name for g in body.vertex_groups}
-    dom = [vg[max(v.groups, key=lambda g: g.weight).group] for v in body.data.vertices]
-
-    def part(b):
-        if b.startswith("Acc_Chimes"):
-            return b.split("_")[1]
-        if b.startswith("Cloak_"):
-            return "cloak"
-        if b.endswith("_R") and any(b.startswith(p) for p in ("UpperArm", "Forearm", "Hand", "Clav", "Sleeve")) or "_R_" in b:
-            return "arm_R"
-        return "body"
-    groups = defaultdict(list)
-    for i, p in enumerate(polys):
-        groups[part(dom[p[0]])].append(i)
-
-    def tree(idx, co_, polys_):
-        return BVHTree.FromPolygons(co_, [polys_[i] for i in idx], all_triangles=True)
-    trees = {k: tree(v, co, polys) for k, v in groups.items()}
-    chimes = [k for k in trees if k.startswith("Chimes")]
-    out = {"chime-chime": 0, "chime-cloak": 0, "staff-body": 0, "staff-arm_R": 0}
-    per, cc = {}, []
-    for i, a in enumerate(chimes):
-        for b in chimes[i + 1:]:
-            n = len(trees[a].overlap(trees[b]))
-            out["chime-chime"] += n
-            if n:
-                cc.append(f"{a[-4:]}/{b[-4:]}")
-        per[a] = len(trees[a].overlap(trees["cloak"]))
-        out["chime-cloak"] += per[a]
-    out["peores"] = sorted(per.items(), key=lambda kv: -kv[1])[:5]
-    out["pares"] = cc[:6]
-    sco, spol = mesh_of(staff)
-    st = BVHTree.FromPolygons(sco, spol, all_triangles=True)
-    for k, t in trees.items():
-        n = len(st.overlap(t))
-        out["staff-arm_R" if k == "arm_R" else "staff-body"] += n
-    scn.frame_set(0)
-    return out
-
-
-def main():
-    t0 = time.time()
+def model_and_checks():
     L.clear_scene()
     scn = bpy.context.scene
     scn.render.fps = NA.FPS
@@ -255,94 +216,137 @@ def main():
     missing = [n for n in CONTRACT_BONES if n not in names]
     check(not missing, f"huesos del contrato ({len(names)} huesos; faltan {missing[:8]})")
     check_weights(body)
+    return scn, arm, rig, meshes, tris, bh
 
-    # ---------------------------------------------------------------- poses de prueba
-    posed = {}
-    for name, *_ in CP.ORDER:
-        W, misses = CP.solve(rig, name)
-        posed[name] = W
-        worst = max(misses.values()) if misses else 0.0
-        check(worst <= 0.02, f"pose {name}: las manos y los pies llegan (faltó {worst * 100:.1f} cm)", warn=worst <= 0.05)
+
+def main():
+    t0 = time.time()
+    scn, arm, rig, meshes, tris, bh = model_and_checks()
+    # los del modelo (presupuesto, alto, pesos, huesos) bloquean la exportación aun con --allow-fail
+    MODEL_FAILS.extend(failures)
+    if LAB:
+        import chikuo_bake as CB
+        CB.lab_sheet(arm, rig, meshes, RENDERS, [n.strip() for n in LAB.split(",")])
+        finish(t0)
+        return
+    objs = list(meshes.values())
+    body = meshes["Chikuo_Body"]
     rest = NA.Pose(rig)
     for n in rig.names:
         rest.get(n)
     bind = HeldClip("BindPose", [rest.W] * 31, True, "el reposo (pose A, la del skin): para revisar el modelo en Unity")
-    idle = HeldClip("Idle", [posed["relaxed"]] * 31, True, "parado relajado con la flauta en la derecha (la pose 'relaxed' "
-                    "quieta): el estado por defecto y la locomoción hasta que el paso de animación traiga los clips")
-    ptW = []
-    for name, *_ in CP.ORDER:
-        ptW += [posed[name]] * HOLD
-    pt = HeldClip("PoseTest", ptW, False, "las poses de prueba de la deformación, " + str(HOLD) + " cuadros cada una: "
-                  + ", ".join(n for n, *_ in CP.ORDER))
-    baked = [(bind, bind.W), (idle, idle.W), (pt, pt.W)]
+    posed = {}
+    reports = {}
+    if MODEL_ONLY:
+        for name, *_ in CP.ORDER:
+            W, misses = CP.solve(rig, name)
+            posed[name] = W
+            worst = max(misses.values()) if misses else 0.0
+            check(worst <= 0.02, f"pose {name}: las manos y los pies llegan (faltó {worst * 100:.1f} cm)", warn=worst <= 0.05)
+        idle = HeldClip("Idle", [posed["relaxed"]] * 31, True, "parado relajado con la flauta en la derecha")
+        ptW = []
+        for name, *_ in CP.ORDER:
+            ptW += [posed[name]] * HOLD
+        pt = HeldClip("PoseTest", ptW, False, "las poses de prueba de la deformación, " + str(HOLD) + " cuadros cada una")
+        baked = [(bind, bind.W), (idle, idle.W), (pt, pt.W)]
+        data = {}
+    else:
+        import chikuo_clips as CC
+        import chikuo_bake as CB
+        clips = CC.clips(rig)
+        if ONLY:
+            keep = [c for c in clips if wanted(c.name, ONLY)]
+            # las poses de referencia del encadenado se hornean igual (el lint compara contra ellas)
+            refs = {CC.CHAIN_REF[k] for c in keep for k in (c.timing.get("chain_from"), c.timing.get("chain_to")) if k in CC.CHAIN_REF}
+            clips = [c for c in clips if c in keep or c.name in refs]
+        data = CB.bake_all(rig, clips, check)
+        reports = {n: d["report"] for n, d in data.items()}
+        baked = [(bind, bind.W)] + [(c, data[c.name]["frames"]) for c in clips]
     _, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
     last = max(b for _, b in ranges.values())
     scn.frame_set(0)
+    n0 = len(failures)
     check_chain_clearance(rest.W, "reposo")
-    check_chain_clearance(posed["relaxed"], "Idle")
     check_chime_spacing(rest.W, "reposo")
-    for lab, f in (("reposo", ranges["BindPose"][0] + 2), ("Idle", ranges["Idle"][0] + 2)):
-        ov = overlap_pairs(body, meshes["Chikuo_Staff"], f, scn)
-        print(f"  cruces {lab}: {ov}")
-        check(ov["chime-chime"] == 0, f"{lab}: ningún cascabel atraviesa a otro ({ov['chime-chime']} pares)")
-        check(ov["staff-body"] == 0, f"{lab}: la flauta no atraviesa el cuerpo, la ropa ni la capa ({ov['staff-body']} pares)")
-        check(ov["chime-cloak"] <= 40, f"{lab}: los cascabeles cuelgan afuera de las hojas ({ov['chime-cloak']} pares)", warn=True)
+    MODEL_FAILS.extend(failures[n0:])
+    if not MODEL_ONLY:
+        import chikuo_bake as CB
+        CB.mesh_checks(scn, meshes, data, ranges, check)
+    if REPORT:
+        os.makedirs(os.path.dirname(os.path.abspath(REPORT)), exist_ok=True)
+        with open(REPORT, "w", encoding="utf-8", newline=chr(10)) as fh:
+            json.dump(reports, fh, indent=1, ensure_ascii=False)
 
     # ---------------------------------------------------------------- export
     if EXPORT:
-        if failures:
+        model_fails = [f for f in failures if f in MODEL_FAILS]
+        if failures and (not ALLOW_FAIL or model_fails):
             print("NO SE EXPORTA: fallaron chequeos")
+        elif ONLY:
+            print("NO SE EXPORTA: --only hornea una parte de los clips")
         else:
             NA.export_fbx(FBX, arm, objs, 1, last)
-            write_sidecar(ranges, baked, tris, bh)
+            write_sidecar(ranges, baked, data, tris, bh, failures)
             if ROUNDTRIP:
-                write_roundtrip(scn, arm, meshes["Chikuo_Body"], ranges)
+                write_roundtrip(scn, arm, body, ranges, baked)
             print("EXPORTADO", FBX, "cuadros 1 ..", last, f"{os.path.getsize(FBX) / 1e6:.1f} MB")
 
     # ---------------------------------------------------------------- renders
     if RENDERS:
-        import chikuo_review as RV
         scn.frame_set(0)
         arm.animation_data.action = None
-        rv = RV.Review(arm, rig, meshes, RENDERS)
-        if "turnaround" in SHEETS:
-            print(rv.turnaround_sheet())
-        if "head" in SHEETS:
-            print(rv.head_sheet({f: CP.face_pose(rig, f) for f in CP.FACE_POSES}))
-        if "details" in SHEETS:
-            print(rv.details_sheet())
-        if "game" in SHEETS:
-            print(rv.game_sheet(perch_W=posed["perch"], hang_W=posed["hang"]))
-        if "poses" in SHEETS:
-            ps = [(n, posed[n], c, s) for n, _, c, s in CP.ORDER]
-            print(rv.pose_sheet(ps[:5], "Chikuō ermitaño: poses de prueba (1/2)", "poses1", [cc for _, cc, _, _ in CP.ORDER[:5]],
-                                CP.SHEET_LIFT))
-            print(rv.pose_sheet(ps[5:], "Chikuō ermitaño: poses de prueba (2/2)", "poses2", [cc for _, cc, _, _ in CP.ORDER[5:]],
-                                CP.SHEET_LIFT))
-        if "lineup" in SHEETS:
-            print(rv.lineup_sheet())
-        if "metric" in SHEETS:
-            print(rv.metric_sheet(("front", "side"), "metric_body"))
-            print(rv.metric_sheet(("q34", "back"), "metric_body2"))
-            print(rv.metric_sheet(("head_front", "head_side", "head_back"), "metric_head"))
+        if MODEL_SHEETS or MODEL_ONLY:
+            model_sheets(arm, rig, meshes, posed or {n: CP.solve(rig, n)[0] for n, *_ in CP.ORDER})
+        if not MODEL_ONLY and SHEETS != "none":
+            import chikuo_bake as CB
+            CB.clip_sheets(arm, rig, meshes, RENDERS, baked, data, SHEETS)
     finish(t0)
 
 
-def write_sidecar(ranges, baked, tris, bh):
+def model_sheets(arm, rig, meshes, posed):
+    import chikuo_review as RV
+    sheets = set((MODEL_SHEETS or "turnaround,head,details,game,poses,lineup,metric").split(","))
+    rv = RV.Review(arm, rig, meshes, RENDERS)
+    if "turnaround" in sheets:
+        print(rv.turnaround_sheet())
+    if "head" in sheets:
+        print(rv.head_sheet({f: CP.face_pose(rig, f) for f in CP.FACE_POSES}))
+    if "details" in sheets:
+        print(rv.details_sheet())
+    if "game" in sheets:
+        print(rv.game_sheet(perch_W=posed["perch"], hang_W=posed["hang"]))
+    if "poses" in sheets:
+        ps = [(n, posed[n], c, s) for n, _, c, s in CP.ORDER]
+        print(rv.pose_sheet(ps[:5], "Chikuō ermitaño: poses de prueba (1/2)", "poses1", [cc for _, cc, _, _ in CP.ORDER[:5]],
+                            CP.SHEET_LIFT))
+        print(rv.pose_sheet(ps[5:], "Chikuō ermitaño: poses de prueba (2/2)", "poses2", [cc for _, cc, _, _ in CP.ORDER[5:]],
+                            CP.SHEET_LIFT))
+    if "lineup" in sheets:
+        print(rv.lineup_sheet())
+    if "metric" in sheets:
+        print(rv.metric_sheet(("front", "side"), "metric_body"))
+        print(rv.metric_sheet(("q34", "back"), "metric_body2"))
+        print(rv.metric_sheet(("head_front", "head_side", "head_back"), "metric_head"))
+
+
+def write_sidecar(ranges, baked, data, tris, bh, fails=()):
+    import chikuo_bake as CB
+    import chikuo_clips as CC
     clips = {}
     for c, _ in baked:
         a, b = ranges[c.name]
-        clips[c.name] = {"first": a, "last": b, "frames": c.frames, "seconds": round(c.frames / NA.FPS, 4), "loop": c.loop,
-                         "notes": c.notes}
+        clips[c.name] = CB.sidecar_clip(c, a, b, data.get(c.name))
     info = {
         "fps": NA.FPS, "take": "Scene", "bind_height": bh,
         "bind_height_note": "alto que mide CharacterFactory.NormalizeHeight en la pose por defecto del FBX (el reposo, con la "
                             "flauta parada a la derecha): con este valor en NindoContent la escala es 1",
         "tris": tris, "facing": "frente +Z en Unity (Blender -Y): modelYaw 0",
-        "stage": "modelo (fase C4): solo los clips BindPose, Idle (parado relajado) y PoseTest; los de la pelea los agrega el "
-                 "paso de animación",
+        "stage": "clips de pelea (fase C4): el contrato de Docs/handoff/diseno/chikuo_v2.md sección 16",
         "clips": clips,
-        "pose_test": [n for n, *_ in CP.ORDER], "pose_test_hold_frames": HOLD,
+        "lint_failures": list(fails),
+        "aliases": CC.ALIASES,
+        "spaces": CB.SPACES_NOTE,
+        "stalk": CB.stalk_note(),
         "contract_bones": CONTRACT_BONES,
         "parts": {"skinned": ["Chikuo_Body"], "rigid": {"Chikuo_Staff": "Staff"}, "materials": ["Nindo_Palette"] + CM.EXTRA_MATS,
                   "notes": "una sola malla con skin (cuerpo, ropa, capa de hojas y los 26 cascabeles) y la flauta-bastón rígida "
@@ -357,10 +361,10 @@ def write_sidecar(ranges, baked, tris, bh):
                    "colliders": [n for n, *_ in CR.collider_specs()],
                    "baked": ["Topknot_*", "Sleeve_*", "Skirt_*", "Cloak_*"],
                    "notes": "las Acc_* son cadenas de SpringChain (TasselBeard = perfil Tassel, LeafKnot = Leaf, TieSash = Tie, "
-                            "Chimes* = Chimes, un hueso por cascabel). La capa, las mangas, la falda y el moño van horneados "
-                            "en los clips y NO son Acc_: SpringChain saltea las cadenas colgadas de otra Acc_ y los cascabeles "
-                            "cuelgan de la capa. Los paños de la capa que cubren los brazos siguen al brazo en parte "
-                            "(chikuo_rig.Poser.follow_cloak, la pose rígida antes de los resortes)."},
+                            "Chimes* = Chimes, un hueso por cascabel) y vienen horneadas en cada clip (la física del juego "
+                            "las sigue con stiffness y un tope de ángulo desde esa pose: colgado, los cascabeles ya caen al "
+                            "piso en el clip). La capa, las mangas, la falda y el moño van horneados y NO son Acc_: "
+                            "SpringChain saltea las cadenas colgadas de otra Acc_ y los cascabeles cuelgan de la capa."},
         "chimes": {n: {"group": g, "angle_deg": a, "drop": s, "cord_m": cord, "tube_m": ln, "radius_m": r,
                        "parent": CR.chime_parent(a, s)} for n, g, a, s, cord, ln, r in CR.chimes_full()},
         "sockets": {"Staff_Muzzle": "la punta de abajo: de donde salen los dardos", "Staff_Mouth": "la punta de arriba: la "
@@ -369,11 +373,7 @@ def write_sidecar(ranges, baked, tris, bh):
         "staff": {"length_m": CR.STAFF_LEN, "radius_m": CR.STAFF_R, "bone": "Staff",
                   "note": "el hueso va de la punta de abajo (cabeza) a la de arriba (cola): Y a lo largo"},
         "face": {"bones": ["Jaw", "Lid_R", "Lid_L", "Brow_R", "Brow_L", "Cheek_R", "Cheek_L", "MouthCorner_R", "MouthCorner_L"],
-                 "poses": CR.FACES,
-                 "notes": "jaw en grados (+ abre: la boca abre en medialuna, las comisuras quedan), lids 0 = el reposo (tapa el "
-                          "30 % de arriba) .. 1 = cerrado (60° hacia abajo), brows en grados (+ la punta de afuera sube), cheeks "
-                          "0..1 (2.4 cm afuera: asoma un domo en cada cachete), corners (adentro, arriba) en metros en el marco de "
-                          "la cabeza"},
+                 "poses": CR.FACES},
         "hand_shapes": CR.HAND_SHAPES,
         "anchors": {"grip_local": list(CR.GRIP_LOCAL), "palm_local": list(CR.PALM_LOCAL),
                     "note": "espacio del hueso de la mano (Y dedos, Z dorso): donde pasa un caño agarrado con el puño"},
@@ -382,12 +382,14 @@ def write_sidecar(ranges, baked, tris, bh):
         json.dump(info, fh, indent=1, ensure_ascii=False)
 
 
-def write_roundtrip(scn, arm, body, ranges):
-    """Dónde quedan algunos huesos y la caja y el centro de la malla deformada en el reposo, en Idle, en el medio de cada
-    pose de PoseTest y en el primer cuadro de cada una, donde la pose cambia (el FBX importado tiene que dar lo mismo: un
-    corrimiento de un cuadro en la toma se ve ahí)."""
-    a0, _ = ranges["PoseTest"]
-    frames = [0, ranges["Idle"][0] + 5] + [a0 + i * HOLD + d for i in range(len(CP.ORDER)) for d in (0, HOLD // 2)]
+def write_roundtrip(scn, arm, body, ranges, baked):
+    """Dónde quedan algunos huesos y la caja y el centro de la malla deformada en el reposo y en el primer cuadro, el
+    del medio y el último de algunos clips (el FBX importado tiene que dar lo mismo: un corrimiento de un cuadro en la
+    toma se ve ahí)."""
+    frames = [0]
+    for c, _ in baked[:: max(1, len(baked) // 14)]:
+        a, b = ranges[c.name]
+        frames += [a, (a + b) // 2, b]
     rt = {}
     for f in frames:
         scn.frame_set(f)

@@ -10,7 +10,7 @@
   "staff": 444
  },
  "facing": "frente +Z en Unity (Blender -Y): modelYaw 0",
- "stage": "modelo (fase C4): solo los clips BindPose, Idle (parado relajado) y PoseTest; los de la pelea los agrega el paso de animación",
+ "stage": "clips de pelea (fase C4): el contrato de Docs/handoff/diseno/chikuo_v2.md sección 16",
  "clips": {
   "BindPose": {
    "first": 1,
@@ -18,37 +18,6805 @@
    "frames": 30,
    "seconds": 1.0,
    "loop": true,
+   "timing": {
+    "space": "ground"
+   },
+   "normalized": {},
+   "events": [],
    "notes": "el reposo (pose A, la del skin): para revisar el modelo en Unity"
   },
-  "Idle": {
-   "first": 41,
-   "last": 71,
+  "PerchIdle": {
+   "first": 35,
+   "last": 83,
+   "frames": 48,
+   "seconds": 1.6,
+   "loop": true,
+   "timing": {
+    "space": "perch",
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 6.0,
+    "feet_on_node": [
+     [
+      0,
+      48
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "agachado en el nudo, la flauta en los hombros, se hamaca y mira; loop",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     30.8,
+     "Index_R_2",
+     39
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     53,
+     0.094,
+     21,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       15
+      ],
+      [
+       "Cloak_192_2",
+       9
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "PerchDart": {
+   "first": 87,
+   "last": 111,
+   "frames": 24,
+   "seconds": 0.8,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "tell": [
+     2,
+     8
+    ],
+    "apex": 8,
+    "kind": "projectile",
+    "glow": [
+     "Chikuo_GlintChimesHi"
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 8.0,
+    "feet_on_node": [
+     [
+      0,
+      24
+     ]
+    ],
+    "shots": [
+     [
+      8,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintStaff"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.3333,
+    "tell": [
+     0.0833,
+     0.3333
+    ]
+   },
+   "events": [
+    {
+     "frame": 14,
+     "t": 0.5833,
+     "fn": "DartSpawn"
+    }
+   ],
+   "notes": "un dardo: baja la flauta de los hombros a la boca (aviso f8), sopla en f14 y vuelve",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.0,
+     "Staff",
+     17
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     52,
+     0.097,
+     24,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       13
+      ],
+      [
+       "Cloak_192_2",
+       8
+      ],
+      [
+       "Cloak_192_3",
+       8
+      ],
+      [
+       "Foot_R",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "PerchDart2": {
+   "first": 115,
+   "last": 149,
+   "frames": 34,
+   "seconds": 1.1333,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "tell": [
+     2,
+     8
+    ],
+    "apex": 8,
+    "kind": "projectile",
+    "glow": [
+     "Chikuo_GlintChimesHi"
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 8.0,
+    "feet_on_node": [
+     [
+      0,
+      34
+     ]
+    ],
+    "shots": [
+     [
+      8,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintStaff"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.2353,
+    "tell": [
+     0.0588,
+     0.2353
+    ]
+   },
+   "events": [
+    {
+     "frame": 14,
+     "t": 0.4118,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 24,
+     "t": 0.7059,
+     "fn": "DartSpawn"
+    }
+   ],
+   "notes": "dos dardos (f14 y f24): reapunta entre los dos",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.0,
+     "Staff",
+     27
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     53,
+     0.098,
+     34,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       12
+      ],
+      [
+       "Cloak_192_3",
+       11
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "PerchVolley": {
+   "first": 153,
+   "last": 204,
+   "frames": 51,
+   "seconds": 1.7,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "tell": [
+     3,
+     12
+    ],
+    "apex": 12,
+    "load": [
+     3,
+     42
+    ],
+    "kind": "projectile",
+    "glow": [
+     "Chikuo_GlintChimesHi"
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 20.0,
+    "feet_on_node": [
+     [
+      0,
+      51
+     ]
+    ],
+    "shots": [
+     [
+      22,
+      "cargada (blanco)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.2353,
+    "tell": [
+     0.0588,
+     0.2353
+    ],
+    "load": [
+     0.0588,
+     0.8235
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.0588,
+     "fn": "Load"
+    },
+    {
+     "frame": 17,
+     "t": 0.3333,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 28,
+     "t": 0.549,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 39,
+     "t": 0.7647,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 42,
+     "t": 0.8235,
+     "fn": "Unload"
+    }
+   ],
+   "notes": "Tres Notas: se echa atrás (Load f3), inspira, tres dardos (f17, f28, f39) y Unload f42",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.0,
+     "Staff",
+     43
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     52,
+     0.098,
+     50,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       13
+      ],
+      [
+       "Cloak_192_3",
+       11
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "PerchVolley4": {
+   "first": 208,
+   "last": 256,
+   "frames": 48,
+   "seconds": 1.6,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "tell": [
+     3,
+     10
+    ],
+    "apex": 10,
+    "load": [
+     3,
+     40
+    ],
+    "kind": "projectile",
+    "glow": [
+     "Chikuo_GlintChimesHi"
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 20.0,
+    "feet_on_node": [
+     [
+      0,
+      48
+     ]
+    ],
+    "shots": [
+     [
+      21,
+      "cargada (blanco)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.2083,
+    "tell": [
+     0.0625,
+     0.2083
+    ],
+    "load": [
+     0.0625,
+     0.8333
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.0625,
+     "fn": "Load"
+    },
+    {
+     "frame": 14,
+     "t": 0.2917,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 22,
+     "t": 0.4583,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 30,
+     "t": 0.625,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 39,
+     "t": 0.8125,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 40,
+     "t": 0.8333,
+     "fn": "Unload"
+    }
+   ],
+   "notes": "Cuatro Notas (fase 3): Load f3, dardos f14, f22, f30, f39, Unload f40",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.0,
+     "Staff",
+     41
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     51,
+     0.095,
+     0,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       15
+      ],
+      [
+       "Cloak_192_2",
+       9
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "PerchWhistle": {
+   "first": 260,
+   "last": 302,
+   "frames": 42,
+   "seconds": 1.4,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "tell": [
+     3,
+     24
+    ],
+    "apex": 24,
+    "load": [
+     3,
+     30
+    ],
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintChimesHi",
+     "Chikuo_GlintStaff"
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 25.0,
+    "feet_on_node": [
+     [
+      0,
+      42
+     ]
+    ],
+    "shots": [
+     [
+      24,
+      "aviso (rojo)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintStaff"
+      ],
+      "red"
+     ],
+     [
+      16,
+      "cargada (blanco)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.5714,
+    "tell": [
+     0.0714,
+     0.5714
+    ],
+    "load": [
+     0.0714,
+     0.7143
+    ]
+   },
+   "events": [
+    {
+     "frame": 3,
+     "t": 0.0714,
+     "fn": "Load"
+    },
+    {
+     "frame": 27,
+     "t": 0.6429,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 30,
+     "t": 0.7143,
+     "fn": "Unload"
+    }
+   ],
+   "notes": "el silbador: gran inspiración, aviso quieto en f24, culatazo al soplar en f27; en la fase 3 el código lo toca a x1.125",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.0,
+     "Staff",
+     8
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     51,
+     0.095,
+     0,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       15
+      ],
+      [
+       "Cloak_192_2",
+       9
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "TalaShot": {
+   "first": 306,
+   "last": 336,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "tell": [
+     2,
+     13
+    ],
+    "apex": 13,
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintChimesHi",
+     "Chikuo_GlintStaff"
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 12.0,
+    "feet_on_node": [
+     [
+      0,
+      30
+     ]
+    ],
+    "shots": [
+     [
+      13,
+      "aviso (rojo)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintStaff"
+      ],
+      "red"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.4333,
+    "tell": [
+     0.0667,
+     0.4333
+    ]
+   },
+   "events": [
+    {
+     "frame": 14,
+     "t": 0.4667,
+     "fn": "DartSpawn"
+    }
+   ],
+   "notes": "el silbador corto contra la rajadura de otra caña (la tala); el código gira el cuerpo hacia ella",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.0,
+     "Staff",
+     5
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     51,
+     0.095,
+     0,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       15
+      ],
+      [
+       "Cloak_192_2",
+       9
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "HangDrop": {
+   "first": 340,
+   "last": 351,
+   "frames": 11,
+   "seconds": 0.3667,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "load": [
+     0,
+     11
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "HANG",
+    "bend": 30.0,
+    "preroll": 1.0,
+    "feet_on_node": [
+     [
+      0,
+      1
+     ]
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.9091,
+     "fn": "Hang"
+    }
+   ],
+   "notes": "se deja caer de costado y queda colgado de las piernas, cabeza abajo; Hang en f10",
+   "lint": {
+    "reach_miss_cm": [
+     45.3,
+     13.4
+    ],
+    "snap_deg": [
+     175.8,
+     "UpperArm_R",
+     8
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     124.7,
+     "Hand_R",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     154,
+     0.114,
+     8,
+     [
+      [
+       "Shin_L",
+       25
+      ],
+      [
+       "Cloak_102_3",
+       22
+      ],
+      [
+       "Acc_ChimesLo08_0",
+       22
+      ],
+      [
+       "Toe_L",
+       17
+      ]
+     ]
+    ]
+   }
+  },
+  "HangDart2": {
+   "first": 355,
+   "last": 373,
+   "frames": 18,
+   "seconds": 0.6,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "load": [
+     0,
+     18
+    ],
+    "kind": "projectile",
+    "glow": [
+     "Chikuo_GlintChimesHi"
+    ],
+    "chain_from": "HANG",
+    "bend": 30.0,
+    "preroll": 2.0,
+    "shots": [
+     [
+      8,
+      "colgado: aviso (dorado)",
+      [
+       "Chikuo_GlintChimesHi"
+      ],
+      "gold"
+     ],
+     [
+      4,
+      "colgado: cargada",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 9,
+     "t": 0.5,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 18,
+     "t": 1.0,
+     "fn": "DartSpawn"
+    }
+   ],
+   "notes": "colgado cabeza abajo, dos dardos (f9 y f18, el último cuadro); sigue HangClimb",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     6.1
+    ],
+    "snap_deg": [
+     21.0,
+     "Lid_R",
+     9
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     72,
+     0.097,
+     4,
+     [
+      [
+       "Shin_L",
+       19
+      ],
+      [
+       "Skirt_320",
+       12
+      ],
+      [
+       "Toe_L",
+       9
+      ],
+      [
+       "Toe_R",
+       8
+      ]
+     ]
+    ]
+   }
+  },
+  "HangClimb": {
+   "first": 377,
+   "last": 392,
+   "frames": 15,
+   "seconds": 0.5,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "load": [
+     0,
+     8
+    ],
+    "chain_from": "HANG",
+    "chain_to": "PERCH",
+    "bend": 30.0,
+    "feet_on_node": [
+     [
+      12,
+      15
+     ]
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     0.5333
+    ]
+   },
+   "events": [
+    {
+     "frame": 8,
+     "t": 0.5333,
+     "fn": "Unload"
+    },
+    {
+     "frame": 15,
+     "t": 1.0,
+     "fn": "Perch"
+    }
+   ],
+   "notes": "de colgado al posado: Unload f8, Perch f15",
+   "lint": {
+    "reach_miss_cm": [
+     46.8,
+     10.1
+    ],
+    "snap_deg": [
+     176.3,
+     "Foot_L",
+     5
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     127.7,
+     "Hand_R",
+     0.0,
+     21.7
+    ],
+    "chain_to_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     138,
+     0.096,
+     5,
+     [
+      [
+       "Shin_L",
+       54
+      ],
+      [
+       "Shin_R",
+       39
+      ],
+      [
+       "Toe_R",
+       12
+      ],
+      [
+       "Toe_L",
+       10
+      ]
+     ]
+    ]
+   }
+  },
+  "PerchLaugh": {
+   "first": 396,
+   "last": 432,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": true,
+   "timing": {
+    "space": "perch",
+    "load": [
+     0,
+     36
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 10.0,
+    "feet_on_node": [
+     [
+      0,
+      36
+     ]
+    ],
+    "shots": [
+     [
+      9,
+      "la risa (cargada)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "carcajada con palmadas en la rodilla; loop (la Risa cargada, 1.2 s / 2.0 s la del maestro)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     3.274
+    ],
+    "snap_deg": [
+     74.8,
+     "Cloak_280_1",
+     31
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     60.0,
+     "Lid_R",
+     0.0,
+     3.6
+    ],
+    "culm_inside_verts": [
+     47,
+     0.095,
+     34,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       10
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ],
+      [
+       "Topknot_2",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "PerchWobble": {
+   "first": 436,
+   "last": 444,
+   "frames": 8,
+   "seconds": 0.2667,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 10.0,
+    "feet_on_node": [
+     [
+      0,
+      8
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "manotea: le cortaron la caña sin las campanas (¡Cosquillas!)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.1,
+     "Sleeve_L_2",
+     1
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "Middle_L_2",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     91,
+     0.074,
+     1,
+     [
+      [
+       "Acc_ChimesLo11_0",
+       26
+      ],
+      [
+       "Cloak_192_2",
+       15
+      ],
+      [
+       "Acc_ChimesLo05_0",
+       15
+      ],
+      [
+       "Cloak_192_3",
+       8
+      ]
+     ]
+    ]
+   }
+  },
+  "StalkSweep": {
+   "first": 448,
+   "last": 489,
+   "frames": 41,
+   "seconds": 1.3667,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "tell": [
+     8,
+     20
+    ],
+    "apex": 20,
+    "contact": 26,
+    "active": [
+     24,
+     28
+    ],
+    "kind": "dodge",
+    "load": [
+     8,
+     26
+    ],
+    "glow": [
+     "Chikuo_GlintChimesHi",
+     "Chikuo_GlintChimesLo",
+     "Chikuo_GlintStaff"
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 30.0,
+    "ring_m": 3.6,
+    "feet_on_node": [
+     [
+      0,
+      4
+     ],
+     [
+      37,
+      41
+     ]
+    ],
+    "shots": [
+     [
+      20,
+      "aviso (rojo)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo",
+       "Chikuo_GlintStaff"
+      ],
+      "red"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.4878,
+    "contact": 0.6341,
+    "tell": [
+     0.1951,
+     0.4878
+    ],
+    "active": [
+     0.5854,
+     0.6829
+    ],
+    "load": [
+     0.1951,
+     0.6341
+    ]
+   },
+   "events": [
+    {
+     "frame": 8,
+     "t": 0.1951,
+     "fn": "Load"
+    },
+    {
+     "frame": 26,
+     "t": 0.6341,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "se cuelga del costado y la caña (código) barre el disco de 3.6 m; Load f8, aviso f20, Contact f26",
+   "lint": {
+    "reach_miss_cm": [
+     32.0,
+     0.0
+    ],
+    "snap_deg": [
+     177.5,
+     "Hand_L",
+     13
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      32
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     55.5,
+     "UpperArm_L",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     243,
+     0.096,
+     10,
+     [
+      [
+       "Head",
+       111
+      ],
+      [
+       "Topknot_1",
+       24
+      ],
+      [
+       "Topknot_2",
+       20
+      ],
+      [
+       "Spine2",
+       16
+      ]
+     ]
+    ]
+   }
+  },
+  "CatapultDraw": {
+   "first": 493,
+   "last": 523,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "load": [
+     0,
+     30
+    ],
+    "tell": [
+     0,
+     22
+    ],
+    "apex": 22,
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintChimesHi",
+     "Chikuo_GlintChimesLo",
+     "Chikuo_GlintFootR"
+    ],
+    "chain_from": "PERCH",
+    "bend": -35.0,
+    "feet_on_node": [
+     [
+      0,
+      29
+     ]
+    ],
+    "shots": [
+     [
+      22,
+      "aviso (rojo)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo",
+       "Chikuo_GlintFootR"
+      ],
+      "red"
+     ],
+     [
+      12,
+      "cargada",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.7333,
+    "tell": [
+     0.0,
+     0.7333
+    ],
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 0,
+     "t": 0.0,
+     "fn": "Load"
+    },
+    {
+     "frame": 22,
+     "t": 0.7333,
+     "fn": "AimFix"
+    },
+    {
+     "frame": 30,
+     "t": 1.0,
+     "fn": "LeaveStalk"
+    }
+   ],
+   "notes": "tensa la caña como un arco: Load f0, AimFix f22 (el carril queda fijo), LeaveStalk f30 (sigue CatapultKick)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     21.4,
+     "Sleeve_L_1",
+     5
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     51,
+     0.095,
+     0,
+     [
+      [
+       "Acc_ChimesLo10_0",
+       15
+      ],
+      [
+       "Cloak_192_2",
+       9
+      ],
+      [
+       "Foot_R",
+       7
+      ],
+      [
+       "Foot_L",
+       7
+      ]
+     ]
+    ]
+   }
+  },
+  "CatapultKick": {
+   "first": 527,
+   "last": 542,
+   "frames": 15,
+   "seconds": 0.5,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "contact": 15,
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintFootR"
+    ],
+    "chain_to": "DIVE_LAND",
+    "shots": [
+     [
+      8,
+      "en vuelo (rojo)",
+      [
+       "Chikuo_GlintFootR"
+      ],
+      "red"
+     ]
+    ]
+   },
+   "normalized": {
+    "contact": 1.0
+   },
+   "events": [
+    {
+     "frame": 15,
+     "t": 1.0,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "la patada voladora por el carril: el código lleva la raíz del PerchNode al final del carril (el pie derecho a la altura de la raíz); Contact f15; sigue DiveLand",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     39.1,
+     "UpperArm_L",
+     6
+    ],
+    "chain_to_deg": [
+     36.38,
+     "UpperArm_L",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "LeapCrouch": {
+   "first": 546,
+   "last": 553,
+   "frames": 7,
+   "seconds": 0.2333,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "chain_from": "PERCH",
+    "chain_to": "AIR",
+    "bend": 12.0,
+    "feet_on_node": [
+     [
+      0,
+      6
+     ]
+    ],
+    "fade_to": 0.08,
+    "root_offset": [
+     "LeapAir",
+     0,
+     7
+    ]
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 7,
+     "t": 1.0,
+     "fn": "LeaveStalk"
+    }
+   ],
+   "notes": "el agachado del salto (0.23 s; fase 3 a x1.57): LeaveStalk f7",
+   "lint": {
+    "reach_miss_cm": [
+     10.2,
+     0.0
+    ],
+    "snap_deg": [
+     93.3,
+     "UpperArm_R",
+     3
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     120.48,
+     "UpperArm_L",
+     15.1,
+     80.9
+    ],
+    "culm_inside_verts": [
+     55,
+     0.091,
+     7,
+     [
+      [
+       "Acc_ChimesLo03_0",
+       16
+      ],
+      [
+       "Hips",
+       13
+      ],
+      [
+       "Foot_R",
+       8
+      ],
+      [
+       "Spine1",
+       5
+      ]
+     ]
+    ]
+   },
+   "root_offset_m": [
+    -0.0,
+    -0.02,
+    0.15
+   ]
+  },
+  "LeapAir": {
+   "first": 557,
+   "last": 569,
+   "frames": 12,
+   "seconds": 0.4,
+   "loop": true,
+   "timing": {
+    "space": "air",
+    "chain_from": "AIR",
+    "chain_to": "AIR"
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "en el aire entre cañas (loop); el código lleva la raíz por el arco del salto (los pies a la altura de la raíz)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.04,
+     0.08
+    ],
+    "snap_deg": [
+     24.5,
+     "Hand_L",
+     3
+    ],
+    "chain_from_deg": [
+     0.04,
+     "Foot_R",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "LeapGrab": {
+   "first": 573,
+   "last": 579,
+   "frames": 6,
+   "seconds": 0.2,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "load": [
+     0,
+     6
+    ],
+    "chain_from": "AIR",
+    "chain_to": "PERCH",
+    "bend": 12.0,
+    "feet_on_node": [
+     [
+      6,
+      6
+     ]
+    ],
+    "fade_from": 0.08,
+    "root_offset": [
+     "LeapAir",
+     0,
+     0
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 0,
+     "t": 0.0,
+     "fn": "GrabStalk"
+    },
+    {
+     "frame": 6,
+     "t": 1.0,
+     "fn": "Perch"
+    }
+   ],
+   "notes": "agarra la caña de destino (GrabStalk f0, cargada 0.20 s) y queda posado (Perch f6). Llega con el culmo adelante a su derecha (el código lo trae mirando la caña) y da la vuelta por ese costado",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     116.4,
+     "UpperArm_R",
+     4
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     76.32,
+     "UpperArm_L",
+     57.0,
+     45.0
+    ],
+    "chain_to_deg": [
+     97.09,
+     "UpperArm_R",
+     3.0,
+     3.0
+    ],
+    "culm_inside_verts": [
+     112,
+     0.097,
+     1,
+     [
+      [
+       "Shin_R",
+       62
+      ],
+      [
+       "Foot_R",
+       24
+      ],
+      [
+       "Thumb_L_2",
+       8
+      ],
+      [
+       "Thigh_R",
+       5
+      ]
+     ]
+    ]
+   },
+   "root_offset_m": [
+    -0.45,
+    -0.02,
+    -0.35
+   ]
+  },
+  "Climb": {
+   "first": 583,
+   "last": 607,
+   "frames": 24,
+   "seconds": 0.8,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "load": [
+     0,
+     24
+    ],
+    "air": [
+     0,
+     4
+    ],
+    "chain_to": "PERCH",
+    "bend": 6.0,
+    "feet_on_node": [
+     [
+      23,
+      24
+     ]
+    ],
+    "fade_from": 0.1,
+    "shots": [
+     [
+      10,
+      "trepando (cargada: Resbalón)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ],
+    "air": [
+     0.0,
+     0.1667
+    ]
+   },
+   "events": [
+    {
+     "frame": 4,
+     "t": 0.1667,
+     "fn": "GrabStalk"
+    },
+    {
+     "frame": 24,
+     "t": 1.0,
+     "fn": "Perch"
+    }
+   ],
+   "notes": "trepa desde el piso. Autorado sobre la caña de adentro: los pies arrancan en el piso 4.4 m abajo del PerchNode. En [0, air_end] (el alcance) el código lleva el modelo desde donde está parado hasta el eje de la caña y corrige la altura (perch - 4.4); desde GrabStalk (f4) va exacto en el PerchNode. Cargada entera (Resbalón)",
+   "lint": {
+    "reach_miss_cm": [
+     17.1,
+     1.4
+    ],
+    "snap_deg": [
+     161.0,
+     "Forearm_R",
+     6
+    ],
+    "culm_hands_cm": {
+     "R": [
+      2.04,
+      15
+     ],
+     "L": [
+      0.09,
+      10
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_to_deg": [
+     68.25,
+     "UpperArm_L",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     169,
+     0.095,
+     21,
+     [
+      [
+       "Acc_ChimesLo06_0",
+       20
+      ],
+      [
+       "Foot_R",
+       18
+      ],
+      [
+       "Index_R_2",
+       16
+      ],
+      [
+       "Middle_R_2",
+       16
+      ]
+     ]
+    ]
+   }
+  },
+  "DecoySpin": {
+   "first": 611,
+   "last": 629,
+   "frames": 18,
+   "seconds": 0.6,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "chain_from": "PERCH",
+    "chain_to": "PERCH",
+    "bend": 8.0,
+    "feet_on_node": [
+     [
+      0,
+      1
+     ],
+     [
+      17,
+      18
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "gira con la capa abierta (los señuelos aparecen al final; repiten este clip y los de arriba con 0.25 s de eco)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     71.8,
+     "Acc_ChimesHi04_0",
+     15
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.0,
+     "Middle_L_2",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     105,
+     0.085,
+     10,
+     [
+      [
+       "Foot_R",
+       17
+      ],
+      [
+       "Foot_L",
+       16
+      ],
+      [
+       "Acc_ChimesLo03_0",
+       13
+      ],
+      [
+       "Cloak_168_1",
+       11
+      ]
+     ]
+    ]
+   }
+  },
+  "Dive": {
+   "first": 633,
+   "last": 662,
+   "frames": 29,
+   "seconds": 0.9667,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "tell": [
+     2,
+     10
+    ],
+    "apex": 8,
+    "contact": 28,
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintFootR",
+     "Chikuo_GlintChimesLo"
+    ],
+    "ring_m": 1.6,
+    "marker_m": 1.6,
+    "chain_from": "PERCH",
+    "chain_to": "DIVE_LAND",
+    "bend": 8.0,
+    "feet_on_node": [
+     [
+      0,
+      9
+     ]
+    ],
+    "shots": [
+     [
+      8,
+      "aviso (rojo)",
+      [
+       "Chikuo_GlintFootR",
+       "Chikuo_GlintChimesLo"
+      ],
+      "red"
+     ],
+     [
+      20,
+      "en vuelo (rojo)",
+      [
+       "Chikuo_GlintFootR"
+      ],
+      "red"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.2759,
+    "contact": 0.9655,
+    "tell": [
+     0.069,
+     0.3448
+    ]
+   },
+   "events": [
+    {
+     "frame": 10,
+     "t": 0.3448,
+     "fn": "LeaveStalk"
+    },
+    {
+     "frame": 28,
+     "t": 0.9655,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "la Picada de la Grulla: posado hasta LeaveStalk f10 (la raíz en el PerchNode), después el código lleva la raíz por el arco hasta el disco de 1.6 m; el pie derecho toca a la altura de la raíz en Contact f28",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     39.1,
+     "UpperArm_L",
+     16
+    ],
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     36.39,
+     "UpperArm_L",
+     2.0,
+     2.4
+    ]
+   }
+  },
+  "DiveLand": {
+   "first": 666,
+   "last": 680,
+   "frames": 14,
+   "seconds": 0.4667,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     14
+    ],
+    "chain_from": "DIVE_LAND",
+    "chain_to": "READY",
+    "hang_scale": 0.5
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 0,
+     "t": 0.0,
+     "fn": "Land"
+    }
+   ],
+   "notes": "aterriza agachado con el pie de la patada clavado (Land f0); cortable 0.45 s",
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.03,
+    -0.06,
+    -0.1,
+    -0.16,
+    -0.24,
+    -0.3,
+    -0.3,
+    -0.3
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     137.6,
+     "UpperArm_R",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       8
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       3,
+       10
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.04,
+     "Foot_L",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.003,
+     0
+    ]
+   }
+  },
+  "FeetStuck": {
+   "first": 684,
+   "last": 732,
+   "frames": 48,
+   "seconds": 1.6,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     44
+    ],
+    "chain_from": "DIVE_LAND",
+    "chain_to": "READY",
+    "sunk": 0.16,
+    "fade_to": 0.1
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     0.9167
+    ]
+   },
+   "events": [],
+   "notes": "Pies Enterrados (1.6 s abierto): los pies hundidos 12 cm, tironea y salta afuera al final",
+   "lint": {
+    "reach_miss_cm": [
+     0.9,
+     0.0
+    ],
+    "snap_deg": [
+     146.8,
+     "Hand_R",
+     43
+    ],
+    "sole_slip_cm": {
+     "R": [
+      1.57,
+      [
+       0,
+       42
+      ]
+     ],
+     "L": [
+      3.53,
+      [
+       2,
+       42
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     23.51,
+     "Forearm_L",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.13,
+     6
+    ]
+   }
+  },
+  "StaffDrop": {
+   "first": 736,
+   "last": 763,
+   "frames": 27,
+   "seconds": 0.9,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "tell": [
+     2,
+     20
+    ],
+    "apex": 20,
+    "contact": 26,
+    "active": [
+     25,
+     27
+    ],
+    "kind": "parry",
+    "glow": [
+     "Chikuo_GlintStaff",
+     "Chikuo_GlintChimesHi"
+    ],
+    "reach_m": 2.4,
+    "arc_deg": 90.0,
+    "air": [
+     6,
+     19
+    ],
+    "chain_from": "PERCH",
+    "chain_to": "STAFF_DOWN",
+    "bend": 8.0,
+    "feet_on_node": [
+     [
+      0,
+      5
+     ]
+    ],
+    "shots": [
+     [
+      20,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintStaff",
+       "Chikuo_GlintChimesHi"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.7407,
+    "contact": 0.963,
+    "tell": [
+     0.0741,
+     0.7407
+    ],
+    "active": [
+     0.9259,
+     1.0
+    ],
+    "air": [
+     0.2222,
+     0.7037
+    ]
+   },
+   "events": [
+    {
+     "frame": 6,
+     "t": 0.2222,
+     "fn": "LeaveStalk"
+    },
+    {
+     "frame": 19,
+     "t": 0.7037,
+     "fn": "Land"
+    },
+    {
+     "frame": 26,
+     "t": 0.963,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "el Bastón que Cae: posado hasta LeaveStalk f6, el código lo lleva por el arco hasta 1.6 m de Kaito (Land f19: los pies a la altura de la raíz en el piso); la flauta arriba en f20, el bastonazo de 90° y 2.4 m en Contact f26",
+   "lint": {
+    "reach_miss_cm": [
+     37.9,
+     0.0
+    ],
+    "snap_deg": [
+     144.4,
+     "UpperArm_L",
+     23
+    ],
+    "chain_from_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     67.01,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "StaffDropRecover": {
+   "first": 767,
+   "last": 779,
+   "frames": 12,
+   "seconds": 0.4,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     12
+    ],
+    "chain_from": "STAFF_DOWN",
+    "chain_to": "READY"
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "vuelve a la guardia después del Bastón que Cae (la Contra, 0.40 s)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     32.2,
+     "Acc_LeafKnot_1",
+     6
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       12
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       11
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.04,
+     "Foot_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     92.55,
+     "Forearm_L",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.02,
+     0
+    ]
+   }
+  },
+  "Vault": {
+   "first": 783,
+   "last": 810,
+   "frames": 27,
+   "seconds": 0.9,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "air": [
+     9,
+     27
+    ],
+    "chain_from": "READY",
+    "chain_to": "AIR",
+    "invulnerable": [
+     0,
+     27
+    ],
+    "root_offset": [
+     "LeapAir",
+     0,
+     9
+    ],
+    "carried_from": 9,
+    "staff_in_floor": 0.12
+   },
+   "normalized": {
+    "air": [
+     0.3333,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 6,
+     "t": 0.2222,
+     "fn": "Plant"
+    },
+    {
+     "frame": 9,
+     "t": 0.3333,
+     "fn": "LeaveStalk"
+    },
+    {
+     "frame": 27,
+     "t": 1.0,
+     "fn": "GrabStalk"
+    }
+   ],
+   "notes": "la garrocha: Plant f6 (el bastón 1 m adelante), LeaveStalk f9 (desde ahí el código lleva la raíz por el arco como en LeapAir: root_offset_m), GrabStalk f27 (sigue LeapGrab)",
+   "travel_m": [
+    0.0,
+    0.0389,
+    0.1111,
+    0.15,
+    0.2556,
+    0.2944,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3,
+    0.3
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     24.7,
+     0.0
+    ],
+    "snap_deg": [
+     155.1,
+     "UpperArm_R",
+     10
+    ],
+    "sole_slip_cm": {
+     "R": [
+      29.78,
+      [
+       0,
+       7
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       4,
+       7
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.51,
+     "Head",
+     1.0,
+     1.0
+    ],
+    "mesh_min_z": [
+     -0.071,
+     8
+    ]
+   },
+   "root_offset_m": [
+    -0.0,
+    0.4,
+    0.35
+   ]
+  },
+  "JumpCrouch": {
+   "first": 814,
+   "last": 823,
+   "frames": 9,
+   "seconds": 0.3,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "READY",
+    "chain_to": "AIR",
+    "fade_to": 0.08,
+    "root_offset": [
+     "LeapAir",
+     0,
+     9
+    ],
+    "carried_from": 9
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 9,
+     "t": 1.0,
+     "fn": "LeaveStalk"
+    }
+   ],
+   "notes": "el agachado del salto desde el piso (cortable: Tropiezo); LeaveStalk f9",
+   "lint": {
+    "reach_miss_cm": [
+     83.0,
+     0.0
+    ],
+    "snap_deg": [
+     146.7,
+     "Forearm_R",
+     6
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       8
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       8
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     35.69,
+     "Thigh_R",
+     15.6,
+     67.4
+    ],
+    "mesh_min_z": [
+     -0.009,
+     8
+    ]
+   },
+   "root_offset_m": [
+    -0.0,
+    0.12,
+    0.1
+   ]
+  },
+  "FlungAir": {
+   "first": 827,
+   "last": 839,
+   "frames": 12,
+   "seconds": 0.4,
+   "loop": true,
+   "timing": {
+    "space": "air",
+    "chain_from": "FLUNG",
+    "chain_to": "FLUNG",
+    "hang_scale": 0.0
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "el revolcón volando (loop de una vuelta para atrás); el código lleva la raíz por el arco",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     1.6
+    ],
+    "loop_seam_deg": [
+     0.0,
+     9.579
+    ],
+    "snap_deg": [
+     175.9,
+     "Forearm_R",
+     5
+    ],
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "FlungLand": {
+   "first": 843,
+   "last": 854,
+   "frames": 11,
+   "seconds": 0.3667,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "FLUNG",
+    "chain_to": "DAZED_SIT",
+    "fade_from": 0.06,
+    "hang_scale": 0.5
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "toca el piso de cola y rebota hasta quedar sentado (sigue DazedSit)",
+   "lint": {
+    "reach_miss_cm": [
+     5.7,
+     0.0
+    ],
+    "snap_deg": [
+     120.6,
+     "Foot_L",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.16,
+      [
+       0,
+       1
+      ]
+     ],
+     "L": [
+      6.54,
+      [
+       0,
+       2
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     22.53,
+     "UpperArm_R",
+     30.0,
+     15.0
+    ],
+    "chain_to_deg": [
+     7.21,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.277,
+     0
+    ]
+   }
+  },
+  "DazedSit": {
+   "first": 858,
+   "last": 888,
    "frames": 30,
    "seconds": 1.0,
    "loop": true,
-   "notes": "parado relajado con la flauta en la derecha (la pose 'relaxed' quieta): el estado por defecto y la locomoción hasta que el paso de animación traiga los clips"
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     30
+    ],
+    "chain_from": "DAZED_SIT",
+    "chain_to": "DAZED_SIT"
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "sentado mareado (revolcón, estampado, resbalón, tropiezo; Exhausted lo usa de alias); loop",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.255
+    ],
+    "snap_deg": [
+     17.6,
+     "Lid_L",
+     18
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.061,
+     30
+    ]
+   }
   },
-  "PoseTest": {
-   "first": 81,
-   "last": 260,
-   "frames": 179,
-   "seconds": 5.9667,
+  "DazedSitHit": {
+   "first": 892,
+   "last": 902,
+   "frames": 10,
+   "seconds": 0.3333,
    "loop": false,
-   "notes": "las poses de prueba de la deformación, 20 cuadros cada una: relaxed, arms_up, climb, perch, hang, flute, blowpipe, kick, spin"
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     10
+    ],
+    "chain_from": "DAZED_SIT",
+    "chain_to": "DAZED_SIT"
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "el sacudón de un corte sentado (ExhaustedHit lo usa de alias)",
+   "lint": {
+    "reach_miss_cm": [
+     5.6,
+     0.0
+    ],
+    "snap_deg": [
+     32.8,
+     "Cloak_168_3",
+     5
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       10
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       8
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     3.56,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     1.02,
+     "Spine2",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.062,
+     7
+    ]
+   }
+  },
+  "Splat": {
+   "first": 906,
+   "last": 915,
+   "frames": 9,
+   "seconds": 0.3,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "contact": 2,
+    "chain_from": "FLUNG",
+    "chain_to": "SPLAT",
+    "culm_behind_m": 0.3
+   },
+   "normalized": {
+    "contact": 0.2222
+   },
+   "events": [
+    {
+     "frame": 2,
+     "t": 0.2222,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "se estrella de espaldas contra la otra caña (Contact f2): el código pone la raíz al pie del cuerpo con el eje de esa caña 0.30 m detrás (y +0.30 en Blender)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     60.4,
+     "Lid_R",
+     2
+    ],
+    "chain_from_deg": [
+     12.53,
+     "UpperArm_R",
+     10.0,
+     9.7
+    ],
+    "chain_to_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "SlideDown": {
+   "first": 919,
+   "last": 937,
+   "frames": 18,
+   "seconds": 0.6,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "chain_from": "SPLAT",
+    "chain_to": "DAZED_SIT",
+    "culm_behind_m": 0.3,
+    "land": 13
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "se desliza por la caña hasta sentarse al pie (el código baja la raíz hasta el piso en f13)",
+   "lint": {
+    "reach_miss_cm": [
+     13.7,
+     0.0
+    ],
+    "snap_deg": [
+     120.4,
+     "Forearm_R",
+     13
+    ],
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     7.21,
+     "Head",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "MissGrab": {
+   "first": 941,
+   "last": 955,
+   "frames": 14,
+   "seconds": 0.4667,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "chain_from": "AIR",
+    "chain_to": "DAZED_LIE",
+    "hang_scale": 0.5
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "la caña se le escapa de las manos y cae de espaldas (el código lo baja hasta el piso en f14); sigue DazedLie",
+   "lint": {
+    "reach_miss_cm": [
+     45.8,
+     0.0
+    ],
+    "snap_deg": [
+     134.9,
+     "Forearm_R",
+     7
+    ],
+    "chain_from_deg": [
+     26.78,
+     "UpperArm_L",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     123.81,
+     "Forearm_R",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "DazedLie": {
+   "first": 959,
+   "last": 989,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     30
+    ],
+    "chain_from": "DAZED_LIE",
+    "chain_to": "DAZED_LIE"
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "de espaldas pataleando (la caída del cielo); loop",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.04
+    ],
+    "snap_deg": [
+     21.9,
+     "Pinky_L_2",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.071,
+     30
+    ]
+   }
+  },
+  "DazedLieHit": {
+   "first": 993,
+   "last": 1003,
+   "frames": 10,
+   "seconds": 0.3333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     10
+    ],
+    "chain_from": "DAZED_LIE",
+    "chain_to": "DAZED_LIE"
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "el sacudón de un corte de espaldas",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     38.7,
+     "Acc_ChimesHi09_0",
+     1
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     62.0,
+     "Ring_L_2",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     62.0,
+     "Ring_L_2",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.071,
+     10
+    ]
+   }
+  },
+  "Slip": {
+   "first": 1007,
+   "last": 1022,
+   "frames": 15,
+   "seconds": 0.5,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "chain_to": "DAZED_SIT",
+    "land": 10,
+    "culm_front_m": 0.35,
+    "hang_scale": 0.5
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "resbala trepando y cae sentado (el código baja la raíz hasta el piso en f10); el culmo 0.35 m adelante",
+   "lint": {
+    "reach_miss_cm": [
+     103.6,
+     0.0
+    ],
+    "snap_deg": [
+     127.4,
+     "UpperArm_R",
+     7
+    ],
+    "chain_to_deg": [
+     41.59,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ]
+   }
+  },
+  "Stumble": {
+   "first": 1026,
+   "last": 1056,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     30
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.08
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "el tropiezo: rodilla al piso, mareado; abierto 1.0 s",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     72.0,
+     "Foot_R",
+     6
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       6,
+       23
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     54.13,
+     "UpperArm_R",
+     29.1,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.071,
+     8
+    ]
+   }
+  },
+  "PoleFall": {
+   "first": 1060,
+   "last": 1074,
+   "frames": 14,
+   "seconds": 0.4667,
+   "loop": false,
+   "timing": {
+    "space": "pole",
+    "chain_from": "BALANCE",
+    "chain_to": "FLUNG",
+    "fade_to": 0.1,
+    "root_offset": [
+     "FlungAir",
+     0,
+     14
+    ],
+    "hang_scale": 0.0,
+    "staff_in_floor": 0.13
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "el bastón cortado se vence y lo tira (el revolcón): sale volando dando vueltas con el bastón en la mano; sigue FlungAir desde root_offset_m",
+   "lint": {
+    "reach_miss_cm": [
+     72.3,
+     0.0
+    ],
+    "snap_deg": [
+     85.1,
+     "Shin_L",
+     8
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     150.0,
+     "Hips",
+     235.5,
+     201.0
+    ],
+    "mesh_min_z": [
+     -0.007,
+     6
+    ]
+   },
+   "root_offset_m": [
+    -0.0,
+    0.84,
+    2.2
+   ]
+  },
+  "GetUp": {
+   "first": 1078,
+   "last": 1090,
+   "frames": 12,
+   "seconds": 0.4,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "air": [
+     6,
+     9
+    ],
+    "chain_from": "DAZED_LIE",
+    "chain_to": "READY",
+    "invulnerable": [
+     0,
+     12
+    ],
+    "fade_from": 0.1,
+    "hang_scale": 0.0
+   },
+   "normalized": {
+    "air": [
+     0.5,
+     0.75
+    ]
+   },
+   "events": [],
+   "notes": "kip-up de espaldas a la guardia (invulnerable; ExhaustedRise lo usa de alias)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     98.2,
+     "Forearm_R",
+     7
+    ],
+    "sole_slip_cm": {
+     "R": [
+      2.2,
+      [
+       8,
+       12
+      ]
+     ],
+     "L": [
+      0.16,
+      [
+       8,
+       12
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     62.0,
+     "Ring_L_2",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.227,
+     2
+    ]
+   }
+  },
+  "Detuned": {
+   "first": 1094,
+   "last": 1136,
+   "frames": 42,
+   "seconds": 1.4,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     42
+    ],
+    "chain_from": "FLUTE",
+    "chain_to": "READY"
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "Desafinado (1.4 s abierto): la flauta chilla, tose hojas (el código las larga en f10, f18 y f26)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     158.3,
+     "Acc_ChimesHi04_0",
+     21
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       36
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       40
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     18.66,
+     "Foot_L",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     42
+    ]
+   }
+  },
+  "Tuned": {
+   "first": 1140,
+   "last": 1176,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     36
+    ],
+    "chain_from": "DAZED_SIT",
+    "chain_to": "DAZED_SIT",
+    "fade_from": 0.2
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "Afinado (2.5 s abierto): sentado aplaudiendo despacio; loop (aplausos en f0 y f18)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.056,
+     0.005
+    ],
+    "snap_deg": [
+     7.3,
+     "Acc_TieSashB_1",
+     7
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       36
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     64.0,
+     "Index_R_2",
+     0.0,
+     30.4
+    ],
+    "mesh_min_z": [
+     -0.03,
+     36
+    ]
+   }
+  },
+  "StaffStuck": {
+   "first": 1180,
+   "last": 1213,
+   "frames": 33,
+   "seconds": 1.1,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     33
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.1,
+    "staff_in_floor": 0.15
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "Bastón Clavado (1.1 s abierto): tres tirones y sale al tercero",
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.2111,
+    -0.2889,
+    -0.3,
+    -0.3259,
+    -0.3741,
+    -0.4,
+    -0.4,
+    -0.4,
+    -0.4
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     18.8,
+     8.7
+    ],
+    "snap_deg": [
+     129.8,
+     "UpperArm_L",
+     28
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       25
+      ]
+     ],
+     "L": [
+      0.79,
+      [
+       0,
+       25
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     10.15,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.08,
+     6
+    ]
+   }
+  },
+  "Hit": {
+   "first": 1217,
+   "last": 1227,
+   "frames": 10,
+   "seconds": 0.3333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.06,
+    "hang_scale": 0.6
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "golpe en el piso (10 cuadros): retrocede 0.25 m (travel_m)",
+   "travel_m": [
+    0.0,
+    -0.1056,
+    -0.1444,
+    -0.15,
+    -0.2,
+    -0.25,
+    -0.25,
+    -0.25,
+    -0.25,
+    -0.25,
+    -0.25
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     46.4,
+     "Sleeve_L_2",
+     1
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       2
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       4,
+       9
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     8.39,
+     "UpperArm_L",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.01,
+     2
+    ]
+   }
+  },
+  "HitHeavy": {
+   "first": 1231,
+   "last": 1247,
+   "frames": 16,
+   "seconds": 0.5333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.06,
+    "hang_scale": 0.6
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "golpe en el piso (16 cuadros): retrocede 0.60 m (travel_m)",
+   "travel_m": [
+    0.0,
+    -0.2533,
+    -0.3467,
+    -0.36,
+    -0.3975,
+    -0.48,
+    -0.5625,
+    -0.6,
+    -0.6,
+    -0.6,
+    -0.6,
+    -0.6,
+    -0.6,
+    -0.6,
+    -0.6,
+    -0.6,
+    -0.6
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     82.0,
+     "Sleeve_L_2",
+     1
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       3
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       1
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     8.39,
+     "UpperArm_L",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.038,
+     1
+    ]
+   }
+  },
+  "Parried": {
+   "first": 1251,
+   "last": 1263,
+   "frames": 12,
+   "seconds": 0.4,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     12
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.06,
+    "hang_scale": 0.6
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "el retroceso del parry (0.40 s): retrocede 0.35 m (travel_m)",
+   "travel_m": [
+    0.0,
+    -0.0919,
+    -0.105,
+    -0.2275,
+    -0.245,
+    -0.2975,
+    -0.35,
+    -0.35,
+    -0.35,
+    -0.35,
+    -0.35,
+    -0.35,
+    -0.35
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     110.0,
+     "Hand_R",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       5,
+       12
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       4,
+       6
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     12
+    ]
+   }
+  },
+  "ParriedPerfect": {
+   "first": 1267,
+   "last": 1285,
+   "frames": 18,
+   "seconds": 0.6,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "open": [
+     0,
+     18
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.06,
+    "hang_scale": 0.6
+   },
+   "normalized": {
+    "open": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "el retroceso del parry (0.60 s): retrocede 0.55 m (travel_m)",
+   "travel_m": [
+    0.0,
+    -0.1444,
+    -0.165,
+    -0.3575,
+    -0.385,
+    -0.4022,
+    -0.4431,
+    -0.4919,
+    -0.5328,
+    -0.55,
+    -0.55,
+    -0.55,
+    -0.55,
+    -0.55,
+    -0.55,
+    -0.55,
+    -0.55,
+    -0.55,
+    -0.55
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     118.2,
+     "Hand_R",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       6,
+       18
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       4,
+       18
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     18
+    ]
+   }
+  },
+  "Idle": {
+   "first": 1289,
+   "last": 1337,
+   "frames": 48,
+   "seconds": 1.6,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "chain_from": "READY",
+    "chain_to": "READY"
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "guardia de bastón rebotando; loop (Guard, Counter y Spotted lo usan de alias)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.032
+    ],
+    "snap_deg": [
+     30.0,
+     "Lid_L",
+     22
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       48
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       45
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     48
+    ]
+   }
+  },
+  "Walk": {
+   "first": 1341,
+   "last": 1371,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "ground_speed_mps": 1.6,
+    "stance": 0.6,
+    "contacts": [
+     6,
+     21
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.25,
+    "fade_to": 0.25
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 6,
+     "t": 0.2,
+     "fn": "Step"
+    },
+    {
+     "frame": 21,
+     "t": 0.7,
+     "fn": "Step"
+    }
+   ],
+   "notes": "camina encorvado con la flauta en guardia, 1.6 m/s (los pies no patinan a esa velocidad)",
+   "root_velocity_mps": 1.6,
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.056,
+     0.0
+    ],
+    "snap_deg": [
+     11.3,
+     "Thigh_L",
+     14
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       6,
+       23
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       21,
+       30
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     35.64,
+     "Thigh_L",
+     6.1,
+     13.6
+    ],
+    "mesh_min_z": [
+     -0.005,
+     23
+    ]
+   }
+  },
+  "Run": {
+   "first": 1375,
+   "last": 1395,
+   "frames": 20,
+   "seconds": 0.6667,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "ground_speed_mps": 5.5,
+    "stance": 0.3,
+    "contacts": [
+     7,
+     17
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.25,
+    "fade_to": 0.25
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 7,
+     "t": 0.35,
+     "fn": "Step"
+    },
+    {
+     "frame": 17,
+     "t": 0.85,
+     "fn": "Step"
+    }
+   ],
+   "notes": "corre a saltos de viejo, 5.5 m/s: rebota alto en cada pisada (vuelo largo)",
+   "root_velocity_mps": 5.5,
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.056,
+     0.21
+    ],
+    "snap_deg": [
+     26.4,
+     "Thigh_R",
+     20
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       7,
+       12
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       2
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     67.95,
+     "Shin_R",
+     5.3,
+     31.2
+    ],
+    "mesh_min_z": [
+     -0.002,
+     12
+    ]
+   }
+  },
+  "StrafeL": {
+   "first": 1399,
+   "last": 1423,
+   "frames": 24,
+   "seconds": 0.8,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "ground_speed_mps": 1.3,
+    "stance": 0.55,
+    "contacts": [
+     5,
+     17
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.25,
+    "fade_to": 0.25
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 5,
+     "t": 0.2083,
+     "fn": "Step"
+    },
+    {
+     "frame": 17,
+     "t": 0.7083,
+     "fn": "Step"
+    }
+   ],
+   "notes": "paso de costado hacia su izquierda en guardia, 1.3 m/s (el controller lo acelera a la velocidad de rodear)",
+   "root_velocity_mps": 1.3,
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.068
+    ],
+    "snap_deg": [
+     9.2,
+     "Shin_L",
+     15
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.41,
+      [
+       5,
+       18
+      ]
+     ],
+     "L": [
+      0.49,
+      [
+       17,
+       23
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     20.49,
+     "Foot_R",
+     4.4,
+     7.4
+    ],
+    "mesh_min_z": [
+     -0.002,
+     18
+    ]
+   }
+  },
+  "StrafeR": {
+   "first": 1427,
+   "last": 1451,
+   "frames": 24,
+   "seconds": 0.8,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "ground_speed_mps": 1.3,
+    "stance": 0.55,
+    "contacts": [
+     5,
+     17
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.25,
+    "fade_to": 0.25
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 5,
+     "t": 0.2083,
+     "fn": "Step"
+    },
+    {
+     "frame": 17,
+     "t": 0.7083,
+     "fn": "Step"
+    }
+   ],
+   "notes": "paso de costado hacia su derecha en guardia, 1.3 m/s",
+   "root_velocity_mps": 1.3,
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.147
+    ],
+    "snap_deg": [
+     9.2,
+     "Shin_R",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.49,
+      [
+       5,
+       18
+      ]
+     ],
+     "L": [
+      0.41,
+      [
+       17,
+       24
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     28.0,
+     "Hips",
+     4.4,
+     7.4
+    ],
+    "mesh_min_z": [
+     -0.002,
+     18
+    ]
+   }
+  },
+  "WalkBack": {
+   "first": 1455,
+   "last": 1485,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "ground_speed_mps": 1.2,
+    "stance": 0.6,
+    "contacts": [
+     6,
+     21
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.25,
+    "fade_to": 0.25
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 6,
+     "t": 0.2,
+     "fn": "Step"
+    },
+    {
+     "frame": 21,
+     "t": 0.7,
+     "fn": "Step"
+    }
+   ],
+   "notes": "retrocede en guardia, 1.2 m/s (la bola del pie entra primero)",
+   "root_velocity_mps": 1.2,
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.015
+    ],
+    "snap_deg": [
+     10.0,
+     "Toe_R",
+     6
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       6,
+       23
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       8
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     30.3,
+     "Thigh_L",
+     6.9,
+     6.0
+    ],
+    "mesh_min_z": [
+     -0.002,
+     23
+    ]
+   }
+  },
+  "BackFlip": {
+   "first": 1489,
+   "last": 1501,
+   "frames": 12,
+   "seconds": 0.4,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "air": [
+     2,
+     10
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "invulnerable": [
+     0,
+     10
+    ],
+    "hang_scale": 0.0
+   },
+   "normalized": {
+    "air": [
+     0.1667,
+     0.8333
+    ]
+   },
+   "events": [],
+   "notes": "el Paso del Ermitaño: mortal atrás de 2.5 m (travel_m), aire f2-f10",
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    -0.3937,
+    -0.45,
+    -0.775,
+    -1.1,
+    -1.7,
+    -2.3,
+    -2.475,
+    -2.5,
+    -2.5,
+    -2.5
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     40.2,
+     0.0
+    ],
+    "snap_deg": [
+     86.4,
+     "Hips",
+     9
+    ],
+    "sole_slip_cm": {
+     "R": [
+      5.64,
+      [
+       9,
+       12
+      ]
+     ],
+     "L": [
+      0.25,
+      [
+       9,
+       11
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     81.81,
+     "Forearm_L",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.973,
+     9
+    ]
+   }
+  },
+  "HopBack": {
+   "first": 1505,
+   "last": 1519,
+   "frames": 14,
+   "seconds": 0.4667,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "air": [
+     3,
+     12
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "hang_scale": 0.6
+   },
+   "normalized": {
+    "air": [
+     0.2143,
+     0.8571
+    ]
+   },
+   "events": [],
+   "notes": "salto atrás de 4 m (travel_m), aire f3-f12",
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    -0.9148,
+    -1.2519,
+    -1.3,
+    -1.8,
+    -2.3,
+    -2.8,
+    -3.8063,
+    -3.95,
+    -4.0,
+    -4.0,
+    -4.0
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     68.7,
+     "Forearm_L",
+     4
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       3
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       3
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.008,
+     3
+    ]
+   }
+  },
+  "Thrust": {
+   "first": 1523,
+   "last": 1550,
+   "frames": 27,
+   "seconds": 0.9,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "tell": [
+     2,
+     9
+    ],
+    "apex": 9,
+    "contact": 15,
+    "active": [
+     14,
+     17
+    ],
+    "kind": "parry",
+    "glow": [
+     "Chikuo_GlintStaff",
+     "Chikuo_GlintChimesHi"
+    ],
+    "reach_m": 2.4,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "shots": [
+     [
+      9,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintStaff",
+       "Chikuo_GlintChimesHi"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.3333,
+    "contact": 0.5556,
+    "tell": [
+     0.0741,
+     0.3333
+    ],
+    "active": [
+     0.5185,
+     0.6296
+    ]
+   },
+   "events": [
+    {
+     "frame": 15,
+     "t": 0.5556,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "la Estocada: aviso f9, Contact f15 (2.4 m), el avance 0.45 m",
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.007,
+    0.0563,
+    0.1898,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45,
+    0.45
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     49.0,
+     "Thigh_R",
+     15
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       17
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       7
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.009,
+     15
+    ]
+   }
+  },
+  "StaffSpin2": {
+   "first": 1554,
+   "last": 1584,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "tell": [
+     2,
+     9
+    ],
+    "apex": 9,
+    "contact": 17,
+    "active": [
+     16,
+     18
+    ],
+    "contacts": [
+     17,
+     29
+    ],
+    "kind": "parry",
+    "glow": [
+     "Chikuo_GlintStaff",
+     "Chikuo_GlintChimesHi"
+    ],
+    "reach_m": 2.3,
+    "chain_from": "READY",
+    "fade_to": 0.15,
+    "hang_scale": 0.5,
+    "shots": [
+     [
+      9,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintStaff",
+       "Chikuo_GlintChimesHi"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.3,
+    "contact": 0.5667,
+    "tell": [
+     0.0667,
+     0.3
+    ],
+    "active": [
+     0.5333,
+     0.6
+    ]
+   },
+   "events": [
+    {
+     "frame": 17,
+     "t": 0.5667,
+     "fn": "Contact"
+    },
+    {
+     "frame": 29,
+     "t": 0.9667,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "la Flauta Giratoria: dos barridos (Contact f17 y f29) con una vuelta entera sobre el pie izquierdo entre los dos; termina en el seguimiento del segundo (el código funde a la guardia o a la próxima)",
+   "lint": {
+    "reach_miss_cm": [
+     0.8,
+     0.0
+    ],
+    "snap_deg": [
+     71.3,
+     "Thigh_R",
+     19
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       17
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       30
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.007,
+     17
+    ]
+   }
+  },
+  "CraneKick": {
+   "first": 1588,
+   "last": 1616,
+   "frames": 28,
+   "seconds": 0.9333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "tell": [
+     2,
+     8
+    ],
+    "apex": 8,
+    "contact": 15,
+    "active": [
+     14,
+     16
+    ],
+    "kind": "parry",
+    "glow": [
+     "Chikuo_GlintFootR",
+     "Chikuo_GlintChimesHi"
+    ],
+    "reach_m": 1.2,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "shots": [
+     [
+      8,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintFootR",
+       "Chikuo_GlintChimesHi"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.2857,
+    "contact": 0.5357,
+    "tell": [
+     0.0714,
+     0.2857
+    ],
+    "active": [
+     0.5,
+     0.5714
+    ]
+   },
+   "events": [
+    {
+     "frame": 15,
+     "t": 0.5357,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "la Patada de Grulla: rodilla arriba y brazos abiertos (aviso f8), Contact f15",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     1.6
+    ],
+    "snap_deg": [
+     91.5,
+     "Shin_R",
+     16
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       24,
+       28
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       22
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.003,
+     15
+    ]
+   }
+  },
+  "NoteSmash": {
+   "first": 1620,
+   "last": 1656,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "tell": [
+     2,
+     14
+    ],
+    "apex": 14,
+    "contact": 20,
+    "active": [
+     19,
+     21
+    ],
+    "kind": "parry",
+    "glow": [
+     "Chikuo_GlintStaff",
+     "Chikuo_GlintChimesHi"
+    ],
+    "reach_m": 2.2,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "shots": [
+     [
+      14,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintStaff",
+       "Chikuo_GlintChimesHi"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.3889,
+    "contact": 0.5556,
+    "tell": [
+     0.0556,
+     0.3889
+    ],
+    "active": [
+     0.5278,
+     0.5833
+    ]
+   },
+   "events": [
+    {
+     "frame": 20,
+     "t": 0.5556,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "el Golpe de Nota: la flauta arriba (aviso f14, suena una nota), Contact f20 con la punta en el piso a 2.2 m",
+   "travel_m": [
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    0.025,
+    0.05,
+    0.25,
+    0.2833,
+    0.3167,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35,
+    0.35
+   ],
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     53.4,
+     "Hand_R",
+     5
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       26
+      ]
+     ],
+     "L": [
+      0.01,
+      [
+       0,
+       15
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.006,
+     13
+    ]
+   }
+  },
+  "LowSweep": {
+   "first": 1660,
+   "last": 1699,
+   "frames": 39,
+   "seconds": 1.3,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "tell": [
+     4,
+     16
+    ],
+    "apex": 16,
+    "contact": 24,
+    "active": [
+     21,
+     27
+    ],
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintStaff",
+     "Chikuo_GlintChimesLo"
+    ],
+    "ring_m": 2.6,
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "shots": [
+     [
+      16,
+      "aviso (rojo)",
+      [
+       "Chikuo_GlintStaff",
+       "Chikuo_GlintChimesLo"
+      ],
+      "red"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.4103,
+    "contact": 0.6154,
+    "tell": [
+     0.1026,
+     0.4103
+    ],
+    "active": [
+     0.5385,
+     0.6923
+    ]
+   },
+   "events": [
+    {
+     "frame": 24,
+     "t": 0.6154,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "la Barrida del Bastón: agachado del tigre (aviso f16), gira sobre el pie izquierdo barriendo el disco de 2.6 m (Contact f24)",
+   "lint": {
+    "reach_miss_cm": [
+     22.8,
+     0.0
+    ],
+    "snap_deg": [
+     167.5,
+     "Forearm_R",
+     29
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       4
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       39
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.054,
+     29
+    ]
+   }
+  },
+  "GroundDart": {
+   "first": 1703,
+   "last": 1728,
+   "frames": 25,
+   "seconds": 0.8333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "tell": [
+     2,
+     9
+    ],
+    "apex": 9,
+    "kind": "projectile",
+    "glow": [
+     "Chikuo_GlintChimesHi",
+     "Chikuo_GlintStaff"
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "shots": [
+     [
+      12,
+      "aviso (dorado)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintStaff"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.36,
+    "tell": [
+     0.08,
+     0.36
+    ]
+   },
+   "events": [
+    {
+     "frame": 17,
+     "t": 0.68,
+     "fn": "DartSpawn"
+    }
+   ],
+   "notes": "el Soplo desde el piso: da vuelta la flauta a la boca, DartSpawn f17",
+   "lint": {
+    "reach_miss_cm": [
+     11.5,
+     0.0
+    ],
+    "snap_deg": [
+     127.8,
+     "UpperArm_R",
+     8
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       25
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       25
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     37.61,
+     "UpperArm_L",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     25
+    ]
+   }
+  },
+  "PolePlant": {
+   "first": 1732,
+   "last": 1746,
+   "frames": 14,
+   "seconds": 0.4667,
+   "loop": false,
+   "timing": {
+    "space": "pole",
+    "chain_from": "READY",
+    "chain_to": "POLE",
+    "staff_in_floor": 0.13
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 8,
+     "t": 0.5714,
+     "fn": "Plant"
+    }
+   ],
+   "notes": "clava el bastón vertical delante (Plant f8); queda agarrado a él",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     40.0,
+     "Staff",
+     12
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       14
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       14
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     14
+    ]
+   }
+  },
+  "PoleClimb": {
+   "first": 1750,
+   "last": 1764,
+   "frames": 14,
+   "seconds": 0.4667,
+   "loop": false,
+   "timing": {
+    "space": "pole",
+    "load": [
+     0,
+     14
+    ],
+    "chain_from": "POLE",
+    "chain_to": "BALANCE",
+    "staff_in_floor": 0.13
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 0,
+     "t": 0.0,
+     "fn": "Load"
+    }
+   ],
+   "notes": "sube por el bastón y queda parado en la punta en un pie (Load f0)",
+   "lint": {
+    "reach_miss_cm": [
+     34.6,
+     0.0
+    ],
+    "snap_deg": [
+     65.0,
+     "Foot_L",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       2
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       2
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.04,
+     "Forearm_L",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     10.26,
+     "Hand_L",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.005,
+     2
+    ]
+   }
+  },
+  "PoleBalance": {
+   "first": 1768,
+   "last": 1798,
+   "frames": 30,
+   "seconds": 1.0,
+   "loop": true,
+   "timing": {
+    "space": "pole",
+    "load": [
+     0,
+     30
+    ],
+    "chain_from": "BALANCE",
+    "chain_to": "BALANCE",
+    "root_offset": [
+     "PoleDive",
+     0,
+     0
+    ],
+    "staff_in_floor": 0.13,
+    "shots": [
+     [
+      8,
+      "la grulla en el bastón (cargada)",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "la grulla en la punta del bastón, en un pie; loop cargado",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.0,
+     0.064
+    ],
+    "snap_deg": [
+     8.0,
+     "Forearm_R",
+     12
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       0
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     0.01,
+     30
+    ]
+   },
+   "root_offset_m": [
+    -0.0,
+    1.98,
+    -0.0
+   ]
+  },
+  "PoleDive": {
+   "first": 1802,
+   "last": 1831,
+   "frames": 29,
+   "seconds": 0.9667,
+   "loop": false,
+   "timing": {
+    "space": "air",
+    "tell": [
+     0,
+     14
+    ],
+    "apex": 14,
+    "contact": 28,
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintFootR",
+     "Chikuo_GlintChimesLo"
+    ],
+    "ring_m": 1.4,
+    "chain_from": "DIVE_TOP",
+    "chain_to": "DIVE_LAND",
+    "fade_to": 0.06,
+    "shots": [
+     [
+      14,
+      "picada (rojo)",
+      [
+       "Chikuo_GlintFootR",
+       "Chikuo_GlintChimesLo"
+      ],
+      "red"
+     ]
+    ]
+   },
+   "normalized": {
+    "apex": 0.4828,
+    "contact": 0.9655,
+    "tell": [
+     0.0,
+     0.4828
+    ]
+   },
+   "events": [
+    {
+     "frame": 0,
+     "t": 0.0,
+     "fn": "LeaveStalk"
+    },
+    {
+     "frame": 28,
+     "t": 0.9655,
+     "fn": "Contact"
+    }
+   ],
+   "notes": "la picada desde la punta del bastón (disco 1.4 m): LeaveStalk f0, Contact f28. La raíz en los pies (arranca en la punta del bastón: root_offset_m de PoleBalance) y el código la lleva por el arco; el pie de la patada toca a la altura de la raíz en f28",
+   "lint": {
+    "reach_miss_cm": [
+     24.4,
+     0.0
+    ],
+    "snap_deg": [
+     176.4,
+     "Hand_R",
+     13
+    ],
+    "chain_from_deg": [
+     0.0,
+     "",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     36.39,
+     "UpperArm_L",
+     2.0,
+     2.4
+    ]
+   }
+  },
+  "FluteRaise": {
+   "first": 1835,
+   "last": 1849,
+   "frames": 14,
+   "seconds": 0.4667,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "READY",
+    "chain_to": "FLUTE"
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "se lleva la flauta de costado a la boca (la pregunta)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     44.2,
+     "UpperArm_R",
+     6
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       5
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       14
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     18.66,
+     "Foot_L",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     14
+    ]
+   }
+  },
+  "FluteNote": {
+   "first": 1853,
+   "last": 1866,
+   "frames": 13,
+   "seconds": 0.4333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "FLUTE",
+    "chain_to": "FLUTE"
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 0,
+     "t": 0.0,
+     "fn": "Note"
+    }
+   ],
+   "notes": "una nota de la pregunta (Note f0)",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     14.0,
+     "Middle_L_1",
+     1
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       13
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       13
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.04,
+     "Forearm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.16,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     13
+    ]
+   }
+  },
+  "AnswerBlow": {
+   "first": 1870,
+   "last": 1883,
+   "frames": 13,
+   "seconds": 0.4333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "kind": "projectile",
+    "glow": [
+     "Chikuo_GlintChimesHi"
+    ],
+    "chain_from": "FLUTE",
+    "chain_to": "FLUTE",
+    "shots": [
+     [
+      3,
+      "respuesta aguda (dorado)",
+      [
+       "Chikuo_GlintChimesHi"
+      ],
+      "gold"
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 4,
+     "t": 0.3077,
+     "fn": "DartSpawn"
+    }
+   ],
+   "notes": "la nota aguda de la respuesta: de punta, sopla un dardo (DartSpawn f4)",
+   "lint": {
+    "reach_miss_cm": [
+     1.1,
+     0.0
+    ],
+    "snap_deg": [
+     56.0,
+     "Clav_R",
+     3
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       10
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       12
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     4.16,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     11.71,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.0,
+     13
+    ]
+   }
+  },
+  "AnswerStamp": {
+   "first": 1887,
+   "last": 1900,
+   "frames": 13,
+   "seconds": 0.4333,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "kind": "dodge",
+    "glow": [
+     "Chikuo_GlintChimesLo"
+    ],
+    "chain_from": "FLUTE",
+    "chain_to": "FLUTE",
+    "shots": [
+     [
+      3,
+      "respuesta grave (rojo)",
+      [
+       "Chikuo_GlintChimesLo"
+      ],
+      "red"
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 4,
+     "t": 0.3077,
+     "fn": "Stamp"
+    }
+   ],
+   "notes": "la nota grave: golpea el piso con el bastón (Stamp f4) y brota el retoño",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "snap_deg": [
+     76.6,
+     "UpperArm_L",
+     13
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       13
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       13
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     4.16,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     30.69,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.074,
+     5
+    ]
+   }
+  },
+  "GroundLaugh": {
+   "first": 1904,
+   "last": 1940,
+   "frames": 36,
+   "seconds": 1.2,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "load": [
+     0,
+     36
+    ],
+    "chain_from": "READY",
+    "chain_to": "READY",
+    "fade_from": 0.2,
+    "fade_to": 0.2,
+    "shots": [
+     [
+      10,
+      "la risa en el piso",
+      [
+       "Chikuo_GlintChimesHi",
+       "Chikuo_GlintChimesLo"
+      ],
+      "white"
+     ]
+    ]
+   },
+   "normalized": {
+    "load": [
+     0.0,
+     1.0
+    ]
+   },
+   "events": [],
+   "notes": "carcajada parado apoyado en la flauta; loop",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.04,
+     0.0
+    ],
+    "snap_deg": [
+     143.7,
+     "Forearm_R",
+     32
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       36
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       36
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     77.09,
+     "Forearm_L",
+     9.4,
+     103.2
+    ],
+    "mesh_min_z": [
+     -0.001,
+     0
+    ]
+   }
+  },
+  "Intro": {
+   "first": 1944,
+   "last": 2139,
+   "frames": 195,
+   "seconds": 6.5,
+   "loop": false,
+   "timing": {
+    "space": "perch",
+    "chain_to": "PERCH",
+    "bend": 6.0,
+    "stalk": "O1",
+    "cloak_hang": 0.97,
+    "preroll": 2.0,
+    "feet_on_node": [
+     [
+      175,
+      195
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 135,
+     "t": 0.6923,
+     "fn": "DartSpawn"
+    },
+    {
+     "frame": 148,
+     "t": 0.759,
+     "fn": "LeaveStalk"
+    },
+    {
+     "frame": 175,
+     "t": 0.8974,
+     "fn": "Perch"
+    }
+   ],
+   "notes": "colgado de las corvas 1 m arriba del PerchNode de O1 tocando la flauta; DartSpawn f135 (a los pies de Kaito), se suelta en f148 y queda posado en f175 (Perch)",
+   "lint": {
+    "reach_miss_cm": [
+     24.9,
+     8.1
+    ],
+    "snap_deg": [
+     177.4,
+     "Forearm_R",
+     157
+    ],
+    "culm_hands_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "node_feet_cm": {
+     "R": [
+      0.0,
+      0
+     ],
+     "L": [
+      0.0,
+      0
+     ]
+    },
+    "chain_to_deg": [
+     0.57,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "culm_inside_verts": [
+     65,
+     0.083,
+     26,
+     [
+      [
+       "Shin_L",
+       17
+      ],
+      [
+       "Shin_R",
+       15
+      ],
+      [
+       "Skirt_220",
+       8
+      ],
+      [
+       "Skirt_320",
+       8
+      ]
+     ]
+    ]
+   }
+  },
+  "PhaseBow": {
+   "first": 2143,
+   "last": 2263,
+   "frames": 120,
+   "seconds": 4.0,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "DAZED_SIT",
+    "chain_to": "READY",
+    "fade_from": 0.1
+   },
+   "normalized": {},
+   "events": [
+    {
+     "frame": 70,
+     "t": 0.5833,
+     "fn": "Note"
+    },
+    {
+     "frame": 85,
+     "t": 0.7083,
+     "fn": "Note"
+    },
+    {
+     "frame": 100,
+     "t": 0.8333,
+     "fn": "Note"
+    }
+   ],
+   "notes": "'Bailemos en el piso': cae sentado riéndose, la hoja de la barba, tres notas (Note f70, f85, f100)",
+   "lint": {
+    "reach_miss_cm": [
+     20.1,
+     0.0
+    ],
+    "snap_deg": [
+     81.1,
+     "Forearm_R",
+     57
+    ],
+    "sole_slip_cm": {
+     "R": [
+      105.62,
+      [
+       0,
+       112
+      ]
+     ],
+     "L": [
+      49.05,
+      [
+       0,
+       113
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     48.0,
+     "Lid_R",
+     13.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.161,
+     5
+    ]
+   }
+  },
+  "PhaseForest": {
+   "first": 2267,
+   "last": 2417,
+   "frames": 150,
+   "seconds": 5.0,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "air": [
+     120,
+     150
+    ],
+    "chain_from": "READY",
+    "chain_to": "AIR",
+    "root_offset": [
+     "LeapAir",
+     0,
+     120
+    ],
+    "carried_from": 120,
+    "staff_in_floor": 0.12
+   },
+   "normalized": {
+    "air": [
+     0.8,
+     1.0
+    ]
+   },
+   "events": [
+    {
+     "frame": 60,
+     "t": 0.4,
+     "fn": "Note"
+    },
+    {
+     "frame": 90,
+     "t": 0.6,
+     "fn": "Note"
+    },
+    {
+     "frame": 120,
+     "t": 0.8,
+     "fn": "LeaveStalk"
+    },
+    {
+     "frame": 150,
+     "t": 1.0,
+     "fn": "GrabStalk"
+    }
+   ],
+   "notes": "'Que cante todo el bosque': la frase entera (Note f60, f90), la garrocha a la Madre (LeaveStalk f120: desde ahí el código lleva la raíz como en LeapAir), GrabStalk f150 (sigue LeapGrab)",
+   "lint": {
+    "reach_miss_cm": [
+     6.2,
+     0.0
+    ],
+    "snap_deg": [
+     176.8,
+     "Forearm_R",
+     124
+    ],
+    "sole_slip_cm": {
+     "R": [
+      7.44,
+      [
+       14,
+       115
+      ]
+     ],
+     "L": [
+      0.01,
+      [
+       0,
+       115
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     4.51,
+     "Head",
+     1.0,
+     1.0
+    ],
+    "mesh_min_z": [
+     -0.068,
+     119
+    ]
+   },
+   "root_offset_m": [
+    -0.0,
+    0.4,
+    0.35
+   ]
+  },
+  "Defeat": {
+   "first": 2421,
+   "last": 2586,
+   "frames": 165,
+   "seconds": 5.5,
+   "loop": false,
+   "timing": {
+    "space": "ground",
+    "chain_from": "READY",
+    "chain_to": "CROSS",
+    "legs_cross": [
+     [
+      72,
+      165
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "la derrota: de espaldas riéndose, se sienta con las piernas cruzadas, se seca una lágrima y hace la reverencia con la flauta sobre las rodillas",
+   "lint": {
+    "reach_miss_cm": [
+     25.7,
+     0.0
+    ],
+    "snap_deg": [
+     55.9,
+     "Shin_R",
+     10
+    ],
+    "sole_slip_cm": {
+     "R": [
+      5.65,
+      [
+       70,
+       162
+      ]
+     ],
+     "L": [
+      3.53,
+      [
+       71,
+       165
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.35,
+     "Head",
+     0.0,
+     0.0
+    ],
+    "chain_to_deg": [
+     74.21,
+     "Forearm_L",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.094,
+     71
+    ]
+   }
+  },
+  "DefeatIdle": {
+   "first": 2590,
+   "last": 2650,
+   "frames": 60,
+   "seconds": 2.0,
+   "loop": true,
+   "timing": {
+    "space": "ground",
+    "chain_from": "CROSS",
+    "chain_to": "CROSS",
+    "legs_cross": [
+     [
+      0,
+      60
+     ]
+    ]
+   },
+   "normalized": {},
+   "events": [],
+   "notes": "meditando: respira; loop",
+   "lint": {
+    "reach_miss_cm": [
+     0.0,
+     0.0
+    ],
+    "loop_seam_deg": [
+     0.04,
+     0.0
+    ],
+    "snap_deg": [
+     95.3,
+     "Acc_ChimesLo15_0",
+     17
+    ],
+    "sole_slip_cm": {
+     "R": [
+      0.0,
+      [
+       0,
+       60
+      ]
+     ],
+     "L": [
+      0.0,
+      [
+       0,
+       60
+      ]
+     ]
+    },
+    "chain_from_deg": [
+     0.04,
+     "UpperArm_R",
+     0.0,
+     0.0
+    ],
+    "mesh_min_z": [
+     -0.057,
+     60
+    ]
+   }
   }
  },
- "pose_test": [
-  "relaxed",
-  "arms_up",
-  "climb",
-  "perch",
-  "hang",
-  "flute",
-  "blowpipe",
-  "kick",
-  "spin"
+ "lint_failures": [
+  "HangDart2: los pies llegan (faltó 6.1 cm en f6, pie L)",
+  "HangDart2: muñeca R posible (exceso 1.52 en f0: flexión 66°, desvío -47°, agarrada)",
+  "LeapAir: muñeca L posible (exceso 1.32 en f9: flexión 3°, desvío -50°)",
+  "DiveLand: ningún hueso gira más de 45° en un cuadro (137.6° UpperArm_R f3)",
+  "DiveLand: muñeca R posible (exceso 1.43 en f6: flexión 0°, desvío 36°, agarrada)",
+  "DiveLand: flauta / cabeza se meten 12.9 cm en f4",
+  "DiveLand: flauta / tronco se meten 9.2 cm en f3",
+  "StaffDropRecover: muñeca L posible (exceso 1.80 en f0: flexión 10°, desvío 45°, agarrada)",
+  "StaffDropRecover: flauta / tronco se meten 4.2 cm en f2",
+  "FlungAir: loop sin costura (pose 0.00°, salto de velocidad 9.58°)",
+  "FlungAir: ningún hueso gira más de 45° en un cuadro (175.9° Forearm_R f5)",
+  "FlungAir: muñeca R posible (exceso 1.45 en f5: flexión 47°, desvío 33°, agarrada)",
+  "SlideDown: las manos llegan (faltó 13.7 cm en f15, mano R)",
+  "SlideDown: ningún hueso gira más de 45° en un cuadro (120.4° Forearm_R f13)",
+  "SlideDown: muñeca R posible (exceso 2.48 en f2: flexión 85°, desvío -84°, agarrada)",
+  "PoleClimb: las manos llegan (faltó 34.6 cm en f10, mano R)",
+  "PoleClimb: ningún hueso gira más de 45° en un cuadro (65.0° Foot_L f3)",
+  "PoleClimb: muñeca R posible (exceso 2.72 en f8: flexión 41°, desvío 67°, agarrada)",
+  "PoleClimb: muñeca L posible (exceso 2.29 en f8: flexión 37°, desvío 56°, agarrada)",
+  "PoleClimb: flauta / tronco se meten 13.3 cm en f6",
+  "PoleClimb: flauta / cabeza se meten 5.2 cm en f3",
+  "PoleClimb: flauta / tibia R se meten 4.1 cm en f9",
+  "PoleBalance: muñeca L posible (exceso 1.19 en f9: flexión 20°, desvío -44°)",
+  "PoleDive: las manos llegan (faltó 24.4 cm en f10, mano R)",
+  "PoleDive: ningún hueso gira más de 45° en un cuadro (176.4° Hand_R f13)",
+  "PoleDive: muñeca R posible (exceso 7.15 en f13: flexión -152°, desvío 169°, agarrada)",
+  "PoleDive: muñeca L posible (exceso 1.01 en f0: flexión 7°, desvío -38°)",
+  "PoleDive: flauta / tronco se meten 9.7 cm en f11",
+  "PoleDive: flauta / tibia R se meten 7.6 cm en f7",
+  "FluteNote: antebrazo L / tronco se meten 4.2 cm en f13",
+  "DefeatIdle: ningún hueso gira más de 45° en un cuadro (95.3° Acc_ChimesLo15_0 f17)",
+  "DefeatIdle: las suelas no se meten en el piso (-4.8 cm en f0)",
+  "HangDrop: los pies llegan (faltó 13.4 cm en f10, pie L)",
+  "HangDrop: las manos llegan (faltó 45.3 cm en f7, mano R)",
+  "HangDrop: ningún hueso gira más de 45° en un cuadro (175.8° UpperArm_R f8)",
+  "HangDrop: muñeca R posible (exceso 7.14 en f4: flexión -144°, desvío 170°, agarrada)",
+  "HangDrop: flauta / tronco se meten 5.4 cm en f4",
+  "HangClimb: los pies llegan (faltó 10.1 cm en f2, pie L)",
+  "HangClimb: las manos llegan (faltó 46.8 cm en f7, mano L)",
+  "HangClimb: ningún hueso gira más de 45° en un cuadro (176.3° Foot_L f5)",
+  "HangClimb: muñeca R posible (exceso 3.02 en f10: flexión -84°, desvío 68°, agarrada)",
+  "HangClimb: muñeca L posible (exceso 7.06 en f9: flexión 121°, desvío 172°, agarrada)",
+  "HangClimb: muslo R / muslo L se meten 14.1 cm en f5",
+  "HangClimb: flauta / tronco se meten 3.2 cm en f9",
+  "PerchLaugh: loop sin costura (pose 0.00°, salto de velocidad 3.27°)",
+  "PerchLaugh: ningún hueso gira más de 45° en un cuadro (74.8° Cloak_280_1 f31)",
+  "PerchLaugh: muñeca R posible (exceso 3.89 en f12: flexión 90°, desvío 92°, agarrada)",
+  "StalkSweep: las manos llegan (faltó 32.0 cm en f33, mano R)",
+  "StalkSweep: ningún hueso gira más de 45° en un cuadro (177.5° Hand_L f13)",
+  "StalkSweep: muñeca R posible (exceso 3.24 en f6: flexión -6°, desvío 81°, agarrada)",
+  "StalkSweep: muñeca L posible (exceso 6.04 en f11: flexión 161°, desvío 141°, agarrada)",
+  "StalkSweep: antebrazo R / tronco se meten 10.7 cm en f5",
+  "StalkSweep: flauta / muslo R se meten 7.5 cm en f34",
+  "StalkSweep: flauta / tronco se meten 6.3 cm en f5",
+  "StalkSweep: antebrazo L / tronco se meten 6.3 cm en f9",
+  "StalkSweep: flauta / tibia R se meten 5.0 cm en f34",
+  "LeapCrouch: las manos llegan (faltó 10.2 cm en f2, mano L)",
+  "LeapCrouch: ningún hueso gira más de 45° en un cuadro (93.3° UpperArm_R f3)",
+  "LeapGrab: ningún hueso gira más de 45° en un cuadro (116.4° UpperArm_R f4)",
+  "LeapGrab: muñeca R posible (exceso 1.57 en f6: flexión -41°, desvío 36°, agarrada)",
+  "LeapGrab: antebrazo L / tronco se meten 14.0 cm en f2",
+  "LeapGrab: flauta / cabeza se meten 7.2 cm en f6",
+  "Climb: las manos llegan (faltó 17.1 cm en f8, mano L)",
+  "Climb: ningún hueso gira más de 45° en un cuadro (161.0° Forearm_R f6)",
+  "Climb: la mano R trabada en el culmo con 6° de arco (2.0 cm en f15)",
+  "Climb: muñeca R posible (exceso 2.93 en f19: flexión 95°, desvío -100°, agarrada)",
+  "Climb: muñeca L posible (exceso 2.95 en f15: flexión -98°, desvío -96°, agarrada)",
+  "DecoySpin: ningún hueso gira más de 45° en un cuadro (71.8° Acc_ChimesHi04_0 f15)",
+  "FeetStuck: ningún hueso gira más de 45° en un cuadro (146.8° Hand_R f43)",
+  "FeetStuck: la suela apoyada no patina (L: 3.5 cm en f2-42)",
+  "FeetStuck: muñeca R posible (exceso 6.61 en f42: flexión 108°, desvío 161°, agarrada)",
+  "StaffDrop: las manos llegan (faltó 37.9 cm en f18, mano L)",
+  "StaffDrop: ningún hueso gira más de 45° en un cuadro (144.4° UpperArm_L f23)",
+  "StaffDrop: muñeca R posible (exceso 2.70 en f25: flexión 58°, desvío 65°, agarrada)",
+  "StaffDrop: muñeca L posible (exceso 2.98 en f23: flexión -66°, desvío 70°, agarrada)",
+  "StaffDrop: flauta / cabeza se meten 10.7 cm en f25",
+  "Vault: las manos llegan (faltó 24.7 cm en f11, mano R)",
+  "Vault: ningún hueso gira más de 45° en un cuadro (155.1° UpperArm_R f10)",
+  "Vault: la suela apoyada no patina (R: 29.8 cm en f0-7)",
+  "Vault: muñeca R posible (exceso 3.04 en f10: flexión 103°, desvío -103°, agarrada)",
+  "Vault: muñeca L posible (exceso 1.40 en f5: flexión -67°, desvío -36°, agarrada)",
+  "Vault: flauta / tronco se meten 15.0 cm en f8",
+  "Vault: flauta / cabeza se meten 9.8 cm en f5",
+  "Vault: antebrazo L / tronco se meten 3.5 cm en f9",
+  "JumpCrouch: las manos llegan (faltó 83.0 cm en f6, mano R)",
+  "JumpCrouch: ningún hueso gira más de 45° en un cuadro (146.7° Forearm_R f6)",
+  "JumpCrouch: muñeca R posible (exceso 1.68 en f4: flexión 34°, desvío 40°, agarrada)",
+  "FlungLand: las manos llegan (faltó 5.7 cm en f3, mano L)",
+  "FlungLand: ningún hueso gira más de 45° en un cuadro (120.6° Foot_L f3)",
+  "FlungLand: la suela apoyada no patina (L: 6.5 cm en f0-2)",
+  "FlungLand: las suelas no se meten en el piso (-27.3 cm en f0)",
+  "FlungLand: flauta / tibia R se meten 6.7 cm en f7",
+  "DazedSitHit: las manos llegan (faltó 5.6 cm en f3, mano L)",
+  "Splat: ningún hueso gira más de 45° en un cuadro (60.4° Lid_R f2)",
+  "Splat: muñeca R posible (exceso 2.00 en f8: flexión 11°, desvío -76°, agarrada)",
+  "MissGrab: las manos llegan (faltó 45.8 cm en f8, mano R)",
+  "MissGrab: ningún hueso gira más de 45° en un cuadro (134.9° Forearm_R f7)",
+  "MissGrab: muñeca R posible (exceso 2.71 en f14: flexión -87°, desvío -90°, agarrada)",
+  "MissGrab: muñeca L posible (exceso 1.09 en f4: flexión -23°, desvío -39°)",
+  "Slip: las manos llegan (faltó 103.6 cm en f10, mano R)",
+  "Slip: ningún hueso gira más de 45° en un cuadro (127.4° UpperArm_R f7)",
+  "Slip: muñeca R posible (exceso 2.04 en f7: flexión -71°, desvío -65°, agarrada)",
+  "Stumble: ningún hueso gira más de 45° en un cuadro (72.0° Foot_R f6)",
+  "Stumble: las suelas no se meten en el piso (-2.2 cm en f23)",
+  "Stumble: muñeca R posible (exceso 3.67 en f21: flexión 93°, desvío -131°, agarrada)",
+  "PoleFall: las manos llegan (faltó 72.3 cm en f8, mano R)",
+  "PoleFall: ningún hueso gira más de 45° en un cuadro (85.1° Shin_L f8)",
+  "PoleFall: muñeca R posible (exceso 2.20 en f14: flexión -52°, desvío 51°, agarrada)",
+  "PoleFall: muñeca L posible (exceso 1.12 en f1: flexión 11°, desvío -42°)",
+  "GetUp: ningún hueso gira más de 45° en un cuadro (98.2° Forearm_R f7)",
+  "GetUp: la suela apoyada no patina (R: 2.2 cm en f8-12)",
+  "GetUp: muñeca R posible (exceso 2.93 en f1: flexión 104°, desvío -98°, agarrada)",
+  "GetUp: flauta / tronco se meten 6.2 cm en f10",
+  "Detuned: ningún hueso gira más de 45° en un cuadro (158.3° Acc_ChimesHi04_0 f21)",
+  "Detuned: muñeca R posible (exceso 2.86 en f26: flexión 91°, desvío -98°, agarrada)",
+  "Detuned: flauta / cabeza se meten 5.7 cm en f30",
+  "Detuned: antebrazo L / tronco se meten 3.6 cm en f0",
+  "StaffStuck: los pies llegan (faltó 8.7 cm en f26, pie L)",
+  "StaffStuck: las manos llegan (faltó 18.8 cm en f2, mano R)",
+  "StaffStuck: ningún hueso gira más de 45° en un cuadro (129.8° UpperArm_L f28)",
+  "StaffStuck: muñeca R posible (exceso 2.37 en f5: flexión 45°, desvío 57°, agarrada)",
+  "StaffStuck: muñeca L posible (exceso 1.91 en f29: flexión 34°, desvío 46°, agarrada)",
+  "StaffStuck: flauta / muslo R se meten 4.2 cm en f1",
+  "Hit: ningún hueso gira más de 45° en un cuadro (46.4° Sleeve_L_2 f1)",
+  "HitHeavy: ningún hueso gira más de 45° en un cuadro (82.0° Sleeve_L_2 f1)",
+  "Parried: ningún hueso gira más de 45° en un cuadro (110.0° Hand_R f3)",
+  "Parried: muñeca R posible (exceso 1.39 en f1: flexión 59°, desvío 29°, agarrada)",
+  "ParriedPerfect: ningún hueso gira más de 45° en un cuadro (118.2° Hand_R f3)",
+  "ParriedPerfect: muñeca R posible (exceso 4.45 en f14: flexión 92°, desvío 107°, agarrada)",
+  "BackFlip: las manos llegan (faltó 40.2 cm en f9, mano L)",
+  "BackFlip: ningún hueso gira más de 45° en un cuadro (86.4° Hips f9)",
+  "BackFlip: la suela apoyada no patina (R: 5.6 cm en f9-12)",
+  "HopBack: ningún hueso gira más de 45° en un cuadro (68.7° Forearm_L f4)",
+  "Thrust: ningún hueso gira más de 45° en un cuadro (49.0° Thigh_R f15)",
+  "StaffSpin2: ningún hueso gira más de 45° en un cuadro (71.3° Thigh_R f19)",
+  "StaffSpin2: muñeca L posible (exceso 2.23 en f6: flexión 69°, desvío -77°, agarrada)",
+  "CraneKick: ningún hueso gira más de 45° en un cuadro (91.5° Shin_R f16)",
+  "CraneKick: muñeca R posible (exceso 2.08 en f4: flexión -45°, desvío 49°, agarrada)",
+  "NoteSmash: ningún hueso gira más de 45° en un cuadro (53.4° Hand_R f5)",
+  "NoteSmash: flauta / tronco se meten 8.8 cm en f24",
+  "LowSweep: las manos llegan (faltó 22.8 cm en f32, mano L)",
+  "LowSweep: ningún hueso gira más de 45° en un cuadro (167.5° Forearm_R f29)",
+  "LowSweep: muñeca R posible (exceso 1.87 en f32: flexión 54°, desvío -66°, agarrada)",
+  "LowSweep: muñeca L posible (exceso 1.83 en f9: flexión -55°, desvío -62°, agarrada)",
+  "LowSweep: antebrazo L / tronco se meten 12.0 cm en f35",
+  "LowSweep: antebrazo R / tronco se meten 4.3 cm en f14",
+  "GroundDart: las manos llegan (faltó 11.5 cm en f6, mano L)",
+  "GroundDart: ningún hueso gira más de 45° en un cuadro (127.8° UpperArm_R f8)",
+  "GroundDart: muñeca R posible (exceso 4.46 en f9: flexión -97°, desvío 105°, agarrada)",
+  "GroundDart: muñeca L posible (exceso 4.38 en f24: flexión -99°, desvío 103°, agarrada)",
+  "GroundDart: flauta / tronco se meten 4.7 cm en f24",
+  "GroundDart: antebrazo R / cabeza se meten 3.8 cm en f8",
+  "PolePlant: muñeca R posible (exceso 2.33 en f14: flexión -1°, desvío 58°, agarrada)",
+  "FluteRaise: antebrazo L / tronco se meten 7.8 cm en f9",
+  "AnswerBlow: ningún hueso gira más de 45° en un cuadro (56.0° Clav_R f3)",
+  "AnswerBlow: muñeca R posible (exceso 2.96 en f3: flexión -25°, desvío 73°, agarrada)",
+  "AnswerBlow: flauta / cabeza se meten 5.0 cm en f9",
+  "AnswerBlow: antebrazo L / tronco se meten 4.2 cm en f13",
+  "AnswerStamp: ningún hueso gira más de 45° en un cuadro (76.6° UpperArm_L f13)",
+  "AnswerStamp: antebrazo L / tronco se meten 4.2 cm en f0",
+  "GroundLaugh: ningún hueso gira más de 45° en un cuadro (143.7° Forearm_R f32)",
+  "GroundLaugh: muñeca R posible (exceso 4.88 en f32: flexión -105°, desvío 115°, agarrada)",
+  "Intro: los pies llegan (faltó 8.1 cm en f61, pie L)",
+  "Intro: las manos llegan (faltó 24.9 cm en f155, mano R)",
+  "Intro: ningún hueso gira más de 45° en un cuadro (177.4° Forearm_R f157)",
+  "Intro: la flauta no atraviesa el culmo (-5.8 cm en f172)",
+  "Intro: muñeca R posible (exceso 3.22 en f37: flexión 35°, desvío 80°, agarrada)",
+  "Intro: muñeca L posible (exceso 2.09 en f123: flexión 75°, desvío -70°, agarrada)",
+  "Intro: tibia R / tibia L se meten 6.5 cm en f156",
+  "Intro: flauta / cabeza se meten 5.7 cm en f174",
+  "Intro: antebrazo R / cabeza se meten 3.2 cm en f160",
+  "PhaseBow: las manos llegan (faltó 20.1 cm en f34, mano L)",
+  "PhaseBow: ningún hueso gira más de 45° en un cuadro (81.1° Forearm_R f57)",
+  "PhaseBow: la suela apoyada no patina (R: 105.6 cm en f0-112)",
+  "PhaseBow: muñeca L posible (exceso 1.33 en f52: flexión -8°, desvío 33°)",
+  "PhaseBow: antebrazo L / tronco se meten 7.0 cm en f66",
+  "PhaseForest: las manos llegan (faltó 6.2 cm en f122, mano R)",
+  "PhaseForest: ningún hueso gira más de 45° en un cuadro (176.8° Forearm_R f124)",
+  "PhaseForest: la suela apoyada no patina (R: 7.4 cm en f14-115)",
+  "PhaseForest: muñeca R posible (exceso 2.70 en f124: flexión 72°, desvío 63°, agarrada)",
+  "PhaseForest: muñeca L posible (exceso 1.64 en f114: flexión -49°, desvío -55°, agarrada)",
+  "PhaseForest: flauta / tronco se meten 15.0 cm en f119",
+  "PhaseForest: antebrazo L / tronco se meten 6.5 cm en f120",
+  "PhaseForest: flauta / cabeza se meten 6.0 cm en f112",
+  "Defeat: las manos llegan (faltó 25.7 cm en f118, mano L)",
+  "Defeat: ningún hueso gira más de 45° en un cuadro (55.9° Shin_R f10)",
+  "Defeat: la suela apoyada no patina (R: 5.7 cm en f70-162)",
+  "Defeat: las suelas no se meten en el piso (-4.8 cm en f72)",
+  "Defeat: muñeca R posible (exceso 1.45 en f64: flexión 59°, desvío -46°, agarrada)",
+  "Defeat: flauta / tibia R se meten 5.4 cm en f69",
+  "Defeat: flauta / muslo R se meten 5.2 cm en f69",
+  "Defeat: flauta / tibia L se meten 4.3 cm en f68",
+  "HangDrop: la última pose encadena con HANG: 124.7° en Hand_R, cadera 0.0 cm, flauta 0.0 cm",
+  "HangClimb: la primera pose encadena con HANG: 127.7° en Hand_R, cadera 0.0 cm, flauta 21.7 cm",
+  "PerchLaugh: la primera pose encadena con PERCH: 60.0° en Lid_R, cadera 0.0 cm, flauta 3.6 cm",
+  "StalkSweep: la última pose encadena con PERCH: 55.5° en UpperArm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "CatapultKick: la última pose encadena con DIVE_LAND: 36.4° en UpperArm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "LeapGrab: la última pose encadena con PERCH: 97.1° en UpperArm_R, cadera 3.0 cm, flauta 3.0 cm",
+  "Climb: la última pose encadena con PERCH: 68.2° en UpperArm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "Dive: la última pose encadena con DIVE_LAND: 36.4° en UpperArm_L, cadera 2.0 cm, flauta 2.4 cm",
+  "FeetStuck: la primera pose encadena con DIVE_LAND: 23.5° en Forearm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "StaffDrop: la última pose encadena con STAFF_DOWN: 67.0° en UpperArm_R, cadera 0.0 cm, flauta 0.0 cm",
+  "StaffDropRecover: la última pose encadena con READY: 92.5° en Forearm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "Splat: la primera pose encadena con FLUNG: 12.5° en UpperArm_R, cadera 10.0 cm, flauta 9.7 cm",
+  "MissGrab: la primera pose encadena con AIR: 26.8° en UpperArm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "MissGrab: la última pose encadena con DAZED_LIE: 123.8° en Forearm_R, cadera 0.0 cm, flauta 0.0 cm",
+  "DazedLieHit: la primera pose encadena con DAZED_LIE: 62.0° en Ring_L_2, cadera 0.0 cm, flauta 0.0 cm",
+  "DazedLieHit: la última pose encadena con DAZED_LIE: 62.0° en Ring_L_2, cadera 0.0 cm, flauta 0.0 cm",
+  "Slip: la última pose encadena con DAZED_SIT: 41.6° en UpperArm_R, cadera 0.0 cm, flauta 0.0 cm",
+  "Detuned: la primera pose encadena con FLUTE: 18.7° en Foot_L, cadera 0.0 cm, flauta 0.0 cm",
+  "BackFlip: la última pose encadena con READY: 81.8° en Forearm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "GroundDart: la última pose encadena con READY: 37.6° en UpperArm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "FluteRaise: la última pose encadena con FLUTE: 18.7° en Foot_L, cadera 0.0 cm, flauta 0.0 cm",
+  "AnswerStamp: la última pose encadena con FLUTE: 30.7° en UpperArm_R, cadera 0.0 cm, flauta 0.0 cm",
+  "Defeat: la última pose encadena con CROSS: 74.2° en Forearm_L, cadera 0.0 cm, flauta 0.0 cm",
+  "PerchIdle: el cuerpo no atraviesa el culmo (53 vértices a más de 1.5 cm adentro en f21, hasta 9.4 cm: [('Acc_ChimesLo10_0', 15), ('Cloak_192_2', 9), ('Foot_R', 7), ('Foot_L', 7)])",
+  "HangDart2: el cuerpo no atraviesa el culmo (72 vértices a más de 1.5 cm adentro en f4, hasta 9.7 cm: [('Shin_L', 19), ('Skirt_320', 12), ('Toe_L', 9), ('Toe_R', 8)])",
+  "DazedSit: nada atraviesa el piso (mín -6.1 cm en f30: [('Skirt_220', 2)])",
+  "DazedLie: nada atraviesa el piso (mín -7.1 cm en f30: [('Skirt_220', 5), ('Skirt_140', 2)])",
+  "DefeatIdle: nada atraviesa el piso (mín -5.7 cm en f60: [('Foot_R', 3), ('Skirt_220', 2), ('Foot_L', 1)])",
+  "PerchDart: el cuerpo no atraviesa el culmo (52 vértices a más de 1.5 cm adentro en f24, hasta 9.7 cm: [('Acc_ChimesLo10_0', 13), ('Cloak_192_2', 8), ('Cloak_192_3', 8), ('Foot_R', 7)])",
+  "PerchDart2: el cuerpo no atraviesa el culmo (53 vértices a más de 1.5 cm adentro en f34, hasta 9.8 cm: [('Acc_ChimesLo10_0', 12), ('Cloak_192_3', 11), ('Foot_R', 7), ('Foot_L', 7)])",
+  "PerchVolley: el cuerpo no atraviesa el culmo (52 vértices a más de 1.5 cm adentro en f50, hasta 9.8 cm: [('Acc_ChimesLo10_0', 13), ('Cloak_192_3', 11), ('Foot_R', 7), ('Foot_L', 7)])",
+  "PerchVolley4: el cuerpo no atraviesa el culmo (51 vértices a más de 1.5 cm adentro en f0, hasta 9.5 cm: [('Acc_ChimesLo10_0', 15), ('Cloak_192_2', 9), ('Foot_R', 7), ('Foot_L', 7)])",
+  "PerchWhistle: el cuerpo no atraviesa el culmo (51 vértices a más de 1.5 cm adentro en f0, hasta 9.5 cm: [('Acc_ChimesLo10_0', 15), ('Cloak_192_2', 9), ('Foot_R', 7), ('Foot_L', 7)])",
+  "TalaShot: el cuerpo no atraviesa el culmo (51 vértices a más de 1.5 cm adentro en f0, hasta 9.5 cm: [('Acc_ChimesLo10_0', 15), ('Cloak_192_2', 9), ('Foot_R', 7), ('Foot_L', 7)])",
+  "HangDrop: el cuerpo no atraviesa el culmo (154 vértices a más de 1.5 cm adentro en f8, hasta 11.4 cm: [('Shin_L', 25), ('Cloak_102_3', 22), ('Acc_ChimesLo08_0', 22), ('Toe_L', 17)])",
+  "HangClimb: el cuerpo no atraviesa el culmo (138 vértices a más de 1.5 cm adentro en f5, hasta 9.6 cm: [('Shin_L', 54), ('Shin_R', 39), ('Toe_R', 12), ('Toe_L', 10)])",
+  "PerchLaugh: el cuerpo no atraviesa el culmo (47 vértices a más de 1.5 cm adentro en f34, hasta 9.5 cm: [('Acc_ChimesLo10_0', 10), ('Foot_R', 7), ('Foot_L', 7), ('Topknot_2', 7)])",
+  "PerchWobble: el cuerpo no atraviesa el culmo (91 vértices a más de 1.5 cm adentro en f1, hasta 7.4 cm: [('Acc_ChimesLo11_0', 26), ('Cloak_192_2', 15), ('Acc_ChimesLo05_0', 15), ('Cloak_192_3', 8)])",
+  "StalkSweep: el cuerpo no atraviesa el culmo (243 vértices a más de 1.5 cm adentro en f10, hasta 9.6 cm: [('Head', 111), ('Topknot_1', 24), ('Topknot_2', 20), ('Spine2', 16)])",
+  "CatapultDraw: el cuerpo no atraviesa el culmo (51 vértices a más de 1.5 cm adentro en f0, hasta 9.5 cm: [('Acc_ChimesLo10_0', 15), ('Cloak_192_2', 9), ('Foot_R', 7), ('Foot_L', 7)])",
+  "LeapCrouch: el cuerpo no atraviesa el culmo (55 vértices a más de 1.5 cm adentro en f7, hasta 9.1 cm: [('Acc_ChimesLo03_0', 16), ('Hips', 13), ('Foot_R', 8), ('Spine1', 5)])",
+  "LeapGrab: el cuerpo no atraviesa el culmo (112 vértices a más de 1.5 cm adentro en f1, hasta 9.7 cm: [('Shin_R', 62), ('Foot_R', 24), ('Thumb_L_2', 8), ('Thigh_R', 5)])",
+  "Climb: el cuerpo no atraviesa el culmo (169 vértices a más de 1.5 cm adentro en f21, hasta 9.5 cm: [('Acc_ChimesLo06_0', 20), ('Foot_R', 18), ('Index_R_2', 16), ('Middle_R_2', 16)])",
+  "DecoySpin: el cuerpo no atraviesa el culmo (105 vértices a más de 1.5 cm adentro en f10, hasta 8.5 cm: [('Foot_R', 17), ('Foot_L', 16), ('Acc_ChimesLo03_0', 13), ('Cloak_168_1', 11)])",
+  "Vault: nada atraviesa el piso (mín -7.1 cm en f8: [('flauta', 18)])",
+  "FlungLand: nada atraviesa el piso (mín -27.7 cm en f0: [('Foot_L', 78), ('Shin_L', 38), ('Foot_R', 12), ('Toe_L', 4)])",
+  "DazedSitHit: nada atraviesa el piso (mín -6.2 cm en f7: [('Skirt_220', 2)])",
+  "DazedLieHit: nada atraviesa el piso (mín -7.1 cm en f10: [('Skirt_220', 5), ('Skirt_140', 2)])",
+  "Stumble: nada atraviesa el piso (mín -7.1 cm en f8: [('flauta', 21)])",
+  "GetUp: nada atraviesa el piso (mín -22.7 cm en f2: [('Spine2', 79), ('Acc_ChimesLo04_0', 35), ('Acc_ChimesLo03_0', 34), ('Acc_ChimesLo02_0', 22)])",
+  "StaffStuck: nada atraviesa el piso (mín -8.0 cm en f6: [('flauta', 21)])",
+  "HitHeavy: nada atraviesa el piso (mín -3.8 cm en f1: [('Cloak_192_3', 1)])",
+  "BackFlip: nada atraviesa el piso (mín -97.3 cm en f9: [('flauta', 133)])",
+  "LowSweep: nada atraviesa el piso (mín -5.4 cm en f29: [('Skirt_320', 4), ('Skirt_040', 1)])",
+  "AnswerStamp: nada atraviesa el piso (mín -7.4 cm en f5: [('flauta', 21)])",
+  "Intro: el cuerpo no atraviesa el culmo (65 vértices a más de 1.5 cm adentro en f26, hasta 8.3 cm: [('Shin_L', 17), ('Shin_R', 15), ('Skirt_220', 8), ('Skirt_320', 8)])",
+  "PhaseBow: nada atraviesa el piso (mín -16.1 cm en f5: [('Cloak_146_3', 12), ('Skirt_220', 2), ('Cloak_124_3', 2), ('Cloak_214_3', 2)])",
+  "PhaseForest: nada atraviesa el piso (mín -6.8 cm en f119: [('flauta', 17)])",
+  "Defeat: nada atraviesa el piso (mín -9.4 cm en f71: [('Skirt_220', 4), ('Foot_R', 2), ('Skirt_140', 2)])"
  ],
- "pose_test_hold_frames": 20,
+ "aliases": {
+  "Guard": "Idle",
+  "Counter": "Idle",
+  "Spotted": "Idle",
+  "Exhausted": "DazedSit",
+  "ExhaustedHit": "DazedSitHit",
+  "ExhaustedRise": "GetUp"
+ },
+ "spaces": {
+  "ground": "la raíz en el piso, donde está el transform del jefe; el avance del clip lo aplica el código (travel_m)",
+  "perch": "la raíz en el PerchNode de la caña (arriba del anillo del nudo del posado) con su giro: el culmo es el eje +Y del modelo (Unity) desde la raíz; el código gira el modelo alrededor del culmo para mirar a Kaito. Autorado sobre la caña de adentro (posado 4.4 m, culmo r 0.103): en la Madre (r 0.155) correr el modelo 5 cm hacia su frente",
+  "air": "la raíz la lleva el código por el arco (de PerchNode a PerchNode, o al punto donde cae): los pies quedan a la altura de la raíz como en el posado",
+  "pole": "en el piso con la flauta-bastón clavada en el piso del clip (la Grulla en el Bastón)"
+ },
+ "stalk": {
+  "author_kind": "inner",
+  "perch_m": 4.4,
+  "grip_high_z": 0.8999999999999995,
+  "climb_grip_z": -2.2,
+  "culm_radius_at_perch": 0.1031,
+  "perch_ring_radius": 0.17,
+  "note": "z del clip de posado (0 = PerchNode). Las manos agarran el culmo dentro del tramo del PerchNode (Seg_05) en los clips de arriba: el arco del código no las despega"
+ },
  "contract_bones": [
   "Root",
   "Hips",
@@ -337,7 +7105,7 @@
    "Skirt_*",
    "Cloak_*"
   ],
-  "notes": "las Acc_* son cadenas de SpringChain (TasselBeard = perfil Tassel, LeafKnot = Leaf, TieSash = Tie, Chimes* = Chimes, un hueso por cascabel). La capa, las mangas, la falda y el moño van horneados en los clips y NO son Acc_: SpringChain saltea las cadenas colgadas de otra Acc_ y los cascabeles cuelgan de la capa. Los paños de la capa que cubren los brazos siguen al brazo en parte (chikuo_rig.Poser.follow_cloak, la pose rígida antes de los resortes)."
+  "notes": "las Acc_* son cadenas de SpringChain (TasselBeard = perfil Tassel, LeafKnot = Leaf, TieSash = Tie, Chimes* = Chimes, un hueso por cascabel) y vienen horneadas en cada clip (la física del juego las sigue con stiffness y un tope de ángulo desde esa pose: colgado, los cascabeles ya caen al piso en el clip). La capa, las mangas, la falda y el moño van horneados y NO son Acc_: SpringChain saltea las cadenas colgadas de otra Acc_ y los cascabeles cuelgan de la capa."
  },
  "chimes": {
   "Acc_ChimesHi00": {
@@ -650,8 +7418,7 @@
      -0.004
     ]
    }
-  },
-  "notes": "jaw en grados (+ abre: la boca abre en medialuna, las comisuras quedan), lids 0 = el reposo (tapa el 30 % de arriba) .. 1 = cerrado (60° hacia abajo), brows en grados (+ la punta de afuera sube), cheeks 0..1 (2.4 cm afuera: asoma un domo en cada cachete), corners (adentro, arriba) en metros en el marco de la cabeza"
+  }
  },
  "hand_shapes": {
   "relaxed": {

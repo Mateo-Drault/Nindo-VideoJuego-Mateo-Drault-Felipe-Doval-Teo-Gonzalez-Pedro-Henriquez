@@ -684,7 +684,8 @@ class Poser:
                 pose.delta(cloak_name(ang, 1), qf)
 
     def fingers(self, pose, S, shape):
-        h = HAND_SHAPES[shape]
+        # una forma por nombre o sus números (los clips interpolan entre formas)
+        h = HAND_SHAPES[shape] if isinstance(shape, str) else shape
         R = self.rig
         for i, (name, *_r) in enumerate(FINGERS):
             for j, key in ((1, "fing"), (2, "tip")):

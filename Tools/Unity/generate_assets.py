@@ -733,6 +733,11 @@ def bamboo_master_controller():
         return round(walk / gs, 4) if base in BAMBOO_SIDE_STEPS and gs and walk else 1
 
     st = {n: (ref(g, stable_id("bamboo_master", n), 3), round(r["seconds"], 4), speed(n)) for n, r in clips.items()}
+    # los nombres que Enemy toca por config sin clip propio (Guard, Exhausted...): estados con el clip del que el sidecar
+    # dice (el Chikuō ermitaño los trae en 'aliases')
+    for a, src in (bi.get("aliases") or {}).items():
+        if src in st and a not in st:
+            st[a] = st[src]
     path = os.path.join(P_ANIM, "BambooMaster.controller")
     res = controller(path, "BambooMaster", st, [st[n if n in st else "Idle"] for n in BAMBOO_LOCO], BAMBOO_LOCO_THRESHOLDS)
     trees = {f"Locomotion{s}": [st[n + s] for n in BAMBOO_LOCO] for s in ("_P2", "_P3") if all(n + s in st for n in BAMBOO_LOCO)}
