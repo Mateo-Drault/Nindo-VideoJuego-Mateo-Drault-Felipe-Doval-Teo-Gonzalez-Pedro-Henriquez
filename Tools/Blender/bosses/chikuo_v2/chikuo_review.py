@@ -425,7 +425,7 @@ class Review:
         self.floor("path")
         self.clear_extra()
         self.forest()
-        st = self.stalk(0.0, 0.0, 7.5, 4.4)
+        self.stalk(0.0, 0.0, 7.5, 4.4)
         self.stalk(-5.0, 1.0, 8.5, 4.8)
         self.stalk(4.3, -2.5, 7.5, 4.4)
         self.kaito((0.6, -4.5), 0.0)

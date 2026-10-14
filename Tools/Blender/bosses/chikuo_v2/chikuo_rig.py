@@ -331,7 +331,7 @@ def bones():
         B.append(BoneDef(cloak_name(a, 1), p0, p1, "Spine2", True, tuple(nrm)))
         B.append(BoneDef(cloak_name(a, 2), p1, p2, cloak_name(a, 1), True, tuple(cloak_normal(a, 0.75))))
     # cascabeles: un hueso por tubo, del nudo del cordón a la punta de abajo del tubo, hijo del tramo de capa que lo lleva
-    for name, g, a, s, cord, ln, r in chimes_full():
+    for name, _, a, s, cord, ln, _r in chimes_full():
         top = chime_attach(a, s)
         ax = chime_axis(a, s)
         bot = top + ax * (cord + ln)

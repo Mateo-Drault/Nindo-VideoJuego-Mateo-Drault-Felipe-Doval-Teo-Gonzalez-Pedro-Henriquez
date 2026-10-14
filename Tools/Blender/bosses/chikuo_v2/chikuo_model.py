@@ -374,7 +374,7 @@ def build_brows_hair(kits):
     """Cejas salvajes: una masa blanca del entrecejo a la sien con púas anchas hacia arriba y afuera (de frente son una
     corona más ancha que la cabeza), mechones en punta en las sienes, el pelo blanco peinado hacia atrás (pelado
     arriba adelante) y el moño."""
-    for S, s in (("R", -1.0), ("L", 1.0)):
+    for S in "RL":
         m = (lambda v: Vector(v)) if S == "R" else (lambda v: Vector((-v[0], v[1], v[2])))
         kb = kits["Brow_" + S] = Kit("part_Brow_" + S, "Brow_" + S)
         # la masa nace baja junto a la nariz y sube hacia la sien (la V del ceño); las púas forman una llama que sube
@@ -739,7 +739,7 @@ def build_skirt(kits):
             k.tag([f], C["gi2"])
     # el revés de la falda (se ve desde abajo y en las patadas)
     inner = [[p + (Vector((p.x, p.y, 0.0)).normalized() * -0.012) for p in r] for r in rows[2:]]
-    ip = k.rings_loft([list(reversed(r)) for r in inner], C["gi3"], False, False)
+    k.rings_loft([list(reversed(r)) for r in inner], C["gi3"], False, False)
     # los bordes del cruce: dos ribetes en diagonal desde la faja hacia los costados del ruedo
     for s in (-1.0, 1.0):
         pts, nr = [], []
@@ -789,7 +789,7 @@ def arm_points():
 
 def build_sleeve_r(kits):
     """Manga ancha de kimono hasta la mitad del antebrazo, con el puño paja; el vuelo de abajo cuelga de Sleeve_R_*."""
-    S, E, W, u, l = arm_points()
+    S, E, _, u, l = arm_points()
     cuff = E + l * 0.17
     wa = chain_weights([S, E, cuff], ["UpperArm_R", "Forearm_R"], before="Clav_R", span=0.08)
     up = Vector((0.0, 0.0, 1.0))
@@ -827,7 +827,7 @@ def build_sleeve_r(kits):
 
 
 def build_wrap_hand_r(kits):
-    S, E, W, u, l = arm_points()
+    _, E, W, _, l = arm_points()
     wf = chain_weights([E, W, W + l * 0.05], ["Forearm_R", "Hand_R"], span=0.03)
     k = kits["Wrap_R"] = Kit("part_Wrap_R", "Forearm_R", weights=lambda co: {"Forearm_R": 1.0} if along_bone(co, E, W) < 0.9 else wf(co))
     pts = [E + l * 0.08, E + l * 0.17, E + l * 0.25, E + l * 0.31, W - l * 0.02, W + l * 0.012]
@@ -838,7 +838,7 @@ def build_wrap_hand_r(kits):
 
 def build_hand_r(kits):
     """Mano grande y huesuda (la que agarra la caña): palma chata, nudillos marcados, dedos largos de dos falanges."""
-    W, hd, dors, thumb = CR.hand_frame("R")
+    W, hd, dors, _ = CR.hand_frame("R")
     Kn = CR.KNUCKLE
 
     def w_hand(co):
@@ -848,7 +848,7 @@ def build_hand_r(kits):
     k.tube([W - hd * 0.012, W + hd * 0.04, W + hd * 0.085, Kn + hd * 0.006],
            [(0.040, 0.022), (0.052, 0.024), (0.058, 0.023), (0.056, 0.020)], 6, C["skin"],
            ups=[dors] * 4, phase=math.pi / 6, power=3.0, ring_colors=[C["skin"], C["skin"], C["skin2"]])
-    for name, off, l1, l2 in CR.FINGERS:
+    for name, *_ in CR.FINGERS:
         b1, b2 = f"{name}_R_1", f"{name}_R_2"
         base, mid, tip = bh(b1), bh(b2), bt(b2)
         r0 = 0.0128 if name != "Pinky" else 0.0112
@@ -1058,9 +1058,10 @@ def drop_len(phi):
 
 
 def build_cloak(kits):
-    """La capa: una cáscara oscura de dos caras (lo que se ve entre las hojas y por dentro) y ~260 hojas de bambú en
-    hileras como tejas (las de arriba encima de las de abajo), en tres tonos, más largas hacia el ruedo de la espalda; en
-    los hombros se paran hacia afuera (la silueta en púas del concepto) y en el cuello hacen una gola."""
+    """La capa: una cáscara oscura de dos caras (lo que se ve entre las hojas y por dentro) y ~170 hojas de bambú anchas
+    en hileras como tejas (las de arriba encima de las de abajo), oliva amarillento arriba y verde oscuro abajo, más
+    largas hacia el ruedo de la espalda; en los hombros salen hacia afuera (la silueta en púas del concepto) y en el
+    cuello hacen una gola."""
     rng = random.Random(61)
     k = kits["Cloak"] = Kit("part_Cloak", "Spine2", weights=w_cloak)
     k.use_anchors()
@@ -1088,16 +1089,14 @@ def build_cloak(kits):
         fi.append(k.bm.faces.new((so[0][c + 1], so[0][c], si[0][c], si[0][c + 1])))
     k._new([v for r in so + si for v in r], C["shell"], None, None)
     k.tag(fi, C["gi3"])
-    # hileras de hojas: (fracción de la caída, largo relativo, tono de arriba, tono de abajo)
-    # seis hileras (tejas que se tapan un tercio: de cada hoja se ve la parte ancha, como en la hoja de la espalda)
-    # la gola (hojas paradas alrededor de la nuca), el yugo de los hombros (hojas que salen hacia afuera en estrella: la
+    # hileras de hojas (fracción de la caída, largo relativo, tono principal, tono de una de cada tres): la gola (hojas paradas alrededor de la nuca), el yugo de los hombros (hojas que salen hacia afuera en estrella: la
     # silueta en púas) y cinco hileras que cuelgan como tejas que se tapan un tercio: de cada hoja se ve la parte ancha.
     # Los tonos como en la hoja de la espalda: oliva amarillento arriba, oliva al medio, verde oscuro abajo
     rows = [(0.03, 0.55, "leaf1b", "leaf1"), (0.11, 0.70, "leaf1b", "leaf1c"), (0.27, 0.92, "leaf1", "leaf1b"),
             (0.45, 1.0, "leaf2", "leaf1"), (0.62, 1.0, "leaf2", "leaf1"), (0.78, 1.0, "leaf3", "leaf2"),
             (0.91, 1.0, "leaf3", "leaf2")]
     for ri_, (s, lr, ca, cb) in enumerate(rows):
-        # largo de arco de la hilera para repartir las hojas cada ~5.6 cm
+        # largo de arco de la hilera para repartir las hojas a lo ancho (una al lado de la otra)
         phis = [a0 + (a1 - a0) * i / 120.0 for i in range(121)]
         arc = [0.0]
         for p0, p1 in zip(phis[:-1], phis[1:]):

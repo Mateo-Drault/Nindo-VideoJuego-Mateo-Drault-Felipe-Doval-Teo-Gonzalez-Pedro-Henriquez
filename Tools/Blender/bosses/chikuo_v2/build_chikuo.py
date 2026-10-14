@@ -165,8 +165,8 @@ def main():
     pt = HeldClip("PoseTest", ptW, False, "las poses de prueba de la deformación, " + str(HOLD) + " cuadros cada una: "
                   + ", ".join(n for n, *_ in CP.ORDER))
     baked = [(bind, bind.W), (idle, idle.W), (pt, pt.W)]
-    act, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
-    last = max(b for a, b in ranges.values())
+    _, ranges = NA.write_pack(arm, rig, baked, start=1, gap=GAP)
+    last = max(b for _, b in ranges.values())
     scn.frame_set(0)
 
     # ---------------------------------------------------------------- export

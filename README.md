@@ -269,10 +269,12 @@ $B -b --python Tools/Blender/world/build_world.py -- --export [--map] [--preview
 # Kaito: esqueleto de juego + todos sus clips (chequeos de pies, loops e impactos; hojas con --renders DIR)
 $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --export [--only Run,Attack1] [--renders DIR]
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
-# Chikuō, el Maestro del Bambú: modelo, esqueleto, clips, chequeos y FBX (hojas con --renders DIR [--detail] [--lineup])
-$B -b --factory-startup --python Tools/Blender/bosses/bamboo_master/build_bamboo_master.py -- --export [--renders DIR]
-python3 Tools/Blender/bosses/bamboo_master/check_master_fbx.py   # lo que Unity va a ligar: raíz, curvas, huesos, materiales
-# iterar clips sin exportar: --only 'Palm*,Defeat' --renders DIR --sheets Palm_P3 ; poses sueltas: --lab 'sentado 3' --renders DIR
+# Chikuō, el ermitaño de las cañas (fase C4): modelo, esqueleto, poses de prueba, chequeos y FBX (bosses/bamboo_master es
+# el Chikuō viejo: ya no se exporta). Hojas contra el concepto con --renders DIR [--sheets turnaround,head,details,game,poses,lineup]
+$B -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/build_chikuo.py -- --export [--renders DIR] [--roundtrip RT.json]
+python3 Tools/Blender/bosses/chikuo_v2/check_chikuo_fbx.py      # lo que Unity va a ligar: raíces, rutas, huesos, materiales
+$B -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/check_chikuo_roundtrip.py -- RT.json   # el FBX importado da lo mismo
+python3 Tools/Unity/chikuo_assets.py [--prune]                  # solo sus .mat, su .meta, BambooMaster.controller y su fila de NindoContent
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
 # música de jefes por fases y del final: pasos (fuentes, Vorbis, recorte, verificación) en su encabezado
