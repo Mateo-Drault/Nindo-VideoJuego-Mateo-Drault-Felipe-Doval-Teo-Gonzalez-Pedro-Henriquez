@@ -5,7 +5,7 @@ a Unity está medido (contrato de calidad, Docs/handoff/diseno/chikuo_v2.md 16.7
 * los loops no tienen costura (ni de pose ni de velocidad: < 1°);
 * los pies apoyados no patinan con el avance que aplica el juego (< 2 cm), y la suela que toca el piso tampoco;
 * manos y pies en la caña trabados (< 2 cm) con el arco del código aplicado;
-* ningún hueso gira más de 45° en un cuadro fuera de un corte declarado;
+* ningún hueso gira más de 45° en un cuadro fuera de un corte declarado (los párpados sí: parpadear es de un cuadro);
 * la muñeca dentro de lo que dobla una persona (la elipse de flexión y desvío de team_limbs);
 * el cuerpo contra sí mismo (cápsulas por dentro de la malla: la flauta, los antebrazos, las piernas) y la flauta contra
   el culmo;
@@ -107,15 +107,26 @@ def local_quats(rig, frames):
     return [{n: q for n, (l, q) in rig.to_local(W).items()} for W in frames]
 
 
-def snaps(rig, lq, cuts=()):
-    """El mayor giro local de un hueso entre dos cuadros seguidos (fuera de los cortes): (grados, hueso, cuadro)."""
+def snaps(rig, lq, cuts=(), frames=None):
+    """El mayor giro local de un hueso entre dos cuadros seguidos (fuera de los cortes): (grados, hueso, cuadro). Los
+    párpados no cuentan: un parpadeo cierra el ojo en un cuadro (60°) y así tiene que verse. Lo secundario (capa,
+    cascabeles, mangas: los resortes) cuenta con lo menos que giró contra su padre y en el mundo (con 'frames'): un
+    cascabel que cuelga quieto mientras el paño del que cuelga latiguea gira mucho contra el paño y nada en el mundo, y un
+    paño que va con el cuerpo en un giro rápido gira en el mundo y nada contra el cuerpo; lo que salta es lo que gira de
+    golpe contra los dos."""
     worst = (0.0, "", 0)
+    names = [n for n in rig.names if not n.startswith("Lid_")]
+    wq = None
+    if frames is not None:
+        wq = [{n: W[n].to_quaternion() for n in names if n.startswith(SPRING_PREFIX)} for W in frames]
     for i in range(1, len(lq)):
         if i in cuts or (i - 1) in cuts:
             continue
         a, b = lq[i - 1], lq[i]
-        for n in rig.names:
+        for n in names:
             d = NA.quat_angle_deg(a[n], b[n])
+            if wq is not None and n in wq[i] and d > SNAP_DEG:
+                d = min(d, NA.quat_angle_deg(wq[i - 1][n], wq[i][n]))
             if d > worst[0]:
                 worst = (round(d, 1), n, i)
     return worst
@@ -299,7 +310,8 @@ def bone_delta(rig, Wa, Wb):
     la, lb = rig.to_local(Wa), rig.to_local(Wb)
     worst, wb = 0.0, ""
     for n in rig.names:
-        if n.startswith(SPRING_PREFIX) or n == "Staff":
+        # los párpados son la cara (cada clip la suya: cerrar o abrir el ojo en el empalme es un parpadeo)
+        if n.startswith(SPRING_PREFIX) or n == "Staff" or n.startswith("Lid_"):
             continue
         d = NA.quat_angle_deg(la[n][1], lb[n][1])
         if d > worst:

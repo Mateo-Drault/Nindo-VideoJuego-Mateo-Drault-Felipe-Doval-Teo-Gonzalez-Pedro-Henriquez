@@ -3,7 +3,7 @@ cambios de fase y la derrota con la reverencia.
 """
 import chikuo_rig as CR
 from chikuo_anim import CClip, merge, free, grip, legs, staff_world, staff_lips
-from chikuo_clips import K, PERCH, HANG, READY, AIR, AIR_STAFF, feet_track, READY_R, READY_L
+from chikuo_clips import K, PERCH, HANG, HANG_Z, READY, AIR, AIR_STAFF, feet_track, READY_R, READY_L
 from chikuo_clips_perch import shoulders_hold, hang_pipe, aim_dir, FACE_PUFF, FACE_BLOWN
 from chikuo_clips_ground import (FLUTE, FLUTE_AT, staff_at, unit, face_track, E, plants, FACE_FOCUS)
 from chikuo_clips_react import DAZED_SIT, DAZED_LIE, OUCH
@@ -35,7 +35,7 @@ def intro():
     ojos cerrados; abre un ojo, sonríe, se ríe a carcajadas colgado, da vuelta la flauta de cerbatana y le sopla un dardo a
     los pies de Kaito (DartSpawn f135), se suelta, gira de costado sobre la cadera y cae agachado en el posado (Perch f175)."""
     P = merge(PERCH, shoulders_hold())
-    sway = lambda d: dict(hips=(0.0, -0.27 + 0.10 * d, -1.56 + UP), hips_rot=(12 + 10 * d, 180, 0))
+    sway = lambda d: dict(hips=(0.0, -0.27 + 0.10 * d, HANG_Z + UP), hips_rot=(12 + 10 * d, 180, 0))
     keys = [K(0, HANG_FLUTE)]
     for i, f in enumerate(range(15, 61, 15)):
         keys.append(K(f, HANG_FLUTE, sway(0.5 if i % 2 == 0 else -0.5), dict(head=(-14 + 3 * (i % 2), 0, 0)), ease="sine"))
@@ -59,16 +59,16 @@ def intro():
         K(148, up(HANG), dict(face="grin", hips_rot=(12, 180, 0)),
           staff_lips(CR.STAFF_LEN, (0.0, 0.70, -0.71), (0, 0, -1)), grip("l", CR.STAFF_LEN - 0.17, elbow=(1, -0.2, 0.6)),
           grip("r", CR.STAFF_LEN - 0.32, elbow=(-1, -0.2, 0.6)), ease="inout"),
-        K(152, up(HANG), dict(face="laugh", hips=(0.0, -0.30, -1.50 + UP), hips_rot=(10, 180, 0)),
-          legs((0.30, -0.20, 1.40), (-0.30, -0.10, 1.50), rr=(-40, 180, 0), rl=(-40, 180, 0), kr=(1.0, -0.3, 0.3), kl=(-1.0, -0.3, 0.3)),
+        K(152, up(HANG), dict(face="laugh", hips=(0.0, -0.30, HANG_Z + 0.06 + UP), hips_rot=(10, 180, 0)),
+          legs((0.30, -0.20, 1.40), (-0.30, -0.10, 1.50), rr=(-40, -180, 0), rl=(-40, -180, 0), kr=(1.0, -0.3, 0.3), kl=(-1.0, -0.3, 0.3)),
           staff_lips(CR.STAFF_LEN, (0.0, 0.70, -0.71), (0, 0, -1)), grip("l", CR.STAFF_LEN - 0.17, elbow=(1, -0.2, 0.6)),
           grip("r", CR.STAFF_LEN - 0.32, elbow=(-1, -0.2, 0.6)), ease="out"),
         K(160, AIR, dict(hips=(0.10, -0.30, -0.40 + 0.30), hips_rot=(0, 90, 0), face="laugh"),
           legs((-0.10, -0.40, 0.40), (0.20, -0.20, 0.60), rr=(-30, 0, 0), rl=(-30, 0, 0), kr=(-0.4, -1, 0.3), kl=(0.4, -1, 0.3),
                hips=True), ease="lin"),
-        K(168, AIR, dict(hips=(0.0, -0.30, -0.40), hips_rot=(6, 20, 0), face="grin"), ease="out"),
-        K(175, P, dict(hips=(0, -0.33, -0.66), hips_rot=(16, 0, 0), spine2=(12, 0, 0)), ease="in"),
-        K(181, P, dict(hips=(0, -0.34, -0.60)), ease="out"),
+        K(168, AIR, dict(hips=(0.0, -0.34, -0.40), hips_rot=(6, 20, 0), face="grin"), ease="out"),
+        K(175, P, dict(hips=(0, -0.37, -0.66), hips_rot=(16, 0, 0), spine2=(12, 0, 0)), ease="in"),
+        K(181, P, dict(hips=(0, -0.38, -0.60)), ease="out"),
         K(195, P, ease="inout"),
     ]
     blink = [K(0, wink_r=0.0, wink_l=0.0), K(60, wink_r=0.0, wink_l=0.0), K(62, wink_r=1.0, wink_l=0.0),
@@ -174,7 +174,7 @@ def phase_forest():
 # sentado con las piernas cruzadas y la flauta sobre las rodillas (la reverencia y la meditación)
 CROSS = merge(dict(hips=(0.0, 0.04, 0.22 - 1.06), hips_rot=(-6, 0, 0), spine=(4, 0, 0), spine1=(2, 0, 0), spine2=(2, 0, 0),
                    neck=(-2, 0, 0), head=(-2, 0, 0), face="flute"),
-              legs((0.14, -0.40, 0.10), (-0.16, -0.30, 0.12), rr=(-10, 30, 60), rl=(-10, -30, -60), kr=(-1.0, -0.5, 0.25),
+              legs((0.14, -0.40, 0.16), (-0.16, -0.30, 0.18), rr=(-10, 30, 60), rl=(-10, -30, -60), kr=(-1.0, -0.5, 0.25),
                    kl=(1.0, -0.5, 0.25)),
               staff_world((-1.02, -0.50, 0.40), (1.0, 0.0, 0.0), (0, -0.3, 1)),
               free("r", (-0.30, -0.50, 0.50), (0.2, -0.6, -0.8), (-0.4, -0.7, 0.4), elbow=(-1, 0.3, -0.5), fing="relaxed"),
@@ -207,9 +207,10 @@ def defeat():
     keys += [K(108, wipe, ease="inout"), K(114, wipe, dict(head=(6, 0, 6)), ease="sine"), K(120, wipe, ease="sine"),
              K(128, CROSS, dict(face="grin"), ease="inout"),
              K(134, CROSS, ease="inout"),
-             K(146, bow, ease="inout"),
-             K(156, bow, dict(head=(16, 0, 0)), ease="sine"),
-             K(165, bow, ease="inout")]
+             K(144, bow, ease="inout"),
+             K(152, bow, dict(head=(16, 0, 0)), ease="sine"),
+             # se endereza y vuelve a apoyar las manos en la flauta: DefeatIdle sigue con la pose CROSS
+             K(165, CROSS, ease="inout")]
     r0, l0 = READY_R, READY_L
     plan = {"r": plants((0, 3, r0[0], r0[1], r0[2]), {"free": (4, 165)}), "l": plants((0, 3, l0[0], l0[1], l0[2]), {"free": (4, 165)})}
     feet = feet_track(keys, 165, plan)

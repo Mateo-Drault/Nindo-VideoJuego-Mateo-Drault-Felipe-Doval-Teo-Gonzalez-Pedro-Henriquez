@@ -12,7 +12,7 @@ agarra con el plan de agarres; llevada por la mano (staff_hand) seguía el giro 
 import math
 import chikuo_rig as CR
 from chikuo_anim import CClip, merge, free, grip, legs, staff_world, staff_spine
-from chikuo_clips import K, READY, AIR, feet_track, rolled, READY_R, READY_L, ANKLE_Z
+from chikuo_clips import K, READY, AIR, AIR_STAFF, feet_track, rolled, READY_R, READY_L, ANKLE_Z
 from chikuo_clips_ground import staff_at, unit, E, plants, FLUTE, BALANCE, POLE_BASE
 from chikuo_clips_perch import FACE_EFFORT
 
@@ -41,17 +41,19 @@ def sit_legs(spread=0.0):
 # sentado en el piso mareado: la cadera apoyada, las piernas estiradas adelante con las rodillas apenas arriba, el tronco
 # vencido hacia adelante, la flauta cruzada sobre los muslos en el puño derecho (los dedos por encima, el dorso adelante),
 # la izquierda en la rodilla
-DAZED_SIT = merge(dict(hips=(0.0, 0.06, 0.27 - 1.06), hips_rot=(-24, 0, 0), spine=(14, 0, 0), spine1=(12, 0, 0), spine2=(10, 0, 0),
+DAZED_SIT = merge(dict(hips=(0.0, 0.06, 0.31 - 1.06), hips_rot=(-24, 0, 0), spine=(14, 0, 0), spine1=(12, 0, 0), spine2=(10, 0, 0),
                        neck=(6, 0, 0), head=(4, 0, 0), face=DIZZY),
                   sit_legs(),
                   held_r((-0.34, -0.58, 0.58), (1.0, 0.02, 0.03), elbow=(-1, 0.3, -0.4), chest=False),
                   free("l", (0.30, -0.56, 0.62), elbow=(1, 0.3, -0.4), fing="relaxed"))
 # de espaldas en el piso pataleando como una tortuga: la cabeza levantada, la flauta en el puño derecho a lo largo del
 # cuerpo apoyada en el piso (los dedos hacia el piso, el dorso afuera), la izquierda revoleándose sobre el pecho
-DAZED_LIE = merge(dict(hips=(0.0, 0.10, 0.27 - 1.06), hips_rot=(-86, 0, 0), spine=(6, 0, 0), spine1=(4, 0, 0), spine2=(4, 0, 0),
+DAZED_LIE = merge(dict(hips=(0.0, 0.10, 0.32 - 1.06), hips_rot=(-86, 0, 0), spine=(6, 0, 0), spine1=(4, 0, 0), spine2=(4, 0, 0),
                        neck=(18, 0, 0), head=(22, 0, 0), face=DIZZY),
                   legs((-0.20, -0.66, 0.50), (0.20, -0.56, 0.74), rr=(-20, 0, -10), rl=(-20, 0, 10), kr=(-0.3, -0.3, 1.0), kl=(0.3, -0.3, 1.0)),
                   held_r((-0.40, 0.30, 0.12), (0.05, -1.0, 0.0), elbow=(-1, 0.3, 0.3), chest=False, at=0.60, up=(0, 0, 1)),
+                  # el meñique hacia la misma punta que en el salto: MissGrab llega acá sin soltar la flauta
+                  dict(grip_r_side=1.0),
                   free("l", (0.40, 0.55, 0.82), elbow=(1, 0.3, -0.3), fing="open"))
 # dando vueltas en el aire: abierto como una estrella, la flauta en el puño derecho
 FLUNG = merge(dict(hips=(0.0, 0.0, 0.0), hips_rot=(0, 0, 0), spine=(-6, 0, 0), spine1=(-4, 0, 0), spine2=(-4, 0, 0), neck=(-8, 0, 0),
@@ -116,7 +118,8 @@ def dazed_sit_hit():
     keys = [K(0, DAZED_SIT, rest),
             K(3, DAZED_SIT, dict(hips=(0.0, 0.10, 0.29 - 1.06), spine=(8, 0, 0), spine2=(4, 0, 4), neck=(-8, 0, 0), head=(-12, 0, 8),
                                  clav_r=(0, 0, 10), clav_l=(0, 0, -10), face=OUCH),
-              held_r((-0.34, -0.52, 0.64), (1.0, 0.02, 0.05), elbow=(-1, 0.3, -0.4), chest=False), ease="out"),
+              held_r((-0.34, -0.52, 0.64), (1.0, 0.02, 0.05), elbow=(-1, 0.3, -0.4), chest=False),
+              free("l", (0.30, -0.46, 0.70), elbow=(1, 0.3, -0.4), fing="open"), ease="out"),
             K(6, DAZED_SIT, dict(spine2=(14, 0, 0), head=(14, 0, -4), face=OUCH), ease="inout"),
             K(10, DAZED_SIT, rest, ease="inout")]
     return CClip("DazedSitHit", 10, keys, lag={"head": 1.0},
@@ -128,7 +131,7 @@ def dazed_lie():
     """De espaldas pataleando como una tortuga dada vuelta, revoleando el brazo libre. Loop de 30."""
     kick = lambda a: legs((-0.20, -0.66 + 0.10 * a, 0.50 + 0.22 * a), (0.20, -0.56 - 0.10 * a, 0.74 - 0.22 * a), rr=(-20, 0, -10),
                           rl=(-20, 0, 10), kr=(-0.3, -0.3, 1.0), kl=(0.3, -0.3, 1.0))
-    wave = lambda a: free("l", (0.40 + 0.10 * a, 0.55 - 0.10 * a, 0.74 + 0.06 * a), elbow=(1, 0.3, -0.3), fing="open" if a > 0 else "claw")
+    wave = lambda a: free("l", (0.40 + 0.10 * a, 0.55 - 0.10 * a, 0.74 + 0.06 * a), elbow=(1, 0.3, -0.3), fing="open" if a >= 0 else "claw")
     keys = [K(0, DAZED_LIE, kick(0.0), wave(0.0)),
             K(4, DAZED_LIE, kick(1.0), wave(1.0), dict(head=(18, 0, 8)), ease="sine"),
             K(11, DAZED_LIE, kick(-1.0), wave(-1.0), dict(head=(24, 0, -6)), ease="sine"),
@@ -172,7 +175,8 @@ def splat():
             K(9, SPREAD, dict(face=DIZZY), ease="inout")]
     return CClip("Splat", 9, keys, lag={"head": 1.0},
                  spring_vel=lambda f: (0.0, 0.25 * min(f, 2), 0.0),
-                 timing=dict(space="air", contact=2, chain_from="FLUNG", chain_to="SPLAT", culm_behind_m=CULM_Y),
+                 # el revolcón llega en cualquier punto de su vuelta: el código entra con un fundido corto
+                 timing=dict(space="air", contact=2, chain_from="FLUNG", chain_to="SPLAT", culm_behind_m=CULM_Y, fade_from=0.06),
                  events=[E(2, "Contact")],
                  notes="se estrella de espaldas contra la otra caña (Contact f2): el código pone la raíz al pie del cuerpo con el "
                        "eje de esa caña 0.30 m detrás (y +0.30 en Blender)")
@@ -207,16 +211,19 @@ def miss_grab():
     reach = merge(AIR, dict(hips=(0.0, -0.06, -0.24), hips_rot=(6, 0, 0), spine2=(6, 0, 0), head=(-12, 0, 0), face="grin"),
                   free("l", (0.22, -0.80, 1.92), (0.2, -0.9, 0.3), (0.9, 0.0, 0.3), elbow=(1, 0.3, -0.3), fing="open"))
     grab_air = merge(reach, dict(face="surprise"), free("l", (0.20, -0.76, 1.88), elbow=(1, 0.3, -0.3), fing="fist"))
-    flail = merge(FLUNG, dict(hips=(0.0, 0.10, -0.20), hips_rot=(-40, 0, 0), face="surprise"),
+    # manotea con la izquierda; la derecha sigue con la flauta alzada del salto (pasarla al puño mientras cae le giraba
+    # la mano 135° en un cuadro) y la flauta baja con él hasta el piso
+    flail = merge(FLUNG, AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.3)), dict(hips=(0.0, 0.10, -0.20), hips_rot=(-40, 0, 0), face="surprise"),
                   legs((-0.24, -0.30, 0.30), (0.24, -0.20, 0.20), rr=(-30, 0, -10), rl=(-20, 0, 10), kr=(-0.4, -1, 0.3), kl=(0.4, -1, 0.3),
                        hips=True))
     keys = [K(0, AIR),
             K(3, reach, ease="out"),
             K(5, grab_air),
-            # la flauta pasa de la mano alzada al puño (el modo de llevarla en la mano) mientras manotea
-            K(8, flail, dict(hips_rot=(-20, 0, 0)), ease="inout"),
-            K(11, flail, ease="inout"),
-            K(14, DAZED_LIE, dict(face=OUCH), ease="in")]
+            K(7, flail, dict(hips_rot=(-20, 0, 0)), ease="inout"),
+            K(9, flail, dict(face=OUCH), ease="inout"),
+            # cinco cuadros hasta quedar tirado: la flauta alzada baja al piso y el brazo gira 135° alrededor del hombro (en
+            # tres, a más de 45° por cuadro, la flauta se atrasaba y llegaba de un salto en el último)
+            K(14, DAZED_LIE, ease="inout")]
     return CClip("MissGrab", 14, keys, lag={"head": 1.0},
                  spring_vel=lambda f: (0.0, -0.05 * min(f, 5), 0.10 * max(0, f - 5)),
                  timing=dict(space="air", chain_from="AIR", chain_to="DAZED_LIE", hang_scale=0.5),
@@ -441,15 +448,17 @@ def guard_l():
 def parried(name, frames, travel, big):
     """El retroceso del parry: la flauta le rebota para arriba y atrás por encima del hombro derecho, el cuerpo se echa
     atrás y retrocede; el perfecto lo deja revoleando la izquierda y riéndose antes de recomponerse."""
-    up = merge(READY, staff_at((-0.30, 0.20, 1.62), unit((0.12, 0.40, 0.91)), 0.23), grip("r", 0.23, elbow=(-1, 0.0, -0.4)),
+    # la mano derecha queda adelante del hombro con el codo doblado, no pegada a él: con la muñeca a 20 cm del hombro el
+    # codo podía ir a cualquier lado y daba vuelta en un cuadro
+    up = merge(READY, staff_at((-0.40, 0.08, 1.48), unit((0.12, 0.40, 0.91)), 0.23), grip("r", 0.23, elbow=(-1, 0.0, -0.4)),
                free("l", (0.62, -0.20, 1.50 + 0.30 * big), elbow=(0.6, 0.5, -0.5), fing="open"),
                dict(hips=(0.0, 0.12, -0.16), hips_rot=(-10 - 6 * big, 0, -20), spine=(-6, 0, 4), spine2=(-8 - 4 * big, 0, 6),
                     neck=(-8, 0, 0), head=(-14, 0, 6), face="surprise"))
-    mid = merge(READY, staff_at((-0.30, 0.20, 1.40), unit((0.30, -0.20, 0.93)), 0.23), grip("r", 0.23, elbow=(-1, 0.2, -0.5)),
-                free("l", (0.50, -0.20, 1.40), elbow=(0.6, 0.4, -0.5), fing="open"), dict(hips=(0.0, 0.06, -0.18), face="surprise"))
+    mid = merge(READY, staff_at((-0.38, 0.06, 1.34), unit((0.30, -0.20, 0.93)), 0.23), grip("r", 0.23, elbow=(-1, 0.2, -0.5)),
+                free("l", (0.50, -0.20, 1.40), elbow=(0.6, 0.4, -0.5), fing="open"), dict(hips=(0.0, 0.06, -0.18), neck=(0, 12, 0), head=(0, 12, 0), face="surprise"))  # la cabeza se aparta de la flauta que sube
     keys = [K(0, READY, travel=0.0),
             K(2, mid, travel=travel * 0.3, ease="out"),
-            K(4, up, travel=travel * 0.7, ease="out"),
+            K(4, up, travel=travel * 0.7, ease="inout"),
             K(6 + 3 * big, up, dict(hips=(0.0, 0.16, -0.20)), travel=travel, ease="inout")]
     if big:
         keys += [K(12, up, dict(hips=(0.06, 0.12, -0.14), hips_rot=(-6, 6, -14), face="laugh"),

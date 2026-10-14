@@ -668,13 +668,16 @@ class Poser:
 
     def follow_cloak(self, pose):
         """Los paños de la capa que cubren el brazo lo siguen cuando se levanta o se abre (si no, el brazo los atraviesa),
-        y bajan con él: el giro del brazo respecto del pecho, en parte. Los cascabeles que cuelgan de ellos van juntos.
-        El paso de animación hace lo mismo antes de los resortes (es la pose rígida a la que tiran)."""
+        y bajan con él: hacia dónde apunta el brazo respecto del pecho, en parte. Los cascabeles que cuelgan de ellos van
+        juntos. El paso de animación hace lo mismo antes de los resortes (es la pose rígida a la que tiran). Solo cuenta la
+        dirección del brazo, no su giro sobre el eje: con el giro entero, un codo que pasa al otro lado o un brazo que pasa
+        por media vuelta daban vuelta el paño en un cuadro (hasta 116°)."""
         R = self.rig
         Ds2 = rot3(pose.get("Spine2")) @ rot3(R.rest["Spine2"]).transposed()
         for S, sg in (("L", 1.0), ("R", -1.0)):
-            Dua = rot3(pose.get("UpperArm_" + S)) @ rot3(R.rest["UpperArm_" + S]).transposed()
-            q = (Ds2.transposed() @ Dua).to_quaternion()
+            d0 = rot3(R.rest["UpperArm_" + S]).col[1]
+            d1 = Ds2.transposed() @ rot3(pose.get("UpperArm_" + S)).col[1]
+            q = d0.rotation_difference(d1)
             for a, f in self.CLOAK_FOLLOW.items():
                 ang = a if sg > 0 else 360.0 - a
                 qf = Quaternion().slerp(q, f)

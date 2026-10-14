@@ -22,16 +22,16 @@ def dive():
     disco queda fijo a 0.50 s), salta de la caña (LeaveStalk f10), se arma en el aire con la patada del concepto y cae con
     el pie derecho clavado (Contact f28)."""
     P = merge(PERCH, shoulders_hold())
-    crouch = merge(P, dict(hips=(0, -0.30, -0.70), hips_rot=(20, 0, 0), spine=(12, 0, 0), spine1=(10, 0, 0), spine2=(12, 0, 0),
+    crouch = merge(P, dict(hips=(0, -0.34, -0.70), hips_rot=(20, 0, 0), spine=(12, 0, 0), spine1=(10, 0, 0), spine2=(12, 0, 0),
                            neck=(-16, 0, 0), head=(-6, 0, 0)),
-                   legs((-0.15, -0.115, 0.115), (0.15, -0.115, 0.115), rr=(0, 0, -26), rl=(0, 0, 26), kr=(-0.7, -0.8, 0.5),
+                   legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -22), rl=(0, 0, 22), kr=(-0.7, -0.8, 0.5),
                         kl=(0.7, -0.8, 0.5)))
     keys = [
         K(0, P),
         K(4, crouch, ease="inout"),
-        K(8, crouch, dict(hips=(0, -0.31, -0.73), head=(-4, 0, 0)), ease="out"),
+        K(8, crouch, dict(hips=(0, -0.35, -0.73), head=(-4, 0, 0)), ease="out"),
         K(10, merge(STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), grip("l", L_SH, elbow=(1, -0.2, -1))),
-          dict(hips=(0, -0.32, -0.50), hips_rot=(24, 0, 0), spine=(10, 0, 0), spine2=(14, 0, 0), neck=(8, 0, 0), head=(10, 0, 0)),
+          dict(hips=(0, -0.36, -0.50), hips_rot=(24, 0, 0), spine=(10, 0, 0), spine2=(14, 0, 0), neck=(8, 0, 0), head=(10, 0, 0)),
           legs((-0.14, -0.08, 0.14), (0.14, -0.08, 0.14), rr=(-20, 0, -20), rl=(-20, 0, 20), kr=(-0.5, -1, 0.3), kl=(0.5, -1, 0.3)),
           ease="in"),
         K(12, merge(STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1))), dict(hips=(0, -0.10, -0.36), hips_rot=(6, 0, 0)),
@@ -41,8 +41,8 @@ def dive():
           ease="inout"),
         K(17, kick_pose(0.88, 0.22, 0.28), ease="out"),
         K(22, kick_pose(0.86, 0.24, 0.22), ease="sine"),
-        K(28, LANDING, ease="in"),
-        K(29, kick_pose(0.78, 0.22, 0.115, -28.0, land=True), ease="out"),
+        K(28, kick_pose(0.81, 0.22, 0.115, -31.0, land=True), ease="in"),
+        K(29, LANDING, ease="out"),
     ]
     faces = face_track((0, "grin"), (4, FACE_FOCUS), (11, "surprise"), (14, ANGRY), (29, ANGRY))
     return CClip("Dive", 29, keys, tracks=[faces], lag={"head": 1.0},
@@ -58,37 +58,44 @@ def dive():
 def dive_land():
     """El aterrizaje de la patada voladora (Land f0): el pie derecho clavado adelante, el izquierdo cae atrás y la
     rodilla casi toca el piso (queda cortable 0.45 s); vuelve a la guardia con un paso atrás del pie de la patada."""
-    low = merge(READY, dict(hips=(0.06, 0.08, -0.52), hips_rot=(22, 0, -8), spine=(10, 0, 4), spine1=(6, 0, 2), spine2=(6, 0, 0),
-                            neck=(0, 0, 0), head=(-6, 0, 0), face="grin"),
+    # agachado con el yugo todavía en los hombros (lo tira en f9): con la flauta de la guardia acá, la flauta y la mano
+    # derecha saltaban de los hombros a la guardia en un cuadro
+    low = merge(READY, STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)),
+                dict(hips=(0.06, 0.08, -0.52), hips_rot=(22, 0, -8), spine=(10, 0, 4), spine1=(6, 0, 2), spine2=(6, 0, 0),
+                     neck=(0, 0, 0), head=(-6, 0, 0), face="grin"),
                 dict(foot_l=(0.24, 0.0, ANKLE_Z), foot_l_rot=(0, 0, 8), fsp_l=0.0),
                 free("l", (0.50, -0.36, 0.72), elbow=(1, 0.3, -0.3), fing="open"))
     keys = [
         K(0, LANDING, travel=0.0),
         K(2, LANDING, dict(hips=(0.03, 0.18, -0.36), hips_rot=(-10, 0, -4)), free("l", (0.70, 0.0, 1.30), elbow=(1, 0.4, -0.3),
                                                                                    fing="claw", chest=True), travel=0.0, ease="out"),
-        K(3, low, dict(hips=(0.04, 0.10, -0.44)), travel=0.0, ease="out"),
+        # el tronco pasa de echado atrás (la patada) a inclinado adelante en dos cuadros, no en uno
+        K(4, low, dict(hips=(0.04, 0.10, -0.46)), travel=0.0, ease="inout"),
         K(6, low, travel=0.0, ease="inout"),
-        K(8, low, dict(hips=(0.03, 0.10, -0.42), hips_rot=(18, 0, -12)), travel=-0.06, ease="inout"),
-        # la tira de los hombros: sube y gira en el aire hacia adelante, las dos manos abiertas para atajarla
-        K(9, low, dict(hips=(0.03, 0.08, -0.36), hips_rot=(14, 0, -14)), staff_spine((-1.00, 0.06, 2.08), (1, 0, 0.03), (0, -0.3, 1)),
-          free("r", (-0.62, -0.10, 1.90), elbow=(-0.6, -0.2, -1), fing="open", chest=True),
-          free("l", (0.40, -0.36, 1.30), elbow=(1, 0.3, -0.4), fing="open"), travel=-0.10, ease="out"),
-        K(10, low, dict(hips=(0.02, 0.06, -0.32)), staff_world((-0.62, -0.10, 1.40), unit((0.75, -0.55, 0.38)), (0, -0.3, 1)),
-          free("r", (-0.46, -0.20, 1.40), elbow=(-1, 0.3, -0.6), fing="open"),
-          free("l", (0.24, -0.40, 1.30), elbow=(1, 0.2, -0.6), fing="open"), travel=-0.16, ease="lin"),
-        K(11, READY, dict(hips=(0.01, 0.03, -0.26)), staff_world((-0.48, 0.12, 1.06), unit((0.42, -0.82, 0.39)), (0, -0.3, 1)),
-          free("r", (-0.36, 0.0, 1.12), elbow=(-1, 0.4, -0.6), fing="grip_stalk"),
-          free("l", (-0.10, -0.46, 1.26), elbow=(1, 0.2, -0.8), fing="grip_stalk"), travel=-0.24, ease="lin"),
-        K(12, READY, dict(hips=(0.0, 0.0, -0.22)), travel=-0.30, ease="out"),
+        # la tira de los hombros: la empuja para arriba con la derecha, la suelta y la flauta gira en el aire hacia adelante
+        # mientras se endereza; la ataja con las dos manos abiertas ya en la guardia (de la suelta a la guardia en cinco
+        # cuadros: en tres, el antebrazo derecho giraba 140° en un cuadro)
+        K(7, low, dict(hips=(0.03, 0.10, -0.42), hips_rot=(18, 0, -12)), staff_spine((-1.00, 0.08, 2.01), (1, 0, 0.03), (0, -0.3, 1)),
+          travel=-0.03, ease="inout"),
+        K(8, low, dict(hips=(0.03, 0.08, -0.38), hips_rot=(14, 0, -14)), staff_spine((-1.00, -0.04, 2.30), (1, 0, 0.03), (0, -0.3, 1)),
+          free("r", (-0.60, -0.10, 1.86), elbow=(-0.6, -0.2, -1), fing="open", chest=True),
+          free("l", (0.40, -0.36, 1.30), elbow=(1, 0.3, -0.4), fing="open"), travel=-0.07, ease="out"),
+        K(10, low, dict(hips=(0.02, 0.05, -0.32), hips_rot=(10, 0, -16)), staff_world((-0.60, -0.10, 1.36), unit((0.70, -0.58, 0.40)), (0, -0.3, 1)),
+          free("r", (-0.48, -0.16, 1.32), elbow=(-1, 0.3, -0.6), fing="open"),
+          free("l", (0.06, -0.42, 1.30), elbow=(1, 0.2, -0.6), fing="open"), travel=-0.17, ease="inout"),
+        K(12, READY, dict(hips=(0.01, 0.02, -0.24)), staff_world((-0.44, 0.15, 1.02), unit((0.42, -0.82, 0.39)), (0, -0.3, 1)),
+          free("r", (-0.38, 0.02, 1.13), elbow=(-1, 0.4, -0.6), fing="grip_stalk"),
+          free("l", (-0.06, -0.48, 1.26), elbow=(1, 0.2, -0.8), fing="grip_stalk"), travel=-0.27, ease="inout"),
+        K(13, READY, dict(hips=(0.0, 0.0, -0.20)), travel=-0.30, ease="out"),
         K(14, READY, travel=-0.30, ease="inout"),
     ]
     r0, l0 = READY_R, READY_L
     plan = {"r": plants((0, 8, -0.10, -0.40, 0.0, [(0, -30.0, "heel"), (3, 0.0, "heel")]), (12, 14, r0[0], r0[1] + 0.30, r0[2])),
-            "l": plants({"free": (0, 2)}, (3, 14, l0[0], l0[1] + 0.30, l0[2]))}
+            "l": plants({"free": (0, 3)}, (5, 14, l0[0], l0[1] + 0.30, l0[2]))}
     feet = feet_track(keys, 14, plan)
     faces = face_track((0, ANGRY), (3, "surprise"), (8, "grin"), (14, "grin"))
     return CClip("DiveLand", 14, keys, tracks=[feet, faces], lag={"head": 1.0},
-                 timing=dict(space="ground", open=[0, 14], chain_from="DIVE_LAND", chain_to="READY", hang_scale=0.5),
+                 timing=dict(space="ground", open=[0, 14], chain_from="DIVE_LAND", chain_to="READY", hang_scale=0.5, fade_from=0.05),
                  events=[E(0, "Land")], notes="aterriza agachado con el pie de la patada clavado (Land f0); cortable 0.45 s")
 
 
@@ -154,7 +161,7 @@ def staff_drop():
                        neck=(-16, 0, 0), head=(-18, 0, 0)))
     keys = [
         K(0, P),
-        K(3, P, lift(0.40), dict(hips=(0, -0.32, -0.66), hips_rot=(14, 0, 0), spine2=(4, 0, 0), head=(-6, 0, 0)), ease="inout"),
+        K(3, P, lift(0.40), dict(hips=(0, -0.36, -0.66), hips_rot=(14, 0, 0), spine2=(4, 0, 0), head=(-6, 0, 0)), ease="inout"),
         K(6, lift(0.62), dict(hips=(0, -0.20, -0.40), hips_rot=(10, 0, 0), spine=(-4, 0, 0), spine2=(-2, 0, 0), head=(-10, 0, 0)),
           legs((-0.14, -0.06, 0.14), (0.14, -0.06, 0.14), rr=(-20, 0, -20), rl=(-20, 0, 20), kr=(-0.5, -1, 0.3), kl=(0.5, -1, 0.3)),
           ease="in"),

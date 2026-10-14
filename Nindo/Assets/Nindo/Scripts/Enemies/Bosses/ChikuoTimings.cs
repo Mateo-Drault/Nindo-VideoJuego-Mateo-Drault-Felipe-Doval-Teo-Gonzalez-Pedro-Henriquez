@@ -143,12 +143,12 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.5333f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "HANG", "PERCH", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "Unload", "Perch" }, new[] { 0.5333f, 1.0f });
+            "HANG_END", "PERCH", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "Unload", "Perch" }, new[] { 0.5333f, 1.0f });
         public static readonly ChikuoClip PerchLaugh = new ChikuoClip("PerchLaugh", 36, 1.2f, true, 1, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "PERCH", "PERCH", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
+            "PERCH", "PERCH", 0.15f, 0.15f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
         public static readonly ChikuoClip PerchWobble = new ChikuoClip("PerchWobble", 8, 0.2667f, false, 1, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -202,8 +202,8 @@ namespace Nindo
         public static readonly ChikuoClip DiveLand = new ChikuoClip("DiveLand", 14, 0.4667f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.03f, -0.06f, -0.1f, -0.16f, -0.24f, -0.3f, -0.3f, -0.3f },
-            "DIVE_LAND", "READY", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "Land" }, new[] { 0.0f });
+            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.03f, -0.07f, -0.12f, -0.17f, -0.22f, -0.27f, -0.3f, -0.3f },
+            "DIVE_LAND", "READY", 0.05f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "Land" }, new[] { 0.0f });
         public static readonly ChikuoClip FeetStuck = new ChikuoClip("FeetStuck", 48, 1.6f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.9167f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -253,7 +253,7 @@ namespace Nindo
             0.0f, 0.2222f, 0.2222f, 0.2222f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "FLUNG", "SPLAT", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "Contact" }, new[] { 0.2222f });
+            "FLUNG", "SPLAT", 0.06f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "Contact" }, new[] { 0.2222f });
         public static readonly ChikuoClip SlideDown = new ChikuoClip("SlideDown", 18, 0.6f, false, 2, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -322,12 +322,12 @@ namespace Nindo
         public static readonly ChikuoClip Parried = new ChikuoClip("Parried", 12, 0.4f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            new[] { 0.0f, -0.0919f, -0.105f, -0.2275f, -0.245f, -0.2975f, -0.35f, -0.35f, -0.35f, -0.35f, -0.35f, -0.35f, -0.35f },
+            new[] { 0.0f, -0.0919f, -0.105f, -0.175f, -0.245f, -0.2975f, -0.35f, -0.35f, -0.35f, -0.35f, -0.35f, -0.35f, -0.35f },
             "READY", "READY", 0.06f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
         public static readonly ChikuoClip ParriedPerfect = new ChikuoClip("ParriedPerfect", 18, 0.6f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            new[] { 0.0f, -0.1444f, -0.165f, -0.3575f, -0.385f, -0.4022f, -0.4431f, -0.4919f, -0.5328f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f },
+            new[] { 0.0f, -0.1444f, -0.165f, -0.275f, -0.385f, -0.4022f, -0.4431f, -0.4919f, -0.5328f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f, -0.55f },
             "READY", "READY", 0.06f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
         public static readonly ChikuoClip Idle = new ChikuoClip("Idle", 48, 1.6f, true, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
@@ -362,17 +362,17 @@ namespace Nindo
         public static readonly ChikuoClip BackFlip = new ChikuoClip("BackFlip", 12, 0.4f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.1667f, 0.8333f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            new[] { 0.0f, 0.0f, 0.0f, -0.3937f, -0.45f, -0.775f, -1.1f, -1.7f, -2.3f, -2.475f, -2.5f, -2.5f, -2.5f },
+            new[] { 0.0f, 0.0f, 0.0f, -0.225f, -0.45f, -0.775f, -1.1f, -1.7f, -2.3f, -2.4f, -2.5f, -2.5f, -2.5f },
             "READY", "READY", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
         public static readonly ChikuoClip HopBack = new ChikuoClip("HopBack", 14, 0.4667f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.2143f, 0.8571f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            new[] { 0.0f, 0.0f, 0.0f, 0.0f, -0.9148f, -1.2519f, -1.3f, -1.8f, -2.3f, -2.8f, -3.8063f, -3.95f, -4.0f, -4.0f, -4.0f },
+            new[] { 0.0f, 0.0f, 0.0f, -0.1f, -0.2f, -0.7f, -1.25f, -1.8f, -2.3f, -2.8f, -3.8063f, -3.95f, -4.0f, -4.0f, -4.0f },
             "READY", "READY", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
         public static readonly ChikuoClip Thrust = new ChikuoClip("Thrust", 27, 0.9f, false, 0, 1,
             0.3333f, 0.5556f, 0.5185f, 0.6296f, 0.0741f, 0.3333f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 2.4f, 0.0f, new[] { "Chikuo_GlintStaff", "Chikuo_GlintChimesHi" },
-            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.007f, 0.0563f, 0.1898f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f },
+            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0036f, 0.0288f, 0.0972f, 0.2304f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f, 0.45f },
             "READY", "READY", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "Contact" }, new[] { 0.5556f });
         public static readonly ChikuoClip StaffSpin2 = new ChikuoClip("StaffSpin2", 30, 1.0f, false, 0, 1,
             0.3f, 0.5667f, 0.5333f, 0.6f, 0.0667f, 0.3f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,

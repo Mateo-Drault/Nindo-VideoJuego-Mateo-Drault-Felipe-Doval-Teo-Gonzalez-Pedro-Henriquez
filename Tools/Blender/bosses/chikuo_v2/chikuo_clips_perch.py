@@ -11,7 +11,7 @@ Staff_Muzzle, 35° hacia abajo al frente del modelo.
 import math
 import chikuo_rig as CR
 from chikuo_anim import CClip, merge, free, grip, culm, legs, staff_world, staff_spine, staff_lips, CLIMB_Z
-from chikuo_clips import (K, PERCH, PERCH_FEET, PERCH_BLOW, STAFF_SHOULDERS, HANG, AIR, AIR_STAFF, AIM, GOLD, RED, WHITE,
+from chikuo_clips import (K, PERCH, PERCH_FEET, PERCH_BLOW, STAFF_SHOULDERS, HANG, HANG_Z, AIR, AIR_STAFF, AIM, GOLD, RED, WHITE,
                           CHIMES_ALL, rolled)
 
 HI = ("Chikuo_GlintChimesHi",)
@@ -71,10 +71,10 @@ def aim_dir(down_deg, yaw_deg=0.0):
 def blow_keys(f, kick=1.0):
     """El soplido en el cuadro f: la cabeza empuja la boquilla, los hombros rebotan, la punta patea apenas hacia arriba."""
     return [
-        K(f - 1, pipe(dict(hips=(0, -0.37, -0.61), head=(16, 0, 0), spine2=(9, 0, 0)))),
-        K(f, pipe(dict(hips=(0, -0.38, -0.60), head=(12 + 2 * kick, 0, 0), spine2=(6, 0, 0), clav_r=(0, 0, 4 * kick),
+        K(f - 1, pipe(dict(hips=(0, -0.41, -0.61), head=(16, 0, 0), spine2=(9, 0, 0)))),
+        K(f, pipe(dict(hips=(0, -0.42, -0.60), head=(12 + 2 * kick, 0, 0), spine2=(6, 0, 0), clav_r=(0, 0, 4 * kick),
                        clav_l=(0, 0, -4 * kick)), aim=aim_dir(35 - 4 * kick)), ease="snap"),
-        K(f + 2, pipe(dict(hips=(0, -0.365, -0.60), head=(13, 0, 0), spine2=(7, 0, 0)), aim=aim_dir(35 - 2 * kick)), ease="out"),
+        K(f + 2, pipe(dict(hips=(0, -0.405, -0.60), head=(13, 0, 0), spine2=(7, 0, 0)), aim=aim_dir(35 - 2 * kick)), ease="out"),
     ]
 
 
@@ -154,7 +154,7 @@ def perch_idle():
 def dart_clip(name, frames, spawns, notes):
     """Dardo y dos dardos: baja la flauta de los hombros a la boca (aviso en f8), sopla, y vuelve."""
     P = merge(PERCH, shoulders_hold())
-    keys = [K(0, P)] + to_pipe(0, P) + [K(12, pipe(dict(hips=(0, -0.37, -0.61), spine2=(9, 0, 0), head=(15, 0, 0))))]
+    keys = [K(0, P)] + to_pipe(0, P) + [K(12, pipe(dict(hips=(0, -0.41, -0.61), spine2=(9, 0, 0), head=(15, 0, 0))))]
     faces = [(0, "grin"), (5, "grin"), (8, FACE_PUFF)]
     last = spawns[-1]
     for i, f in enumerate(spawns):
@@ -163,8 +163,8 @@ def dart_clip(name, frames, spawns, notes):
         if i + 1 < len(spawns):
             nxt = spawns[i + 1]
             # vuelve a apuntar (un poco más a su izquierda: la segunda va adonde va a estar Kaito) e infla otra vez
-            keys.append(K(f + 5, pipe(dict(hips=(0, -0.365, -0.605), head=(15, 0, 0), spine2=(8, 0, 2)), aim=aim_dir(35, 4))))
-            keys.append(K(nxt - 2, pipe(dict(hips=(0, -0.37, -0.61), head=(15, 0, 0), spine2=(9, 0, 2)), aim=aim_dir(35, 4))))
+            keys.append(K(f + 5, pipe(dict(hips=(0, -0.405, -0.605), head=(15, 0, 0), spine2=(8, 0, 2)), aim=aim_dir(35, 4))))
+            keys.append(K(nxt - 2, pipe(dict(hips=(0, -0.41, -0.61), head=(15, 0, 0), spine2=(9, 0, 2)), aim=aim_dir(35, 4))))
             faces += [(f + 3, FACE_BLOWN), (nxt - 2, FACE_PUFF)]
     keys += from_pipe(last, frames, P)
     faces += [(last + 3, "grin"), (frames, "grin")]
@@ -180,12 +180,12 @@ def volley_clip(name, frames, spawns, unload, notes, swing_end):
     cerbatana casi horizontal, se adelanta a apuntar y sopla la ráfaga con un rebote de hombros en cada dardo; Unload y
     vuelve al posado. La flauta deja los hombros antes de echarse atrás (si no, chocaba con el culmo)."""
     P = merge(PERCH, shoulders_hold())
-    back = dict(hips=(0, -0.44, -0.57), hips_rot=(2, 0, 0), spine=(-8, 0, 0), spine1=(-4, 0, 0), spine2=(0, 0, 0),
+    back = dict(hips=(0, -0.48, -0.57), hips_rot=(2, 0, 0), spine=(-8, 0, 0), spine1=(-4, 0, 0), spine2=(0, 0, 0),
                 neck=(-2, 0, 0), head=(-6, 0, 0))
     keys = [K(0, P)] + to_pipe(0, P, back) + [
             K(swing_end, pipe(dict(back, spine=(-10, 0, 0), head=(-9, 0, 0)), aim=aim_dir(13)), ease="out"),
             # el pecho lleno, se adelanta a apuntar
-            K(spawns[0] - 3, pipe(dict(hips=(0, -0.35, -0.60), spine2=(8, 0, 0), head=(15, 0, 0))), ease="inout")]
+            K(spawns[0] - 3, pipe(dict(hips=(0, -0.39, -0.60), spine2=(8, 0, 0), head=(15, 0, 0))), ease="inout")]
     faces = [(0, "grin"), (3, "surprise"), (8, FACE_PUFF), (spawns[0] - 1, FACE_PUFF)]
     sweep = [-5, 0, 5, 0]
     for i, f in enumerate(spawns):
@@ -194,9 +194,9 @@ def volley_clip(name, frames, spawns, unload, notes, swing_end):
         if i + 1 < len(spawns):
             nxt = spawns[i + 1]
             y = sweep[(i + 1) % len(sweep)]
-            keys.append(K(nxt - 3, pipe(dict(hips=(0, -0.365, -0.605), head=(15, 0, 0), spine2=(9, 0, y * 0.5)), aim=aim_dir(35, y))))
+            keys.append(K(nxt - 3, pipe(dict(hips=(0, -0.405, -0.605), head=(15, 0, 0), spine2=(9, 0, y * 0.5)), aim=aim_dir(35, y))))
             faces += [(nxt - 3, FACE_PUFF)]
-    keys += [K(unload, pipe(dict(hips=(0, -0.34, -0.59), head=(10, 0, 0), spine2=(6, 0, 0)), aim=aim_dir(30)), ease="out")]
+    keys += [K(unload, pipe(dict(hips=(0, -0.38, -0.59), head=(10, 0, 0), spine2=(6, 0, 0)), aim=aim_dir(30)), ease="out")]
     keys += from_pipe(unload, frames, P)
     faces += [(unload + 2, "grin"), (frames, "grin")]
     return CClip(name, frames, keys, tracks=[face_track(*faces)], lag={"head": 1.0},
@@ -212,14 +212,14 @@ def perch_whistle():
     (f27) y vuelve."""
     P = merge(PERCH, shoulders_hold())
     keys = [K(0, P)] + to_pipe(2, P) + [
-        K(20, pipe(dict(hips=(0, -0.33, -0.57), spine=(0, 0, 0), spine1=(2, 0, 0), spine2=(2, 0, 0), head=(8, 0, 0),
+        K(20, pipe(dict(hips=(0, -0.37, -0.57), spine=(0, 0, 0), spine1=(2, 0, 0), spine2=(2, 0, 0), head=(8, 0, 0),
                         clav_r=(0, 0, 8), clav_l=(0, 0, -8)), aim=aim_dir(32)), ease="inout"),
-        K(24, pipe(dict(hips=(0, -0.34, -0.575), spine2=(3, 0, 0), head=(10, 0, 0), clav_r=(0, 0, 9), clav_l=(0, 0, -9)),
+        K(24, pipe(dict(hips=(0, -0.38, -0.575), spine2=(3, 0, 0), head=(10, 0, 0), clav_r=(0, 0, 9), clav_l=(0, 0, -9)),
                    aim=aim_dir(35)), ease="out"),
-        K(26, pipe(dict(hips=(0, -0.345, -0.578), spine2=(4, 0, 0), head=(11, 0, 0), clav_r=(0, 0, 9), clav_l=(0, 0, -9)))),
+        K(26, pipe(dict(hips=(0, -0.385, -0.578), spine2=(4, 0, 0), head=(11, 0, 0), clav_r=(0, 0, 9), clav_l=(0, 0, -9)))),
         K(27, pipe(dict(hips=(0, -0.29, -0.56), spine=(-6, 0, 0), spine2=(0, 0, 0), head=(4, 0, 0)), aim=aim_dir(26)),
           ease="snap"),
-        K(30, pipe(dict(hips=(0, -0.36, -0.60), spine2=(7, 0, 0), head=(13, 0, 0)), aim=aim_dir(33)), ease="out"),
+        K(30, pipe(dict(hips=(0, -0.4, -0.60), spine2=(7, 0, 0), head=(13, 0, 0)), aim=aim_dir(33)), ease="out"),
     ] + from_pipe(30, 42, P)
     big = dict(FACE_PUFF, cheeks=1.45, brows=14.0, lids=0.2)
     faces = face_track((0, "grin"), (7, "grin"), (10, FACE_PUFF), (24, big), (26, big), (27, FACE_BLOWN), (31, "grin"), (42, "grin"))
@@ -237,9 +237,9 @@ def tala_shot():
     un soplido seco con culatazo."""
     P = merge(PERCH, shoulders_hold())
     keys = [K(0, P)] + to_pipe(0, P) + [
-        K(13, pipe(dict(hips=(0, -0.34, -0.58), spine2=(4, 0, 0), clav_r=(0, 0, 6), clav_l=(0, 0, -6)), aim=aim_dir(25))),
+        K(13, pipe(dict(hips=(0, -0.38, -0.58), spine2=(4, 0, 0), clav_r=(0, 0, 6), clav_l=(0, 0, -6)), aim=aim_dir(25))),
         K(14, pipe(dict(hips=(0, -0.29, -0.565), spine=(-6, 0, 0), spine2=(0, 0, 0), head=(6, 0, 0)), aim=aim_dir(18)), ease="snap"),
-        K(17, pipe(dict(hips=(0, -0.33, -0.58), spine2=(6, 0, 0)), aim=aim_dir(24)), ease="out"),
+        K(17, pipe(dict(hips=(0, -0.37, -0.58), spine2=(6, 0, 0)), aim=aim_dir(24)), ease="out"),
     ] + from_pipe(17, 30, P)
     faces = face_track((0, "grin"), (5, "grin"), (8, FACE_PUFF), (13, dict(FACE_PUFF, cheeks=1.35)), (14, FACE_BLOWN),
                        (18, "grin"), (30, "grin"))
@@ -253,44 +253,58 @@ def tala_shot():
 
 # ============================================================================ colgarse
 def hang_pipe(extra=None, aim=AIM):
+    # los codos pedidos en el marco del clip (hsp 0) aunque la clave vecina tenga una mano suelta con el pecho: si no, el
+    # primer cuadro de HangClimb tomaba el marco de la clave siguiente y el codo no empalmaba con HangDart2
     d = tuple(-x for x in aim)
     return merge(HANG, staff_lips(CR.STAFF_LEN, d, (0, 0, -1)), grip("l", L_TOP, elbow=(1, -0.2, 0.6)),
-                 grip("r", R_TOP, elbow=(-1, -0.2, 0.6)), extra or {})
+                 grip("r", R_TOP, elbow=(-1, -0.2, 0.6)), dict(hsp_r=0.0, hsp_l=0.0), extra or {})
 
 
-# a mitad del giro de costado: tendido sobre su derecha con las piernas trabadas en el culmo, la flauta en la derecha
-# (en el marco del pecho: va con el tronco que gira) y la izquierda en ella
+# a mitad del giro de costado: tendido sobre su derecha con las piernas trabadas en el culmo y la flauta todavía en los
+# hombros como un yugo (va con el pecho: gira con él)
 SIDE = merge(dict(hips=(-0.42, -0.26, -1.00), hips_rot=(6, -92, 0), spine=(-4, 0, 0), spine1=(-2, 0, 0), spine2=(2, 0, 0),
                   neck=(4, 0, 0), head=(-4, 0, 0)),
-             staff_spine((-1.05, -0.30, 1.30), (1, -0.25, 0.25), (0, -0.4, 1)), grip("r", 0.62, elbow=(-1, 0.2, -0.6)),
-             free("l", (0.62, -0.32, 1.55), elbow=(1, 0.2, -0.4), fing="open", chest=True),
+             STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), grip("l", L_SH, elbow=(0.6, -0.2, -1)),
              legs((-0.10, 0.14, 0.06), (0.12, 0.16, 0.42), rr=(-30, -70, 0), rl=(-30, -70, 0), kr=(-0.5, -1, -0.6), kl=(0.5, -1, 0.6)))
+
+
+def hang_swap(w_lips, grip_l, free_r, extra=None):
+    """Entre el yugo y la cerbatana colgado: la izquierda la tiene (la flauta gira alrededor de ese agarre, mezcla de los
+    dos modos) y la derecha está suelta al lado de la cara."""
+    return merge(hang_pipe(extra), STAFF_SHOULDERS, hang_pipe(extra), dict(sw_spine=1.0 - w_lips, sw_lips=w_lips),
+                 grip("l", grip_l, elbow=(1, -0.2, 0.6)),
+                 free("r", free_r, elbow=(-1, -0.2, 0.6), fing="open", chest=True))
 
 
 def hang_drop():
     """Se deja caer de costado (hacia su derecha) girando sobre las piernas trabadas en el culmo y queda cabeza abajo
-    delante de la caña (Hang en f10); la flauta baja de los hombros a la boca en el giro."""
+    delante de la caña (Hang en f10). La flauta va en los hombros hasta casi dar la vuelta; ahí la derecha la suelta, la
+    izquierda la hace girar alrededor de su agarre hasta la boca y la derecha la vuelve a tomar cerca de la boquilla."""
     P = merge(PERCH, shoulders_hold())
     keys = [
         K(0, P),
         K(1, P, dict(spine2=(12, 0, -3))),
-        K(3, P, shoulders_hold(), dict(hips=(-0.08, -0.25, -0.64), hips_rot=(10, -22, 0), spine2=(12, 0, -4), head=(10, 4, 6)),
+        K(3, P, dict(hips=(-0.08, -0.29, -0.64), hips_rot=(10, -22, 0), spine2=(12, 0, -4), head=(10, 4, 6)),
           legs((-0.14, -0.08, 0.13), (0.14, -0.06, 0.15), rr=(-10, -20, -32), rl=(-10, -20, 32), kr=(-1, -0.6, 0.4), kl=(1, -0.6, 0.4))),
         K(6, SIDE, ease="inout"),
-        K(9, hang_pipe(dict(hips=(0.04, -0.27, -1.62), hips_rot=(16, -186, 0), head=(-28, 0, 0))), ease="out"),
+        K(8, hang_swap(0.45, L_SH + 0.08, (-0.40, -0.40, 2.10), dict(hips=(-0.10, -0.27, HANG_Z + 0.10), hips_rot=(14, -160, 0),
+                                                                     head=(-22, 0, 0))), ease="inout"),
+        K(9, hang_swap(0.85, L_TOP - 0.06, (-0.24, -0.50, 2.04), dict(hips=(0.03, -0.27, HANG_Z - 0.04), hips_rot=(16, -182, 0),
+                                                                      head=(-26, 0, 0))), ease="inout"),
+        K(10, hang_pipe(dict(hips=(0.02, -0.27, HANG_Z - 0.02), hips_rot=(14, -181, 0), head=(-24, 0, 0))), ease="out"),
         K(11, hang_pipe(dict(hips_rot=(12, -180, 0))), ease="inout"),
     ]
-    faces = face_track((0, "grin"), (3, "surprise"), (8, "blow"), (11, "blow"))
+    faces = face_track((0, "grin"), (3, "surprise"), (8, "laugh"), (10, "blow"), (11, "blow"))
     return CClip("HangDrop", 11, keys, tracks=[faces], lag={"head": 1.0, "spine2": 0.5},
                  timing=dict(space="perch", load=[0, 11], chain_from="PERCH", chain_to="HANG", bend=30.0, preroll=1.0,
-                             feet_on_node=[[0, 1]]),
+                             feet_on_node=[[0, 1]], hang_scale=0.6),
                  events=[E(10, "Hang")], notes="se deja caer de costado y queda colgado de las piernas, cabeza abajo; Hang en f10")
 
 
 def hang_dart2():
     """Cabeza abajo delante del culmo, sopla dos dardos (f9, f18): se hamaca colgado como un péndulo chico, la barba y la
     capa caen hacia el piso alrededor de la cabeza; el segundo dardo es el último cuadro (sigue HangClimb)."""
-    sway = lambda d: dict(hips=(0, -0.27 + d * 0.18, -1.56), hips_rot=(12 + d * 20, 180, 0))
+    sway = lambda d: dict(hips=(0, -0.27 + d * 0.18, HANG_Z), hips_rot=(12 + d * 20, 180, 0))
     keys = [
         K(0, hang_pipe(sway(0.0))),
         K(5, hang_pipe(sway(-0.06)), ease="sine"),
@@ -311,22 +325,28 @@ def hang_dart2():
 
 
 def hang_climb():
-    """El abdominal de vuelta: se dobla por la cintura hacia su derecha, suelta la boca de la flauta, gira sobre las
-    piernas y cae otra vez agachado en el nudo con la flauta en los hombros (Unload f8, Perch f15)."""
+    """El abdominal de vuelta, el mismo giro de HangDrop al revés: la derecha suelta la cerbatana, la izquierda la lleva de
+    la boca a los hombros girando alrededor de su agarre, la derecha la toma en el yugo, se dobla por la cintura y gira de
+    costado sobre las piernas hasta caer agachado en el nudo (Unload f8, Perch f15)."""
     P = merge(PERCH, shoulders_hold())
     keys = [
-        K(0, hang_pipe(dict(hips_rot=(14, 180, 0)), aim=aim_dir(31, 4))),
-        K(3, hang_pipe(dict(hips_rot=(20, 168, 0), spine=(14, 0, 0), spine1=(12, 0, 0), head=(-10, 0, 0)))),
-        K(6, SIDE, dict(hips_rot=(6, 92, 0), hips=(-0.40, -0.26, -0.98)), ease="inout"),
-        K(9, P, shoulders_hold(), dict(hips=(-0.08, -0.25, -0.60), hips_rot=(12, 18, 0), spine2=(12, 0, 0), head=(12, 0, 0)),
-          legs((-0.14, -0.08, 0.14), (0.14, -0.08, 0.16), rr=(-10, 20, -32), rl=(-10, 20, 32), kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)),
+        # el último cuadro de HangDart2 (el segundo dardo)
+        K(0, hang_pipe(dict(hips=(0, -0.2664, HANG_Z), hips_rot=(12.4, -180, 0), head=(-26, 0, 0)), aim=aim_dir(31, 4))),
+        # la vuelta de la flauta alrededor de la izquierda en siete cuadros (en seis, el puño giraba 150° en uno)
+        K(3, hang_swap(0.85, L_TOP - 0.06, (-0.24, -0.50, 2.04), dict(hips_rot=(14, -180, 0))), ease="inout"),
+        K(5, hang_swap(0.40, L_SH + 0.08, (-0.40, -0.40, 2.10), dict(hips_rot=(16, -176, 0), spine=(8, 0, 0))), ease="inout"),
+        K(7, hang_pipe(dict(hips_rot=(20, -170, 0), spine=(12, 0, 0), spine1=(10, 0, 0), head=(-12, 0, 0))), STAFF_SHOULDERS,
+          grip("r", R_SH, elbow=(-0.6, -0.2, -1)), grip("l", L_SH, elbow=(0.6, -0.2, -1)), ease="inout"),
+        K(10, SIDE, ease="inout"),
+        K(13, P, dict(hips=(-0.08, -0.29, -0.60), hips_rot=(12, -18, 0), spine2=(12, 0, 0), head=(12, 0, 0)),
+          legs((-0.14, -0.08, 0.14), (0.14, -0.08, 0.16), rr=(-10, -20, -32), rl=(-10, -20, 32), kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)),
           ease="out"),
-        K(12, P, shoulders_hold(), dict(hips=(0, -0.34, -0.62), spine2=(10, 0, 0)), ease="inout"),
         K(15, P, ease="inout"),
     ]
     faces = face_track((0, FACE_BLOWN), (4, "grin"), (15, "grin"))
     return CClip("HangClimb", 15, keys, tracks=[faces], lag={"head": 1.0},
-                 timing=dict(space="perch", load=[0, 8], chain_from="HANG", chain_to="PERCH", bend=30.0, feet_on_node=[[12, 15]]),
+                 timing=dict(space="perch", load=[0, 8], chain_from="HANG_END", chain_to="PERCH", bend=30.0, feet_on_node=[[14, 15]],
+                             hang_scale=0.6),
                  events=[E(8, "Unload"), E(15, "Perch")], notes="de colgado al posado: Unload f8, Perch f15")
 
 
@@ -339,9 +359,13 @@ def perch_laugh():
     lean = dict(spine=(6, 0, 0), spine1=(8, 0, -4), spine2=(14, 0, -6), neck=(6, 0, 0), head=(-2, 0, -4))
 
     def slap(f):
+        # la mano vuelve al yugo subiendo por el costado con el codo afuera (de la rodilla al hombro derecho de un saque,
+        # el eje del brazo giraba y el codo pasaba al otro lado en un cuadro)
         return [K(f - 4, P, STAFF_SHOULDERS, free("r", (-0.46, -0.58, 0.80), elbow=(-1, 0.3, -0.2), fing="open"), lean),
                 K(f, P, STAFF_SHOULDERS, free("r", (-0.47, -0.50, 0.50), elbow=(-1, 0.3, -0.2), fing="open"),
-                  dict(lean, spine2=(18, 0, -7)), ease="snap")]
+                  dict(lean, spine2=(18, 0, -7)), ease="snap"),
+                K(f + 3, P, STAFF_SHOULDERS, free("r", (-0.62, -0.30, 1.30), elbow=(-1, 0.1, -0.4), fing="relaxed"), lean,
+                  ease="inout")]
     keys = [K(0, P, up)] + slap(9) + [K(14, P, dict(neck=(-10, 0, 0), head=(-20, 0, 4), spine2=(0, 0, 2)))]
     keys += slap(27) + [K(32, P, dict(neck=(-10, 0, 0), head=(-20, 0, -2), spine2=(0, 0, -2))), K(36, P, up)]
     # el 'ja, ja, ja': los hombros rebotan a 5 Hz encima de todo (seno: sin quiebre en la costura del loop)
@@ -350,8 +374,8 @@ def perch_laugh():
                 key=lambda k: k.frame)
     faces = face_track((0, "laugh"), (36, "laugh"))
     return CClip("PerchLaugh", 36, keys, tracks=[ja, faces], loop=True, lag={"head": 1.0},
-                 timing=dict(space="perch", load=[0, 36], chain_from="PERCH", chain_to="PERCH", bend=10.0,
-                             feet_on_node=[[0, 36]], shots=[(9, "la risa (cargada)", CHIMES_ALL, WHITE)]),
+                 timing=dict(space="perch", load=[0, 36], chain_from="PERCH", chain_to="PERCH", bend=10.0, fade_from=0.15,
+                             fade_to=0.15, feet_on_node=[[0, 36]], shots=[(9, "la risa (cargada)", CHIMES_ALL, WHITE)]),
                  notes="carcajada con palmadas en la rodilla; loop (la Risa cargada, 1.2 s / 2.0 s la del maestro)")
 
 
@@ -365,7 +389,7 @@ def perch_wobble():
           dict(hips=(0.04, -0.33, -0.56), hips_rot=(6, 7, 0), spine2=(4, 6, 0), head=(-4, -8, 0)), ease="snap"),
         K(4, P, sh, free("l", (0.50, -0.44, 1.62), elbow=(1, 0.3, -0.2), fing="open"),
           dict(hips=(-0.03, -0.35, -0.59), hips_rot=(10, -5, 0), spine2=(12, -4, 0), head=(8, 6, 0)), ease="inout"),
-        K(6, P, sh, release_left((0.52, -0.30, 1.32)), dict(hips=(0.0, -0.345, -0.585), spine2=(9, 0, 0)), ease="out"),
+        K(6, P, sh, release_left((0.52, -0.30, 1.32)), dict(hips=(0.0, -0.385, -0.585), spine2=(9, 0, 0)), ease="out"),
         K(8, P, ease="inout"),
     ]
     faces = face_track((0, "grin"), (2, "surprise"), (6, "grin"), (8, "grin"))
@@ -380,11 +404,13 @@ def stalk_sweep():
     cuerpo bien afuera; la caña barre (el código) y el cuerpo la sigue estirado, la flauta barriendo adelante (Contact f26);
     vuelve a posarse."""
     P = merge(PERCH, shoulders_hold())
-    # la flauta en la derecha, estirada hacia afuera a lo largo del cuerpo (en el marco del pecho)
-    # la flauta en la derecha a lo largo del cuerpo hacia los pies (en el marco del pecho): de bandera es una línea larga
-    # que barre con la caña
-    out_staff = merge(staff_spine((-0.42, -0.30, -0.55), (0.0, 0.05, 1.0), (0, -1, 0)), grip("r", 1.45, elbow=(-1, 0.2, 0.3)))
-    hold = culm("l", 1.00, 0.0, elbow=(1, 0.4, -0.2))
+    # la flauta sigue en los hombros como un yugo en la derecha (de bandera queda a lo largo de la línea de los hombros):
+    # sacarla a la mano y volverla a los hombros daba vuelta los brazos
+    out_staff = merge(STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)))
+    # la izquierda toma el culmo del costado que da al cuerpo (su derecha) y por encima del hombro: de bandera el brazo
+    # llega derecho al culmo y el cuerpo cuelga por debajo (con el agarre a la altura del hombro, al salir para afuera el
+    # hombro pasaba a 11 cm de la mano y el codo daba vuelta)
+    hold = culm("l", 1.36, 300.0, elbow=(0.3, 0.3, 1))
 
     def flag(x, z, tilt, yaw=0.0, y=-0.12):
         return dict(hips=(x, y, z - 1.06), hips_rot=(4, tilt, yaw), spine=(-4, 0, 0), spine1=(-2, 0, 0), spine2=(2, 0, 0),
@@ -399,20 +425,20 @@ def stalk_sweep():
                     rr=(-20, tilt, 0), rl=(-10, tilt, 0), kr=(0.3, -1, 0.6), kl=(0.3, -1, 0.9))
     keys = [
         K(0, P),
-        K(2, P, STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), release_left((0.45, -0.30, 1.25)),
-          dict(hips=(0, -0.32, -0.60), spine2=(10, 0, 0))),
-        K(4, P, staff_spine((-1.15, -0.05, 2.35), (1, 0.05, -0.15), (0, -0.4, 1)), grip("r", 0.62, elbow=(-1, 0.2, 0.6)), hold),
-        K(6, P, out_staff, hold, dict(hips=(-0.15, -0.30, -0.58), hips_rot=(10, 10, 0), spine2=(8, 0, 0))),
-        K(10, out_staff, hold, flag(-0.72, 0.45, 40.0), flag_legs(-0.72, 0.45, 40.0), ease="inout"),
+        # la izquierda suelta el yugo por arriba y afuera del hombro y va al culmo
+        K(2, P, out_staff, free("l", (0.58, -0.12, 1.72), elbow=(0.6, -0.2, -1), fing="open"),
+          dict(hips=(0, -0.40, -0.60), spine2=(10, 0, 0))),
+        K(4, P, out_staff, free("l", (0.40, -0.30, 1.30), elbow=(1, 0.4, -0.2), fing="open"), dict(hips=(-0.06, -0.36, -0.59))),
+        K(6, P, out_staff, hold, dict(hips=(-0.30, -0.30, -0.58), hips_rot=(10, 14, 0), spine2=(8, 0, 0))),
+        K(10, out_staff, hold, flag(-0.92, 0.45, 40.0), flag_legs(-0.92, 0.45, 40.0), ease="inout"),
         K(20, out_staff, hold, flag(-1.22, 0.42, 62.0), flag_legs(-1.22, 0.42, 62.0), ease="out"),
         K(22, out_staff, hold, flag(-1.23, 0.43, 63.0), flag_legs(-1.23, 0.43, 63.0)),
         # el barrido: la caña tira y el cuerpo se estira derecho para afuera
         K(26, out_staff, hold, flag(-1.38, 0.72, 84.0, -12.0, -0.02), flag_legs(-1.38, 0.72, 84.0, 0.10), ease="in"),
         K(30, out_staff, hold, flag(-1.10, 0.55, 62.0, -4.0), flag_legs(-1.10, 0.55, 62.0), ease="out"),
-        K(35, P, out_staff, hold, dict(hips=(-0.15, -0.32, -0.58), hips_rot=(10, 10, 0), spine2=(10, 0, 0)), PERCH_FEET, ease="inout"),
-        # la flauta sube por encima de la cabeza para volver a los hombros (no le cruza el pecho)
-        K(37, P, staff_spine((-1.15, -0.05, 2.35), (1, 0.05, -0.15), (0, -0.4, 1)), grip("r", 0.62, elbow=(-1, 0.2, 0.6)), hold),
-        K(39, P, STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), release_left((0.50, -0.30, 1.30))),
+        K(35, P, out_staff, hold, dict(hips=(-0.30, -0.32, -0.58), hips_rot=(10, 14, 0), spine2=(10, 0, 0)), PERCH_FEET, ease="inout"),
+        K(37, P, out_staff, free("l", (0.40, -0.30, 1.30), elbow=(1, 0.4, -0.2), fing="open"), dict(hips=(-0.06, -0.36, -0.59))),
+        K(39, P, out_staff, free("l", (0.58, -0.12, 1.72), elbow=(0.6, -0.2, -1), fing="open"), dict(hips=(0, -0.39, -0.59))),
         K(41, P, ease="inout"),
     ]
     faces = face_track((0, "grin"), (6, FACE_EFFORT), (26, "laugh"), (34, "grin"), (41, "grin"))
@@ -436,14 +462,14 @@ def catapult_draw():
                 neck=(-14, 0, 0), head=(-4, 0, 0))
     deep = dict(hips=(0, -0.27, -0.72), hips_rot=(18, 0, 0), spine=(12, 0, 0), spine1=(10, 0, 0), spine2=(12, 0, 0),
                 neck=(-20, 0, 0), head=(-2, 0, 0))
-    feet = legs((-0.15, -0.115, 0.115), (0.15, -0.115, 0.115), rr=(0, 0, -26), rl=(0, 0, 26), kr=(-0.7, -0.8, 0.5), kl=(0.7, -0.8, 0.5))
+    feet = legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -22), rl=(0, 0, 22), kr=(-0.7, -0.8, 0.5), kl=(0.7, -0.8, 0.5))
     keys = [
         K(0, P),
         K(6, both, coil, feet, ease="inout"),
         K(16, both, dict(coil, hips=(0, -0.265, -0.70)), feet, ease="sine"),
         K(22, both, deep, feet, ease="out"),
         K(27, both, dict(deep, hips=(0, -0.27, -0.73), head=(0, 0, 0)), feet),
-        K(30, both, dict(hips=(0, -0.32, -0.50), hips_rot=(24, 0, 0), spine=(10, 0, 0), spine2=(14, 0, 0), neck=(8, 0, 0),
+        K(30, both, dict(hips=(0, -0.36, -0.50), hips_rot=(24, 0, 0), spine=(10, 0, 0), spine2=(14, 0, 0), neck=(8, 0, 0),
                          head=(10, 0, 0)),
           legs((-0.15, -0.10, 0.14), (0.15, -0.10, 0.14), rr=(-20, 0, -20), rl=(-20, 0, 20), kr=(-0.5, -1, 0.3), kl=(0.5, -1, 0.3)),
           ease="in"),
@@ -480,7 +506,7 @@ def catapult_kick():
     arma en el aire, el pie derecho adelante y abajo, y toca el piso en f15."""
     keys = [
         K(0, merge(STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), grip("l", L_SH, elbow=(1, -0.2, -1))),
-          dict(hips=(0, -0.32, -0.50), hips_rot=(24, 0, 0), spine=(10, 0, 0), spine2=(14, 0, 0), neck=(8, 0, 0), head=(10, 0, 0)),
+          dict(hips=(0, -0.36, -0.50), hips_rot=(24, 0, 0), spine=(10, 0, 0), spine2=(14, 0, 0), neck=(8, 0, 0), head=(10, 0, 0)),
           legs((-0.14, -0.08, 0.14), (0.14, -0.08, 0.14), rr=(-20, 0, -20), rl=(-20, 0, 20), kr=(-0.5, -1, 0.3), kl=(0.5, -1, 0.3))),
         K(2, merge(STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1))), dict(hips=(0, -0.10, -0.36), hips_rot=(6, 0, 0)),
           free("l", (0.68, 0.06, 1.88), elbow=(0.6, -0.2, -1), fing="open", chest=True),
@@ -508,15 +534,16 @@ def leap_crouch():
     derecha saca la flauta de los hombros y la alza, la izquierda suelta el culmo, y estira las piernas de golpe
     (LeaveStalk f7)."""
     P = merge(PERCH, shoulders_hold())
-    deep = legs((-0.14, -0.10, 0.115), (0.14, -0.10, 0.115), rr=(0, 0, -32), rl=(0, 0, 32), kr=(-0.8, -0.9, 0.3), kl=(0.8, -0.9, 0.3))
+    deep = legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -24), rl=(0, 0, 24), kr=(-0.8, -0.9, 0.3), kl=(0.8, -0.9, 0.3))
     keys = [
         K(0, P),
-        K(2, P, STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), free("l", (0.68, -0.06, 1.80), elbow=(0.6, -0.2, -1),
+        K(2, P, STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), free("l", (0.58, -0.12, 1.70), elbow=(0.6, -0.2, -1),
                                                                                   fing="open"),
-          dict(hips=(0, -0.33, -0.65), hips_rot=(16, 0, 0), spine2=(13, 0, 0), neck=(10, 0, 8), head=(6, 0, 14)), deep, ease="out"),
-        K(4, AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.4)), dict(hips=(0, -0.34, -0.67), hips_rot=(20, 0, 0),
+          dict(hips=(0, -0.37, -0.65), hips_rot=(16, 0, 0), spine2=(13, 0, 0), neck=(10, 0, 8), head=(6, 0, 14)), deep, ease="out"),
+        # la flauta de los hombros a alzada en tres cuadros (la mano se corre 57 cm por el caño: en dos, el brazo giraba 80°)
+        K(5, AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.4)), dict(hips=(0, -0.38, -0.67), hips_rot=(20, 0, 0),
                                                                         spine2=(12, 0, 0), head=(4, 0, 8)),
-          free("l", (0.62, -0.10, 1.30), elbow=(1, 0.4, -0.2), fing="open"), deep),
+          free("l", (0.62, -0.10, 1.30), elbow=(1, 0.4, -0.2), fing="open"), deep, ease="lin"),
         K(7, merge(AIR, dict(hips=(0, -0.10, -0.32), hips_rot=(10, 0, 0))),
           legs((-0.14, -0.04, 0.115), (0.14, -0.08, 0.20), rr=(-30, 0, -10), rl=(-40, 0, 10), kr=(-0.2, -1, 0), kl=(0.2, -1, 0.3)),
           ease="in"),
@@ -536,7 +563,7 @@ def leap_air():
         K(0, A),
         K(6, A, dict(hips=(0, 0.05, -0.27), spine2=(2, 0, 8), head=(-10, 0, -6)),
           legs((-0.16, 0.40, 0.16), (0.18, -0.26, 0.48), rr=(-34, 0, -10), rl=(-46, 0, 10), kr=(-0.2, -1, 0), kl=(0.2, -1, 0.3)),
-          free("l", (0.82, -0.08, 1.62), (1.0, -0.1, 0.2), (0.1, -0.2, 1.0), elbow=(0.4, 0.6, -0.6), fing="claw"), ease="sine"),
+          free("l", (0.82, -0.08, 1.62), elbow=(0.4, 0.6, -0.6), fing="claw"), ease="sine"),
         K(12, A, ease="sine"),
     ]
     return CClip("LeapAir", 12, keys, loop=True, lag={"head": 1.0},
@@ -555,13 +582,15 @@ def leap_grab():
         K(0, merge(AIR, dict(hips=(0.45, 0.40, -0.32), hips_rot=(-4, 0, 10), spine2=(8, 0, 0), head=(4, 0, -6))),
           culm("l", 1.05, 80.0, elbow=(1, 0.6, -0.2)),
           legs((0.14, 0.78, 0.25), (0.48, 0.36, 0.40), rr=(-40, 0, -10), rl=(-40, 0, 10), kr=(-0.6, -1, 0.2), kl=(0.6, -1, 0.3))),
-        K(3, merge(PERCH, culm("l", 1.05, 80.0, elbow=(1, 0.4, -0.3))), AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.4)),
+        K(2, merge(PERCH, culm("l", 1.05, 80.0, elbow=(1, 0.4, -0.3))), AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.4)),
           dict(hips=(0.42, -0.14, -0.48), hips_rot=(18, 0, 6), spine2=(12, 0, 0), head=(10, 0, 0)),
           legs((-0.10, -0.26, 0.24), (0.30, -0.06, 0.22), rr=(-10, 0, -30), rl=(-10, 0, 30), kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)),
           ease="out"),
+        # la flauta alzada vuelve a los hombros en tres cuadros (la mano se corre 57 cm por el caño: en dos, el brazo daba
+        # vuelta el codo)
         K(5, P, STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), release_left((0.45, -0.30, 1.25)),
-          dict(hips=(0, -0.33, -0.60)), ease="out"),
-        K(6, P, dict(hips=(0, -0.34, -0.61)), ease="inout"),
+          dict(hips=(0, -0.37, -0.60)), ease="lin"),
+        K(6, P, dict(hips=(0, -0.38, -0.61)), ease="inout"),
     ]
     faces = face_track((0, "grin"), (6, "grin"))
     return CClip("LeapGrab", 6, keys, tracks=[faces], lag={"head": 0.5},
@@ -640,19 +669,19 @@ def decoy_spin():
     for i, f in enumerate((5, 8, 11, 14)):
         a = 360.0 * ((i + 1) / 5.0)
         r = math.radians(a)
-        # el cuerpo orbita el culmo (radio 0.24) y gira con la órbita: siempre de espaldas a la caña; se eleva un poco
-        hip = (math.sin(r) * 0.24, -math.cos(r) * 0.24, -0.53)
+        # el cuerpo orbita el culmo (radio 0.30) y gira con la órbita: siempre de espaldas a la caña; se eleva un poco
+        hip = (math.sin(r) * 0.30, -math.cos(r) * 0.30, -0.53)
         keys.append(K(f, P, STAFF_SHOULDERS, dict(hips=hip, hips_rot=(4, 0, a), spine2=(4, 0, 0), head=(-4, 0, 0)),
                       grip("r", R_SH, elbow=(-0.6, -0.2, -1)),
                       free("l", (0.85, -0.10, 1.75), elbow=(0.5, 0.5, -0.5), fing="open", chest=True),
-                      legs(rot_z((-0.14, -0.10, 0.17), a), rot_z((0.14, -0.10, 0.17), a), rr=(0, 0, -32 + a), rl=(0, 0, 32 + a),
+                      legs(rot_z((-0.19, -0.135, 0.17), a), rot_z((0.19, -0.135, 0.17), a), rr=(0, 0, -24 + a), rl=(0, 0, 24 + a),
                            kr=rot_z((-1.0, -0.7, 0.35), a), kl=rot_z((1.0, -0.7, 0.35), a)), ease="lin"))
     keys.append(K(16, P, dict(hips_rot=(10, 0, 360.0)), STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)),
                   release_left((0.55, -0.30, 1.35)),
-                  legs((-0.14, -0.10, 0.115), (0.14, -0.10, 0.115), rr=(0, 0, -32 + 360.0), rl=(0, 0, 32 + 360.0),
+                  legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -24 + 360.0), rl=(0, 0, 24 + 360.0),
                        kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)), ease="out"))
     keys.append(K(18, P, dict(hips_rot=(10, 0, 360.0)),
-                  legs((-0.14, -0.10, 0.115), (0.14, -0.10, 0.115), rr=(0, 0, -32 + 360.0), rl=(0, 0, 32 + 360.0),
+                  legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -24 + 360.0), rl=(0, 0, 24 + 360.0),
                        kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)), ease="inout"))
     faces = face_track((0, "grin"), (6, "laugh"), (14, "laugh"), (18, "grin"))
     return CClip("DecoySpin", 18, keys, tracks=[faces],

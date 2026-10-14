@@ -29,12 +29,14 @@ Controles (todos opcionales; los que no trae una clave se interpolan desde las v
   extra    {hueso: grados} al final (cola de la faja que se acomoda, los pulgares...)
 """
 import math
+import numpy as np
 from mathutils import Vector, Matrix, Quaternion
 import nindo_anim as NA
 from nindo_anim import V, euler_q, basis_yz, compose, rot3
 import chikuo_rig as CR
 
 FPS = NA.FPS
+TWIST_SHARE_MAX_DEG = 100.0  # lo más que el antebrazo se lleva del giro de la mano (prona y supina ~100°)
 
 # ============================================================================ la caña de la arena (contrato de c4/arena)
 # Tools/Blender/world/arena_stalks.py (KINDS) y World/ArenaStalk.cs (SetBend): juntas de los tramos, alto, posado, radios.
@@ -300,10 +302,11 @@ class Solver(CR.Poser):
     """Controles -> huesos (ver el resumen arriba). Hereda de chikuo_rig.Poser el hombro que se adelanta, los dedos, la
     cara y la capa que sigue a los brazos."""
     TWIST_SHARE = 0.6        # lo que el antebrazo se lleva del giro de la mano sobre su eje (pronación)
-    FORE_MAX = math.radians(100.0)
+    FORE_MAX = math.radians(TWIST_SHARE_MAX_DEG)
     ELBOW_RATE = 30.0
     GRIP_ELBOW_RATE = 30.0
     HAND_RATE = 35.0
+    KNEE_RATE = 30.0         # lo más que gira el plano de la rodilla alrededor del eje cadera-tobillo por cuadro
     FING_RATE = 38.0         # lo más que se cierra o se abre un dedo por cuadro (soltar o atajar es de a dos cuadros)
     ROLLS = [math.radians(a) for a in range(0, 360, 15)]
 
@@ -323,11 +326,34 @@ class Solver(CR.Poser):
         self.prev_elbow_pos = {}
         self.last_staff_z = None
         self.last_staff_q = None
+        self.last_s2_q = None
+        self.last_s2_rot = None
+        self.prev_knee = {}
+        self.cand_q, self.fixed_q = {}, {}
+        self.tw_log = {"R": {}, "L": {}}
 
     # agarres del culmo que se prueban: pulgar arriba / abajo y corrimientos del costado pedido (grados); y para todo
     # agarre (flauta o culmo), cuánto gira el codo alrededor del eje hombro-muñeca desde el polo pedido (grados)
     CULM_TRY = [(t, d) for t in (1.0, -1.0) for d in (-50.0, -25.0, 0.0, 25.0, 50.0)]
     SWIVELS = (-45.0, -22.5, 0.0, 22.5, 45.0)
+
+    HISTORY = ("prev_elbow", "prev_elbow_pos", "prev_hand_rel", "prev_fing", "last_staff_z", "last_staff_q", "last_s2_q",
+               "last_s2_rot", "prev_knee")
+
+    def snapshot(self):
+        """Lo que el solver recuerda del cuadro anterior (los topes de giro, el lado del codo, la flauta): con esto el clip
+        que sigue a otro arranca donde terminó el de referencia."""
+        cp = lambda v: v.copy() if hasattr(v, "copy") else v
+        out = {}
+        for k in self.HISTORY:
+            v = getattr(self, k)
+            out[k] = {kk: cp(vv) for kk, vv in v.items()} if isinstance(v, dict) else cp(v)
+        return out
+
+    def restore(self, snap):
+        for k, v in snap.items():
+            setattr(self, k, {kk: (vv.copy() if hasattr(vv, "copy") else vv) for kk, vv in v.items()} if isinstance(v, dict)
+                    else (v.copy() if hasattr(v, "copy") else v))
 
     def begin(self, mode):
         """'collect' junta lo que le cuesta a la muñeca cada agarre posible en cada cuadro; 'replay' usa el plan."""
@@ -338,10 +364,16 @@ class Solver(CR.Poser):
         self.prev_elbow_pos = {}
         self.last_staff_z = None
         self.last_staff_q = None
+        self.last_s2_q = None
+        self.last_s2_rot = None
+        self.prev_knee = {}
+        self.tw_log = {"R": {}, "L": {}}
         if mode == "collect":
             self.costs = {"r": {}, "l": {}}
             self.ccosts = {"r": {}, "l": {}}
             self.side_hint = {}
+            self.cand_q = {"r": {}, "l": {}}
+            self.fixed_q = {"r": {}, "l": {}}
 
     @staticmethod
     def runs(frames, have):
@@ -381,25 +413,39 @@ class Solver(CR.Poser):
     def plan_rolls(self, frames):
         """Por mano, cómo agarra la flauta en cada cuadro que la agarra con 'auto': el giro del puño alrededor del caño,
         hacia qué punta va el meñique y el giro del codo. Es el camino más barato (programación dinámica) entre lo que le
-        cuesta a la muñeca y lo que cuesta cambiar de un cuadro al otro: el puño no resbala alrededor del caño y el codo no
-        salta (cada paso de la grilla cuesta), y el meñique no cambia de punta en un mismo agarre (sería soltarla: se prueba
-        cada lado entero y se queda el más barato)."""
+        cuesta a la muñeca y lo que cuesta cambiar de un cuadro al otro: el puño no resbala alrededor del caño, el codo no
+        salta (cada paso de la grilla cuesta) y el brazo no gira de golpe (arm_step: lo que giran brazo, antebrazo y mano
+        entre dos agarres de cuadros seguidos, también contra el cuadro de antes y el de después del agarre), y el meñique
+        no cambia de punta en un mismo agarre (sería soltarla: se prueba cada lado entero y se queda el más barato)."""
         self.plan = {"r": {}, "l": {}}
         n = len(self.ROLLS)
         ns = len(self.SWIVELS)
+        # transición fija entre estados (codo si, giro ri) -> (sj, rj): cada paso de 15° del puño cuesta (cuadrático) y
+        # más de 45° de un cuadro al otro no se puede (con el costo cuadrático solo, a veces le convenía un salto grande en
+        # el último cuadro de un loop); el codo pasa a lo sumo al paso vecino de la grilla
+        si = np.repeat(np.arange(ns), n)
+        ri = np.tile(np.arange(n), ns)
+        d = np.abs(((ri[:, None] - ri[None, :] + n // 2) % n) - n // 2)
+        dsw = np.abs(si[:, None] - si[None, :])
+        T = 0.6 * d * d + 1.5 * dsw + np.where(d > 3, 1e5, 0.0) + np.where(dsw > 1, 1e12, 0.0)
+        cols = np.arange(ns * n)
         for s in "rl":
             cs = self.costs.get(s, {})
+            cq = self.cand_q.get(s, {})
+            fq = self.fixed_q.get(s, {})
             for run in self.runs(frames, cs):
                 best = None
                 for side in (0, 1):
                     # estado = (codo, giro): índice si * n + ri; el costo del cuadro sale de la grilla de collect
+                    sel = [(k * 2 + side) * n + r for k in range(ns) for r in range(n)]
+
                     def cost_at(fi):
                         row = []
                         # la punta hacia la que va el meñique, si la clave la pide (grip_s_side): el otro lado cuesta
                         want = self.side_hint.get((s, fi))
                         bias = 3.0 if want is not None and want != side else 0.0
-                        for si, sw in enumerate(self.SWIVELS):
-                            off = (si * 2 + side) * n
+                        for k, sw in enumerate(self.SWIVELS):
+                            off = (k * 2 + side) * n
                             row += [v + 0.2 * abs(sw) / 22.5 + bias for v in cs[fi][off:off + n]]
                         pin = self.pins.get((s, fi))
                         if pin is not None:
@@ -408,43 +454,63 @@ class Solver(CR.Poser):
                             k = min(range(n), key=lambda i: abs(((self.ROLLS[i] - pr + math.pi) % (2 * math.pi)) - math.pi))
                             ks = min(range(ns), key=lambda i: abs(self.SWIVELS[i] - psw))
                             row = [v + (0.0 if (ps == side and st == ks * n + k) else 1e6) for st, v in enumerate(row)]
-                        return row
-                    acc = [cost_at(run[0])]
+                        return np.array(row)
+
+                    def quats(fi):
+                        q = cq.get(fi)
+                        return q[sel] if q is not None else None
+
+                    acc = cost_at(run[0])
+                    qa = quats(run[0])
+                    before = fq.get(run[0] - 1)
+                    if before is not None and qa is not None:
+                        acc = acc + self.arm_step(before[None], qa)[0]
                     back = []
                     for fi in run[1:]:
-                        cost = cost_at(fi)
-                        prev = acc[-1]
-                        row, brow = [], []
-                        for sj in range(ns):
-                            for j in range(n):
-                                bv, bi = 1e18, 0
-                                for si in range(max(0, sj - 1), min(ns, sj + 2)):
-                                    sc = 1.5 * abs(si - sj)
-                                    base = si * n
-                                    for i in range(n):
-                                        d = abs(((i - j + n // 2) % n) - n // 2)
-                                        # el puño no gira más de 45° alrededor del caño de un cuadro al otro (con el costo
-                                        # cuadrático solo, a veces le convenía un salto grande en el último cuadro de un loop)
-                                        v = prev[base + i] + 0.6 * d * d + sc + (1e5 if d > 3 else 0.0)
-                                        if v < bv:
-                                            bv, bi = v, base + i
-                                row.append(bv + cost[sj * n + j])
-                                brow.append(bi)
-                        acc.append(row)
-                        back.append(brow)
-                    j = min(range(len(acc[-1])), key=lambda k: acc[-1][k])
-                    total = acc[-1][j]
+                        qb = quats(fi)
+                        M = acc[:, None] + T
+                        if qa is not None and qb is not None:
+                            M = M + self.arm_step(qa, qb)
+                        bi = np.argmin(M, axis=0)
+                        acc = M[bi, cols] + cost_at(fi)
+                        back.append(bi)
+                        qa = qb
+                    after = fq.get(run[-1] + 1)
+                    if after is not None and qa is not None:
+                        acc = acc + self.arm_step(qa, after[None])[:, 0]
+                    j = int(np.argmin(acc))
+                    total = float(acc[j])
                     if best is not None and total >= best[0]:
                         continue
                     path = [j]
-                    for brow in reversed(back):
-                        j = brow[j]
+                    for bi in reversed(back):
+                        j = int(bi[j])
                         path.append(j)
                     path.reverse()
                     best = (total, side, path)
                 _, side, path = best
                 for fi, st in zip(run, path):
                     self.plan[s][fi] = (self.ROLLS[st % n], side, self.SWIVELS[st // n])
+
+    # lo que puede girar un hueso del brazo de un cuadro al otro sin costo (grados) y lo que cuesta pasarse: el lint corta
+    # en 45°, a partir de ahí el salto cuesta como empeorar mucho la muñeca
+    ARM_FREE_STEP = 25.0
+
+    def arm_step(self, qa, qb):
+        """Costo de pasar de cada agarre de qa a cada uno de qb (cuaterniones (N, 3, 4): brazo sobre la clavícula,
+        antebrazo sobre el brazo, mano sobre el antebrazo): el hueso que más gira manda."""
+        dots = np.abs(np.einsum("akc,bkc->kab", qa, qb))
+        ang = np.degrees(2.0 * np.arccos(np.clip(dots, 0.0, 1.0))).max(axis=0)
+        ex = np.maximum(0.0, ang - self.ARM_FREE_STEP)
+        return 0.01 * ex * ex + np.where(ang > 45.0, 20.0, 0.0)
+
+    def arm_quats(self, pose, S):
+        """Brazo, antebrazo y mano de este cuadro, cada uno sobre su padre (para arm_step)."""
+        out = []
+        for par, b in (("Clav_", "UpperArm_"), ("UpperArm_", "Forearm_"), ("Forearm_", "Hand_")):
+            q = rot3(pose.get(par + S)).to_quaternion().inverted() @ rot3(pose.get(b + S)).to_quaternion()
+            out.append((q.w, q.x, q.y, q.z))
+        return out
 
     def wrist_cost(self, pose, S, miss):
         flex, dev, tw = self.meter.angles(pose.W, S)
@@ -471,7 +537,10 @@ class Solver(CR.Poser):
             mats.append((self.staff_from(g("stw_pos"), g("stw_dir"), g("stw_up", (0, 0, 1)), self.last_staff_z), w["world"]))
         if w["spine"] > 1e-4:
             S2 = pose.get("Spine2") @ R.rest_inv["Spine2"]
-            tz = rot3(S2).inverted() @ self.last_staff_z if self.last_staff_z is not None else None
+            # el lado del cuadro anterior en el marco del pecho de ese cuadro (con el de este, el lado quedaba quieto en el
+            # mundo mientras el pecho giraba: en la voltereta se apartaba 140° del pedido y volvía de un salto al final)
+            P2 = self.last_s2_rot if self.last_s2_rot is not None else rot3(S2)
+            tz = P2.inverted() @ self.last_staff_z if self.last_staff_z is not None else None
             M = self.staff_from(g("sts_pos"), g("sts_dir"), g("sts_up", (0, 0, 1)), tz)
             mats.append((S2 @ M, w["spine"]))
         if w["lips"] > 1e-4:
@@ -481,10 +550,16 @@ class Solver(CR.Poser):
         carriers = [s for s in "rl" if w["h" + s] > 1e-4]
         self.misses = {}
         staff = None
+        s2q = rot3(pose.get("Spine2")).to_quaternion()
+        turn = s2q.rotation_difference(self.last_s2_q).angle if self.last_s2_q is not None else 0.0
+        # lo que giró el pecho cuenta en lo que la flauta va pegada a él (en el mundo o en la boca no la lleva el pecho)
+        wsum = sum(w.values())
+        turn = min(turn, 2.0 * math.pi - turn) * (w["spine"] / wsum if wsum > 1e-6 else 0.0)
         if mats:
             # con una mano que la lleva, la de los otros modos es provisoria: la mano que pasa de agarrarla a llevarla la
             # agarra ahí (el peso de la mano decide cuánto)
-            staff = self.limit_staff(blend_mats(mats))
+            pv = self.staff_pivot(c)
+            staff = self.limit_staff(blend_mats(mats, pv), pv, turn)
             pose.place("Staff", staff)
         # las manos: primero la que lleva la flauta (si la lleva una), después la otra (que puede agarrarla)
         order = carriers + [s for s in "rl" if s not in carriers]
@@ -496,13 +571,16 @@ class Solver(CR.Poser):
                     ax = rot3(Hw).col[0] * g("sth_sign", 1.0)
                     gp = Hw @ CR.GRIP_LOCAL
                     mats.append((compose(gp - ax * g("sth_at", 1.0), basis_yz(ax, rot3(Hw).col[2])), w["h" + cs]))
-                staff = self.limit_staff(blend_mats(mats))
+                pv = self.staff_pivot(c)
+                staff = self.limit_staff(blend_mats(mats, pv), pv, turn)
                 pose.place("Staff", staff)
         if staff is None:
             # sin modo: queda donde la deja el reposo (no pasa en los clips de pelea)
             pose.get("Staff")
         self.last_staff_z = rot3(pose.get("Staff")).col[2].copy()
         self.last_staff_q = rot3(pose.get("Staff")).to_quaternion()
+        self.last_s2_q = s2q
+        self.last_s2_rot = rot3(pose.get("Spine2") @ R.rest_inv["Spine2"])
         for S in "RL":
             s = S.lower()
             ank = V(g("foot_" + s, tuple(CR.ANKLE if S == "R" else CR.mx(CR.ANKLE))))
@@ -518,6 +596,32 @@ class Solver(CR.Poser):
                 ank = ank.lerp(M @ ank, fs)
                 knee = knee.lerp(R3 @ knee, fs)
                 Rf = Rf.to_quaternion().slerp((R3 @ Rf).to_quaternion(), fs).to_matrix()
+            # la rodilla gira alrededor del eje cadera-tobillo a lo sumo KNEE_RATE por cuadro respecto de la cadera, y con el
+            # polo pedido casi a lo largo de la pierna se queda del lado anterior: con la pierna casi estirada el plano de la
+            # rodilla no está definido y la tibia daba media vuelta en un cuadro (el pie, fijo en el mundo, giraba 180° sobre
+            # ella). Se mide en el marco de la cadera: dando una vuelta en el aire la rodilla va con el cuerpo
+            Rh = rot3(pose.get("Hips"))
+            Rhi = Rh.transposed()
+            hipp = pose.head("Thigh_" + S)
+            axis = Rhi @ (ank - hipp)
+            pk = self.prev_knee.get(S)
+            kl = Rhi @ knee
+            if pk is not None and axis.length > 1e-6:
+                nax = axis.normalized()
+                a = pk - nax * pk.dot(nax)
+                b = kl - nax * kl.dot(nax)
+                if a.length > 1e-4 and b.length < 0.35 * kl.length:
+                    wq = b.length / (0.35 * kl.length)
+                    kl = (b.normalized() * wq if b.length > 1e-6 else Vector()) + a.normalized() * (1.0 - wq)
+                    b = kl - nax * kl.dot(nax)
+                if a.length > 1e-4 and b.length > 1e-4:
+                    ang = a.angle(b)
+                    lim = self.rate_limit(self.KNEE_RATE, ang)
+                    if ang > lim:
+                        cr = a.cross(b)
+                        kl = Quaternion(cr.normalized() if cr.length > 1e-6 else nax, lim) @ a.normalized()
+                knee = Rh @ kl
+            self.prev_knee[S] = kl.copy()
             self.misses["leg_" + s] = pose.two_bone("Thigh_" + S, "Shin_" + S, ank, knee)
             pose.place("Foot_" + S, compose(pose.tail("Shin_" + S), Rf))
             ax = rot3(R.rest["Toe_" + S]).col[0]
@@ -526,8 +630,14 @@ class Solver(CR.Poser):
             fv = list(fv) if fv is not None else list(shape_vec("relaxed"))
             pv = self.prev_fing.get(s)
             if pv is not None:
-                # de un agarre a la mano abierta en un cuadro el dedo giraba 60°: se cierra o se abre a FING_RATE
-                fv = [p + max(-self.FING_RATE, min(self.FING_RATE, v - p)) for v, p in zip(fv, pv)]
+                # de un agarre a la mano abierta en un cuadro el dedo giraba 60°: se cierra o se abre a FING_RATE (o lo que
+                # falta repartido en los cuadros que quedan: el último cuadro llega a la mano de la pose que sigue)
+                rem = max(1, self.nframes - self.frame + 1) if self.nframes else None
+                out = []
+                for v, p in zip(fv, pv):
+                    lim = max(self.FING_RATE, abs(v - p) / rem) if rem else self.FING_RATE
+                    out.append(p + max(-lim, min(lim, v - p)))
+                fv = out
             self.prev_fing[s] = fv
             self.fingers(pose, S, vec_shape(fv))
         self.follow_cloak(pose)
@@ -545,9 +655,30 @@ class Solver(CR.Poser):
 
     STAFF_RATE = 40.0
 
-    def limit_staff(self, M):
-        """La flauta gira a lo sumo STAFF_RATE por cuadro (un giro más rápido entre dos claves se reparte en los cuadros
-        que siguen); las manos agarran la que queda, así que siguen pegadas."""
+    def rate_limit(self, rate_deg, ang):
+        """El tope de giro por cuadro (codo, mano suelta, flauta) en radianes: rate_deg, o lo que falta repartido entre los
+        cuadros que quedan si es más (el último cuadro tiene que llegar a la pose con la que encadena aunque el tope la haya
+        atrasado; abriéndolo de golpe en los últimos tres cuadros, lo atrasado se ponía al día en un salto de 50°)."""
+        lim = math.radians(rate_deg)
+        if not self.nframes:
+            return lim
+        return max(lim, ang / max(1, self.nframes - self.frame + 1))
+
+    @staticmethod
+    def staff_pivot(c):
+        """El punto de la flauta alrededor del cual se mezclan dos modos (metros desde la punta de abajo): donde la agarra
+        la derecha, o la izquierda, o el medio. Mezclando por la punta de abajo el punto agarrado se iba en arco lejos de
+        las dos manos."""
+        for s in "rl":
+            if (c.get("gw_" + s) or 0.0) > 0.01 and c.get("grip_" + s) is not None:
+                return c["grip_" + s]
+        return CR.STAFF_LEN * 0.5
+
+    def limit_staff(self, M, pivot=0.0, body_turn=0.0):
+        """La flauta gira a lo sumo STAFF_RATE por cuadro más lo que giró el pecho (un giro más rápido entre dos claves se
+        reparte en los cuadros que siguen), alrededor del punto agarrado; las manos agarran la que queda, así que siguen
+        pegadas. Lo que gira el pecho cuenta aparte: en la voltereta la flauta va con el cuerpo a 45° por cuadro y con el
+        tope solo quedaba atrás y no llegaba a la guardia del final. Cerca del final el tope se abre (rate_limit)."""
         qp = self.last_staff_q
         if qp is None:
             return M
@@ -555,10 +686,12 @@ class Solver(CR.Poser):
         if q.dot(qp) < 0.0:
             q = -q
         ang = q.rotation_difference(qp).angle
-        lim = math.radians(self.STAFF_RATE)
+        lim = self.rate_limit(self.STAFF_RATE, ang) + body_turn
         if ang <= lim:
             return M
-        return compose(M.translation, qp.slerp(q, lim / ang).to_matrix())
+        R = qp.slerp(q, lim / ang).to_matrix()
+        p = M.translation + rot3(M).col[1] * pivot
+        return compose(p - R.col[1] * pivot, R)
 
     def staff_from(self, bottom, d, up, transport=None):
         """La flauta con la punta de abajo en bottom, el eje d y el lado 'up' (lo que se ve de los agujeros). Si 'up' queda
@@ -665,7 +798,7 @@ class Solver(CR.Poser):
             hint = c.get("grip_%s_side" % s)
             if hint is not None:
                 self.side_hint[(s, self.frame)] = int(round(hint))
-            row = []
+            row, qs = [], []
             for sw in self.SWIVELS:
                 for side in (0, 1):
                     for r in self.ROLLS:
@@ -673,8 +806,10 @@ class Solver(CR.Poser):
                         pose.place("Clav_" + S, clav)
                         self.place_arm(pose, c, s, staff)
                         row.append(self.wrist_cost(pose, S, self.misses[s]))
+                        qs.append(self.arm_quats(pose, S))
             self.roll_override = self.swivel_override = None
             self.costs[s][self.frame] = row
+            self.cand_q[s][self.frame] = np.array(qs)
         if self.mode == "collect" and (c.get("cw_" + s) or 0.0) > 0.01 and not (c.get("cs_" + s) or 0.0):
             row = []
             for t in self.CULM_TRY:
@@ -687,6 +822,9 @@ class Solver(CR.Poser):
             self.ccosts[s][self.frame] = row
         pose.place("Clav_" + S, clav)
         self.place_arm(pose, c, s, staff)
+        if self.mode == "collect" and self.frame not in self.costs[s]:
+            # el brazo de los cuadros sin agarre automático: contra él se mide el salto al entrar y al salir del agarre
+            self.fixed_q[s][self.frame] = np.array(self.arm_quats(pose, S))
 
     def swivel_for(self, c, s):
         """El giro del codo de este cuadro: el que se prueba, o el del plan del agarre que más pesa."""
@@ -753,7 +891,7 @@ class Solver(CR.Poser):
             b = pole - nax * pole.dot(nax)
             if a.length > 1e-4 and b.length > 1e-4:
                 ang = a.angle(b)
-                lim = math.radians(lim_deg)
+                lim = self.rate_limit(lim_deg, ang)
                 if ang > lim:
                     cr = a.cross(b)
                     rot_ax = cr.normalized() if cr.length > 1e-6 else nax
@@ -764,18 +902,37 @@ class Solver(CR.Poser):
             self.prev_elbow_pos[S] = pose.head("Forearm_" + S) - sh
         q = None
         acc = 0.0
+        qs = []
         for p, Hr, wt in tg:
             if Hr is None:
                 # la muñeca neutra: la relación antebrazo-mano del reposo sobre el antebrazo de este cuadro
                 Hr = rot3(pose.get("Forearm_" + S)) @ self.meter.side[S][0]
-            qq = Hr.to_quaternion()
-            if q is None:
-                q, acc = qq, wt
-            else:
-                if q.dot(qq) < 0.0:
-                    qq = -qq
-                acc += wt
-                q = q.slerp(qq, wt / acc)
+            qs.append((Hr.to_quaternion(), wt))
+        pr = self.prev_hand_rel.get(S)
+        if len(qs) > 1 and pr is not None:
+            # al soltar o al agarrar (dos giros pedidos con peso) la mezcla se hace alrededor de la mano del cuadro anterior
+            # (el promedio de lo que cada giro se aparta de ella): con el slerp entre los dos, cuando el agarre y la mano
+            # suelta quedaban casi opuestos el camino corto cambiaba de lado y la mano daba media vuelta en un cuadro
+            ref = rot3(pose.get("Forearm_" + S)).to_quaternion() @ pr
+            v, tot = Vector(), 0.0
+            for qq, wt in qs:
+                d = ref.rotation_difference(qq)
+                if d.w < 0.0:
+                    d = -d
+                ax, an = d.to_axis_angle()
+                v += ax * (an * wt)
+                tot += wt
+            v /= tot
+            q = ref @ Quaternion(v.normalized(), v.length) if v.length > 1e-9 else ref.copy()
+        else:
+            for qq, wt in qs:
+                if q is None:
+                    q, acc = qq, wt
+                else:
+                    if q.dot(qq) < 0.0:
+                        qq = -qq
+                    acc += wt
+                    q = q.slerp(qq, wt / acc)
         # la mano suelta no gira sobre el antebrazo más de HAND_RATE por cuadro: al soltar un agarre pasa de a poco a la
         # muñeca pedida (de golpe el antebrazo se llevaba media vuelta en un cuadro); la que agarra manda y deja su
         # relación para cuando suelte
@@ -786,22 +943,23 @@ class Solver(CR.Poser):
             if rel.dot(pr) < 0.0:
                 rel = -rel
             ang = rel.rotation_difference(pr).angle
-            lim = math.radians(self.HAND_RATE)
+            lim = self.rate_limit(self.HAND_RATE, ang)
             if ang > lim:
                 rel = pr.slerp(rel, lim / ang)
                 q = Ff @ rel
         self.prev_hand_rel[S] = rel.copy()
         pose.place("Hand_" + S, compose(pose.tail("Forearm_" + S), q.to_matrix()))
         # el antebrazo se lleva parte del giro de la mano sobre su eje (pronación), hasta FORE_MAX. Solo depende de la
-        # pose (así el primer y el último cuadro de un clip son iguales a la pose con la que encadena); pasar por los 180°
-        # lo evitan el plan de agarres (wrist_cost) y, con la mano suelta, HAND_RATE
+        # pose (así el primer y el último cuadro de un clip son iguales a la pose con la que encadena); el giro medido
+        # salta de +180° a -180° cuando la mano pasa por media vuelta, y eso lo arregla unwind_forearms con el clip entero
         Wf = pose.get("Forearm_" + S)
         base = (Wf @ self.rig.rel["Hand_" + S]).inverted() @ pose.get("Hand_" + S)
         qb = base.to_quaternion()
         ang = (2.0 * math.atan2(qb.y, qb.w) + math.pi) % (2.0 * math.pi) - math.pi
         self.twist[S] = abs(math.degrees(ang))
-
         share = max(-self.FORE_MAX, min(self.FORE_MAX, ang * self.TWIST_SHARE))
+        if self.mode == "replay":
+            self.tw_log[S][self.frame] = (ang, share)
         pose.place("Forearm_" + S, compose(Wf.translation, rot3(Wf) @ Matrix.Rotation(share, 3, 'Y')))
 
 
@@ -811,9 +969,11 @@ def culm_local(r):
     return Vector((0.0, CR.PALM_LOCAL.y + 0.004, CR.PALM_LOCAL.z - r - 0.010))
 
 
-def blend_mats(mats):
+def blend_mats(mats, pivot=0.0):
+    """Mezcla de matrices de la flauta por peso: el giro con slerp y la posición del punto a 'pivot' metros por su eje Y
+    (la punta de abajo con 0)."""
     tot = sum(w for _, w in mats)
-    pos = sum((M.translation * (w / tot) for M, w in mats), Vector())
+    pos = sum(((M.translation + rot3(M).col[1] * pivot) * (w / tot) for M, w in mats), Vector())
     q, acc = None, 0.0
     for M, w in mats:
         qq = rot3(M).to_quaternion()
@@ -824,7 +984,8 @@ def blend_mats(mats):
             qq = -qq
         acc += w
         q = q.slerp(qq, w / acc)
-    return compose(pos, q.to_matrix())
+    R = q.to_matrix()
+    return compose(pos - R.col[1] * pivot, R)
 
 
 class Kit:
@@ -867,11 +1028,16 @@ def culm_spheres(rig, z0=-4.5, z1=1.6, step=0.10, pad=0.05):
     z = z0
     while z <= z1 + 1e-6:
         r = culm_r(z) + pad
-        out.append(("Root", rig.rest_inv["Root"] @ Vector((0.0, 0.0, z)), r))
+        out.append(("Root", rig.rest_inv["Root"] @ Vector((0.0, 0.0, z)), r, "culm"))
         z += step
     # el anillo del nudo del posado (más grueso)
-    out.append(("Root", rig.rest_inv["Root"] @ Vector((0.0, 0.0, -0.06)), RING_R + 0.01))
+    out.append(("Root", rig.rest_inv["Root"] @ Vector((0.0, 0.0, -0.06)), RING_R + 0.01, "culm"))
     return out
+
+
+# lo que las hojas de la capa y de la falda y los tubos graves sobresalen de la cola de sus huesos hacia el culmo: con la
+# esfera del hueso solo, sentado en el posado el ruedo de atrás y el cascabel más bajo quedaban 9 cm adentro de la caña
+CULM_PAD_CLOTH = 0.10
 
 
 # cuánto busca colgar a plomo cada tela según cuánto se aparta su pose rígida de la vertical (HANG_LO .. HANG_HI grados):
@@ -888,8 +1054,13 @@ def chain_colliders(first, colliders):
     no con las de su propio brazo (cuelgan de él: empezaban adentro y temblaban) y el moño y la ramita no con la de la
     cabeza; la barba y las colas de la faja solo con el cuerpo."""
     out = []
+    cloth = first.startswith(("Cloak_", "Skirt_", "Acc_ChimesLo"))
     for c in colliders:
         b = c[0]
+        if len(c) > 3:
+            # las del culmo: más gruesas para la tela de hojas
+            out.append((c[0], c[1], c[2] + (CULM_PAD_CLOTH if cloth else 0.0)))
+            continue
         if b == "Staff":
             continue
         if first.startswith("Sleeve_") and b.endswith("_" + first.split("_")[1]) and b.startswith(("UpperArm_", "Forearm_")):
@@ -950,10 +1121,14 @@ def cloak_drop(b):
         return 0.27 if seg == n else 0.16 if seg > 1 else 0.10
     if b in ("Skirt_040", "Skirt_320"):
         return 0.22
+    if b in ("Skirt_140", "Skirt_220"):
+        # los paños de atrás son anchos: sentado o tirado el borde de abajo queda debajo de la cola
+        return 0.10
     return 0.0
 
 
 DEV_RATE = 32.0              # lo más que la tela cambia su apartamiento de la pose por cuadro (grados)
+TWIST_KEEP = (100.0, 150.0)  # desde qué apartamiento la tela conserva el giro sobre su eje del cuadro anterior (grados)
 
 
 def run_springs(rig, frames, springs, root_offsets, loop=False, preroll=1.0, substeps=4, floor_offsets=None, carry=CARRY):
@@ -1128,9 +1303,21 @@ def run_springs(rig, frames, springs, root_offsets, loop=False, preroll=1.0, sub
                     dirn = x - h
                     if dirn.length > 1e-6:
                         x = h + dirn.normalized() * L
-            q = rigid.rotation_difference((x - h).normalized())
+            bdir = (x - h).normalized()
+            q = rigid.rotation_difference(bdir)
             qp = st[4] if len(st) > 4 else None
             if qp is not None:
+                # el giro más corto de la pose a la simulada no dice nada del giro del hueso sobre su eje cuando las dos
+                # direcciones son casi opuestas (la capa que cuelga con el cuerpo cabeza abajo, el paño doblado contra el
+                # piso): el eje saltaba y el paño daba media vuelta sobre sí mismo en un cuadro. Ahí se queda con el giro
+                # sobre su eje más parecido al del cuadro anterior (con los dos apartamientos chicos manda el más corto)
+                wk = max(0.0, min(1.0, (math.degrees(q.angle) - TWIST_KEEP[0]) / (TWIST_KEEP[1] - TWIST_KEEP[0])))
+                if wk > 0.0:
+                    r = qp @ q.inverted()
+                    if r.w < 0.0:
+                        r = -r
+                    tw = 2.0 * math.atan2(Vector((r.x, r.y, r.z)).dot(bdir), r.w)
+                    q = Quaternion(bdir, tw * wk) @ q
                 # la tela no se aparta de su pose más de DEV_RATE por cuadro: en un golpe de cadera la capa o un cascabel
                 # pasaban de un tope al opuesto en un cuadro (130-180°)
                 if q.dot(qp) < 0.0:
@@ -1140,6 +1327,13 @@ def run_springs(rig, frames, springs, root_offsets, loop=False, preroll=1.0, sub
                 if ang > lim:
                     q = qp.slerp(q, lim / ang)
                     x = h + (q @ rigid) * L
+                    if fl is not None and x.z < fl:
+                        # el piso sigue mandando (el tope de cada cuadro no la mete debajo)
+                        x.z = fl
+                        dirn = x - h
+                        if dirn.length > 1e-6:
+                            x = h + dirn.normalized() * L
+                        q = rigid.rotation_difference((x - h).normalized())
             st[0], st[1], st[2], st[3] = x, xp, t.copy(), h.copy()
             if len(st) > 4:
                 st[4] = q.copy()
@@ -1182,7 +1376,9 @@ def run_springs(rig, frames, springs, root_offsets, loop=False, preroll=1.0, sub
 def bake(rig, clip, solver, base_colliders, pin_from=None, pin_to=None):
     """Resuelve y hornea un clip: (poses W por cuadro, controles, raíces del juego por cuadro, faltas del IK por cuadro).
     pin_from / pin_to: los agarres (flauta y culmo) del primer y del último cuadro de la pose con la que encadena (los de
-    su clip de referencia): así el fundido del código no ve la mano girar sobre el caño."""
+    su clip de referencia): así el fundido del código no ve la mano girar sobre el caño. pin_from trae además lo que el
+    solver recordaba en ese cuadro del de referencia ("state"): el clip arranca con el codo del mismo lado (sin eso, el
+    codo de un brazo casi estirado podía elegir el otro lado en el primer cuadro y el empalme se iba 160°)."""
     space = clip.timing.get("space", "ground")
     ctl = [clip.controls(f) for f in range(clip.frames + 1)]
     solver.nframes = clip.frames
@@ -1196,6 +1392,8 @@ def bake(rig, clip, solver, base_colliders, pin_from=None, pin_to=None):
     if any((c.get("grip_r_auto") or 0) > 0.5 or (c.get("grip_l_auto") or 0) > 0.5 or (c.get("cw_r") or 0) > 0.01 or
            (c.get("cw_l") or 0) > 0.01 for c in ctl):
         solver.begin("collect")
+        if pin_from and pin_from.get("state"):
+            solver.restore(pin_from["state"])
         for f, c in enumerate(ctl):
             solver.frame = f
             solver.solve(NA.Pose(rig), c)
@@ -1208,18 +1406,24 @@ def bake(rig, clip, solver, base_colliders, pin_from=None, pin_to=None):
                     solver.pins[(s_, clip.frames)] = solver.plan[s_][0]
             solver.plan_rolls(clip.frames + 1)
     solver.begin("replay")
+    if pin_from and pin_from.get("state"):
+        solver.restore(pin_from["state"])
     misses = []
     frames, ctrls, roots = [], [], []
+    states = {}
     for f in range(clip.frames + 1):
         c = ctl[f]
         solver.frame = f
         pose = NA.Pose(rig)
         misses.append(dict(solver.solve(pose, c)))
+        if f in (0, clip.frames):
+            states[f] = solver.snapshot()
         for n in rig.names:
             pose.get(n)
         frames.append(pose.W)
         ctrls.append(c)
         roots.append(Vector((0.0, -(c.get("travel") or 0.0), 0.0)) + clip.root_vel * (f / FPS))
+    unwind_forearms(rig, frames, solver.tw_log, clip.cuts)
     smooth_free_arms(rig, frames, ctrls, clip.cuts)
     cols = list(base_colliders)
     if space in ("perch",):
@@ -1235,11 +1439,60 @@ def bake(rig, clip, solver, base_colliders, pin_from=None, pin_to=None):
                    preroll=t.get("preroll", 1.0), floor_offsets=lifts, carry=t.get("carry", 0.6 if space == "ground" else CARRY))
     if clip.loop:
         frames[-1] = {n: m.copy() for n, m in frames[0].items()}
-    clip.grips = {"first": grips_at(solver, 0), "last": grips_at(solver, clip.frames)}
+    clip.grips = {"first": dict(grips_at(solver, 0), state=states[0]),
+                  "last": dict(grips_at(solver, clip.frames), state=states[clip.frames])}
     return frames, ctrls, roots, misses
 
 
 ARM_RATE = 40.0                # lo más que gira un hueso del brazo suelto por cuadro después del alisado (grados)
+
+
+UNWIND_RATE = 20.0          # grados por cuadro que gira el antebrazo sobre su eje al volver a la vuelta de la pose
+
+
+def unwind_forearms(rig, frames, log, cuts=()):
+    """El giro del antebrazo sobre su eje con el clip entero a la vista. Cuadro a cuadro (place_arm) el giro de la mano se
+    mide entre -180° y 180°: cuando la mano pasa por media vuelta (un agarre que gira el puño, la flauta que da vueltas)
+    la medida salta de un extremo al otro y el antebrazo daba esa vuelta en un cuadro. Acá el giro sigue de corrido (sin
+    saltos: se suma la vuelta entera que haga falta) y el antebrazo se lleva su parte; si al final del clip quedó en otra
+    vuelta que la pose con la que encadena, vuelve a ella de a UNWIND_RATE en los últimos cuadros (lo que se ve es la manga
+    que gira sobre el antebrazo, no la mano: la mano queda donde está, agarrando)."""
+    n = len(frames)
+    lim = math.radians(TWIST_SHARE_MAX_DEG)
+    for S in "RL":
+        L = log.get(S) or {}
+        if len(L) != n:
+            continue
+        ang = [L[f][0] for f in range(n)]
+        share = [L[f][1] for f in range(n)]
+        u = [ang[0]]
+        for f in range(1, n):
+            if f in cuts:
+                u.append(ang[f])
+                continue
+            d = (ang[f] - u[-1] + math.pi) % (2.0 * math.pi) - math.pi
+            u.append(u[-1] + d)
+        want = [max(-lim, min(lim, x * Solver.TWIST_SHARE)) for x in u]
+        off = want[-1] - share[-1]
+        if abs(off) > 1e-4:
+            k = min(n - 1, max(4, int(math.ceil(math.degrees(abs(off)) / UNWIND_RATE))))
+            for i in range(1, k + 1):
+                f = n - 1 - k + i
+                t = i / k
+                want[f] -= off * t * t * (3.0 - 2.0 * t)
+        fa = "Forearm_" + S
+        carried = [c for c in rig.subtree(fa) if c != fa and c not in rig.subtree("Hand_" + S)]
+        for f in range(n):
+            delta = want[f] - share[f]
+            if abs(delta) < 1e-5:
+                continue
+            W = frames[f]
+            old = W[fa]
+            new = compose(old.translation, rot3(old) @ Matrix.Rotation(delta, 3, 'Y'))
+            rel = old.inverted()
+            for c in carried:
+                W[c] = new @ (rel @ W[c])
+            W[fa] = new
 
 
 def smooth_free_arms(rig, frames, ctrls, cuts=()):
@@ -1251,8 +1504,9 @@ def smooth_free_arms(rig, frames, ctrls, cuts=()):
     for S in "RL":
         s = S.lower()
         chain = ["UpperArm_" + S, "Forearm_" + S, "Hand_" + S]
+        # el primero y el último quedan fijos: son las poses con las que encadena
         free = [1.0 - min(1.0, (c.get("gw_" + s) or 0.0) + (c.get("cw_" + s) or 0.0)) >= 0.5 and f not in cuts
-                for f, c in enumerate(ctrls)]
+                and 0 < f < n - 1 for f, c in enumerate(ctrls)]
         if not any(free):
             continue
         loc = [{b: ((W[rig.parent[b]] @ rig.rel[b]).inverted() @ W[b]).to_quaternion() for b in chain} for W in frames]

@@ -31,10 +31,12 @@ from chikuo_anim import CClip, merge, free, grip, legs, staff_world, staff_spine
 # de los hombros y los codos abajo (la hoja: el puño adelante, el antebrazo parado). El diseño pedía la izquierda en el
 # culmo (GripHigh): desde la cámara la tapaba la capa y cada clip tenía que soltarla y volver a agarrarla; se mantiene en
 # equilibrio con los pies, como en el concepto.
-PERCH_FEET = legs((-0.155, -0.115, 0.115), (0.155, -0.115, 0.115), rr=(0, 0, -32), rl=(0, 0, 32),
+# los pies en el anillo del nudo a los dos lados del culmo: los talones a 0.14 del eje (afuera del culmo de 0.10, adentro
+# del anillo de 0.17); más juntos se metían 9 cm en la caña
+PERCH_FEET = legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -24), rl=(0, 0, 24),
                   kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35))
 STAFF_SHOULDERS = staff_spine((-1.00, 0.11, 1.95), (1, 0, 0.03), (0, -0.3, 1))
-PERCH = merge(dict(hips=(0, -0.34, -0.58), hips_rot=(10, 0, 0), spine=(-6, 0, 0), spine1=(0, 0, 0), spine2=(8, 0, 0),
+PERCH = merge(dict(hips=(0, -0.38, -0.58), hips_rot=(10, 0, 0), spine=(-6, 0, 0), spine1=(0, 0, 0), spine2=(8, 0, 0),
                    neck=(8, 0, 0), head=(8, 0, 0), face="grin"),
               PERCH_FEET, STAFF_SHOULDERS,
               grip("r", 0.38, elbow=(-0.6, -0.2, -1)),
@@ -43,16 +45,20 @@ PERCH = merge(dict(hips=(0, -0.34, -0.58), hips_rot=(10, 0, 0), spine=(-6, 0, 0)
 # los labios y las dos manos juntas cerca de la boquilla (16.6 del diseño); los cachetes inflados
 AIM = (0.0, -0.819, -0.574)                  # 35° hacia abajo, al frente del modelo (el código lo gira hacia Kaito)
 BLOW_STAFF = staff_lips(CR.STAFF_LEN, tuple(-x for x in AIM), (0, 0, 1))
-PERCH_BLOW = merge(PERCH, dict(hips=(0, -0.36, -0.60), hips_rot=(16, 0, 0), spine=(4, 0, 0), spine1=(6, 0, 0), spine2=(8, 0, 0),
+PERCH_BLOW = merge(PERCH, dict(hips=(0, -0.4, -0.60), hips_rot=(16, 0, 0), spine=(4, 0, 0), spine1=(6, 0, 0), spine2=(8, 0, 0),
                                neck=(6, 0, 0), head=(14, 0, 0), face="blow"),
                    BLOW_STAFF, grip("l", CR.STAFF_LEN - 0.17, elbow=(1, 0.2, -0.6)),
                    grip("r", CR.STAFF_LEN - 0.36, elbow=(-1, 0.2, -0.6)))
 # colgado cabeza abajo DELANTE del culmo, mirando a Kaito (la hoja original): las piernas abrazan el culmo arriba del nudo
 # (los muslos a los dos lados, las pantorrillas cruzadas detrás), la espalda hacia la caña, la capa y los cascabeles caen
 # hacia el piso alrededor de la cabeza; sopla de cerbatana con las dos manos en la boquilla
-HANG = merge(dict(hips=(0, -0.27, -1.56), hips_rot=(12, 180, 0), spine=(4, 0, 0), spine1=(4, 0, 0), spine2=(2, 0, 0),
+# colgado de las piernas cabeza abajo: la cadera lo bastante alta para que las piernas lleguen a cruzarse detrás del culmo
+# y los tobillos abiertos lo justo para que las tibias lo abracen por los costados (con 0.10 lo atravesaban 9 cm)
+HANG_Z = -1.46
+HANG = merge(dict(hips=(0, -0.27, HANG_Z), hips_rot=(12, 180, 0), spine=(4, 0, 0), spine1=(4, 0, 0), spine2=(2, 0, 0),
                   neck=(-8, 0, 0), head=(-20, 0, 0), face="blow"),
-             legs((0.10, 0.21, 0.30), (-0.10, 0.23, 0.38), rr=(-40, 180, 0), rl=(-40, 180, 0), kr=(1.0, -0.35, 0.3), kl=(-1.0, -0.35, 0.3)),
+             # los pies dados vuelta con -180 (no 180): las claves vecinas (el giro de costado, -70) se interpolan por el camino corto
+             legs((0.18, 0.21, 0.30), (-0.18, 0.23, 0.38), rr=(-40, -180, 0), rl=(-40, -180, 0), kr=(1.0, -0.35, 0.3), kl=(-1.0, -0.35, 0.3)),
              staff_lips(CR.STAFF_LEN, (0.0, 0.819, 0.574), (0, 0, -1)),
              grip("l", CR.STAFF_LEN - 0.17, elbow=(1, -0.2, 0.6)),
              grip("r", CR.STAFF_LEN - 0.36, elbow=(-1, -0.2, 0.6)))
@@ -215,7 +221,17 @@ def clips(rig):
 CHAIN_REF = {"PERCH": "PerchIdle", "READY": "Idle", "HANG": "HangDart2", "AIR": "LeapAir", "POLE": "PoleClimb",
              "BALANCE": "PoleBalance", "FLUTE": "FluteNote", "DIVE_LAND": "DiveLand", "DAZED_SIT": "DazedSit",
              "DAZED_LIE": "DazedLie", "FLUNG": "FlungAir", "SPLAT": "SlideDown", "STAFF_DOWN": "StaffDropRecover",
-             "CROSS": "DefeatIdle", "DIVE_TOP": "PoleDive"}
+             "CROSS": "DefeatIdle", "DIVE_TOP": "PoleDive", "HANG_END": "HangDart2:last"}
+
+
+def chain_ref(name):
+    """(clip, cuadro) de la pose de encadenado: el primero del clip de referencia, o el último con ':last' (HangClimb
+    sigue al final de HangDart2, que termina en el segundo dardo y no en su primera pose)."""
+    v = CHAIN_REF.get(name)
+    if v is None:
+        return None, None
+    clip, _, which = v.partition(":")
+    return clip, (-1 if which == "last" else 0)
 
 
 # ============================================================================ el contrato (diseño, sección 16)

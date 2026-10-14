@@ -256,8 +256,16 @@ def main():
         clips = CC.clips(rig)
         if ONLY:
             keep = [c for c in clips if wanted(c.name, ONLY)]
-            # las poses de referencia del encadenado se hornean igual (el lint compara contra ellas)
-            refs = {CC.CHAIN_REF[k] for c in keep for k in (c.timing.get("chain_from"), c.timing.get("chain_to")) if k in CC.CHAIN_REF}
+            # las poses de referencia del encadenado se hornean igual (el lint compara contra ellas), y las de ellas
+            by_name = {c.name: c for c in clips}
+            refs, todo = set(), list(keep)
+            while todo:
+                c = todo.pop()
+                for k in (c.timing.get("chain_from"), c.timing.get("chain_to")):
+                    r = CC.chain_ref(k)[0] if k in CC.CHAIN_REF else None
+                    if r and r not in refs and r in by_name:
+                        refs.add(r)
+                        todo.append(by_name[r])
             clips = [c for c in clips if c in keep or c.name in refs]
         data = CB.bake_all(rig, clips, check)
         reports = {n: d["report"] for n, d in data.items()}

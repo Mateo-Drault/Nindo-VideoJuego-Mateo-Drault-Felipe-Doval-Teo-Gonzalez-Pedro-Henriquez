@@ -52,18 +52,34 @@ def bake_all(rig, clips, check):
     meter = LT.WristMeter(rig)
     import chikuo_clips as CC
     out = {}
-    # primero los clips de referencia del encadenado: sus agarres fijan los de las puntas de los demás
-    refs = set(CC.CHAIN_REF.values())
-    order = [c for c in clips if c.name in refs] + [c for c in clips if c.name not in refs]
+    # primero los clips de referencia del encadenado: sus agarres fijan los de las puntas de los demás. Entre ellos, cada
+    # uno después de los de referencia con los que encadena (DiveLand termina en la guardia de Idle: horneado antes que
+    # Idle, su último agarre no quedaba fijado y el empalme se iba 20° en el brazo)
+    refs = {CC.chain_ref(k)[0] for k in CC.CHAIN_REF}
+    pending = [c for c in clips if c.name in refs]
+    deps = {c.name: {CC.chain_ref(c.timing.get(k))[0] for k in ("chain_from", "chain_to")} & refs - {c.name} for c in pending}
+    order, done = [], set()
+    while pending:
+        ready = [c for c in pending if deps[c.name] <= done] or pending[:1]
+        for c in ready:
+            order.append(c)
+            done.add(c.name)
+            pending.remove(c)
+    order += [c for c in clips if c.name not in refs]
     ref_grips = {}
     for clip in order:
         t0 = time.time()
         t = clip.timing
-        pf = ref_grips.get(CC.CHAIN_REF.get(t.get("chain_from")))
-        pt = ref_grips.get(CC.CHAIN_REF.get(t.get("chain_to")))
+        rf, wf = CC.chain_ref(t.get("chain_from"))
+        rt, wt = CC.chain_ref(t.get("chain_to"))
+        # con fundido el código mezcla las dos poses (la flauta tampoco coincide): fijar el agarre de la pose de encadenado
+        # solo obligaba al puño a dar la vuelta alrededor del caño en los primeros o los últimos cuadros
+        pf = None if t.get("fade_from") else ref_grips.get((rf, wf))
+        pt = None if t.get("fade_to") else ref_grips.get((rt, wt))
         frames, ctrls, roots, misses = CA.bake(rig, clip, solver, cols, pin_from=pf, pin_to=pt)
         if clip.name in refs:
-            ref_grips[clip.name] = clip.grips["first"]
+            ref_grips[(clip.name, 0)] = clip.grips["first"]
+            ref_grips[(clip.name, -1)] = clip.grips["last"]
         rep = lint_clip(rig, clip, frames, ctrls, roots, misses, meter, check)
         out[clip.name] = dict(frames=frames, ctrls=ctrls, roots=roots, misses=misses, report=rep, clip=clip)
         print(f"-- {clip.name} ({clip.frames} cuadros, {time.time() - t0:.1f} s)")
@@ -107,7 +123,7 @@ def lint_clip(rig, clip, frames, ctrls, roots, misses, meter, check):
         pose, vel = LT.loop_seam(rig, lq)
         rep["loop_seam_deg"] = [pose, vel]
         check(pose < 0.5 and vel < 1.0, f"{clip.name}: loop sin costura (pose {pose:.2f}°, salto de velocidad {vel:.2f}°)")
-    sn = LT.snaps(rig, lq, clip.cuts)
+    sn = LT.snaps(rig, lq, clip.cuts, frames)
     rep["snap_deg"] = list(sn)
     check(sn[0] <= LT.SNAP_DEG, f"{clip.name}: ningún hueso gira más de {LT.SNAP_DEG:.0f}° en un cuadro ({sn[0]}° {sn[1]} f{sn[2]})")
     # pies en el piso (con el avance del juego)
@@ -167,10 +183,10 @@ def chain_checks(rig, clips, data, check):
         t = clip.timing
         for which, key, i in (("primera", "chain_from", 0), ("última", "chain_to", -1)):
             nm = t.get(key)
-            ref = CC.CHAIN_REF.get(nm)
+            ref, rfi = CC.chain_ref(nm)
             if not nm or ref is None or ref not in data or (clip.loop and which == "última"):
                 continue
-            Wr = data[ref]["frames"][0]
+            Wr = data[ref]["frames"][rfi]
             W = data[clip.name]["frames"][i]
             d, bone, hip, st = LT.bone_delta(rig, W, Wr)
             data[clip.name]["report"][key + "_deg"] = [d, bone, hip, st]
