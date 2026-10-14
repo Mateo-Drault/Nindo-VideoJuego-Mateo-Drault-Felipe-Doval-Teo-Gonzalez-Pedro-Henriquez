@@ -6,7 +6,7 @@ forma y el valor, no el detalle:
   * arriba del todo el blanco: el moño facetado con su cordón verde y la ramita, las cejas en púas más anchas que la
     cabeza y la barba larga anudada hasta el ombligo (una franja blanca de ~1 m entre las hojas verdes);
   * la capa de hojas de bambú en tres tonos (claras arriba, oscuras abajo: más oscura que sus cañas), abierta adelante
-    (se ve el gi entero) y larga atrás como una parva, con 24 cascabeles huecos color paja-oro en racimos por los
+    (se ve el gi entero) y larga atrás como una parva, con 26 cascabeles huecos color paja-oro en racimos por los
     hombros y la espalda alta: la luz de la pelea (dos materiales que el juego enciende: Chikuo_GlintChimesHi en los
     hombros, Lo en la espalda);
   * el gi salvia con el ribete tostado (cuello cruzado, puños, ruedo), la faja verde ancha anudada con dos colas
@@ -410,8 +410,8 @@ def build_ear(k, s):
     """Oreja grande en punta hacia afuera y arriba (el duende del concepto): una lámina con espesor de piel, con el hueco
     en sombra adelante."""
     # contorno en el plano de la oreja: (altura, y, cuánto sale de la cabeza)
-    out = [(2.090, 0.014, 0.004), (2.106, -0.008, 0.028), (2.146, 0.000, 0.050), (2.192, 0.040, 0.072), (2.162, 0.052, 0.044),
-           (2.132, 0.046, 0.020), (2.104, 0.034, 0.004)]
+    out = [(2.090, 0.014, 0.004), (2.106, -0.008, 0.030), (2.148, 0.000, 0.056), (2.196, 0.040, 0.084), (2.164, 0.054, 0.050),
+           (2.132, 0.048, 0.022), (2.104, 0.034, 0.004)]
     pts = []
     for z, y, o in out:
         p = head_surface(min(z, 2.16), 90.0 * s, 0.0)
@@ -529,8 +529,8 @@ def build_hair(kits):
             (-122.0, 2.060), (-142.0, 2.054), (-162.0, 2.050), (180.0, 2.048)]
     line = line + [(-a, z) for a, z in reversed(line[:-1])]
     cols = len(line)
-    rows = 6
-    ring_r = 0.036
+    rows = 7
+    ring_r = 0.046
     ax = CR.TOPKNOT_AXIS
     xv = Vector((1.0, 0.0, 0.0))
     fv = xv.cross(ax).normalized()              # hacia adelante, perpendicular al eje del moño
@@ -539,7 +539,7 @@ def build_hair(kits):
         h = head_surface(z, a)
         # el punto del anillo de la base del moño hacia ese lado (las mechas de la sien llegan por delante del cordón)
         ar = math.atan2(h.x - TK_SRC.x, -(h.y - TK_SRC.y))
-        tk = TK_SRC + xv * (math.sin(ar) * ring_r) + fv * (math.cos(ar) * ring_r) - ax * 0.012
+        tk = TK_SRC + xv * (math.sin(ar) * ring_r) + fv * (math.cos(ar) * ring_r) - ax * 0.004
         ro, ri = [], []
         for r in range(rows + 1):
             t = r / rows
@@ -547,7 +547,11 @@ def build_hair(kits):
             ridge = 0.007 if c % 2 else 0.0
             # pegado al cráneo, un poco más de volumen en la nuca; arriba se va juntando en el moño (nunca a menos de
             # 6 mm: las caras planas entre dos mechas no se meten en el cráneo redondo)
-            bulk = max(0.009, (0.006 + 0.004 * max(0.0, -math.cos(math.radians(a))) + ridge) * (1.0 - 0.2 * t))
+            bulk = max(0.009 + 0.004 * t, (0.006 + 0.004 * max(0.0, -math.cos(math.radians(a))) + ridge) * (1.0 - 0.2 * t))
+            # el pelo de las sienes peinado hacia arriba hace bulto sobre la calva: de frente sube en dos alas blancas hasta
+            # el cordón y de perfil tapa la coronilla (la hoja de perfil)
+            if abs(a) < 95.0:
+                bulk += 0.016 * math.sin(math.pi * min(1.0, max(0.0, (t - 0.2) / 0.75)))
             surf = onto_head(p, 0.0) if p.z < 2.262 else p
             outv = Vector((surf.x, surf.y - head_r(surf.z, 0)[0], 0.0))
             outv = outv.normalized() if outv.length > 1e-6 else Vector((0, 1, 0))
@@ -622,14 +626,14 @@ def build_topknot(kits):
     for i in range(lobes * 2):
         rv = top[i] - c_top
         # las puntas de los lóbulos suben y se recogen; los valles quedan más abajo (al 60 %): los pliegues de arriba
-        top[i] = c_top + rv * (0.70 if i % 2 == 0 else 0.88) + ax * (0.018 if i % 2 == 0 else 0.006)
+        top[i] = c_top + rv * (0.64 if i % 2 == 0 else 0.84) + ax * (0.022 if i % 2 == 0 else 0.006)
     up = [k.bm.verts.new(p) for p in top]
     fz = []
     for i in range(lobes * 2):
         j = (i + 1) % (lobes * 2)
         fz.append(k.bm.faces.new((last[i], last[j], up[j], up[i])))
     last = up
-    apex = k.bm.verts.new(T0 + ax * 0.198 + yv * 0.004)
+    apex = k.bm.verts.new(T0 + ax * 0.206 + yv * 0.004)
     fs = [k.bm.faces.new((last[i], last[(i + 1) % (lobes * 2)], apex)) for i in range(lobes * 2)]
     k.tag(fs + fz, C["white"])
     for f in part.faces + fz + fs:
@@ -969,6 +973,8 @@ def build_skirt(kits):
     fb.append(ko.bm.faces.new((vo[-1][1], vo[-1][2], vi[-1][2], vi[-1][1])))
     ko._new([v for r in vo + vi for v in r], C["gi"], None, None)
     ko.tag(fb, C["gi3"])
+    # abajo de la rodilla el paño queda en la sombra de la capa (de frente no es un bloque claro)
+    ko.tag([f for f in fs if f.calc_center_median().z < 0.86], C["gi2"])
     # ribetes del paño: el borde de su derecha (el que se ve) y el de abajo
     edge = [Vector((xl + 0.012, vo[i][0].co.y - 0.006, z)) for i, z in enumerate(zs)]
     ko.strip(edge, [0.040] * len(edge), (0, -1, 0), C["trim"], thick=0.010)
@@ -995,11 +1001,12 @@ def build_sleeve_r(kits):
             a = 0.5 * smooth01(-t / 0.2)
             return {"UpperArm_R": 1.0 - a, "Clav_R": a}
         w = wa(co)
-        # toda la mitad de abajo del tubo (y la del puño) va con el vuelo: desde el eje del brazo hasta el borde, entera
-        # a los 8 cm; el vuelo del codo pasa al del puño de a poco (la manga cae sobre el antebrazo con el brazo arriba)
+        # la mitad de abajo del tubo (y la del puño) va con el vuelo, desde 2 cm arriba del eje del brazo hasta el borde,
+        # entera a los 8 cm; el vuelo del codo pasa al del puño de a poco (la manga cae sobre el antebrazo con el brazo
+        # arriba)
         axis_pt = S + u * max(0.0, min(1.0, t)) * (E - S).length if t <= 1.0 else E + l * min(0.17, (co - E).dot(l))
         below = (axis_pt - co).dot(up)
-        k = smooth01(below / 0.08)
+        k = smooth01((below + 0.02) / 0.10)
         if k > 0.0:
             b2 = smooth01((t - 0.75) / 0.30)
             w = {n: v * (1.0 - k) for n, v in w.items()}
@@ -1343,10 +1350,10 @@ def build_cloak(kits):
         k.leaf(base, tip, nrm, width or max(0.055, ln * 0.36), col, ridge=0.16, under=under or C["leafu"], wide=0.45)
 
     # la gola: hojas paradas alrededor de la nuca y los costados del cuello, hacia arriba y afuera (no adelante)
-    for phi in arc_samples(66.0, 294.0, 0.02, 0.01, 0.062, rng):
+    for phi in arc_samples(66.0, 294.0, 0.02, 0.01, 0.046, rng):
         base = CR.cloak_point(phi, 0.02, 0.01)
         outv = Vector((base.x, base.y - CR.CLOAK_Y0, 0.0)).normalized()
-        ln = 0.13 * rng.uniform(0.9, 1.1)
+        ln = 0.15 * rng.uniform(0.9, 1.1)
         tip = base + (outv * 0.75 + Vector((0, 0, 0.75))).normalized() * ln
         k.leaf(base, tip, outv - Vector((0, 0, 0.6)), 0.046, C["leaf1b"] if rng.random() < 0.6 else C["leaf1"], ridge=0.3,
                under=C["leafu"])
@@ -1370,7 +1377,7 @@ def build_cloak(kits):
     # oliva al medio y verde oscuro abajo, más largas hacia el ruedo de la espalda
     for ri_, (s, ca, cb) in enumerate(((0.32, "leaf1", "leaf2"), (0.46, "leaf2", "leaf1"), (0.60, "leaf2", "leaf3"),
                                        (0.74, "leaf3", "leaf2"), (0.87, "leaf3", "leaf2"))):
-        for j, phi in enumerate(arc_samples(a0, a1, s, 0.0, 0.092, rng)):
+        for j, phi in enumerate(arc_samples(a0, a1, s, 0.0, 0.100, rng)):
             D = drop_len(phi)
             sb = s + rng.uniform(-0.015, 0.015)
             ln = (0.18 + 0.22 * min(1.0, D / 1.45)) * rng.uniform(0.9, 1.1)
@@ -1379,7 +1386,7 @@ def build_cloak(kits):
                     yaw=rng.uniform(-9.0, 9.0) * (0.4 if D < 0.8 else 1.0))
     # las hojas de adentro: en los paños de detrás del brazo y la espalda, mirando hacia el cuerpo, más oscuras, puntas
     # abajo y pasando el ruedo (con los brazos arriba, en el salto y colgado no se ve una cáscara lisa)
-    for s, sp in ((0.50, 0.11), (0.70, 0.11), (0.88, 0.10)):
+    for s, sp in ((0.34, 0.12), (0.50, 0.11), (0.65, 0.11), (0.80, 0.11), (0.92, 0.10)):
         for j, phi in enumerate(arc_samples(70.0, 290.0, s, -0.012, sp, rng)):
             D = drop_len(phi)
             if D < 0.55:

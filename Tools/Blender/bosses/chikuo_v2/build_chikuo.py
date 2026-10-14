@@ -45,9 +45,12 @@ RT_BONES = ("Hips", "Head", "Jaw", "Hand_R", "Index_L_2", "Thumb_R_2", "Foot_L",
             "Acc_TasselBeard_3", "Cloak_168_2", "Acc_ChimesLo03_0", "Sleeve_L_2", "Lid_R", "Topknot_2")
 OUT_DIR = os.path.join(ROOT, "Nindo", "Assets", "Nindo", "Art", "Characters", "BambooMaster")
 FBX = os.path.join(OUT_DIR, "BambooMaster.fbx")
-# el diseño pide ~9000 en total (doc chikuo_v2 sección 14); por grupo, lo que costó llegar al concepto
-BUDGET = {"body": 5650, "cloak": 2350, "chimes": 1750, "staff": 480}
-TOTAL_BUDGET = 10150
+# el diseño pedía ~9000 en total (doc chikuo_v2 sección 14); la revisión de arte contra el concepto sumó las hojas de
+# adentro de la capa (colgado y con los brazos arriba no se ve la cáscara), las dos coronas del cuello (lo que ve la
+# cámara alta) y 26 cascabeles con nudo, lazo y agujeros redondos: ~10.4k, un 13 % más que Mizuchi (un jefe solo en
+# pantalla). Por grupo, lo que costó llegar al concepto
+BUDGET = {"body": 5650, "cloak": 2500, "chimes": 1900, "staff": 480}
+TOTAL_BUDGET = 10450
 HOLD = 20                   # cuadros de cada pose en PoseTest
 GAP = 10
 # huesos de los que dependen el código y los pasos que siguen (animación, pelea): si falta uno, no se exporta
@@ -342,7 +345,7 @@ def write_sidecar(ranges, baked, tris, bh):
         "pose_test": [n for n, *_ in CP.ORDER], "pose_test_hold_frames": HOLD,
         "contract_bones": CONTRACT_BONES,
         "parts": {"skinned": ["Chikuo_Body"], "rigid": {"Chikuo_Staff": "Staff"}, "materials": ["Nindo_Palette"] + CM.EXTRA_MATS,
-                  "notes": "una sola malla con skin (cuerpo, ropa, capa de hojas y los 24 cascabeles) y la flauta-bastón rígida "
+                  "notes": "una sola malla con skin (cuerpo, ropa, capa de hojas y los 26 cascabeles) y la flauta-bastón rígida "
                            "en el hueso Staff (siempre visible). Los slots Chikuo_Glint* nacen sin emisión: el jefe los "
                            "enciende por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash, blanco = la caña "
                            "cargada). Ninguno se llama 'Glint': Enemy no prende nada solo."},

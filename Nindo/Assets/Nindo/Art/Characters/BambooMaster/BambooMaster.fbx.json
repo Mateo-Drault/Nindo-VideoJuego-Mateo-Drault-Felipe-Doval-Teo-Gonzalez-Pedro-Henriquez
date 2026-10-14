@@ -1,12 +1,12 @@
 {
  "fps": 30,
  "take": "Scene",
- "bind_height": 2.446,
+ "bind_height": 2.453,
  "bind_height_note": "alto que mide CharacterFactory.NormalizeHeight en la pose por defecto del FBX (el reposo, con la flauta parada a la derecha): con este valor en NindoContent la escala es 1",
  "tris": {
-  "body": 5570,
-  "cloak": 2276,
-  "chimes": 1728,
+  "body": 5614,
+  "cloak": 2468,
+  "chimes": 1872,
   "staff": 444
  },
  "facing": "frente +Z en Unity (Blender -Y): modelYaw 0",
@@ -211,7 +211,11 @@
   "Acc_ChimesLo12_0",
   "Acc_ChimesLo12_end",
   "Acc_ChimesLo13_0",
-  "Acc_ChimesLo13_end"
+  "Acc_ChimesLo13_end",
+  "Acc_ChimesLo14_0",
+  "Acc_ChimesLo14_end",
+  "Acc_ChimesLo15_0",
+  "Acc_ChimesLo15_end"
  ],
  "parts": {
   "skinned": [
@@ -230,7 +234,7 @@
    "Chikuo_GlintFootL",
    "Chikuo_Gi"
   ],
-  "notes": "una sola malla con skin (cuerpo, ropa, capa de hojas y los 24 cascabeles) y la flauta-bastón rígida en el hueso Staff (siempre visible). Los slots Chikuo_Glint* nacen sin emisión: el jefe los enciende por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash, blanco = la caña cargada). Ninguno se llama 'Glint': Enemy no prende nada solo."
+  "notes": "una sola malla con skin (cuerpo, ropa, capa de hojas y los 26 cascabeles) y la flauta-bastón rígida en el hueso Staff (siempre visible). Los slots Chikuo_Glint* nacen sin emisión: el jefe los enciende por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash, blanco = la caña cargada). Ninguno se llama 'Glint': Enemy no prende nada solo."
  },
  "material_rgb": {
   "Chikuo_Skin": [
@@ -309,7 +313,9 @@
    "Acc_ChimesLo10",
    "Acc_ChimesLo11",
    "Acc_ChimesLo12",
-   "Acc_ChimesLo13"
+   "Acc_ChimesLo13",
+   "Acc_ChimesLo14",
+   "Acc_ChimesLo15"
   ],
   "colliders": [
    "AccCol_Chest_13",
@@ -336,53 +342,53 @@
  "chimes": {
   "Acc_ChimesHi00": {
    "group": "Hi",
-   "angle_deg": 58.0,
-   "drop": 0.4077,
+   "angle_deg": 57.0,
+   "drop": 0.3977,
    "cord_m": 0.035,
-   "tube_m": 0.2,
+   "tube_m": 0.195,
    "radius_m": 0.031,
    "parent": "Cloak_058_1"
   },
   "Acc_ChimesHi01": {
    "group": "Hi",
-   "angle_deg": 72.0,
-   "drop": 0.5674,
+   "angle_deg": 66.0,
+   "drop": 0.4466,
    "cord_m": 0.05,
    "tube_m": 0.21,
    "radius_m": 0.032,
-   "parent": "Cloak_080_2"
+   "parent": "Cloak_058_1"
   },
   "Acc_ChimesHi02": {
    "group": "Hi",
-   "angle_deg": 87.0,
-   "drop": 0.5229,
-   "cord_m": 0.035,
-   "tube_m": 0.22,
+   "angle_deg": 75.0,
+   "drop": 0.5917,
+   "cord_m": 0.03,
+   "tube_m": 0.2,
    "radius_m": 0.031,
    "parent": "Cloak_080_2"
   },
   "Acc_ChimesHi03": {
    "group": "Hi",
-   "angle_deg": 101.0,
-   "drop": 0.3612,
-   "cord_m": 0.05,
-   "tube_m": 0.21,
+   "angle_deg": 86.0,
+   "drop": 0.57,
+   "cord_m": 0.055,
+   "tube_m": 0.225,
    "radius_m": 0.032,
-   "parent": "Cloak_102_2"
+   "parent": "Cloak_080_2"
   },
   "Acc_ChimesHi04": {
    "group": "Hi",
-   "angle_deg": 120.0,
-   "drop": 0.394,
+   "angle_deg": 98.0,
+   "drop": 0.3927,
    "cord_m": 0.04,
    "tube_m": 0.21,
    "radius_m": 0.031,
-   "parent": "Cloak_124_2"
+   "parent": "Cloak_102_2"
   },
   "Acc_ChimesHi05": {
    "group": "Hi",
-   "angle_deg": 302.0,
-   "drop": 0.4177,
+   "angle_deg": 303.0,
+   "drop": 0.4077,
    "cord_m": 0.045,
    "tube_m": 0.2,
    "radius_m": 0.031,
@@ -390,164 +396,182 @@
   },
   "Acc_ChimesHi06": {
    "group": "Hi",
-   "angle_deg": 288.0,
-   "drop": 0.5603,
+   "angle_deg": 293.0,
+   "drop": 0.4729,
    "cord_m": 0.035,
-   "tube_m": 0.215,
+   "tube_m": 0.24,
    "radius_m": 0.032,
-   "parent": "Cloak_280_2"
+   "parent": "Cloak_302_2"
   },
   "Acc_ChimesHi07": {
    "group": "Hi",
-   "angle_deg": 273.0,
-   "drop": 0.5309,
-   "cord_m": 0.05,
-   "tube_m": 0.21,
+   "angle_deg": 285.0,
+   "drop": 0.5966,
+   "cord_m": 0.055,
+   "tube_m": 0.195,
    "radius_m": 0.031,
    "parent": "Cloak_280_2"
   },
   "Acc_ChimesHi08": {
    "group": "Hi",
-   "angle_deg": 259.0,
-   "drop": 0.3563,
-   "cord_m": 0.04,
+   "angle_deg": 274.0,
+   "drop": 0.5751,
+   "cord_m": 0.03,
    "tube_m": 0.22,
    "radius_m": 0.032,
-   "parent": "Cloak_258_2"
+   "parent": "Cloak_280_2"
   },
   "Acc_ChimesHi09": {
    "group": "Hi",
-   "angle_deg": 243.0,
-   "drop": 0.4216,
-   "cord_m": 0.045,
-   "tube_m": 0.215,
+   "angle_deg": 262.0,
+   "drop": 0.3875,
+   "cord_m": 0.05,
+   "tube_m": 0.205,
    "radius_m": 0.031,
-   "parent": "Cloak_236_2"
+   "parent": "Cloak_258_2"
   },
   "Acc_ChimesLo00": {
    "group": "Lo",
-   "angle_deg": 168.0,
-   "drop": 0.1485,
-   "cord_m": 0.05,
-   "tube_m": 0.21,
-   "radius_m": 0.033,
-   "parent": "Cloak_168_1"
+   "angle_deg": 122.0,
+   "drop": 0.2906,
+   "cord_m": 0.045,
+   "tube_m": 0.19,
+   "radius_m": 0.032,
+   "parent": "Cloak_124_1"
   },
   "Acc_ChimesLo01": {
    "group": "Lo",
-   "angle_deg": 193.0,
-   "drop": 0.1527,
+   "angle_deg": 138.0,
+   "drop": 0.229,
    "cord_m": 0.06,
    "tube_m": 0.215,
-   "radius_m": 0.034,
-   "parent": "Cloak_192_1"
+   "radius_m": 0.032,
+   "parent": "Cloak_146_1"
   },
   "Acc_ChimesLo02": {
    "group": "Lo",
-   "angle_deg": 149.0,
-   "drop": 0.2015,
-   "cord_m": 0.04,
-   "tube_m": 0.205,
+   "angle_deg": 154.0,
+   "drop": 0.1993,
+   "cord_m": 0.035,
+   "tube_m": 0.2,
    "radius_m": 0.033,
    "parent": "Cloak_146_1"
   },
   "Acc_ChimesLo03": {
    "group": "Lo",
-   "angle_deg": 211.0,
-   "drop": 0.1898,
-   "cord_m": 0.045,
-   "tube_m": 0.21,
-   "radius_m": 0.034,
-   "parent": "Cloak_214_1"
+   "angle_deg": 170.0,
+   "drop": 0.1415,
+   "cord_m": 0.055,
+   "tube_m": 0.225,
+   "radius_m": 0.033,
+   "parent": "Cloak_168_1"
   },
   "Acc_ChimesLo04": {
    "group": "Lo",
-   "angle_deg": 130.0,
-   "drop": 0.2484,
-   "cord_m": 0.055,
-   "tube_m": 0.2,
+   "angle_deg": 190.0,
+   "drop": 0.1604,
+   "cord_m": 0.04,
+   "tube_m": 0.195,
    "radius_m": 0.033,
-   "parent": "Cloak_124_1"
+   "parent": "Cloak_192_1"
   },
   "Acc_ChimesLo05": {
    "group": "Lo",
-   "angle_deg": 230.0,
-   "drop": 0.2421,
-   "cord_m": 0.04,
-   "tube_m": 0.205,
+   "angle_deg": 206.0,
+   "drop": 0.1781,
+   "cord_m": 0.065,
+   "tube_m": 0.215,
    "radius_m": 0.033,
-   "parent": "Cloak_236_1"
+   "parent": "Cloak_214_1"
   },
   "Acc_ChimesLo06": {
    "group": "Lo",
-   "angle_deg": 180.0,
-   "drop": 0.2913,
-   "cord_m": 0.04,
-   "tube_m": 0.26,
-   "radius_m": 0.034,
-   "parent": "Cloak_168_1"
+   "angle_deg": 222.0,
+   "drop": 0.245,
+   "cord_m": 0.035,
+   "tube_m": 0.205,
+   "radius_m": 0.032,
+   "parent": "Cloak_214_1"
   },
   "Acc_ChimesLo07": {
    "group": "Lo",
-   "angle_deg": 158.0,
-   "drop": 0.3472,
-   "cord_m": 0.03,
-   "tube_m": 0.25,
-   "radius_m": 0.034,
-   "parent": "Cloak_168_2"
+   "angle_deg": 238.0,
+   "drop": 0.2613,
+   "cord_m": 0.055,
+   "tube_m": 0.19,
+   "radius_m": 0.032,
+   "parent": "Cloak_236_1"
   },
   "Acc_ChimesLo08": {
    "group": "Lo",
-   "angle_deg": 203.0,
-   "drop": 0.3419,
-   "cord_m": 0.05,
-   "tube_m": 0.255,
-   "radius_m": 0.035,
-   "parent": "Cloak_192_2"
-  },
-  "Acc_ChimesLo09": {
-   "group": "Lo",
-   "angle_deg": 139.0,
-   "drop": 0.4216,
-   "cord_m": 0.04,
-   "tube_m": 0.24,
+   "angle_deg": 146.0,
+   "drop": 0.425,
+   "cord_m": 0.035,
+   "tube_m": 0.235,
    "radius_m": 0.033,
    "parent": "Cloak_146_2"
   },
+  "Acc_ChimesLo09": {
+   "group": "Lo",
+   "angle_deg": 162.0,
+   "drop": 0.3483,
+   "cord_m": 0.03,
+   "tube_m": 0.26,
+   "radius_m": 0.034,
+   "parent": "Cloak_168_2"
+  },
   "Acc_ChimesLo10": {
    "group": "Lo",
-   "angle_deg": 221.0,
-   "drop": 0.4142,
-   "cord_m": 0.035,
+   "angle_deg": 180.0,
+   "drop": 0.3186,
+   "cord_m": 0.04,
    "tube_m": 0.25,
    "radius_m": 0.034,
-   "parent": "Cloak_214_2"
+   "parent": "Cloak_168_1"
   },
   "Acc_ChimesLo11": {
    "group": "Lo",
-   "angle_deg": 170.0,
-   "drop": 0.5158,
-   "cord_m": 0.04,
+   "angle_deg": 198.0,
+   "drop": 0.3425,
+   "cord_m": 0.05,
    "tube_m": 0.265,
-   "radius_m": 0.035,
-   "parent": "Cloak_168_2"
+   "radius_m": 0.034,
+   "parent": "Cloak_192_2"
   },
   "Acc_ChimesLo12": {
    "group": "Lo",
-   "angle_deg": 196.0,
-   "drop": 0.5322,
+   "angle_deg": 214.0,
+   "drop": 0.4214,
    "cord_m": 0.035,
-   "tube_m": 0.27,
-   "radius_m": 0.035,
-   "parent": "Cloak_192_2"
+   "tube_m": 0.24,
+   "radius_m": 0.033,
+   "parent": "Cloak_214_2"
   },
   "Acc_ChimesLo13": {
    "group": "Lo",
-   "angle_deg": 183.0,
-   "drop": 0.6778,
+   "angle_deg": 172.0,
+   "drop": 0.5316,
    "cord_m": 0.04,
    "tube_m": 0.26,
-   "radius_m": 0.035,
+   "radius_m": 0.034,
+   "parent": "Cloak_168_2"
+  },
+  "Acc_ChimesLo14": {
+   "group": "Lo",
+   "angle_deg": 192.0,
+   "drop": 0.5509,
+   "cord_m": 0.035,
+   "tube_m": 0.265,
+   "radius_m": 0.034,
+   "parent": "Cloak_192_2"
+  },
+  "Acc_ChimesLo15": {
+   "group": "Lo",
+   "angle_deg": 183.0,
+   "drop": 0.7361,
+   "cord_m": 0.04,
+   "tube_m": 0.245,
+   "radius_m": 0.034,
    "parent": "Cloak_192_3"
   }
  },

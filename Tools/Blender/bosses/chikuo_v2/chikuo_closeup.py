@@ -2,6 +2,7 @@
 
   blender -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/chikuo_closeup.py -- DIR cabeza|cuerpo|pies
   blender -b ... -- DIR pose NOMBRE x,y,z ESCALA     (una pose de chikuo_poses de cerca, alrededor de x,y,z, desde 4 lados)
+  blender -b ... -- DIR arriba                        (parado y con los brazos arriba desde 52°, como la cámara del juego)
 """
 import sys, os
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -39,18 +40,28 @@ if what == "pose":
     arm.location = (0, 0, up)
     views = [(c + Vector((0, 0, up)), sc, a, e) for a, e in ((0, 5), (70, 5), (160, 10), (250, 5))]
     tag = f"{name}_{argv[3]}"
+elif what == "arriba":
+    # desde arriba como la cámara del juego (52°), parado y con los brazos arriba: lo que más se ve es el lomo de la capa
+    views = []
+    for pose_name in ("relaxed", "arms_up"):
+        W, _ = CP.solve(rig, pose_name)
+        views += [(W, pose_name, (0, 0.05, 1.45), 1.9, a, 52) for a in (0, 90, 180)]
+    tag = "arriba"
 elif what == "cara":
     # las caras de cerca, de frente y de 3/4 (sonrisa, soplando, riéndose, tocando con los ojos cerrados)
     views = []
     for face in CP.FACE_POSES:
-        views += [(face, (0, -0.02, 2.15), 0.30, a, e) for a, e in ((0, 3), (35, 4))]
+        views += [(face, (0, -0.07, 2.13), 0.34, a, e) for a, e in ((0, 3), (35, 4))]
 else:
-    views = {"cabeza": [((0, 0.0, 2.22), 0.54, a, e) for a, e in ((0, 3), (90, 2), (35, 5), (-90, 2), (180, 8), (0, 60))],
+    views = {"cabeza": [((0, -0.03, 2.22), 0.56, a, e) for a, e in ((0, 3), (90, 2), (35, 5), (-90, 2), (180, 8), (0, 60))],
              "cuerpo": [((0, 0, 1.55), 1.2, a, e) for a, e in ((0, 3), (90, 2), (35, 5), (180, 8))],
              "pies": [((-0.24, -0.06, 0.2), 0.6, a, e) for a, e in ((0, 3), (90, 2), (35, 15), (180, 8))]}[what]
 tiles = []
 for i, v in enumerate(views):
-    if len(v) == 5:
+    if len(v) == 6:
+        W, tag, c, s, a, e = v
+        rv.apply(W)
+    elif len(v) == 5:
         face, c, s, a, e = v
         rv.apply(CP.face_pose(rig, face))
         tag = "cara " + face
@@ -59,5 +70,6 @@ for i, v in enumerate(views):
     rv.set_studio_light(RV.STUDIO if abs(a) < 150 else Vector((0.4, 0.75, 0.7)))
     rv.ortho(c, s, a, e)
     tiles.append({"img": rv.render(rv.tile(f"cu_{i}"), res=(640, 640)), "label": f"{tag} {a}° / {e}°"})
-rv.sheet({"out": os.path.join(out, f"closeup_{tag}.png"), "title": "primer plano: " + tag, "width": 1280, "tile_h": 420,
+name = tag if what == "pose" else what
+rv.sheet({"out": os.path.join(out, f"closeup_{name}.png"), "title": "primer plano: " + name, "width": 1280, "tile_h": 420,
           "rows": [{"label": "", "tiles": tiles}]})

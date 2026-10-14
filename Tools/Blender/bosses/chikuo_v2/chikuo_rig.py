@@ -13,7 +13,7 @@ una sola raíz 'Root' que ningún clip anima). Además de la cadena humana (Hips
     la cerbatana), 'Staff_Flute' (el agujero de soplar de costado) y 'Staff_Grip' (el centro del vendado);
   * cadenas que el juego puede mover con SpringChain ('Acc_<Nombre>_0..n' + '_end', la convención de los kits):
     la barba ('TasselBeard', 4 tramos, cuelga de la cabeza), la ramita de hojas del moño ('LeafKnot'), las colas de la
-    faja ('TieSashA/B') y un hueso por cascabel ('ChimesHi00..09' en los hombros, 'ChimesLo00..13' en la espalda: el
+    faja ('TieSashA/B') y un hueso por cascabel ('ChimesHi00..09' en los hombros, 'ChimesLo00..15' en la espalda: el
     perfil 'Chimes' de SpringChain), con las esferas 'AccCol_*' del pecho, la panza, la espalda de la capa, la cadera,
     los muslos, los brazos y la flauta (ninguna cadena queda adentro de una esfera en reposo: build_chikuo lo mide);
   * cadenas horneadas en los clips (sin el prefijo Acc_, a propósito): el moño ('Topknot_1..2'), las mangas
@@ -73,24 +73,29 @@ HEAD_SRC = Vector((0.0, 0.005, 2.02))        # el pivote de la cabeza en el marc
 HEAD_J = Vector((0.0, -0.035, 2.0))          # el pivote de la cabeza en el modelo (la base del cráneo)
 HEAD_S = Vector((1.18, 1.10, 1.06))
 HEAD_SX_TOP = 1.00                           # el ancho se estira en la cara; el cráneo, arriba de las sienes, casi no
+HEAD_SX_BACK = 0.35                          # y la nuca solo un tercio: de espaldas el pelo no es un casco más ancho
 
 
-def head_sx(z_src):
+def head_sx(z_src, y_src):
     t = max(0.0, min(1.0, (z_src - 2.13) / 0.09))
-    return HEAD_S.x + (HEAD_SX_TOP - HEAD_S.x) * t * t * (3.0 - 2.0 * t)
+    sx = HEAD_S.x + (HEAD_SX_TOP - HEAD_S.x) * t * t * (3.0 - 2.0 * t)
+    u = max(0.0, min(1.0, (y_src + 0.02) / 0.09))
+    return 1.0 + (sx - 1.0) * (1.0 + (HEAD_SX_BACK - 1.0) * u * u * (3.0 - 2.0 * u))
 
 
 def head_t(p):
-    """Del marco de autoría de la cabeza al modelo."""
+    """Del marco de autoría de la cabeza al modelo (el ancho depende de la altura y de la profundidad, que no cambian con
+    x: la vuelta es exacta)."""
     p = Vector(p)
     d = p - HEAD_SRC
-    return HEAD_J + Vector((d.x * head_sx(p.z), d.y * HEAD_S.y, d.z * HEAD_S.z))
+    return HEAD_J + Vector((d.x * head_sx(p.z, p.y), d.y * HEAD_S.y, d.z * HEAD_S.z))
 
 
 def head_t_inv(p):
     d = Vector(p) - HEAD_J
     z = HEAD_SRC.z + d.z / HEAD_S.z
-    return Vector((d.x / head_sx(z), HEAD_SRC.y + d.y / HEAD_S.y, z))
+    y = HEAD_SRC.y + d.y / HEAD_S.y
+    return Vector((d.x / head_sx(z, y), y, z))
 
 
 # cara en el marco de autoría (lado derecho): ojo (hundido bajo el arco de la ceja), ceja, cachete, comisura de la
@@ -169,18 +174,19 @@ def cloak_bones():
 # (los que ve la cámara del juego); los graves, largos, en tres hileras por la espalda alta y uno abajo: medidos sobre
 # la hoja de modelado, cuelgan entre 1.9 y 1.0 m (de espaldas, la mitad de arriba de la parva)
 CHIMES = [
-    # los hombros: cuatro de cada lado justo debajo del yugo de hojas en punta (que queda arriba y atrás, como en la hoja)
-    # y uno más a cada costado, detrás del brazo
-    ("Hi", 58.0, 1.835, 0.035, 0.200, 0.031), ("Hi", 72.0, 1.840, 0.050, 0.210, 0.032), ("Hi", 87.0, 1.830, 0.035, 0.220, 0.031),
-    ("Hi", 101.0, 1.800, 0.050, 0.210, 0.032), ("Hi", 120.0, 1.675, 0.040, 0.210, 0.031),
-    ("Hi", 302.0, 1.830, 0.045, 0.200, 0.031), ("Hi", 288.0, 1.845, 0.035, 0.215, 0.032), ("Hi", 273.0, 1.825, 0.050, 0.210, 0.031),
-    ("Hi", 259.0, 1.805, 0.040, 0.220, 0.032), ("Hi", 243.0, 1.660, 0.045, 0.215, 0.031),
-    # la espalda: tres hileras que no se pisan en altura (los de abajo entre los de arriba) y uno más abajo
-    ("Lo", 168.0, 1.860, 0.050, 0.210, 0.033), ("Lo", 193.0, 1.855, 0.060, 0.215, 0.034), ("Lo", 149.0, 1.845, 0.040, 0.205, 0.033),
-    ("Lo", 211.0, 1.860, 0.045, 0.210, 0.034), ("Lo", 130.0, 1.825, 0.055, 0.200, 0.033), ("Lo", 230.0, 1.835, 0.040, 0.205, 0.033),
-    ("Lo", 180.0, 1.585, 0.040, 0.260, 0.034), ("Lo", 158.0, 1.575, 0.030, 0.250, 0.034), ("Lo", 203.0, 1.590, 0.050, 0.255, 0.035),
-    ("Lo", 139.0, 1.560, 0.040, 0.240, 0.033), ("Lo", 221.0, 1.570, 0.035, 0.250, 0.034),
-    ("Lo", 170.0, 1.240, 0.040, 0.265, 0.035), ("Lo", 196.0, 1.250, 0.035, 0.270, 0.035), ("Lo", 183.0, 0.950, 0.040, 0.260, 0.035),
+    # los hombros: cinco de cada lado adelante, justo debajo del yugo de hojas en punta (que queda arriba y atrás, como en
+    # la hoja de modelado: de frente se ven todos, de 0.25 a 0.55 m del eje)
+    ("Hi", 57.0, 1.840, 0.035, 0.195, 0.031), ("Hi", 66.0, 1.855, 0.050, 0.210, 0.032), ("Hi", 75.0, 1.835, 0.030, 0.200, 0.031),
+    ("Hi", 86.0, 1.815, 0.055, 0.225, 0.032), ("Hi", 98.0, 1.790, 0.040, 0.210, 0.031),
+    ("Hi", 303.0, 1.835, 0.045, 0.200, 0.031), ("Hi", 293.0, 1.850, 0.035, 0.240, 0.032), ("Hi", 285.0, 1.830, 0.055, 0.195, 0.031),
+    ("Hi", 274.0, 1.810, 0.030, 0.220, 0.032), ("Hi", 262.0, 1.795, 0.050, 0.205, 0.031),
+    # la espalda: tres hileras que no se pisan en altura (las de abajo entre las de arriba) y uno más abajo
+    ("Lo", 122.0, 1.800, 0.045, 0.190, 0.032), ("Lo", 138.0, 1.845, 0.060, 0.215, 0.032), ("Lo", 154.0, 1.825, 0.035, 0.200, 0.033),
+    ("Lo", 170.0, 1.865, 0.055, 0.225, 0.033), ("Lo", 190.0, 1.830, 0.040, 0.195, 0.033), ("Lo", 206.0, 1.860, 0.065, 0.215, 0.033),
+    ("Lo", 222.0, 1.820, 0.035, 0.205, 0.032), ("Lo", 238.0, 1.840, 0.055, 0.190, 0.032),
+    ("Lo", 146.0, 1.530, 0.035, 0.235, 0.033), ("Lo", 162.0, 1.550, 0.030, 0.260, 0.034), ("Lo", 180.0, 1.540, 0.040, 0.250, 0.034),
+    ("Lo", 198.0, 1.560, 0.050, 0.265, 0.034), ("Lo", 214.0, 1.535, 0.035, 0.240, 0.033),
+    ("Lo", 172.0, 1.205, 0.040, 0.260, 0.034), ("Lo", 192.0, 1.195, 0.035, 0.265, 0.034), ("Lo", 183.0, 0.855, 0.040, 0.245, 0.034),
 ]
 # flauta-bastón: 2.1 m, Ø 6 cm; en reposo parada a la derecha (el juego la mueve; no cambia el alto de bind)
 STAFF_LEN = 2.10

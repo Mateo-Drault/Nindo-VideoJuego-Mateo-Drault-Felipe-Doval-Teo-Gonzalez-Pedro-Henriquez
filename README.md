@@ -270,7 +270,8 @@ $B -b --python Tools/Blender/world/build_world.py -- --export [--map] [--preview
 $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --export [--only Run,Attack1] [--renders DIR]
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
 # Chikuō, el ermitaño de las cañas (fase C4): modelo, esqueleto, poses de prueba, chequeos y FBX (bosses/bamboo_master es
-# el Chikuō viejo: ya no se exporta). Hojas contra el concepto con --renders DIR [--sheets turnaround,head,details,game,poses,lineup]
+# el Chikuō viejo: ya no se exporta). Hojas contra el concepto con --renders DIR [--sheets turnaround,head,details,game,poses,lineup,metric]
+# ('metric': el modelo y la hoja de modelado a la misma escala con grilla de 10 cm y superpuestos, chikuo_overlay.py)
 $B -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/build_chikuo.py -- --export [--renders DIR] [--roundtrip RT.json]
 python3 Tools/Blender/bosses/chikuo_v2/check_chikuo_fbx.py      # lo que Unity va a ligar: raíces, rutas, huesos, materiales
 $B -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/check_chikuo_roundtrip.py -- RT.json   # el FBX importado da lo mismo
