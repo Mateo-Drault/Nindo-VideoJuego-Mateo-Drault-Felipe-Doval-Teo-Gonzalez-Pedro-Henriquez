@@ -552,6 +552,10 @@ def build_hair(kits):
             # el cordón y de perfil tapa la coronilla (la hoja de perfil)
             if abs(a) < 95.0:
                 bulk += 0.016 * math.sin(math.pi * min(1.0, max(0.0, (t - 0.2) / 0.75)))
+            else:
+                # en la coronilla de atrás las mechas se juntan sobre un cráneo muy curvo: un poco más de volumen para que
+                # las caras planas no lo dejen asomar
+                bulk += 0.008 * smooth01((t - 0.5) / 0.3)
             surf = onto_head(p, 0.0) if p.z < 2.262 else p
             outv = Vector((surf.x, surf.y - head_r(surf.z, 0)[0], 0.0))
             outv = outv.normalized() if outv.length > 1e-6 else Vector((0, 1, 0))
