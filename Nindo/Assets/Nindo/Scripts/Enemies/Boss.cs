@@ -132,21 +132,6 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Arranca la pelea ya en la fase 'p' (un reintento que retoma más adelante): las aceleraciones de cada fase
-        /// saltada quedan como si hubiera pasado por ellas, sin el rugido ni el cartel. La música la pide cada jefe.
-        /// </summary>
-        protected void ResumeAtPhase(int p)
-        {
-            while (phase < p)
-            {
-                phase++;
-                config.attackCooldown *= 0.75f;
-                config.ScaleSteps(1f, 1f + phaseSpeedBonus);
-            }
-            pendingPhase = 0;
-        }
-
-        /// <summary>
         /// Se enfurece: ruge 1.1 s sin dejar de ser un objetivo (antes pasaba a "guion": se perdía el fijado y la
         /// cámara se reacomodaba), conserva la postura acumulada y vuelve más rápido.
         /// </summary>

@@ -59,45 +59,6 @@ namespace Nindo
         static readonly float[] PhaseHeal = { 0f, 25f, 20f };
         const float PhaseSpirit = 20f;
 
-        /// <summary>
-        /// Reintento: la pelea vuelve en la fase más alta a la que llegó Kaito (como las fases de Chikuō y los actos de
-        /// Kokuyō). Con la vida doble, morir en la fase 3 y volver a la plataforma sana dejaba al bot promedio ~10 muertes
-        /// por pelea: cada fase es una lección ya aprendida.
-        /// </summary>
-        int retryPhase;
-
-        void OnPlayerDied()
-        {
-            if (Fighting) retryPhase = Mathf.Max(retryPhase, Mathf.Min(CurrentPhase, phaseThresholds.Length));
-        }
-
-        /// <summary>
-        /// Arranca la pelea en la fase del reintento como queda al terminar su transición: el cuerpo corrompido, la cascada
-        /// crecida e inundando la plataforma y, en la 3, a pleno con el arcoíris doble; las esperas, las firmas y la cadencia
-        /// de cada fase saltada; la vida en el umbral. Sin la escena de 5.5 s ni la cura (Kaito reapareció entero). El tema
-        /// entra en su fase: esto corre en el mismo frame que PlayBossMusic (Boss.BeginFight).
-        /// </summary>
-        void ResumeRetryPhase()
-        {
-            int n = retryPhase;
-            ResumeAtPhase(n);
-            for (int i = 1; i <= n; i++) ApplyPhasePacing(i);
-            Imbalance = 0f;
-            CorruptedStats();
-            body?.SetPhase(1);
-            if (Falls != null)
-            {
-                Falls.Corruption = 0.35f;
-                Falls.Intensity = n >= 2 ? 1.6f : 1.4f;
-                if (n >= 2) Falls.MoonbowBoost = 2f;
-                Falls.Flood?.Rise(2f);
-            }
-            Health = Mathf.Min(Health, config.maxHealth * phaseThresholds[n - 1]);
-            StaggerCooldowns(n, 0.6f);
-            QueueSignatures(n);
-            Game.Audio?.SetBossMusicPhase(n + 1);
-        }
-
         // cooldowns por fase (1, 2, 3) de los especiales que se aceleran; el resto queda como lo pone EnemyArchetypes
         static readonly string[] FasterNames = { "Salto del Dragón", "Ola de la Cascada", "Pilares", "Chorro barrido", "Perlas de tormenta" };
         static readonly float[,] FasterCooldowns = { { 12f, 9f, 7f }, { 15f, 13f, 10f }, { 20f, 17f, 12f }, { 8f, 8f, 6.5f }, { 6f, 6f, 5f } };

@@ -28,7 +28,7 @@ namespace Nindo
         {
             EnsureGrove();
             Game.Audio?.StopMusic(first ? 1.5f : 0.6f);
-            if (!first || retryPhase >= 1 || grove == null)
+            if (!first || grove == null)
             {
                 yield return Reintro(p);
                 yield break;
@@ -73,28 +73,26 @@ namespace Nindo
             Game.Camera.CancelShot(talk);
         }
 
-        /// <summary>Reintento: en su lugar de la fase (colgado de O1 se suelta y se posa; en la fase 2 parado; en la 3 en la
-        /// Madre) con una frase distinta por intento (~2 s).</summary>
+        /// <summary>Reintento: colgado de O1 se suelta y se posa, con una frase distinta por intento (~2 s).</summary>
         IEnumerator Reintro(PlayerController p)
         {
             WaitPose();
             float dur = 2f;
             Transform focus = model;
-            if (retryPhase == 0 && body == Body.Perch)
+            if (body == Body.Perch)
             {
                 var intro = ChikuoTimings.Intro;
                 float from = intro.Event("LeaveStalk") - 0.06f;
                 Play(intro, 0.1f, Mathf.Max(0f, from));
                 dur = Mathf.Max(1.2f, (1f - from) * intro.Seconds);
             }
-            else if (retryPhase == 1) Play(ChikuoTimings.GroundLaugh, 0.15f);
             else Play(ChikuoTimings.PerchLaugh, 0.15f);
             Vector3 b = transform.position;
             Vector3 kp = p != null ? p.transform.position : b + Vector3.back * 10f;
             Vector3 back = (kp - b).Flat().normalized;
             float h = HeightAboveFloor + 1.4f;
             int shot = Game.Camera.PlayStaticShot(kp + back * 4.5f + Vector3.up * 2.6f, b + Vector3.up * Mathf.Max(1.6f, h * 0.7f), 38f, 0f, 0.6f, 0.7f);
-            Game.UI?.ShowBark(StoryText.Chikuo, StoryText.ChikuoRetry(attempts, retryPhase), BarkColor, 3.2f);
+            Game.UI?.ShowBark(StoryText.Chikuo, StoryText.ChikuoRetry(attempts), BarkColor, 3.2f);
             yield return new WaitForSeconds(dur);
             if (body == Body.Perch) Play(ChikuoTimings.PerchIdle, 0.15f);
             else Play(ChikuoTimings.Idle, 0.2f);

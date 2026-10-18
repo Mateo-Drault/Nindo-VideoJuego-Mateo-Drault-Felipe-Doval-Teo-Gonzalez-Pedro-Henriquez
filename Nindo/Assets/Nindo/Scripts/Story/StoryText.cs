@@ -331,12 +331,9 @@ namespace Nindo
             }
         }
 
-        /// <summary>Lo que dice Chikuō al recibir a Kaito otra vez después de vencerlo (una frase distinta por intento; si la
-        /// lección sigue en la fase 2 o 3, retoma donde quedó).</summary>
-        public static string ChikuoRetry(int attempt, int phase)
+        /// <summary>Lo que dice Chikuō al recibir a Kaito otra vez después de vencerlo (una frase distinta por intento).</summary>
+        public static string ChikuoRetry(int attempt)
         {
-            if (phase >= 2) return "El bosque te estaba esperando. Seguimos donde quedamos.";
-            if (phase == 1) return "Las cañas siguen inclinadas. Vení a bailar.";
             switch (attempt)
             {
                 // volvió otro día (el contador de intentos vive en la pelea y arranca en 0 al cargar la partida)

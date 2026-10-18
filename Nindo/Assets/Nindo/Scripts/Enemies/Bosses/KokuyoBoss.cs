@@ -62,14 +62,9 @@ namespace Nindo
         bool lastStandKneel;
         // ya cayó de rodillas una vez: desde ahí hacen falta dos parries (KneelThreshold), también en los reintentos
         bool kneelTaught;
-        // reintentos: dos muertes en el Acto 1 → pista del abuelo; morir en el Acto 2 o en el eclipse → se reintenta
-        // desde ese acto
+        // reintentos: la pelea entera desde el Acto 1 (pedido del usuario); dos muertes en el Acto 1 → pista del abuelo
         int act1Deaths;
         bool hintPending, shadowTipShown;
-        int retryAct = 1;
-        // el arranque rápido del reintento espera al primer Update de la pelea: BeginFight levanta el evento ANTES de
-        // ponerlo en Chase, y una escena empezada ahí adentro quedaba pisada (caminaba y pegaba siendo inmune)
-        bool retryTearPending;
 
         // paso en curso
         KokuyoClip clip;
@@ -162,16 +157,6 @@ namespace Nindo
             ResetShadowDirector();
             BeginActShadow();
             if (hintPending) { hintPending = false; Bark("kokuyo_hint_suelo"); }
-            // murió en el Acto 2 o en el eclipse: el reintento arranca en ese acto, con un arranque rápido de lo que pasó
-            // (la sombra arrancada y, para el 3, la luna tapada). Cada acto es ~1 minuto de pelea: volver al 100 % le hacía
-            // repetir al bot promedio el 22 % de la pelea en actos que ya había ganado
-            if (retryAct >= 2)
-            {
-                Health = Mathf.Min(Health, Gates[retryAct - 1] * config.maxHealth);
-                retryTearPending = true;
-                // en el mismo frame que PlayBossMusic: la música arranca directo en el acto del reintento
-                Game.Audio?.SetBossMusicPhase(retryAct);
-            }
         }
 
         void OnPlayerDied()
@@ -179,7 +164,6 @@ namespace Nindo
             if (!Fighting) return;
             LogShadowStats("murió Kaito");
             if (Act == 1 && ++act1Deaths == 2) hintPending = true;
-            if (Act >= 2) retryAct = Mathf.Max(retryAct, Mathf.Min(Act, 3));
         }
 
         public override void ResetEnemy()
@@ -189,7 +173,6 @@ namespace Nindo
             if (look == null) return;
             Act = 1;
             LastStand = lastStandKneel = false;
-            retryTearPending = false;
             pendingPosture = 0f;
             ResetShadowDirector();
             sinking = false;
@@ -213,7 +196,6 @@ namespace Nindo
         protected override void Update()
         {
             if (look == null) { base.Update(); return; }
-            if (retryTearPending && Fighting && IsAlive && State == EnemyState.Chase) { retryTearPending = false; StartTransition(retryAct, true); }
             ApplyPendingPosture();
             UpdateShadowDirector();
             BiasStrafe();
@@ -687,7 +669,7 @@ namespace Nindo
         {
             // sin la fase genérica de Boss: los umbrales son pisos y cada uno abre su escena
             if (transition != null || LastStand || !IsAlive) return;
-            if (Health <= Gates[Act] * config.maxHealth + 0.5f) StartTransition(Act + 1, false);
+            if (Health <= Gates[Act] * config.maxHealth + 0.5f) StartTransition(Act + 1);
             else CheckStage();
         }
 
@@ -784,13 +766,13 @@ namespace Nindo
         }
 
         // ================================================================== transiciones
-        void StartTransition(int next, bool quick)
+        void StartTransition(int next)
         {
             if (transition != null) return;
-            transition = StartCoroutine(TransitionRoutine(next, quick));
+            transition = StartCoroutine(TransitionRoutine(next));
         }
 
-        IEnumerator TransitionRoutine(int next, bool quick)
+        IEnumerator TransitionRoutine(int next)
         {
             bool fromKneel = State == EnemyState.Exhausted;
             ReleaseToken();
@@ -804,19 +786,19 @@ namespace Nindo
             lastStandKneel = false;
             config.finisherHealth = 0f;
             hazards.Core(Vector3.zero, 0f);
-            if (!quick) Game.UI?.BossEnraged(this);
+            Game.UI?.BossEnraged(this);
             if (fromKneel)
             {
                 // de rodillas: primero arranca la hoja del piso (si no, el fundido la saca de la piedra en 0.15 s)
                 anim.Play(KokuyoTimings.KneelRise.State, 0.08f);
                 yield return new WaitForSeconds(KokuyoTimings.KneelRise.Seconds * 0.9f);
             }
-            if (next == 2) yield return ShadowTear(quick);
+            if (next == 2) yield return ShadowTear(false);
             else if (next == 3)
             {
-                // reintento desde el eclipse: el arranque rápido pasa por los dos cambios, uno detrás del otro
+                // el atajo de prueba al acto 3 ('kokuyo fase 3' desde el 1): el tirón rápido y después el eclipse
                 if (Act < 2) yield return ShadowTear(true);
-                yield return Eclipse(quick);
+                yield return Eclipse();
             }
             else yield return LastStandRise();
             transition = null;
@@ -876,18 +858,15 @@ namespace Nindo
             if (!shadowTipShown) { shadowTipShown = true; ShowTip(StoryText.Hint("kage_shadow")); }
         }
 
-        /// <summary>2 → 3: la sombra vuelve a sus pies, clava la nodachi y cierra el puño sobre la luna. 'quick' (el
-        /// reintento desde el eclipse): desde poco antes del clavado, sin grito, sin el plano al cielo ni la cura (Kaito
-        /// volvió entero) y con el tema ya en su fase 3 (OnBossStarted).</summary>
-        IEnumerator Eclipse(bool quick)
+        /// <summary>2 → 3: la sombra vuelve a sus pies, clava la nodachi y cierra el puño sobre la luna.</summary>
+        IEnumerator Eclipse()
         {
             var c = KokuyoTimings.Eclipse;
             kage?.Recall();
             float plantN = c.Event("SwordPlant"), fadeN = c.Event("MoonFade");
-            float from = quick ? Mathf.Max(0f, plantN - 0.1f) : 0f;
-            anim.Play(c.State, 0.15f, from);
-            if (!quick) Bark("kokuyo_bark_eclipse");
-            float plant = (plantN - from) * c.Seconds, fade = (fadeN - from) * c.Seconds;
+            anim.Play(c.State, 0.15f);
+            Bark("kokuyo_bark_eclipse");
+            float plant = plantN * c.Seconds, fade = fadeN * c.Seconds;
             yield return new WaitForSeconds(plant);
             Game.FX?.Shockwave(transform.position, 4.5f, KokuyoLook.Violet);
             Game.FX?.Dust(transform.position + transform.forward * 1.5f, 1.6f);
@@ -896,24 +875,16 @@ namespace Nindo
             yield return new WaitForSeconds(Mathf.Max(0f, fade - plant));
             // sin luna no hay sombra que se vea... pero sigue ahí, en la oscuridad (sale para atacar)
             kage?.Hide();
-            if (!quick) Game.Audio?.SilenceBossMusic(0.4f);   // viento y silencio: lo que queda es el aviso
+            Game.Audio?.SilenceBossMusic(0.4f);   // viento y silencio: lo que queda es el aviso
             fx?.Eclipse();
             look.SetEclipse(true);
-            if (quick)
-            {
-                // hasta pasado el puño cerrado (~0.75 del clip): la locomoción funde lo que queda
-                yield return new WaitForSeconds(0.8f);
-            }
-            else
-            {
-                // un vistazo al cielo mientras no puede atacar (la cámara de juego nunca ve la luna)
-                if (fx != null && fx.Moon != null) fx.Moon.PlaySkyShot(0.9f, 0.5f, 0.6f);
-                RewardKaito();
-                yield return new WaitForSeconds(1.6f);
-                // desde el silencio entra en el acto: la segunda subida del tema
-                Game.Audio?.SetBossMusicPhase(3);
-                yield return new WaitForSeconds(Mathf.Max(0.2f, 3.0f - fade - 1.6f));
-            }
+            // un vistazo al cielo mientras no puede atacar (la cámara de juego nunca ve la luna)
+            if (fx != null && fx.Moon != null) fx.Moon.PlaySkyShot(0.9f, 0.5f, 0.6f);
+            RewardKaito();
+            yield return new WaitForSeconds(1.6f);
+            // desde el silencio entra en el acto: la segunda subida del tema
+            Game.Audio?.SetBossMusicPhase(3);
+            yield return new WaitForSeconds(Mathf.Max(0.2f, 3.0f - fade - 1.6f));
             Act = 3;
             config.patterns = KokuyoMoves.Act(3);
             counterPattern = KokuyoMoves.Counter(3);
@@ -925,8 +896,8 @@ namespace Nindo
             var c = KokuyoTimings.LastStand;
             Bark("kokuyo_bark_last");
             anim.Play(c.State, 0.12f);
-            // como cada cambio de acto, le devuelve aire: morir en el Último Desfile (cinco golpes del final) reintenta
-            // desde el eclipse; sin la cura el bot promedio llegaba sin vida y moría ahí 0.3 veces por pelea
+            // como cada cambio de acto, le devuelve aire: sin la cura el bot promedio llegaba sin vida al Último Desfile
+            // (cinco golpes del final) y moría ahí 0.3 veces por pelea
             RewardKaito();
             TopUpSpirit();
             float roar = c.Event("Roar") * c.Seconds;
@@ -1258,7 +1229,7 @@ namespace Nindo
                 Act = 3;
             }
             Health = Gates[act - 1] * config.maxHealth + 1f;
-            StartTransition(act, false);
+            StartTransition(act);
         }
 
         /// <summary>

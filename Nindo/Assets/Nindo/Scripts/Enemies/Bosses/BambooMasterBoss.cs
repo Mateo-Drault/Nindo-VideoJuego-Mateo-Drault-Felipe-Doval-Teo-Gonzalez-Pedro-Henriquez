@@ -109,7 +109,7 @@ namespace Nindo
         bool returnCutUsed;
         // la fase cambia: lo que la corrutina en curso haga después de esto ya no vale
         bool phaseChanging;
-        int attempts, retryPhase;
+        int attempts;
 
         // ------------------------------------------------------------------ dardos por salir (ETA honesta)
         struct PendingDart { public float at; public bool cued, glinted; }
@@ -191,9 +191,8 @@ namespace Nindo
         void OnPlayerDied()
         {
             if (!Fighting) return;
+            // el reintento es la pelea entera desde la fase 1 (pedido del usuario); solo cambia la frase de bienvenida
             attempts++;
-            // el viejo retoma la lección donde quedó: el reintento arranca en la fase más alta a la que llegó Kaito
-            retryPhase = Mathf.Max(retryPhase, phaseIdx);
         }
 
         public override void ResetEnemy()
@@ -223,31 +222,21 @@ namespace Nindo
             lastBark = -99f;
             if (tipHideAt > 0f) { Game.UI?.HideTutorial(); tipHideAt = -1f; }
             ClearCameraBias();
-            if (EnsureGrove()) grove.Reset(retryPhase);
+            if (EnsureGrove()) grove.Reset(0);
             WaitPose();
         }
 
         /// <summary>
-        /// Espera la llegada de Kaito: colgado cabeza abajo de la punta de O1 tocando la flauta (el primer cuadro del Intro);
-        /// en un reintento de la fase 2, parado en el centro del claro; de la fase 3, posado en la Madre.
+        /// Espera la llegada de Kaito: colgado cabeza abajo de la punta de O1 tocando la flauta (el primer cuadro del Intro).
         /// </summary>
         void WaitPose()
         {
             EnterScripted();
             vuln = Vuln.None;
             if (grove == null) { SetBody(Body.Ground); return; }
-            if (retryPhase == 1)
-            {
-                Warp(grove.Center + (grove.Get("O1") != null ? (grove.Get("O1").Base - grove.Center).normalized * 2f : Vector3.left * 2f));
-                SetBody(Body.Ground);
-                anim.Play("Idle", 0f);
-                return;
-            }
-            var s = retryPhase >= 2 && grove.Mother != null ? grove.Mother : grove.Get("O1");
-            PerchOn(s);
+            PerchOn(grove.Get("O1"));
             // colgado de O1 quieto en el primer cuadro del Intro hasta que lo arranque la presentación
-            if (retryPhase >= 2) Play(ChikuoTimings.PerchIdle, 0f);
-            else Play(ChikuoTimings.Intro, 0f, 0f, 0f);
+            Play(ChikuoTimings.Intro, 0f, 0f, 0f);
         }
 
         // ================================================================== por frame
@@ -296,18 +285,10 @@ namespace Nindo
             begun = true;
             kaitoDown = false;
             if (!EnsureGrove()) return;
-            phaseIdx = Mathf.Clamp(retryPhase, 0, 2);
-            if (phaseIdx >= 1)
-            {
-                // misma frame que PlayBossMusic (Boss.BeginFight): el tema arranca directo en su fase
-                Health = Mathf.Min(Health, Gates[phaseIdx] * config.maxHealth);
-                Game.Audio?.SetBossMusicPhase(phaseIdx + 1);
-                subtitle = PhaseSubtitle(phaseIdx);
-                Game.UI?.BossRetitled(this);
-            }
-            config.patterns = BambooMasterMoves.GroundPatterns(Mathf.Max(1, phaseIdx));
+            phaseIdx = 0;
+            config.patterns = BambooMasterMoves.GroundPatterns(1);
             SetState(EnemyState.Scripted);
-            firstActions = phaseIdx == 0 && retryPhase == 0 ? 0 : 3;
+            firstActions = 0;
             Run(Brain());
         }
 

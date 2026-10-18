@@ -17,10 +17,8 @@ namespace Nindo
     ///    Golpes más pesados y con variantes (EnemyArchetypes.GoroPhase2), la onda que sale por el piso (SlamWave) y la
     ///    AVALANCHA (GoroAvalanche). Mientras carga un golpe la roca rebota los cortes (ArmorWindow): hay que desviar o
     ///    esquivar y pegarle después. Con la vida se le va cayendo la armadura (y cada tramo roto le devuelve aire a Kaito).
-    ///  * Reintento: morir en la primera barra vuelve a ella (la sorpresa de la barra falsa es la primera vez; las
-    ///    siguientes la cinemática va más rápida y sin el silencio largo). Morir ARMADO arranca armado (retryArmored, como
-    ///    los actos de Kokuyō y las fases de Chikuō): con las barras largas de la hora de juego, volver a la primera barra
-    ///    después de cada muerte en la segunda dejaba al jugador promedio 20-50 min trabado (goro_fight_sim.py).
+    ///  * Reintento: la pelea entera desde la primera barra, como la primera vez (pedido del usuario). La sorpresa de la
+    ///    barra falsa es la primera vez: en las siguientes la cinemática va más rápida y sin el silencio largo.
     /// bossId 'goro', flags, SealId.Montana y musicKey 'boss_goro' no cambian. Los cuadros de los clips y de la armadura
     /// salen de GoroTimings (generado desde los sidecars).
     /// </summary>
@@ -116,8 +114,6 @@ namespace Nindo
         float baseFinisherHealth = -1f;
         int shedStage;
         bool bounceHinted, barkPending;
-        // murió con la armadura puesta: el reintento arranca armado (OnPlayerDied, OnBossStarted)
-        bool retryArmored;
         Vector3 riseCamDir;
 
         // ---- presentación (y la versión corta del reintento)
@@ -168,34 +164,13 @@ namespace Nindo
             ApplyFinisherGate();
             if (Defeated) return;
             avalanche = GoroAvalanche.Create(this);
-            GameEvents.PlayerDied += OnPlayerDied;
-            GameEvents.BossStarted += OnBossStarted;
         }
 
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            GameEvents.PlayerDied -= OnPlayerDied;
-            GameEvents.BossStarted -= OnBossStarted;
             HoldCutscene(false);
             if (avalanche != null) Destroy(avalanche.gameObject);
-        }
-
-        void OnPlayerDied()
-        {
-            if (Fighting && armored) retryArmored = true;
-        }
-
-        /// <summary>
-        /// El reintento después de morir armado: la re-presentación ya lo mostró con la armadura (ResetEnemy) y acá entra
-        /// directo a la fase 2, sin la barra falsa ni la cinemática. La música arranca en su clímax: este evento sale en el
-        /// mismo frame que PlayBossMusic (Boss.BeginFight), así el tema empieza en la fase 2.
-        /// </summary>
-        void OnBossStarted(Boss b)
-        {
-            if (b != this || !retryArmored || !Game.Save.HasFlag(ArmorSeenFlag)) return;
-            ResumeAtPhase(1);   // la segunda mitad de la primera barra ya pasó ('Terremoto' y su aceleración)
-            BeginArmored(true);
         }
 
         public override void ResetEnemy()
@@ -214,13 +189,6 @@ namespace Nindo
             armor.HideAll();
             if (baseTitle != null) { title = baseTitle; subtitle = baseSubtitle; }
             ApplyFinisherGate();
-            // murió armado: espera con la armadura puesta y el epíteto (la re-presentación lo muestra así)
-            if (retryArmored && Game.Save.HasFlag(ArmorSeenFlag))
-            {
-                armor.ShowAll();
-                title = StoryText.Goro;
-                subtitle = StoryText.GoroEpithet;
-            }
         }
 
         /// <summary>Sin remate en la primera barra: la barra se vacía a golpes y "le ganaste". El remate es del final de verdad.</summary>
@@ -570,10 +538,9 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Barra nueva entera, el epíteto, el tema en su clímax y a pelear (la avalancha primero: se la presenta). 'retry':
-        /// el reintento después de morir armado (Kaito ya reapareció entero y la avalancha ya la conoce).
+        /// Barra nueva entera, el epíteto, el tema en su clímax y a pelear (la avalancha primero: se la presenta).
         /// </summary>
-        void BeginArmored(bool retry = false)
+        void BeginArmored()
         {
             armored = true;
             inCinematic = false;
@@ -596,16 +563,16 @@ namespace Nindo
             IsAggro = true;
             target = Game.Player;
             // la avalancha espera a que se vaya el cartel: el carril rojo es el único aviso justo de la primera
-            nextAttackTime = Time.time + (retry ? 0.6f : 3f);
-            forceAvalanche = !retry;
+            nextAttackTime = Time.time + 3f;
+            forceAvalanche = true;
             // el grito sale cuando termina esa primera avalancha (encima de ella tapaba los carriles de arriba)
-            barkPending = !retry;
+            barkPending = true;
             Game.UI?.ShowBossBar(this);
             // la fase 2 ya entró al levantarse (ArmorRise); acá solo hace falta si se llegó sin la cinemática (DebugArmor).
             // Un PlayBossMusic acá reiniciaba el tema y cortaba los tambores recién caídos
             Game.Audio?.SetBossMusicPhase(2);
             var p = Game.Player;
-            if (!retry && p != null && p.IsAlive)
+            if (p != null && p.IsAlive)
             {
                 p.Heal(TransitionHeal);
                 p.AddSpirit(TransitionSpirit);
