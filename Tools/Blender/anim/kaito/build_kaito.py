@@ -5,6 +5,7 @@
                       sidecar kaitooo.fbx.json; después correr Tools/Unity/generate_assets.py (o su parte de Kaito)
     --src FBX         modelo de partida (por defecto el del repo: el script es idempotente)
     --renders DIR     hojas de revisión por clip en DIR
+    --strip N         con --renders: también una tira de primeros planos cada N cuadros (cuerpo, manos, peso)
     --only A,B        solo esos clips (para iterar; no exporta)
     --report PATH     las mediciones en JSON
     --blend PATH      guarda el .blend
@@ -48,6 +49,8 @@ FBX = os.path.join(ROOT, "Nindo", "Assets", REL)
 SRC = opt("--src", FBX)
 EXPORT = "--export" in argv
 RENDERS = opt("--renders")
+# --strip N: con --renders, además una tira de primeros planos cada N cuadros de cada clip (kaito_review.strip)
+STRIP = int(opt("--strip", "0"))
 ONLY = opt("--only")
 REPORT = opt("--report")
 BLEND = opt("--blend")
@@ -802,6 +805,8 @@ def main():
             r["summary"] = summary(clip, r)
             print(rv.clip_sheet(clip, a, rootsd[clip.name], fs, [frame_label(clip, f) for f in fs], r,
                                 gait=isinstance(clip, NA.ProcClip)))
+            if STRIP:
+                print(rv.strip(clip, a, rootsd[clip.name], frames, STRIP))
     if BLEND:
         bpy.ops.wm.save_as_mainfile(filepath=BLEND)
     print(f"listo en {time.time() - t0:.1f} s; avisos {len(warnings)}")

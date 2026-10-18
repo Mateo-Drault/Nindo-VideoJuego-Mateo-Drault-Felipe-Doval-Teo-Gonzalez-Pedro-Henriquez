@@ -103,6 +103,32 @@ class Review:
         NA.ortho_camera(self.cam, center, scale, azimuth=90.0, elevation=4.0)
         self.render_crop(path, self.bounds_pts(), min_px=(300, 420))
 
+    def strip(self, clip, first, roots, frames, step):
+        """Tira de primeros planos: de frente 3/4 (yaw 35°), cámara a la altura del pecho a ~3 m, cada 'step' cuadros y
+        de perfil debajo. Para juzgar cuerpo, manos y peso en clips lentos (el rezo), que la hoja de 10 cuadros no muestra."""
+        rows = {"de frente 3/4, de cerca": [], "perfil": []}
+        for f in range(0, clip.frames + 1, step):
+            root = Vector(roots[f]) if f < len(roots) else Vector()
+            rz = Matrix.Rotation(math.radians(35.0), 3, 'Z') @ root
+            self.place(first + f, 35.0, root)
+            NA.game_camera(self.cam, Vector((rz.x, rz.y, 0.95 * KR.U_PER_M)), pitch=14.0, dist=3.2 * KR.U_PER_M, fov=30.0)
+            p = os.path.join(self.out, f"_{clip.name}_st{f}.png")
+            self.render_crop(p, self.bounds_pts(), min_px=(300, 420))
+            rows["de frente 3/4, de cerca"].append({"img": p, "label": f"f{f}"})
+            self.place(first + f, 0.0, root)
+            p = os.path.join(self.out, f"_{clip.name}_ss{f}.png")
+            self.side_view(p, Vector((root.x, root.y, 1.3)))
+            rows["perfil"].append({"img": p, "label": f"f{f}"})
+        self.restore()
+        lay = {"out": os.path.join(self.out, f"kaito_{clip.name}_tira.png"), "width": 1600, "tile_h": 230, "delete": True,
+               "title": f"Kaito {clip.name}: tira cada {step} cuadros", "rows": [{"label": k, "tiles": v} for k, v in rows.items()]}
+        jp = os.path.join(self.out, f"_{clip.name}_tira.json")
+        with open(jp, "w", encoding="utf-8") as fh:
+            json.dump(lay, fh, ensure_ascii=False)
+        NA.compose_sheet(jp)
+        os.remove(jp)
+        return lay["out"]
+
     # ------------------------------------------------------------------ hoja de un clip
     def clip_sheet(self, clip, first, roots, frames, labels, report, gait=False):
         tiles = {"juego 52° / 24 m, de frente 3/4 (píxeles reales de 1080p)": [],
