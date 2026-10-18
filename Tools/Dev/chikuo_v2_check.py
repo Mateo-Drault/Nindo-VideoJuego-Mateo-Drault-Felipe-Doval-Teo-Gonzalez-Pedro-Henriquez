@@ -16,7 +16,7 @@ Partes (se pueden pedir de a una):
   --fair     avisos de cada golpe (anillo, '¡ya!', zona fija), escapes de los rojos corriendo y con el dash, vuelo de los
              dardos, ventanas del latigazo y de la caída del cielo (desde cuántos metros llega el bot).
   (siempre)  la pelea contra el bot ('bot on experto|bueno|promedio' de Input/AutoPilot.cs, con el gancho del latigazo
-             del doc): 2D a 60 Hz, tres fases, muertes y reintentos desde la fase alcanzada. Dice cuánto dura (el intento
+             del doc): 2D a 60 Hz, tres fases, muertes y reintentos desde la fase 1. Dice cuánto dura (el intento
              ganador y el total con las muertes, que es lo que mide el PlayClock), las muertes, de dónde sale el daño, la
              densidad de amenazas, el tiempo muerto, y qué tan seguido sale cada hueco.
 
@@ -85,17 +85,17 @@ P = dict(
     react_mix=dict(colgado=0.30, barrido=0.20, picada=0.15, baston=0.15, salto=0.20),
     camp_dist=2.5, camp_time=0.6,                     # plantado al pie de la caña: barrido de caña
     max_on_stalk=[2, None, 2],                        # acciones por caña antes de saltar sí o sí
-    dart_speed=[16.0, 16.0, 18.0], dart_lead=[0.5, 0.6, 0.8], dart_hit_r=0.6,
+    dart_speed=[16.0, 16.0, 21.0], dart_lead=[0.5, 0.6, 0.8], dart_hit_r=0.6,
     whistle_speed=22.0, whistle_lane=1.0,
     leap_crouch=[0.22, 0.22, 0.14], leap_base=0.30, leap_per_m=0.035, leap_k=[1.0, 1.0, 0.85], leap_grab=0.20,
     leap_dest=[(4.5, 8.0), None, (4.0, 7.0)],
     catch_window=[0.45, 0.45, 0.60],                  # caída del cielo: el corte a la caña de destino en los últimos s
     leap_look=[0.0, 0.0, 0.25],                       # fase 3: mira la caña de destino antes de agacharse
-    pingpong=0.30,
+    pingpong=0.12,
     last_song=0.20,                                   # la Última Canción: salta después de cada acción
     signature_first=(5.0, 7.0), signature_every=(9.0, 12.0),   # fase 3: tala, catapulta o la ráfaga de cuatro
     signature_chain=7.0,                              # con Kaito a 7 m o menos, la ráfaga de cuatro sigue con la Picada
-    perch_rate=[1.0, None, 1.2],                      # fase 3: los dardos posados a x1.2 (BambooMasterMoves.PerchRate)
+    perch_rate=[1.0, None, 1.45],                      # fase 3: los dardos posados a x1.2 (BambooMasterMoves.PerchRate)
     fan=[False, None, True], fan_m=1.6,               # fase 3: un soplido de cada dos sale en abanico (dos más a 1.6 m)
     catapult=dict(min_dist=4.0, every=6.0, w=1.0),
     hang_near_lead=0.35,                              # colgado con Kaito al pie: la carga prende 0.35 s antes del dardo
@@ -1696,7 +1696,7 @@ def campaign(skill, rng, stats, log=None):
         died.append(f.ph)
         deaths += 1
         total += DEATH_AND_RETRY
-        retry = max(retry, f.ph)
+        # el reintento es la pelea entera desde la fase 1 (como en el juego desde el 18 de octubre)
     return dict(win_time=None, total=total, deaths=deaths, died=died, phases=[0, 0, 0], agg=agg)
 
 

@@ -34,8 +34,9 @@ namespace Nindo
         public const float SignatureChain = 7f;
         /// <summary>Los dardos posados (Dardo, Dos Dardos, Tres y Cuatro Notas) por fase: en la fase 3 a x1.2 y un soplido de
         /// cada dos en abanico (dos dardos más a FanM del de Kaito, de costado): la fase 3 tenía la misma densidad de
-        /// amenazas que la 1 y menos que la 2 (37 / 48 / 37 por minuto fuera de los huecos; ahora 37 / 48 / 53).</summary>
-        public static readonly float[] PerchRate = { 1f, 1f, 1.2f };
+        /// amenazas que la 1 y menos que la 2 (37 / 48 / 37 por minuto fuera de los huecos). Con x1.45, dardos a 21 m/s y
+        /// menos ping-pong (los saltos son tiempo sin atacar) el bot bueno ve 38 / 49 / 59: el crescendo que pedía el usuario.</summary>
+        public static readonly float[] PerchRate = { 1f, 1f, 1.45f };
         public static readonly bool[] Fan = { false, false, true };
         public const float FanM = 1.6f;
         /// <summary>La catapulta por pesos (fase 3): Kaito a esta distancia o más, cada tanto como mucho, con este peso.</summary>
@@ -46,7 +47,7 @@ namespace Nindo
         public const float WhistleFrom = 0.85f;
 
         // ---- dardos
-        public static readonly float[] DartSpeed = { 16f, 16f, 18f };
+        public static readonly float[] DartSpeed = { 16f, 16f, 21f };
         /// <summary>Cuánto adelanta la puntería con la velocidad de Kaito (de costado, corriendo, se esquiva en las fases 1-2).</summary>
         public static readonly float[] DartLead = { 0.5f, 0.6f, 0.8f };
         public const float DartHitR = 0.6f, WhistleSpeed = 22f, WhistleLane = 1.0f;
@@ -70,8 +71,9 @@ namespace Nindo
         public static readonly float[] CatchWindow = { 0.45f, 0.45f, 0.60f };
         /// <summary>Lo que mira la caña de destino antes de agacharse (fase 3: el agachado va a x1.57).</summary>
         public static readonly float[] LeapLook = { 0f, 0f, 0.25f };
-        /// <summary>Fase 3: al caer de un salto, la chance de encadenar otro (ping-pong).</summary>
-        public const float PingPong = 0.30f;
+        /// <summary>Fase 3: al caer de un salto, la chance de encadenar otro (ping-pong). Baja: cada salto encadenado es tiempo
+        /// sin atacar y la fase 3 se sentía igual que la 1.</summary>
+        public const float PingPong = 0.12f;
         /// <summary>El bot (y la pista bamboo_deny): un salto a una caña a esta distancia de Kaito o menos se puede atajar.</summary>
         public const float CatchHint = 5f, BotCatchDist = 7f;
 
