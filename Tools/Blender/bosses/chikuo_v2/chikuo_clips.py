@@ -76,11 +76,13 @@ READY = merge(dict(hips=(0, -0.02, -0.17), hips_rot=(6, 0, -22), spine=(2, 0, 8)
               grip("l", 0.83, elbow=(1, 0.2, -0.8)))
 # la flauta alzada en diagonal detrás del hombro derecho (el salto del concepto), pegada al pecho
 AIR_STAFF = staff_spine((-0.22, 0.90, 2.75), (0.04, -0.92, -0.38), (-0.9, 0.2, -0.1))
-# en el aire (el salto del concepto): la rodilla izquierda arriba, la derecha estirada atrás y abajo, la flauta alzada en
-# la derecha, la izquierda abierta al costado como una garra; los pies a la altura de la raíz (el arco lo lleva el código)
-AIR = merge(dict(hips=(0, 0.05, -0.30), hips_rot=(-10, 0, 0), spine=(4, 0, 0), spine1=(4, 0, 4), spine2=(4, 0, 6),
+# en el aire (el salto entre cañas de la hoja de acciones): abierto de piernas como un tijeretazo, la rodilla izquierda alta
+# adelante y la derecha estirada atrás, la flauta alzada en la derecha, la izquierda abierta al costado como una garra; los
+# pies a la altura de la raíz (el arco lo lleva el código). Con la pierna de atrás apenas detrás de la cadera se leía como
+# un agachado quieto
+AIR = merge(dict(hips=(0, 0.05, -0.28), hips_rot=(-12, 0, 0), spine=(4, 0, 0), spine1=(4, 0, 4), spine2=(4, 0, 6),
                  neck=(-4, 0, -4), head=(-8, 0, -4), face="grin"),
-            legs((-0.16, 0.42, 0.10), (0.18, -0.30, 0.42), rr=(-30, 0, -10), rl=(-50, 0, 10), kr=(-0.2, -1, 0), kl=(0.2, -1, 0.3)),
+            legs((-0.16, 0.66, 0.36), (0.18, -0.40, 0.56), rr=(10, 0, -10), rl=(-62, 0, 10), kr=(-0.1, 0.3, -1), kl=(0.2, -1, 0.3)),
             AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.3)),
             free("l", (0.70, -0.14, 1.50), elbow=(0.4, 0.6, -0.6), fing="claw"))
 
@@ -198,13 +200,18 @@ def feet_track(keys, frames, plan, lift=0.12, swing_pitch=-12.0):
 
 
 # ============================================================================ la flauta suelta y entre dos agarres
-def tossed(kit, A, B, t, lift):
+def tossed(kit, A, B, t, lift, side_of_b=False):
     """La flauta suelta en el aire entre dos claves de la flauta (A y B, como las da Kit.staff): el giro va de A a B por el
-    camino corto y el centro sube 'lift' metros en arco sobre la recta (la tiró para arriba)."""
+    camino corto y el centro sube 'lift' metros en arco sobre la recta (la tiró para arriba). side_of_b: el eje gira de A a
+    B y el lado de los agujeros es siempre el de B (la ataja pegada al pecho, que pide ese lado: girando también el lado la
+    flauta daba más vuelta que la del eje y llegaba atrasada)."""
     qa, qb = (basis_yz(Vector(m[1]), Vector(m[2])).to_quaternion() for m in (A, B))
     if qa.dot(qb) < 0.0:
         qb = -qb
     R = qa.slerp(qb, t).to_matrix()
+    if side_of_b:
+        d = Vector(A[1]).normalized().slerp(Vector(B[1]).normalized(), t)
+        R = basis_yz(d, Vector(B[2]))
     ca, cb = (Vector(m[0]) + Vector(m[1]) * (CR.STAFF_LEN * 0.5) for m in (A, B))
     c = ca.lerp(cb, t) + Vector((0.0, 0.0, lift * math.sin(math.pi * t)))
     return staff_world(tuple(c - R.col[1] * (CR.STAFF_LEN * 0.5)), tuple(R.col[1]), tuple(R.col[2]))

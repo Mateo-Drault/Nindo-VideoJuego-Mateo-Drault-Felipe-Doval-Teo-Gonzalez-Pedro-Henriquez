@@ -137,20 +137,21 @@ SKIRT_HEM_R = (0.345, 0.285)
 # capa: doce paños por los hombros y la espalda, abierta adelante como en la hoja: entre los dos bordes (a 56° del frente:
 # 0.19 m del eje en el pecho) se ve el gi entero con las solapas, y de perfil la barba queda delante de todo. Los dos
 # del frente de cada lado son capas cortas de hombro; detrás del brazo y en la espalda cuelgan derecho hasta las corvas
-# (la parva del concepto: de atrás angosta y a plomo, sin campana)
+# (la parva del concepto: de atrás angosta arriba y abierta hacia abajo)
 CLOAK_ANGLES = [58.0, 80.0, 102.0, 124.0, 146.0, 168.0, 192.0, 214.0, 236.0, 258.0, 280.0, 302.0]
 CLOAK_OPEN = 56.0
 CLOAK_Y0 = 0.02                              # eje de la capa (la nuca, apenas atrás del eje del cuerpo)
 # perfil de la caída (distancia al eje, altura) del cuello al ruedo, por ángulo. Medido sobre la hoja de modelado a
 # escala: adelante la capa de hombro baja hasta 1.53 sin pasar de y -0.10 (la barba de perfil se ve entera); sobre el
 # hombro cubre el brazo de la pose A (la manga queda 3-5 cm abajo) hasta el codo; detrás del brazo baja hasta la
-# cadera y en la espalda hasta media pantorrilla, a plomo
+# cadera y en la espalda hasta media pantorrilla, abriéndose hacia abajo como una parva (de espaldas, angosta arriba y
+# ancha abajo: a plomo se leía como un huevo)
 CLOAK_PROFILES = [
     (58.0, [(0.12, 1.985), (0.185, 1.955), (0.215, 1.88), (0.225, 1.76), (0.23, 1.64), (0.232, 1.53)]),
     (80.0, [(0.12, 1.985), (0.25, 1.96), (0.36, 1.90), (0.45, 1.80), (0.51, 1.68), (0.55, 1.55)]),
     (104.0, [(0.12, 1.985), (0.25, 1.955), (0.37, 1.885), (0.44, 1.75), (0.47, 1.56), (0.48, 1.34), (0.48, 1.05)]),
-    (135.0, [(0.115, 1.985), (0.235, 1.95), (0.33, 1.86), (0.38, 1.70), (0.40, 1.45), (0.40, 1.15), (0.40, 0.78)]),
-    (180.0, [(0.105, 1.985), (0.20, 1.935), (0.255, 1.80), (0.28, 1.55), (0.29, 1.20), (0.29, 0.80), (0.29, 0.42)]),
+    (135.0, [(0.115, 1.985), (0.235, 1.95), (0.34, 1.86), (0.39, 1.70), (0.42, 1.45), (0.43, 1.15), (0.44, 0.78)]),
+    (180.0, [(0.105, 1.985), (0.21, 1.935), (0.28, 1.80), (0.32, 1.55), (0.345, 1.20), (0.36, 0.80), (0.37, 0.45)]),
 ]
 # tramos por paño y dónde se parten (fracción de la caída)
 CLOAK_SPLITS = {2: (0.46,), 3: (0.34, 0.66)}
@@ -169,24 +170,23 @@ def cloak_bones():
     return [cloak_name(a, i) for a in CLOAK_ANGLES for i in range(1, cloak_segs(a) + 1)]
 
 
-# cascabeles, uno por uno (sin espejo: racimos de dos y tres a alturas distintas, como en la hoja): (grupo, ángulo,
-# altura del nudo del cordón, largo del cordón, largo del tubo, radio). Los agudos, cortos, en los dos hombros adelante
-# (los que ve la cámara del juego); los graves, largos, en tres hileras por la espalda alta y uno abajo: medidos sobre
-# la hoja de modelado, cuelgan entre 1.9 y 1.0 m (de espaldas, la mitad de arriba de la parva)
+# cascabeles, uno por uno (sin espejo): racimos de dos y tres a alturas distintas, como en la hoja (grupo, ángulo, altura
+# del nudo del cordón, largo del cordón, largo del tubo, radio). Los agudos, en los dos hombros adelante (los que ve la
+# cámara del juego): un racimo alto y uno más abajo de cada lado. Los graves, por toda la espalda entre 1.85 y 0.95 m, en
+# racimos con huecos de 9 a 22° y largos de 0.16 a 0.30 m: en hileras parejas (como estaban) se leían como una cartuchera
+# y no como los cascabeles colgados entre las hojas del concepto
 CHIMES = [
-    # los hombros: cinco de cada lado adelante, justo debajo del yugo de hojas en punta (que queda arriba y atrás, como en
-    # la hoja de modelado: de frente se ven todos, de 0.25 a 0.55 m del eje)
-    ("Hi", 57.0, 1.840, 0.035, 0.195, 0.031), ("Hi", 66.0, 1.855, 0.050, 0.210, 0.032), ("Hi", 75.0, 1.835, 0.030, 0.200, 0.031),
-    ("Hi", 86.0, 1.815, 0.055, 0.225, 0.032), ("Hi", 98.0, 1.790, 0.040, 0.210, 0.031),
-    ("Hi", 303.0, 1.835, 0.045, 0.200, 0.031), ("Hi", 293.0, 1.850, 0.035, 0.240, 0.032), ("Hi", 285.0, 1.830, 0.055, 0.195, 0.031),
-    ("Hi", 274.0, 1.810, 0.030, 0.220, 0.032), ("Hi", 262.0, 1.795, 0.050, 0.205, 0.031),
-    # la espalda: tres hileras que no se pisan en altura (las de abajo entre las de arriba) y uno más abajo
-    ("Lo", 122.0, 1.800, 0.045, 0.190, 0.032), ("Lo", 138.0, 1.845, 0.060, 0.215, 0.032), ("Lo", 154.0, 1.825, 0.035, 0.200, 0.033),
-    ("Lo", 170.0, 1.865, 0.055, 0.225, 0.033), ("Lo", 190.0, 1.830, 0.040, 0.195, 0.033), ("Lo", 206.0, 1.860, 0.065, 0.215, 0.033),
-    ("Lo", 222.0, 1.820, 0.035, 0.205, 0.032), ("Lo", 238.0, 1.840, 0.055, 0.190, 0.032),
-    ("Lo", 146.0, 1.530, 0.035, 0.235, 0.033), ("Lo", 162.0, 1.550, 0.030, 0.260, 0.034), ("Lo", 180.0, 1.540, 0.040, 0.250, 0.034),
-    ("Lo", 198.0, 1.560, 0.050, 0.265, 0.034), ("Lo", 214.0, 1.535, 0.035, 0.240, 0.033),
-    ("Lo", 172.0, 1.205, 0.040, 0.260, 0.034), ("Lo", 192.0, 1.195, 0.035, 0.265, 0.034), ("Lo", 183.0, 0.855, 0.040, 0.245, 0.034),
+    ("Hi", 57.0, 1.855, 0.035, 0.190, 0.031), ("Hi", 67.0, 1.800, 0.055, 0.240, 0.032),
+    ("Hi", 84.0, 1.745, 0.030, 0.200, 0.031), ("Hi", 92.0, 1.735, 0.040, 0.180, 0.032), ("Hi", 103.0, 1.720, 0.040, 0.175, 0.031),
+    ("Hi", 303.0, 1.840, 0.045, 0.215, 0.031), ("Hi", 294.0, 1.780, 0.035, 0.170, 0.032), ("Hi", 285.0, 1.860, 0.055, 0.250, 0.031),
+    ("Hi", 268.0, 1.725, 0.030, 0.195, 0.032), ("Hi", 258.0, 1.640, 0.050, 0.190, 0.031),
+    ("Lo", 124.0, 1.830, 0.045, 0.200, 0.032), ("Lo", 134.0, 1.740, 0.060, 0.270, 0.032), ("Lo", 143.0, 1.850, 0.035, 0.170, 0.033),
+    ("Lo", 165.0, 1.640, 0.055, 0.300, 0.033), ("Lo", 175.0, 1.720, 0.040, 0.215, 0.033),
+    ("Lo", 194.0, 1.845, 0.065, 0.240, 0.033), ("Lo", 204.0, 1.760, 0.035, 0.185, 0.032), ("Lo", 214.0, 1.830, 0.055, 0.280, 0.032),
+    ("Lo", 230.0, 1.680, 0.040, 0.205, 0.032), ("Lo", 239.0, 1.770, 0.035, 0.160, 0.032),
+    ("Lo", 146.0, 1.360, 0.035, 0.250, 0.034), ("Lo", 155.0, 1.440, 0.030, 0.190, 0.033),
+    ("Lo", 207.0, 1.300, 0.050, 0.290, 0.034), ("Lo", 216.0, 1.390, 0.035, 0.210, 0.033),
+    ("Lo", 176.0, 1.080, 0.040, 0.260, 0.034), ("Lo", 187.0, 0.980, 0.035, 0.220, 0.034),
 ]
 # flauta-bastón: 2.1 m, Ø 6 cm; en reposo parada a la derecha (el juego la mueve; no cambia el alto de bind)
 STAFF_LEN = 2.10

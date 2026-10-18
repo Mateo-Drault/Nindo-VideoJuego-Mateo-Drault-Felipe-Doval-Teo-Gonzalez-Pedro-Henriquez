@@ -66,7 +66,10 @@ def intro():
         K(160, AIR, dict(hips=(0.10, -0.30, -0.40 + 0.30), hips_rot=(0, 90, 0), face="laugh"),
           legs((-0.10, -0.40, 0.40), (0.20, -0.20, 0.60), rr=(-30, 0, 0), rl=(-30, 0, 0), kr=(-0.4, -1, 0.3), kl=(0.4, -1, 0.3),
                hips=True), ease="lin"),
-        K(168, AIR, dict(hips=(0.0, -0.34, -0.40), hips_rot=(6, 20, 0), face="grin"), ease="out"),
+        # cayendo al nudo con las piernas ya recogidas (abierto de piernas como en el salto, el pie de atrás no llegaba)
+        K(168, AIR, dict(hips=(0.0, -0.34, -0.40), hips_rot=(6, 20, 0), face="grin"),
+          legs((-0.16, 0.30, 0.12), (0.18, -0.30, 0.40), rr=(-30, 0, -10), rl=(-50, 0, 10), kr=(-0.2, -1, 0), kl=(0.2, -1, 0.3)),
+          ease="out"),
         K(175, P, dict(hips=(0, -0.37, -0.66), hips_rot=(16, 0, 0), spine2=(12, 0, 0)), ease="in"),
         K(181, P, dict(hips=(0, -0.38, -0.60)), ease="out"),
         K(195, P, ease="inout"),

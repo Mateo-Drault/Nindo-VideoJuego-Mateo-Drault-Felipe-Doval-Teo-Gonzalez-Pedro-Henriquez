@@ -139,6 +139,9 @@ namespace Nindo
         public const float DiveFix = 0.50f;
         /// <summary>El Bastón que Cae elige dónde cae (de Kaito, de su lado) a este tiempo desde que arranca.</summary>
         public const float StaffDropPick = 0.40f, StaffDropNear = 1.6f;
+        /// <summary>Lo más que gira el cuerpo sobre los pies soplando para que la cerbatana no caiga sobre el culmo en pantalla
+        /// (grados).</summary>
+        public const float AimYaw = 20f;
 
         /// <summary>Todo lo que pega a Kaito se multiplica por esto (la perilla de las muertes: 0.9 o 1.1, sección 12.3).</summary>
         public const float DamageScale = 0.9f;

@@ -482,7 +482,8 @@ namespace Nindo
                 Vector3 start = new Vector3(climbFrom.x, (grove != null ? grove.FloorY : transform.position.y) + ClimbAuthorPerch, climbFrom.z);
                 pos = Vector3.Lerp(pos, start, climbBlend);
             }
-            Quaternion rot = perchYaw * Quaternion.AngleAxis(AimLean(node.position, dt), Vector3.right);
+            Quaternion rot = perchYaw * Quaternion.AngleAxis(AimYaw(fwd.normalized, up, dt), Vector3.up) *
+                             Quaternion.AngleAxis(AimLean(node.position, dt), Vector3.right);
             // colgado de las corvas el cuerpo cuelga a plomo: con la caña arqueada 30° hacia Kaito el giro del tramo lo
             // dejaba torcido 30° de la vertical. Se lo endereza alrededor de las rodillas (siguen en el culmo)
             hangBlend = Mathf.MoveTowards(hangBlend, hanging ? 1f : 0f, dt / 0.2f);
@@ -520,6 +521,27 @@ namespace Nindo
         }
 
         float aimLean;
+
+        /// <summary>
+        /// Con Kaito hacia la cámara (o del otro lado) la cerbatana apuntada derecho caía encima del culmo en pantalla y el
+        /// aviso no se leía. Mientras sopla, el cuerpo gira sobre los pies hasta 20° para el lado de la pantalla al que ya
+        /// apunta (lo justo: con Kaito de costado no gira); el dardo igual sale hacia Kaito.
+        /// </summary>
+        float AimYaw(Vector3 fwd, Vector3 up, float dt)
+        {
+            float want = 0f;
+            var cam = Game.Camera != null ? Game.Camera.Cam : null;
+            if (clip != null && aimClips.Contains(clip) && ClipNorm >= clip.TellStart && cam != null)
+            {
+                Vector3 right = Vector3.ProjectOnPlane(cam.transform.right, up);
+                float side = right.sqrMagnitude > 1e-4f ? Vector3.Dot(fwd, right.normalized) : 1f;
+                want = BambooMasterMoves.AimYaw * (1f - Mathf.Abs(side)) * (side >= 0f ? 1f : -1f);
+            }
+            aimYaw = Mathf.MoveTowards(aimYaw, want, 80f * dt);
+            return aimYaw;
+        }
+
+        float aimYaw;
         static readonly HashSet<ChikuoClip> aimClips = new HashSet<ChikuoClip>
         {
             ChikuoTimings.PerchDart, ChikuoTimings.PerchDart2, ChikuoTimings.PerchVolley, ChikuoTimings.PerchVolley4, ChikuoTimings.PerchWhistle,

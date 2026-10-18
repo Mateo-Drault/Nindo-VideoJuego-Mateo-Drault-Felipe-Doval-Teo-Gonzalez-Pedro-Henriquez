@@ -1023,7 +1023,10 @@ class Kit:
 
     def W(self, ctrl):
         pose = NA.Pose(self.rig)
-        self.solver.mode, self.solver.frame, self.solver.plan = None, 0, {}
+        # cada medida arranca sin lo que el solver recuerda del cuadro anterior: con el tope de giro de la flauta de la
+        # medida anterior, medir dos poses seguidas daba la segunda flauta girada a lo sumo 40° desde la primera
+        self.solver.begin(None)
+        self.solver.frame, self.solver.plan = 0, {}
         self.solver.solve(pose, prep_ctrl(merge(ctrl)))
         for n in self.rig.names:
             pose.get(n)
@@ -1141,7 +1144,7 @@ def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0, cloak_max=No
         sp.hang_max = 40.0 if b0.startswith("Sleeve_") else 30.0 if b0.startswith("Acc_LeafKnot") else             100.0 if b0.startswith("Acc_TasselBeard") else 180.0
         sp.sag_ref = ("Spine2" if not cloak_free else None) if b0.startswith("Cloak_") else "Hips" if b0.startswith("Skirt_") else None
         # las hojas de la capa cuelgan debajo de la cola de cada tramo (medido en la malla: 0.10 el de arriba, 0.16 el
-        # del medio, 0.27 el último) y los paños de adelante de la falda 0.22: el piso se le pide a la punta de la hoja,
+        # del medio, 0.33 el último con las hojas grandes del ruedo) y los paños de adelante de la falda 0.22: el piso se le pide a la punta de la hoja,
         # no a la cola (en guardia la capa de atrás se metía 7 cm en el piso con las colas a 20 cm)
         sp.drop = {b: cloak_drop(b) for b in bones}
         out.append(sp)
@@ -1180,7 +1183,7 @@ def cloak_drop(b):
     """Lo que la malla de un hueso de tela baja debajo de su cola (m): las hojas de la capa y el ruedo de la falda."""
     if b.startswith("Cloak_"):
         seg, n = int(b[-1]), CR.cloak_segs(float(b.split("_")[1]))
-        return 0.27 if seg == n else 0.16 if seg > 1 else 0.10
+        return 0.33 if seg == n else 0.16 if seg > 1 else 0.10
     if b in ("Skirt_040", "Skirt_320"):
         return 0.22
     if b in ("Skirt_140", "Skirt_220"):

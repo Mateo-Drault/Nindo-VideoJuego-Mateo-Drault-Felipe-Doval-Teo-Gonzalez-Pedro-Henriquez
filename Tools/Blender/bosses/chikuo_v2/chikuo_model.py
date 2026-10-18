@@ -1387,13 +1387,15 @@ def build_cloak(kits):
                 yaw=rng.uniform(-8.0, 8.0))
     # las hileras que cuelgan como tejas (las de arriba encima de las de abajo; de cada hoja se ve la parte ancha):
     # oliva al medio y verde oscuro abajo, más largas hacia el ruedo de la espalda
-    for ri_, (s, ca, cb) in enumerate(((0.32, "leaf1", "leaf2"), (0.46, "leaf2", "leaf1"), (0.60, "leaf2", "leaf3"),
-                                       (0.74, "leaf3", "leaf2"), (0.87, "leaf3", "leaf2"))):
+    # por pisos, de claro arriba a oscuro abajo (como en la hoja), menos hojas y más grandes: mezcladas de a una se leía
+    # un ruido parejo y no las tejas de hojas del concepto
+    for ri_, (s, ca, cb) in enumerate(((0.32, "leaf1b", "leaf1"), (0.46, "leaf1", "leaf1b"), (0.60, "leaf1", "leaf2"),
+                                       (0.74, "leaf2", "leaf1"), (0.87, "leaf2", "leaf3"))):
         # la del ruedo más rala (las hojas de las ranuras la completan)
-        for j, phi in enumerate(arc_samples(a0, a1, s, 0.0, 0.130 if s > 0.8 else 0.100, rng)):
+        for j, phi in enumerate(arc_samples(a0, a1, s, 0.0, 0.140 if s > 0.8 else 0.112, rng)):
             D = drop_len(phi)
             sb = s + rng.uniform(-0.015, 0.015)
-            ln = (0.18 + 0.22 * min(1.0, D / 1.45)) * rng.uniform(0.9, 1.1)
+            ln = (0.20 + 0.25 * min(1.0, D / 1.45)) * rng.uniform(0.9, 1.1)
             col = C[ca] if (j + ri_) % 3 else C[cb]
             leaf_at(phi, sb, ln, 0.006 + 0.026 * (1.0 - sb), 0.012 + 0.025 * rng.random(), 1.0, col,
                     yaw=rng.uniform(-9.0, 9.0) * (0.4 if D < 0.8 else 1.0))
