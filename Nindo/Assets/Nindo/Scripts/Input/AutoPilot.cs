@@ -24,7 +24,12 @@ namespace Nindo
     ///   waitcontrol [max]      espera a que no haya cinemática ni diálogo
     ///   goto X Z [max]         camina hasta el punto (x, z) del mundo (o hasta 'max' s)
     ///   kokuyo act N           en plena pelea con Kokuyō, salta al acto N (2, 3; 4 = última resistencia)
-    ///   chikuo fase N          en plena pelea con Chikuō (el jefe del bambú), salta a la fase N (2 = sin saco, 3 = bastón)
+    ///   chikuo fase N          en plena pelea con Chikuō (el jefe del bambú), salta a la fase N (2 = el piso, 3 = el bosque)
+    ///   chikuo cana|salto ID   se posa ya / salta ya a la caña ID (N1 N2 O1 O2 E1 E2 M)
+    ///   chikuo mov NOMBRE      hace ya esa acción: dardo dos notas silbador colgado risa picada baston barrido catapulta tala
+    ///                          pertiga pregunta soplo
+    ///   chikuo abrir TIPO      lo pone en ese hueco: revolcon estampado caida resbalon afinado pies
+    ///   chikuo canas [reset]   el estado de las cañas en el Editor.log (o todas como empieza la fase)
     ///   kokuyo sombra MOV [l]  su sombra ataca ya: nobi (Acto 1), giri, nui, watari; lado flanco u opuesto
     ///   kokuyo mitad           salta a la segunda mitad del acto en curso (rugido y patrón nuevo al terminar su combo)
     ///   kokuyo patron NOMBRE   usa ya ese patrón del acto ("Pinza", "Media Luna Negra"...) si no está atacando
@@ -143,13 +148,15 @@ namespace Nindo
         /// más lento y desparejo, a veces no ven el aviso, a veces confunden parry y dash, y a veces atacan aunque
         /// el enemigo esté cargando un golpe.
         /// </summary>
-        struct Skill { public float rtMean, rtSd, miss, wrong, greedy; }
-        static readonly Skill Expert = new Skill { rtMean = ReactionMean, rtSd = ReactionSd };
-        static readonly Skill Good = new Skill { rtMean = 0.28f, rtSd = 0.06f, miss = 0.1f, wrong = 0.05f, greedy = 0.1f };
+        struct Skill { public float rtMean, rtSd, miss, wrong, greedy, notice, catchFall; }
+        // notice: ve de lejos que la caña de Chikuō se cargó (campanas blancas) y va a cortarla; catchFall: va a la caña adonde
+        // salta (la caída del cielo). Los mismos números en Tools/Dev/chikuo_v2_check.py
+        static readonly Skill Expert = new Skill { rtMean = ReactionMean, rtSd = ReactionSd, notice = 0.95f, catchFall = 0.25f };
+        static readonly Skill Good = new Skill { rtMean = 0.28f, rtSd = 0.06f, miss = 0.1f, wrong = 0.05f, greedy = 0.1f, notice = 0.75f, catchFall = 0.06f };
         // el promedio de antes (no ve 25 %, se confunde 10 %, apurado 25 %) perdía contra todos los jefes un orden de
         // magnitud más que el bueno: no medía a alguien que juega por primera vez sino a alguien que no mira. Los mismos
-        // números en las simulaciones (Tools/Dev/goro_fight_sim.py, sim_bamboo_master.py, boss_sims/kaito.py)
-        static readonly Skill Average = new Skill { rtMean = 0.32f, rtSd = 0.08f, miss = 0.15f, wrong = 0.07f, greedy = 0.15f };
+        // números en las simulaciones (Tools/Dev/goro_fight_sim.py, chikuo_v2_check.py, boss_sims/kaito.py)
+        static readonly Skill Average = new Skill { rtMean = 0.32f, rtSd = 0.08f, miss = 0.15f, wrong = 0.07f, greedy = 0.15f, notice = 0.55f, catchFall = 0.02f };
         Skill skill = Expert;
         public static string SkillName { get; private set; } = "experto";
 
@@ -220,18 +227,63 @@ namespace Nindo
             }
             if (nearest == null) { InputReader.VirtualMove = Vector2.zero; return; }
 
+            // un jefe que no se pelea yendo a su raíz (Chikuō arriba de sus cañas: IBotHints): adónde ir, si cortar sirve y la
+            // caña cargada que va a cortar (el latigazo)
+            var hints = nearest as IBotHints;
+            Vector3 goal = hints != null ? hints.BotTarget : nearest.transform.position;
+            bool cutGoal = hints != null && TrackCutGoal(hints, p, ref goal);
+            if (hints != null) best = CombatMath.FlatDistance(goal, p.transform.position);
+
             // acercarse en espacio de cámara (el "stick" es relativo a la cámara)
-            Vector3 to = nearest.transform.position - p.transform.position; to.y = 0f;
+            Vector3 to = goal - p.transform.position; to.y = 0f;
             var cam = Camera.main != null ? Camera.main.transform : null;
             Vector3 f = cam != null ? Vector3.ProjectOnPlane(cam.forward, Vector3.up).normalized : Vector3.forward;
             Vector3 r = cam != null ? Vector3.ProjectOnPlane(cam.right, Vector3.up).normalized : Vector3.right;
-            InputReader.VirtualMove = best > 2.2f ? new Vector2(Vector3.Dot(to.normalized, r), Vector3.Dot(to.normalized, f)) : Vector2.zero;
+            InputReader.VirtualMove = best > (cutGoal ? 1.6f : 2.2f) ? new Vector2(Vector3.Dot(to.normalized, r), Vector3.Dot(to.normalized, f)) : Vector2.zero;
 
+            // la base cargada lejos: con el dash, si le alcanza el Espíritu (una vez por ventana)
+            if (cutGoal && !goalDashed && best > 3.7f && !p.DashTired && Time.unscaledTime >= nextBotAction)
+            {
+                goalDashed = true;
+                InputReader.VirtualTap(Act.Dash); BotDashes++;
+                nextBotAction = Time.unscaledTime + 0.3f;
+                return;
+            }
             if (Time.unscaledTime < nextBotAction) return;
+            // el latigazo: corta al llegar aunque haya un anillo a la vista (las defensas pendientes ya salieron arriba)
+            if (cutGoal && best < 2.6f && pending.Count == 0) { InputReader.VirtualTap(Act.Attack); BotAttacks++; nextBotAction = Time.unscaledTime + 0.32f; return; }
+            // arriba sin campanas cortar no sirve (la caña barre): como contra una guardia, salvo de apurado
+            if (hints != null && !hints.BotMayCut && Random.value >= skill.greedy * Time.unscaledDeltaTime * 4f) return;
             if (p.FinisherCandidate() != null) { InputReader.VirtualTap(Act.Finisher); BotFinishers++; nextBotAction = Time.unscaledTime + 1.2f; }
             // no empezar un ataque si alguien está por pegar (el anillo ya se está dibujando) ni contra una guardia
             // (una persona ve el rebote: el segundo golpe contra la guardia se lo devuelven)
             else if (best < 2.6f && (!threatened || Random.value < skill.greedy * Time.unscaledDeltaTime * 4f) && pending.Count == 0 && nearest.State != EnemyState.Guard) { InputReader.VirtualTap(Act.Attack); BotAttacks++; nextBotAction = Time.unscaledTime + 0.32f; }
+        }
+
+        // la ventana del latigazo que el bot está siguiendo (una nueva cada carga): si la vio, cuándo reacciona, si ya usó el dash
+        float goalUntil = -1f, goalReactAt;
+        bool goalNoticed, goalDashed;
+
+        /// <summary>
+        /// El gancho del latigazo: cuando arranca una carga el bot la nota a un tiempo de reacción de su nivel (de lejos con
+        /// la probabilidad 'notice', al pie como cualquier aviso), y hasta que la nota no va. La caída del cielo (ir a la caña
+        /// adonde salta) con 'catchFall'.
+        /// </summary>
+        bool TrackCutGoal(IBotHints h, PlayerController p, ref Vector3 goal)
+        {
+            if (!h.BotCutGoal(out var g, out float until, out bool fall)) { goalUntil = -1f; return false; }
+            if (Mathf.Abs(until - goalUntil) > 0.01f)
+            {
+                goalUntil = until;
+                goalDashed = false;
+                float d = CombatMath.FlatDistance(g, p.transform.position);
+                float chance = fall ? skill.catchFall : d <= 3f ? 1f - skill.miss : skill.notice;
+                goalNoticed = Random.value < chance;
+                goalReactAt = Time.time + Mathf.Clamp(skill.rtMean + 0.02f + Gaussian() * skill.rtSd, 0.15f, 0.6f);
+            }
+            if (!goalNoticed || Time.time < goalReactAt || Time.time > until) return false;
+            goal = g;
+            return true;
         }
 
         IEnumerator Loop()
@@ -300,8 +352,9 @@ namespace Nindo
                 case "chikuo":
                 {
                     var m = Game.Combat != null ? Game.Combat.ActiveBoss as BambooMasterBoss : null;
-                    if (m == null || t.Length < 3 || t[1].ToLowerInvariant() != "fase") throw new System.ArgumentException("uso: chikuo fase N (en plena pelea)");
-                    m.DebugJump(int.Parse(t[2], CultureInfo.InvariantCulture));
+                    string sub = t.Length > 1 ? t[1].ToLowerInvariant() : "", arg = t.Length > 2 ? t[2].ToLowerInvariant() : "";
+                    if (m == null || sub == "") throw new System.ArgumentException("uso: chikuo fase N | cana ID | salto ID | mov NOMBRE | abrir TIPO | canas [reset] (en plena pelea)");
+                    if (!m.DebugCommand(sub, arg)) Debug.LogWarning("[AutoPilot] Chikuō no puede '" + string.Join(" ", t, 1, t.Length - 1) + "' ahora");
                     return null;
                 }
                 case "move":

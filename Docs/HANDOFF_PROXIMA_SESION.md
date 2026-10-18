@@ -81,7 +81,7 @@
   * `Core/`: Game, GameBootstrap, SaveSystem/Settings, NindoContent, CharacterFactory, CharacterKits, TimeController.
   * `Player/`: PlayerController(.Combat), PlayerConfig.
   * `Enemies/`: Enemy, Boss, EnemyArchetypes (los AttackDef de todos), EnemyVariants, VariantMotion, SumoPoser, StepTimeline (tiempos de aviso y embestidas en cuadros del clip), EnemyAmbient (idles de ambiente).
-    * `Enemies/Bosses/`: MizuchiBoss(+Moves, Pacing), KoiBody, WaterPearl, MizuchiMarks, KokuyoBoss, KokuyoMoves/Timings/Hazards/Look, KageShadow, GoroBoss(+GoroArmor, GoroAvalanche), BambooMasterBoss(+Moves, Look, Qi, Story, BambooMasterTimings).
+    * `Enemies/Bosses/`: MizuchiBoss(+Moves, Pacing), KoiBody, WaterPearl, MizuchiMarks, KokuyoBoss, KokuyoMoves/Timings/Hazards/Look, KageShadow, GoroBoss(+GoroArmor, GoroAvalanche), BambooMasterBoss(+Canopy, Ground, Tricks, Story, Moves, Look, ChikuoTimings), BambooStalk, BambooGrove, BambooDart.
   * `Combat/`: CombatDirector (tokens), CharacterAnimator, CombatTypes.
   * `Camera/`: CameraDirector (planos, perfil de jefe ICameraProfile, SetFocusBias, auto-encuadre), CameraOcclusion.
   * `FX/`: FXManager, CombatTelegraphs (anillos ensō), ParryCrescent, ScreenFX, CharacterGlint, KohanFalls (la cascada), FloodSheet, WaterSplash, Braziers, MoonEclipse, PlanarShadow, ShadowRopes, KageArenaFX, FinisherStreak, XRaySilhouette, SpringChain, BandanaGlow.
@@ -217,7 +217,7 @@ Están casi en sus palabras, con notas. Al final de cada uno, entre corchetes, *
 10. **Vida doble en todos los jefes** (Mizuchi 1440, Kokuyō 1800, bambú ~1400, Gorō ~1040 entre las dos barras) y algunos especiales más rápidos, para peleas más dinámicas.
     * **Objetivo: que la partida dure ~1 hora** (hoy ~30 min).
     * Después balancear en Unity con `bot on bueno` / `bot on promedio`: el bueno gana en unos 4-6 min por jefe, el promedio muere alguna vez.
-    * **[C2 hecho en simulación (`Tools/Dev/goro_fight_sim.py`, `sim_bamboo_master.py`, `boss_sims/`): Gorō 1000 + 1600, Mizuchi y Kokuyō x1.5 (2160 y 2700, con el daño que aguanta el promedio), Chikuō ~2000; el bot promedio se recalibró (falla 15 %, se confunde 7 %, ataca apurado 15 %). Falta medir en Unity con PlayClock.]**
+    * **[C2 hecho en simulación (`Tools/Dev/goro_fight_sim.py`, `sim_bamboo_master.py` (borrado en C4: lo reemplaza `chikuo_v2_check.py`), `boss_sims/`): Gorō 1000 + 1600, Mizuchi y Kokuyō x1.5 (2160 y 2700, con el daño que aguanta el promedio), Chikuō ~2000; el bot promedio se recalibró (falla 15 %, se confunde 7 %, ataca apurado 15 %). Falta medir en Unity con PlayClock.]**
     * **[C3: con las ocho peleas del bot que el lead corrió sobre C2 el factor real/simulado es Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92 y Chikuō 1.42 (`boss_sims/calibration.py`); con eso Gorō 1900 + 3040, Mizuchi x2.5, Kokuyō x4 y Chikuō 1900 dan ~4.5 min de juego para el bueno y 1-1.6 muertes para el promedio en cada jefe. Provisorio: medir tres peleas por bot con lo de C3 (`reportes/c3_reports.md` 5.1).]**
     * **[Medido en Unity el 13 de octubre (C3 integrada, PlayClock).** Con lo de C3 el bot promedio no moría con ningún jefe
       (Gorō 5:11, Mizuchi 5:01, Kokuyō 6:29, los tres sin morir) y Mizuchi duraba poco para el bueno (3:29). Rebalanceado

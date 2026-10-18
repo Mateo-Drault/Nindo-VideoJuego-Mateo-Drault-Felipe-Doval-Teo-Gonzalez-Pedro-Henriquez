@@ -7,11 +7,11 @@ Medido el 13 de octubre de 2026 en el editor, con main 76be027 (la fase C2), una
   * Gorō      goro_fight_sim.py --runs 400 (barras 1000 + 1600, daño x0.5 / x0.4, tramo 25);
   * Mizuchi   mz_run.py fix bueno,promedio 300 '{"hp": 2160, "dmg": [0.35, 0.385, 0.385], "retry": true}';
   * Kokuyō    kk_fix_run.py largo 2700 0.4 40 bueno,promedio 300;
-  * Chikuō    sim_bamboo_master.py --runs 200 --seed 3 (2000 de vida, los rebotes de C2).
+  * Chikuō    sim_bamboo_master.py --runs 200 --seed 3 (2000 de vida, los rebotes de C2; el Chikuō viejo, borrado en C4).
 El factor sale del bot "bueno": su pelea casi no varía (p10-p90 de ±8 % en las cuatro simulaciones), así que una pelea ya
 lo mide. La del "promedio" depende de las muertes: una sola no separa la suerte del error del modelo, y queda de control.
 
-Cómo se usa (--calib en sim_bamboo_master.py, '{"calib": true}' en mz_run.py y kk_fix_run.py): el daño de Kaito va a 1/F.
+Cómo se usa (--calib en chikuo_v2_check.py, '{"calib": true}' en mz_run.py y kk_fix_run.py): el daño de Kaito va a 1/F.
 Es el error que mejor explica lo medido: con Gorō el bot real le pega más que el modelo (se le pega a la cápsula y le
 corta las vueltas a la guardia: F 0.71) y con Chikuō menos (F 1.42: en Unity ronda más y lo agarran más, 24 golpes contra
 12.5 simulados en la pelea del bueno). Con ese daño, la simulación de C2 reproduce el tiempo del bueno y predice al
@@ -44,21 +44,29 @@ MEASURED = {
     "mizuchi": dict(real_bueno=[(169, 0)], real_promedio=[(207, 1)], sim_bueno=142.2, sim_promedio=(307.2, 2.02)),
     "kokuyo": dict(real_bueno=[(108, 0)], real_promedio=[(146, 0)], sim_bueno=117.6, sim_promedio=(363.6, 3.23)),
     "chikuo": dict(real_bueno=[(361, 0)], real_promedio=[(950, 4)], sim_bueno=254.0, sim_promedio=(400.0, 1.00)),
+    # el Chikuō ermitaño de la fase C4 (las cañas y el latigazo): sin medir todavía. La simulación cruda es
+    # chikuo_v2_check.py --runs 400 --seed 7 (los tiempos del sidecar, las perillas después de la revisión de C4); el diseño
+    # espera F 1.2-1.4. Pegar acá las líneas del PlayClock
+    "chikuo_v2": dict(real_bueno=[], real_promedio=[], sim_bueno=213.0, sim_promedio=(255.0, 0.32)),
 }
 
 
 def factor(boss):
     """Tiempo real / simulado del bot bueno (la media de lo medido)."""
     m = MEASURED[boss]
+    if not m["real_bueno"]:
+        return None   # sin medir
     real = sum(t for t, _ in m["real_bueno"]) / len(m["real_bueno"])
     return real / m["sim_bueno"]
 
 
 def damage_mul(boss):
     """El daño de Kaito en la simulación calibrada: 1/F."""
-    return 1.0 / factor(boss)
+    f = factor(boss)
+    return 1.0 / f if f else 1.0
 
 
 if __name__ == "__main__":
     for b in MEASURED:
-        print("%-8s F = %.2f (daño de Kaito x%.2f)" % (b, factor(b), damage_mul(b)))
+        f = factor(b)
+        print("%-10s F = %.2f (daño de Kaito x%.2f)" % (b, f, damage_mul(b)) if f else "%-10s sin medir" % b)

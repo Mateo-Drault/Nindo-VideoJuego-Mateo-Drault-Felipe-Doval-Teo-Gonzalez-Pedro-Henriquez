@@ -1,0 +1,176 @@
+{
+ "arena_stalk_inner": {
+  "collider": {
+   "type": "none"
+  },
+  "module": "arena_stalks",
+  "size": [
+   0.34,
+   7.5,
+   0.34
+  ],
+  "slots": [
+   0,
+   2
+  ],
+  "stalk": {
+   "climb": 2.2,
+   "cut": 0.9,
+   "grip": 5.3,
+   "joints": [
+    0.0,
+    0.9,
+    1.75,
+    2.62,
+    3.47,
+    4.32,
+    5.62,
+    6.55
+   ],
+   "length": 7.5,
+   "perch": 4.4,
+   "r0": 0.15,
+   "r1": 0.07
+  },
+  "tags": [
+   "occluder",
+   "nonstatic"
+  ],
+  "tris": 1032
+ },
+ "arena_stalk_mother": {
+  "collider": {
+   "type": "none"
+  },
+  "module": "arena_stalks",
+  "size": [
+   0.52,
+   10.0,
+   0.52
+  ],
+  "slots": [
+   0,
+   2
+  ],
+  "stalk": {
+   "climb": 2.2,
+   "cut": 0.9,
+   "grip": 5.9,
+   "joints": [
+    0.0,
+    0.9,
+    1.95,
+    2.95,
+    3.94,
+    4.92,
+    6.55,
+    8.15
+   ],
+   "length": 10.0,
+   "perch": 5.0,
+   "r0": 0.21,
+   "r1": 0.1
+  },
+  "tags": [
+   "occluder",
+   "nonstatic"
+  ],
+  "tris": 1270
+ },
+ "arena_stalk_north": {
+  "collider": {
+   "type": "none"
+  },
+  "module": "arena_stalks",
+  "size": [
+   0.34,
+   7.5,
+   0.34
+  ],
+  "slots": [
+   0,
+   2
+  ],
+  "stalk": {
+   "climb": 2.2,
+   "cut": 0.9,
+   "grip": 4.9,
+   "joints": [
+    0.0,
+    0.9,
+    1.68,
+    2.46,
+    3.19,
+    3.92,
+    5.2,
+    6.35
+   ],
+   "length": 7.5,
+   "perch": 4.0,
+   "r0": 0.15,
+   "r1": 0.07
+  },
+  "tags": [
+   "occluder",
+   "nonstatic"
+  ],
+  "tris": 1032
+ },
+ "arena_stalk_outer": {
+  "collider": {
+   "type": "none"
+  },
+  "module": "arena_stalks",
+  "size": [
+   0.34,
+   8.5,
+   0.34
+  ],
+  "slots": [
+   0,
+   2
+  ],
+  "stalk": {
+   "climb": 2.2,
+   "cut": 0.9,
+   "grip": 5.7,
+   "joints": [
+    0.0,
+    0.9,
+    1.82,
+    2.78,
+    3.75,
+    4.72,
+    6.1,
+    7.3
+   ],
+   "length": 8.5,
+   "perch": 4.8,
+   "r0": 0.15,
+   "r1": 0.07
+  },
+  "tags": [
+   "occluder",
+   "nonstatic"
+  ],
+  "tris": 1032
+ },
+ "arena_stalk_stump": {
+  "collider": {
+   "type": "none"
+  },
+  "module": "arena_stalks",
+  "size": [
+   0.4,
+   1.1,
+   0.4
+  ],
+  "slots": [
+   0
+  ],
+  "tags": [
+   "nonstatic"
+  ],
+  "tris": 90
+ }
+}

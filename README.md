@@ -129,33 +129,29 @@ para fijar, que antes andaban sin verse, ahora se asignan a mano. Las reglas y c
 * **Sumos**: sus clips casi no se mueven desde arriba, así que cada golpe lleva una pose
   procedural atada al aviso (`Enemies/SumoPoser`): la mano atrás antes de la bofetada, la
   pierna arriba en el shiko, agachado con los puños en el piso antes de embestir.
-* **Chikuō, el Maestro del Bambú** (jefe del bambú, `Enemies/Bosses/BambooMasterBoss`; el
-  arquetipo y el bossId siguen siendo `ozeki`): un viejo maestro de kung fu que enseña paciencia.
-  Fuera de sus huecos desvía el corte con la palma: lee el corte de Kaito y le sale al encuentro,
-  la palma (o el bastón) encuentra la hoja en el contacto y la acompaña para donde va
-  (`GuardHit` / `GuardHitL` para el revés / `GuardHitLow` para el Corte final, que llega bajo),
-  sin empujarlo; el primero de una tanda igual lo roza (un cuarto del daño), contesta con su
-  combo, enseguida si Kaito insiste con el segundo, y recién el tercero seguido se contragolpea
-  (entre combo y combo descansa cubierto). El golpe que abre un combo a veces entra con el paso
-  largo y corre a Kaito con el pecho, si hay lugar detrás. Se le pega en el
-  contraataque del parry, de rodillas (postura llena), cuando baja la guardia y llama a Kaito
-  (esperó la postura del bambú: hundido con las palmas cruzadas y un aro de jade en el piso), en la
-  vuelta de un rojo que no pegó y al final del último golpe de un combo. Fase 1
-  con una mano en la espalda (palma, sable, grulla; la grulla voladora roja cae sobre una marca y,
-  con Kaito pegado, primero salta hacia atrás), fase 2 sin el saco (palmas gemelas, patada
-  giratoria, barrida, onda de qi, paso del viento con imágenes residuales: de frente vuela como
-  poco la mitad del autorado y, si Kaito está cerca, pasa a su costado (`DashStrike_Pass`): el
-  carril rojo lo sigue hasta que despega, en el aire se abre de costado en vez de frenar, le
-  sostiene la mano encima al cruzarlo, sigue volando lo autorado después del cruce y cae ~2.4 m
-  detrás de él, mirándolo; siempre pega cuando lo dice el aviso),
-  fase 3 con el bastón. Antes de tirar el saco se lo desliza por la espalda y los brazos (formas
-  `CoatSlip1..4` de `Master_Robe`); el que vuela, `Master_RobeThrown`, sale igual al saco puesto
-  y se aplana al caer (`Collapse`). Vencido se sienta a meditar, saluda y deja el sello.
-  Balance offline: `python Tools/Dev/sim_bamboo_master.py [--table] [--fair] [--calib]`.
+* **Chikuō, el Ermitaño de las Cañas** (jefe del bambú, `Enemies/Bosses/BambooMasterBoss*`; el
+  arquetipo y el bossId siguen siendo `ozeki`, 1900 de vida): un viejo ermitaño excéntrico que vive
+  arriba de las siete cañas del claro (`World/ArenaStalk`, `Enemies/Bosses/BambooStalk` y
+  `BambooGrove`). Sopla dardos con la flauta-bastón (`BambooDart`: se desvían y se parten), salta de
+  caña en caña en menos de un segundo, cae a golpear al piso (la picada de la grulla, el bastón que
+  cae) y vuelve arriba. La regla de la pelea: a él no se le pega arriba, **se le corta lo que lo
+  sostiene**. Cuando carga su caña (la ráfaga, el silbador, colgado, la risa, trepando, al agarrarse
+  de un salto) los cascabeles laten en blanco y aparece un círculo blanco en la base: un corte ahí
+  suelta el resorte y lo despide para el lado del corte (el revolcón, el estampado contra otra caña
+  o, cortándole la caña adonde salta, la caída del cielo); sin campanas la caña barre
+  ("¡Cosquillas!"). Nunca espera ni se cubre. Tres fases que cambian la forma: Las Cañas (100-65 %),
+  El Piso (65-40 %: las cañas se inclinan, tandas de bastón sin guardia con el Paso del Ermitaño, la
+  Grulla en el Bastón y Pregunta y Respuesta) y El Bosque Entero (40-0 %: nace la Caña Madre, cada
+  9-12 s una firma: la catapulta, la tala de una caña rajada o la ráfaga de cuatro). Diseño:
+  `Docs/handoff/diseno/chikuo_v2.md`; lo hecho y el plan de prueba: `Docs/handoff/reportes/c4_reports.md`.
+  El modelo y los clips salen de `Tools/Blender/bosses/chikuo_v2/build_chikuo.py` (el Chikuō viejo,
+  `bosses/bamboo_master/`, se borró: queda en la historia de git). Balance offline:
+  `python Tools/Dev/chikuo_v2_check.py [--fair] [--calib F] [--knobs]`.
 * **Balance de los jefes en minutos de juego**: las simulaciones (`goro_fight_sim.py`,
-  `sim_bamboo_master.py`, `boss_sims/mz_run.py`, `boss_sims/kk_fix_run.py`) se pasan a tiempo
+  `chikuo_v2_check.py`, `boss_sims/mz_run.py`, `boss_sims/kk_fix_run.py`) se pasan a tiempo
   de Unity con el factor real/simulado de cada jefe, medido con `bot on bueno` y el PlayClock
-  (`Tools/Dev/boss_sims/calibration.py`: Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92, Chikuō 1.42).
+  (`Tools/Dev/boss_sims/calibration.py`: Gorō 0.71, Mizuchi 1.19, Kokuyō 0.92; el Chikuō viejo
+  1.42, el ermitaño todavía sin medir).
   Con `--calib` (o `'{"calib": true}'`) el daño de Kaito va a 1/F y dicen segundos y muertes del
   juego. Al medir de nuevo se pegan las líneas del PlayClock en ese archivo.
 * **Cámara de combate**: baja a 45° y fijada nunca queda a menos de 19 m ni gira (los controles
@@ -269,10 +265,16 @@ $B -b --python Tools/Blender/world/build_world.py -- --export [--map] [--preview
 # Kaito: esqueleto de juego + todos sus clips (chequeos de pies, loops e impactos; hojas con --renders DIR)
 $B -b --factory-startup --python Tools/Blender/anim/kaito/build_kaito.py -- --export [--only Run,Attack1] [--renders DIR]
 python3 Tools/Blender/anim/kaito/unity_kaito.py      # solo su .meta, Kaito.controller y sus filas de NindoContent
-# Chikuō, el Maestro del Bambú: modelo, esqueleto, clips, chequeos y FBX (hojas con --renders DIR [--detail] [--lineup])
-$B -b --factory-startup --python Tools/Blender/bosses/bamboo_master/build_bamboo_master.py -- --export [--renders DIR]
-python3 Tools/Blender/bosses/bamboo_master/check_master_fbx.py   # lo que Unity va a ligar: raíz, curvas, huesos, materiales
-# iterar clips sin exportar: --only 'Palm*,Defeat' --renders DIR --sheets Palm_P3 ; poses sueltas: --lab 'sentado 3' --renders DIR
+# Chikuō, el ermitaño de las cañas (fase C4): modelo, esqueleto, los 75 clips del contrato (chikuo_clips_*.py), chequeos y
+# FBX (bosses/bamboo_master es el Chikuō viejo: ya no se exporta). Hojas por clip y los avisos con la cámara del juego con
+# --renders DIR [--sheets Perch*,Dive]; las del modelo con --model-sheets turnaround,head,details,game,poses,lineup,metric.
+# Iterar clips sueltos con --only A,B (no exporta); --allow-fail exporta con los chequeos de clip que fallan anotados en
+# el sidecar (lint_failures)
+$B -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/build_chikuo.py -- --export [--renders DIR] [--roundtrip RT.json]
+python3 Tools/Blender/bosses/chikuo_v2/check_chikuo_fbx.py      # lo que Unity va a ligar: raíces, rutas, huesos, materiales
+$B -b --factory-startup --python Tools/Blender/bosses/chikuo_v2/check_chikuo_roundtrip.py -- RT.json   # el FBX importado da lo mismo
+python3 Tools/Unity/chikuo_assets.py [--prune]                  # solo sus .mat, su .meta, BambooMaster.controller y su fila de NindoContent
+python3 Tools/Unity/chikuo_timings.py                           # ChikuoTimings.cs (tiempos y eventos de cada clip) desde el sidecar
 # audio (descarga los packs CC0 la primera vez)
 python3 Tools/Audio/build_audio.py [--only sfx|amb|music]
 # música de jefes por fases y del final: pasos (fuentes, Vorbis, recorte, verificación) en su encabezado

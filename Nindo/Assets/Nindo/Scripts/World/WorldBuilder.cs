@@ -503,6 +503,18 @@ namespace Nindo
                     lightPool.Add(pos, c, p.Length > 3 ? F(p[3], 8f) : 8f, p.Length > 4 ? F(p[4], 2f) : 2f);
                     break;
                 }
+                case "Stalk":
+                {
+                    // M__Stalk__ID__tipo: una caña del claro de Chikuō (World/ArenaStalk.cs), de la arena que la contiene
+                    string kind = p.Length > 3 ? p[3] : "inner";
+                    var go = InstantiateProp("arena_stalk_" + kind, pos, rot, dynamicRoot);
+                    if (go == null) break;
+                    Vector3 center = pos;
+                    foreach (var a in arenas)
+                        if (CombatMath.FlatDistance(a.transform.position, pos) <= a.radius) center = a.transform.position;
+                    ArenaStalk.Setup(go, p.Length > 2 ? p[2] : "", kind, center);
+                    break;
+                }
                 case "SealGate":
                 {
                     var go = new GameObject("SealGate"); go.transform.SetParent(dynamicRoot, false); go.transform.SetPositionAndRotation(pos, rot);

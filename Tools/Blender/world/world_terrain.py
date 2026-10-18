@@ -293,6 +293,15 @@ def face_color(x, z, h, nz, rng):
         cx, cz = math.floor(x / 2.5), math.floor(z / 2.5)
         return "stone_light" if (cx + cz) % 2 == 0 else "stone"
     steep = nz < 0.72
+    # el claro de las cañas de Chikuō: tierra pisada clara que se funde con el pasto del borde. Encima se leen el ensō
+    # blanco de la base de cada caña, los anillos y la silueta oscura del ermitaño posado (sin el claro, verde sobre
+    # verde). Una sola tirada de rng, como cada rama: el resto del terreno sale igual
+    if reg == "bambu" and not steep:
+        dc = math.hypot(x - W.OZEKI_CENTER[0], z - W.OZEKI_CENTER[1])
+        if dc < W.ARENA_FLOOR_R:
+            if dc < W.ARENA_FLOOR_R - 4.0:
+                return ramp(x, z, ["path_dark", "path", "path", "grass_dry"], rng, 0.11, seed=41, jitter=0.25)
+            return ramp(x, z, ["moss", "grass_dry", "path_dark", "grass_dry"], rng, 0.11, seed=41, jitter=0.3)
     snowy = reg == "montana" and h > 9.5
     if pd < -0.4:
         if pname == "pasarela_lago":

@@ -519,276 +519,208 @@ MonoBehaviour:
   - id: bamboo_master
     model: {fileID: 919132149155446097, guid: 191c5633648e5611746e668f0421a7c7, type: 3}
     controller: {fileID: 9100000, guid: 00038a893675a4c699be298472f4a7fd, type: 2}
-    height: 2.67
+    height: 2.45
     modelYaw: 0
     materialSwaps:
-    - material: Master_GlintHandR
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.1
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintHandL
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.1
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintFootR
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.12
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintFootL
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.12
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_Eyes
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.45
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_GlintStaff
-      color: {r: 1, g: 1, b: 1, a: 0}
-      smoothness: 0.3
-      emission: {r: 0, g: 0, b: 0, a: 1}
-      clearBaseMap: 0
-    - material: Master_Skin
+    - material: Chikuo_Skin
       color: {r: 1, g: 1, b: 1, a: 0}
       smoothness: 0.14
       emission: {r: 0, g: 0, b: 0, a: 1}
       clearBaseMap: 0
+    - material: Chikuo_GlintChimesHi
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.35
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintChimesLo
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.35
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintStaff
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.3
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintFootR
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_GlintFootL
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.12
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
+    - material: Chikuo_Gi
+      color: {r: 1, g: 1, b: 1, a: 0}
+      smoothness: 0.1
+      emission: {r: 0, g: 0, b: 0, a: 1}
+      clearBaseMap: 0
     stateNames:
+    - BindPose
+    - PerchIdle
+    - PerchDart
+    - PerchDart2
+    - PerchVolley
+    - PerchVolley4
+    - PerchWhistle
+    - TalaShot
+    - HangDrop
+    - HangDart2
+    - HangClimb
+    - PerchLaugh
+    - PerchWobble
+    - StalkSweep
+    - CatapultDraw
+    - CatapultKick
+    - LeapCrouch
+    - LeapAir
+    - LeapGrab
+    - Climb
+    - Dive
+    - DiveLand
+    - FeetStuck
+    - StaffDrop
+    - StaffDropRecover
+    - Vault
+    - JumpCrouch
+    - FlungAir
+    - FlungLand
+    - DazedSit
+    - DazedSitHit
+    - Splat
+    - SlideDown
+    - MissGrab
+    - DazedLie
+    - DazedLieHit
+    - Slip
+    - Stumble
+    - PoleFall
+    - GetUp
+    - Detuned
+    - Tuned
+    - StaffStuck
+    - Hit
+    - HitHeavy
+    - Parried
+    - ParriedPerfect
     - Idle
     - Walk
     - Run
     - StrafeL
     - StrafeR
     - WalkBack
-    - Idle_P2
-    - Walk_P2
-    - Run_P2
-    - StrafeL_P2
-    - StrafeR_P2
-    - WalkBack_P2
-    - Idle_P3
-    - Walk_P3
-    - Run_P3
-    - StrafeL_P3
-    - StrafeR_P3
-    - WalkBack_P3
-    - Palm
-    - Palm_Mid
-    - Palm_Close
-    - ChopPalm
-    - ChopPalm_Mid
-    - ChopPalm_Close
+    - BackFlip
+    - HopBack
+    - Thrust
+    - StaffSpin2
     - CraneKick
-    - LeapKick
-    - Palm_P2
-    - Palm_Mid_P2
-    - Palm_Close_P2
-    - ChopPalm_P2
-    - ChopPalm_Mid_P2
-    - ChopPalm_Close_P2
-    - CraneKick_P2
-    - LeapKick_P2
+    - NoteSmash
+    - LowSweep
+    - GroundDart
+    - PolePlant
+    - PoleClimb
+    - PoleBalance
+    - PoleDive
+    - FluteRaise
+    - FluteNote
+    - AnswerBlow
+    - AnswerStamp
+    - GroundLaugh
+    - Intro
+    - PhaseBow
+    - PhaseForest
+    - Defeat
+    - DefeatIdle
     - Guard
-    - GuardHit
-    - GuardHitL
     - Counter
-    - CounterStrike
-    - CounterStrike_Mid
-    - CounterStrike_Close
-    - Taunt
-    - Stance
-    - Hit
-    - HitHeavy
-    - Parried
-    - ParriedPerfect
+    - Spotted
     - Exhausted
     - ExhaustedHit
     - ExhaustedRise
-    - Guard_P2
-    - GuardHit_P2
-    - GuardHitL_P2
-    - Counter_P2
-    - CounterStrike_P2
-    - CounterStrike_Mid_P2
-    - CounterStrike_Close_P2
-    - Taunt_P2
-    - Stance_P2
-    - Hit_P2
-    - HitHeavy_P2
-    - Parried_P2
-    - ParriedPerfect_P2
-    - Exhausted_P2
-    - ExhaustedHit_P2
-    - ExhaustedRise_P2
-    - Guard_P3
-    - GuardHit_P3
-    - GuardHitL_P3
-    - Counter_P3
-    - CounterStrike_P3
-    - CounterStrike_Mid_P3
-    - CounterStrike_Close_P3
-    - Taunt_P3
-    - Stance_P3
-    - Hit_P3
-    - HitHeavy_P3
-    - Parried_P3
-    - ParriedPerfect_P3
-    - Exhausted_P3
-    - ExhaustedHit_P3
-    - ExhaustedRise_P3
-    - Intro
-    - PhaseCoat
-    - TwinPalm
-    - TwinPalm_Mid
-    - TwinPalm_Close
-    - SpinKick
-    - Sweep
-    - QiWave
-    - DashStrike
-    - DashStrike_Pass
-    - BackHop
-    - BackHop_P2
-    - BackHop_P3
-    - Palm_P3
-    - Palm_Mid_P3
-    - Palm_Close_P3
-    - ChopPalm_P3
-    - ChopPalm_Mid_P3
-    - ChopPalm_Close_P3
-    - CraneKick_P3
-    - LeapKick_P3
-    - Sweep_P3
-    - QiWave_P3
-    - DashStrike_P3
-    - DashStrike_Pass_P3
-    - PhaseStaff
-    - Defeat
-    - Meditate
-    - SeatedBow
-    - GuardHitLow
-    - GuardHitLow_P2
-    - GuardHitLow_P3
-    - PoseTest
     stateLengths:
-    - 3.2
-    - 1.2
-    - 0.7333
-    - 0.8
-    - 0.8
-    - 1.2
-    - 3.2
-    - 1.2
-    - 0.7333
-    - 0.8
-    - 0.8
-    - 1.2
-    - 3.2
-    - 1.2
-    - 0.7333
-    - 0.8
-    - 0.8
-    - 1.2
-    - 1.1333
-    - 1.1333
-    - 1.1333
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.4
-    - 1.8667
-    - 1.1333
-    - 1.1333
-    - 1.1333
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.4
-    - 1.8667
-    - 0.6667
-    - 0.5
-    - 0.5
-    - 0.5333
-    - 0.8667
-    - 0.8667
-    - 0.8667
-    - 2.0
-    - 0.6667
-    - 0.6
-    - 0.9
     - 1.0
-    - 1.2
-    - 4.0
-    - 0.5333
-    - 0.7333
-    - 0.6667
-    - 0.5
-    - 0.5
-    - 0.5333
-    - 0.8667
-    - 0.8667
-    - 0.8667
-    - 2.0
-    - 0.6667
-    - 0.6
-    - 0.9
-    - 1.0
-    - 1.2
-    - 4.0
-    - 0.5333
-    - 0.7333
-    - 0.6667
-    - 0.5
-    - 0.5
-    - 0.5333
-    - 0.8667
-    - 0.8667
-    - 0.8667
-    - 2.0
-    - 0.6667
-    - 0.6
-    - 0.9
-    - 1.0
-    - 1.2
-    - 4.0
-    - 0.5333
-    - 0.7333
-    - 4.0
-    - 3.6667
-    - 1.2667
-    - 1.2667
-    - 1.2667
-    - 1.4667
     - 1.6
-    - 1.8667
-    - 1.2
-    - 1.2
-    - 0.7333
-    - 0.7333
-    - 0.7333
+    - 0.8
     - 1.1333
-    - 1.1333
-    - 1.1333
-    - 1.2
-    - 1.2
-    - 1.2
-    - 1.4
-    - 1.8667
+    - 1.7
     - 1.6
-    - 1.8667
+    - 1.4
+    - 1.0
+    - 0.3667
+    - 0.6
+    - 0.5
     - 1.2
+    - 0.2667
+    - 1.3667
+    - 1.0
+    - 0.5
+    - 0.2333
+    - 0.4
+    - 0.2
+    - 0.8
+    - 0.9667
+    - 0.4667
+    - 1.6
+    - 0.9
+    - 0.4
+    - 0.9
+    - 0.3
+    - 0.4
+    - 0.3667
+    - 1.0
+    - 0.3333
+    - 0.3
+    - 0.6
+    - 0.4667
+    - 1.0
+    - 0.3333
+    - 0.5
+    - 1.0
+    - 0.4667
+    - 0.4
+    - 1.4
     - 1.2
-    - 3.0
+    - 1.1
+    - 0.3333
+    - 0.5333
+    - 0.4
+    - 0.6
+    - 1.6
+    - 1.0
+    - 0.6667
+    - 0.8
+    - 0.8
+    - 1.0
+    - 0.4
+    - 0.4667
+    - 0.9
+    - 1.0
+    - 0.9333
+    - 1.2
+    - 1.3
+    - 0.8333
+    - 0.4667
+    - 0.4667
+    - 1.0
+    - 0.9667
+    - 0.4667
+    - 0.4333
+    - 0.4333
+    - 0.4333
+    - 1.2
+    - 6.5
+    - 4.0
     - 5.0
-    - 3.2
-    - 2.3333
-    - 0.5
-    - 0.5
-    - 0.5
-    - 7.7333
+    - 5.5
+    - 2.0
+    - 1.6
+    - 1.6
+    - 1.6
+    - 1.0
+    - 0.3333
+    - 0.4
   kits:
   - id: goro_armor
     model: {fileID: 919132149155446097, guid: d9163b055f46bf9cf1a218a4e55a6dee, type: 3}
@@ -833,6 +765,16 @@ MonoBehaviour:
   props:
   - id: arch_bamboo_gate
     model: {fileID: 919132149155446097, guid: df43f4b542fda366375dde7785b54100, type: 3}
+  - id: arena_stalk_inner
+    model: {fileID: 919132149155446097, guid: 9e96a6dcfb65f026313f02e1630df4a8, type: 3}
+  - id: arena_stalk_mother
+    model: {fileID: 919132149155446097, guid: 90e28bd29284691c2c08fdb354b54ccb, type: 3}
+  - id: arena_stalk_north
+    model: {fileID: 919132149155446097, guid: f407d7c3971d433a42b100f10f1350ff, type: 3}
+  - id: arena_stalk_outer
+    model: {fileID: 919132149155446097, guid: dafb836411c9ed4188ef4987ba6264e4, type: 3}
+  - id: arena_stalk_stump
+    model: {fileID: 919132149155446097, guid: 34897aade9165321006e20c1bb9aad53, type: 3}
   - id: bamboo_cluster_a
     model: {fileID: 919132149155446097, guid: 4bdd38b0b4e8f65d958bd49a98c373f1, type: 3}
   - id: bamboo_cluster_b
@@ -1146,6 +1088,44 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
+  - key: bamboo_break
+    clips:
+    - {fileID: 8300000, guid: 8a7a3d04b494583ce5ef03f128450009, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_crack
+    clips:
+    - {fileID: 8300000, guid: b34df104afd467eb83549d9c53a047b7, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_fall
+    clips:
+    - {fileID: 8300000, guid: f34dc02dbd0dd15c02d2128fc92d7466, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_slam
+    clips:
+    - {fileID: 8300000, guid: ccf307216596e1916ba961805e48ea0f, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_thok
+    clips:
+    - {fileID: 8300000, guid: a3167016aec97f68c197ee7a8a74fc4c, type: 3}
+    - {fileID: 8300000, guid: 9916f0ced27fc5f007ff171ed8c73107, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_whip
+    clips:
+    - {fileID: 8300000, guid: 640728f5498503d59eefe3ccd4de1cb4, type: 3}
+    - {fileID: 8300000, guid: c84a081a2500911de3a8cc5a52f3d3ce, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: bandana_charge
     clips:
     - {fileID: 8300000, guid: a5b14aa03a37c453ebfee56e43c51569, type: 3}
@@ -1216,6 +1196,20 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
+  - key: chime_jangle
+    clips:
+    - {fileID: 8300000, guid: 6d31e5a2a1f762a88a6b2638bbcbbc7d, type: 3}
+    - {fileID: 8300000, guid: 67778c3d4b99bbff7085243509b6001c, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: chime_jangle_p3
+    clips:
+    - {fileID: 8300000, guid: cf81753bb4b2489789b065b062471775, type: 3}
+    - {fileID: 8300000, guid: 5a2949a88b6f2227105a58ec781efbf5, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: clang
     clips:
     - {fileID: 8300000, guid: 3996a0f0dbc6cce48be0e5ec2f1e88a3, type: 3}
@@ -1229,6 +1223,33 @@ MonoBehaviour:
   - key: danger
     clips:
     - {fileID: 8300000, guid: 9b03f4897382411e160b7b6dbfdaab1f, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_blow
+    clips:
+    - {fileID: 8300000, guid: a46fde13e841e0b02395dcbf7b3189e6, type: 3}
+    - {fileID: 8300000, guid: fe8c9cc960ecfce128e609f10c149ba3, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_snap
+    clips:
+    - {fileID: 8300000, guid: fc1c348372d6890416c83e9cf55cca57, type: 3}
+    - {fileID: 8300000, guid: 4d1f4aceaceb66333e2e1917cb93a740, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_thunk
+    clips:
+    - {fileID: 8300000, guid: acddebe1c2717361a23041a2028e69ec, type: 3}
+    - {fileID: 8300000, guid: 5a353bdd894a7c3ea87304d14c3df497, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_whistle
+    clips:
+    - {fileID: 8300000, guid: 3c8aff3af3d3d875019d1346b2f4b7d4, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
@@ -1324,6 +1345,84 @@ MonoBehaviour:
   - key: finisher_start
     clips:
     - {fileID: 8300000, guid: 91615328d14b0df9a1855c0e4491f60e, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n1
+    clips:
+    - {fileID: 8300000, guid: 2f237a35206d4d61e1913009c5c3c286, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n1_p3
+    clips:
+    - {fileID: 8300000, guid: fe039215c86c98c035519e1a57d724a5, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n2
+    clips:
+    - {fileID: 8300000, guid: bd1b737586d0c7e27728d870de4916ff, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n2_p3
+    clips:
+    - {fileID: 8300000, guid: 439fb4367712f34dd3fca8935dbff3f3, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n3
+    clips:
+    - {fileID: 8300000, guid: 37343e371b90150cc8662513d17d0010, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n3_p3
+    clips:
+    - {fileID: 8300000, guid: 84c34bc3c9a4665734f3376c014a17cd, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n4
+    clips:
+    - {fileID: 8300000, guid: 528d394badf2bdd41b876a2cd574fb9b, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n4_p3
+    clips:
+    - {fileID: 8300000, guid: e7984f6061e00ac69eb90b4f9a06a833, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n5
+    clips:
+    - {fileID: 8300000, guid: 8de48849a8f5efc849e2112b645f8af6, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n5_p3
+    clips:
+    - {fileID: 8300000, guid: d1afd00f2b9f088c9ecc983ec0d66682, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_phrase_forest
+    clips:
+    - {fileID: 8300000, guid: c661c7a441aaeed6594cdd3799dd0729, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_phrase_intro
+    clips:
+    - {fileID: 8300000, guid: 6b6ef89447315d8355db680b4c3ad715, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_squeak
+    clips:
+    - {fileID: 8300000, guid: cb45b5d698abd1a8f81e78f537c98ae8, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
@@ -1570,6 +1669,24 @@ MonoBehaviour:
     volume: 0.5
     pitchVariance: 0.06
     spatial: 1
+  - key: stalk_bow
+    clips:
+    - {fileID: 8300000, guid: ed081db5498606c4fae040a6c4880298, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: stalk_grow
+    clips:
+    - {fileID: 8300000, guid: 1171e59f549ed3e1d8db8481b78d3660, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: stalk_whoosh
+    clips:
+    - {fileID: 8300000, guid: 72b763c786072daeae0378cfab49463b, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: step
     clips:
     - {fileID: 8300000, guid: 5b996a9a4db8e5e88459e886e861ec16, type: 3}
@@ -1643,6 +1760,60 @@ MonoBehaviour:
   - key: teleport
     clips:
     - {fileID: 8300000, guid: f2d1d8523a1b2aaa667645c549630a8d, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_cascade
+    clips:
+    - {fileID: 8300000, guid: 1bd364acc100fb02ab72043a625b5051, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_cascade_p3
+    clips:
+    - {fileID: 8300000, guid: 9eadeef148c8e785aac2c9d94b8fca2d, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_hi
+    clips:
+    - {fileID: 8300000, guid: 7cca34afdfc4dac665e910f74b494295, type: 3}
+    - {fileID: 8300000, guid: 5a659829c8dd74c9d90ea4ab5f47f626, type: 3}
+    - {fileID: 8300000, guid: d2b168aeb06595bf053e02c218b60807, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_hi_p3
+    clips:
+    - {fileID: 8300000, guid: 2c31802e4c533fb41298322e81c7abca, type: 3}
+    - {fileID: 8300000, guid: 9be05b04f56589fd95941e8a32adbd53, type: 3}
+    - {fileID: 8300000, guid: 93ccfa5ae648e3f24d19f135e0df7a87, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_lo
+    clips:
+    - {fileID: 8300000, guid: c91a129eb46af2dd2ac58de87e404f30, type: 3}
+    - {fileID: 8300000, guid: c03ff4f37d1c6042cce3503287ad9478, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_lo_p3
+    clips:
+    - {fileID: 8300000, guid: d462099932879aeb86e306c1c5a515c2, type: 3}
+    - {fileID: 8300000, guid: da79b4e51ac67b07f3d7e890e78b88fa, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_shimmer
+    clips:
+    - {fileID: 8300000, guid: 4a5e8598de06417a5fc0182386e6bd72, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_shimmer_p3
+    clips:
+    - {fileID: 8300000, guid: 262e92c078edf90138ac0d20f1ce7869, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1

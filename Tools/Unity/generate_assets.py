@@ -274,9 +274,11 @@ Material:
     return ensure_guid(path)
 
 
-def lit(path, name, base_tex, base_color=(1, 1, 1, 1), smooth=0.08, emission_tex=None, emission=(0, 0, 0, 1), cull=2, metallic=0.0, spec=0):
+def lit(path, name, base_tex, base_color=(1, 1, 1, 1), smooth=0.08, emission_tex=None, emission=(0, 0, 0, 1), cull=2, metallic=0.0, spec=0, emission_on=False):
     kws = []
-    if emission_tex is not None or emission[0] + emission[1] + emission[2] > 0:
+    # emission_on: la emisión nace en negro pero la enciende el código con un bloque de propiedades (sin la palabra clave,
+    # URP Lit ni compila la emisión)
+    if emission_on or emission_tex is not None or emission[0] + emission[1] + emission[2] > 0:
         kws.append("_EMISSION")
     if not spec:
         kws.append("_SPECULARHIGHLIGHTS_OFF")   # lo que escribe URP al validar _SpecularHighlights = 0
@@ -716,25 +718,33 @@ def controllers():
 
 def bamboo_master_controller():
     """Chikuō: un estado por clip del sidecar (todos en el mismo FBX y GUID), la locomoción mezclada por velocidad
-    ('Locomotion' de la fase 1 y 'Locomotion_P2'/'Locomotion_P3' con los clips de cada fase: el jefe cambia
-    config.animLocomotion al cambiar de fase) y los pasos de costado y hacia atrás a la velocidad a la que rodea."""
+    ('Locomotion' y, si el sidecar trae variantes por fase, 'Locomotion_P2'/'Locomotion_P3': el jefe cambia
+    config.animLocomotion al cambiar de fase) y los pasos de costado y hacia atrás a la velocidad a la que rodea. Con el
+    sidecar del paso de modelado del ermitaño (solo Idle y PoseTest) la locomoción es el reposo en los tres umbrales."""
     bi = bamboo_master_info()
     if not bi:
         return {}
     g = ensure_guid(BAMBOO_FBX)
     clips = bi["clips"]
-    walk = clips["Walk"]["timing"]["ground_speed_mps"]
+    walk = clips.get("Walk", {}).get("timing", {}).get("ground_speed_mps")
 
     def speed(n):
         # Enemy rodea y retrocede a walkSpeed: StrafeL/R (1.3 m/s) y WalkBack (1.2 m/s) se aceleran a esa velocidad
         base = n.split("_")[0]
         gs = clips[n].get("timing", {}).get("ground_speed_mps")
-        return round(walk / gs, 4) if base in BAMBOO_SIDE_STEPS and gs else 1
+        return round(walk / gs, 4) if base in BAMBOO_SIDE_STEPS and gs and walk else 1
 
     st = {n: (ref(g, stable_id("bamboo_master", n), 3), round(r["seconds"], 4), speed(n)) for n, r in clips.items()}
+    # los nombres que Enemy toca por config sin clip propio (Guard, Exhausted...): estados con el clip del que el sidecar
+    # dice (el Chikuō ermitaño los trae en 'aliases')
+    for a, src in (bi.get("aliases") or {}).items():
+        if src in st and a not in st:
+            st[a] = st[src]
     path = os.path.join(P_ANIM, "BambooMaster.controller")
-    res = controller(path, "BambooMaster", st, [st[n] for n in BAMBOO_LOCO], BAMBOO_LOCO_THRESHOLDS)
-    bamboo_phase_trees(path, "BambooMaster", {f"Locomotion{s}": [st[n + s] for n in BAMBOO_LOCO] for s in ("_P2", "_P3")})
+    res = controller(path, "BambooMaster", st, [st[n if n in st else "Idle"] for n in BAMBOO_LOCO], BAMBOO_LOCO_THRESHOLDS)
+    trees = {f"Locomotion{s}": [st[n + s] for n in BAMBOO_LOCO] for s in ("_P2", "_P3") if all(n + s in st for n in BAMBOO_LOCO)}
+    if trees:
+        bamboo_phase_trees(path, "BambooMaster", trees)
     return {"bamboo_master": res}
 
 
@@ -965,27 +975,32 @@ def kokuyo_assets(mats):
 # ============================================================================ Chikuō (jefe del bambú)
 P_BAMBOO = os.path.join(ART, "Characters", "BambooMaster")
 BAMBOO_FBX = os.path.join(P_BAMBOO, "BambooMaster.fbx")
-# locomoción: quieto / camina (1.6 m/s) / corre (4.0 m/s = runSpeed): umbrales de Speed = v / runSpeed. Las variantes de
-# fase (Idle_P2, Walk_P3...) van en sus propios blend trees (Locomotion_P2/_P3, bamboo_phase_trees)
+# locomoción: quieto / camina / corre (runSpeed): umbrales de Speed = v / runSpeed. Si el sidecar trae variantes de fase
+# (Idle_P2, Walk_P3...) van en sus propios blend trees (Locomotion_P2/_P3, bamboo_phase_trees)
 BAMBOO_LOCO = ("Idle", "Walk", "Run")
-BAMBOO_LOCO_THRESHOLDS = (0, 0.4, 1)
+# (Walk a 1.6 m/s y Run a 5.5, BambooMasterMoves.Config: con la mezcla lineal entre los dos la velocidad del clip es la
+# del agente en todo el tramo; con 0.4 caminaba a 1.17 m/s y los pies patinaban)
+BAMBOO_LOCO_THRESHOLDS = (0, 0.2909, 1)
 # los clips de rodear y retroceder (BambooMasterBoss los toca según hacia dónde lo mueve el agente)
 BAMBOO_SIDE_STEPS = ("StrafeL", "StrafeR", "WalkBack")
-# brillo (Blinn-Phong) de los materiales propios: vendas y zapatillas de tela, el bambú apenas encerado, los ojos húmedos
-BAMBOO_SMOOTH = {"Master_GlintHandR": 0.1, "Master_GlintHandL": 0.1, "Master_GlintFootR": 0.12, "Master_GlintFootL": 0.12,
-                 "Master_Eyes": 0.45, "Master_GlintStaff": 0.3, "Master_Skin": 0.14}
+# brillo (Blinn-Phong) de los materiales propios del ermitaño: la piel curtida, los cascabeles y la flauta de bambú
+# lustrado (un reflejo chico: se leen como caña dura bajo la luna), las sandalias de tela
+BAMBOO_SMOOTH = {"Chikuo_Skin": 0.14, "Chikuo_GlintChimesHi": 0.35, "Chikuo_GlintChimesLo": 0.35, "Chikuo_GlintStaff": 0.3,
+                 "Chikuo_GlintFootR": 0.12, "Chikuo_GlintFootL": 0.12, "Chikuo_Gi": 0.1}
 
 
 def bamboo_master_info():
-    """BambooMaster.fbx.json: clips, alto de bind y colores que escribe Tools/Blender/bosses/bamboo_master/build_bamboo_master.py."""
+    """BambooMaster.fbx.json: clips, alto de bind y colores que escribe Tools/Blender/bosses/chikuo_v2/build_chikuo.py."""
     j = BAMBOO_FBX + ".json"
     return json.load(open(j, encoding="utf-8")) if os.path.exists(BAMBOO_FBX) and os.path.exists(j) else None
 
 
 def bamboo_master_assets(mats):
     """Materiales propios de Chikuō y el .meta de su FBX (clips cortados de la toma única 'Scene').
-    Los slots Master_Glint* (palmas, zapatillas, bastón) y Master_Eyes nacen sin emisión: el jefe los enciende por nombre
-    con CharacterGlint.SetGlow (dorado = parry, rojo = dash; los ojos en jade en la fase 2). Reducción de claves con
+    Los slots Chikuo_Glint* (los cascabeles de los hombros y de la espalda, la flauta-bastón, las sandalias) nacen sin
+    emisión: el jefe los enciende por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash, blanco = la caña
+    cargada). Los 'extra_materials' del sidecar (si hay: materiales que no están en el FBX y el jefe pone en una copia de
+    la malla) solo escriben su .mat. Reducción de claves con
     errores diez veces más finos que los de Unity (0.05° / 0.05 %: en una pierna de 1 m es ~1 mm, los pies clavados y
     los golpes cortos no lo notan) y sin las curvas de escala constantes: con 106 clips de 88 huesos sin comprimir era
     ~3 veces Kokuyo.fbx en memoria. Sin 'Optimize Bones': las puntas de las cadenas (Acc_*_end) y las esferas AccCol_* no
@@ -995,6 +1010,8 @@ def bamboo_master_assets(mats):
         return
     km = {n: lit(os.path.join(P_BAMBOO, n + ".mat"), n, None, base_color=(*rgb, 1), smooth=BAMBOO_SMOOTH.get(n, 0.15))
           for n, rgb in info["material_rgb"].items()}
+    for n, e in info.get("extra_materials", {}).items():
+        lit(os.path.join(P_BAMBOO, n + ".mat"), n, None, base_color=(*e["rgb"], 1), smooth=e.get("smoothness", 0.15))
     remap = {"Nindo_Palette": mats["palette"], "Nindo_Emissive": mats["emissive"], **km}
     clips = [dict(name=n, take=info.get("take", "Scene"), id=stable_id("bamboo_master", n), first=r["first"], last=r["last"],
                   loop=r["loop"]) for n, r in info["clips"].items()]
@@ -1002,8 +1019,6 @@ def bamboo_master_assets(mats):
     meta = meta.replace("optimizeBones: 1", "optimizeBones: 0").replace("removeConstantScaleCurves: 0", "removeConstantScaleCurves: 1")
     for k in ("animationRotationError", "animationPositionError", "animationScaleError"):
         meta = meta.replace(f"{k}: 0.5", f"{k}: 0.05")
-    # la forma CoatSlip de Master_Robe (el saco que se desliza en PhaseCoat antes de CoatOff) llega como blendShape
-    meta = meta.replace("importBlendShapes: 0", "importBlendShapes: 1")
     write_meta(BAMBOO_FBX, meta, force=True)
     write_meta(BAMBOO_FBX + ".json", TEXT_META)
     ensure_folder_metas(P_BAMBOO)
@@ -1073,11 +1088,19 @@ def team_anim_metas():
 
 
 # ============================================================================ props y mundo
+def arena_stalk_materials():
+    """Las cañas del claro de Chikuō (Tools/Blender/world/arena_stalks.py): el nudo de la base (GlintBase) tiene su propio
+    material, que World/ArenaStalk.SetGlint enciende. Sin mapa de emisión: el destello es blanco, no del color paja del nudo."""
+    palg = ensure_guid(os.path.join(P_TEX, "NindoPalette.png"))
+    return {"Stalk_GlintBase": lit(os.path.join(P_MAT, "Stalk_GlintBase.mat"), "Stalk_GlintBase", palg, smooth=0.12, emission_on=True)}
+
+
 def model_metas(mats):
     remap = {"Nindo_Palette": mats["palette"], "Nindo_Emissive": mats["emissive"], "Nindo_Foliage": mats["foliage"], "Nindo_Water": mats["water"]}
+    stalk_remap = {**remap, **arena_stalk_materials()}
     props, zones = {}, []
     for p in sorted(glob.glob(os.path.join(P_PROPS, "*.fbx"))):
-        write_meta(p, model_meta(remap=remap, readable=True), force=True)
+        write_meta(p, model_meta(remap=stalk_remap if os.path.basename(p).startswith("arena_stalk_") else remap, readable=True), force=True)
         props[os.path.splitext(os.path.basename(p))[0]] = ensure_guid(p)
     for p in sorted(glob.glob(os.path.join(P_WORLD, "*.fbx"))):
         write_meta(p, model_meta(remap=remap, readable=True), force=True)

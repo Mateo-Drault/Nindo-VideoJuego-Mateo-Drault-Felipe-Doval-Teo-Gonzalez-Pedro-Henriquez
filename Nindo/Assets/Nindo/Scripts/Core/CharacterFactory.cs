@@ -401,9 +401,9 @@ namespace Nindo
                     b.phaseSpeedBonus = 0.08f;
                     break;
                 case "ozeki":
-                    // Chikuō: las fases (66 % y 33 %), sus escenas y su ritmo los maneja BambooMasterBoss
-                    b.bossId = "ozeki"; b.title = "Chikuō"; b.subtitle = "El Maestro del Bambú";
-                    b.introAnim = "Intro"; b.phaseAnim = "PhaseCoat"; b.musicKey = "boss_bamboo"; b.phaseThresholds = new[] { 0.66f, 0.33f };
+                    // Chikuō: las fases (65 % y 40 %, BambooMasterMoves.Gates), sus escenas y su ritmo los maneja BambooMasterBoss
+                    b.bossId = "ozeki"; b.title = "Chikuō"; b.subtitle = "El Ermitaño de las Cañas";
+                    b.introAnim = "Intro"; b.phaseAnim = "PhaseBow"; b.musicKey = "boss_bamboo"; b.phaseThresholds = new[] { 0.65f, 0.40f };
                     b.phaseSpeedBonus = 0f;
                     break;
                 case "kage":

@@ -126,6 +126,36 @@ for arch, ax, az, r, bx, bz, yaw in W.BOSSES:
     for npc, variant, x, z, nyaw in W.NPCS:
         if variant == "dojo" and not W.on_courtyard(x, z):
             problems.append(f"NPC {npc} del dojo fuera del piso del patio")
+# el claro de Chikuō: las cañas adentro de la barrera y lejos de ella, separadas, con el piso plano al pie, sin tapar la
+# entrada (del arco al centro, la Madre no está cuando se entra la primera vez), el portal ni el lugar del jefe
+oz = next((ax, az, r) for arch, ax, az, r, bx, bz, yaw in W.BOSSES if arch == "ozeki")
+spawn = next((bx, bz) for arch, ax, az, r, bx, bz, yaw in W.BOSSES if arch == "ozeki")
+arch_xz = next(((x, z) for pid, x, z, yaw, sc in W.LANDMARKS if pid == "arch_bamboo_gate" and math.hypot(x - oz[0], z - oz[1]) < oz[2] + 3), None)
+stalks = [(sid, kind, W.boss_stalk_xz(b, r)) for sid, kind, b, r in W.BOSS_STALKS]
+floor_h = T.height(oz[0], oz[1])
+for sid, kind, (x, z) in stalks:
+    check("Caña", sid, x, z, 3.0)
+    dc = math.hypot(x - oz[0], z - oz[1])
+    if dc > oz[2] - 4.0:
+        problems.append(f"Caña {sid} ({x},{z}) a {oz[2] - dc:.1f} m de la barrera (mínimo 4: la caña inclinada y el revolcón)")
+    if abs(T.height(x, z) - floor_h) > 0.05:
+        problems.append(f"Caña {sid}: el pie a {T.height(x, z) - floor_h:+.2f} m del piso del claro")
+    for sid2, kind2, (x2, z2) in stalks:
+        if sid < sid2 and math.hypot(x - x2, z - z2) < 4.5:
+            problems.append(f"Cañas {sid} y {sid2} a {math.hypot(x - x2, z - z2):.1f} m (mínimo 4.5)")
+    if math.hypot(x - spawn[0], z - spawn[1]) < 2.0:
+        problems.append(f"Caña {sid} a menos de 2 m del lugar del jefe")
+    for pid, px, pz, pyaw, flag in W.PORTALS:
+        if math.hypot(x - px, z - pz) < 3.5:
+            problems.append(f"Caña {sid} a {math.hypot(x - px, z - pz):.1f} m del portal {pid} (mínimo 3.5)")
+    if arch_xz and kind != "mother" and T.seg_dist(x, z, *arch_xz, oz[0], oz[1])[0] < 4.0:
+        problems.append(f"Caña {sid} a {T.seg_dist(x, z, *arch_xz, oz[0], oz[1])[0]:.1f} m del camino del arco al centro (mínimo 4)")
+for pid, b, r in W.ARENA_PROPS:
+    x, z = W.boss_stalk_xz(b, r)
+    check("Farol del claro", pid, x, z, 0.3)
+    # el pie del farol (r 0.35) y medio espesor de la barrera (0.15) afuera del anillo, con 20 cm de aire
+    if math.hypot(x - oz[0], z - oz[1]) < oz[2] + 0.7:
+        problems.append(f"Farol del claro ({x},{z}) pegado a la barrera o adentro (r {oz[2]})")
 for pid, x, z, yaw, flag in W.PORTALS:
     check("Portal", pid, x, z)
 for tid, x, z, r in W.TRIGGERS:

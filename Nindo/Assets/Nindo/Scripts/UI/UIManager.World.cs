@@ -157,7 +157,7 @@ namespace Nindo
             return sp.z > 0f;
         }
 
-        static Vector3 HeadPoint(Enemy e) => e.transform.position + Vector3.up * (e.config.height * e.config.scale + 0.35f);
+        static Vector3 HeadPoint(Enemy e) => e.HeadPoint;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         static bool Automated => AutoPilot.Bot || AutoPilot.Busy;
