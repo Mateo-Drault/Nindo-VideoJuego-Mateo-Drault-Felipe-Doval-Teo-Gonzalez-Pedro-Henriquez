@@ -142,19 +142,32 @@ class ClipReview(RV.Review):
                     "width": 1280, "tile_h": 300, "rows": rows})
         return out
 
+    # Kaito en el claro de las hojas de avisos y lo que gira el cuerpo soplando con la cerbatana (BambooMasterBoss.AimYaw:
+    # hasta 20° hacia el lado de la pantalla al que ya apunta, según cuánto mira hacia la cámara)
+    KAITO = (0.8, -6.0)
+    AIM_YAW = 20.0
+
+    def aim_yaw(self):
+        x, y = self.KAITO
+        side = x / math.hypot(x, y)
+        return self.AIM_YAW * (1.0 - abs(side)) * (1.0 if side >= 0.0 else -1.0)
+
     def game_tells(self, shots, name="tells"):
         """Las poses de aviso con la cámara del juego en el claro de noche, recortadas 1:1 de 1920x1080. shots =
-        [(etiqueta, W, 'perch'|'ground', slots que brillan, color, theta del arco)]."""
+        [(etiqueta, W, 'perch'|'ground', slots que brillan, color, theta del arco, soplando)]: los que soplan giran como
+        los gira el código."""
         self.use("game")
         self.look.set_moon(None)
         self.floor("path")
         self.clear_extra()
         self.forest()
-        self.kaito((0.8, -6.0), 0.0)
+        self.kaito(self.KAITO, 0.0)
         tiles = []
-        for i, (lab, W, space, slots, color, theta) in enumerate(shots):
+        for i, (lab, W, space, slots, color, theta, blowing) in enumerate(shots):
             if space == "perch":
                 M = self.place_stalk((0.0, 0.0), theta, (0.0, 1.0, 0.0))
+                if blowing:
+                    M = M @ Matrix.Rotation(math.radians(self.aim_yaw()), 4, 'Z')
                 self.hide_stalk(False)
             else:
                 self.hide_stalk(True)

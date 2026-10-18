@@ -290,6 +290,10 @@ def sidecar_clip(c, a, b, d):
     return rec
 
 
+# los clips de cerbatana posados que el código gira hacia la pantalla mientras sopla (BambooMasterBoss.aimClips)
+AIM_CLIPS = ("PerchDart", "PerchDart2", "PerchVolley", "PerchVolley4", "PerchWhistle")
+
+
 def clip_sheets(arm, rig, meshes, out_dir, baked, data, pattern):
     import fnmatch
     import chikuo_clip_review as CRV
@@ -312,7 +316,8 @@ def clip_sheets(arm, rig, meshes, out_dir, baked, data, pattern):
             line.append("patina " + "/".join(f"{v[0]:.1f}" for v in rep["sole_slip_cm"].values()) + " cm")
         print(rv.clip_sheet(clip, frames, d["roots"], picks, [frame_label(clip, f) for f in picks], ", ".join(line)))
         for f, lab, slots, color in CC.tell_shots(clip):
-            shots.append((f"{clip.name} {lab}", frames[f], clip.timing.get("space", "ground"), slots, color, clip.timing.get("bend", 0.0)))
+            shots.append((f"{clip.name} {lab}", frames[f], clip.timing.get("space", "ground"), slots, color, clip.timing.get("bend", 0.0),
+                          clip.name in AIM_CLIPS))
     for i in range(0, len(shots), 8):
         print(rv.game_tells(shots[i:i + 8], name=f"tells_{i // 8}"))
 
