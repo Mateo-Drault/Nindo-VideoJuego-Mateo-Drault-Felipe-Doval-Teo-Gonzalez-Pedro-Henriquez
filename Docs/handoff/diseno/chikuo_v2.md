@@ -1242,3 +1242,30 @@ el `goto`) y `Nindo.AutoPilot.Run("goto 124 156 20; talk 40; waitcontrol 30")`.
 3. **Recortable, en este orden**: Tres Ermitaños, la Tala, los dardos que quedan clavados, `PerchVolley4` (la fase 3 usa
    Tres Notas a x1.12), la inclinación (las cañas quedan paradas y en la fase 2 tiemblan con la música), la Madre (la fase 3
    con las seis).
+
+## 23. Lo que quedó en el código (rama `c4/chikuo`, paso de la pelea)
+
+Todo lo de las secciones 22.1 y 22.2 está; de la 22.3 quedó afuera solo **Tres Ermitaños** (los señuelos de hojas: el primero
+de la lista de recortes; la simulación ya no los tiene). Diferencias con este documento, todas a propósito:
+
+* **Archivos**: `BambooMasterBoss.cs` (núcleo: el cuerpo, el reloj de los clips, los golpes de Kaito, la maquinaria de los
+  avisos, el bot), `.Canopy.cs` (arriba: decidir, dardos, colgado, risa, barrido, picada, bastón que cae, saltos, vuelta
+  arriba, el latigazo y los huecos), `.Tricks.cs` (silbador, catapulta, tala), `.Ground.cs` (el piso, la Grulla en el
+  Bastón, Pregunta y Respuesta), `.Story.cs`; `BambooStalk.cs` (con `InkEnso`, el ensō blanco), `BambooGrove.cs`,
+  `BambooDart.cs`. Los tiempos los da `ChikuoTimings.cs` (no `BambooMasterTimings.cs`, borrado con la pelea vieja).
+* **Los golpes con anillo** desde la caña y la pértiga son pasos "held" de Enemy: el jefe toca el clip a su tiempo natural y
+  le da a Enemy la ETA; Enemy dibuja el anillo, el "¡ya!", el destello y la zona. Las tandas del piso son patrones comunes.
+* **El ensō blanco** tiene 1.6 m de radio (no 1.2): el anillo de los golpes del jefe va a 1.2 m alrededor de la raíz, que
+  posado está en esa misma base, y el silbador es rojo y cargado a la vez. También hay uno en el bastón de la Grulla.
+* **Apuntar la flauta**: en vez de girar el pecho (la flauta es un hueso de `Root` que las manos agarran por IK: girar el
+  pecho despegaba las manos) se inclina el cuerpo entero sobre los pies, hasta 20° adelante y 12° atrás, solo soplando.
+* **El bastonazo de la vuelta** (después de aterrizar) desviado abre la Contra, como dice la tabla 5.2 (el modelo de Python
+  no la abría); la Revancha de la fase 3 no.
+* **El ping-pong** de la fase 3 encadena el salto con su agachado (0.15 s).
+* **La barra del jefe** no muestra rombos de postura (no tiene postura) y las marcas de la UI van arriba de su cabeza.
+* **Sonido**: `Tools/Audio/sfx_chikuo.py` sintetiza la sección 18 entera; el cromagrama del tema dio F# menor pentatónica
+  (la fase 3, G): los cascabeles y la flauta tienen su versión `_p3`. El tintineo blanco es de una sola vez (1.3 s), no un
+  loop.
+* **Balance**: `chikuo_v2_check.py` toma los tiempos del sidecar (lo que toca el código). 400 peleas por nivel con F 1.3:
+  el bueno 4.9 min sin morir, el promedio 7.4 min con 1.26 muertes (fases 112 / 46 / 132 s; un latigazo cada 8.4 / 15 /
+  9.7 s). Con el 1.42 del Chikuō viejo: 5.3 y 8.9 min con 1.81. La regla para calibrar de 12.3 sigue valiendo.

@@ -18,7 +18,7 @@ namespace Nindo
         public const string ChimesHi = "Chikuo_GlintChimesHi", ChimesLo = "Chikuo_GlintChimesLo", StaffGlow = "Chikuo_GlintStaff",
             FootR = "Chikuo_GlintFootR", FootL = "Chikuo_GlintFootL";
         public static readonly string[] DartSlots = { ChimesHi }, StaffSlots = { StaffGlow }, KickSlots = { FootR, ChimesLo, ChimesHi },
-            RedSlots = { ChimesLo, ChimesHi, StaffGlow }, DropSlots = { StaffGlow, ChimesHi };
+            RedSlots = { ChimesLo, ChimesHi, StaffGlow }, DropSlots = { StaffGlow, ChimesHi }, LowSlots = { ChimesLo };
 
         readonly CharacterGlint glint;
         readonly SpringChain spring;

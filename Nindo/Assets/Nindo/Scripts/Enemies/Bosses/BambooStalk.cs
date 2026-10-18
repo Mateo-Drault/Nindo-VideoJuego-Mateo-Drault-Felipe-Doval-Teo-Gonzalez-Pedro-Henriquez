@@ -48,39 +48,14 @@ namespace Nindo
         /// <summary>La tala: la pieza toca el piso a este tiempo (Time.time); -1 si no hay tala en curso.</summary>
         public float FellImpactAt { get; private set; } = -1f;
 
-        // ensō: un quad con el pincel de los avisos (shader Nindo/Telegraph, modo anillo)
-        readonly Transform enso;
-        readonly MeshRenderer ensoR;
-        readonly MaterialPropertyBlock mpb = new MaterialPropertyBlock();
-        float ensoAlpha, ensoSeed;
-
-        /// <summary>Radio del ensō blanco (m): fuera del cuerpo del viejo sentado al pie y de la cápsula de la raíz.</summary>
-        public const float EnsoRadius = 1.2f;
-        public static readonly Color White = new Color(0.92f, 0.97f, 1f);
-        static readonly int IdColor = Shader.PropertyToID("_Color"), IdHotColor = Shader.PropertyToID("_HotColor"), IdInk = Shader.PropertyToID("_Ink"),
-            IdMode = Shader.PropertyToID("_Mode"), IdProgress = Shader.PropertyToID("_Progress"), IdHot = Shader.PropertyToID("_Hot"),
-            IdFlash = Shader.PropertyToID("_Flash"), IdDanger = Shader.PropertyToID("_Danger"), IdAlpha = Shader.PropertyToID("_Alpha"),
-            IdRadius = Shader.PropertyToID("_Radius"), IdWidth = Shader.PropertyToID("_Width"), IdDot = Shader.PropertyToID("_Dot"),
-            IdMinPx = Shader.PropertyToID("_MinPx"), IdOutcome = Shader.PropertyToID("_Outcome"), IdOutT = Shader.PropertyToID("_OutT"),
-            IdSeed = Shader.PropertyToID("_Seed");
+        readonly InkEnso enso;
+        public static readonly Color White = InkEnso.White;
 
         public BambooStalk(ArenaStalk s, Mesh quad, Material ensoMat, Transform parent)
         {
             S = s;
             piece = s.BreakPiece;
-            if (quad != null && ensoMat != null)
-            {
-                var go = new GameObject("Enso_" + s.Id);
-                go.transform.SetParent(parent, false);
-                go.AddComponent<MeshFilter>().sharedMesh = quad;
-                ensoR = go.AddComponent<MeshRenderer>();
-                ensoR.sharedMaterial = ensoMat;
-                ensoR.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                ensoR.receiveShadows = false;
-                ensoR.enabled = false;
-                enso = go.transform;
-            }
-            ensoSeed = Random.value * 10f;
+            enso = InkEnso.Create("Enso_" + s.Id, quad, ensoMat, parent);
         }
 
         // ------------------------------------------------------------------ estado por fase (reintentos)
@@ -97,8 +72,7 @@ namespace Nindo
             Cracks = 0;
             Fallen = false;
             loaded = markOn = false;
-            ensoAlpha = 0f;
-            if (ensoR != null) ensoR.enabled = false;
+            enso?.Hide();
             pieceActive = false;
             FellImpactAt = -1f;
             if (IsMother) S.SetRise(phase >= 2 ? 1f : 0f);
@@ -242,8 +216,6 @@ namespace Nindo
 
         void TickEnso(float dt)
         {
-            bool show = (loaded || markOn) && !Fallen;
-            ensoAlpha = Mathf.MoveTowards(ensoAlpha, show ? 1f : 0f, dt / (show ? 0.08f : 0.18f));
             if (loaded)
             {
                 loadedFor += dt;
@@ -252,35 +224,8 @@ namespace Nindo
                 S.SetGlint(White * Mathf.Lerp(2.2f, 4.5f, pulse));
             }
             else if (markOn) S.SetGlint(White * 2.4f);
-            if (ensoR == null) return;
-            if (ensoAlpha <= 0f) { if (ensoR.enabled) ensoR.enabled = false; return; }
-            ensoR.enabled = Settings.CombatAids >= 1;
-            Vector3 p = Base;
-            const float half = EnsoRadius * 1.7f + 0.3f;
-            enso.SetPositionAndRotation(p + Vector3.up * 0.06f, Quaternion.Euler(0f, ensoSeed * 36f, 0f));
-            enso.localScale = new Vector3(half * 2f, 1f, half * 2f);
             // en el último cuarto de la carga el trazo se afina
-            float thin = loaded ? Mathf.InverseLerp(0.75f, 1f, loadedFor / loadLen) : 0f;
-            float width = 0.14f * 0.5f * 1.25f * Mathf.Lerp(1f, 0.45f, thin);
-            mpb.Clear();
-            mpb.SetColor(IdColor, White);
-            mpb.SetColor(IdHotColor, White);
-            mpb.SetColor(IdInk, TellStyle.Ink);
-            mpb.SetFloat(IdMode, 0f);
-            // abierto (0.86): no se cierra nunca, no es un reloj
-            mpb.SetFloat(IdProgress, 0.86f);
-            mpb.SetFloat(IdHot, 0.6f);
-            mpb.SetFloat(IdFlash, 0f);
-            mpb.SetFloat(IdDanger, 0f);
-            mpb.SetFloat(IdAlpha, ensoAlpha * (markOn && !loaded ? 0.7f : 1f));
-            mpb.SetFloat(IdRadius, EnsoRadius / half);
-            mpb.SetFloat(IdWidth, width / half);
-            mpb.SetFloat(IdDot, 0.125f / half);
-            mpb.SetFloat(IdMinPx, 14f);
-            mpb.SetFloat(IdOutcome, 0f);
-            mpb.SetFloat(IdOutT, 0f);
-            mpb.SetFloat(IdSeed, ensoSeed);
-            ensoR.SetPropertyBlock(mpb);
+            enso?.Tick(Base, (loaded || markOn) && !Fallen, markOn && !loaded, loaded ? Mathf.InverseLerp(0.75f, 1f, loadedFor / loadLen) : 0f, dt);
         }
 
         // ------------------------------------------------------------------ rajadura, quebradura, tala (fase 3)
@@ -355,6 +300,89 @@ namespace Nindo
             BambooGrove.Leaves(Base + fallDir * (S.Length * 0.4f) + Vector3.up * 0.6f, 1.6f);
             S.SetBroken(true, false);
             pieceActive = false;
+        }
+    }
+
+    /// <summary>
+    /// El ensō blanco de tinta en el piso: "cortá acá" (las cañas cargadas, el destino de un salto, el bastón de la Grulla).
+    /// Un quad con el pincel de los avisos (shader Nindo/Telegraph, modo anillo), abierto: no se cierra nunca, no es un reloj.
+    /// </summary>
+    public sealed class InkEnso
+    {
+        /// <summary>Radio (m): por fuera del anillo de los golpes del jefe (1.2 m alrededor de la raíz, que posado está en la
+        /// base: el silbador es rojo y cargado a la vez), del cuerpo sentado al pie y de su cápsula.</summary>
+        public const float Radius = 1.6f;
+        public static readonly Color White = new Color(0.92f, 0.97f, 1f);
+        static readonly int IdColor = Shader.PropertyToID("_Color"), IdHotColor = Shader.PropertyToID("_HotColor"), IdInk = Shader.PropertyToID("_Ink"),
+            IdMode = Shader.PropertyToID("_Mode"), IdProgress = Shader.PropertyToID("_Progress"), IdHot = Shader.PropertyToID("_Hot"),
+            IdFlash = Shader.PropertyToID("_Flash"), IdDanger = Shader.PropertyToID("_Danger"), IdAlpha = Shader.PropertyToID("_Alpha"),
+            IdRadius = Shader.PropertyToID("_Radius"), IdWidth = Shader.PropertyToID("_Width"), IdDot = Shader.PropertyToID("_Dot"),
+            IdMinPx = Shader.PropertyToID("_MinPx"), IdOutcome = Shader.PropertyToID("_Outcome"), IdOutT = Shader.PropertyToID("_OutT"),
+            IdSeed = Shader.PropertyToID("_Seed");
+
+        readonly Transform tf;
+        readonly MeshRenderer r;
+        readonly MaterialPropertyBlock mpb = new MaterialPropertyBlock();
+        readonly float seed;
+        float alpha;
+
+        InkEnso(Transform tf, MeshRenderer r)
+        {
+            this.tf = tf;
+            this.r = r;
+            seed = Random.value * 10f;
+        }
+
+        /// <summary>null sin el shader de los avisos (el resto de la carga, el nudo y las campanas, igual se ve).</summary>
+        public static InkEnso Create(string name, Mesh quad, Material mat, Transform parent)
+        {
+            if (quad == null || mat == null) return null;
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.AddComponent<MeshFilter>().sharedMesh = quad;
+            var mr = go.AddComponent<MeshRenderer>();
+            mr.sharedMaterial = mat;
+            mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            mr.receiveShadows = false;
+            mr.enabled = false;
+            return new InkEnso(go.transform, mr);
+        }
+
+        public void Hide()
+        {
+            alpha = 0f;
+            r.enabled = false;
+        }
+
+        /// <summary>Cada frame: aparece en 0.08 s y se va en 0.18; 'dim' más tenue (el destino de un salto); 'thin' 0..1
+        /// afina el trazo (la carga que se termina).</summary>
+        public void Tick(Vector3 center, bool show, bool dim, float thin, float dt)
+        {
+            alpha = Mathf.MoveTowards(alpha, show ? 1f : 0f, dt / (show ? 0.08f : 0.18f));
+            if (alpha <= 0f) { if (r.enabled) r.enabled = false; return; }
+            r.enabled = Settings.CombatAids >= 1;
+            const float half = Radius * 1.7f + 0.3f;
+            tf.SetPositionAndRotation(center + Vector3.up * 0.06f, Quaternion.Euler(0f, seed * 36f, 0f));
+            tf.localScale = new Vector3(half * 2f, 1f, half * 2f);
+            float width = 0.14f * 0.5f * 1.25f * Mathf.Lerp(1f, 0.45f, thin);
+            mpb.Clear();
+            mpb.SetColor(IdColor, White);
+            mpb.SetColor(IdHotColor, White);
+            mpb.SetColor(IdInk, TellStyle.Ink);
+            mpb.SetFloat(IdMode, 0f);
+            mpb.SetFloat(IdProgress, 0.86f);
+            mpb.SetFloat(IdHot, 0.6f);
+            mpb.SetFloat(IdFlash, 0f);
+            mpb.SetFloat(IdDanger, 0f);
+            mpb.SetFloat(IdAlpha, alpha * (dim ? 0.7f : 1f));
+            mpb.SetFloat(IdRadius, Radius / half);
+            mpb.SetFloat(IdWidth, width / half);
+            mpb.SetFloat(IdDot, 0.125f / half);
+            mpb.SetFloat(IdMinPx, 14f);
+            mpb.SetFloat(IdOutcome, 0f);
+            mpb.SetFloat(IdOutT, 0f);
+            mpb.SetFloat(IdSeed, seed);
+            r.SetPropertyBlock(mpb);
         }
     }
 }

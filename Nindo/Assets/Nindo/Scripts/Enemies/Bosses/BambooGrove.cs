@@ -12,7 +12,8 @@ namespace Nindo
     public sealed class BambooGrove
     {
         readonly List<BambooStalk> stalks = new List<BambooStalk>(8);
-        public IReadOnlyList<BambooStalk> All => stalks;
+        /// <summary>Las cañas (la lista misma: recorrerla con foreach no asigna memoria, como sí la interfaz).</summary>
+        public List<BambooStalk> All => stalks;
         public BambooStalk Mother { get; private set; }
         public Vector3 Center { get; private set; }
         public float FloorY { get; private set; }
@@ -67,6 +68,7 @@ namespace Nindo
                 g.stalks.Add(b);
                 if (s.IsMother) g.Mother = b;
             }
+            g.poleEnso = InkEnso.Create("Enso_Baston", g.quad, g.ensoMat, g.root);
             g.Center = g.Mother != null ? g.Mother.Base : fallbackCenter;
             g.FloorY = g.Center.y;
             return g;
@@ -92,11 +94,25 @@ namespace Nindo
             aim.enabled = false;
             aimAlpha = 0f;
             aimStamp = null;
+            poleOn = false;
+            poleEnso?.Hide();
         }
 
         public void Tick(float dt)
         {
             for (int i = 0; i < stalks.Count; i++) stalks[i].Tick(dt);
+            poleEnso?.Tick(poleAt, poleOn, false, 0f, dt);
+        }
+
+        // el ensō del bastón clavado de la Grulla en el Bastón (su bastón también es una caña)
+        InkEnso poleEnso;
+        Vector3 poleAt;
+        bool poleOn;
+
+        public void SetPoleEnso(bool on, Vector3 at)
+        {
+            poleOn = on;
+            poleAt = at;
         }
 
         /// <summary>Se puede posar (en pie y recta; la Madre solo en la fase 3).</summary>

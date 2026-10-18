@@ -276,10 +276,11 @@ namespace Nindo
                     vuln = Vuln.Loaded;
                     loadedStalk = null;
                     look.Loaded = true;
+                    grove.SetPoleEnso(true, transform.position);
                     loadUntil = Time.time + (leaveAt - loadFrom);
                     Sfx("tell_chime_shimmer", "parry_ready", Voice, 0.5f);
                 }
-                if (loaded && t >= plantT + leaveAt - 0.02f) { onPole = false; look.Loaded = false; vuln = Vuln.None; }
+                if (loaded && t >= plantT + leaveAt - 0.02f) { onPole = false; look.Loaded = false; vuln = Vuln.None; grove.SetPoleEnso(false, transform.position); }
                 land = Floor(TargetPos);
                 SetDiscArea(land, dive.RingM);
                 yield return null;
@@ -318,6 +319,7 @@ namespace Nindo
         HitResult PoleWhip(Vector3 dir)
         {
             onPole = false;
+            grove.SetPoleEnso(false, transform.position);
             Log("latigazo a la pértiga");
             Sfx("bamboo_whip", "fin_whoosh", transform.position + Vector3.up * 1.2f, 1f);
             BambooGrove.Splinters(transform.position + Vector3.up * 1.2f, -dir);
@@ -395,7 +397,7 @@ namespace Nindo
                 bool high = phrase[i] == 'A';
                 Play(ChikuoTimings.FluteNote, 0.03f);
                 PlayNote(high, i);
-                look.Tell(high ? BambooMasterLook.DartSlots : new[] { BambooMasterLook.ChimesLo }, !high, 0.8f);
+                look.Tell(high ? BambooMasterLook.DartSlots : BambooMasterLook.LowSlots, !high, 0.8f);
                 yield return Wait(gap);
                 look.ClearTell();
             }

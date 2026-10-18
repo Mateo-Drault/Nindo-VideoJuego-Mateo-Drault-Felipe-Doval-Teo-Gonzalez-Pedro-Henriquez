@@ -466,8 +466,33 @@ namespace Nindo
                 Vector3 start = new Vector3(climbFrom.x, (grove != null ? grove.FloorY : transform.position.y) + ClimbAuthorPerch, climbFrom.z);
                 pos = Vector3.Lerp(pos, start, climbBlend);
             }
-            model.SetPositionAndRotation(pos, perchYaw);
+            model.SetPositionAndRotation(pos, perchYaw * Quaternion.AngleAxis(AimLean(node.position, dt), Vector3.right));
         }
+
+        /// <summary>
+        /// Los clips de cerbatana apuntan la flauta 35° hacia abajo al frente; el dardo va al pecho de Kaito (de lejos más
+        /// tendido, de cerca más empinado). Mientras sopla, el cuerpo entero se inclina sobre los pies (gira alrededor del
+        /// PerchNode, así las suelas no se despegan del nudo) lo que falta para que la flauta coincida con el tiro: hasta 20°
+        /// hacia adelante y 12° hacia atrás. Fuera de los soplidos vuelve suave.
+        /// </summary>
+        float AimLean(Vector3 node, float dt)
+        {
+            float want = 0f;
+            if (clip != null && aimClips.Contains(clip) && ClipNorm >= clip.TellStart)
+            {
+                Vector3 to = TargetPos + Vector3.up * 0.9f - (node + Vector3.up * 1.3f);
+                float down = Mathf.Atan2(-to.y, Mathf.Max(0.5f, to.Flat().magnitude)) * Mathf.Rad2Deg;
+                want = Mathf.Clamp(down - 35f, -12f, 20f);
+            }
+            aimLean = Mathf.MoveTowards(aimLean, want, 60f * dt);
+            return aimLean;
+        }
+
+        float aimLean;
+        static readonly HashSet<ChikuoClip> aimClips = new HashSet<ChikuoClip>
+        {
+            ChikuoTimings.PerchDart, ChikuoTimings.PerchDart2, ChikuoTimings.PerchVolley, ChikuoTimings.PerchVolley4, ChikuoTimings.PerchWhistle,
+        };
 
         float HeightAboveFloor => grove != null ? model.position.y - grove.FloorY : 0f;
 
@@ -906,6 +931,8 @@ namespace Nindo
             slowFrom = slowTo = -1f;
             groundAI = false;
             whistleDart = null;
+            onPole = false;
+            grove?.SetPoleEnso(false, transform.position);
             look?.ClearTell();
             look?.StopLimbTrail();
             trail?.Stop();
