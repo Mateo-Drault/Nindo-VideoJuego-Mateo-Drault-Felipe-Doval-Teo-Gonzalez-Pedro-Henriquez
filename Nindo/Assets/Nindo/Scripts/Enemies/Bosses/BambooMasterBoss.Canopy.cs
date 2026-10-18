@@ -278,7 +278,8 @@ namespace Nindo
             }
             while (fired < n) { FireDart(); fired++; }
             Play(up, 0f);
-            perch.SetLoad(6f, FaceDirFrom(perch.Base));
+            // el latigazo del último dardo pudo tirarlo y soltar la caña en el mismo cuadro
+            if (perch != null) perch.SetLoad(6f, FaceDirFrom(perch.Base));
             yield return Until(1f);
             hanging = false;
         }
