@@ -94,6 +94,9 @@ P = dict(
     pingpong=0.30,
     last_song=0.20,                                   # la Última Canción: salta después de cada acción
     signature_first=(5.0, 7.0), signature_every=(9.0, 12.0),   # fase 3: tala, catapulta o la ráfaga de cuatro
+    signature_chain=7.0,                              # con Kaito a 7 m o menos, la ráfaga de cuatro sigue con la Picada
+    perch_rate=[1.0, None, 1.2],                      # fase 3: los dardos posados a x1.2 (BambooMasterMoves.PerchRate)
+    fan=[False, None, True], fan_m=1.6,               # fase 3: un soplido de cada dos sale en abanico (dos más a 1.6 m)
     catapult=dict(min_dist=4.0, every=6.0, w=1.0),
     hang_near_lead=0.35,                              # colgado con Kaito al pie: la carga prende 0.35 s antes del dardo
     # la vuelta de un hueco: lejos (>= 6 m) un salto común; si no garrocha / agachado cortable / dos bastonazos y trepa
@@ -151,6 +154,10 @@ PERCH_ACTS = {
     "risa": dict(dur=1.20, releases=[], loaded=(0.00, 1.20)),
     "risa_maestro": dict(dur=2.00, releases=[], loaded=(0.00, 2.00)),
 }
+
+
+# los dardos posados (BambooMasterBoss.DartAct): los que van más rápido y en abanico en la fase 3
+DART_ACTS = ("dardo", "dos_dardos", "tres_notas", "cuatro_notas")
 
 
 SIDECAR = os.path.join(HERE, "..", "..", "Nindo", "Assets", "Nindo", "Art", "Characters", "BambooMaster", "BambooMaster.fbx.json")
@@ -760,6 +767,8 @@ class Fight:
                 if dK >= P["catapult"]["min_dist"]:
                     self.cd["catapulta"] = t
                     return self.catapult()
+                if dK <= P["signature_chain"] and self.cd_ok("picada", 3.0):
+                    self.chain = "picada"
                 return self.perch_act("cuatro_notas")
         if dK <= P["react_dist"]:
             # Kaito debajo y él sin cargar: se cuelga a soplarle de cerca (cargado), barre con la caña, baja a pegarle o se va
@@ -831,9 +840,18 @@ class Fight:
 
     act_laugh = False
     last_open = None
+    chain = None
+    fan_flip = False
 
     def after_perch(self):
         self.act = None
+        if self.chain == "picada" and self.mode == "perch":
+            # la firma encadenada: sin respiro, de la ráfaga a la Picada
+            self.chain = None
+            self.cd["picada"] = self.t
+            self.S("firma_encadenada")
+            return self.dive()
+        self.chain = None
         self.go(self.t + self.breath(), self.decide)
 
     # ------------------------------------------------------------------ arriba: acciones
@@ -847,6 +865,12 @@ class Fight:
             a["releases"] = [r + 0.6 for r in a["releases"]]
             a["dur"] += 0.6
         a["name"], a["t0"] = name, t0
+        rate = P["perch_rate"][self.ph] or 1.0
+        if name in DART_ACTS and rate != 1.0:
+            a["dur"] /= rate
+            a["releases"] = [r / rate for r in a["releases"]]
+            if a["loaded"]:
+                a["loaded"] = (a["loaded"][0] / rate, a["loaded"][1] / rate)
         if a.get("hang") and dist(self.k.pos, self.root) <= P["react_dist"]:
             # con Kaito al pie la carga prende 0.35 s antes del primer dardo (BambooMasterBoss.HangAct 'near')
             a["loaded"] = (max(0.0, a["releases"][0] - P["hang_near_lead"]), a["loaded"][1])
@@ -920,6 +944,13 @@ class Fight:
             zone = ("disc", aim, P["dart_hit_r"])
             self.show(T, "gold", own=False)
             self.at(T, self.strike_kaito, "dart", self.dmg("dart"), zone, name)
+            if name in DART_ACTS and P["fan"][ph]:
+                self.fan_flip = not self.fan_flip
+            if name in DART_ACTS and P["fan"][ph] and self.fan_flip:
+                d = norm(v2(base, aim))
+                for sgn in (-1.0, 1.0):
+                    side = (aim[0] - d[1] * P["fan_m"] * sgn, aim[1] + d[0] * P["fan_m"] * sgn)
+                    self.at(T, self.strike_kaito, "dart", self.dmg("dart"), ("disc", side, P["dart_hit_r"]), name)
 
     def inside(self, zone):
         kind, a, b = zone

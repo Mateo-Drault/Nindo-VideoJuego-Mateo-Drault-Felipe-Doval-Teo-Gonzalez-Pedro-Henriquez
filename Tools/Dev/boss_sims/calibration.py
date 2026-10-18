@@ -41,7 +41,7 @@ MEASURED = {
     # el Chikuō ermitaño de la fase C4 (las cañas y el latigazo): sin medir todavía. La simulación cruda es
     # chikuo_v2_check.py --runs 400 --seed 7 (los tiempos del sidecar, las perillas después de la revisión de C4); el diseño
     # espera F 1.2-1.4. Pegar acá las líneas del PlayClock
-    "chikuo_v2": dict(real_bueno=[], real_promedio=[], sim_bueno=214.0, sim_promedio=(255.0, 0.33)),
+    "chikuo_v2": dict(real_bueno=[], real_promedio=[], sim_bueno=213.0, sim_promedio=(255.0, 0.32)),
 }
 
 

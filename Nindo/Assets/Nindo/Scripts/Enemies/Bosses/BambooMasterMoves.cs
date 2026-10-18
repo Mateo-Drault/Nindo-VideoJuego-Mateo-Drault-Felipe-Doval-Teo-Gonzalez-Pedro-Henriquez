@@ -29,6 +29,15 @@ namespace Nindo
         public const float LastSong = 0.20f;
         /// <summary>Fase 3: la firma (tala, catapulta o la ráfaga de cuatro) a los SignatureFirst s y después cada SignatureEvery.</summary>
         public static readonly Vector2 SignatureFirst = new Vector2(5f, 7f), SignatureEvery = new Vector2(9f, 12f);
+        /// <summary>Con Kaito a esta distancia o menos de la base, la firma de la ráfaga de cuatro sigue sin respiro con la
+        /// Picada (m).</summary>
+        public const float SignatureChain = 7f;
+        /// <summary>Los dardos posados (Dardo, Dos Dardos, Tres y Cuatro Notas) por fase: en la fase 3 a x1.2 y un soplido de
+        /// cada dos en abanico (dos dardos más a FanM del de Kaito, de costado): la fase 3 tenía la misma densidad de
+        /// amenazas que la 1 y menos que la 2 (37 / 48 / 37 por minuto fuera de los huecos; ahora 37 / 48 / 53).</summary>
+        public static readonly float[] PerchRate = { 1f, 1f, 1.2f };
+        public static readonly bool[] Fan = { false, false, true };
+        public const float FanM = 1.6f;
         /// <summary>La catapulta por pesos (fase 3): Kaito a esta distancia o más, cada tanto como mucho, con este peso.</summary>
         public const float CatapultMinDist = 4f, CatapultEvery = 6f, CatapultWeight = 1.0f;
         /// <summary>Colgado con Kaito al pie: la carga prende recién esto antes del primer dardo.</summary>

@@ -23,6 +23,10 @@ namespace Nindo
         int tickles;
         /// <summary>Fase 3: cuándo toca su próxima firma (catapulta, tala o la ráfaga de cuatro); -1 = sin agendar.</summary>
         float nextSignatureAt = -1f;
+        /// <summary>La firma de la ráfaga de cuatro con Kaito cerca: al terminar, la Picada sin respiro.</summary>
+        bool chainDive;
+        /// <summary>Fase 3: un soplido de cada dos sale en abanico.</summary>
+        bool fanFlip;
 
         // ================================================================== el cerebro
         /// <summary>La pelea, mientras dure: en la fase 2 (o sin caña libre en la 3) pelea en el piso; si no, vuelve arriba
@@ -80,9 +84,15 @@ namespace Nindo
             }
             justLanded = false;
             if (LastSong) Bark("ultima");
+            chainDive = false;
             var a = Decide();
             if (a != PerchAct.Leap) actionsOnStalk++;
             yield return DoPerch(a);
+            if (chainDive && IsAlive && body == Body.Perch && perch != null && perch.Standing)
+            {
+                chainDive = false;
+                yield return DiveAct();
+            }
         }
 
         /// <summary>Qué hace posado (sección 7.1, en orden: lo primero que se cumple).</summary>
@@ -106,6 +116,8 @@ namespace Nindo
                     nextSignatureAt = Time.time + Random.Range(BambooMasterMoves.SignatureEvery.x, BambooMasterMoves.SignatureEvery.y);
                     if (TalaTarget() != null) return PerchAct.Tala;
                     if (d >= BambooMasterMoves.CatapultMinDist) return PerchAct.Catapult;
+                    // cerca: la ráfaga y, sin respiro, la Picada (la firma encadenada: no da tiempo a acercarse a la base)
+                    chainDive = d <= BambooMasterMoves.SignatureChain && Time.time - lastDive >= 3f;
                     return PerchAct.Volley;
                 }
             }
@@ -187,7 +199,7 @@ namespace Nindo
         IEnumerator DartAct(ChikuoClip c, float extra)
         {
             vuln = Vuln.Tickle;
-            Play(c, 0.12f);
+            Play(c, 0.12f, 0f, BambooMasterMoves.PerchRate[phaseIdx]);
             float load = c.Event("Load"), unload = c.Event("Unload"), first = c.EventAt("DartSpawn", 0);
             if (extra > 0f && load >= 0f && first > load)
             {
@@ -211,10 +223,17 @@ namespace Nindo
                     // se echa atrás: la caña se arquea alejándose de Kaito
                     perch.SetLoad(20f, -FaceDirFrom(perch.Base));
                 }
-                while (fired < n && clipT >= c.EventAt("DartSpawn", fired) * c.Seconds - 1e-4f) { FireDart(); fired++; }
+                while (fired < n && clipT >= c.EventAt("DartSpawn", fired) * c.Seconds - 1e-4f) { FirePerchDart(); fired++; }
                 yield return null;
             }
-            while (fired < n) { FireDart(); fired++; }
+            while (fired < n) { FirePerchDart(); fired++; }
+        }
+
+        /// <summary>Un dardo posado; en la fase 3, uno de cada dos en abanico.</summary>
+        void FirePerchDart()
+        {
+            bool fan = BambooMasterMoves.Fan[phaseIdx] && (fanFlip = !fanFlip);
+            FireDart(fan);
         }
 
         // ------------------------------------------------------------------ colgado (la pose de la hoja original)

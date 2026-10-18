@@ -213,7 +213,7 @@ namespace Nindo
             loadsUncut = 0;
             // lo que el intento anterior dejó a medias (colgado, la revancha, los relojes de la fase 2 y la 3 en Time.time
             // viejos: el reintento abriría con la Grulla al instante en vez de a los 4-6 s)
-            hanging = leaving = justLanded = revanchaPending = dartHitPending = firstVolleyDone = dartGlow = false;
+            hanging = leaving = justLanded = revanchaPending = dartHitPending = firstVolleyDone = dartGlow = chainDive = fanFlip = false;
             tickles = actionsOnStalk = 0;
             nextPoleAt = nextQaAt = nextSignatureAt = -1f;
             lastFlip = -9f;
@@ -895,7 +895,9 @@ namespace Nindo
         Vector3 MuzzlePos => look != null && look.Muzzle != null ? look.Muzzle.position : Voice;
 
         /// <summary>Sopla el próximo dardo de la cola (el más viejo): desde la boca de la flauta hacia donde va a estar Kaito.</summary>
-        void FireDart()
+        /// <summary>'fan': dos dardos más a BambooMasterMoves.FanM del de Kaito, uno a cada costado (sin aviso propio: los
+        /// anuncia el mismo soplido).</summary>
+        void FireDart(bool fan = false)
         {
             bool cued = false;
             if (pending.Count > 0) { cued = pending[0].cued; pending.RemoveAt(0); }
@@ -906,8 +908,15 @@ namespace Nindo
             Vector3 aim = p.transform.position + Vector3.up * 0.9f;
             float t = Vector3.Distance(from, aim) / speed;
             aim += p.Velocity.Flat() * (BambooMasterMoves.DartLead[phaseIdx] * t);
-            var d = BambooDart.Spawn(this, from, aim - from, speed, BambooMasterMoves.Dmg(BambooMasterMoves.Move.Dart, phaseIdx), false, grove.FloorY, cued);
+            var dmg = BambooMasterMoves.Dmg(BambooMasterMoves.Move.Dart, phaseIdx);
+            var d = BambooDart.Spawn(this, from, aim - from, speed, dmg, false, grove.FloorY, cued);
             d.cued = cued;
+            if (fan)
+            {
+                Vector3 side = Vector3.Cross(Vector3.up, (aim - from).Flat()).normalized * BambooMasterMoves.FanM;
+                BambooDart.Spawn(this, from, aim + side - from, speed, dmg, false, grove.FloorY, false);
+                BambooDart.Spawn(this, from, aim - side - from, speed, dmg, false, grove.FloorY, false);
+            }
             Game.FX?.Dust(from, 0.25f);
         }
 
