@@ -76,7 +76,7 @@ for _s in STALKS.values():
 
 # =========================================================================== el diseño en números
 P = dict(
-    health=1900.0,                      # la vida de hoy (BambooMasterMoves.Config)
+    health=2200.0,                      # la vida de hoy (BambooMasterMoves.Config)
     gates=[1.0, 0.65, 0.40, 0.0],       # pisos de cada fase: la 1 es el 35 %, la 2 (el piso) el 25 %, la 3 el 40 %
     trans=[4.0, 5.0], heal=30.0, spirit_gift=30.0,
     # --- arriba ---------------------------------------------------------------------------------------------------

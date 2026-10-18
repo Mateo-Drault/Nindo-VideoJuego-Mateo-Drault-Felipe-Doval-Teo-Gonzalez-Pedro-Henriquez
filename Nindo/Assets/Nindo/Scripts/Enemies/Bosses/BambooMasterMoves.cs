@@ -277,7 +277,8 @@ namespace Nindo
 
         // ================================================================== config
         /// <summary>
-        /// Chikuō, el Ermitaño de las Cañas. 1900 de vida (la de siempre: el usuario dijo que está bien). No se lo ejecuta
+        /// Chikuō, el Ermitaño de las Cañas. 2200 de vida, la que tenía cuando el usuario dijo que estaba bien (C3 la había bajado a
+        /// 1900; con 1900 el bot bueno ganaba en 3:46 en Unity, con el bot sacando la caída del cielo hasta 6 veces). No se lo ejecuta
         /// (termina sentado con las piernas cruzadas, BambooMasterBoss.Story). Sin postura: ningún hueco sale de llenar una
         /// barra, salen de las reglas que se ven (maxImbalance y poiseHits altos apagan las reglas comunes del agotado y del
         /// neutral). Locomoción a 1.6 / 5.5 m/s, las de Walk y Run (los pies no patinan). Arriba decide el jefe; los
@@ -287,7 +288,7 @@ namespace Nindo
         {
             return new EnemyConfig
             {
-                id = "ozeki", displayName = "Chikuō", maxHealth = 1900, runSpeed = 5.5f, walkSpeed = 1.6f, turnSpeed = 9f,
+                id = "ozeki", displayName = "Chikuō", maxHealth = 2200, runSpeed = 5.5f, walkSpeed = 1.6f, turnSpeed = 9f,
                 radius = 0.5f, height = 2.4f, scale = 1f, tintStrength = 0f,
                 maxImbalance = 99, exhaustedTime = 1f, exhaustedDamageMul = 1f, guardTime = 0.3f,
                 poiseHits = 99, hyperArmor = true, knockbackResist = 1f, staggerTime = 0.3f,
