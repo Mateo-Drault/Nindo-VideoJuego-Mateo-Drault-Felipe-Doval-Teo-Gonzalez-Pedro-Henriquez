@@ -106,7 +106,7 @@ P = dict(
     # (vuelo hasta que se lo puede cortar, cuánto dura, tope de cortes, multiplicador, daño de la caída)
     revolcon=(0.55, 2.2, 2, 1.0, 12.0),
     estampado=(1.00, 2.2, 4, 1.2, 24.0),
-    caida=(0.45, 3.0, 5, 1.25, 36.0),
+    caida=(0.45, 2.6, 3, 1.25, 24.0),
     resbalon=(0.30, 1.0, 2, 1.0, 6.0),
     tropiezo=(0.0, 1.0, 2, 1.0, 0.0),
     afinado=(0.30, 2.5, 4, 1.2, 0.0),

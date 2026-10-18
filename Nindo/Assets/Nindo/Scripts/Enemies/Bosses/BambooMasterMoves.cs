@@ -98,7 +98,10 @@ namespace Nindo
         public static readonly float[] RevolconOpen = { 2.2f, 2.2f, 2.0f };
         public const int RevolconCap = 2;
         public static Hole Estampado(int phase) => phase >= 2 ? new Hole(1.0f, 2.0f, 3, 1.2f, 24f) : new Hole(1.0f, 2.2f, 4, 1.2f, 24f);
-        public static readonly Hole Caida = new Hole(0.45f, 3.0f, 5, 1.25f, 36f);
+        /// <summary>La caída del cielo: el premio grande. La simulación la da 0.2 veces por pelea, pero en Unity el bot la saca
+        /// 2 a 4 veces (18 de octubre) y con 3 s, 5 cortes y 36 de caída decidía el largo de la pelea (2:43 a 3:50 con el
+        /// mismo bot): sigue siendo el mejor hueco, pero ya no termina la fase sola.</summary>
+        public static readonly Hole Caida = new Hole(0.45f, 2.6f, 3, 1.25f, 24f);
         public static readonly Hole Resbalon = new Hole(0.30f, 1.0f, 2, 1f, 6f);
         public static readonly Hole Tropiezo = new Hole(0f, 1.0f, 2, 1f, 0f);
         public static readonly Hole Pies = new Hole(0f, 1.6f, 3, 1f, 0f);
