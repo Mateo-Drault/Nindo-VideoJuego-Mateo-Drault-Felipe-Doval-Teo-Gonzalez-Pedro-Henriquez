@@ -978,7 +978,9 @@ BAMBOO_FBX = os.path.join(P_BAMBOO, "BambooMaster.fbx")
 # locomoción: quieto / camina / corre (runSpeed): umbrales de Speed = v / runSpeed. Si el sidecar trae variantes de fase
 # (Idle_P2, Walk_P3...) van en sus propios blend trees (Locomotion_P2/_P3, bamboo_phase_trees)
 BAMBOO_LOCO = ("Idle", "Walk", "Run")
-BAMBOO_LOCO_THRESHOLDS = (0, 0.4, 1)
+# (Walk a 1.6 m/s y Run a 5.5, BambooMasterMoves.Config: con la mezcla lineal entre los dos la velocidad del clip es la
+# del agente en todo el tramo; con 0.4 caminaba a 1.17 m/s y los pies patinaban)
+BAMBOO_LOCO_THRESHOLDS = (0, 0.2909, 1)
 # los clips de rodear y retroceder (BambooMasterBoss los toca según hacia dónde lo mueve el agente)
 BAMBOO_SIDE_STEPS = ("StrafeL", "StrafeR", "WalkBack")
 # brillo (Blinn-Phong) de los materiales propios del ermitaño: la piel curtida, los cascabeles y la flauta de bambú

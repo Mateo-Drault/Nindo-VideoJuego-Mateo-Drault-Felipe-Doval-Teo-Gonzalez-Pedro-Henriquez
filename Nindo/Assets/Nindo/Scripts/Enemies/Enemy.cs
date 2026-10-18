@@ -37,6 +37,9 @@ namespace Nindo
         /// la posición). Un cuerpo largo lo cambia por el de su silueta: con el centro solo, la cabeza y la cola del koi
         /// de 7.5 m quedaban fuera del alcance de la katana.</summary>
         public virtual Vector3 HurtCenter(Vector3 from) => Ambient != null ? Ambient.HurtPoint : transform.position;
+        /// <summary>Arriba de su cabeza: donde la UI pone sus marcas (fijado, peligro, alerta). Un jefe que se sube a algo
+        /// (Chikuō en sus cañas) lo cambia: su raíz se queda en el piso.</summary>
+        public virtual Vector3 HeadPoint => transform.position + Vector3.up * (config.height * config.scale + 0.35f);
         public CharacterAnimator Anim => anim;
         /// <summary>Lo que hace antes de la pelea (meditar, practicar, dormir...: EnemyAmbient), o null.</summary>
         public EnemyAmbient Ambient { get; internal set; }

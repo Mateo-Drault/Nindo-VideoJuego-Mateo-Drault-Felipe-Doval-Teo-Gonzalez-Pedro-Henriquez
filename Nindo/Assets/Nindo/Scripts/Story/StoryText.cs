@@ -195,19 +195,21 @@ namespace Nindo
                         L(Kaito, "Por eso el lago está oscuro. Aguantá, gran koi: te voy a sacar esa estaca."),
                         L(Espiritu, "Mirá el agua, Kaito. El agua no miente: dorada, desviá. Roja, salí de ahí."),
                     };
-                // Chikuō, el Maestro del Bambú (el id del jefe sigue siendo "ozeki"): fue maestro de Kokuyō un invierno
+                // Chikuō, el Ermitaño de las Cañas (el id del jefe sigue siendo "ozeki"): vive en las cañas del claro, fue maestro
+                // de Kokuyō un invierno y Kokuyō no aprendió a doblarse
                 case "ozeki_intro":
                     return new List<DialogueLine> {
-                        L(Chikuo, "Pisás fuerte para ser tan chico. El bambú me avisó que venías desde el arroyo."),
-                        L(Chikuo, "El sello que buscás me lo dejó Kokuyō. Fue mi alumno un invierno, hasta que quiso aprender a golpear antes que a esperar."),
-                        L(Chikuo, "Si querés el sello, mostrame qué te enseñó tu abuelo. Para eso me alcanza con una sola mano."),
-                        L(Kaito, "Entonces guardate la otra. La vas a necesitar."),
+                        L(Chikuo, "¡Je, je! Mirá quién vino a visitar al viejo de las cañas. ¿Te perdiste, muchacho?"),
+                        L(Chikuo, "El sello que buscás me lo dejó Kokuyō. Fue mi alumno un invierno: quería ser duro como la piedra."),
+                        L(Chikuo, "El bambú se dobla, por eso no se quiebra. ¿Lo querés? Bajame de acá. ¡Si podés!"),
+                        L(Kaito, "Bajá vos, o te bajo yo."),
                     };
-                // vencido, sentado a meditar, mientras le hace la reverencia
+                // vencido, sentado con las piernas cruzadas, después de la reverencia
                 case "bamboo_defeat":
                     return new List<DialogueLine> {
-                        L(Chikuo, "Tu abuelo sabía esperar, igual que vos. Por eso Kokuyō nunca lo entendió."),
-                        L(Chikuo, "Llevate el sello. Y cuando lo enfrentes, mirá su sombra: siempre llega antes que él."),
+                        L(Chikuo, "Je... Hacía cien inviernos que nadie me bajaba del bambú."),
+                        L(Chikuo, "Lo alto se baja desde la raíz. No te lo olvides."),
+                        L(Chikuo, "Llevate el sello. Y cuando enfrentes a Kokuyō, mirá su sombra: siempre llega antes que él."),
                     };
                 case "kage_intro":
                     return new List<DialogueLine> {
@@ -235,7 +237,7 @@ namespace Nindo
                     return new List<DialogueLine> { L(Kokuyo, "¡Todavía no!") };
                 // a mitad de cada acto (KokuyoBoss.Pacing): se planta, ruge y cambia el ritmo
                 case "kokuyo_bark_mitad1":
-                    return new List<DialogueLine> { L(Kokuyo, "El viejo te enseñó a esperar. Yo no espero.") };
+                    return new List<DialogueLine> { L(Kokuyo, "El viejo de las cañas te enseñó a doblarte. Yo no me doblo.") };
                 case "kokuyo_bark_mitad2":
                     return new List<DialogueLine> { L(Kokuyo, "Mi sombra aprende rápido. Más rápido que vos.") };
                 case "kokuyo_bark_mitad3":
@@ -257,7 +259,7 @@ namespace Nindo
                 case "seal_bamboo":
                     return new List<DialogueLine> {
                         L(Kaito, "Gracias, maestro."),
-                        L(Kaito, "El Sello del Bambú. Primero la paciencia, después la fuerza."),
+                        L(Kaito, "El Sello del Bambú. Lo que está alto se baja desde la raíz."),
                     };
                 case "ending":
                     return new List<DialogueLine> {
@@ -286,17 +288,28 @@ namespace Nindo
         }
 
         /// <summary>
-        /// Frases de Chikuō en plena pelea (salen como grito, una vez cada una): al sacarse el saco, al tomar el bastón, la
-        /// primera vez que le pegan en la postura del bambú y la primera vez que Kaito sabe esperarla.
+        /// Frases de Chikuō en plena pelea (salen como grito, una vez cada una y no más de una cada 12 s, salvo las de los
+        /// momentos que enseñan). Juguetón, excéntrico y sabio: se ríe de todo y de sí mismo, nunca cruel; cuando Kaito le
+        /// pega se queja como un viejo y lo felicita.
         /// </summary>
         public static string ChikuoLine(string beat)
         {
             switch (beat)
             {
-                case "fase2": return "Bien. Ahora con las dos manos.";
-                case "fase3": return "El bambú se dobla, se dobla... y vuelve.";
-                case "paciencia": return "Paciencia. El que ataca primero, cae primero.";
-                case "espera": return "Eso. Supiste esperar.";
+                case "cosquillas": return "¡Je! ¡Cosquillas!";
+                case "latigazo": return "¡Ay, mis huesos! ¿Quién te enseñó eso?";
+                case "estampado": return "¡Uf! Esa caña estaba más dura que yo.";
+                case "caida": return "¡Eh! ¡Esa caña era mía!";
+                case "empujon": return "¡Gracias por el empujón!";
+                case "risa": return "¡Ja, ja! ¡Te di en la nariz!";
+                case "maestro": return "¿Y? ¿No me vas a bajar?";
+                case "fase2": return "¡Ja! Me bajaste del bambú. Bueno, bailemos en el piso.";
+                case "grulla": return "¡Mirá, sin manos!";
+                case "desafinado": return "¡Me hiciste desafinar!";
+                case "afinado": return "¡Afinado! Me ganaste la canción.";
+                case "fase3": return "¡Ahora que cante todo el bosque!";
+                case "rajada": return "¡Mi bambú! Bueno... ahora es leña.";
+                case "ultima": return "Última canción, muchacho. Escuchala bien.";
                 default: return "";
             }
         }
@@ -322,15 +335,15 @@ namespace Nindo
         /// lección sigue en la fase 2 o 3, retoma donde quedó).</summary>
         public static string ChikuoRetry(int attempt, int phase)
         {
-            if (phase >= 2) return "Seguimos donde quedamos. Levantá la guardia.";
-            if (phase == 1) return "Ya no tengo saco que sacarme. Vení.";
+            if (phase >= 2) return "El bosque te estaba esperando. Seguimos donde quedamos.";
+            if (phase == 1) return "Las cañas siguen inclinadas. Vení a bailar.";
             switch (attempt)
             {
                 // volvió otro día (el contador de intentos vive en la pelea y arranca en 0 al cargar la partida)
-                case 0: return "Volviste. Esta vez mirá antes de pegar.";
-                case 1: return "Otra vez. Respirá primero.";
-                case 2: return "El bambú no se apura. Vos tampoco.";
-                case 3: return "Mirá mis manos, no mis ojos.";
+                case 0: return "¡Volviste! Esta vez mirá mis cascabeles.";
+                case 1: return "Otra vez. Cuando brillan blancos, cortá.";
+                case 2: return "El bambú se dobla y vuelve. Vos también.";
+                case 3: return "No me mirés a mí: mirá la caña.";
                 default: return "El que cae siete veces se levanta ocho.";
             }
         }
@@ -341,8 +354,14 @@ namespace Nindo
             switch (id)
             {
                 case "kage_shadow": return "La sombra no se corta con la katana: desviá sus cortes o clavala con {Ability1} o {Ability2}";
-                case "bamboo_stance": return "Manos de jade: no le pegues. Esperá a que baje la guardia o pará su contragolpe";
-                case "bamboo_guard": return "Su guardia no se rompe a golpes: pará los dorados con {Parry} y pegale cuando queda abierto";
+                // Chikuō, el Ermitaño de las Cañas: a él no se le pega arriba, se le corta lo que lo sostiene (dos renglones)
+                case "bamboo_whip": return "Cascabeles blancos: su caña está cargada\nCortala con {Attack} y lo despide";
+                case "bamboo_stamp": return "Lo despide para el lado del corte\nSi atrás hay otra caña, se estrella contra ella";
+                case "bamboo_deny": return "Cuando salta, el ensō blanco marca su caña\nCortala antes de que la agarre";
+                case "bamboo_tickle": return "Sin el brillo blanco, la caña te barre\nParale los dardos y entrá cuando cargue";
+                case "bamboo_staff": return "Su bastón también es una caña\nCortalo con {Attack} mientras está arriba";
+                case "bamboo_flute": return "Lo que toca la flauta, lo repite\nAguda: desviá con {Parry}. Grave: salí con {Dash}";
+                case "bamboo_crack": return "La caña rajada se quiebra con el próximo latigazo\nY él la puede tirar encima tuyo";
                 default: return "";
             }
         }

@@ -7,8 +7,7 @@ GrabStalk / Perch / Hang / Land / Contact / Plant / Note / Stamp / AimFix, el av
 el espacio de la raíz y dónde va la raíz al empalmar un clip de vuelo). Así el jefe nuevo no se despega de lo que se ve:
 si se rehace un clip, se corre este script y se recompila.
 
-Reemplaza a BambooMasterTimings.cs (el del Chikuō viejo, que sigue mientras el BambooMasterBoss viejo lo use: sus nombres
-de estado ya no existen en el FBX nuevo).
+Reemplazó a BambooMasterTimings.cs (el del Chikuō viejo, borrado con su pelea en la fase C4).
 
 Uso: python Tools/Unity/chikuo_timings.py
 """

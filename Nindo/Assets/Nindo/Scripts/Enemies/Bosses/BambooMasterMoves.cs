@@ -4,280 +4,253 @@ using UnityEngine;
 namespace Nindo
 {
     /// <summary>
-    /// Golpes, patrones y config de Chikuō, el Maestro del Bambú (arquetipo y bossId "ozeki": las partidas, las banderas
-    /// y el Sello del Bambú siguen igual). Los tiempos salen de BambooMasterTimings (lo que mide el build de Blender):
-    /// el aviso, el brillo del miembro que pega y el golpe no se despegan del clip. Gramática de siempre:
-    ///  * dorado = parry (palmas, tajo de mano, patada de grulla, patada giratoria, las estocadas del bastón);
-    ///  * rojo = dash o salir de la zona (grulla voladora con la marca donde cae, barrida a ras del piso, onda de qi,
-    ///    embestida con imágenes residuales).
-    /// Las tres fases: una mano a la espalda (enseña de a una cosa), las dos manos (combos y los rojos nuevos) y el
-    /// bastón (más alcance, cadenas largas). Cada fase acorta la pausa en el apex: la velocidad sube sin tocar los clips.
+    /// Perillas, golpes y config de Chikuō, el Ermitaño de las Cañas (Docs/handoff/diseno/chikuo_v2.md, secciones 5, 6, 12
+    /// y 17). Todo número de la pelea vive acá, con el mismo nombre que en el modelo de Python (Tools/Dev/chikuo_v2_check.py,
+    /// diccionario P): el día que se calibre con el PlayClock se cambia en los dos lados. Los tiempos de cada movimiento
+    /// salen de los clips (ChikuoTimings, el sidecar de Blender): el aviso, el dardo y el golpe caen en el cuadro que se ve.
     /// </summary>
     public static class BambooMasterMoves
     {
-        /// <summary>Especiales de Chikuō: golpe con el alcance real del miembro, salto que cae en la marca, barrida en
-        /// disco, onda de qi que se abre por el piso, embestida por un carril fijo y el salto hacia atrás que le hace lugar.</summary>
-        public const string Strike = "m_strike", Leap = "m_leap", Sweep = "m_sweep", Qi = "m_qi", Dash = "m_dash", Hop = "m_hop";
+        // ================================================================== perillas (sección 12.3 del diseño)
+        /// <summary>Pisos de vida de cada fase: 65 % (baja al piso) y 40 % (el bosque entero). El golpe que cruza el piso
+        /// dispara la escena y lo que sobra no cuenta.</summary>
+        public static readonly float[] Gates = { 1f, 0.65f, 0.40f, 0f };
+        public const float TransitionHeal = 30f, TransitionSpirit = 30f;
+        /// <summary>Respiro posado entre acciones por fase (s): nunca quieto, se hamaca con la caña. En la fase 2 es la
+        /// pausa entre tandas del piso.</summary>
+        public static readonly Vector2[] Breath = { new Vector2(0.25f, 0.45f), new Vector2(0.35f, 0.6f), new Vector2(0.12f, 0.25f) };
+        /// <summary>Kaito a esta distancia de la base y él sin cargar: le contesta (7.1, regla 4).</summary>
+        public const float ReactDist = 4.5f;
+        /// <summary>Plantado al pie de la caña tanto tiempo: barrido de caña (cada CampEvery s como mucho).</summary>
+        public const float CampDist = 2.5f, CampTime = 0.6f, CampEvery = 5f;
+        /// <summary>Acciones por caña antes de saltar sí o sí (1 en la Última Canción).</summary>
+        public const int MaxOnStalk = 2;
+        /// <summary>La Última Canción (fase 3): salta después de cada acción.</summary>
+        public const float LastSong = 0.12f;
+        /// <summary>El Silbador sale recién desde este tramo de vida (la fase 1 enseña primero el dardo y la ráfaga).</summary>
+        public const float WhistleFrom = 0.85f;
 
-        /// <summary>Pausa en el apex de los dorados por fase (0..2) y la de los rojos, que ya tienen anticipación larga.</summary>
-        static readonly float[] ParryHold = { 0.30f, 0.22f, 0.16f };
-        static readonly float[] DodgeHold = { 0.14f, 0.10f, 0.08f };
-        /// <summary>Los pasos encadenados de un combo (el jugador ya está en ritmo) pausan menos.</summary>
-        const float ChainedHold = 0.6f;
-        /// <summary>StepTimeline.MinWindup multiplica por 0.9 desde la fase 1: se compensa para que las pausas de arriba
-        /// sean las que se ven.</summary>
-        const float PhaseWindupMul = 0.9f;
+        // ---- dardos
+        public static readonly float[] DartSpeed = { 16f, 16f, 18f };
+        /// <summary>Cuánto adelanta la puntería con la velocidad de Kaito (de costado, corriendo, se esquiva en las fases 1-2).</summary>
+        public static readonly float[] DartLead = { 0.5f, 0.6f, 0.8f };
+        public const float DartHitR = 0.6f, WhistleSpeed = 22f, WhistleLane = 1.0f;
+        /// <summary>El carril del silbador deja de seguir a Kaito este tiempo antes de soplar.</summary>
+        public const float WhistleFix = 0.25f;
+        /// <summary>Lo que queda clavado en el piso un dardo que no pegó (se ve dónde cayó la ráfaga).</summary>
+        public const float DartStuck = 3f;
 
-        /// <summary>Onda de qi por fase: velocidad del frente (m/s) y radio final (m). Más rápida que Kaito corriendo
-        /// (6.2): de lejos se la ve venir, de cerca se la cruza con el dash cuando llega.</summary>
-        public static readonly float[] QiSpeed = { 9f, 9f, 10f }, QiRadius = { 9f, 9f, 10.5f };
-        /// <summary>El salto cae entre estos metros del lugar donde despega (estira o acorta el tramo entre el despegue y
-        /// la caída). Desde 2.6 m el vuelo es por lo menos la mitad del autorado (con 2.0 se volvía un saltito en el
-        /// lugar); el que se le pega al cuerpo ve las palmas, y el salto le llega cuando toma distancia.</summary>
-        public const float LeapMin = 2.6f, LeapMax = 7.4f;
-        /// <summary>Desde esta distancia sale el salto directo; más cerca primero salta hacia atrás (BackHop) hasta
-        /// LeapFrom. Con solo el directo y Kaito pegado (el 95 % de las veces que elegía en la fase 1) la grulla voladora,
-        /// el único rojo de la fase, casi no salía: ~0.1 por pelea contra el bot "bueno" (Tools/Dev/sim_bamboo_master.py).
-        /// Saltarle desde cerca (antes desde 1 m) pasaba el cuerpo por encima de Kaito.</summary>
-        const float LeapMinRange = 2.5f;
-        /// <summary>Hasta dónde lo aleja el salto atrás antes de la grulla voladora (m hasta Kaito; la caída autorada está
-        /// a 4.79 m).</summary>
-        public const float LeapFrom = 4.8f;
-        /// <summary>Peso de la grulla con el salto atrás antes, relativo a la directa.</summary>
-        const float LeapNearShare = 0.5f;
-        /// <summary>
-        /// El paso del viento sale desde la distancia de la grulla voladora (m hasta Kaito): desde ahí el vuelo de frente,
-        /// que frena con la mano sobre él, es la mitad del autorado (BambooMasterBoss.DashMinStretch). Más cerca primero
-        /// salta hacia atrás (BackHop) hasta esa distancia; si Kaito lo vuelve a correr, el viento lo atraviesa con el
-        /// vuelo entero en vez de frenar en un saltito (antes salía ×0.10 con Kaito a 2.4 m contra el bot "bueno").
-        /// </summary>
-        public const float DashFrom = LeapFrom;
-        const float DashMinRange = LeapFrom;
-        /// <summary>Sufijo de los clips de cada fase (los _P2 y _P3 tienen los mismos cuadros que el de la fase 1).</summary>
-        public static string Suffix(int phase) => phase <= 0 ? "" : phase == 1 ? "_P2" : "_P3";
+        // ---- saltos entre cañas
+        /// <summary>Vuelo: LeapBase + LeapPerM por metro, por LeapK de la fase; comba del arco.</summary>
+        public const float LeapBase = 0.30f, LeapPerM = 0.035f, LeapArc = 1.8f;
+        public static readonly float[] LeapK = { 1f, 1f, 0.85f };
+        /// <summary>El agachado del salto a x1.57 en la fase 3 (0.23 → 0.15 s).</summary>
+        public static readonly float[] LeapCrouchRate = { 1f, 1f, 1.57f };
+        /// <summary>A qué distancia de Kaito busca posarse (la franja), por fase.</summary>
+        public static readonly Vector2[] LeapDest = { new Vector2(4.5f, 8f), new Vector2(4.5f, 8f), new Vector2(4f, 7f) };
+        /// <summary>Nunca se posa más cerca de Kaito que esto; el cono del sur de Kaito (donde su cuerpo posado lo tapa).</summary>
+        public const float PerchMinDist = 2.5f, SouthConeDeg = 30f, SouthConeNear = 2.5f, SouthConeFar = 6.5f;
+        /// <summary>Caída del cielo: cortar la caña de destino en los últimos CatchWindow s del vuelo.</summary>
+        public const float CatchWindow = 0.45f;
+        /// <summary>Fase 3: al caer de un salto, la chance de encadenar otro (ping-pong).</summary>
+        public const float PingPong = 0.30f;
+        /// <summary>El bot (y la pista bamboo_deny): un salto a una caña a esta distancia de Kaito o menos se puede atajar.</summary>
+        public const float CatchHint = 5f, BotCatchDist = 7f;
 
-        public static MasterClip Clip(string baseState, int phase) =>
-            BambooMasterTimings.Get(baseState + Suffix(phase)) ?? BambooMasterTimings.Get(baseState);
+        // ---- el latigazo y los huecos (sección 6)
+        public const float StampRange = 6f, StampAngle = 20f, RevolconM = 3.2f, PoleFlingM = 2f;
+        /// <summary>El revolcón nunca deja al viejo a más de esto del centro (adentro de la barrera de 15 m).</summary>
+        public const float ArenaKeep = 13f;
+        /// <summary>A qué altura de la otra caña se estrella el estampado.</summary>
+        public const float SplatHeight = 3.5f;
 
-        // ------------------------------------------------------------------ golpes
-        /// <summary>
-        /// Un golpe con los tiempos de su clip. El avance lo hace el jefe con travel_m (lunge = 0: con la embestida lineal
-        /// los pies patinan). 'range' es lo más lejos que llega (alcance + avance hasta el contacto): lo usan el bot y
-        /// StrikeCanReach; el golpe real se mide con el alcance del miembro desde donde está en el impacto.
-        /// </summary>
-        static AttackDef M(string baseState, int phase, string name, float dmg, float arc, float kb, bool chained, string special = Strike)
+        /// <summary>Un hueco: lo que vuela hasta que se lo puede cortar, cuánto queda abierto, el tope de cortes, el
+        /// multiplicador de daño y el daño de la caída (entra al tocar el piso, como un corte).</summary>
+        public struct Hole
         {
-            var c = Clip(baseState, phase);
-            bool red = c.Kind == 2;
-            float hold = (red ? DodgeHold : ParryHold)[Mathf.Clamp(phase, 0, 2)] * (chained ? ChainedHold : 1f);
-            float natural = c.Apex * c.Seconds / 0.85f + (c.Contact - c.Apex) * c.Seconds / c.ReleaseRate;
-            float windup = natural + hold;
-            if (phase >= 1) windup /= PhaseWindupMul;
-            return new AttackDef
+            public float fly, open, mul, fall;
+            public int cap;
+            public Hole(float fly, float open, int cap, float mul, float fall) { this.fly = fly; this.open = open; this.cap = cap; this.mul = mul; this.fall = fall; }
+        }
+
+        public static Hole Revolcon(int phase) => phase >= 2 ? new Hole(0.55f, 1.4f, 3, 1f, 12f) : new Hole(0.55f, 1.6f, 3, 1f, 12f);
+        public static Hole Estampado(int phase) => phase >= 2 ? new Hole(1.0f, 2.0f, 3, 1.2f, 24f) : new Hole(1.0f, 2.2f, 4, 1.2f, 24f);
+        public static readonly Hole Caida = new Hole(0.45f, 3.0f, 5, 1.25f, 36f);
+        public static readonly Hole Resbalon = new Hole(0.30f, 1.0f, 2, 1f, 6f);
+        public static readonly Hole Tropiezo = new Hole(0f, 1.0f, 2, 1f, 0f);
+        public static readonly Hole Pies = new Hole(0f, 1.6f, 3, 1f, 0f);
+        public static readonly Hole Clavado = new Hole(0f, 1.1f, 2, 1f, 0f);
+        public static readonly Hole Aterrizaje = new Hole(0f, 0.45f, 1, 1f, 0f);
+        public static readonly Hole Afinado = new Hole(0.30f, 2.5f, 4, 1.2f, 0f);
+        public static readonly Hole Desafinado = new Hole(0f, 1.4f, 2, 1f, 0f);
+        public static readonly Hole PoleRevolcon = new Hole(0.55f, 1.6f, 3, 1f, 12f);
+        /// <summary>Contra: el parry al último golpe de una tanda (o al bastón que cae). El primer corte va x1.5 (el
+        /// contraataque de siempre de PlayerController).</summary>
+        public static Hole Contra(bool perfect) => new Hole(0f, perfect ? 0.60f : 0.40f, perfect ? 3 : 2, 1f, 0f);
+        /// <summary>Lo que sigue abierto después del último corte del tope (lo despide un poco y se levanta).</summary>
+        public const float CapRise = 0.25f;
+
+        // ---- el piso (fase 2 y la coda de la 3)
+        /// <summary>El corte en neutral le entra a x0.6 y se va de una voltereta; en la carga de su golpe, x0.35 y el golpe sigue.</summary>
+        public const float NeutralMul = 0.6f, ArmorMul = 0.35f;
+        /// <summary>Después de la voltereta arranca una tanda a este tiempo.</summary>
+        public const float AfterFlip = 0.25f;
+        public static readonly Vector2 PoleFirst = new Vector2(4f, 6f), PoleEvery = new Vector2(8f, 11f);
+        public static readonly Vector2 QaFirst = new Vector2(9f, 12f), QaEvery = new Vector2(18f, 24f);
+        /// <summary>Pregunta y Respuesta: entre notas, de la última de la pregunta a la primera de la respuesta, radio del brote
+        /// y cuándo queda fijo antes de brotar.</summary>
+        public const float NoteGap = 0.44f, AnswerLead = 0.85f, SproutRadius = 1.0f, SproutFix = 0.45f;
+        /// <summary>Desde esta vida (fracción) la pregunta es de cuatro notas.</summary>
+        public const float QaFourFrom = 0.52f;
+        /// <summary>El Soplo: con Kaito más lejos que esto, un dardo desde el piso cada tanto.</summary>
+        public const float SoploDist = 4.5f, SoploEvery = 2.5f;
+        /// <summary>La Grulla en el Bastón: el salto atrás antes de clavarlo y lo que tarda la picada desde que sale.</summary>
+        public const float PoleHop = 4f;
+
+        // ---- vuelta arriba
+        /// <summary>Trepa si cayó a esta distancia de una caña; si no, se agacha y salta.</summary>
+        public const float ClimbReach = 1.5f;
+        /// <summary>Garrocha después de un hueco: a una caña a esta distancia de Kaito.</summary>
+        public static readonly Vector2 VaultDest = new Vector2(4.5f, 8f);
+        /// <summary>Bastonazo de la vuelta: la mitad de las veces con Kaito a 3 m o menos; la Revancha de la fase 3 igual.</summary>
+        public const float AfterLandStrikeChance = 0.5f, AfterLandStrikeDist = 3f;
+        /// <summary>Cuánto le escupe al revolcón la Picada: el disco queda fijo a 0.50 s del golpe.</summary>
+        public const float DiveFix = 0.50f;
+        /// <summary>El Bastón que Cae elige dónde cae (de Kaito, de su lado) a este tiempo desde que arranca.</summary>
+        public const float StaffDropPick = 0.40f, StaffDropNear = 1.6f;
+
+        /// <summary>Todo lo que pega a Kaito se multiplica por esto (la perilla de las muertes: 0.9 o 1.1, sección 12.3).</summary>
+        public const float DamageScale = 1f;
+
+        /// <summary>Daño a Kaito (de 100) por fase (0..2). Pica como un mosquito: lo que exige es la densidad.</summary>
+        public static float Dmg(Move m, int phase)
+        {
+            int p = Mathf.Clamp(phase, 0, 2);
+            float d;
+            switch (m)
             {
-                name = name, state = c.State, damage = dmg, kind = red ? AttackKind.Unblockable : AttackKind.Heavy, arc = arc, knockback = kb,
-                range = c.Reach + c.TravelToContact, activeStart = c.Contact, activeEnd = c.ActiveEnd, apex = c.Apex, releaseRate = c.ReleaseRate,
-                windup = windup, lunge = 0f, tracking = special == Strike || special == Leap || special == Dash, hitStop = red ? 0.12f : 0.1f,
-                shake = red ? 0.45f : 0.35f, imbalance = 1f, sfx = phase >= 2 || red ? "enemy_swing_heavy" : "enemy_swing", special = special,
-                // radio de la zona roja: el anillo de la barrida y de la caída del salto (del clip), el final de la onda
-                specialParam = special == Qi ? QiRadius[Mathf.Clamp(phase, 0, 2)] : c.RingM,
-            };
-        }
-
-        static AttackPattern P(string name, float weight, float minRange, float cooldown, params AttackDef[] steps) =>
-            new AttackPattern
-            {
-                // se acerca hasta tener a Kaito al alcance del primer golpe (más el avance del clip hasta el contacto)
-                name = name, steps = steps, weight = weight, minRange = minRange, cooldown = cooldown,
-                maxRange = steps[0].special == Strike ? steps[0].range + 0.1f : steps[0].special == Sweep ? steps[0].specialParam + 0.2f : steps[0].range,
-            };
-
-        /// <summary>
-        /// El salto hacia atrás antes del paso del viento o de la grulla voladora (sin daño ni aviso): todo el avance va en
-        /// el aire, del despegue a la caída, así el jefe lo acorta sin que los pies patinen (BambooMasterBoss.HopScale). En
-        /// la fase 1 con la izquierda en la espalda. null si el FBX no tiene el clip: el especial sale solo desde lejos.
-        /// </summary>
-        static AttackDef H(int phase)
-        {
-            var c = BambooMasterTimings.Get("BackHop" + Suffix(phase)) ?? BambooMasterTimings.Get("BackHop");
-            if (c == null) return null;
-            return new AttackDef
-            {
-                name = "Paso Atrás", state = c.State, damage = 0f, kind = AttackKind.Heavy, arc = 0f, knockback = 0f, range = 99f,
-                activeStart = c.Contact, activeEnd = c.ActiveEnd, apex = c.Apex, releaseRate = c.ReleaseRate, windup = 0f, lunge = 0f,
-                tracking = true, special = Hop,
-            };
-        }
-
-        /// <summary>El paso del viento desde lejos y, si hay clip, el que primero salta hacia atrás para tomar distancia
-        /// (el peso repartido entre los dos; los dos cuentan para TeachDash).</summary>
-        static void DashPatterns(List<AttackPattern> list, int phase, string name, float weight, float cd, AttackDef dash, AttackDef follow)
-        {
-            var hop = H(phase);
-            float w = hop != null ? weight * 0.5f : weight;
-            Twins(list, name, w, w, cd, DashMinRange, 7.6f, hop, dash, follow);
-        }
-
-        /// <summary>La grulla voladora desde lejos y la que primero salta hacia atrás para tomar distancia (sin clip del
-        /// salto atrás, solo la de lejos). La de cerca pesa 'nearShare' de la otra: es la que de verdad sale contra el
-        /// que pelea pegado.</summary>
-        static void LeapPatterns(List<AttackPattern> list, int phase, string name, float weight, float nearShare, float cd, AttackDef leap, AttackDef follow)
-        {
-            Twins(list, name, weight, weight * nearShare, cd, LeapMinRange, LeapMax - 0.4f, H(phase), leap, follow);
-        }
-
-        /// <summary>
-        /// Un especial que necesita lugar, en dos patrones con el mismo nombre (comparten la pausa entre usos: ver
-        /// BambooMasterBoss.OnStepStarted): el directo desde 'minRange' y, si hay clip del salto atrás, el que se arrima
-        /// hasta donde el salto le deja lugar y salta primero.
-        /// </summary>
-        static void Twins(List<AttackPattern> list, string name, float wFar, float wNear, float cd, float minRange, float maxRange,
-                          AttackDef hop, AttackDef move, AttackDef follow)
-        {
-            var far = follow != null ? P(name, wFar, minRange, cd, move, follow) : P(name, wFar, minRange, cd, move);
-            far.maxRange = maxRange;
-            list.Add(far);
-            if (hop == null) return;
-            var back = follow != null ? P(name, wNear, 0f, cd, hop, move, follow) : P(name, wNear, 0f, cd, hop, move);
-            back.maxRange = minRange + 0.4f;
-            list.Add(back);
-        }
-
-        /// <summary>
-        /// Patrones de cada fase (0..2). Fase 1, una mano: palma, tajo y grulla de a uno y en pares, y la grulla voladora
-        /// (el único rojo: se aprende a mirar la marca). Fase 2, las dos manos: palmas dobles, patada giratoria, mezclas
-        /// dorado-rojo, la barrida, la onda de qi y la embestida. Fase 3, el bastón: todo llega más lejos y las cadenas
-        /// terminan en rojo ("el bambú que vuelve"). Mezcla: ~70 % dorados, ~30 % rojos, como el resto de los jefes.
-        /// Daño: pega poco y seguido, como un maestro que prueba; lo que sube con las fases es el ritmo y el alcance. Con
-        /// 5-7 / 7-11 / 9-13 el bot "promedio" moría ~9 veces y el "bueno" ninguna: el daño castigaba solo al que juega peor
-        /// (Tools/Dev/sim_bamboo_master.py con el daño escalado por fase). Ahora 4-5 / 4-5 / 4-5.5: cada fase pega por lo
-        /// menos lo que la anterior (con 3-3.5 en la fase 3 el bastón dolía menos que la palma de una mano) y lo que más
-        /// sube es el ritmo (pausas de 0.16 s, cadenas que terminan en rojo). Con 1900 de vida, en minutos de juego (la
-        /// simulación calibrada con el bot de Unity, ver Config) el "promedio" muere ~1 vez y el "bueno" tarda ~4.6 min.
-        /// </summary>
-        public static AttackPattern[] Phase(int phase)
-        {
-            var list = new List<AttackPattern>(12);
-            switch (Mathf.Clamp(phase, 0, 2))
-            {
-                case 0:
-                {
-                    var palm = M("Palm", 0, "Palma", 4, 70f, 1.4f, false);
-                    var chop = M("ChopPalm", 0, "Mano de Sable", 4, 90f, 1.6f, false);
-                    var chopC = M("ChopPalm", 0, "Mano de Sable", 4, 90f, 1.6f, true);
-                    var crane = M("CraneKick", 0, "Pico de Grulla", 4, 80f, 1.8f, false);
-                    var craneC = M("CraneKick", 0, "Pico de Grulla", 4, 80f, 1.8f, true);
-                    var leap = M("LeapKick", 0, "Grulla Voladora", 5, 360f, 2.6f, false, Leap);
-                    list.Add(P("Palma", 1.3f, 0f, 0f, palm));
-                    list.Add(P("Palma y Sable", 1.6f, 0f, 0f, palm, chopC));
-                    list.Add(P("Pico de Grulla", 1.0f, 0f, 2f, crane));
-                    list.Add(P("Sable y Grulla", 1.2f, 0f, 4f, chop, craneC));
-                    list.Add(P("Tres de una Mano", 0.8f, 0f, 8f, palm, chopC, craneC));
-                    LeapPatterns(list, 0, "Grulla Voladora", 1.0f, LeapNearShare, 6f, leap, null);
-                    break;
-                }
-                case 1:
-                {
-                    var palm = M("Palm", 1, "Palma", 4, 70f, 1.4f, false);
-                    var chopC = M("ChopPalm", 1, "Mano de Sable", 4, 90f, 1.6f, true);
-                    var chop = M("ChopPalm", 1, "Mano de Sable", 4, 90f, 1.6f, false);
-                    var crane = M("CraneKick", 1, "Pico de Grulla", 4, 80f, 1.8f, false);
-                    var twin = M("TwinPalm", 1, "Palmas Gemelas", 4, 90f, 2.2f, false);
-                    var twinC = M("TwinPalm", 1, "Palmas Gemelas", 4, 90f, 2.2f, true);
-                    var spinC = M("SpinKick", 1, "Viento que Gira", 4, 200f, 2.0f, true);
-                    var sweep = M("Sweep", 1, "Barrida del Bambú", 5, 360f, 2.0f, false, Sweep);
-                    var sweepC = M("Sweep", 1, "Barrida del Bambú", 5, 360f, 2.0f, true, Sweep);
-                    var qi = M("QiWave", 1, "Onda de Qi", 5, 360f, 2.8f, false, Qi);
-                    var dash = M("DashStrike", 1, "Paso del Viento", 5, 60f, 2.4f, false, Dash);
-                    var leap = M("LeapKick", 1, "Grulla Voladora", 5, 360f, 2.6f, false, Leap);
-                    var qiP = P("Onda de Qi", 0.9f, 0f, 9f, qi);
-                    qiP.maxRange = 7f;
-                    list.Add(P("Palmas Gemelas", 1.2f, 0f, 0f, twin));
-                    list.Add(P("Palma y Viento", 1.4f, 0f, 3f, palm, spinC));
-                    list.Add(P("Sable y Gemelas", 1.2f, 0f, 3f, chop, twinC));
-                    list.Add(P("Grulla y Barrida", 1.0f, 0f, 6f, crane, sweepC));
-                    list.Add(P("Barrida", 0.6f, 0f, 6f, sweep));
-                    list.Add(P("Cuatro Vientos", 0.7f, 0f, 9f, palm, chopC, twinC, spinC));
-                    list.Add(qiP);
-                    DashPatterns(list, 1, "Paso del Viento", 1.1f, 6f, dash, null);
-                    LeapPatterns(list, 1, "Grulla Voladora", 0.8f, LeapNearShare, 7f, leap, null);
-                    break;
-                }
-                default:
-                {
-                    var thrust = M("Palm", 2, "Estocada del Bastón", 4, 50f, 1.6f, false);
-                    var thrustC = M("Palm", 2, "Estocada del Bastón", 4, 50f, 1.6f, true);
-                    var smashC = M("ChopPalm", 2, "Bambú que Cae", 4.5f, 70f, 2.0f, true);
-                    var crane = M("CraneKick", 2, "Pico de Grulla", 4.5f, 80f, 1.8f, false);
-                    var sweep = M("Sweep", 2, "Barrida del Bastón", 5.5f, 360f, 2.2f, false, Sweep);
-                    var sweepC = M("Sweep", 2, "Barrida del Bastón", 5.5f, 360f, 2.2f, true, Sweep);
-                    var qi = M("QiWave", 2, "Raíz del Bambú", 5.5f, 360f, 3.0f, false, Qi);
-                    var qiC = M("QiWave", 2, "Raíz del Bambú", 5.5f, 360f, 3.0f, true, Qi);
-                    var dash = M("DashStrike", 2, "Paso del Viento", 5.5f, 50f, 2.4f, false, Dash);
-                    var leap = M("LeapKick", 2, "Grulla Voladora", 5.5f, 360f, 2.6f, false, Leap);
-                    var qiP = P("Raíz del Bambú", 0.8f, 0f, 8f, qi);
-                    qiP.maxRange = 7f;
-                    list.Add(P("Estocada", 1.2f, 0f, 0f, thrust));
-                    list.Add(P("Estocada y Bambú", 1.4f, 0f, 0f, thrust, smashC));
-                    list.Add(P("El Bambú Vuelve", 1.1f, 0f, 6f, thrust, smashC, sweepC));
-                    list.Add(P("Grulla y Estocada", 1.0f, 0f, 3f, crane, thrustC));
-                    list.Add(P("Barrida del Bastón", 0.6f, 0f, 6f, sweep));
-                    list.Add(P("La Última Lección", 0.6f, 0f, 12f, thrust, smashC, thrustC, qiC));
-                    list.Add(qiP);
-                    DashPatterns(list, 2, "Viento y Bambú", 1.0f, 6f, dash, smashC);
-                    // (antes se llamaba "Grulla y Estocada", como el pico de grulla con la estocada: los dos patrones con el
-                    // mismo nombre compartían la pausa entre usos)
-                    LeapPatterns(list, 2, "Grulla Voladora y Estocada", 0.8f, LeapNearShare, 7f, leap, thrustC);
-                    break;
-                }
+                case Move.Dart: d = 2.5f; break;
+                case Move.Whistle: d = 5f; break;
+                case Move.Dive: d = 5f; break;
+                case Move.StaffDrop: d = p >= 2 ? 4.5f : 5f; break;
+                case Move.Sweep: d = 4f; break;
+                case Move.Strike: d = p >= 2 ? 4f : 3.5f; break;
+                case Move.LowSweep: d = p >= 2 ? 5f : 4.5f; break;
+                case Move.Sprout: d = p >= 2 ? 4.5f : 4f; break;
+                case Move.Catapult: d = 6.5f; break;
+                case Move.Tala: d = 5.5f; break;
+                case Move.PoleDive: d = 5f; break;
+                default: d = 3.5f; break;
             }
-            return list.ToArray();
+            return d * DamageScale;
         }
 
-        /// <summary>El contragolpe de la postura del bambú (y de la guardia común): sale de COIL, el final de Counter.</summary>
-        public static AttackPattern Counter(int phase)
-        {
-            int ph = Mathf.Clamp(phase, 0, 2);
-            var c = M("CounterStrike", ph, ph >= 2 ? "Contragolpe del Bastón" : "Contragolpe", 4f, ph >= 2 ? 60f : 80f, 1.4f, false);
-            return new AttackPattern { name = "Contragolpe", steps = new[] { c }, weight = 1f, maxRange = 99f };
-        }
+        public enum Move { Dart, Whistle, Dive, StaffDrop, Sweep, Strike, LowSweep, Sprout, Catapult, Tala, PoleDive }
 
-        // ------------------------------------------------------------------ config
-        /// <summary>Pausa entre combos por fase (s): rodea y mira antes de volver a atacar; se acorta con cada fase. Con
-        /// 2.6-3.6 / 2.0-3.0 / 1.6-2.4 el jefe daba un paso cada ~4 s y la pelea era sobre todo rondar y rebotar.</summary>
-        public static readonly Vector2[] Cooldown = { new Vector2(1.8f, 2.6f), new Vector2(1.4f, 2.2f), new Vector2(1.1f, 1.8f) };
+        // ================================================================== golpes
+        /// <summary>Especiales de Chikuō que maneja el jefe (los 'held' llevan su propio reloj: BambooMasterBoss.StepHeld).</summary>
+        public const string Sweep = "c_sweep", Whistle = "c_whistle", Dive = "c_dive", StaffDrop = "c_staffdrop", Catapult = "c_catapult",
+            Tala = "c_tala", PoleDive = "c_polecrane", Answer = "c_answer", Spin = "c_spin", Soplo = "c_soplo", LowSweep = "c_lowsweep",
+            Strike = "c_strike";
 
         /// <summary>
-        /// Chikuō, el Maestro del Bambú. 1900 de vida. En Unity el bot tarda 1.42 veces lo que dice la simulación con Chikuō
-        /// (medido con el PlayClock en main 76be027: 'bot on bueno' 6:01 contra 254 s simulados; con Gorō es al revés,
-        /// 0.71x): Tools/Dev/boss_sims/calibration.py, y sim_bamboo_master.py --calib da los segundos de juego. Con el roce
-        /// del primer corte apartado, el paso del viento que sigue volando después del cruce y la palma que a veces entra
-        /// con el paso largo: con 2200, el bueno 5.4 min de juego y el promedio 8.8 min con 1.6 muertes (7 % sin morir); con
-        /// 1900, el bueno ~4.6 min (p90 5.0) sin morir y el promedio ~7.3 min con ~1 muerte (21 % sin morir). PROVISORIO
-        /// hasta medirlo con los cambios de C3 (el factor salió de una pelea por bot con los rebotes de C2). No se lo
-        /// ejecuta: termina sentado a meditar (BambooMasterBoss). Postura de 8 (parry 1, perfecto 1.5, unos seis parries):
-        /// solo de rodillas con la barra llena, y de rodillas aguanta tres cortes a x1.15. Con 5 y x1.3 se arrodillaba
-        /// cada 15 s y la pelea duraba la mitad. Los golpes fuera de sus huecos los desvía o rebotan (BambooMasterBoss.Bounce): poiseHits
-        /// alto apaga la regla común del neutral (con 0, el 2.º y el 3.º corte del contraataque de Kaito, que le caen en el
-        /// Stagger, lo metían en la guardia de Enemy con clang: el contraataque entero era un corte). Locomoción a 1.6 / 4.0 m/s, las velocidades a las que están autorados Walk y Run (los pies no
-        /// patinan).
+        /// Un golpe que el jefe coreografía con sus clips (desde la caña, la picada, la pértiga): Enemy pone el anillo, el
+        /// "¡ya!", el destello y la zona con la ETA que da el jefe, y el reloj del paso lo lleva el jefe. La línea de tiempo
+        /// de Enemy queda con el golpe en 'strike' segundos (apex 0, la suelta lineal hasta ahí): de eso sale cuándo arranca
+        /// el anillo.
+        /// </summary>
+        public static AttackDef Held(string name, ChikuoClip c, AttackKind kind, float strike, float dmg, string special, float param = 0f)
+        {
+            float start = Mathf.Clamp(strike / Mathf.Max(0.05f, c.Seconds), 0.02f, 1f);
+            return new AttackDef
+            {
+                name = name, state = c.State, damage = dmg, kind = kind, range = Mathf.Max(0.5f, c.ReachM), arc = 360f, knockback = kind == AttackKind.Unblockable ? 2f : 1.4f,
+                apex = 0f, activeStart = start, activeEnd = start, releaseRate = 1f, windup = strike,
+                lunge = 0f, tracking = false, hitStop = kind == AttackKind.Unblockable ? 0.12f : 0.1f, shake = kind == AttackKind.Unblockable ? 0.45f : 0.35f,
+                sfx = kind == AttackKind.Unblockable ? "enemy_swing_heavy" : "enemy_swing", special = special, specialParam = param,
+            };
+        }
+
+        /// <summary>
+        /// Un golpe de piso con los tiempos de su clip (las tandas de la fase 2): el anillo se cierra en el contacto y 'charge'
+        /// es la carga (s desde que arranca hasta que pega). StepTimeline.MinWindup lo multiplica por 0.9 desde la fase 2: se
+        /// compensa acá para que la carga sea la que pide el diseño.
+        /// </summary>
+        static AttackDef Ground(string name, ChikuoClip c, AttackKind kind, float charge, float dmg, string special, bool noRecoil, float param = 0f)
+        {
+            float rate = 1f;
+            float apexS = c.Apex * c.Seconds, contactS = c.Contact * c.Seconds;
+            // la suelta del clip a la velocidad que deja la carga pedida (anticipación al 0.85 de StepTimeline)
+            float release = contactS - apexS;
+            float left = charge - apexS / 0.85f;
+            if (left > 0.04f && release > 0.01f) rate = Mathf.Clamp(release / left, 0.8f, 2.2f);
+            return new AttackDef
+            {
+                name = name, state = c.State, damage = dmg, kind = kind, range = Mathf.Max(1.2f, c.ReachM), arc = kind == AttackKind.Unblockable ? 360f : 110f,
+                knockback = kind == AttackKind.Unblockable ? 2f : 1.4f, apex = c.Apex, activeStart = c.Contact, activeEnd = Mathf.Max(c.Contact, c.ActiveEnd),
+                releaseRate = rate, windup = charge / 0.9f, lunge = 0f, tracking = true, hitStop = kind == AttackKind.Unblockable ? 0.12f : 0.1f,
+                shake = kind == AttackKind.Unblockable ? 0.45f : 0.35f, sfx = kind == AttackKind.Unblockable ? "enemy_swing_heavy" : "enemy_swing",
+                special = special, specialParam = param, noRecoil = noRecoil, imbalance = 0f,
+            };
+        }
+
+        static AttackPattern P(string name, float weight, float minRange, float maxRange, float cooldown, params AttackDef[] steps) =>
+            new AttackPattern { name = name, steps = steps, weight = weight, minRange = minRange, maxRange = maxRange, cooldown = cooldown };
+
+        /// <summary>
+        /// Las tandas del piso (fase 2 y la coda de la 3), sin guardia: cargas de 0.42-0.65 s y el último golpe, desviado,
+        /// lo deja abierto (la Contra); los del medio no (noRecoil: la tanda sigue). La Flauta Giratoria pega dos veces en
+        /// el mismo clip (la lleva el jefe: 'c_spin'). El Soplo es el dardo desde el piso con Kaito lejos.
+        /// </summary>
+        public static AttackPattern[] GroundPatterns(int phase)
+        {
+            var T = ChikuoTimings.Thrust;
+            float strike = Dmg(Move.Strike, phase);
+            var thrust = Ground("Estocada", T, AttackKind.Heavy, 0.50f, strike, Strike, true);
+            var thrust2 = Ground("Estocada", T, AttackKind.Heavy, 0.42f, strike, Strike, true);
+            var thrustLast = Ground("Estocada", T, AttackKind.Heavy, 0.42f, strike, Strike, false);
+            var spin = Held("Flauta Giratoria", ChikuoTimings.StaffSpin2, AttackKind.Heavy, 0.55f, strike, Spin, 0.42f);
+            var crane = Ground("Patada de Grulla", ChikuoTimings.CraneKick, AttackKind.Heavy, 0.50f, strike, Strike, true);
+            var low = Ground("Barrida del Bastón", ChikuoTimings.LowSweep, AttackKind.Unblockable, 0.80f, Dmg(Move.LowSweep, phase), LowSweep, false, ChikuoTimings.LowSweep.RingM);
+            var note = Ground("Golpe de Nota", ChikuoTimings.NoteSmash, AttackKind.Heavy, 0.65f, strike, Strike, false);
+            var soplo = Ground("Soplo", ChikuoTimings.GroundDart, AttackKind.Projectile, 0.55f, Dmg(Move.Dart, phase), Soplo, false);
+            float reach = T.ReachM + 0.3f;
+            return new[]
+            {
+                P("Nota y Giro", 1.0f, 0f, reach, 0f, thrust, spin),
+                P("Grulla que Barre", 0.9f, 0f, ChikuoTimings.CraneKick.ReachM + 0.6f, 0f, crane, low),
+                P("Tres Estocadas", 0.8f, 0f, reach, 0f, thrust, thrust2, thrustLast),
+                P("Golpe de Nota", 0.6f, 0f, ChikuoTimings.NoteSmash.ReachM + 0.3f, 0f, note),
+                P("Soplo", 1.2f, SoploDist, 99f, SoploEvery, soplo),
+            };
+        }
+
+        /// <summary>El bastonazo dorado (después de aterrizar con Kaito cerca, y la Revancha de la fase 3: pararla no lo abre).</summary>
+        public static AttackDef Bastonazo(int phase, bool revancha) =>
+            Ground(revancha ? "Revancha" : "Bastonazo", ChikuoTimings.Thrust, AttackKind.Heavy, revancha ? 0.60f : 0.55f, Dmg(Move.Strike, phase) + (revancha ? 0.5f : 0f), Strike, revancha);
+
+        // ================================================================== config
+        /// <summary>
+        /// Chikuō, el Ermitaño de las Cañas. 1900 de vida (la de siempre: el usuario dijo que está bien). No se lo ejecuta
+        /// (termina sentado con las piernas cruzadas, BambooMasterBoss.Story). Sin postura: ningún hueco sale de llenar una
+        /// barra, salen de las reglas que se ven (maxImbalance y poiseHits altos apagan las reglas comunes del agotado y del
+        /// neutral). Locomoción a 1.6 / 5.5 m/s, las de Walk y Run (los pies no patinan). Arriba decide el jefe; los
+        /// patrones de config son las tandas del piso.
         /// </summary>
         public static EnemyConfig Config()
         {
             return new EnemyConfig
             {
-                id = "ozeki", displayName = "Chikuō", maxHealth = 1900, runSpeed = 4.0f, walkSpeed = 1.6f, turnSpeed = 7f,
+                id = "ozeki", displayName = "Chikuō", maxHealth = 1900, runSpeed = 5.5f, walkSpeed = 1.6f, turnSpeed = 9f,
                 radius = 0.5f, height = 2.4f, scale = 1f, tintStrength = 0f,
-                maxImbalance = 8, exhaustedTime = BambooMasterTimings.Exhausted.Seconds, exhaustedDamageMul = 1.15f, guardTime = 0.7f,
-                poiseHits = 99, hyperArmor = true, knockbackResist = 0.7f, staggerTime = 0.35f,
-                // el retroceso del parry dura lo que tarda el clip en volver a la guardia (resume de Parried, 0.4 s; el
-                // perfecto, x1.5 = 0.6 s = resume de ParriedPerfect)
-                parriedRecoil = BambooMasterTimings.Parried.Seconds * 0.4f,
-                preferredDistance = 3.6f, detectRadius = 30f, loseRadius = 80f,
-                finisherHealth = 0f, attackCooldown = Cooldown[0], cinematicFinisher = false,
-                animLocomotion = "Locomotion", animGuard = "Guard", animCounter = "Counter", animExhausted = "Exhausted", animHit = "Hit",
-                animSpotted = "Guard", animDeath = "Defeat", animParried = "Parried", deathClipFalls = true,
-                patterns = Phase(0),
+                maxImbalance = 99, exhaustedTime = 1f, exhaustedDamageMul = 1f, guardTime = 0.3f,
+                poiseHits = 99, hyperArmor = true, knockbackResist = 1f, staggerTime = 0.3f,
+                parriedRecoil = ChikuoTimings.Parried.Seconds,
+                preferredDistance = 2.4f, detectRadius = 30f, loseRadius = 80f,
+                finisherHealth = 0f, attackCooldown = Breath[1], cinematicFinisher = false,
+                animLocomotion = "Locomotion", animGuard = "Idle", animCounter = "Idle", animExhausted = "DazedSit", animHit = "Hit",
+                animSpotted = "Idle", animDeath = "Defeat", animParried = "Parried", deathClipFalls = true,
+                patterns = GroundPatterns(1),
             };
         }
     }

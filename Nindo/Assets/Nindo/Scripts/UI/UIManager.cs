@@ -134,8 +134,10 @@ namespace Nindo
             // el título va en el mismo renglón, pegado al nombre
             float nameW = bossName.GetPreferredValues(b.title, 9999f, 70f).x;
             bossSub.rectTransform.anchoredPosition = new Vector2(84f + nameW + 18f, 70f);
-            // rombos de postura: uno por punto de desequilibrio del jefe (4 o 5)
-            int n = Mathf.Clamp(b.config.maxImbalance, 1, bossPipPop.Length);
+            // rombos de postura: uno por punto de desequilibrio del jefe (4 o 5). Un jefe sin postura (Chikuō, 99: sus huecos
+            // salen de reglas que se ven, no de llenar una barra) no muestra ninguno
+            int n = b.config.maxImbalance >= 99 ? 0 : Mathf.Clamp(b.config.maxImbalance, 1, bossPipPop.Length);
+            bossPostureLabel.enabled = n > 0;
             if (bossPips.Length != n)
             {
                 foreach (var p in bossPips) if (p != null) Destroy(p.gameObject);

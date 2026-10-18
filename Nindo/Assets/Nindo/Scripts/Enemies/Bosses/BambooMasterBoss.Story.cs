@@ -5,267 +5,283 @@ using UnityEngine.AI;
 namespace Nindo
 {
     /// <summary>
-    /// Las escenas de Chikuō: la presentación (y su versión corta en los reintentos), los dos cambios de fase (se saca el
-    /// saco; llama al bastón) y la derrota (se rinde, se sienta a meditar, saluda y deja el sello). Los tiempos son los
-    /// eventos del sidecar (BambooMasterTimings), así lo que pasa en el juego cae en el cuadro que se ve.
+    /// Las escenas de Chikuō (diseño 4.2, 4.4, 4.6 y 19): la presentación (colgado cabeza abajo de la punta de O1 tocando
+    /// la flauta) y su versión corta en los reintentos, los dos cambios de fase ("Bailemos en el piso": las seis cañas se
+    /// inclinan; "Que cante todo el bosque": se enderezan y nace la Caña Madre) y la derrota (se cae de espaldas riéndose,
+    /// se sienta con las piernas cruzadas y deja el sello). Los tiempos son los eventos del sidecar (ChikuoTimings).
     /// </summary>
     public partial class BambooMasterBoss
     {
-        /// <summary>Al cambiar de fase Kaito recupera un poco (no hay esbirros que curen): el maestro le deja respirar. Con
-        /// 15 el bot "bueno" llegaba a la fase 3 con ~30 de vida y la mitad de sus muertes eran ahí.</summary>
-        const float TransitionHeal = 30f, TransitionSpirit = 30f;
-        /// <summary>Re-presentación: el Intro desde un poco antes del saludo hasta la guardia (~2 s).</summary>
-        const float ReintroFromFrame = 44f;
-
-        // reintentos: cuántas veces cayó Kaito y desde qué fase se vuelve a empezar (la más alta a la que llegó)
-        int attempts, retryPhase;
+        /// <summary>Altura del posado de la caña sobre la que se autoraron los clips de arriba (sidecar 'stalk').</summary>
+        const float ClimbAuthorPerch = 4.4f;
+        /// <summary>El plano de la muerte de Boss (3.2 s + 1.2 de vuelta): el plano sentado espera a que termine.</summary>
+        const float BossDeathShot = 4.4f;
 
         // ================================================================== presentación
         /// <summary>
-        /// La primera vez: espera con las manos en la espalda, levanta la cabeza (el título), saluda puño en palma, hace
-        /// la reverencia, toma la guardia de una mano y habla. En un reintento: el saludo y la guardia (~2 s) con una frase
-        /// distinta cada vez; si ya se había sacado el saco, solo llama a Kaito con la mano. Lo arranca StoryDirector.
+        /// La primera vez: se oye una flauta; plano desde abajo hacia O1: cuelga cabeza abajo tocando, abre un ojo, sonríe,
+        /// se ríe y le sopla un dardo que se clava a los pies de Kaito (un saludo, no pega), se suelta, da una vuelta y queda
+        /// agachado en el posado; el título y la charla. En un reintento, la versión corta con una frase. Lo arranca
+        /// StoryDirector.
         /// </summary>
         public IEnumerator Presentation(PlayerController p, bool first)
         {
-            var intro = BambooMasterTimings.Intro;
-            Vector3 b = transform.position;
-            Vector3 f = transform.forward.Flat().normalized;   // hacia Kaito (BossIntroRoutine ya lo giró)
-            Vector3 right = Vector3.Cross(Vector3.up, f);
+            EnsureGrove();
             Game.Audio?.StopMusic(first ? 1.5f : 0.6f);
-            if (!first)
+            if (!first || retryPhase >= 1 || grove == null)
             {
-                yield return Reintro(b, f, right);
+                yield return Reintro(p);
                 yield break;
             }
             WaitPose();
-            // de frente, bajo y cerca: sube con él cuando levanta la cabeza
+            var s = perch;
+            Vector3 b = s != null ? s.Base : transform.position;
+            Vector3 kp = p != null ? p.transform.position : b + Vector3.back * 10f;
+            Vector3 toK = (kp - b).Flat().normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, toK);
+            float top = s != null ? s.S.PerchHeight + 1.2f : 5.5f;
+            // desde abajo y detrás del viejo hacia arriba, con el cielo de la noche: sube con él cuando se suelta
             int shot = Game.Camera.PlayShot(t =>
             {
-                float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 4.6f));
-                Vector3 pos = b + f * Mathf.Lerp(7.5f, 6f, u) + right * Mathf.Lerp(2.4f, 1.2f, u) + Vector3.up * Mathf.Lerp(1.0f, 2.1f, u);
-                Vector3 look = b + Vector3.up * Mathf.Lerp(1.5f, 2.0f, u);
+                float u = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(t / 6.2f));
+                Vector3 pos = b + toK * Mathf.Lerp(7.2f, 6.2f, u) + right * Mathf.Lerp(2.6f, 1.6f, u) + Vector3.up * Mathf.Lerp(1.3f, 2.2f, u);
+                Vector3 look = b + Vector3.up * Mathf.Lerp(top + 0.4f, top - 0.6f, u);
                 return new Pose(pos, Quaternion.LookRotation(look - pos));
-            }, () => 34f, 1.0f, 0f, 0.9f);
-            yield return new WaitForSeconds(0.9f);
-            anim.Play(intro.State, 0.05f, 0f, 1f);
-            yield return new WaitForSeconds(intro.Event("HeadRise") * intro.Seconds);
+            }, () => 38f, 1.0f, 0f, 0.9f);
+            Sfx("flute_phrase_intro", null, Voice, 0.9f);
+            yield return new WaitForSeconds(0.6f);
+            var intro = ChikuoTimings.Intro;
+            Play(intro, 0.05f);
+            yield return Until(intro.Event("DartSpawn"));
+            // el saludo: un dardo clavado a los pies de Kaito (en la escena es invulnerable)
+            if (p != null && grove != null)
+            {
+                Vector3 feet = p.transform.position - toK * 0.7f;
+                Vector3 from = MuzzlePos;
+                BambooDart.Spawn(this, from, feet - from, BambooMasterMoves.DartSpeed[0], 0f, false, grove.FloorY, true);
+            }
+            yield return Until(intro.Event("Perch"));
             Game.UI.ShowBossTitle(title, subtitle);
-            yield return new WaitForSeconds((intro.Event("Salute") - intro.Event("HeadRise")) * intro.Seconds);
-            Game.Audio?.Play("spar_clash", transform.position, 0.6f, 0.02f);   // puño contra palma, seco
-            yield return new WaitForSeconds((intro.Event("Guard") - intro.Event("Salute")) * intro.Seconds + 0.4f);
-            // la charla con los dos en cuadro: detrás de Kaito, él arriba en el claro
-            Vector3 kp = p != null ? p.transform.position : b + f * 10f;
-            Vector3 mid = Vector3.Lerp(kp, b, 0.55f);
-            Vector3 back = (kp - b).Flat().normalized;
+            yield return Until(1f);
+            Play(ChikuoTimings.PerchIdle, 0.15f);
             Game.Camera.CancelShot(shot);
-            int talk = Game.Camera.PlayStaticShot(kp + back * 4.5f + Vector3.Cross(Vector3.up, back) * 2.2f + Vector3.up * 3.2f, mid + Vector3.up * 1.6f, 36f, 0f, 0.8f, 0.8f);
+            // la charla con los dos en cuadro: detrás de Kaito, él arriba en su caña
+            Vector3 mid = Vector3.Lerp(kp, b, 0.5f);
+            Vector3 back = (kp - b).Flat().normalized;
+            int talk = Game.Camera.PlayStaticShot(kp + back * 5.5f + Vector3.Cross(Vector3.up, back) * 2.4f + Vector3.up * 3.4f, mid + Vector3.up * 2.6f, 38f, 0f, 0.8f, 0.8f);
             yield return Game.UI.Dialogue(StoryText.Dialogue("ozeki_intro"));
             Game.Camera.CancelShot(talk);
-            anim.Play("Locomotion", 0.3f);
         }
 
-        IEnumerator Reintro(Vector3 b, Vector3 f, Vector3 right)
+        /// <summary>Reintento: en su lugar de la fase (colgado de O1 se suelta y se posa; en la fase 2 parado; en la 3 en la
+        /// Madre) con una frase distinta por intento (~2 s).</summary>
+        IEnumerator Reintro(PlayerController p)
         {
             WaitPose();
-            bool coatOff = retryPhase >= 1;
-            var intro = BambooMasterTimings.Intro;
-            var clipR = coatOff ? (BambooMasterTimings.Get("Taunt" + BambooMasterMoves.Suffix(retryPhase)) ?? BambooMasterTimings.Taunt) : intro;
-            float from = coatOff ? 0f : intro.FrameNorm(ReintroFromFrame);
-            float to = coatOff ? 1f : intro.Event("Guard");
-            float dur = Mathf.Max(0.8f, (to - from) * clipR.Seconds);
-            anim.Play(clipR.State, 0.15f, from, 1f);
-            int shot = Game.Camera.PlayBossIntroShot(transform, 2.6f, dur, 0f, 0.7f);
-            Bark(StoryText.ChikuoRetry(attempts, retryPhase));
+            float dur = 2f;
+            Transform focus = model;
+            if (retryPhase == 0 && body == Body.Perch)
+            {
+                var intro = ChikuoTimings.Intro;
+                float from = intro.Event("LeaveStalk") - 0.06f;
+                Play(intro, 0.1f, Mathf.Max(0f, from));
+                dur = Mathf.Max(1.2f, (1f - from) * intro.Seconds);
+            }
+            else if (retryPhase == 1) Play(ChikuoTimings.GroundLaugh, 0.15f);
+            else Play(ChikuoTimings.PerchLaugh, 0.15f);
+            Vector3 b = transform.position;
+            Vector3 kp = p != null ? p.transform.position : b + Vector3.back * 10f;
+            Vector3 back = (kp - b).Flat().normalized;
+            float h = HeightAboveFloor + 1.4f;
+            int shot = Game.Camera.PlayStaticShot(kp + back * 4.5f + Vector3.up * 2.6f, b + Vector3.up * Mathf.Max(1.6f, h * 0.7f), 38f, 0f, 0.6f, 0.7f);
+            Game.UI?.ShowBark(StoryText.Chikuo, StoryText.ChikuoRetry(attempts, retryPhase), BarkColor, 3.2f);
             yield return new WaitForSeconds(dur);
+            if (body == Body.Perch) Play(ChikuoTimings.PerchIdle, 0.15f);
+            else Play(ChikuoTimings.Idle, 0.2f);
             Game.Camera.CancelShot(shot);
         }
 
         // ================================================================== cambios de fase
         void StartTransition(int next)
         {
-            if (transition != null) return;
-            transition = StartCoroutine(TransitionRoutine(next));
+            if (phaseChanging || !IsAlive) return;
+            phaseChanging = true;
+            Run(TransitionRoutine(next));
         }
 
         IEnumerator TransitionRoutine(int next)
         {
-            // el corte que lo baja al umbral puede ser el último de la rodilla: Enemy ya lo dio por levantado (Guard) en el
-            // mismo golpe, y sin esto la escena lo paraba en 0.15 s
-            bool fromKneel = kneelAtHit || State == EnemyState.Exhausted && !taunt;
-            ReleaseToken();
-            stance = taunt = false;
-            look.SetStance(false);
-            look.ClearTell();
-            ClearQiWave(false);
-            SetState(EnemyState.Alert);   // mira a Kaito; los golpes rebotan; sigue fijable (no se pierde el fijado)
-            stateDuration = 99f;
-            Imbalance = 0f;
-            if (fromKneel)
+            vuln = Vuln.Scene;
+            SetState(EnemyState.Scripted);
+            BambooDart.ClearAll();
+            marks?.Clear();
+            if (body != Body.Ground)
             {
-                // de rodillas: primero se para (si no, el fundido lo levantaba en 0.15 s)
-                var rise = BambooMasterTimings.Get("ExhaustedRise" + suffix);
-                anim.Play(rise.State, 0.08f);
-                yield return new WaitForSeconds(rise.Seconds * 0.9f);
+                // (pruebas: "chikuo fase N" con él arriba) baja al pie de su caña
+                Vector3 at = (perch != null ? perch.Base : transform.position) + FaceDirFrom(transform.position) * 1.2f;
+                Landed(at, FaceDirFrom(at));
             }
-            if (next == 1) yield return CoatOff();
-            else yield return StaffCall();
-            transition = null;
-            if (!IsAlive) yield break;
-            ReleaseToken();
-            SetState(EnemyState.Chase);
-            nextAttackTime = Time.time + 0.5f;
+            Face(TargetPos, 99f, 1f);
+            if (next == 1) yield return BowScene();
+            else yield return ForestScene();
+            phaseChanging = false;
+            vuln = Vuln.None;
+            yield return Brain();
         }
 
-        /// <summary>1 → 2: los ojos se encienden en jade, se saca el saco de un tirón y lo tira atrás; queda con las dos manos.</summary>
-        IEnumerator CoatOff()
+        /// <summary>1 → 2, "Bailemos en el piso" (4 s): cae sentado riéndose, se saca una hoja de la barba y toca tres notas;
+        /// en la tercera las seis cañas se inclinan 70° hacia afuera y quedan temblando con la música.</summary>
+        IEnumerator BowScene()
         {
-            var c = BambooMasterTimings.PhaseCoat;
-            anim.Play(c.State, 0.15f);
-            Bark(StoryText.ChikuoLine("fase2"));
-            sceneDone = 0f;
-            yield return WaitEvent(c, "EyesIgnite");
-            look.IgniteEyes(1f);
-            Game.FX?.FlashLight(AimPoint + Vector3.up * 0.8f, BambooMasterLook.Jade, 3f, 4f, 0.5f);
-            yield return WaitEvent(c, "CoatOff");
-            look.ThrowCoat();
-            Game.Audio?.Play("fin_whoosh", transform.position, 1f, 0.05f);
+            var c = ChikuoTimings.PhaseBow;
+            Play(c, 0.2f);
+            Bark("fase2", true);
+            Log("fase 2 (el piso)");
+            for (int i = 0; i < c.EventCount("Note"); i++)
+            {
+                yield return Until(c.EventAt("Note", i));
+                PlayNote(i != 1, i);
+                if (i < c.EventCount("Note") - 1) continue;
+                foreach (var s in grove.All)
+                {
+                    if (s.IsMother) continue;
+                    s.Lean(true, 1.2f);
+                    // tiemblan con la música (136 BPM: una vez por tiempo)
+                    s.Wobble(2f, 136f / 60f, 9999f);
+                }
+                Sfx("stalk_bow", "fin_whoosh", grove.Center + Vector3.up * 3f, 1f);
+                Game.Camera?.Shake(0.25f);
+            }
+            phaseIdx = 1;
+            config.patterns = BambooMasterMoves.GroundPatterns(1);
+            nextPoleAt = nextQaAt = -1f;
             Game.Audio?.SetBossMusicPhase(2);
-            Game.Camera?.Punch(-3f, 0.4f);
-            PushKaito(3.2f, 2f);
-            yield return WaitEvent(c, "CoatLand");
-            // cae detrás, a su izquierda (donde lo deja PhaseCoat): un golpe de polvo y el roce de la tela
-            Vector3 land = transform.position - transform.forward * 2.5f - transform.right * 1.05f;
-            Game.FX?.Dust(land, 1.6f);
-            Game.Audio?.Play("fin_whoosh", land, 0.45f, 0.1f);
-            yield return WaitEvent(c, "CoatRest");
-            look.RestCoat(transform.parent);
-            yield return WaitEvent(c, "Guard");
-            SetPhase(1);
             subtitle = PhaseSubtitle(1);
             Game.UI?.BossRetitled(this);
             RewardKaito();
-            yield return new WaitForSeconds(Mathf.Max(0f, (1f - c.Event("Guard")) * c.Seconds - 0.15f));
+            yield return Until(1f);
         }
 
-        /// <summary>2 → 3: llama al bambú con la derecha; el bastón sale de entre las cañas, gira en el aire y lo atrapa.</summary>
-        IEnumerator StaffCall()
+        /// <summary>
+        /// 2 → 3, "Que cante todo el bosque" (5 s): toca la frase entera (todas las campanas en cascada), las seis cañas se
+        /// enderezan de golpe (un latigazo de 0.4 s), nace la Caña Madre en el centro (1.5 s; si Kaito está encima lo corre
+        /// 1 m) y salta con la garrocha a ella.
+        /// </summary>
+        IEnumerator ForestScene()
         {
-            var c = BambooMasterTimings.PhaseStaff;
-            anim.Play(c.State, 0.15f);
-            sceneDone = 0f;
-            yield return WaitEvent(c, "StaffAppear");
-            look.ShowStaff(true);
-            Vector3 at = transform.position + transform.right * 3.4f + Vector3.up * 1.4f;
-            Emit(SplinterTemplate(), at, Quaternion.LookRotation(-transform.right + Vector3.up * 0.4f), 1.2f);
-            Emit(LeafTemplate(), at + Vector3.up * 0.8f, Quaternion.identity, 1.8f);
-            Game.Audio?.Play("step_wood", at, 1f, 0.1f);
-            Game.Audio?.Play("ability_wind", at, 0.6f, 0.05f);
-            yield return WaitEvent(c, "StaffCatch");
-            Game.Audio?.Play("spar_clash", transform.position, 1f, 0.04f);
+            var c = ChikuoTimings.PhaseForest;
+            Play(c, 0.15f);
+            Sfx("flute_phrase_forest", null, Voice, 0.9f);
+            yield return Until(c.EventAt("Note", 0));
+            foreach (var s in grove.All) if (!s.IsMother) { s.Wobble(0f, 1f, 0f); s.Lean(false, 0.4f); }
+            Sfx("stalk_whoosh", "ability_wind", grove.Center + Vector3.up * 3f, 1f);
+            BambooGrove.Leaves(grove.Center + Vector3.up * 4f, 1.8f);
+            yield return Until(c.EventAt("Note", 1));
             Game.Audio?.SetBossMusicPhase(3);
-            Game.Camera?.Shake(0.3f);
-            yield return WaitEvent(c, "StaffPresent");
-            Bark(StoryText.ChikuoLine("fase3"));
-            Game.FX?.Shockwave(transform.position, 3f, BambooMasterLook.Jade);
-            PushKaito(3.2f, 1.6f);
-            yield return WaitEvent(c, "Guard");
-            SetPhase(2);
+            if (grove.Mother != null) StartCoroutine(RiseMother(grove.Mother, 1.5f));
+            float leave = c.Event("LeaveStalk");
+            yield return Until(leave);
+            phaseIdx = 2;
+            config.patterns = BambooMasterMoves.GroundPatterns(2);
+            nextPoleAt = nextQaAt = -1f;
             subtitle = PhaseSubtitle(2);
             Game.UI?.BossRetitled(this);
             RewardKaito();
-            yield return new WaitForSeconds(Mathf.Max(0f, (1f - c.Event("Guard")) * c.Seconds - 0.15f));
+            var dest = grove.Mother != null ? grove.Mother : FarthestStalk();
+            Bark("fase3", true);
+            Log("fase 3 (el bosque entero)");
+            if (dest == null) yield break;
+            Vector3 start = model.position + model.rotation * c.RootOffset;
+            yield return Flight(start, model.rotation, dest, false, false, c, (1f - leave) * c.Seconds);
         }
 
-        /// <summary>Espera hasta el evento del clip de la escena (sceneDone = segundos del clip ya esperados).</summary>
-        WaitForSeconds WaitEvent(MasterClip c, string ev)
+        IEnumerator RiseMother(BambooStalk m, float seconds)
         {
-            float at = Mathf.Max(0f, c.Event(ev)) * c.Seconds;
-            float w = Mathf.Max(0f, at - sceneDone);
-            sceneDone = Mathf.Max(sceneDone, at);
-            return new WaitForSeconds(w);
+            Sfx("stalk_grow", "avalanche_rumble", m.Base, 1f);
+            Game.FX?.Dust(m.Base, 2.2f);
+            Game.Camera?.Shake(0.35f);
+            var p = Game.Player;
+            if (p != null && (p.transform.position - m.Base).Flat().magnitude < 1.2f)
+                p.Push((p.transform.position - m.Base).Flat().sqrMagnitude > 1e-4f ? p.transform.position - m.Base : Vector3.back, 1f);
+            for (float t = 0f; t < seconds; t += Time.deltaTime)
+            {
+                float u = t / seconds;
+                m.S.SetRise(1f - (1f - u) * (1f - u));
+                yield return null;
+            }
+            m.S.SetRise(1f);
+            BambooGrove.Leaves(m.Base + Vector3.up * 6f, 1.6f);
         }
-
-        float sceneDone;
 
         void RewardKaito()
         {
             var p = Game.Player;
             if (p == null || !p.IsAlive) return;
-            // (Heal ya muestra la cura si de verdad curó: otra HealBurst acá la duplicaba, como en Kokuyō y Mizuchi)
-            p.Heal(TransitionHeal);
-            p.AddSpirit(TransitionSpirit);
+            p.Heal(BambooMasterMoves.TransitionHeal);
+            p.AddSpirit(BambooMasterMoves.TransitionSpirit);
             BandanaGlow.Ensure(p)?.Pulse(BandanaGlow.Gold, 1f);
         }
 
         // ================================================================== derrota
-        /// <summary>Cuadro de Defeat desde el que sigue si lo vencen de rodillas: ya agachado con las piernas cruzadas y el
-        /// bastón en el piso (de pie, Defeat arranca en la guardia y lo paraba 0.55 m en 0.3 s para volver a sentarlo).</summary>
-        const float DefeatFromKneelFrame = 86f;
-        /// <summary>El plano de la muerte de Boss (3.2 s + 1.2 de vuelta): el plano sentado espera a que termine.</summary>
-        const float BossDeathShot = 4.4f;
-        float defeatFrom;
-
         protected override bool DeathBurst => false;
 
+        /// <summary>
+        /// El último golpe le cae siempre en el piso (arriba no se le pega). No muere ni se esfuma: se cae de espaldas
+        /// riéndose, se sienta con las piernas cruzadas, se seca una lágrima de risa y hace la reverencia con la flauta sobre
+        /// las rodillas; las campanas de la Madre suenan solas, una por una, y se callan; el sello aparece delante.
+        /// </summary>
         protected override void Die(in DamageInfo info, bool finisher = false)
         {
             if (State == EnemyState.Dead) return;
-            bool knelt = State == EnemyState.Exhausted && !taunt;
-            ClearQiWave(true);
-            stance = taunt = false;
+            if (act != null) StopCoroutine(act);
+            act = null;
+            ClearActionState();
+            vuln = Vuln.None;
+            BambooDart.ClearAll();
+            marks?.Clear();
             look?.Extinguish();
-            look?.ShowStanceRing(false);
-            look?.StopLimbTrail();
+            if (body != Body.Ground) Landed(transform.position, transform.forward);
+            ClearCameraBias();
             if (tipHideAt > 0f) { Game.UI?.HideTutorial(); tipHideAt = -1f; }
+            Face(TargetPos, 99f, 1f);
             base.Die(info, finisher);
-            // Enemy cruza a Defeat en 0.06 s desde donde lo agarró el golpe: el clip arranca en la guardia del bastón
-            var d = BambooMasterTimings.Defeat;
-            defeatFrom = knelt ? d.FrameNorm(DefeatFromKneelFrame) : 0f;
-            anim.Play(d.State, knelt ? 0.4f : 0.3f, defeatFrom);
-            // no se esfuma: queda sentado en el claro y Kaito no lo atraviesa para tomar el sello (Enemy apagó los
-            // colliders; el de la raíz vuelve a la medida del cuerpo sentado). Los golpes van por Combat, no por física
-            var col = GetComponent<CapsuleCollider>();
-            if (col != null)
+            anim.Play(ChikuoTimings.Defeat.State, 0.3f);
+            // queda sentado en el claro y Kaito no lo atraviesa para tomar el sello (Enemy apagó los colliders)
+            if (capsule != null)
             {
-                col.radius = 0.6f;
-                col.height = 1.5f;
-                col.center = new Vector3(0f, 0.75f, 0f);
-                col.enabled = true;
+                capsule.radius = 0.6f;
+                capsule.height = 1.4f;
+                capsule.center = new Vector3(0f, 0.7f, 0f);
+                capsule.enabled = true;
             }
         }
 
-        /// <summary>
-        /// No cae ni se hace humo: apoya el bastón, respira, lo suelta, se sienta a meditar y, ya con Kaito delante, le
-        /// hace la reverencia mientras le da su última lección. Recién ahí deja el sello (OnDeathFinished).
-        /// </summary>
         protected override IEnumerator DeathRoutine(Vector3 dir)
         {
-            var d = BambooMasterTimings.Defeat;
+            var d = ChikuoTimings.Defeat;
             float t0 = Time.time;
-            // el bastón contra el piso (de rodillas ya lo tenía apoyado: lo baja en el fundido)
-            float land = d.Event("StaffLand");
-            float toLand = land > defeatFrom ? (land - defeatFrom) * d.Seconds : 0.35f;
-            yield return new WaitForSeconds(toLand);
-            Game.Audio?.Play("step_wood", transform.position, land > defeatFrom ? 0.9f : 0.5f, 0.1f);
-            Game.Audio?.Play("spar_clash", transform.position, land > defeatFrom ? 0.42f : 0.2f, 0.15f);
-            yield return new WaitForSeconds(Mathf.Max(0f, (1f - defeatFrom) * d.Seconds * 0.98f - toLand));
-            anim.Play(BambooMasterTimings.Meditate.State, 0.3f);
-            // los dos en cuadro, de costado, cuando terminó el plano de la muerte
-            yield return new WaitForSeconds(Mathf.Max(0.6f, BossDeathShot - (Time.time - t0)));
+            yield return new WaitForSeconds(d.Seconds * 0.98f);
+            anim.Play(ChikuoTimings.DefeatIdle.State, 0.3f);
+            // las campanas de la Madre (o de las cañas que quedan) suenan solas, una por una, y se callan
+            if (grove != null)
+            {
+                int n = 0;
+                foreach (var s in grove.All)
+                {
+                    if (!s.Standing && !(s.IsMother && s.S.Rise > 0.5f)) continue;
+                    s.S.KickChimes(Vector3.right * (n % 2 == 0 ? 2f : -2f));
+                    Sfx("tell_chime_hi", "pearl_ping", s.S.PerchNode != null ? s.S.PerchNode.position : s.Base, 0.35f);
+                    n++;
+                    yield return new WaitForSeconds(0.35f);
+                }
+            }
+            yield return new WaitForSeconds(Mathf.Max(0.3f, BossDeathShot - (Time.time - t0)));
             int shot = SeatedShot();
-            anim.Play(BambooMasterTimings.SeatedBow.State, 0.25f);
             Game.Story?.PlayDialogueById("bamboo_defeat");
-            yield return new WaitForSeconds(BambooMasterTimings.SeatedBow.Seconds);
-            anim.Play(BambooMasterTimings.Meditate.State, 0.3f);
-            // la última lección dura lo que el jugador tarde en leerla
             float wait = 0f;
             while ((Game.InCutscene || (Game.UI != null && Game.UI.DialogueOpen)) && wait < 60f) { wait += Time.unscaledDeltaTime; yield return null; }
             if (shot >= 0 && Game.Camera != null) Game.Camera.CancelShot(shot);
             OnDeathFinished();
-            // los ojos se apagan despacio: la pelea terminó
-            for (float t = 0f; t < 2f; t += Time.deltaTime) { look?.DimEyes(1f - t / 2f); yield return null; }
-            look?.DimEyes(0f);
         }
 
         int SeatedShot()
@@ -275,11 +291,11 @@ namespace Nindo
             Vector3 f = transform.forward.Flat().normalized, side = Vector3.Cross(Vector3.up, f);
             // del lado de la cámara de juego: no cruza el eje
             if (Vector3.Dot(side, (Game.Camera.transform.position - c).Flat()) < 0f) side = -side;
-            Vector3 pos = c + (side * 0.8f + f * 0.6f).normalized * 6.5f + Vector3.up * 2.2f;
-            return Game.Camera.PlayStaticShot(pos, c + f * 1.2f + Vector3.up * 1.0f, 36f, 0f, 1.0f, 1.0f);
+            Vector3 pos = c + (side * 0.8f + f * 0.6f).normalized * 6.2f + Vector3.up * 2.0f;
+            return Game.Camera.PlayStaticShot(pos, c + f * 1.2f + Vector3.up * 0.9f, 36f, 0f, 1.0f, 1.0f);
         }
 
-        /// <summary>El sello aparece delante de él, entre los dos (el jefe se queda meditando en el claro).</summary>
+        /// <summary>El sello aparece delante de él, entre los dos (el viejo se queda sentado en el claro).</summary>
         protected override void OnDeathFinished()
         {
             if (!hasSeal) return;
@@ -287,36 +303,143 @@ namespace Nindo
             if (NavMesh.SamplePosition(p, out var hit, 2f, NavMesh.AllAreas)) p = hit.position;
             var key = KeyPickup.Spawn(seal, p + Vector3.up * 0.2f);
             if (key != null && transform.parent != null) key.transform.SetParent(transform.parent, true);
-            Game.FX?.Shockwave(p, 2f, BambooMasterLook.Jade);
+            Game.FX?.Shockwave(p, 2f, BambooStalk.White);
         }
 
-        // ================================================================== astillas y hojas del bastón
-        static GameObject splinterTpl, leafTpl;
-
-        static GameObject SplinterTemplate()
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        // ================================================================== pruebas (AutoPilot "chikuo ...")
+        /// <summary>
+        /// "chikuo fase N" (salta a la fase 2 o 3 con su escena), "chikuo cana ID" (se posa ya), "chikuo salto ID", "chikuo
+        /// mov NOMBRE" (dardo dos notas silbador colgado risa picada baston barrido catapulta tala pertiga pregunta soplo),
+        /// "chikuo abrir TIPO" (revolcon estampado caida resbalon afinado pies), "chikuo canas [reset]". false = no pudo.
+        /// </summary>
+        public bool DebugCommand(string sub, string arg)
         {
-            if (splinterTpl != null) return splinterTpl;
-            splinterTpl = FXFactory.Sparks(new Color(0.78f, 0.72f, 0.38f), 16, 24, 8f, "BambooSplinters");
-            splinterTpl.GetComponent<ParticleSystemRenderer>().sharedMaterial = FXMaterials.Alpha;
-            var m = splinterTpl.GetComponent<ParticleSystem>().main;
-            m.startSize = new ParticleSystem.MinMaxCurve(0.06f, 0.14f);
-            m.startLifetime = new ParticleSystem.MinMaxCurve(0.3f, 0.7f);
-            return splinterTpl;
+            if (!Fighting || !IsAlive || grove == null) return false;
+            switch (sub)
+            {
+                case "fase":
+                {
+                    int ph = int.Parse(arg, Inv) - 1;
+                    if (ph <= phaseIdx || ph > 2 || phaseChanging) return false;
+                    if (ph == 2 && phaseIdx == 0) { phaseIdx = 1; foreach (var s in grove.All) if (!s.IsMother) s.Lean(true, 0f); }
+                    Health = Gates[ph] * config.maxHealth + 1f;
+                    StartTransition(ph);
+                    return true;
+                }
+                case "cana":
+                {
+                    var s = grove.Get(arg.ToUpperInvariant());
+                    if (s == null || !BambooGrove.Perchable(s, phaseIdx) || phaseChanging) return false;
+                    Run(DebugPerch(s));
+                    return true;
+                }
+                case "salto":
+                {
+                    var s = grove.Get(arg.ToUpperInvariant());
+                    if (s == null || !BambooGrove.Perchable(s, phaseIdx) || body != Body.Perch || s == perch) return false;
+                    Run(Then(LeapAct(s)));
+                    return true;
+                }
+                case "mov": return DebugMove(arg);
+                case "abrir": return DebugOpen(arg);
+                case "canas":
+                    if (arg == "reset") { grove.Reset(phaseIdx); BambooDart.ClearAll(); return true; }
+                    foreach (var s in grove.All)
+                        Log(s.Id + ": " + (s.Fallen ? "quebrada" : s.Leaning ? "inclinada" : s.Cracks == 1 ? "rajada" : s.IsMother && s.S.Rise < 1f ? "enterrada" : "en pie") +
+                            (s == perch ? " (posado)" : "") + (s.Loaded ? " (cargada)" : ""));
+                    return true;
+            }
+            return false;
         }
 
-        static GameObject LeafTemplate()
+        IEnumerator DebugPerch(BambooStalk s)
         {
-            if (leafTpl != null) return leafTpl;
-            leafTpl = FXFactory.Leaves(new Color(0.42f, 0.66f, 0.3f), new Color(0.68f, 0.82f, 0.38f), 26, 1.2f, 1.5f, "BambooLeaves");
-            return leafTpl;
+            PerchOn(s);
+            Play(ChikuoTimings.PerchIdle, 0.1f);
+            justLanded = false;
+            yield return Brain();
         }
 
-        static void Emit(GameObject tpl, Vector3 pos, Quaternion rot, float life)
+        IEnumerator Then(IEnumerator a)
         {
-            var go = Pool.Spawn(tpl, pos, rot);
-            var ps = go.GetComponent<ParticleSystem>();
-            if (ps != null) { ps.Clear(true); ps.Play(true); }
-            Pool.Despawn(go, life);
+            yield return a;
+            yield return Brain();
         }
+
+        bool DebugMove(string name)
+        {
+            if (phaseChanging) return false;
+            bool up = body == Body.Perch && perch != null;
+            IEnumerator r = null;
+            switch (name)
+            {
+                case "dardo": if (up) r = DartAct(ChikuoTimings.PerchDart, 0f); break;
+                case "dos": if (up) r = DartAct(ChikuoTimings.PerchDart2, 0f); break;
+                case "notas": if (up) r = DartAct(phaseIdx >= 2 ? ChikuoTimings.PerchVolley4 : ChikuoTimings.PerchVolley, 0f); break;
+                case "silbador": if (up) r = WhistleAct(); break;
+                case "colgado": if (up) r = HangAct(); break;
+                case "risa": if (up) r = LaughAct(false); break;
+                case "picada": if (up) r = DiveAct(); break;
+                case "baston": if (up) r = StaffDropAct(); break;
+                case "barrido": if (up) r = SweepAct(false); break;
+                case "catapulta": if (up) r = CatapultAct(); break;
+                case "tala": if (up && TalaTarget() != null) r = TalaAct(); break;
+                case "pertiga": if (body == Body.Ground) r = PoleCraneAct(); break;
+                case "pregunta": if (body == Body.Ground) r = QuestionAnswer(); break;
+                case "soplo": if (body == Body.Ground) { EnterGroundAI(0f); return true; } break;
+            }
+            if (r == null) return false;
+            if (body == Body.Ground) LeaveGroundAI();
+            Run(Then(r));
+            return true;
+        }
+
+        bool DebugOpen(string kind)
+        {
+            if (phaseChanging) return false;
+            Vector3 dir = (transform.position - TargetPos).Flat();
+            dir = dir.sqrMagnitude > 1e-4f ? dir.normalized : Vector3.forward;
+            switch (kind)
+            {
+                case "revolcon":
+                    if (body != Body.Perch || perch == null) return false;
+                    Run(FlingRoutine(perch, dir, model.position, BambooMasterMoves.Revolcon(phaseIdx), BambooMasterMoves.RevolconM));
+                    return true;
+                case "estampado":
+                {
+                    if (body != Body.Perch || perch == null) return false;
+                    BambooStalk other = null;
+                    float best = float.PositiveInfinity;
+                    foreach (var s in grove.All)
+                    {
+                        if (s == perch || !s.Standing || s.IsMother && phaseIdx < 2) continue;
+                        float d = (s.Base - perch.Base).Flat().magnitude;
+                        if (d < best) { best = d; other = s; }
+                    }
+                    if (other == null) return false;
+                    Run(StampRoutine(other, (other.Base - perch.Base).Flat().normalized, model.position));
+                    return true;
+                }
+                case "caida":
+                    if (body != Body.Perch || perch == null) return false;
+                    Run(SkyFallRoutine(perch));
+                    return true;
+                case "resbalon":
+                    if (body != Body.Perch || perch == null) return false;
+                    Run(SlipRoutine(perch));
+                    return true;
+                case "afinado":
+                    if (body != Body.Ground) return false;
+                    Run(SimpleHole(ChikuoTimings.Tuned, BambooMasterMoves.Afinado, ChikuoTimings.Tuned, true));
+                    return true;
+                case "pies":
+                    if (body != Body.Ground) return false;
+                    Run(SimpleHole(ChikuoTimings.FeetStuck, BambooMasterMoves.Pies, null, true));
+                    return true;
+            }
+            return false;
+        }
+#endif
     }
 }
