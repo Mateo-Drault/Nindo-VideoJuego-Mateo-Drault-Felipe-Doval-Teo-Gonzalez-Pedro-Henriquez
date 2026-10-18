@@ -12,7 +12,7 @@ import math
 import chikuo_rig as CR
 from chikuo_anim import CClip, merge, free, grip, culm, legs, staff_world, staff_spine, staff_lips, CLIMB_Z
 from chikuo_clips import (K, PERCH, PERCH_FEET, PERCH_BLOW, STAFF_SHOULDERS, HANG, HANG_Z, AIR, AIR_STAFF, AIM, GOLD, RED, WHITE,
-                          CHIMES_ALL, rolled)
+                          CHIMES_ALL, rolled, tossed)
 
 HI = ("Chikuo_GlintChimesHi",)
 L_TOP = CR.STAFF_LEN - 0.17                  # la izquierda en la cerbatana (cerca de la boquilla)
@@ -265,7 +265,9 @@ def hang_pipe(extra=None, aim=AIM):
 SIDE = merge(dict(hips=(-0.42, -0.26, -1.00), hips_rot=(6, -92, 0), spine=(-4, 0, 0), spine1=(-2, 0, 0), spine2=(2, 0, 0),
                   neck=(4, 0, 0), head=(-4, 0, 0)),
              STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), grip("l", L_SH, elbow=(0.6, -0.2, -1)),
-             legs((-0.10, 0.14, 0.06), (0.12, 0.16, 0.42), rr=(-30, -70, 0), rl=(-30, -70, 0), kr=(-0.5, -1, -0.6), kl=(0.5, -1, 0.6)))
+             # los tobillos bien detrás del culmo y abiertos (las tibias lo abrazan por los costados: más cerca le pasaban 9 cm
+             # por adentro)
+             legs((-0.16, 0.26, 0.06), (0.18, 0.28, 0.42), rr=(-30, -70, 0), rl=(-30, -70, 0), kr=(-0.5, -1, -0.6), kl=(0.5, -1, 0.6)))
 
 
 def hang_swap(w_lips, grip_l, free_r, extra=None):
@@ -278,28 +280,35 @@ def hang_swap(w_lips, grip_l, free_r, extra=None):
                  free("r", free_r, elbow=(1, -0.2, -0.6), fing="open", chest=True))
 
 
-def hang_drop():
+def hang_drop(kit):
     """Se deja caer de costado (hacia su derecha) girando sobre las piernas trabadas en el culmo y queda cabeza abajo
-    delante de la caña (Hang en f10). La flauta va en los hombros hasta casi dar la vuelta; ahí la derecha la suelta, la
-    izquierda la hace girar alrededor de su agarre hasta la boca y la derecha la vuelve a tomar cerca de la boquilla."""
+    delante de la caña (Hang en f10). La flauta va en los hombros hasta casi dar la vuelta; ahí la suelta con un sacudón de
+    hombros, la flauta da un cuarto de vuelta en el aire delante de la cara y la atajan las dos manos en la boca (girándola
+    alrededor del puño izquierdo el puño se daba vuelta 92° en un cuadro)."""
     P = merge(PERCH, shoulders_hold())
+    pipe_end = hang_pipe(dict(hips=(0.02, -0.27, HANG_Z - 0.02), hips_rot=(14, -181, 0), head=(-24, 0, 0)))
+    A, B = kit.staff(SIDE), kit.staff(pipe_end)
+    hands = lambda r, l: merge(free("r", r, elbow=(1, -0.2, -0.6), fing="open", chest=True),
+                               free("l", l, elbow=(-1, -0.2, -0.6), fing="open", chest=True))
     keys = [
         K(0, P),
         K(1, P, dict(spine2=(12, 0, -3))),
         K(3, P, dict(hips=(-0.08, -0.29, -0.64), hips_rot=(10, -22, 0), spine2=(12, 0, -4), head=(10, 4, 6)),
           legs((-0.14, -0.08, 0.13), (0.14, -0.06, 0.15), rr=(-10, -20, -32), rl=(-10, -20, 32), kr=(-1, -0.6, 0.4), kl=(1, -0.6, 0.4))),
         K(6, SIDE, ease="inout"),
-        K(8, hang_swap(0.45, L_SH + 0.08, (-0.40, -0.40, 2.10), dict(hips=(-0.10, -0.27, HANG_Z + 0.10), hips_rot=(14, -160, 0),
-                                                                     head=(-22, 0, 0))), ease="inout"),
-        K(9, hang_swap(0.85, L_TOP - 0.06, (-0.24, -0.50, 2.04), dict(hips=(0.03, -0.27, HANG_Z - 0.04), hips_rot=(16, -182, 0),
-                                                                      head=(-26, 0, 0))), ease="inout"),
-        K(10, hang_pipe(dict(hips=(0.02, -0.27, HANG_Z - 0.02), hips_rot=(14, -181, 0), head=(-24, 0, 0))), ease="out"),
+        K(7, SIDE, tossed(kit, A, B, 0.12, 0.08), hands((-0.56, -0.30, 2.02), (0.56, -0.30, 2.02)),
+          dict(hips=(-0.30, -0.27, -1.12), hips_rot=(8, -112, 0)), ease="out"),
+        K(8, hang_pipe(dict(hips=(-0.10, -0.27, HANG_Z + 0.10), hips_rot=(14, -160, 0), head=(-22, 0, 0))),
+          tossed(kit, A, B, 0.50, 0.08), hands((-0.44, -0.44, 2.00), (0.42, -0.46, 2.00)), ease="inout"),
+        K(9, hang_pipe(dict(hips=(0.03, -0.27, HANG_Z - 0.04), hips_rot=(16, -182, 0), head=(-26, 0, 0))),
+          tossed(kit, A, B, 0.86, 0.04), hands((-0.30, -0.56, 1.98), (0.26, -0.58, 1.98)), ease="inout"),
+        K(10, pipe_end, ease="out"),
         K(11, hang_pipe(dict(hips_rot=(12, -180, 0))), ease="inout"),
     ]
     faces = face_track((0, "grin"), (3, "surprise"), (8, "laugh"), (10, "blow"), (11, "blow"))
     return CClip("HangDrop", 11, keys, tracks=[faces], lag={"head": 1.0, "spine2": 0.5},
                  timing=dict(space="perch", load=[0, 11], chain_from="PERCH", chain_to="HANG", bend=-30.0, preroll=1.0,
-                             feet_on_node=[[0, 1]], hang_scale=0.6, cloak_max=150.0),
+                             feet_on_node=[[0, 1]], hang_scale=0.6, cloak_max=150.0, cloak_free=True),
                  events=[E(10, "Hang")], notes="se deja caer de costado y queda colgado de las piernas, cabeza abajo; Hang en f10")
 
 
@@ -327,25 +336,32 @@ def hang_dart2():
                        (18, FACE_BLOWN))
     return CClip("HangDart2", 18, keys, tracks=[faces], lag={"head": 1.0},
                  timing=dict(space="perch", load=[0, 18], kind="projectile", glow=list(HI), chain_from="HANG", bend=-30.0,
-                             hang_scale=1.0, cloak_hang=1.0, cloak_max=150.0,
+                             hang_scale=1.0, cloak_hang=1.0, cloak_max=150.0, cloak_free=True,
                              preroll=2.0, shots=[(8, "colgado: aviso (dorado)", HI, GOLD), (4, "colgado: cargada", CHIMES_ALL, WHITE)]),
                  events=[E(9, "DartSpawn"), E(18, "DartSpawn")],
                  notes="colgado cabeza abajo, dos dardos (f9 y f18, el último cuadro); sigue HangClimb")
 
 
-def hang_climb():
-    """El abdominal de vuelta, el mismo giro de HangDrop al revés: la derecha suelta la cerbatana, la izquierda la lleva de
-    la boca a los hombros girando alrededor de su agarre, la derecha la toma en el yugo, se dobla por la cintura y gira de
-    costado sobre las piernas hasta caer agachado en el nudo (Unload f8, Perch f15)."""
+def hang_climb(kit):
+    """El abdominal de vuelta, el mismo giro de HangDrop al revés: suelta la cerbatana con un golpe de las dos manos para
+    arriba, la flauta da el cuarto de vuelta en el aire y cae en los hombros, donde la atajan los dos puños; se dobla por la
+    cintura y gira de costado sobre las piernas hasta caer agachado en el nudo (Unload f8, Perch f15)."""
     P = merge(PERCH, shoulders_hold())
+    first = hang_pipe(dict(hips=(0, -0.2664, HANG_Z), hips_rot=(12.4, -180, 0), head=(-26, 0, 0)), aim=aim_dir(31, 4))
+    yoke = merge(hang_pipe(dict(hips_rot=(20, -170, 0), spine=(12, 0, 0), spine1=(10, 0, 0), head=(-12, 0, 0))), STAFF_SHOULDERS,
+                 grip("r", R_SH, elbow=(-0.6, -0.2, -1)), grip("l", L_SH, elbow=(0.6, -0.2, -1)))
+    A, B = kit.staff(first), kit.staff(yoke)
+    hands = lambda r, l: merge(free("r", r, elbow=(1, -0.2, -0.6), fing="open", chest=True),
+                               free("l", l, elbow=(-1, -0.2, -0.6), fing="open", chest=True))
     keys = [
         # el último cuadro de HangDart2 (el segundo dardo)
-        K(0, hang_pipe(dict(hips=(0, -0.2664, HANG_Z), hips_rot=(12.4, -180, 0), head=(-26, 0, 0)), aim=aim_dir(31, 4))),
-        # la vuelta de la flauta alrededor de la izquierda en siete cuadros (en seis, el puño giraba 150° en uno)
-        K(3, hang_swap(0.85, L_TOP - 0.06, (-0.24, -0.50, 2.04), dict(hips_rot=(14, -180, 0))), ease="inout"),
-        K(5, hang_swap(0.40, L_SH + 0.08, (-0.40, -0.40, 2.10), dict(hips_rot=(16, -176, 0), spine=(8, 0, 0))), ease="inout"),
-        K(7, hang_pipe(dict(hips_rot=(20, -170, 0), spine=(12, 0, 0), spine1=(10, 0, 0), head=(-12, 0, 0))), STAFF_SHOULDERS,
-          grip("r", R_SH, elbow=(-0.6, -0.2, -1)), grip("l", L_SH, elbow=(0.6, -0.2, -1)), ease="inout"),
+        K(0, first),
+        K(1, first, tossed(kit, A, B, 0.10, 0.06), hands((-0.24, -0.62, 1.96), (0.20, -0.62, 1.98)), ease="out"),
+        K(3, hang_pipe(dict(hips_rot=(14, -178, 0), spine=(4, 0, 0))), tossed(kit, A, B, 0.45, 0.10),
+          hands((-0.42, -0.46, 2.02), (0.40, -0.46, 2.02)), ease="inout"),
+        K(5, hang_pipe(dict(hips_rot=(17, -174, 0), spine=(8, 0, 0), spine1=(5, 0, 0), head=(-18, 0, 0))), tossed(kit, A, B, 0.84, 0.06),
+          hands((-0.58, -0.30, 1.98), (0.58, -0.30, 1.98)), ease="inout"),
+        K(7, yoke, ease="out"),
         K(10, SIDE, ease="inout"),
         K(13, P, dict(hips=(-0.08, -0.29, -0.60), hips_rot=(12, -18, 0), spine2=(12, 0, 0), head=(12, 0, 0)),
           legs((-0.14, -0.08, 0.14), (0.14, -0.08, 0.16), rr=(-10, -20, -32), rl=(-10, -20, 32), kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)),
@@ -355,7 +371,7 @@ def hang_climb():
     faces = face_track((0, FACE_BLOWN), (4, "grin"), (15, "grin"))
     return CClip("HangClimb", 15, keys, tracks=[faces], lag={"head": 1.0},
                  timing=dict(space="perch", load=[0, 8], chain_from="HANG_END", chain_to="PERCH", bend=-30.0, feet_on_node=[[14, 15]],
-                             hang_scale=0.6, cloak_max=150.0),
+                             hang_scale=0.6, cloak_max=150.0, cloak_free=True),
                  events=[E(8, "Unload"), E(15, "Perch")], notes="de colgado al posado: Unload f8, Perch f15")
 
 
@@ -697,6 +713,6 @@ def clips(kit):
                                                             "(f17, f28, f39) y Unload f42", 12),
            volley_clip("PerchVolley4", 48, [14, 22, 30, 39], 40, "Cuatro Notas (fase 3): Load f3, dardos f14, f22, f30, f39, "
                                                                  "Unload f40", 10),
-           perch_whistle(), tala_shot(), hang_drop(), hang_dart2(), hang_climb(), perch_laugh(), perch_wobble(),
+           perch_whistle(), tala_shot(), hang_drop(kit), hang_dart2(), hang_climb(kit), perch_laugh(), perch_wobble(),
            stalk_sweep(), catapult_draw(), catapult_kick(), leap_crouch(), leap_air(), leap_grab(), climb()]
     return out

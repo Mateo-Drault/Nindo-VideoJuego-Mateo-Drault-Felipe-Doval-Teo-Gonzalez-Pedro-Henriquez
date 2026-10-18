@@ -20,7 +20,7 @@ siempre, los cachetes inflados al soplar, la carcajada con los ojos cerrados.
 """
 import math
 from mathutils import Vector
-from nindo_anim import Key
+from nindo_anim import Key, basis_yz
 import chikuo_rig as CR
 from chikuo_anim import CClip, merge, free, grip, legs, staff_world, staff_spine, staff_lips
 
@@ -195,6 +195,29 @@ def feet_track(keys, frames, plan, lift=0.12, swing_pitch=-12.0):
             ank, rot, toe = rolled(s, x, y + tr[f], yaw, pitch, pivot)
             k.update({"foot_" + s: ank, "foot_%s_rot" % s: rot, "toe_" + s: toe, "fsp_" + s: 0.0})
     return [Key(f, k, "lin") for f, k in enumerate(out)]
+
+
+# ============================================================================ la flauta suelta y entre dos agarres
+def tossed(kit, A, B, t, lift):
+    """La flauta suelta en el aire entre dos claves de la flauta (A y B, como las da Kit.staff): el giro va de A a B por el
+    camino corto y el centro sube 'lift' metros en arco sobre la recta (la tiró para arriba)."""
+    qa, qb = (basis_yz(Vector(m[1]), Vector(m[2])).to_quaternion() for m in (A, B))
+    if qa.dot(qb) < 0.0:
+        qb = -qb
+    R = qa.slerp(qb, t).to_matrix()
+    ca, cb = (Vector(m[0]) + Vector(m[1]) * (CR.STAFF_LEN * 0.5) for m in (A, B))
+    c = ca.lerp(cb, t) + Vector((0.0, 0.0, lift * math.sin(math.pi * t)))
+    return staff_world(tuple(c - R.col[1] * (CR.STAFF_LEN * 0.5)), tuple(R.col[1]), tuple(R.col[2]))
+
+
+def spine_mix(a, b, t):
+    """Una flauta pegada al pecho entre otras dos (claves staff_spine): el giro por el camino corto y la punta de abajo
+    en línea recta."""
+    qa, qb = (basis_yz(Vector(m["sts_dir"]), Vector(m["sts_up"])).to_quaternion() for m in (a, b))
+    if qa.dot(qb) < 0.0:
+        qb = -qb
+    R = qa.slerp(qb, t).to_matrix()
+    return merge(a, staff_spine(tuple(Vector(a["sts_pos"]).lerp(Vector(b["sts_pos"]), t)), tuple(R.col[1]), tuple(R.col[2])))
 
 
 # los pies de la guardia (READY_FEET) como apoyos: (x, y, yaw)

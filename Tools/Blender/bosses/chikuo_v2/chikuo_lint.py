@@ -119,6 +119,10 @@ def snaps(rig, lq, cuts=(), frames=None):
     wq = None
     if frames is not None:
         wq = [{n: W[n].to_quaternion() for n in names if n.startswith(SPRING_PREFIX)} for W in frames]
+        # la flauta cuelga de la raíz: en un mortal va pegada al pecho y gira con él (44° por cuadro, el mortal mismo); lo
+        # que salta es lo que gira de golpe contra la raíz y contra el pecho a la vez
+        for W, q in zip(frames, wq):
+            q["Staff"] = (W["Spine2"].inverted() @ W["Staff"]).to_quaternion()
     for i in range(1, len(lq)):
         if i in cuts or (i - 1) in cuts:
             continue

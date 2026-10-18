@@ -891,10 +891,12 @@ class Solver(CR.Poser):
         if axis.length > 1e-6:
             nax = axis.normalized()
             prev_side = None
+            # el codo de verdad dice de qué lado va solo si el brazo está doblado (un cuarto del brazo fuera del eje): con el
+            # brazo casi estirado su corrimiento del eje es ruido, se daba vuelta de lado y el brazo giraba 126° en un cuadro
             for v in (po, pe):
                 if v is not None:
                     w_ = v - nax * v.dot(nax)
-                    if w_.length > 0.05 * (v.length if v is po else 1.0):
+                    if w_.length > (0.25 if v is po else 0.05) * v.length:
                         prev_side = w_.normalized()
                         break
             b = pole - nax * pole.dot(nax)
@@ -1069,6 +1071,9 @@ CULM_PAD_CLOTH = 0.10
 # alrededor de la cabeza (la hoja original)
 HANG_LO, HANG_HI, HANG_FULL = 35.0, 110.0, 0.95
 CARRY = 0.85                 # lo que la tela se lleva de la traslación de su raíz en cada cuadro (run_springs)
+# lo más que un paño de la capa se aparta de su pose (el levante) y lo más que se apartan dos vecinos entre sí (grados): con
+# 65° y sin el tope entre vecinos, en los golpes los paños se abrían como alas planas más anchas que el cuerpo
+CLOAK_LIFT, CLOAK_PAIR, CLOAK_FLOOR_LIFT = 35.0, 25.0, 65.0
 
 
 def chain_colliders(first, colliders):
@@ -1098,11 +1103,13 @@ def chain_colliders(first, colliders):
     return out
 
 
-def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0, cloak_max=None):
+def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0, cloak_max=None, cloak_free=False):
     """Los resortes de chikuo_rig.chains() con el colgar que depende de la inclinación (HANG_LO/HI); el moño va rígido
     (pelo duro atado). cloak_hang fija otro máximo para la capa y hang_scale escala el colgar de todas (0 dando vueltas);
     cloak_max, el giro máximo de la capa desde su pose rígida (colgado cabeza abajo: con los 65° de siempre la capa quedaba
-    trabada en horizontal como una bandeja alrededor de la cabeza, en vez de caer hacia el piso como en el concepto).
+    trabada en horizontal como una bandeja alrededor de la cabeza, en vez de caer hacia el piso como en el concepto);
+    cloak_free, cada paño cuelga por su cuenta (colgado cabeza abajo: con el giro común los tramos del yugo, que salen de
+    costado, giraban sobre su propio eje y quedaban en horizontal; partida la cáscara, cada paño cae hacia el piso).
     Los cascabeles se hornean más firmes y amortiguados que el péndulo del juego: el clip es la pose a la que tira
     SpringChain, que les pone el bamboleo encima."""
     out = []
@@ -1123,7 +1130,7 @@ def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0, cloak_max=No
         # darse vuelta en los golpes de cadera rápidos; la barba, la ramita y las colas tienen física en el juego encima
         for pre, kk, dd, mm in (("Acc_Chimes", 110.0, 0.45, 60.0), ("Acc_TasselBeard", 120.0, 0.42, 45.0),
                                 ("Acc_LeafKnot", 160.0, 0.45, 40.0), ("Acc_TieSash", 120.0, 0.40, 50.0),
-                                ("Sleeve_", 200.0, 0.45, 35.0), ("Cloak_", 90.0, 0.30, 65.0), ("Skirt_", 160.0, 0.30, 60.0)):
+                                ("Sleeve_", 200.0, 0.45, 35.0), ("Cloak_", 90.0, 0.30, CLOAK_LIFT), ("Skirt_", 160.0, 0.30, 60.0)):
             if b0.startswith(pre):
                 k, damp, mx = kk, dd, mm
         if cloak_max is not None and b0.startswith("Cloak_"):
@@ -1132,13 +1139,41 @@ def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0, cloak_max=No
         # lo más que cuelga de su pose rígida: las mangas son tela pegada al brazo (no se dan vuelta), la barba y la
         # ramita están atadas a la cara; la capa, la falda y los cascabeles cuelgan enteros
         sp.hang_max = 40.0 if b0.startswith("Sleeve_") else 30.0 if b0.startswith("Acc_LeafKnot") else             100.0 if b0.startswith("Acc_TasselBeard") else 180.0
-        sp.sag_ref = "Spine2" if b0.startswith("Cloak_") else "Hips" if b0.startswith("Skirt_") else None
+        sp.sag_ref = ("Spine2" if not cloak_free else None) if b0.startswith("Cloak_") else "Hips" if b0.startswith("Skirt_") else None
         # las hojas de la capa cuelgan debajo de la cola de cada tramo (medido en la malla: 0.10 el de arriba, 0.16 el
         # del medio, 0.27 el último) y los paños de adelante de la falda 0.22: el piso se le pide a la punta de la hoja,
         # no a la cola (en guardia la capa de atrás se metía 7 cm en el piso con las colas a 20 cm)
         sp.drop = {b: cloak_drop(b) for b in bones}
         out.append(sp)
     return out
+
+
+def clamp_cloak(rig, frames, prim, max_rel=CLOAK_PAIR):
+    """Dos paños vecinos de la capa no se apartan de su pose rígida más de max_rel grados uno del otro (cada uno se acerca
+    a la mitad, girando sobre su raíz con lo que cuelga de él): sueltos, en los golpes y los saltos un paño se abría como un
+    ala y el de al lado quedaba pegado, y el borde entre los dos se veía como una lámina."""
+    lim = math.radians(max_rel)
+    angs = CR.CLOAK_ANGLES
+    for W, P in zip(frames, prim):
+        for seg in (1, 2, 3):
+            for a, b in zip(angs, angs[1:]):
+                na, nb = CR.cloak_name(a, seg), CR.cloak_name(b, seg)
+                if na not in W or nb not in W:
+                    continue
+                qa = (rot3(W[na]) @ rot3(P[na]).transposed()).to_quaternion()
+                qb = (rot3(W[nb]) @ rot3(P[nb]).transposed()).to_quaternion()
+                if qa.dot(qb) < 0.0:
+                    qb = -qb
+                d = qa.rotation_difference(qb).angle
+                if d <= lim:
+                    continue
+                mid = qa.slerp(qb, 0.5)
+                for n, q in ((na, qa), (nb, qb)):
+                    corr = (q.slerp(mid, 1.0 - lim / d) @ q.inverted()).to_matrix().to_4x4()
+                    h = W[n].translation.copy()
+                    M = Matrix.Translation(h) @ corr @ Matrix.Translation(-h)
+                    for c in rig.subtree(n):
+                        W[c] = M @ W[c]
 
 
 def cloak_drop(b):
@@ -1462,8 +1497,24 @@ def bake(rig, clip, solver, base_colliders, pin_from=None, pin_to=None):
         soff = roots
     lifts = [min(0.0, c.get("lift") or 0.0) for c in ctrls]
     t = clip.timing
-    run_springs(rig, frames, springs(rig, cols, floor, t.get("cloak_hang"), t.get("hang_scale", 1.0), t.get("cloak_max")), soff, loop=clip.loop,
-                   preroll=t.get("preroll", 1.0), floor_offsets=lifts, carry=t.get("carry", 0.6 if space == "ground" else CARRY))
+    prim = [dict(W) for W in frames]
+    free_cloak = bool(t.get("cloak_free"))
+
+    def bake_cloth(cloak_max):
+        out = [dict(W) for W in prim]
+        run_springs(rig, out, springs(rig, cols, floor, t.get("cloak_hang"), t.get("hang_scale", 1.0), cloak_max, free_cloak), soff,
+                    loop=clip.loop, preroll=t.get("preroll", 1.0), floor_offsets=lifts,
+                    carry=t.get("carry", 0.6 if space == "ground" else CARRY))
+        return out
+    frames[:] = bake_cloth(t.get("cloak_max"))
+    if not free_cloak:
+        # sentado, tirado o caído la capa se apoya en el piso (el piso la aparta de su pose más que el levante): ahí vale el
+        # tope de siempre y no el de los vecinos, que la metía en el piso o la hacía saltar al soltarla
+        if floor is not None and any((W[b] @ Vector((0.0, rig.length[b], 0.0))).z - cloak_drop(b) < floor + lifts[i] + 0.03
+                                     for i, W in enumerate(frames) for b in CR.cloak_bones()):
+            frames[:] = bake_cloth(t.get("cloak_max") or CLOAK_FLOOR_LIFT)
+        else:
+            clamp_cloak(rig, frames, prim)
     if clip.loop:
         frames[-1] = {n: m.copy() for n, m in frames[0].items()}
     clip.grips = {"first": dict(grips_at(solver, 0), state=states[0]),

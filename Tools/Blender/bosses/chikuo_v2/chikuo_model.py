@@ -63,7 +63,7 @@ C = dict(skin="lantern_paper", skin2="wood_light", skin3="wood_light", mouth="wo
          wrap="cloth_black", wrap2="stone_dark",
          sole="rope", sole2="thatch", strap="wood_pale",
          leaf1="stone_moss", leaf1b="grass_dry", leaf1c="reed", leaf2="bamboo_dark", leaf3="tatami_edge", shell="bamboo_dark",
-         leafu="bamboo_dark",
+         shell_in="moss", leafu="bamboo_dark",
          cord="wood_dark", hole="wood_dark", node="wheat_dark",
          staff_node="bamboo_dry", staff_cord="leaf_dark", staff_grip="ink", staff_grip2="iron", staff_hole="wood_dark",
          eye="ink", eyew="paper", knot="moss", knot2="leaf_dark")
@@ -1308,38 +1308,45 @@ def build_cloak(kits):
     k = kits["Cloak"] = Kit("part_Cloak", "Spine2", weights=w_cloak)
     k.use_anchors()
     a0, a1 = CR.CLOAK_OPEN, 360.0 - CR.CLOAK_OPEN
-    cols, rows_n = 20, 7
-    so, si = [], []
-    for r in range(rows_n + 1):
-        s = r / rows_n
-        ro, ri = [], []
-        for c in range(cols + 1):
-            phi = a0 + (a1 - a0) * c / cols
-            # el ruedo en puntas: una columna de cada dos baja (sin un borde recto que se vea entre las hojas)
-            ss = s + (0.045 if (r == rows_n and c % 2 == 0) else 0.0)
-            p_out = CR.cloak_point(phi, min(1.0, ss), 0.0)
-            p_in = CR.cloak_point(phi, min(1.0, ss), -0.012)
-            if ss > 1.0:
-                tan = (CR.cloak_point(phi, 1.0) - CR.cloak_point(phi, 0.97)).normalized()
-                p_out, p_in = p_out + tan * (ss - 1.0) * drop_len(phi), p_in + tan * (ss - 1.0) * drop_len(phi)
-            ro.append(k.bm.verts.new(p_out))
-            ri.append(k.bm.verts.new(p_in))
-        so.append(ro)
-        si.append(ri)
-    fo, fi = [], []
-    for r in range(rows_n):
-        for c in range(cols):
-            fo.append(k.bm.faces.new((so[r][c], so[r][c + 1], so[r + 1][c + 1], so[r + 1][c])))
-            fi.append(k.bm.faces.new((si[r][c + 1], si[r][c], si[r + 1][c], si[r + 1][c + 1])))
-        fi.append(k.bm.faces.new((so[r][0], so[r + 1][0], si[r + 1][0], si[r][0])))
-        fi.append(k.bm.faces.new((so[r][cols], si[r][cols], si[r + 1][cols], so[r + 1][cols])))
-    for c in range(cols):
-        fi.append(k.bm.faces.new((so[rows_n][c], so[rows_n][c + 1], si[rows_n][c + 1], si[rows_n][c])))
-        fi.append(k.bm.faces.new((so[0][c + 1], so[0][c], si[0][c], si[0][c + 1])))
-    # la cáscara y su cara de adentro en el verde de las hojas de abajo: con el gris-teja y el gi oscuro, cuando la capa
-    # se abre (colgado, los golpes, los saltos) lo que se veía era una lona plana oscura más grande que el cuerpo
-    k._new([v for r in so + si for v in r], C["shell"], None, None)
-    k.tag(fi, C["leafu"])
+    # la cáscara partida en un paño por hueso, con una ranura de 1.6° entre paños y cada paño pesado entero a su hueso (el
+    # ancla en el centro del paño): de una sola pieza, cuando los paños se separaban (los golpes, los saltos, colgado) la
+    # cáscara se estiraba entre ellos en una lona plana más ancha que el cuerpo. Cada paño termina en punta, como una hoja
+    angs, gap, rows_n = CR.CLOAK_ANGLES, 1.6, 5
+    for i, A in enumerate(angs):
+        lo = a0 if i == 0 else 0.5 * (angs[i - 1] + A) + gap * 0.5
+        hi = a1 if i == len(angs) - 1 else 0.5 * (A + angs[i + 1]) - gap * 0.5
+        so, si = [], []
+        for r in range(rows_n + 1):
+            sr = r / rows_n
+            ro, ri = [], []
+            for c in range(3):
+                phi = lo + (hi - lo) * c / 2.0
+                ss = sr + (0.06 if (r == rows_n and c == 1) else 0.0)
+                p_out = CR.cloak_point(phi, min(1.0, ss), 0.0)
+                p_in = CR.cloak_point(phi, min(1.0, ss), -0.012)
+                if ss > 1.0:
+                    tan = (CR.cloak_point(phi, 1.0) - CR.cloak_point(phi, 0.97)).normalized()
+                    p_out, p_in = p_out + tan * (ss - 1.0) * drop_len(phi), p_in + tan * (ss - 1.0) * drop_len(phi)
+                anc = CR.cloak_point(A, min(1.0, ss), 0.0)
+                for p_, row in ((p_out, ro), (p_in, ri)):
+                    v = k.bm.verts.new(p_)
+                    v[k.anchor] = anc
+                    row.append(v)
+            so.append(ro)
+            si.append(ri)
+        fo, fi = [], []
+        for r in range(rows_n):
+            for c in range(2):
+                fo.append(k.bm.faces.new((so[r][c], so[r][c + 1], so[r + 1][c + 1], so[r + 1][c])))
+                fi.append(k.bm.faces.new((si[r][c + 1], si[r][c], si[r + 1][c], si[r + 1][c + 1])))
+            fo.append(k.bm.faces.new((so[r][0], so[r + 1][0], si[r + 1][0], si[r][0])))
+            fo.append(k.bm.faces.new((so[r][2], si[r][2], si[r + 1][2], so[r + 1][2])))
+        for c in range(2):
+            fo.append(k.bm.faces.new((so[rows_n][c], so[rows_n][c + 1], si[rows_n][c + 1], si[rows_n][c])))
+            fo.append(k.bm.faces.new((so[0][c + 1], so[0][c], si[0][c], si[0][c + 1])))
+        k._new([v for row in so + si for v in row], C["shell"], None, None)
+        # la cara de adentro en el verde medio de las hojas (se ve con la capa abierta: oscura se leía como un agujero)
+        k.tag(fi, C["shell_in"])
 
     def leaf_at(phi, sb, ln, out_b, lift, nrm_sign, col, width=None, yaw=0.0, under=None, inner=False):
         D = drop_len(phi)
@@ -1382,16 +1389,25 @@ def build_cloak(kits):
     # oliva al medio y verde oscuro abajo, más largas hacia el ruedo de la espalda
     for ri_, (s, ca, cb) in enumerate(((0.32, "leaf1", "leaf2"), (0.46, "leaf2", "leaf1"), (0.60, "leaf2", "leaf3"),
                                        (0.74, "leaf3", "leaf2"), (0.87, "leaf3", "leaf2"))):
-        for j, phi in enumerate(arc_samples(a0, a1, s, 0.0, 0.100, rng)):
+        # la del ruedo más rala (las hojas de las ranuras la completan)
+        for j, phi in enumerate(arc_samples(a0, a1, s, 0.0, 0.130 if s > 0.8 else 0.100, rng)):
             D = drop_len(phi)
             sb = s + rng.uniform(-0.015, 0.015)
             ln = (0.18 + 0.22 * min(1.0, D / 1.45)) * rng.uniform(0.9, 1.1)
             col = C[ca] if (j + ri_) % 3 else C[cb]
             leaf_at(phi, sb, ln, 0.006 + 0.026 * (1.0 - sb), 0.012 + 0.025 * rng.random(), 1.0, col,
                     yaw=rng.uniform(-9.0, 9.0) * (0.4 if D < 0.8 else 1.0))
+    # dos hojas largas en cada ranura entre paños, pesadas a los dos: con la capa quieta tapan la ranura y abierta cuelgan
+    # entre los paños como hojas sueltas (la silueta sigue siendo de hojas y no de paneles)
+    for i in range(len(angs) - 1):
+        mid = 0.5 * (angs[i] + angs[i + 1])
+        for sb, ln, col in ((0.50, 0.30, C["leaf2"]), (0.76, 0.32, C["leaf1"])):
+            if drop_len(mid) * (1.0 - sb) > 0.12:
+                leaf_at(mid + rng.uniform(-1.5, 1.5), sb + rng.uniform(-0.02, 0.02), ln * rng.uniform(0.9, 1.1), 0.030, 0.02, 1.0, col,
+                        width=0.08)
     # las hojas de adentro: en los paños de detrás del brazo y la espalda, mirando hacia el cuerpo, más oscuras, puntas
     # abajo y pasando el ruedo (con los brazos arriba, en el salto y colgado no se ve una cáscara lisa)
-    for s, sp in ((0.34, 0.12), (0.50, 0.11), (0.65, 0.11), (0.80, 0.11), (0.92, 0.10)):
+    for s, sp in ((0.34, 0.12), (0.52, 0.11), (0.70, 0.11), (0.88, 0.10)):
         for j, phi in enumerate(arc_samples(70.0, 290.0, s, -0.012, sp, rng)):
             D = drop_len(phi)
             if D < 0.55:

@@ -61,9 +61,10 @@ FBX = os.path.join(OUT_DIR, "BambooMaster.fbx")
 # el diseño pedía ~9000 en total (doc chikuo_v2 sección 14); la revisión de arte contra el concepto sumó las hojas de
 # adentro de la capa (colgado y con los brazos arriba no se ve la cáscara), las dos coronas del cuello (lo que ve la
 # cámara alta) y 26 cascabeles con nudo, lazo y agujeros redondos: ~10.4k, un 13 % más que Mizuchi (un jefe solo en
-# pantalla). Por grupo, lo que costó llegar al concepto
-BUDGET = {"body": 5650, "cloak": 2500, "chimes": 1900, "staff": 480}
-TOTAL_BUDGET = 10450
+# pantalla). Por grupo, lo que costó llegar al concepto; la capa partida en doce paños (cada uno con sus bordes) y las
+# hojas de las ranuras sumaron 60
+BUDGET = {"body": 5650, "cloak": 2560, "chimes": 1900, "staff": 480}
+TOTAL_BUDGET = 10500
 HOLD = 20                   # cuadros de cada pose en PoseTest (--model-only)
 GAP = 4                     # cuadros vacíos entre clips en la toma única (Unity corta por cuadros: no se mezclan)
 # huesos de los que dependen el código y los pasos que siguen (animación, pelea): si falta uno, no se exporta
