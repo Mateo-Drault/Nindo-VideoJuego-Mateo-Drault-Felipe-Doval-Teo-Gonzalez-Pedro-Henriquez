@@ -767,6 +767,16 @@ MonoBehaviour:
   props:
   - id: arch_bamboo_gate
     model: {fileID: 919132149155446097, guid: df43f4b542fda366375dde7785b54100, type: 3}
+  - id: arena_stalk_inner
+    model: {fileID: 919132149155446097, guid: 9e96a6dcfb65f026313f02e1630df4a8, type: 3}
+  - id: arena_stalk_mother
+    model: {fileID: 919132149155446097, guid: 90e28bd29284691c2c08fdb354b54ccb, type: 3}
+  - id: arena_stalk_north
+    model: {fileID: 919132149155446097, guid: f407d7c3971d433a42b100f10f1350ff, type: 3}
+  - id: arena_stalk_outer
+    model: {fileID: 919132149155446097, guid: dafb836411c9ed4188ef4987ba6264e4, type: 3}
+  - id: arena_stalk_stump
+    model: {fileID: 919132149155446097, guid: 34897aade9165321006e20c1bb9aad53, type: 3}
   - id: bamboo_cluster_a
     model: {fileID: 919132149155446097, guid: 4bdd38b0b4e8f65d958bd49a98c373f1, type: 3}
   - id: bamboo_cluster_b

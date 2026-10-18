@@ -274,9 +274,11 @@ Material:
     return ensure_guid(path)
 
 
-def lit(path, name, base_tex, base_color=(1, 1, 1, 1), smooth=0.08, emission_tex=None, emission=(0, 0, 0, 1), cull=2, metallic=0.0, spec=0):
+def lit(path, name, base_tex, base_color=(1, 1, 1, 1), smooth=0.08, emission_tex=None, emission=(0, 0, 0, 1), cull=2, metallic=0.0, spec=0, emission_on=False):
     kws = []
-    if emission_tex is not None or emission[0] + emission[1] + emission[2] > 0:
+    # emission_on: la emisión nace en negro pero la enciende el código con un bloque de propiedades (sin la palabra clave,
+    # URP Lit ni compila la emisión)
+    if emission_on or emission_tex is not None or emission[0] + emission[1] + emission[2] > 0:
         kws.append("_EMISSION")
     if not spec:
         kws.append("_SPECULARHIGHLIGHTS_OFF")   # lo que escribe URP al validar _SpecularHighlights = 0
@@ -1084,11 +1086,19 @@ def team_anim_metas():
 
 
 # ============================================================================ props y mundo
+def arena_stalk_materials():
+    """Las cañas del claro de Chikuō (Tools/Blender/world/arena_stalks.py): el nudo de la base (GlintBase) tiene su propio
+    material, que World/ArenaStalk.SetGlint enciende. Sin mapa de emisión: el destello es blanco, no del color paja del nudo."""
+    palg = ensure_guid(os.path.join(P_TEX, "NindoPalette.png"))
+    return {"Stalk_GlintBase": lit(os.path.join(P_MAT, "Stalk_GlintBase.mat"), "Stalk_GlintBase", palg, smooth=0.12, emission_on=True)}
+
+
 def model_metas(mats):
     remap = {"Nindo_Palette": mats["palette"], "Nindo_Emissive": mats["emissive"], "Nindo_Foliage": mats["foliage"], "Nindo_Water": mats["water"]}
+    stalk_remap = {**remap, **arena_stalk_materials()}
     props, zones = {}, []
     for p in sorted(glob.glob(os.path.join(P_PROPS, "*.fbx"))):
-        write_meta(p, model_meta(remap=remap, readable=True), force=True)
+        write_meta(p, model_meta(remap=stalk_remap if os.path.basename(p).startswith("arena_stalk_") else remap, readable=True), force=True)
         props[os.path.splitext(os.path.basename(p))[0]] = ensure_guid(p)
     for p in sorted(glob.glob(os.path.join(P_WORLD, "*.fbx"))):
         write_meta(p, model_meta(remap=remap, readable=True), force=True)

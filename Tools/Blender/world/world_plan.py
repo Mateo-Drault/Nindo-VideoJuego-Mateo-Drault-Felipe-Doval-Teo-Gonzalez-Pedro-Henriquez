@@ -196,6 +196,9 @@ LANDMARKS = [
     ("lantern_stone", 92, 120, 180, 1.0), ("lantern_stone", 102, 130, 180, 1.0),
     ("grave_stone", 84, 116, 200, 1.0),
     ("temple_bell", 134, 172, 200, 0.9),
+    # los dos faroles de adentro del claro de Chikuō ya no se ven (build_world.arena_keeps: el claro de las cañas queda
+    # limpio); siguen acá porque el lugar que ocupan decide el sorteo de la decoración de todo el este del mapa. Los
+    # faroles del claro nuevo están en ARENA_PROPS
     ("lantern_post", 118, 168, 180, 1.0), ("lantern_post", 134, 154, 180, 1.0),
 ]
 # Cascada Kohan (jefe del lago): acantilado de basalto en herradura al norte de la arena, pinos del borde y
@@ -279,6 +282,35 @@ BOSSES = [
     ("ozeki", 124, 162, 15, 126, 166, 215),
     ("kage", 0, 132, 18, 0, 145.5, 180),       # Kokuyō espera arrodillado al pie de las escaleras del dojo
 ]
+
+# --------------------------------------------------------------------------- el claro de Chikuō (fase C4)
+# Las cañas de las que pelea el jefe del bambú (Docs/handoff/diseno/chikuo_v2.md sección 8; las mismas posiciones que
+# Tools/Dev/chikuo_v2_check.py): tres rayos desde el centro de la arena 'ozeki' (rumbo desde el este, antihorario) con
+# una caña de adentro a 5.5 m y una de afuera a 10.5 m, más la Caña Madre en el centro (nace en la fase 3).
+# (id, tipo del FBX arena_stalk_<tipo>, rumbo en grados, radio). build_world exporta un marcador M__Stalk__id__tipo por
+# caña y WorldBuilder les pone World/ArenaStalk.
+BOSS_STALKS = [
+    ("N1", "inner", 100, 5.5), ("N2", "north", 100, 10.5),     # la del norte va más baja (posado a 4 m): encuadra peor
+    ("O1", "inner", 180, 5.5), ("O2", "outer", 180, 10.5),     # O1 es la de la presentación
+    ("E1", "inner", 330, 5.5), ("E2", "outer", 330, 10.5),
+    ("M", "mother", 0, 0.0),
+]
+OZEKI_CENTER = next((ax, az) for arch, ax, az, r, bx, bz, yaw in BOSSES if arch == "ozeki")
+
+
+def boss_stalk_xz(bearing, r):
+    return (round(OZEKI_CENTER[0] + r * math.cos(math.radians(bearing)), 2), round(OZEKI_CENTER[1] + r * math.sin(math.radians(bearing)), 2))
+
+
+# El claro: sin nada a menos de STALK_CLEAR m del pie de cada caña (el ensō blanco de la base mide 1.2 m) y, adentro de
+# ARENA_CLEAR_R, solo pasto y flores bajos (ni bambú joven, ni piedras, ni faroles: la pelea salta de caña en caña y
+# rueda por el piso). El piso del claro es tierra pisada clara hasta ARENA_FLOOR_R (world_terrain.face_color).
+STALK_CLEAR = 1.6
+ARENA_CLEAR_R = 15.6
+ARENA_FLOOR_R = 13.5
+# faroles del claro, afuera de la barrera (r 15) y entre los rayos de las cañas: la luz cálida del borde encierra la
+# pelea sin estorbarla. Van después del sorteo y miran al centro (build_world.place_arena_props): (prop, rumbo, radio)
+ARENA_PROPS = [("lantern_stone", 158, 15.9), ("lantern_stone", 22, 15.9), ("lantern_stone", 292, 15.9)]   # en lo plano (mesh_H)
 
 # portales de vuelta al dojo (aparecen al vencer al jefe): (id, x, z, yaw, flag)
 PORTALS = [
