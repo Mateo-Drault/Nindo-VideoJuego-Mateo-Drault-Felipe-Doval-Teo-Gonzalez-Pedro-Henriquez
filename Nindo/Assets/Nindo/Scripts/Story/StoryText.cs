@@ -357,7 +357,7 @@ namespace Nindo
                 // Chikuō, el Ermitaño de las Cañas: a él no se le pega arriba, se le corta lo que lo sostiene (dos renglones)
                 case "bamboo_whip": return "Cascabeles blancos: su caña está cargada\nCortala con {Attack} y lo despide";
                 case "bamboo_stamp": return "Lo despide para el lado del corte\nSi atrás hay otra caña, se estrella contra ella";
-                case "bamboo_deny": return "Cuando salta, el ensō blanco marca su caña\nCortala antes de que la agarre";
+                case "bamboo_deny": return "Cuando salta, el círculo blanco marca su caña\nCortala antes de que la agarre";
                 case "bamboo_tickle": return "Sin el brillo blanco, la caña te barre\nParale los dardos y entrá cuando cargue";
                 case "bamboo_staff": return "Su bastón también es una caña\nCortalo con {Attack} mientras está arriba";
                 case "bamboo_flute": return "Lo que toca la flauta, lo repite\nAguda: desviá con {Parry}. Grave: salí con {Dash}";

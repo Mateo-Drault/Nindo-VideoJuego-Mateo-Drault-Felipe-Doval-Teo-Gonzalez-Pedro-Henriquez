@@ -37,10 +37,10 @@ EXTRA_MATS = ["Chikuo_Skin", "Chikuo_GlintChimesHi", "Chikuo_GlintChimesLo", "Ch
               "Chikuo_GlintFootL", "Chikuo_Gi"]
 # piel curtida de ermitaño (la del concepto: #dda982 a la luz, #98694f en la sombra); las sombras van con la paleta
 SKIN_RGB = (0.82, 0.63, 0.49)
-# el gi salvia del concepto (#555f52 a la luz: gris verdoso, más azulado y apagado que las hojas oliva de la capa), un
-# punto más claro que la hoja para que se lea de noche; el pantalón es de la misma tela. La paleta no tiene un salvia
-# que no se confunda con las hojas
-GI_RGB = (0.36, 0.42, 0.345)
+# el gi salvia del concepto, en el grass_teal de la sección 14 del diseño (#3e6b55): el gris verdoso del concepto
+# (#555f52) bajo la luna del juego salía gris azulado, del valor del sendero, y se perdía "el gi verde de karate"; el
+# teal se separa de las hojas oliva de la capa por el tono. El pantalón es de la misma tela
+GI_RGB = (0.243, 0.42, 0.333)
 # cascabeles paja-oro (el concepto: #e1a96c) y la flauta paja-amarilla, más verde (bambú seco): se distinguen entre sí
 CHIME_RGB = (0.90, 0.68, 0.40)
 STAFF_RGB = (0.80, 0.74, 0.35)
@@ -50,7 +50,6 @@ MAT_RGB = {"Chikuo_Skin": SKIN_RGB, "Chikuo_GlintChimesHi": CHIME_RGB, "Chikuo_G
            "Chikuo_GlintStaff": STAFF_RGB, "Chikuo_GlintFootR": SHOE_RGB, "Chikuo_GlintFootL": SHOE_RGB, "Chikuo_Gi": GI_RGB}
 # el señuelo de hojas (Tricks: la misma malla con todos los slots en este material, sin brillo): no está en el FBX,
 # generate_assets escribe su .mat desde el sidecar
-DECOY_MAT, DECOY_RGB = "Chikuo_Decoy", (0.30, 0.54, 0.24)
 
 # la piel: un solo tono (Chikuo_Skin) y una sola sombra (la del concepto, #98694f: wood_light) en las cuencas, los
 # surcos y los nudillos; el ribete y las colas de la faja en el tostado del concepto (#c59b6e: wood_pale) y su sombra
@@ -63,7 +62,7 @@ C = dict(skin="lantern_paper", skin2="wood_light", skin3="wood_light", mouth="wo
          leg="tatami_edge", leg2="stone_moss",
          wrap="cloth_black", wrap2="stone_dark",
          sole="rope", sole2="thatch", strap="wood_pale",
-         leaf1="stone_moss", leaf1b="grass_dry", leaf1c="reed", leaf2="bamboo_dark", leaf3="tatami_edge", shell="tatami_edge",
+         leaf1="stone_moss", leaf1b="grass_dry", leaf1c="reed", leaf2="bamboo_dark", leaf3="tatami_edge", shell="bamboo_dark",
          leafu="bamboo_dark",
          cord="wood_dark", hole="wood_dark", node="wheat_dark",
          staff_node="bamboo_dry", staff_cord="leaf_dark", staff_grip="ink", staff_grip2="iron", staff_hole="wood_dark",
@@ -1337,8 +1336,10 @@ def build_cloak(kits):
     for c in range(cols):
         fi.append(k.bm.faces.new((so[rows_n][c], so[rows_n][c + 1], si[rows_n][c + 1], si[rows_n][c])))
         fi.append(k.bm.faces.new((so[0][c + 1], so[0][c], si[0][c], si[0][c + 1])))
+    # la cáscara y su cara de adentro en el verde de las hojas de abajo: con el gris-teja y el gi oscuro, cuando la capa
+    # se abre (colgado, los golpes, los saltos) lo que se veía era una lona plana oscura más grande que el cuerpo
     k._new([v for r in so + si for v in r], C["shell"], None, None)
-    k.tag(fi, C["gi3"])
+    k.tag(fi, C["leafu"])
 
     def leaf_at(phi, sb, ln, out_b, lift, nrm_sign, col, width=None, yaw=0.0, under=None, inner=False):
         D = drop_len(phi)

@@ -31,6 +31,9 @@ namespace Nindo
         public Transform Head { get; }
         public Transform StaffBottom { get; }
         public Transform StaffTop { get; }
+        /// <summary>Las rodillas (la cabeza de las canillas): de ahí cuelga cabeza abajo, y el código lo aploma alrededor de ellas.</summary>
+        public Transform ShinL { get; }
+        public Transform ShinR { get; }
 
         readonly Dictionary<string, BladeTrail> limbTrails = new Dictionary<string, BladeTrail>(2);
         BladeTrail limbOn;
@@ -49,6 +52,8 @@ namespace Nindo
                     case "Staff_Mouth": Mouth = t; StaffTop = t; break;
                     case "Staff": StaffBottom = t; break;
                     case "Head": Head = t; break;
+                    case "Shin_L": ShinL = t; break;
+                    case "Shin_R": ShinR = t; break;
                 }
             }
             BuildLimbTrails(model);

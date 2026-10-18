@@ -990,7 +990,7 @@ BAMBOO_SMOOTH = {"Chikuo_Skin": 0.14, "Chikuo_GlintChimesHi": 0.35, "Chikuo_Glin
 
 
 def bamboo_master_info():
-    """BambooMaster.fbx.json: clips, alto de bind y colores que escribe Tools/Blender/bosses/bamboo_master/build_bamboo_master.py."""
+    """BambooMaster.fbx.json: clips, alto de bind y colores que escribe Tools/Blender/bosses/chikuo_v2/build_chikuo.py."""
     j = BAMBOO_FBX + ".json"
     return json.load(open(j, encoding="utf-8")) if os.path.exists(BAMBOO_FBX) and os.path.exists(j) else None
 
@@ -999,8 +999,8 @@ def bamboo_master_assets(mats):
     """Materiales propios de Chikuō y el .meta de su FBX (clips cortados de la toma única 'Scene').
     Los slots Chikuo_Glint* (los cascabeles de los hombros y de la espalda, la flauta-bastón, las sandalias) nacen sin
     emisión: el jefe los enciende por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash, blanco = la caña
-    cargada). Los 'extra_materials' del sidecar (el señuelo de hojas) no están en el FBX: el jefe los pone en una copia de
-    la malla, así que solo se escribe su .mat. Reducción de claves con
+    cargada). Los 'extra_materials' del sidecar (si hay: materiales que no están en el FBX y el jefe pone en una copia de
+    la malla) solo escriben su .mat. Reducción de claves con
     errores diez veces más finos que los de Unity (0.05° / 0.05 %: en una pierna de 1 m es ~1 mm, los pies clavados y
     los golpes cortos no lo notan) y sin las curvas de escala constantes: con 106 clips de 88 huesos sin comprimir era
     ~3 veces Kokuyo.fbx en memoria. Sin 'Optimize Bones': las puntas de las cadenas (Acc_*_end) y las esferas AccCol_* no

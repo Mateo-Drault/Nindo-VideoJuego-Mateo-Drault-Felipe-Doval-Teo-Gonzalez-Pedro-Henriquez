@@ -21,6 +21,8 @@ namespace Nindo
         bool justLanded, hanging, leaving, revanchaPending;
         float lastSweep = -99f, lastDive = -99f, lastDrop = -99f, lastCatapult = -99f, lastTala = -99f;
         int tickles;
+        /// <summary>Fase 3: cuándo toca su próxima firma (catapulta, tala o la ráfaga de cuatro); -1 = sin agendar.</summary>
+        float nextSignatureAt = -1f;
 
         // ================================================================== el cerebro
         /// <summary>La pelea, mientras dure: en la fase 2 (o sin caña libre en la 3) pelea en el piso; si no, vuelve arriba
@@ -94,6 +96,19 @@ namespace Nindo
             if (firstActions < 3) { firstActions++; return firstActions == 3 ? PerchAct.Volley : PerchAct.Dart; }
             // 3. acampan debajo
             if (campFor >= BambooMasterMoves.CampTime && Time.time - lastSweep >= BambooMasterMoves.CampEvery) return PerchAct.Sweep;
+            // 3b. fase 3: su firma cada 9-12 s (la primera a los 5-7): la fase no es el bucle de la 1 más rápido, cambia de
+            // forma (la tala con una caña rajada, la catapulta de lejos, si no la ráfaga de cuatro desde arriba)
+            if (phaseIdx >= 2)
+            {
+                if (nextSignatureAt < 0f) nextSignatureAt = Time.time + Random.Range(BambooMasterMoves.SignatureFirst.x, BambooMasterMoves.SignatureFirst.y);
+                else if (Time.time >= nextSignatureAt)
+                {
+                    nextSignatureAt = Time.time + Random.Range(BambooMasterMoves.SignatureEvery.x, BambooMasterMoves.SignatureEvery.y);
+                    if (TalaTarget() != null) return PerchAct.Tala;
+                    if (d >= BambooMasterMoves.CatapultMinDist) return PerchAct.Catapult;
+                    return PerchAct.Volley;
+                }
+            }
             bool hit = dartHitPending;
             dartHitPending = false;
             // 4. Kaito al pie (y él sin cargar): le contesta
@@ -120,7 +135,7 @@ namespace Nindo
                   wW = Health01 <= BambooMasterMoves.WhistleFrom && d >= 5f ? 0.6f : 0f,
                   wHg = d <= 7f ? 0.6f : 0f, wLp = actionsOnStalk >= 1 ? 0.6f : 0f,
                   wDv = Time.time - lastDive >= 5f ? 0.4f : 0f, wSd = Time.time - lastDrop >= 5f ? 0.3f : 0f,
-                  wC = p3 && d >= 5f && Time.time - lastCatapult >= 8f ? 0.6f : 0f,
+                  wC = p3 && d >= BambooMasterMoves.CatapultMinDist && Time.time - lastCatapult >= BambooMasterMoves.CatapultEvery ? BambooMasterMoves.CatapultWeight : 0f,
                   wT = p3 && Time.time - lastTala >= 7f && TalaTarget() != null ? 0.9f : 0f;
             float sum = w1 + w2 + wV + wW + wHg + wLp + wDv + wSd + wC + wT;
             float x = Random.value * sum;
@@ -151,7 +166,7 @@ namespace Nindo
                     return DartAct(p3 ? ChikuoTimings.PerchVolley4 : ChikuoTimings.PerchVolley, extra);
                 }
                 case PerchAct.Whistle: return WhistleAct();
-                case PerchAct.Hang: return HangAct();
+                case PerchAct.Hang: return HangAct((TargetPos - perch.Base).Flat().magnitude <= BambooMasterMoves.ReactDist);
                 case PerchAct.Laugh: return LaughAct(false);
                 case PerchAct.MasterLaugh: return LaughAct(true);
                 case PerchAct.Sweep: return SweepAct(false);
@@ -203,9 +218,13 @@ namespace Nindo
         }
 
         // ------------------------------------------------------------------ colgado (la pose de la hoja original)
-        /// <summary>Se deja caer cabeza abajo colgado de las corvas y le sopla dos dardos de cerca; vuelve con un abdominal.
-        /// Cargada de punta a punta (HangDrop, HangDart2 y HangClimb hasta su Unload): cortada, cae de cabeza.</summary>
-        IEnumerator HangAct()
+        /// <summary>
+        /// Se deja caer cabeza abajo colgado de las corvas y le sopla dos dardos de cerca; vuelve con un abdominal. Cargada
+        /// hasta el Unload de HangClimb: cortada, cae de cabeza. Con Kaito ya al pie ('near') la carga recién prende 0.15 s
+        /// antes del primer dardo: si no, el corte llegaba antes de que existiera un dardo y el colgado era un latigazo
+        /// gratis; así es "su ataque es tu hueco": parar o esquivar el primero y cortar antes del segundo.
+        /// </summary>
+        IEnumerator HangAct(bool near)
         {
             vuln = Vuln.Tickle;
             hanging = true;
@@ -213,20 +232,30 @@ namespace Nindo
             var blow = ChikuoTimings.HangDart2;
             var up = ChikuoTimings.HangClimb;
             Play(drop, 0.08f);
-            float loaded = drop.Seconds + blow.Seconds + Mathf.Max(0f, up.Event("Unload")) * up.Seconds;
-            Load(perch, loaded);
+            float total = drop.Seconds + blow.Seconds + Mathf.Max(0f, up.Event("Unload")) * up.Seconds;
+            float loadAt = near ? Mathf.Max(0f, drop.Seconds + blow.EventAt("DartSpawn", 0) * blow.Seconds - BambooMasterMoves.HangNearLoadLead) : 0f;
+            float t = 0f;
+            bool loadedOn = false;
             perch.SetLoad(30f, FaceDirFrom(perch.Base));
             // los dos dardos por salir ya cuentan para el anillo de los pies (la ETA honesta)
             for (int i = 0; i < blow.EventCount("DartSpawn"); i++)
                 pending.Add(new PendingDart { at = Time.time + drop.Seconds + blow.EventAt("DartSpawn", i) * blow.Seconds });
-            yield return Until(1f);
+            while (true)
+            {
+                if (!loadedOn && t >= loadAt) { loadedOn = true; Load(perch, total - t); }
+                if (ClipDone) break;
+                yield return null;
+                if (!anim.Frozen) t += Time.deltaTime;
+            }
             Play(blow, 0f);
             Sfx("tell_chime_hi", "pearl_ping", Voice, 0.45f);
             int fired = 0, n = blow.EventCount("DartSpawn");
             while (!ClipDone)
             {
+                if (!loadedOn && t >= loadAt) { loadedOn = true; Load(perch, total - t); }
                 while (fired < n && clipT >= blow.EventAt("DartSpawn", fired) * blow.Seconds - 1e-4f) { FireDart(); fired++; }
                 yield return null;
+                if (!anim.Frozen) t += Time.deltaTime;
             }
             while (fired < n) { FireDart(); fired++; }
             Play(up, 0f);
@@ -376,7 +405,9 @@ namespace Nindo
             heldStrikeAt = contact;
             heldSlots = BambooMasterLook.DropSlots;
             Vector3 land = PickDropPoint();
-            while (clipT < leave * c.Seconds) { land = PickDropPoint(); yield return null; }
+            // la zona del golpe: el disco de su alcance alrededor de donde cae (el bot y el anillo la miran)
+            SetDiscArea(land, c.ReachM);
+            while (clipT < leave * c.Seconds) { land = PickDropPoint(); SetDiscArea(land, c.ReachM); yield return null; }
             perch?.Shake(-FaceDirFrom(perch.Base), 100f);
             Vector3 from = model.position;
             vuln = Vuln.None;
@@ -384,7 +415,7 @@ namespace Nindo
             float start = Time.time - clipT / Mathf.Max(0.01f, clipRate);
             while (clipT < landN * c.Seconds - 1e-4f)
             {
-                if (!picked && Time.time - start < BambooMasterMoves.StaffDropPick) land = PickDropPoint();
+                if (!picked && Time.time - start < BambooMasterMoves.StaffDropPick) { land = PickDropPoint(); SetDiscArea(land, c.ReachM); }
                 else picked = true;
                 float s = Mathf.InverseLerp(leave, landN, ClipNorm);
                 Carry(Arc(from, land, s, 0.8f), Quaternion.LookRotation(FaceDirFrom(Arc(from, land, s, 0f))));
@@ -440,6 +471,9 @@ namespace Nindo
             Sfx("tell_chime_lo", "step_wood", Voice, 0.6f);
             perchFaceLock = true;
             perchFaceDir = (dest.Base - perch.Base).Flat().normalized;
+            // fase 3: mira la caña de destino un instante antes de agacharse (con el agachado a x1.57 la caída del cielo no
+            // se podía leer a tiempo)
+            if (BambooMasterMoves.LeapLook[phaseIdx] > 0f) yield return Wait(BambooMasterMoves.LeapLook[phaseIdx]);
             var cr = ChikuoTimings.LeapCrouch;
             Play(cr, 0.08f, 0f, BambooMasterMoves.LeapCrouchRate[phaseIdx]);
             perch.SetLoad(12f, -perchFaceDir);
@@ -484,7 +518,7 @@ namespace Nindo
                 Quaternion travelRot = Quaternion.LookRotation(travel.sqrMagnitude > 1e-4f ? travel.normalized : transform.forward);
                 Quaternion rot = u < 0.5f ? Quaternion.Slerp(startRot, travelRot, u * 2f) : Quaternion.Slerp(travelRot, rd, (u - 0.5f) * 2f);
                 Carry(Arc(start, end, u, BambooMasterMoves.LeapArc), rot);
-                leapCatchable = catchable && T - t <= BambooMasterMoves.CatchWindow;
+                leapCatchable = catchable && T - t <= BambooMasterMoves.CatchWindow[phaseIdx];
                 yield return null;
             }
             leapCatchable = false;
@@ -542,7 +576,8 @@ namespace Nindo
             if (afterHole)
             {
                 vuln = Vuln.None;
-                Play(ChikuoTimings.GetUp, 0.1f);
+                // el kip-up rápido (0.25 s): la vuelta de un hueco no es una escena
+                Play(ChikuoTimings.GetUp, 0.1f, 0f, ChikuoTimings.GetUp.Seconds / BambooMasterMoves.GetUpTime);
                 yield return Until(1f);
                 if (revanchaPending && phaseIdx >= 2 && (TargetPos - transform.position).Flat().magnitude <= BambooMasterMoves.AfterLandStrikeDist)
                 {
@@ -551,12 +586,33 @@ namespace Nindo
                 }
                 revanchaPending = false;
                 if (phaseIdx == 1 || !HasFreeStalk()) yield break;
-                yield return VaultAct();
+                // cómo vuelve arriba varía (sin esto cada hueco terminaba en la misma garrocha invulnerable de 1.3 s, ~25
+                // veces por pelea): lejos de Kaito, un salto común (se lo puede atajar); cerca, la garrocha, el agachado
+                // cortable (el Tropiezo es chico) o dos bastonazos con la Contra y después trepa
+                float d = (TargetPos - transform.position).Flat().magnitude;
+                float r = Random.value;
+                if (d >= BambooMasterMoves.RecoverLeapDist || r >= BambooMasterMoves.RecoverVault && r < BambooMasterMoves.RecoverVault + BambooMasterMoves.RecoverCrouch)
+                {
+                    returnCutUsed = false;
+                    yield return CrouchLeapAct();
+                }
+                else if (r >= BambooMasterMoves.RecoverVault + BambooMasterMoves.RecoverCrouch && d <= BambooMasterMoves.RecoverTandaDist)
+                {
+                    yield return GroundTanda(BambooMasterMoves.RecoveryTanda(phaseIdx));
+                    returnCutUsed = true;
+                    if (body == Body.Ground && HasFreeStalk()) yield return ClimbOrCrouch();
+                }
+                else yield return VaultAct();
                 yield break;
             }
             if ((TargetPos - transform.position).Flat().magnitude <= BambooMasterMoves.AfterLandStrikeDist && Random.value < BambooMasterMoves.AfterLandStrikeChance)
                 yield return GroundStrike(BambooMasterMoves.Bastonazo(phaseIdx, false));
             if (phaseIdx == 1 || !HasFreeStalk() || body != Body.Ground) yield break;
+            yield return ClimbOrCrouch();
+        }
+
+        IEnumerator ClimbOrCrouch()
+        {
             var near = NearestClimbable();
             if (near != null) yield return ClimbAct(near);
             else yield return CrouchLeapAct();
@@ -569,6 +625,18 @@ namespace Nindo
             Face(TargetPos, 99f, 1f);
             clip = null;   // el golpe lo toca Enemy con su línea de tiempo
             if (!StartMove(a)) yield break;
+            while (State == EnemyState.Attack) yield return null;
+            vuln = Vuln.None;
+        }
+
+        /// <summary>Una tanda corta de piso (la vuelta de un hueco): la arma Enemy; el último golpe desviado abre la Contra.</summary>
+        IEnumerator GroundTanda(AttackPattern p)
+        {
+            vuln = Vuln.Armor;
+            Face(TargetPos, 99f, 1f);
+            clip = null;
+            pattern = p;
+            StartAttack(false);
             while (State == EnemyState.Attack) yield return null;
             vuln = Vuln.None;
         }
@@ -694,6 +762,9 @@ namespace Nindo
             Game.Audio?.Play("ability_wind", s.Base, 0.6f, 0.1f);
             BambooGrove.Splinters(s.Base + Vector3.up * ArenaStalk.CutHeight, -dir);
             Game.Camera?.Shake(0.35f);
+            // el corazón de la pelea pesa siempre (no solo la primera vez): un hit-stop de golpe fuerte y el gamepad
+            Game.Time?.HitStop(0.08f);
+            Game.Input?.Rumble(0.45f, 0.35f, 0.12f);
             s.Whip();
             look.Jangle(dir * 6f + Vector3.up * 2f);
             if (phaseIdx >= 2 && !s.IsMother)
@@ -833,13 +904,14 @@ namespace Nindo
             BambooGrove.Leaves(hit + Vector3.up * 0.8f, 1.6f);
             Game.Camera?.Shake(0.45f);
             Game.Input?.Rumble(0.5f, 0.4f, 0.15f);
+            Game.Time?.HitStop(0.1f);
             look.Jangle(-dir * 5f);
             if (Teach("stamp")) { Bark("estampado", true); }
             yield return Until(1f);
-            // se desliza por la caña hasta sentarse al pie (el sidecar: la raíz llega al piso en el cuadro 13)
+            // se desliza por la caña hasta sentarse al pie (el 'land' del sidecar: el cuadro en que la raíz llega al piso)
             var sd = ChikuoTimings.SlideDown;
             Play(sd, 0f);
-            float floorAt = 13f / sd.Frames;
+            float floorAt = sd.LandN > 0f ? sd.LandN : 1f;
             Vector3 bottom = Floor(hit);
             while (clipT < floorAt * sd.Seconds)
             {
@@ -858,8 +930,8 @@ namespace Nindo
             yield return Brain();
         }
 
-        /// <summary>La caída del cielo: MissGrab desde donde iba a agarrarse, de espaldas al pie de la caña (el sidecar:
-        /// el piso en el cuadro 14), y queda pataleando.</summary>
+        /// <summary>La caída del cielo: MissGrab desde donde iba a agarrarse, de espaldas al pie de la caña (el piso en su
+        /// 'land' del sidecar), y queda pataleando.</summary>
         IEnumerator SkyFallRoutine(BambooStalk s)
         {
             vuln = Vuln.None;
@@ -869,7 +941,7 @@ namespace Nindo
             Vector3 bottom = Floor(s.Base + (away.sqrMagnitude > 1e-4f ? away.normalized : Vector3.back) * 0.8f);
             var c = ChikuoTimings.MissGrab;
             Play(c, 0.03f);
-            float floorAt = Mathf.Min(1f, 14f / c.Frames);
+            float floorAt = c.LandN > 0f ? c.LandN : 1f;
             while (clipT < floorAt * c.Seconds - 1e-4f)
             {
                 float u = Mathf.Clamp01(ClipNorm / floorAt);
@@ -899,7 +971,7 @@ namespace Nindo
             Vector3 bottom = Floor(s != null ? s.Base - (fwd.sqrMagnitude > 1e-4f ? fwd.normalized : Vector3.forward) * 0.35f : transform.position);
             var c = ChikuoTimings.Slip;
             Play(c, 0.03f);
-            float floorAt = Mathf.Min(1f, 10f / c.Frames);
+            float floorAt = c.LandN > 0f ? c.LandN : 1f;
             while (clipT < floorAt * c.Seconds - 1e-4f)
             {
                 float u = Mathf.Clamp01(ClipNorm / floorAt);
@@ -960,7 +1032,9 @@ namespace Nindo
             if (holeLeft <= 0) return HitResult.Ignored;
             holeLeft--;
             var r = ApplyDamage(info, hole.mul);
-            if (r != HitResult.Hit) return r;
+            // el corte que cruza el piso de la fase ya arrancó la escena (StartTransition): el sacudón del hueco le pisaba
+            // PhaseBow/PhaseForest y las notas, la inclinación y el salto a la Madre pasaban en 0.3 s
+            if (r != HitResult.Hit || phaseChanging || !IsAlive) return r;
             Sfx("chime_jangle", null, Voice, 0.6f);
             var hc = holeHit != null ? ChikuoTimings.Get(holeHit) : null;
             if (hc != null && body == Body.Ground) Play(hc, 0.03f);

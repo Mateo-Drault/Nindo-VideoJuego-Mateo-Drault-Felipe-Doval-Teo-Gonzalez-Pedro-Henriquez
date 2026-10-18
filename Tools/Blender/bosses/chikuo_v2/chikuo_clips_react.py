@@ -105,13 +105,14 @@ def flung_land():
 
 
 def dazed_sit():
-    """Sentado y mareado: la cabeza da vueltas despacio (las hojas que le giran encima son del código), el tronco la sigue
-    tarde, parpadea con los ojos entrecerrados. Loop de 30."""
-    hd = [(8, 0, 6), (2, 8, 10), (-6, 2, 0), (2, -8, -10)]
+    """Sentado y mareado: la cabeza da una vuelta grande y floja (20°; las hojas que le giran encima son del código), el
+    tronco la sigue tarde hamacándose, cabecea como dormido y se despierta de un respingo; parpadea con los ojos
+    entrecerrados. Loop de 30 (con 10° y sin el cabeceo se veía como una foto: es el hueco donde más se lo mira)."""
+    hd = [(8, 0, 6), (14, 16, 20), (-8, 10, 6), (24, 0, 0), (-10, 0, -4), (4, -16, -20)]
     keys = [K(0, DAZED_SIT, dict(head=hd[0], neck=(6, 0, 2), spine2=(10, 0, 2)))]
-    for i, f in enumerate((8, 15, 23)):
-        h = hd[i + 1]
-        keys.append(K(f, DAZED_SIT, dict(head=h, neck=(4 + h[0] * 0.3, 0, h[2] * 0.4), spine2=(10, 0, h[2] * 0.4)), ease="sine"))
+    for f, h, ease in ((6, hd[1], "sine"), (12, hd[2], "sine"), (18, hd[3], "in"), (20, hd[4], "snap"), (25, hd[5], "sine")):
+        keys.append(K(f, DAZED_SIT, dict(head=h, neck=(4 + h[0] * 0.3, 0, h[2] * 0.4), spine2=(10 + h[0] * 0.15, 0, h[2] * 0.4)),
+                      ease=ease))
     keys.append(K(30, DAZED_SIT, dict(head=hd[0], neck=(6, 0, 2), spine2=(10, 0, 2)), ease="sine"))
     blink = [K(0, wink_r=0.0, wink_l=0.0), K(12, wink_r=0.0, wink_l=0.0), K(15, wink_r=1.0, wink_l=1.0),
              K(19, wink_r=0.0, wink_l=0.0), K(30, wink_r=0.0, wink_l=0.0)]
@@ -234,7 +235,7 @@ def miss_grab():
             K(14, DAZED_LIE, ease="inout")]
     return CClip("MissGrab", 14, keys, lag={"head": 1.0},
                  spring_vel=lambda f: (0.0, -0.05 * min(f, 5), 0.10 * max(0, f - 5)),
-                 timing=dict(space="air", chain_from="AIR", chain_to="DAZED_LIE", hang_scale=0.5),
+                 timing=dict(space="air", chain_from="AIR", chain_to="DAZED_LIE", land=14, hang_scale=0.5),
                  notes="la caña se le escapa de las manos y cae de espaldas (el código lo baja hasta el piso en f14); sigue "
                        "DazedLie")
 

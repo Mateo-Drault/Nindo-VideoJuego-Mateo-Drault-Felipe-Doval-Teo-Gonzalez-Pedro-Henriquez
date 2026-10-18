@@ -22,6 +22,9 @@ namespace Nindo
         /// <summary>Radio del disco rojo (barrida, picadas: 0 = sin disco), dónde cae la marca del salto y el alcance
         /// del golpe medidos en metros.</summary>
         public readonly float RingM, MarkerM, ReachM;
+        /// <summary>Cuándo la raíz toca el piso en los clips de caída que baja el código (Slip, SlideDown, MissGrab;
+        /// normalizado, -1 = no tiene).</summary>
+        public readonly float LandN;
         /// <summary>Metros por segundo a los que la locomoción no patina (0 = no es locomoción).</summary>
         public readonly float GroundSpeed;
         /// <summary>Slots de CharacterGlint que se encienden con el aviso.</summary>
@@ -42,14 +45,14 @@ namespace Nindo
             float activeStart, float activeEnd, float tellStart, float tellEnd, float loadStart, float loadEnd, float airStart,
             float airEnd, float openStart, float openEnd, float ringM, float markerM, float reachM, float groundSpeed,
             string[] glow, float[] travel, string chainFrom, string chainTo, float fadeFrom, float fadeTo, Vector3 rootOffset,
-            string[] eventNames, float[] eventTimes)
+            string[] eventNames, float[] eventTimes, float landN = -1f)
         {
             State = state; Frames = frames; Seconds = seconds; Loop = loop; Space = space; Kind = kind; Apex = apex;
             Contact = contact; ActiveStart = activeStart; ActiveEnd = activeEnd; TellStart = tellStart; TellEnd = tellEnd;
             LoadStart = loadStart; LoadEnd = loadEnd; AirStart = airStart; AirEnd = airEnd; OpenStart = openStart;
             OpenEnd = openEnd; RingM = ringM; MarkerM = markerM; ReachM = reachM; GroundSpeed = groundSpeed; Glow = glow;
             Travel = travel; ChainFrom = chainFrom; ChainTo = chainTo; FadeFrom = fadeFrom; FadeTo = fadeTo;
-            RootOffset = rootOffset; this.eventNames = eventNames; this.eventTimes = eventTimes;
+            RootOffset = rootOffset; this.eventNames = eventNames; this.eventTimes = eventTimes; LandN = landN;
         }
 
         /// <summary>Tiempo normalizado del primer evento con ese nombre (-1 si el clip no lo tiene).</summary>
@@ -189,11 +192,6 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
             "", "PERCH", 0.1f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new[] { "GrabStalk", "Perch" }, new[] { 0.1667f, 1.0f });
-        public static readonly ChikuoClip DecoySpin = new ChikuoClip("DecoySpin", 18, 0.6f, false, 1, 0,
-            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
-            0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            null,
-            "PERCH", "PERCH", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
         public static readonly ChikuoClip Dive = new ChikuoClip("Dive", 29, 0.9667f, false, 2, 2,
             0.2759f, 0.9655f, 0.9655f, 0.9655f, 0.069f, 0.3448f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             1.6f, 1.6f, 0.0f, 0.0f, new[] { "Chikuo_GlintFootR", "Chikuo_GlintChimesLo" },
@@ -258,12 +256,12 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "SPLAT", "DAZED_SIT", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
+            "SPLAT", "DAZED_SIT", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0], 0.7222f);
         public static readonly ChikuoClip MissGrab = new ChikuoClip("MissGrab", 14, 0.4667f, false, 2, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "AIR", "DAZED_LIE", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
+            "AIR", "DAZED_LIE", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0], 1.0f);
         public static readonly ChikuoClip DazedLie = new ChikuoClip("DazedLie", 30, 1.0f, true, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -278,7 +276,7 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "", "DAZED_SIT", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
+            "", "DAZED_SIT", 0.0f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0], 0.6667f);
         public static readonly ChikuoClip Stumble = new ChikuoClip("Stumble", 30, 1.0f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -489,7 +487,7 @@ namespace Nindo
             if (all == null)
             {
                 all = new Dictionary<string, ChikuoClip>();
-                foreach (var c in new[] { PerchIdle, PerchDart, PerchDart2, PerchVolley, PerchVolley4, PerchWhistle, TalaShot, HangDrop, HangDart2, HangClimb, PerchLaugh, PerchWobble, StalkSweep, CatapultDraw, CatapultKick, LeapCrouch, LeapAir, LeapGrab, Climb, DecoySpin, Dive, DiveLand, FeetStuck, StaffDrop, StaffDropRecover, Vault, JumpCrouch, FlungAir, FlungLand, DazedSit, DazedSitHit, Splat, SlideDown, MissGrab, DazedLie, DazedLieHit, Slip, Stumble, PoleFall, GetUp, Detuned, Tuned, StaffStuck, Hit, HitHeavy, Parried, ParriedPerfect, Idle, Walk, Run, StrafeL, StrafeR, WalkBack, BackFlip, HopBack, Thrust, StaffSpin2, CraneKick, NoteSmash, LowSweep, GroundDart, PolePlant, PoleClimb, PoleBalance, PoleDive, FluteRaise, FluteNote, AnswerBlow, AnswerStamp, GroundLaugh, Intro, PhaseBow, PhaseForest, Defeat, DefeatIdle })
+                foreach (var c in new[] { PerchIdle, PerchDart, PerchDart2, PerchVolley, PerchVolley4, PerchWhistle, TalaShot, HangDrop, HangDart2, HangClimb, PerchLaugh, PerchWobble, StalkSweep, CatapultDraw, CatapultKick, LeapCrouch, LeapAir, LeapGrab, Climb, Dive, DiveLand, FeetStuck, StaffDrop, StaffDropRecover, Vault, JumpCrouch, FlungAir, FlungLand, DazedSit, DazedSitHit, Splat, SlideDown, MissGrab, DazedLie, DazedLieHit, Slip, Stumble, PoleFall, GetUp, Detuned, Tuned, StaffStuck, Hit, HitHeavy, Parried, ParriedPerfect, Idle, Walk, Run, StrafeL, StrafeR, WalkBack, BackFlip, HopBack, Thrust, StaffSpin2, CraneKick, NoteSmash, LowSweep, GroundDart, PolePlant, PoleClimb, PoleBalance, PoleDive, FluteRaise, FluteNote, AnswerBlow, AnswerStamp, GroundLaugh, Intro, PhaseBow, PhaseForest, Defeat, DefeatIdle })
                     all[c.State] = c;
             }
             if (state == null) return null;

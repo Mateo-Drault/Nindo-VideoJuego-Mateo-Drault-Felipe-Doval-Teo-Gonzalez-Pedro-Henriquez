@@ -18,7 +18,7 @@ namespace Nindo
         public const float TransitionHeal = 30f, TransitionSpirit = 30f;
         /// <summary>Respiro posado entre acciones por fase (s): nunca quieto, se hamaca con la caña. En la fase 2 es la
         /// pausa entre tandas del piso.</summary>
-        public static readonly Vector2[] Breath = { new Vector2(0.25f, 0.45f), new Vector2(0.35f, 0.6f), new Vector2(0.12f, 0.25f) };
+        public static readonly Vector2[] Breath = { new Vector2(0.25f, 0.45f), new Vector2(0.35f, 0.6f), new Vector2(0.10f, 0.20f) };
         /// <summary>Kaito a esta distancia de la base y él sin cargar: le contesta (7.1, regla 4).</summary>
         public const float ReactDist = 4.5f;
         /// <summary>Plantado al pie de la caña tanto tiempo: barrido de caña (cada CampEvery s como mucho).</summary>
@@ -26,7 +26,13 @@ namespace Nindo
         /// <summary>Acciones por caña antes de saltar sí o sí (1 en la Última Canción).</summary>
         public const int MaxOnStalk = 2;
         /// <summary>La Última Canción (fase 3): salta después de cada acción.</summary>
-        public const float LastSong = 0.12f;
+        public const float LastSong = 0.20f;
+        /// <summary>Fase 3: la firma (tala, catapulta o la ráfaga de cuatro) a los SignatureFirst s y después cada SignatureEvery.</summary>
+        public static readonly Vector2 SignatureFirst = new Vector2(5f, 7f), SignatureEvery = new Vector2(9f, 12f);
+        /// <summary>La catapulta por pesos (fase 3): Kaito a esta distancia o más, cada tanto como mucho, con este peso.</summary>
+        public const float CatapultMinDist = 4f, CatapultEvery = 6f, CatapultWeight = 1.0f;
+        /// <summary>Colgado con Kaito al pie: la carga prende recién esto antes del primer dardo.</summary>
+        public const float HangNearLoadLead = 0.35f;
         /// <summary>El Silbador sale recién desde este tramo de vida (la fase 1 enseña primero el dardo y la ráfaga).</summary>
         public const float WhistleFrom = 0.85f;
 
@@ -50,15 +56,18 @@ namespace Nindo
         public static readonly Vector2[] LeapDest = { new Vector2(4.5f, 8f), new Vector2(4.5f, 8f), new Vector2(4f, 7f) };
         /// <summary>Nunca se posa más cerca de Kaito que esto; el cono del sur de Kaito (donde su cuerpo posado lo tapa).</summary>
         public const float PerchMinDist = 2.5f, SouthConeDeg = 30f, SouthConeNear = 2.5f, SouthConeFar = 6.5f;
-        /// <summary>Caída del cielo: cortar la caña de destino en los últimos CatchWindow s del vuelo.</summary>
-        public const float CatchWindow = 0.45f;
+        /// <summary>Caída del cielo: cortar la caña de destino en los últimos CatchWindow s del vuelo (por fase: en la 3 los
+        /// saltos son más cortos y rápidos, y con 0.45 no se llegaba de reacción).</summary>
+        public static readonly float[] CatchWindow = { 0.45f, 0.45f, 0.60f };
+        /// <summary>Lo que mira la caña de destino antes de agacharse (fase 3: el agachado va a x1.57).</summary>
+        public static readonly float[] LeapLook = { 0f, 0f, 0.25f };
         /// <summary>Fase 3: al caer de un salto, la chance de encadenar otro (ping-pong).</summary>
         public const float PingPong = 0.30f;
         /// <summary>El bot (y la pista bamboo_deny): un salto a una caña a esta distancia de Kaito o menos se puede atajar.</summary>
         public const float CatchHint = 5f, BotCatchDist = 7f;
 
         // ---- el latigazo y los huecos (sección 6)
-        public const float StampRange = 6f, StampAngle = 20f, RevolconM = 3.2f, PoleFlingM = 2f;
+        public const float StampRange = 6f, StampAngle = 26f, RevolconM = 3.2f, PoleFlingM = 2f;
         /// <summary>El revolcón nunca deja al viejo a más de esto del centro (adentro de la barrera de 15 m).</summary>
         public const float ArenaKeep = 13f;
         /// <summary>A qué altura de la otra caña se estrella el estampado.</summary>
@@ -73,7 +82,10 @@ namespace Nindo
             public Hole(float fly, float open, int cap, float mul, float fall) { this.fly = fly; this.open = open; this.cap = cap; this.mul = mul; this.fall = fall; }
         }
 
-        public static Hole Revolcon(int phase) => phase >= 2 ? new Hole(0.55f, 1.4f, 3, 1f, 12f) : new Hole(0.55f, 1.6f, 3, 1f, 12f);
+        public static Hole Revolcon(int phase) => phase >= 2 ? new Hole(0.55f, RevolconOpen[2], RevolconCap, 1f, 12f) : new Hole(0.55f, RevolconOpen[0], RevolconCap, 1f, 12f);
+        /// <summary>El revolcón, el resultado más común del latigazo: abierto y tope de cortes (la perilla de la duración).</summary>
+        public static readonly float[] RevolconOpen = { 2.2f, 2.2f, 2.0f };
+        public const int RevolconCap = 5;
         public static Hole Estampado(int phase) => phase >= 2 ? new Hole(1.0f, 2.0f, 3, 1.2f, 24f) : new Hole(1.0f, 2.2f, 4, 1.2f, 24f);
         public static readonly Hole Caida = new Hole(0.45f, 3.0f, 5, 1.25f, 36f);
         public static readonly Hole Resbalon = new Hole(0.30f, 1.0f, 2, 1f, 6f);
@@ -93,8 +105,8 @@ namespace Nindo
         // ---- el piso (fase 2 y la coda de la 3)
         /// <summary>El corte en neutral le entra a x0.6 y se va de una voltereta; en la carga de su golpe, x0.35 y el golpe sigue.</summary>
         public const float NeutralMul = 0.6f, ArmorMul = 0.35f;
-        /// <summary>Después de la voltereta arranca una tanda a este tiempo.</summary>
-        public const float AfterFlip = 0.25f;
+        /// <summary>Después de la voltereta arranca una tanda a este tiempo; una voltereta cada FlipEvery s como mucho.</summary>
+        public const float AfterFlip = 0.25f, FlipEvery = 1.5f;
         public static readonly Vector2 PoleFirst = new Vector2(4f, 6f), PoleEvery = new Vector2(8f, 11f);
         public static readonly Vector2 QaFirst = new Vector2(9f, 12f), QaEvery = new Vector2(18f, 24f);
         /// <summary>Pregunta y Respuesta: entre notas, de la última de la pregunta a la primera de la respuesta, radio del brote
@@ -104,12 +116,21 @@ namespace Nindo
         public const float QaFourFrom = 0.52f;
         /// <summary>El Soplo: con Kaito más lejos que esto, un dardo desde el piso cada tanto.</summary>
         public const float SoploDist = 4.5f, SoploEvery = 2.5f;
-        /// <summary>La Grulla en el Bastón: el salto atrás antes de clavarlo y lo que tarda la picada desde que sale.</summary>
-        public const float PoleHop = 4f;
+        /// <summary>La Grulla en el Bastón: el salto atrás antes de clavarlo; cargada de PoleLoadFrom a PoleLeaveAt s desde
+        /// que clava, y ahí sale en picada.</summary>
+        public const float PoleHop = 4f, PoleLoadFrom = 0.45f, PoleLeaveAt = 1.40f;
+        /// <summary>La Tala: el carril queda fijo y la caña pega a estos s desde que arranca.</summary>
+        public const float TalaFix = 0.65f, TalaImpact = 1.10f;
 
         // ---- vuelta arriba
         /// <summary>Trepa si cayó a esta distancia de una caña; si no, se agacha y salta.</summary>
         public const float ClimbReach = 1.5f;
+        /// <summary>El kip-up de después de un hueco (GetUp a esta duración; el clip es de 0.40 s).</summary>
+        public const float GetUpTime = 0.25f;
+        /// <summary>Cómo vuelve arriba después de un hueco: con Kaito a RecoverLeapDist o más, un salto común; si no, la
+        /// garrocha (RecoverVault), el agachado cortable (RecoverCrouch) o, con Kaito a RecoverTandaDist o menos, dos
+        /// bastonazos y trepa (el resto).</summary>
+        public const float RecoverLeapDist = 6f, RecoverVault = 0.45f, RecoverCrouch = 0.30f, RecoverTandaDist = 4f;
         /// <summary>Garrocha después de un hueco: a una caña a esta distancia de Kaito.</summary>
         public static readonly Vector2 VaultDest = new Vector2(4.5f, 8f);
         /// <summary>Bastonazo de la vuelta: la mitad de las veces con Kaito a 3 m o menos; la Revancha de la fase 3 igual.</summary>
@@ -120,7 +141,7 @@ namespace Nindo
         public const float StaffDropPick = 0.40f, StaffDropNear = 1.6f;
 
         /// <summary>Todo lo que pega a Kaito se multiplica por esto (la perilla de las muertes: 0.9 o 1.1, sección 12.3).</summary>
-        public const float DamageScale = 1f;
+        public const float DamageScale = 0.9f;
 
         /// <summary>Daño a Kaito (de 100) por fase (0..2). Pica como un mosquito: lo que exige es la densidad.</summary>
         public static float Dmg(Move m, int phase)
@@ -223,6 +244,14 @@ namespace Nindo
                 P("Golpe de Nota", 0.6f, 0f, ChikuoTimings.NoteSmash.ReachM + 0.3f, 0f, note),
                 P("Soplo", 1.2f, SoploDist, 99f, SoploEvery, soplo),
             };
+        }
+
+        /// <summary>Los dos bastonazos de la vuelta de un hueco: el segundo, desviado, abre la Contra.</summary>
+        public static AttackPattern RecoveryTanda(int phase)
+        {
+            var T = ChikuoTimings.Thrust;
+            float strike = Dmg(Move.Strike, phase);
+            return P("Vuelta con Bastón", 1f, 0f, 99f, 0f, Ground("Estocada", T, AttackKind.Heavy, 0.50f, strike, Strike, true), Ground("Estocada", T, AttackKind.Heavy, 0.42f, strike, Strike, false));
         }
 
         /// <summary>El bastonazo dorado (después de aterrizar con Kaito cerca, y la Revancha de la fase 3: pararla no lo abre).</summary>

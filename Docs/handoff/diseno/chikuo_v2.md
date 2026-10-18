@@ -1269,3 +1269,24 @@ de la lista de recortes; la simulación ya no los tiene). Diferencias con este d
 * **Balance**: `chikuo_v2_check.py` toma los tiempos del sidecar (lo que toca el código). 400 peleas por nivel con F 1.3:
   el bueno 4.9 min sin morir, el promedio 7.4 min con 1.26 muertes (fases 112 / 46 / 132 s; un latigazo cada 8.4 / 15 /
   9.7 s). Con el 1.42 del Chikuō viejo: 5.3 y 8.9 min con 1.81. La regla para calibrar de 12.3 sigue valiendo.
+
+### 23.1 Después de la revisión de C4 (cuatro revisores; detalle en `Docs/handoff/reportes/c4_reports.md`)
+
+* **Tres Ermitaños queda recortado del todo**: se borraron el clip `DecoySpin`, `Chikuo_Decoy.mat` y los
+  `extra_materials` del sidecar (un especial que no está no deja assets en el build). Para darle forma a la fase 3 sin él:
+  **la firma** cada 9-12 s (la primera a los 5-7 s): la tala si hay una caña rajada, la catapulta con Kaito a 4 m o más,
+  si no la ráfaga de cuatro. La catapulta por pesos pasa a 1.0, cada 6 s, desde 4 m. La Última Canción arranca al 20 %.
+* **La vuelta de un hueco varía** (antes siempre la garrocha invulnerable de 1.3 s): el kip-up a 0.25 s, y con Kaito a
+  6 m o más un salto común (se le puede cortar el agachado y atajar el salto); si no, 45 % la garrocha, 30 % el agachado
+  cortable, y con Kaito a 4 m o menos el resto son dos bastonazos (el segundo desviado abre la Contra) y trepa sin carga.
+  El estampado se abre a ±26° (antes 20°).
+* **Colgado con Kaito al pie**: la carga prende 0.35 s antes del primer dardo (antes desde el principio: un latigazo gratis
+  antes de que existiera un dardo). Lejos (la regla 8), cargado de punta a punta como antes.
+* **La caída del cielo** tiene 0.60 s de ventana en la fase 3 (0.45 en la 1) y el viejo mira la caña de destino 0.25 s
+  antes de agacharse: los saltos de 5-9 m se atajan de reacción con el dash desde 4.5-8 m (`--fair`).
+* **El Paso del Ermitaño**: una voltereta cada 1.5 s como mucho (dash-corte-voltereta lo trababa); dentro de esa ventana
+  aguanta el corte (x0.6) y contesta con una tanda ya. La voltereta es invulnerable entera.
+* **El revolcón** queda abierto 2.2 s con tope de 5 cortes (fase 3: 2.0 s). El daño a Kaito va x0.9.
+* **Balance** (400 peleas, seed 7): con el 1.41 del Chikuō viejo, el bueno 4.9 min (p10 4.3, p90 5.5) sin morir y el
+  promedio 7.3 min con 1.20 muertes (el experto 4.5 min); con F 1.3, 4.6 y 6.7 min con 0.94. Sigue siendo más largo que
+  lo que se espera de Kokuyō (~4.4 min para el bueno, `calibration.py`): el lead decide si el objetivo de 4.5-5 min manda.

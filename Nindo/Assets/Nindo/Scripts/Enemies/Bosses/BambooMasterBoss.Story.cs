@@ -183,7 +183,7 @@ namespace Nindo
             yield return Until(leave);
             phaseIdx = 2;
             config.patterns = BambooMasterMoves.GroundPatterns(2);
-            nextPoleAt = nextQaAt = -1f;
+            nextPoleAt = nextQaAt = nextSignatureAt = -1f;
             subtitle = PhaseSubtitle(2);
             Game.UI?.BossRetitled(this);
             RewardKaito();
@@ -378,7 +378,7 @@ namespace Nindo
                 case "dos": if (up) r = DartAct(ChikuoTimings.PerchDart2, 0f); break;
                 case "notas": if (up) r = DartAct(phaseIdx >= 2 ? ChikuoTimings.PerchVolley4 : ChikuoTimings.PerchVolley, 0f); break;
                 case "silbador": if (up) r = WhistleAct(); break;
-                case "colgado": if (up) r = HangAct(); break;
+                case "colgado": if (up) r = HangAct((TargetPos - perch.Base).Flat().magnitude <= BambooMasterMoves.ReactDist); break;
                 case "risa": if (up) r = LaughAct(false); break;
                 case "picada": if (up) r = DiveAct(); break;
                 case "baston": if (up) r = StaffDropAct(); break;
@@ -387,7 +387,17 @@ namespace Nindo
                 case "tala": if (up && TalaTarget() != null) r = TalaAct(); break;
                 case "pertiga": if (body == Body.Ground) r = PoleCraneAct(); break;
                 case "pregunta": if (body == Body.Ground) r = QuestionAnswer(); break;
-                case "soplo": if (body == Body.Ground) { EnterGroundAI(0f); return true; } break;
+                case "soplo":
+                {
+                    // el patrón del piso a la fuerza (Enemy lo elegía por peso y distancia: con Kaito cerca nunca salía); solo
+                    // en la pelea del piso, que es la que lo vuelve a tomar al terminar
+                    var soplo = groundAI && State != EnemyState.Attack ? System.Array.Find(config.patterns, x => x.name == "Soplo") : null;
+                    if (soplo == null) return false;
+                    EnterGroundAI(0f);
+                    pattern = soplo;
+                    StartAttack(false);
+                    return State == EnemyState.Attack;
+                }
             }
             if (r == null) return false;
             if (body == Body.Ground) LeaveGroundAI();

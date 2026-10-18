@@ -19,6 +19,7 @@ Claves (las usa el código con Game.Audio.Play):
   flute_phrase_intro    la frase de la presentación (colgado de la caña); flute_phrase_forest, la del cambio 2
   flute_squeak          la flauta que chilla (Desafinado)
   dart_blow, dart_whistle, dart_thunk    el soplido, el silbador (el pesado, rojo) y el dardo que se clava en el piso
+  dart_snap             el dardo desviado que se parte en el aire (seco y agudo: "thok" queda solo para las cosquillas)
   bamboo_thok           corte a la caña sin campanas (hueco, opaco)
   bamboo_whip           el latigazo: el chasquido y el "zuing" de la caña tensa que se suelta
   bamboo_slam           el estampado contra la otra caña (grave, con las hojas)
@@ -176,6 +177,14 @@ def dart_thunk(i, k=1.0):
     return mix((x, 0.0, 1.0), (quiver, 0.004, 0.25), (dirt, 0.0, 0.4))
 
 
+def dart_snap(i, k=1.0):
+    # el dardo desviado: una astilla fina que se parte (chasquido agudo y el "tic" del tubito), nada del culmo grueso
+    snap = filt(noise(0.025, 3050 + i), 2600, 12000) * env_exp(0.025, 0.003, attack=0.0004)
+    tick = partials(2350 + 180 * i, [1.0, 2.4, 3.9], [1.0, 0.4, 0.15], [0.035, 0.02, 0.012], 0.08, seed=3060 + i)
+    fly = whoosh(0.12, 3000, 7500, peak_t=0.15, q=1.6, seed=3070 + i)
+    return reverb(mix((snap, 0.0, 1.0), (tick, 0.002, 0.45), (fly, 0.005, 0.25)), 0.1, 0.6, 0.2)
+
+
 # ---------------------------------------------------------------- las cañas
 def bamboo_thok(i, k=1.0):
     # corte a la caña sin campanas: hueco y opaco, el culmo grueso resuena bajo (no es un aviso: es "no así")
@@ -265,17 +274,20 @@ SOUNDS = {
     "flute_phrase_forest": (flute_phrase([0, 1, 2, 3, 4, 3, 4], [0.24, 0.24, 0.24, 0.24, 0.36, 0.2, 0.9], 2680), 1, False),
     "flute_squeak": (flute_squeak, 1, False),
     "dart_blow": (dart_blow, 2, False), "dart_whistle": (dart_whistle, 1, False), "dart_thunk": (dart_thunk, 2, False),
+    "dart_snap": (dart_snap, 2, False),
     "bamboo_thok": (bamboo_thok, 2, False), "bamboo_whip": (bamboo_whip, 2, False), "bamboo_slam": (bamboo_slam, 1, False),
     "bamboo_crack": (bamboo_crack, 1, False), "bamboo_break": (bamboo_break, 1, False), "bamboo_fall": (bamboo_fall, 1, False),
     "stalk_bow": (stalk_bow, 1, False), "stalk_whoosh": (stalk_whoosh, 1, False), "stalk_grow": (stalk_grow, 1, False),
 }
 # los avisos (cascabeles) arriba, como el resto de los avisos; la confirmación y el ambiente de las cañas por debajo
-PEAK_DB = {"palm_deflect": -5.0, "tell_chime_shimmer": -4.0, "chime_jangle": -6.0, "dart_thunk": -8.0, "bamboo_thok": -4.0,
+PEAK_DB = {"palm_deflect": -5.0, "dart_snap": -6.0, "tell_chime_shimmer": -4.0, "chime_jangle": -6.0, "dart_thunk": -8.0, "bamboo_thok": -4.0,
            "stalk_bow": -4.0, "stalk_grow": -3.0, "flute_phrase_intro": -3.0, "flute_phrase_forest": -3.0}
 
 
-def main():
+def main(only=None):
     for key, (fn, n, p3) in SOUNDS.items():
+        if only and key not in only:
+            continue
         for name, k in [(key, 1.0)] + ([(key + "_p3", SEMITONE)] if p3 else []):
             for i in range(n):
                 p = os.path.join(OUT, f"{name}_{i + 1}.wav" if n > 1 or key == "palm_deflect" else f"{name}.wav")
@@ -286,4 +298,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # python Tools/Audio/sfx_chikuo.py [clave ...]: solo esas (para no reescribir los .wav que no cambiaron)
+    main(set(sys.argv[1:]))

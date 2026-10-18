@@ -71,6 +71,9 @@ def main():
     w("        /// <summary>Radio del disco rojo (barrida, picadas: 0 = sin disco), dónde cae la marca del salto y el alcance")
     w("        /// del golpe medidos en metros.</summary>")
     w("        public readonly float RingM, MarkerM, ReachM;")
+    w("        /// <summary>Cuándo la raíz toca el piso en los clips de caída que baja el código (Slip, SlideDown, MissGrab;")
+    w("        /// normalizado, -1 = no tiene).</summary>")
+    w("        public readonly float LandN;")
     w("        /// <summary>Metros por segundo a los que la locomoción no patina (0 = no es locomoción).</summary>")
     w("        public readonly float GroundSpeed;")
     w("        /// <summary>Slots de CharacterGlint que se encienden con el aviso.</summary>")
@@ -91,14 +94,14 @@ def main():
     w("            float activeStart, float activeEnd, float tellStart, float tellEnd, float loadStart, float loadEnd, float airStart,")
     w("            float airEnd, float openStart, float openEnd, float ringM, float markerM, float reachM, float groundSpeed,")
     w("            string[] glow, float[] travel, string chainFrom, string chainTo, float fadeFrom, float fadeTo, Vector3 rootOffset,")
-    w("            string[] eventNames, float[] eventTimes)")
+    w("            string[] eventNames, float[] eventTimes, float landN = -1f)")
     w("        {")
     w("            State = state; Frames = frames; Seconds = seconds; Loop = loop; Space = space; Kind = kind; Apex = apex;")
     w("            Contact = contact; ActiveStart = activeStart; ActiveEnd = activeEnd; TellStart = tellStart; TellEnd = tellEnd;")
     w("            LoadStart = loadStart; LoadEnd = loadEnd; AirStart = airStart; AirEnd = airEnd; OpenStart = openStart;")
     w("            OpenEnd = openEnd; RingM = ringM; MarkerM = markerM; ReachM = reachM; GroundSpeed = groundSpeed; Glow = glow;")
     w("            Travel = travel; ChainFrom = chainFrom; ChainTo = chainTo; FadeFrom = fadeFrom; FadeTo = fadeTo;")
-    w("            RootOffset = rootOffset; this.eventNames = eventNames; this.eventTimes = eventTimes;")
+    w("            RootOffset = rootOffset; this.eventNames = eventNames; this.eventTimes = eventTimes; LandN = landN;")
     w("        }")
     w("")
     w("        /// <summary>Tiempo normalizado del primer evento con ese nombre (-1 si el clip no lo tiene).</summary>")
@@ -168,9 +171,10 @@ def main():
         w("            %s, %s, %s, %s, %s," % (f(t.get("ring_m") or 0.0), f(t.get("marker_m") or 0.0), f(t.get("reach_m") or 0.0),
                                            f(t.get("ground_speed_mps") or 0.0), strs(glow)))
         w("            %s," % arr(c.get("travel_m")))
-        w("            \"%s\", \"%s\", %s, %s, new Vector3(%s, %s, %s), %s, %s);" % (
+        land = ", " + f(t["land"] / float(c["frames"])) if t.get("land") is not None else ""
+        w("            \"%s\", \"%s\", %s, %s, new Vector3(%s, %s, %s), %s, %s%s);" % (
             t.get("chain_from", ""), t.get("chain_to", ""), f(t.get("fade_from") or 0.0), f(t.get("fade_to") or 0.0),
-            f(ro[0]), f(ro[1]), f(ro[2]), en, et))
+            f(ro[0]), f(ro[1]), f(ro[2]), en, et, land))
         names.append(name)
     aliases = data.get("aliases", {})
     w("")

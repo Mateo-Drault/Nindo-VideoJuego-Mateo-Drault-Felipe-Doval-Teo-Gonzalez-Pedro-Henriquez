@@ -35,7 +35,7 @@
     "space": "perch",
     "chain_from": "PERCH",
     "chain_to": "PERCH",
-    "bend": 6.0,
+    "bend": -6.0,
     "feet_on_node": [
      [
       0,
@@ -118,7 +118,7 @@
     ],
     "chain_from": "PERCH",
     "chain_to": "PERCH",
-    "bend": 8.0,
+    "bend": -8.0,
     "feet_on_node": [
      [
       0,
@@ -234,7 +234,7 @@
     ],
     "chain_from": "PERCH",
     "chain_to": "PERCH",
-    "bend": 8.0,
+    "bend": -8.0,
     "feet_on_node": [
      [
       0,
@@ -793,7 +793,7 @@
     ],
     "chain_from": "PERCH",
     "chain_to": "PERCH",
-    "bend": 12.0,
+    "bend": -12.0,
     "feet_on_node": [
      [
       0,
@@ -904,7 +904,7 @@
     ],
     "chain_from": "PERCH",
     "chain_to": "HANG",
-    "bend": 30.0,
+    "bend": -30.0,
     "preroll": 1.0,
     "feet_on_node": [
      [
@@ -912,7 +912,8 @@
       1
      ]
     ],
-    "hang_scale": 0.6
+    "hang_scale": 0.6,
+    "cloak_max": 150.0
    },
    "normalized": {
     "load": [
@@ -1012,7 +1013,10 @@
      "Chikuo_GlintChimesHi"
     ],
     "chain_from": "HANG",
-    "bend": 30.0,
+    "bend": -30.0,
+    "hang_scale": 1.0,
+    "cloak_hang": 1.0,
+    "cloak_max": 150.0,
     "preroll": 2.0,
     "shots": [
      [
@@ -1056,12 +1060,12 @@
    "lint": {
     "reach_miss_cm": [
      0.0,
-     0.0
+     0.5
     ],
     "snap_deg": [
-     8.1,
-     "Hand_L",
-     18
+     24.3,
+     "Acc_ChimesLo09_0",
+     14
     ],
     "culm_hands_cm": {
      "R": [
@@ -1118,14 +1122,15 @@
     ],
     "chain_from": "HANG_END",
     "chain_to": "PERCH",
-    "bend": 30.0,
+    "bend": -30.0,
     "feet_on_node": [
      [
       14,
       15
      ]
     ],
-    "hang_scale": 0.6
+    "hang_scale": 0.6,
+    "cloak_max": 150.0
    },
    "normalized": {
     "load": [
@@ -1177,10 +1182,10 @@
      ]
     },
     "chain_from_deg": [
-     0.0,
-     "",
-     0.0,
-     0.0
+     1.07,
+     "Shin_L",
+     0.4,
+     0.6
     ],
     "chain_to_deg": [
      0.57,
@@ -1227,7 +1232,7 @@
     ],
     "chain_from": "PERCH",
     "chain_to": "PERCH",
-    "bend": 10.0,
+    "bend": -10.0,
     "fade_from": 0.15,
     "fade_to": 0.15,
     "feet_on_node": [
@@ -1291,7 +1296,7 @@
      ]
     },
     "chain_from_deg": [
-     27.29,
+     35.82,
      "Head",
      0.0,
      3.6
@@ -1427,7 +1432,7 @@
     ],
     "chain_from": "PERCH",
     "chain_to": "PERCH",
-    "bend": 30.0,
+    "bend": -30.0,
     "ring_m": 3.6,
     "feet_on_node": [
      [
@@ -1572,7 +1577,7 @@
      "Chikuo_GlintFootR"
     ],
     "chain_from": "PERCH",
-    "bend": -35.0,
+    "bend": 35.0,
     "feet_on_node": [
      [
       0,
@@ -2126,101 +2131,9 @@
     ]
    }
   },
-  "DecoySpin": {
-   "first": 611,
-   "last": 629,
-   "frames": 18,
-   "seconds": 0.6,
-   "loop": false,
-   "timing": {
-    "space": "perch",
-    "chain_from": "PERCH",
-    "chain_to": "PERCH",
-    "bend": 8.0,
-    "feet_on_node": [
-     [
-      0,
-      1
-     ],
-     [
-      17,
-      18
-     ]
-    ]
-   },
-   "normalized": {},
-   "events": [],
-   "notes": "gira con la capa abierta (los señuelos aparecen al final; repiten este clip y los de arriba con 0.25 s de eco)",
-   "lint": {
-    "reach_miss_cm": [
-     0.0,
-     0.0
-    ],
-    "snap_deg": [
-     79.9,
-     "Acc_ChimesHi06_0",
-     15
-    ],
-    "culm_hands_cm": {
-     "R": [
-      0.0,
-      0
-     ],
-     "L": [
-      0.0,
-      0
-     ]
-    },
-    "node_feet_cm": {
-     "R": [
-      0.0,
-      0
-     ],
-     "L": [
-      0.0,
-      0
-     ]
-    },
-    "chain_from_deg": [
-     0.57,
-     "Head",
-     0.0,
-     0.0
-    ],
-    "chain_to_deg": [
-     0.57,
-     "Head",
-     0.0,
-     0.0
-    ],
-    "culm_inside_verts": [
-     52,
-     0.063,
-     7,
-     [
-      [
-       "Acc_ChimesLo03_0",
-       21
-      ],
-      [
-       "Skirt_220",
-       7
-      ],
-      [
-       "Foot_R",
-       6
-      ],
-      [
-       "Foot_L",
-       6
-      ]
-     ]
-    ]
-   }
-  },
   "Dive": {
-   "first": 633,
-   "last": 662,
+   "first": 611,
+   "last": 640,
    "frames": 29,
    "seconds": 0.9667,
    "loop": false,
@@ -2314,8 +2227,8 @@
    }
   },
   "DiveLand": {
-   "first": 666,
-   "last": 680,
+   "first": 644,
+   "last": 658,
    "frames": 14,
    "seconds": 0.4667,
    "loop": false,
@@ -2406,8 +2319,8 @@
    }
   },
   "FeetStuck": {
-   "first": 684,
-   "last": 732,
+   "first": 662,
+   "last": 710,
    "frames": 48,
    "seconds": 1.6,
    "loop": false,
@@ -2475,8 +2388,8 @@
    }
   },
   "StaffDrop": {
-   "first": 736,
-   "last": 763,
+   "first": 714,
+   "last": 741,
    "frames": 27,
    "seconds": 0.9,
    "loop": false,
@@ -2583,8 +2496,8 @@
    }
   },
   "StaffDropRecover": {
-   "first": 767,
-   "last": 779,
+   "first": 745,
+   "last": 757,
    "frames": 12,
    "seconds": 0.4,
    "loop": false,
@@ -2650,8 +2563,8 @@
    }
   },
   "Vault": {
-   "first": 783,
-   "last": 810,
+   "first": 761,
+   "last": 788,
    "frames": 27,
    "seconds": 0.9,
    "loop": false,
@@ -2779,8 +2692,8 @@
    ]
   },
   "JumpCrouch": {
-   "first": 814,
-   "last": 823,
+   "first": 792,
+   "last": 801,
    "frames": 9,
    "seconds": 0.3,
    "loop": false,
@@ -2855,8 +2768,8 @@
    ]
   },
   "FlungAir": {
-   "first": 827,
-   "last": 839,
+   "first": 805,
+   "last": 817,
    "frames": 12,
    "seconds": 0.4,
    "loop": true,
@@ -2892,8 +2805,8 @@
    }
   },
   "FlungLand": {
-   "first": 843,
-   "last": 854,
+   "first": 821,
+   "last": 832,
    "frames": 11,
    "seconds": 0.3667,
    "loop": false,
@@ -2952,8 +2865,8 @@
    }
   },
   "DazedSit": {
-   "first": 858,
-   "last": 888,
+   "first": 836,
+   "last": 866,
    "frames": 30,
    "seconds": 1.0,
    "loop": true,
@@ -2981,12 +2894,12 @@
     ],
     "loop_seam_deg": [
      0.0,
-     0.098
+     0.487
     ],
     "snap_deg": [
-     6.3,
-     "Acc_ChimesHi01_0",
-     15
+     33.8,
+     "Head",
+     19
     ],
     "sole_slip_cm": {
      "R": [
@@ -3017,8 +2930,8 @@
    }
   },
   "DazedSitHit": {
-   "first": 892,
-   "last": 902,
+   "first": 870,
+   "last": 880,
    "frames": 10,
    "seconds": 0.3333,
    "loop": false,
@@ -3066,13 +2979,13 @@
      ]
     },
     "chain_from_deg": [
-     4.15,
-     "UpperArm_L",
+     5.87,
+     "Clav_L",
      0.0,
      0.0
     ],
     "chain_to_deg": [
-     1.02,
+     3.8,
      "Spine2",
      0.0,
      0.0
@@ -3084,8 +2997,8 @@
    }
   },
   "Splat": {
-   "first": 906,
-   "last": 915,
+   "first": 884,
+   "last": 893,
    "frames": 9,
    "seconds": 0.3,
    "loop": false,
@@ -3133,8 +3046,8 @@
    }
   },
   "SlideDown": {
-   "first": 919,
-   "last": 937,
+   "first": 897,
+   "last": 915,
    "frames": 18,
    "seconds": 0.6,
    "loop": false,
@@ -3173,8 +3086,8 @@
    }
   },
   "MissGrab": {
-   "first": 941,
-   "last": 955,
+   "first": 919,
+   "last": 933,
    "frames": 14,
    "seconds": 0.4667,
    "loop": false,
@@ -3182,6 +3095,7 @@
     "space": "air",
     "chain_from": "AIR",
     "chain_to": "DAZED_LIE",
+    "land": 14,
     "hang_scale": 0.5
    },
    "normalized": {},
@@ -3212,8 +3126,8 @@
    }
   },
   "DazedLie": {
-   "first": 959,
-   "last": 989,
+   "first": 937,
+   "last": 967,
    "frames": 30,
    "seconds": 1.0,
    "loop": true,
@@ -3277,8 +3191,8 @@
    }
   },
   "DazedLieHit": {
-   "first": 993,
-   "last": 1003,
+   "first": 971,
+   "last": 981,
    "frames": 10,
    "seconds": 0.3333,
    "loop": false,
@@ -3344,8 +3258,8 @@
    }
   },
   "Slip": {
-   "first": 1007,
-   "last": 1022,
+   "first": 985,
+   "last": 1000,
    "frames": 15,
    "seconds": 0.5,
    "loop": false,
@@ -3378,8 +3292,8 @@
    }
   },
   "Stumble": {
-   "first": 1026,
-   "last": 1056,
+   "first": 1004,
+   "last": 1034,
    "frames": 30,
    "seconds": 1.0,
    "loop": false,
@@ -3446,8 +3360,8 @@
    }
   },
   "PoleFall": {
-   "first": 1060,
-   "last": 1074,
+   "first": 1038,
+   "last": 1052,
    "frames": 14,
    "seconds": 0.4667,
    "loop": false,
@@ -3517,8 +3431,8 @@
    ]
   },
   "GetUp": {
-   "first": 1078,
-   "last": 1090,
+   "first": 1056,
+   "last": 1068,
    "frames": 12,
    "seconds": 0.4,
    "loop": false,
@@ -3590,8 +3504,8 @@
    }
   },
   "Detuned": {
-   "first": 1094,
-   "last": 1136,
+   "first": 1072,
+   "last": 1114,
    "frames": 42,
    "seconds": 1.4,
    "loop": false,
@@ -3657,8 +3571,8 @@
    }
   },
   "Tuned": {
-   "first": 1140,
-   "last": 1176,
+   "first": 1118,
+   "last": 1154,
    "frames": 36,
    "seconds": 1.2,
    "loop": true,
@@ -3723,8 +3637,8 @@
    }
   },
   "StaffStuck": {
-   "first": 1180,
-   "last": 1213,
+   "first": 1158,
+   "last": 1191,
    "frames": 33,
    "seconds": 1.1,
    "loop": false,
@@ -3828,8 +3742,8 @@
    }
   },
   "Hit": {
-   "first": 1217,
-   "last": 1227,
+   "first": 1195,
+   "last": 1205,
    "frames": 10,
    "seconds": 0.3333,
    "loop": false,
@@ -3901,8 +3815,8 @@
    }
   },
   "HitHeavy": {
-   "first": 1231,
-   "last": 1247,
+   "first": 1209,
+   "last": 1225,
    "frames": 16,
    "seconds": 0.5333,
    "loop": false,
@@ -3980,8 +3894,8 @@
    }
   },
   "Parried": {
-   "first": 1251,
-   "last": 1263,
+   "first": 1229,
+   "last": 1241,
    "frames": 12,
    "seconds": 0.4,
    "loop": false,
@@ -4064,8 +3978,8 @@
    }
   },
   "ParriedPerfect": {
-   "first": 1267,
-   "last": 1285,
+   "first": 1245,
+   "last": 1263,
    "frames": 18,
    "seconds": 0.6,
    "loop": false,
@@ -4154,8 +4068,8 @@
    }
   },
   "Idle": {
-   "first": 1289,
-   "last": 1337,
+   "first": 1267,
+   "last": 1315,
    "frames": 48,
    "seconds": 1.6,
    "loop": true,
@@ -4174,26 +4088,26 @@
     ],
     "loop_seam_deg": [
      0.0,
-     0.032
+     0.18
     ],
     "snap_deg": [
-     15.0,
-     "Index_L_2",
-     37
+     24.1,
+     "UpperArm_L",
+     22
     ],
     "sole_slip_cm": {
      "R": [
       0.0,
       [
        0,
-       45
+       47
       ]
      ],
      "L": [
       0.0,
       [
        0,
-       45
+       46
       ]
      ]
     },
@@ -4210,8 +4124,8 @@
    }
   },
   "Walk": {
-   "first": 1341,
-   "last": 1371,
+   "first": 1319,
+   "last": 1349,
    "frames": 30,
    "seconds": 1.0,
    "loop": true,
@@ -4286,8 +4200,8 @@
    }
   },
   "Run": {
-   "first": 1375,
-   "last": 1395,
+   "first": 1353,
+   "last": 1373,
    "frames": 20,
    "seconds": 0.6667,
    "loop": true,
@@ -4362,8 +4276,8 @@
    }
   },
   "StrafeL": {
-   "first": 1399,
-   "last": 1423,
+   "first": 1377,
+   "last": 1401,
    "frames": 24,
    "seconds": 0.8,
    "loop": true,
@@ -4438,8 +4352,8 @@
    }
   },
   "StrafeR": {
-   "first": 1427,
-   "last": 1451,
+   "first": 1405,
+   "last": 1429,
    "frames": 24,
    "seconds": 0.8,
    "loop": true,
@@ -4514,8 +4428,8 @@
    }
   },
   "WalkBack": {
-   "first": 1455,
-   "last": 1485,
+   "first": 1433,
+   "last": 1463,
    "frames": 30,
    "seconds": 1.0,
    "loop": true,
@@ -4590,8 +4504,8 @@
    }
   },
   "BackFlip": {
-   "first": 1489,
-   "last": 1501,
+   "first": 1467,
+   "last": 1479,
    "frames": 12,
    "seconds": 0.4,
    "loop": false,
@@ -4677,8 +4591,8 @@
    }
   },
   "HopBack": {
-   "first": 1505,
-   "last": 1519,
+   "first": 1483,
+   "last": 1497,
    "frames": 14,
    "seconds": 0.4667,
    "loop": false,
@@ -4762,8 +4676,8 @@
    }
   },
   "Thrust": {
-   "first": 1523,
-   "last": 1550,
+   "first": 1501,
+   "last": 1528,
    "frames": 27,
    "seconds": 0.9,
    "loop": false,
@@ -4894,8 +4808,8 @@
    }
   },
   "StaffSpin2": {
-   "first": 1554,
-   "last": 1584,
+   "first": 1532,
+   "last": 1562,
    "frames": 30,
    "seconds": 1.0,
    "loop": false,
@@ -5000,8 +4914,8 @@
    }
   },
   "CraneKick": {
-   "first": 1588,
-   "last": 1616,
+   "first": 1566,
+   "last": 1594,
    "frames": 28,
    "seconds": 0.9333,
    "loop": false,
@@ -5102,8 +5016,8 @@
    }
   },
   "NoteSmash": {
-   "first": 1620,
-   "last": 1656,
+   "first": 1598,
+   "last": 1634,
    "frames": 36,
    "seconds": 1.2,
    "loop": false,
@@ -5243,8 +5157,8 @@
    }
   },
   "LowSweep": {
-   "first": 1660,
-   "last": 1699,
+   "first": 1638,
+   "last": 1677,
    "frames": 39,
    "seconds": 1.3,
    "loop": false,
@@ -5345,8 +5259,8 @@
    }
   },
   "GroundDart": {
-   "first": 1703,
-   "last": 1728,
+   "first": 1681,
+   "last": 1706,
    "frames": 25,
    "seconds": 0.8333,
    "loop": false,
@@ -5436,8 +5350,8 @@
    }
   },
   "PolePlant": {
-   "first": 1732,
-   "last": 1746,
+   "first": 1710,
+   "last": 1724,
    "frames": 14,
    "seconds": 0.4667,
    "loop": false,
@@ -5501,8 +5415,8 @@
    }
   },
   "PoleClimb": {
-   "first": 1750,
-   "last": 1764,
+   "first": 1728,
+   "last": 1742,
    "frames": 14,
    "seconds": 0.4667,
    "loop": false,
@@ -5575,8 +5489,8 @@
    }
   },
   "PoleBalance": {
-   "first": 1768,
-   "last": 1798,
+   "first": 1746,
+   "last": 1776,
    "frames": 30,
    "seconds": 1.0,
    "loop": true,
@@ -5662,8 +5576,8 @@
    ]
   },
   "PoleDive": {
-   "first": 1802,
-   "last": 1831,
+   "first": 1780,
+   "last": 1809,
    "frames": 29,
    "seconds": 0.9667,
    "loop": false,
@@ -5742,8 +5656,8 @@
    }
   },
   "FluteRaise": {
-   "first": 1835,
-   "last": 1849,
+   "first": 1813,
+   "last": 1827,
    "frames": 14,
    "seconds": 0.4667,
    "loop": false,
@@ -5800,8 +5714,8 @@
    }
   },
   "FluteNote": {
-   "first": 1853,
-   "last": 1866,
+   "first": 1831,
+   "last": 1844,
    "frames": 13,
    "seconds": 0.4333,
    "loop": false,
@@ -5864,8 +5778,8 @@
    }
   },
   "AnswerBlow": {
-   "first": 1870,
-   "last": 1883,
+   "first": 1848,
+   "last": 1861,
    "frames": 13,
    "seconds": 0.4333,
    "loop": false,
@@ -5942,8 +5856,8 @@
    }
   },
   "AnswerStamp": {
-   "first": 1887,
-   "last": 1900,
+   "first": 1865,
+   "last": 1878,
    "frames": 13,
    "seconds": 0.4333,
    "loop": false,
@@ -6020,8 +5934,8 @@
    }
   },
   "GroundLaugh": {
-   "first": 1904,
-   "last": 1940,
+   "first": 1882,
+   "last": 1918,
    "frames": 36,
    "seconds": 1.2,
    "loop": true,
@@ -6057,36 +5971,36 @@
    "notes": "carcajada parado apoyado en la flauta; loop",
    "lint": {
     "reach_miss_cm": [
-     0.0,
+     0.1,
      0.0
     ],
     "loop_seam_deg": [
      0.0,
-     0.341
+     0.964
     ],
     "snap_deg": [
-     42.0,
-     "Forearm_R",
-     3
+     38.2,
+     "Clav_L",
+     7
     ],
     "sole_slip_cm": {
      "R": [
       0.0,
       [
        0,
-       35
+       36
       ]
      ],
      "L": [
       0.0,
       [
        0,
-       36
+       34
       ]
      ]
     },
     "chain_from_deg": [
-     84.34,
+     103.28,
      "Forearm_R",
      9.4,
      106.6
@@ -6098,8 +6012,8 @@
    }
   },
   "Intro": {
-   "first": 1944,
-   "last": 2139,
+   "first": 1922,
+   "last": 2117,
    "frames": 195,
    "seconds": 6.5,
    "loop": false,
@@ -6198,8 +6112,8 @@
    }
   },
   "PhaseBow": {
-   "first": 2143,
-   "last": 2263,
+   "first": 2121,
+   "last": 2241,
    "frames": 120,
    "seconds": 4.0,
    "loop": false,
@@ -6255,7 +6169,7 @@
      ]
     },
     "chain_from_deg": [
-     19.83,
+     17.38,
      "Clav_R",
      9.0,
      0.0
@@ -6273,8 +6187,8 @@
    }
   },
   "PhaseForest": {
-   "first": 2267,
-   "last": 2417,
+   "first": 2245,
+   "last": 2395,
    "frames": 150,
    "seconds": 5.0,
    "loop": false,
@@ -6373,8 +6287,8 @@
    ]
   },
   "Defeat": {
-   "first": 2421,
-   "last": 2586,
+   "first": 2399,
+   "last": 2564,
    "frames": 165,
    "seconds": 5.5,
    "loop": false,
@@ -6437,8 +6351,8 @@
    }
   },
   "DefeatIdle": {
-   "first": 2590,
-   "last": 2650,
+   "first": 2568,
+   "last": 2628,
    "frames": 60,
    "seconds": 2.0,
    "loop": true,
@@ -6500,7 +6414,7 @@
   }
  },
  "lint_failures": [
-  "HangDart2: muñeca R posible (exceso 1.52 en f0: flexión 66°, desvío -47°, agarrada)",
+  "HangDart2: muñeca R posible (exceso 1.87 en f15: flexión 70°, desvío -62°, agarrada)",
   "FlungAir: loop sin costura (pose 0.04°, salto de velocidad 4.22°)",
   "FlungAir: ningún hueso gira más de 45° en un cuadro (72.7° Hand_R f11)",
   "DiveLand: flauta / cabeza se meten 6.5 cm en f9",
@@ -6518,7 +6432,6 @@
   "PoleDive: flauta / tibia R se meten 7.6 cm en f7",
   "PoleDive: flauta / tronco se meten 6.1 cm en f12",
   "HangDrop: ningún hueso gira más de 45° en un cuadro (92.4° Hand_L f9)",
-  "HangDrop: muñeca R posible (exceso 1.52 en f11: flexión 66°, desvío -47°, agarrada)",
   "HangDrop: muñeca L posible (exceso 3.13 en f8: flexión 96°, desvío -109°, agarrada)",
   "HangDrop: flauta / cabeza se meten 5.0 cm en f7",
   "HangClimb: ningún hueso gira más de 45° en un cuadro (70.5° UpperArm_L f6)",
@@ -6539,7 +6452,6 @@
   "Climb: muñeca L posible (exceso 1.68 en f15: flexión -33°, desvío 40°, agarrada)",
   "Climb: flauta / tronco se meten 5.6 cm en f21",
   "Climb: antebrazo L / cabeza se meten 4.0 cm en f9",
-  "DecoySpin: ningún hueso gira más de 45° en un cuadro (79.9° Acc_ChimesHi06_0 f15)",
   "FeetStuck: ningún hueso gira más de 45° en un cuadro (127.4° Hand_R f40)",
   "FeetStuck: la suela apoyada no patina (L: 3.1 cm en f2-42)",
   "FeetStuck: muñeca R posible (exceso 7.07 en f41: flexión 117°, desvío 172°, agarrada)",
@@ -6604,7 +6516,7 @@
   "AnswerBlow: ningún hueso gira más de 45° en un cuadro (51.1° Clav_R f3)",
   "AnswerBlow: muñeca R posible (exceso 2.96 en f3: flexión -25°, desvío 73°, agarrada)",
   "AnswerBlow: flauta / cabeza se meten 5.3 cm en f9",
-  "GroundLaugh: muñeca R posible (exceso 2.86 en f33: flexión 108°, desvío -94°, agarrada)",
+  "GroundLaugh: muñeca R posible (exceso 2.82 en f5: flexión -94°, desvío -92°, agarrada)",
   "Intro: ningún hueso gira más de 45° en un cuadro (86.3° Cloak_236_3 f160)",
   "Intro: la flauta no atraviesa el culmo (-1.8 cm en f172)",
   "Intro: muñeca R posible (exceso 3.22 en f37: flexión 35°, desvío 80°, agarrada)",
@@ -6638,7 +6550,6 @@
   "LeapCrouch: el cuerpo no atraviesa el culmo (53 vértices a más de 1.5 cm adentro en f7, hasta 9.1 cm: [('Acc_ChimesLo03_0', 15), ('Hips', 13), ('Foot_R', 8), ('Spine1', 5)])",
   "LeapGrab: el cuerpo no atraviesa el culmo (44 vértices a más de 1.5 cm adentro en f1, hasta 6.9 cm: [('Cloak_280_2', 16), ('Foot_R', 15), ('Thumb_L_2', 8), ('Pinky_L_2', 2)])",
   "Climb: el cuerpo no atraviesa el culmo (70 vértices a más de 1.5 cm adentro en f19, hasta 8.7 cm: [('Index_L_2', 16), ('Middle_L_2', 16), ('Ring_L_2', 16), ('Pinky_L_2', 16)])",
-  "DecoySpin: el cuerpo no atraviesa el culmo (52 vértices a más de 1.5 cm adentro en f7, hasta 6.3 cm: [('Acc_ChimesLo03_0', 21), ('Skirt_220', 7), ('Foot_R', 6), ('Foot_L', 6)])",
   "Vault: nada atraviesa el piso (mín -3.6 cm en f5: [('flauta', 6)])",
   "GetUp: nada atraviesa el piso (mín -5.8 cm en f2: [('Acc_ChimesLo03_0', 10), ('Acc_ChimesLo04_0', 10), ('Spine2', 2)])",
   "HitHeavy: nada atraviesa el piso (mín -3.8 cm en f1: [('Cloak_192_3', 1)])",
@@ -6887,21 +6798,10 @@
    0.13
   ],
   "Chikuo_Gi": [
-   0.36,
+   0.243,
    0.42,
-   0.345
+   0.333
   ]
- },
- "extra_materials": {
-  "Chikuo_Decoy": {
-   "rgb": [
-    0.3,
-    0.54,
-    0.24
-   ],
-   "smoothness": 0.05,
-   "use": "el señuelo de hojas: la misma malla con todos los slots en este material"
-  }
  },
  "chains": {
   "runtime": [

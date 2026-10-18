@@ -578,7 +578,6 @@ MonoBehaviour:
     - LeapAir
     - LeapGrab
     - Climb
-    - DecoySpin
     - Dive
     - DiveLand
     - FeetStuck
@@ -661,7 +660,6 @@ MonoBehaviour:
     - 0.4
     - 0.2
     - 0.8
-    - 0.6
     - 0.9667
     - 0.4667
     - 1.6
@@ -1232,6 +1230,13 @@ MonoBehaviour:
     clips:
     - {fileID: 8300000, guid: a46fde13e841e0b02395dcbf7b3189e6, type: 3}
     - {fileID: 8300000, guid: fe8c9cc960ecfce128e609f10c149ba3, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_snap
+    clips:
+    - {fileID: 8300000, guid: fc1c348372d6890416c83e9cf55cca57, type: 3}
+    - {fileID: 8300000, guid: 4d1f4aceaceb66333e2e1917cb93a740, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1

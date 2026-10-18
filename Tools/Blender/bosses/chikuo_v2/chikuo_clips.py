@@ -240,7 +240,7 @@ def chain_ref(name):
 CONTRACT_FRAMES = {
     "PerchIdle": 48, "PerchDart": 24, "PerchDart2": 34, "PerchVolley": 51, "PerchVolley4": 48, "PerchWhistle": 42,
     "TalaShot": 30, "HangDrop": 11, "HangDart2": 18, "HangClimb": 15, "PerchLaugh": 36, "PerchWobble": 8, "StalkSweep": 41,
-    "CatapultDraw": 30, "CatapultKick": 15, "LeapCrouch": 7, "LeapAir": 12, "LeapGrab": 6, "Climb": 24, "DecoySpin": 18,
+    "CatapultDraw": 30, "CatapultKick": 15, "LeapCrouch": 7, "LeapAir": 12, "LeapGrab": 6, "Climb": 24,
     "Dive": 29, "DiveLand": 14, "FeetStuck": 48, "StaffDrop": 27, "StaffDropRecover": 12, "Vault": 27, "JumpCrouch": 9,
     "FlungAir": 12, "FlungLand": 11, "DazedSit": 30, "DazedSitHit": 10, "Splat": 9, "SlideDown": 18, "MissGrab": 14,
     "DazedLie": 30, "DazedLieHit": 10, "Slip": 15, "Stumble": 30, "PoleFall": 14, "GetUp": 12, "Detuned": 42, "Tuned": 36,
@@ -258,7 +258,7 @@ CONTRACT_EVENTS = {
     "PerchLaugh": [], "PerchWobble": [], "StalkSweep": [(8, "Load"), (26, "Contact")],
     "CatapultDraw": [(0, "Load"), (22, "AimFix"), (30, "LeaveStalk")], "CatapultKick": [(15, "Contact")],
     "LeapCrouch": [(7, "LeaveStalk")], "LeapAir": [], "LeapGrab": [(0, "GrabStalk"), (6, "Perch")],
-    "Climb": [(4, "GrabStalk"), (24, "Perch")], "DecoySpin": [],
+    "Climb": [(4, "GrabStalk"), (24, "Perch")],
     "Dive": [(10, "LeaveStalk"), (28, "Contact")], "DiveLand": [(0, "Land")], "FeetStuck": [],
     "StaffDrop": [(6, "LeaveStalk"), (19, "Land"), (26, "Contact")], "StaffDropRecover": [],
     "Vault": [(6, "Plant"), (9, "LeaveStalk"), (27, "GrabStalk")], "JumpCrouch": [(9, "LeaveStalk")],

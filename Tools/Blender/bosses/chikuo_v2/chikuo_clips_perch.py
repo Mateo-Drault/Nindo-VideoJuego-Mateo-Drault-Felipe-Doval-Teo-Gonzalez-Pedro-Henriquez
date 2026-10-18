@@ -147,7 +147,7 @@ def perch_idle():
     blink = [K(0, wink_r=0.0, wink_l=0.0), K(18, wink_r=0.0, wink_l=0.0), K(20, wink_r=1.0, wink_l=1.0),
              K(23, wink_r=0.0, wink_l=0.0), K(48, wink_r=0.0, wink_l=0.0)]
     return CClip("PerchIdle", 48, keys, tracks=[fingers, blink], loop=True, lag={"head": 1.5, "neck": 0.8},
-                 timing=dict(space="perch", chain_from="PERCH", chain_to="PERCH", bend=6.0, feet_on_node=[[0, 48]]),
+                 timing=dict(space="perch", chain_from="PERCH", chain_to="PERCH", bend=-6.0, feet_on_node=[[0, 48]]),
                  notes="agachado en el nudo, la flauta en los hombros, se hamaca y mira; loop")
 
 
@@ -170,7 +170,7 @@ def dart_clip(name, frames, spawns, notes):
     faces += [(last + 3, "grin"), (frames, "grin")]
     return CClip(name, frames, keys, tracks=[face_track(*faces)], lag={"head": 1.0},
                  timing=dict(space="perch", tell=[2, 8], apex=8, kind="projectile", glow=list(HI), chain_from="PERCH",
-                             chain_to="PERCH", bend=8.0, feet_on_node=[[0, frames]],
+                             chain_to="PERCH", bend=-8.0, feet_on_node=[[0, frames]],
                              shots=[(8, "aviso (dorado)", HI + ("Chikuo_GlintStaff",), GOLD)]),
                  events=[E(f, "DartSpawn") for f in spawns], notes=notes)
 
@@ -245,7 +245,7 @@ def tala_shot():
                        (18, "grin"), (30, "grin"))
     return CClip("TalaShot", 30, keys, tracks=[faces], lag={"head": 1.0},
                  timing=dict(space="perch", tell=[2, 13], apex=13, kind="dodge", glow=list(HI) + ["Chikuo_GlintStaff"],
-                             chain_from="PERCH", chain_to="PERCH", bend=12.0, feet_on_node=[[0, 30]],
+                             chain_from="PERCH", chain_to="PERCH", bend=-12.0, feet_on_node=[[0, 30]],
                              shots=[(13, "aviso (rojo)", HI + ("Chikuo_GlintStaff",), RED)]),
                  events=[E(14, "DartSpawn")], notes="el silbador corto contra la rajadura de otra caña (la tala); el código "
                                                      "gira el cuerpo hacia ella")
@@ -298,29 +298,36 @@ def hang_drop():
     ]
     faces = face_track((0, "grin"), (3, "surprise"), (8, "laugh"), (10, "blow"), (11, "blow"))
     return CClip("HangDrop", 11, keys, tracks=[faces], lag={"head": 1.0, "spine2": 0.5},
-                 timing=dict(space="perch", load=[0, 11], chain_from="PERCH", chain_to="HANG", bend=30.0, preroll=1.0,
-                             feet_on_node=[[0, 1]], hang_scale=0.6),
+                 timing=dict(space="perch", load=[0, 11], chain_from="PERCH", chain_to="HANG", bend=-30.0, preroll=1.0,
+                             feet_on_node=[[0, 1]], hang_scale=0.6, cloak_max=150.0),
                  events=[E(10, "Hang")], notes="se deja caer de costado y queda colgado de las piernas, cabeza abajo; Hang en f10")
 
 
 def hang_dart2():
-    """Cabeza abajo delante del culmo, sopla dos dardos (f9, f18): se hamaca colgado como un péndulo chico, la barba y la
-    capa caen hacia el piso alrededor de la cabeza; el segundo dardo es el último cuadro (sigue HangClimb)."""
-    sway = lambda d: dict(hips=(0, -0.27 + d * 0.18, HANG_Z), hips_rot=(12 + d * 20, 180, 0))
+    """Cabeza abajo delante del culmo, sopla dos dardos (f9, f18) hamacándose de costado como un péndulo de 0.6 s (±13 cm
+    y ±14°: antes era ±1 cm y el clip se veía como una foto): en cada punta del vaivén toma aire con la cabeza atrás, sopla
+    al pasar por abajo (la cabeza empuja la boquilla de un golpe) y la punta patea 3° para arriba (el retroceso). La capa
+    cuelga entera hacia el piso (cloak_max: con el tope de siempre quedaba en horizontal, una bandeja alrededor de la
+    cabeza), la barba también. El segundo dardo es el último cuadro (sigue HangClimb). La puntería no se mueve más que eso:
+    con 4° o más el planificador del giro de la izquierda daba media vuelta y el antebrazo no empalmaba con HangDrop ni con
+    HangClimb (110°)."""
+    # de costado: hacia el culmo se metía la cabeza en la caña y para afuera se despegaban los pies del nudo
+    sway = lambda d: dict(hips=(d * 0.13, -0.27, HANG_Z), hips_rot=(12, 180, d * 14))
     keys = [
         K(0, hang_pipe(sway(0.0))),
-        K(5, hang_pipe(sway(-0.06)), ease="sine"),
-        K(8, hang_pipe(dict(sway(-0.04), head=(-20, 0, 0)))),
-        K(9, hang_pipe(dict(sway(0.02), head=(-26, 0, 0)), aim=aim_dir(31)), ease="snap"),
-        K(11, hang_pipe(dict(sway(0.05), head=(-24, 0, 0)), aim=aim_dir(33)), ease="out"),
-        K(15, hang_pipe(dict(sway(0.0), head=(-22, 0, 0)), aim=aim_dir(35, 4)), ease="sine"),
-        K(17, hang_pipe(dict(sway(-0.03), head=(-22, 0, 0)), aim=aim_dir(35, 4))),
+        K(5, hang_pipe(dict(sway(-1.0), head=(-15, 0, 0))), ease="sine"),
+        K(8, hang_pipe(dict(sway(-0.3), head=(-20, 0, 0)))),
+        K(9, hang_pipe(dict(sway(0.02), head=(-30, 0, 0)), aim=aim_dir(31)), ease="snap"),
+        K(11, hang_pipe(dict(sway(0.5), head=(-24, 0, 0)), aim=aim_dir(28)), ease="out"),
+        K(15, hang_pipe(dict(sway(1.0), head=(-15, 0, 0)), aim=aim_dir(35, 4)), ease="sine"),
+        K(17, hang_pipe(dict(sway(0.3), head=(-22, 0, 0)), aim=aim_dir(35, 4))),
         K(18, hang_pipe(dict(sway(0.02), head=(-26, 0, 0)), aim=aim_dir(31, 4)), ease="snap"),
     ]
     faces = face_track((0, FACE_PUFF), (8, FACE_PUFF), (9, FACE_BLOWN), (12, FACE_BLOWN), (16, FACE_PUFF), (17, FACE_PUFF),
                        (18, FACE_BLOWN))
     return CClip("HangDart2", 18, keys, tracks=[faces], lag={"head": 1.0},
-                 timing=dict(space="perch", load=[0, 18], kind="projectile", glow=list(HI), chain_from="HANG", bend=30.0,
+                 timing=dict(space="perch", load=[0, 18], kind="projectile", glow=list(HI), chain_from="HANG", bend=-30.0,
+                             hang_scale=1.0, cloak_hang=1.0, cloak_max=150.0,
                              preroll=2.0, shots=[(8, "colgado: aviso (dorado)", HI, GOLD), (4, "colgado: cargada", CHIMES_ALL, WHITE)]),
                  events=[E(9, "DartSpawn"), E(18, "DartSpawn")],
                  notes="colgado cabeza abajo, dos dardos (f9 y f18, el último cuadro); sigue HangClimb")
@@ -347,8 +354,8 @@ def hang_climb():
     ]
     faces = face_track((0, FACE_BLOWN), (4, "grin"), (15, "grin"))
     return CClip("HangClimb", 15, keys, tracks=[faces], lag={"head": 1.0},
-                 timing=dict(space="perch", load=[0, 8], chain_from="HANG_END", chain_to="PERCH", bend=30.0, feet_on_node=[[14, 15]],
-                             hang_scale=0.6),
+                 timing=dict(space="perch", load=[0, 8], chain_from="HANG_END", chain_to="PERCH", bend=-30.0, feet_on_node=[[14, 15]],
+                             hang_scale=0.6, cloak_max=150.0),
                  events=[E(8, "Unload"), E(15, "Perch")], notes="de colgado al posado: Unload f8, Perch f15")
 
 
@@ -357,7 +364,8 @@ def perch_laugh():
     """La carcajada (la cara del concepto): la cabeza atrás, la boca abierta, los ojos cerrados, los hombros que se sacuden
     a cada 'ja' y la derecha que se palmea la rodilla dos veces; los cascabeles se sacuden. Loop de 36."""
     P = merge(PERCH, shoulders_hold())
-    up = dict(neck=(-8, 0, 0), head=(-18, 0, 0), spine2=(2, 0, 0))
+    # la cabeza bien atrás (26-28°: con 18 la cara quedaba de frente al horizonte y la cámara alta no la veía)
+    up = dict(neck=(-10, 0, 0), head=(-26, 0, 0), spine2=(2, 0, 0))
     lean = dict(spine=(6, 0, 0), spine1=(8, 0, -4), spine2=(14, 0, -6), neck=(6, 0, 0), head=(-2, 0, -4))
 
     def slap(f):
@@ -368,15 +376,15 @@ def perch_laugh():
                   dict(lean, spine2=(18, 0, -7)), ease="snap"),
                 K(f + 3, P, STAFF_SHOULDERS, free("r", (-0.62, -0.30, 1.30), elbow=(-1, 0.1, -0.4), fing="relaxed"), lean,
                   ease="inout")]
-    keys = [K(0, P, up)] + slap(9) + [K(14, P, dict(neck=(-10, 0, 0), head=(-20, 0, 4), spine2=(0, 0, 2)))]
-    keys += slap(27) + [K(32, P, dict(neck=(-10, 0, 0), head=(-20, 0, -2), spine2=(0, 0, -2))), K(36, P, up)]
+    keys = [K(0, P, up)] + slap(9) + [K(14, P, dict(neck=(-12, 0, 0), head=(-28, 0, 4), spine2=(0, 0, 2)))]
+    keys += slap(27) + [K(32, P, dict(neck=(-12, 0, 0), head=(-28, 0, -2), spine2=(0, 0, -2))), K(36, P, up)]
     # el 'ja, ja, ja': los hombros rebotan a 5 Hz encima de todo (seno: sin quiebre en la costura del loop)
     ja = [K(i, clav_r=(0, 0, 0), clav_l=(0, 0, 0), spine1=(0, 0, 0), ease="sine") for i in range(0, 37, 6)]
     ja = sorted(ja + [K(i + 3, clav_r=(0, 0, 6), clav_l=(0, 0, -6), spine1=(-4, 0, 0), ease="sine") for i in range(0, 34, 6)],
                 key=lambda k: k.frame)
     faces = face_track((0, "laugh"), (36, "laugh"))
     return CClip("PerchLaugh", 36, keys, tracks=[ja, faces], loop=True, lag={"head": 1.0},
-                 timing=dict(space="perch", load=[0, 36], chain_from="PERCH", chain_to="PERCH", bend=10.0, fade_from=0.15,
+                 timing=dict(space="perch", load=[0, 36], chain_from="PERCH", chain_to="PERCH", bend=-10.0, fade_from=0.15,
                              fade_to=0.15, feet_on_node=[[0, 36]], shots=[(9, "la risa (cargada)", CHIMES_ALL, WHITE)]),
                  notes="carcajada con palmadas en la rodilla; loop (la Risa cargada, 1.2 s / 2.0 s la del maestro)")
 
@@ -446,7 +454,7 @@ def stalk_sweep():
     faces = face_track((0, "grin"), (6, FACE_EFFORT), (26, "laugh"), (34, "grin"), (41, "grin"))
     return CClip("StalkSweep", 41, keys, tracks=[faces], lag={"head": 1.5, "spine2": 0.5},
                  timing=dict(space="perch", tell=[8, 20], apex=20, contact=26, active=[24, 28], kind="dodge", load=[8, 26],
-                             glow=list(CHIMES_ALL) + ["Chikuo_GlintStaff"], chain_from="PERCH", chain_to="PERCH", bend=30.0,
+                             glow=list(CHIMES_ALL) + ["Chikuo_GlintStaff"], chain_from="PERCH", chain_to="PERCH", bend=-30.0,
                              ring_m=3.6, feet_on_node=[[0, 4], [37, 41]],
                              shots=[(20, "aviso (rojo)", CHIMES_ALL + ("Chikuo_GlintStaff",), RED)]),
                  events=[E(8, "Load"), E(26, "Contact")],
@@ -480,7 +488,7 @@ def catapult_draw():
                        (22, dict(jaw=-1.0, lids=0.45, brows=-10.0, cheeks=0.3, corners=(0.006, 0.008))), (30, "surprise"))
     return CClip("CatapultDraw", 30, keys, tracks=[faces], lag={"head": 1.0},
                  timing=dict(space="perch", load=[0, 30], tell=[0, 22], apex=22, kind="dodge", glow=list(CHIMES_ALL) + ["Chikuo_GlintFootR"],
-                             chain_from="PERCH", bend=-35.0, feet_on_node=[[0, 29]],
+                             chain_from="PERCH", bend=35.0, feet_on_node=[[0, 29]],
                              shots=[(22, "aviso (rojo)", CHIMES_ALL + ("Chikuo_GlintFootR",), RED), (12, "cargada", CHIMES_ALL, WHITE)]),
                  events=[E(0, "Load"), E(22, "AimFix"), E(30, "LeaveStalk")],
                  notes="tensa la caña como un arco: Load f0, AimFix f22 (el carril queda fijo), LeaveStalk f30 (sigue CatapultKick)")
@@ -674,35 +682,6 @@ def climb():
                        "entera (Resbalón)")
 
 
-def decoy_spin():
-    """Tres Ermitaños: gira 360° alrededor del culmo sobre el nudo con los brazos abiertos (la capa se abre y largan las
-    hojas); los señuelos repiten este clip con 0.25 s de eco."""
-    P = merge(PERCH, shoulders_hold())
-    keys = [K(0, P), K(2, P, STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)), release_left((0.55, -0.30, 1.35)))]
-    for i, f in enumerate((5, 8, 11, 14)):
-        a = 360.0 * ((i + 1) / 5.0)
-        r = math.radians(a)
-        # el cuerpo orbita el culmo (radio 0.30) y gira con la órbita: siempre de espaldas a la caña; se eleva un poco
-        hip = (math.sin(r) * 0.30, -math.cos(r) * 0.30, -0.53)
-        keys.append(K(f, P, STAFF_SHOULDERS, dict(hips=hip, hips_rot=(4, 0, a), spine2=(4, 0, 0), head=(-4, 0, 0)),
-                      grip("r", R_SH, elbow=(-0.6, -0.2, -1)),
-                      free("l", (0.85, -0.10, 1.75), elbow=(0.5, 0.5, -0.5), fing="open", chest=True),
-                      legs(rot_z((-0.19, -0.135, 0.17), a), rot_z((0.19, -0.135, 0.17), a), rr=(0, 0, -24 + a), rl=(0, 0, 24 + a),
-                           kr=rot_z((-1.0, -0.7, 0.35), a), kl=rot_z((1.0, -0.7, 0.35), a)), ease="lin"))
-    keys.append(K(16, P, dict(hips_rot=(10, 0, 360.0)), STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)),
-                  release_left((0.55, -0.30, 1.35)),
-                  legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -24 + 360.0), rl=(0, 0, 24 + 360.0),
-                       kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)), ease="out"))
-    keys.append(K(18, P, dict(hips_rot=(10, 0, 360.0)),
-                  legs((-0.19, -0.135, 0.115), (0.19, -0.135, 0.115), rr=(0, 0, -24 + 360.0), rl=(0, 0, 24 + 360.0),
-                       kr=(-1.0, -0.7, 0.35), kl=(1.0, -0.7, 0.35)), ease="inout"))
-    faces = face_track((0, "grin"), (6, "laugh"), (14, "laugh"), (18, "grin"))
-    return CClip("DecoySpin", 18, keys, tracks=[faces],
-                 timing=dict(space="perch", chain_from="PERCH", chain_to="PERCH", bend=8.0, feet_on_node=[[0, 1], [17, 18]]),
-                 notes="gira con la capa abierta (los señuelos aparecen al final; repiten este clip y los de arriba con 0.25 s "
-                       "de eco)")
-
-
 def rot_z(v, deg):
     r = math.radians(deg)
     c, s = math.cos(r), math.sin(r)
@@ -719,5 +698,5 @@ def clips(kit):
            volley_clip("PerchVolley4", 48, [14, 22, 30, 39], 40, "Cuatro Notas (fase 3): Load f3, dardos f14, f22, f30, f39, "
                                                                  "Unload f40", 10),
            perch_whistle(), tala_shot(), hang_drop(), hang_dart2(), hang_climb(), perch_laugh(), perch_wobble(),
-           stalk_sweep(), catapult_draw(), catapult_kick(), leap_crouch(), leap_air(), leap_grab(), climb(), decoy_spin()]
+           stalk_sweep(), catapult_draw(), catapult_kick(), leap_crouch(), leap_air(), leap_grab(), climb()]
     return out

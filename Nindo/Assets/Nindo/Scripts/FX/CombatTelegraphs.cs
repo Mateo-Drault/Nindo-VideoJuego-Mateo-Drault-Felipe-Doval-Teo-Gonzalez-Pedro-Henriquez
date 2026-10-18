@@ -135,7 +135,7 @@ namespace Nindo
                         if (!t.visible) AimStroke(t, e);
                         t.progress = e.TellProgress01;
                         t.hasArea = e.TryGetTellArea(out t.areaShape);
-                        t.center = e.transform.position;
+                        t.center = e.TellCenter;
                     }
                 }
                 if (t.outcome != null)

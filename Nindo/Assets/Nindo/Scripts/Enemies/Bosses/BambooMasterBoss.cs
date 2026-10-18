@@ -55,7 +55,7 @@ namespace Nindo
         /// <summary>Los 45° de pelea de siempre: subir o bajar el ángulo casi no cambia el encuadre (sección 10).</summary>
         public float CameraPitch => 0f;
         /// <summary>Más lejos con él arriba o en el aire (posado a 4-5 m), un poco menos en el piso.</summary>
-        public float CameraExtraDistance => body != Body.Ground || HeightAboveFloor > 1f ? 2.4f : 1.6f;
+        public float CameraExtraDistance => body != Body.Ground || HeightAboveFloor > 1f || !groundAI && phaseIdx != 1 ? 2.4f : 1.6f;
 
         public override int CurrentPhase => phaseIdx;
         public bool Transitioning => vuln == Vuln.Scene && Fighting;
@@ -116,7 +116,7 @@ namespace Nindo
         readonly List<PendingDart> pending = new List<PendingDart>(4);
         float projEta = float.PositiveInfinity;
         Vector3 projFrom;
-        bool dartHitPending;
+        bool dartHitPending, dartGlow;
 
         // ------------------------------------------------------------------ paso "held" (lo coreografía el jefe)
         bool heldStep;
@@ -211,6 +211,14 @@ namespace Nindo
             marks?.Clear();
             look.Extinguish();
             loadsUncut = 0;
+            // lo que el intento anterior dejó a medias (colgado, la revancha, los relojes de la fase 2 y la 3 en Time.time
+            // viejos: el reintento abriría con la Grulla al instante en vez de a los 4-6 s)
+            hanging = leaving = justLanded = revanchaPending = dartHitPending = firstVolleyDone = dartGlow = false;
+            tickles = actionsOnStalk = 0;
+            nextPoleAt = nextQaAt = nextSignatureAt = -1f;
+            lastFlip = -9f;
+            campFor = 0f;
+            hangBlend = lastPerchBias = 0f;
             said.Clear();
             lastBark = -99f;
             if (tipHideAt > 0f) { Game.UI?.HideTutorial(); tipHideAt = -1f; }
@@ -459,6 +467,14 @@ namespace Nindo
             Quaternion want = Quaternion.LookRotation(fwd.normalized, up);
             perchYaw = Quaternion.Slerp(perchYaw, want, 1f - Mathf.Exp(-8f * dt));
             Vector3 pos = node.position + perchYaw * Vector3.forward * (perch.IsMother ? 0.05f : 0f);
+            if (clip == ChikuoTimings.Climb)
+            {
+                // Climb está autorado sobre la caña de adentro (posado a 4.4 m): en las otras (4.0 / 4.8 / Madre 5.0) los
+                // pies y las manos quedaban 0.4-0.6 m corridos del piso y del ClimbGrip. Se corre el clip entero esa
+                // diferencia y se la come a lo largo de los tirones: exacto en el PerchNode al llegar (f24)
+                float grab = clip.AirEnd > 0f ? clip.AirEnd : Mathf.Max(0f, clip.Event("GrabStalk"));
+                pos += up * ((ClimbAuthorPerch - perch.S.PerchHeight) * (1f - Mathf.InverseLerp(grab, 1f, ClipNorm)));
+            }
             if (climbBlend > 0f)
             {
                 // trepando desde el piso: del lugar donde está parado al eje del culmo, con la altura corregida (Climb está
@@ -466,8 +482,23 @@ namespace Nindo
                 Vector3 start = new Vector3(climbFrom.x, (grove != null ? grove.FloorY : transform.position.y) + ClimbAuthorPerch, climbFrom.z);
                 pos = Vector3.Lerp(pos, start, climbBlend);
             }
-            model.SetPositionAndRotation(pos, perchYaw * Quaternion.AngleAxis(AimLean(node.position, dt), Vector3.right));
+            Quaternion rot = perchYaw * Quaternion.AngleAxis(AimLean(node.position, dt), Vector3.right);
+            // colgado de las corvas el cuerpo cuelga a plomo: con la caña arqueada 30° hacia Kaito el giro del tramo lo
+            // dejaba torcido 30° de la vertical. Se lo endereza alrededor de las rodillas (siguen en el culmo)
+            hangBlend = Mathf.MoveTowards(hangBlend, hanging ? 1f : 0f, dt / 0.2f);
+            if (hangBlend > 0f && look.ShinL != null && look.ShinR != null)
+            {
+                Vector3 kneeLocal = model.InverseTransformPoint((look.ShinL.position + look.ShinR.position) * 0.5f);
+                Vector3 kneeWorld = pos + rot * Vector3.Scale(kneeLocal, model.lossyScale);
+                Vector3 f = (rot * Vector3.forward).Flat();
+                Quaternion plumb = Quaternion.Slerp(rot, Quaternion.LookRotation(f.sqrMagnitude > 1e-4f ? f.normalized : Vector3.forward), hangBlend);
+                pos = kneeWorld - plumb * Vector3.Scale(kneeLocal, model.lossyScale);
+                rot = plumb;
+            }
+            model.SetPositionAndRotation(pos, rot);
         }
+
+        float hangBlend;
 
         /// <summary>
         /// Los clips de cerbatana apuntan la flauta 35° hacia abajo al frente; el dardo va al pecho de Kaito (de lejos más
@@ -504,10 +535,28 @@ namespace Nindo
             // arriba (posado, salto, pértiga): el foco sube con él (0.45 x la altura del posado), CameraDirector lo
             // amortigua. Sin esto, posado a 4 m solo entraba en cuadro con Kaito a 3 m al norte de su caña
             float h = Mathf.Clamp(HeightAboveFloor, 0f, 5.5f);
-            Game.Camera.SetFocusBias(h > 0.6f ? Vector3.up * (0.45f * h) : Vector3.zero);
+            if (h > 0.6f) lastPerchBias = 0.45f * h;
+            // en las fases de arriba una bajada (un hueco, la picada) dura 1-3 s y vuelve a subir: la cámara se queda con el
+            // 60 % del foco del posado en vez de bombear cada 5 s; recién la pelea del piso (GroundBrain) la baja del todo
+            float bias = h > 0.6f ? 0.45f * h : !groundAI && phaseIdx != 1 ? 0.6f * lastPerchBias : 0f;
+            Game.Camera.SetFocusBias(Vector3.up * bias);
         }
 
+        float lastPerchBias;
+
         void ClearCameraBias() => Game.Camera?.SetFocusBias(Vector3.zero);
+
+        /// <summary>El anillo de sus golpes con aviso se cierra donde está el peligro (el disco de la picada, el carril a 3 m de
+        /// su origen), no en la base de la caña: ahí está el ensō blanco que dice "cortá acá", y un anillo rojo encima decía lo
+        /// contrario.</summary>
+        public override Vector3 TellCenter
+        {
+            get
+            {
+                if (!heldStep || body == Body.Ground || heldAreaSize <= 0f) return base.TellCenter;
+                return heldAreaLane ? heldAreaOrigin + heldAreaDir * Mathf.Min(3f, heldAreaSize * 0.5f) : heldAreaOrigin;
+            }
+        }
 
         /// <summary>Las marcas de la UI (fijado, peligro) arriba de su cabeza, esté donde esté (no a 2.7 m de la base).</summary>
         public override Vector3 HeadPoint => look != null && look.Head != null && body != Body.Ground ? look.Head.position + Vector3.up * 0.45f : base.HeadPoint;
@@ -542,10 +591,40 @@ namespace Nindo
                 case Vuln.Crouch: return Trip(info);
                 case Vuln.Open: return HoleHit(info);
                 case Vuln.Neutral: return NeutralHit(info);
-                case Vuln.Armor: return ApplyDamage(info, BambooMasterMoves.ArmorMul);
-                default: return HitResult.Ignored;
+                case Vuln.Armor: return ArmorHit(info, dir);
+                default: return Whiff(dir);
             }
         }
+
+        /// <summary>El corte en la carga de su golpe: entra a x0.35 y el golpe sigue, pero se tiene que notar que entró (sin
+        /// esto el filo lo atravesaba como un corte errado): un sacudón de cascabeles y un hit-stop chico.</summary>
+        HitResult ArmorHit(in DamageInfo info, Vector3 dir)
+        {
+            var r = ApplyDamage(info, BambooMasterMoves.ArmorMul);
+            if (r != HitResult.Hit) return r;
+            Sfx("chime_jangle", "step_wood", Voice, 0.55f);
+            look.Jangle(dir * 4f + Vector3.up);
+            Game.Time?.HitStop(0.04f);
+            return r;
+        }
+
+        /// <summary>
+        /// Un corte que no vale ahora (levantándose, en la garrocha, en el aire): el filo pasa por las hojas de la capa y los
+        /// cascabeles suenan sueltos, para que se lea "ahora no" y no un error del juego. Una vez cada 0.3 s.
+        /// </summary>
+        HitResult Whiff(Vector3 dir)
+        {
+            if (body != Body.Perch && Time.time - lastWhiff >= 0.3f)
+            {
+                lastWhiff = Time.time;
+                Sfx("chime_jangle", "parry_whiff", Voice, 0.3f);
+                look.Jangle(dir * 3f);
+                BambooGrove.Leaves(Voice, 0.4f);
+            }
+            return HitResult.Ignored;
+        }
+
+        float lastWhiff = -9f;
 
         /// <summary>
         /// Para dónde lo despide el corte: la línea Kaito → base, en el plano. El Corte del Viento se resuelve cuando Kaito
@@ -619,6 +698,7 @@ namespace Nindo
             heldStruck = false;
             heldStrikeAt = -1f;
             heldTravel = 0f;
+            heldAreaSize = 0f;   // cada golpe pone su zona (si no, quedaba la del anterior)
             travelDone = 0f;
             stepClip = ChikuoTimings.Get(a.state);
             if (heldStep) anim.SetSpeed(1f);   // BeginStep lo dejó en 0 (el reloj de Enemy arranca el frame que viene)
@@ -656,6 +736,9 @@ namespace Nindo
                 case BambooMasterMoves.Whistle:
                 case BambooMasterMoves.Catapult:
                 case BambooMasterMoves.Tala:
+                // el bastón que cae: el disco de donde cae (la raíz sigue en la base de la caña hasta que toca el piso, y
+                // el bot medía el alcance desde ahí: nunca lo paraba)
+                case BambooMasterMoves.StaffDrop:
                     area = new TellArea { lane = heldAreaLane, origin = heldAreaOrigin, forward = heldAreaDir, size = heldAreaSize, width = heldAreaWidth };
                     return heldAreaSize > 0f;
                 case BambooMasterMoves.LowSweep:
@@ -763,7 +846,13 @@ namespace Nindo
                 float eta = Mathf.Max(0f, pending[i].at - Time.time) + Mathf.Max(0f, Vector3.Distance(muzzle, pp + Vector3.up * 0.9f) - BambooMasterMoves.DartHitR) / speed;
                 if (eta < projEta) { projEta = eta; projFrom = muzzle; next = null; nextPending = i; }
             }
-            if (float.IsInfinity(projEta)) return;
+            if (float.IsInfinity(projEta))
+            {
+                // el último dardo ya pegó o se clavó: los hombros se apagan (dorado = "viene un dardo"; PerchDart no tiene
+                // Unload que lo apague, y quedaban encendidos 1-3 s mintiendo)
+                if (dartGlow) { dartGlow = false; look.ClearTell(); }
+                return;
+            }
             bool cued = next != null ? next.cued : pending[nextPending].cued;
             if (!cued && AudioManager.CueDue(projEta, TellStyle.TickParryable))
             {
@@ -772,7 +861,7 @@ namespace Nindo
                 GameEvents.RaiseStrikeCue(this, false);
             }
             // los cascabeles de los hombros en dorado en el último tramo (el filo de los otros), y el destello del cierre
-            if (projEta <= GlintLead) look.Tell(BambooMasterLook.DartSlots, false, Mathf.InverseLerp(GlintLead, TellStyle.BiasParryable, projEta));
+            if (projEta <= GlintLead) { look.Tell(BambooMasterLook.DartSlots, false, Mathf.InverseLerp(GlintLead, TellStyle.BiasParryable, projEta)); dartGlow = true; }
             bool glinted = next != null ? next.glinted : pending[nextPending].glinted;
             if (!glinted && projEta <= TellStyle.BiasParryable)
             {
@@ -837,6 +926,9 @@ namespace Nindo
 
         void UpdateLoad(float dt)
         {
+            // el hit-stop local frena el clip (y su Unload): la carga espera lo mismo, si no el corte que el clip dice
+            // latigazo salía "¡Cosquillas!" después de un parry a un dardo de la ráfaga
+            if (anim.Frozen && (loadedStalk != null || onPole)) loadUntil += dt;
             if (loadedStalk != null && Time.time > loadUntil + 0.05f) Unload();
             grove?.TickAim(loadedStalk, TargetPos, phaseIdx, dt);
         }

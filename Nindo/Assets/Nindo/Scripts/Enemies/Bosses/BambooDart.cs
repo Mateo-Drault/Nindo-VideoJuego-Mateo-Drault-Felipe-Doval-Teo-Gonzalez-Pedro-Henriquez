@@ -227,7 +227,8 @@ namespace Nindo
         void Break(bool parried)
         {
             BambooGrove.Splinters(transform.position, -dir);
-            if (parried) Game.Audio?.Play("bamboo_thok", transform.position, 0.7f, 0.1f);
+            // su propio chasquido: "thok" (hueco) es solo el de las cosquillas, el corte a la caña sin campanas
+            if (parried) Game.Audio?.Play("dart_snap", transform.position, 0.7f, 0.1f);
             Despawn();
         }
 

@@ -1098,9 +1098,11 @@ def chain_colliders(first, colliders):
     return out
 
 
-def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0):
+def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0, cloak_max=None):
     """Los resortes de chikuo_rig.chains() con el colgar que depende de la inclinación (HANG_LO/HI); el moño va rígido
-    (pelo duro atado). cloak_hang fija otro máximo para la capa y hang_scale escala el colgar de todas (0 dando vueltas).
+    (pelo duro atado). cloak_hang fija otro máximo para la capa y hang_scale escala el colgar de todas (0 dando vueltas);
+    cloak_max, el giro máximo de la capa desde su pose rígida (colgado cabeza abajo: con los 65° de siempre la capa quedaba
+    trabada en horizontal como una bandeja alrededor de la cabeza, en vez de caer hacia el piso como en el concepto).
     Los cascabeles se hornean más firmes y amortiguados que el péndulo del juego: el clip es la pose a la que tira
     SpringChain, que les pone el bamboleo encima."""
     out = []
@@ -1124,6 +1126,8 @@ def springs(rig, colliders, floor, cloak_hang=None, hang_scale=1.0):
                                 ("Sleeve_", 200.0, 0.45, 35.0), ("Cloak_", 90.0, 0.30, 65.0), ("Skirt_", 160.0, 0.30, 60.0)):
             if b0.startswith(pre):
                 k, damp, mx = kk, dd, mm
+        if cloak_max is not None and b0.startswith("Cloak_"):
+            mx = cloak_max
         sp = NA.Spring(bones, k=k, damp=damp, grav=3.0, max_deg=mx, hang=hang, floor=floor, colliders=colliders_b)
         # lo más que cuelga de su pose rígida: las mangas son tela pegada al brazo (no se dan vuelta), la barba y la
         # ramita están atadas a la cara; la capa, la falda y los cascabeles cuelgan enteros
@@ -1458,7 +1462,7 @@ def bake(rig, clip, solver, base_colliders, pin_from=None, pin_to=None):
         soff = roots
     lifts = [min(0.0, c.get("lift") or 0.0) for c in ctrls]
     t = clip.timing
-    run_springs(rig, frames, springs(rig, cols, floor, t.get("cloak_hang"), t.get("hang_scale", 1.0)), soff, loop=clip.loop,
+    run_springs(rig, frames, springs(rig, cols, floor, t.get("cloak_hang"), t.get("hang_scale", 1.0), t.get("cloak_max")), soff, loop=clip.loop,
                    preroll=t.get("preroll", 1.0), floor_offsets=lifts, carry=t.get("carry", 0.6 if space == "ground" else CARRY))
     if clip.loop:
         frames[-1] = {n: m.copy() for n, m in frames[0].items()}

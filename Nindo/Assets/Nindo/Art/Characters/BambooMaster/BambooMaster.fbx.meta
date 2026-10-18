@@ -658,40 +658,11 @@ ModelImporter:
       maskSource: {instanceID: 0}
       additiveReferencePoseFrame: 0
     - serializedVersion: 16
-      name: DecoySpin
-      takeName: Scene
-      internalID: 1082668184866343126
-      firstFrame: 611
-      lastFrame: 629
-      wrapMode: 0
-      orientationOffsetY: 0
-      level: 0
-      cycleOffset: 0
-      loop: 0
-      hasAdditiveReferencePose: 0
-      loopTime: 0
-      loopBlend: 0
-      loopBlendOrientation: 0
-      loopBlendPositionY: 0
-      loopBlendPositionXZ: 0
-      keepOriginalOrientation: 0
-      keepOriginalPositionY: 1
-      keepOriginalPositionXZ: 0
-      heightFromFeet: 0
-      mirror: 0
-      bodyMask: 01000000010000000100000001000000010000000100000001000000010000000100000001000000010000000100000001000000
-      curves: []
-      events: []
-      transformMask: []
-      maskType: 3
-      maskSource: {instanceID: 0}
-      additiveReferencePoseFrame: 0
-    - serializedVersion: 16
       name: Dive
       takeName: Scene
       internalID: 72756661956935242
-      firstFrame: 633
-      lastFrame: 662
+      firstFrame: 611
+      lastFrame: 640
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -719,8 +690,8 @@ ModelImporter:
       name: DiveLand
       takeName: Scene
       internalID: 976208562832669728
-      firstFrame: 666
-      lastFrame: 680
+      firstFrame: 644
+      lastFrame: 658
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -748,8 +719,8 @@ ModelImporter:
       name: FeetStuck
       takeName: Scene
       internalID: 877405077191525568
-      firstFrame: 684
-      lastFrame: 732
+      firstFrame: 662
+      lastFrame: 710
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -777,8 +748,8 @@ ModelImporter:
       name: StaffDrop
       takeName: Scene
       internalID: 437623820525457606
-      firstFrame: 736
-      lastFrame: 763
+      firstFrame: 714
+      lastFrame: 741
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -806,8 +777,8 @@ ModelImporter:
       name: StaffDropRecover
       takeName: Scene
       internalID: 185371892649814168
-      firstFrame: 767
-      lastFrame: 779
+      firstFrame: 745
+      lastFrame: 757
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -835,8 +806,8 @@ ModelImporter:
       name: Vault
       takeName: Scene
       internalID: 732318908622567339
-      firstFrame: 783
-      lastFrame: 810
+      firstFrame: 761
+      lastFrame: 788
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -864,8 +835,8 @@ ModelImporter:
       name: JumpCrouch
       takeName: Scene
       internalID: 763798204916566752
-      firstFrame: 814
-      lastFrame: 823
+      firstFrame: 792
+      lastFrame: 801
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -893,8 +864,8 @@ ModelImporter:
       name: FlungAir
       takeName: Scene
       internalID: 49371886791931440
-      firstFrame: 827
-      lastFrame: 839
+      firstFrame: 805
+      lastFrame: 817
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -922,8 +893,8 @@ ModelImporter:
       name: FlungLand
       takeName: Scene
       internalID: 124687213584189989
-      firstFrame: 843
-      lastFrame: 854
+      firstFrame: 821
+      lastFrame: 832
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -951,8 +922,8 @@ ModelImporter:
       name: DazedSit
       takeName: Scene
       internalID: 327320218861076827
-      firstFrame: 858
-      lastFrame: 888
+      firstFrame: 836
+      lastFrame: 866
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -980,8 +951,8 @@ ModelImporter:
       name: DazedSitHit
       takeName: Scene
       internalID: 804108866267775181
-      firstFrame: 892
-      lastFrame: 902
+      firstFrame: 870
+      lastFrame: 880
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1009,8 +980,8 @@ ModelImporter:
       name: Splat
       takeName: Scene
       internalID: 899035744417110502
-      firstFrame: 906
-      lastFrame: 915
+      firstFrame: 884
+      lastFrame: 893
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1038,8 +1009,8 @@ ModelImporter:
       name: SlideDown
       takeName: Scene
       internalID: 14777980542945236
-      firstFrame: 919
-      lastFrame: 937
+      firstFrame: 897
+      lastFrame: 915
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1067,8 +1038,8 @@ ModelImporter:
       name: MissGrab
       takeName: Scene
       internalID: 1101307050266011060
-      firstFrame: 941
-      lastFrame: 955
+      firstFrame: 919
+      lastFrame: 933
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1096,8 +1067,8 @@ ModelImporter:
       name: DazedLie
       takeName: Scene
       internalID: 62023793781596553
-      firstFrame: 959
-      lastFrame: 989
+      firstFrame: 937
+      lastFrame: 967
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1125,8 +1096,8 @@ ModelImporter:
       name: DazedLieHit
       takeName: Scene
       internalID: 110846474266946690
-      firstFrame: 993
-      lastFrame: 1003
+      firstFrame: 971
+      lastFrame: 981
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1154,8 +1125,8 @@ ModelImporter:
       name: Slip
       takeName: Scene
       internalID: 286058900900724760
-      firstFrame: 1007
-      lastFrame: 1022
+      firstFrame: 985
+      lastFrame: 1000
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1183,8 +1154,8 @@ ModelImporter:
       name: Stumble
       takeName: Scene
       internalID: 656204088388528948
-      firstFrame: 1026
-      lastFrame: 1056
+      firstFrame: 1004
+      lastFrame: 1034
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1212,8 +1183,8 @@ ModelImporter:
       name: PoleFall
       takeName: Scene
       internalID: 321384943297527856
-      firstFrame: 1060
-      lastFrame: 1074
+      firstFrame: 1038
+      lastFrame: 1052
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1241,8 +1212,8 @@ ModelImporter:
       name: GetUp
       takeName: Scene
       internalID: 656122197182400735
-      firstFrame: 1078
-      lastFrame: 1090
+      firstFrame: 1056
+      lastFrame: 1068
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1270,8 +1241,8 @@ ModelImporter:
       name: Detuned
       takeName: Scene
       internalID: 403348979748582315
-      firstFrame: 1094
-      lastFrame: 1136
+      firstFrame: 1072
+      lastFrame: 1114
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1299,8 +1270,8 @@ ModelImporter:
       name: Tuned
       takeName: Scene
       internalID: 1072530859834880996
-      firstFrame: 1140
-      lastFrame: 1176
+      firstFrame: 1118
+      lastFrame: 1154
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1328,8 +1299,8 @@ ModelImporter:
       name: StaffStuck
       takeName: Scene
       internalID: 284663857096075807
-      firstFrame: 1180
-      lastFrame: 1213
+      firstFrame: 1158
+      lastFrame: 1191
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1357,8 +1328,8 @@ ModelImporter:
       name: Hit
       takeName: Scene
       internalID: 928414661178970721
-      firstFrame: 1217
-      lastFrame: 1227
+      firstFrame: 1195
+      lastFrame: 1205
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1386,8 +1357,8 @@ ModelImporter:
       name: HitHeavy
       takeName: Scene
       internalID: 427628283238432918
-      firstFrame: 1231
-      lastFrame: 1247
+      firstFrame: 1209
+      lastFrame: 1225
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1415,8 +1386,8 @@ ModelImporter:
       name: Parried
       takeName: Scene
       internalID: 579008189676006322
-      firstFrame: 1251
-      lastFrame: 1263
+      firstFrame: 1229
+      lastFrame: 1241
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1444,8 +1415,8 @@ ModelImporter:
       name: ParriedPerfect
       takeName: Scene
       internalID: 1108673102064695940
-      firstFrame: 1267
-      lastFrame: 1285
+      firstFrame: 1245
+      lastFrame: 1263
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1473,8 +1444,8 @@ ModelImporter:
       name: Idle
       takeName: Scene
       internalID: 1063720026419174595
-      firstFrame: 1289
-      lastFrame: 1337
+      firstFrame: 1267
+      lastFrame: 1315
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1502,8 +1473,8 @@ ModelImporter:
       name: Walk
       takeName: Scene
       internalID: 723238853744037936
-      firstFrame: 1341
-      lastFrame: 1371
+      firstFrame: 1319
+      lastFrame: 1349
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1531,8 +1502,8 @@ ModelImporter:
       name: Run
       takeName: Scene
       internalID: 94099673521883256
-      firstFrame: 1375
-      lastFrame: 1395
+      firstFrame: 1353
+      lastFrame: 1373
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1560,8 +1531,8 @@ ModelImporter:
       name: StrafeL
       takeName: Scene
       internalID: 512201124543053358
-      firstFrame: 1399
-      lastFrame: 1423
+      firstFrame: 1377
+      lastFrame: 1401
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1589,8 +1560,8 @@ ModelImporter:
       name: StrafeR
       takeName: Scene
       internalID: 981948747523281650
-      firstFrame: 1427
-      lastFrame: 1451
+      firstFrame: 1405
+      lastFrame: 1429
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1618,8 +1589,8 @@ ModelImporter:
       name: WalkBack
       takeName: Scene
       internalID: 524590581339736057
-      firstFrame: 1455
-      lastFrame: 1485
+      firstFrame: 1433
+      lastFrame: 1463
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1647,8 +1618,8 @@ ModelImporter:
       name: BackFlip
       takeName: Scene
       internalID: 1002359834654414682
-      firstFrame: 1489
-      lastFrame: 1501
+      firstFrame: 1467
+      lastFrame: 1479
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1676,8 +1647,8 @@ ModelImporter:
       name: HopBack
       takeName: Scene
       internalID: 723472510741407740
-      firstFrame: 1505
-      lastFrame: 1519
+      firstFrame: 1483
+      lastFrame: 1497
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1705,8 +1676,8 @@ ModelImporter:
       name: Thrust
       takeName: Scene
       internalID: 949978981623055991
-      firstFrame: 1523
-      lastFrame: 1550
+      firstFrame: 1501
+      lastFrame: 1528
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1734,8 +1705,8 @@ ModelImporter:
       name: StaffSpin2
       takeName: Scene
       internalID: 995785909812146321
-      firstFrame: 1554
-      lastFrame: 1584
+      firstFrame: 1532
+      lastFrame: 1562
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1763,8 +1734,8 @@ ModelImporter:
       name: CraneKick
       takeName: Scene
       internalID: 1089241076805791334
-      firstFrame: 1588
-      lastFrame: 1616
+      firstFrame: 1566
+      lastFrame: 1594
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1792,8 +1763,8 @@ ModelImporter:
       name: NoteSmash
       takeName: Scene
       internalID: 589329479499646848
-      firstFrame: 1620
-      lastFrame: 1656
+      firstFrame: 1598
+      lastFrame: 1634
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1821,8 +1792,8 @@ ModelImporter:
       name: LowSweep
       takeName: Scene
       internalID: 1071409259664718741
-      firstFrame: 1660
-      lastFrame: 1699
+      firstFrame: 1638
+      lastFrame: 1677
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1850,8 +1821,8 @@ ModelImporter:
       name: GroundDart
       takeName: Scene
       internalID: 492757700567456603
-      firstFrame: 1703
-      lastFrame: 1728
+      firstFrame: 1681
+      lastFrame: 1706
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1879,8 +1850,8 @@ ModelImporter:
       name: PolePlant
       takeName: Scene
       internalID: 19038499339974783
-      firstFrame: 1732
-      lastFrame: 1746
+      firstFrame: 1710
+      lastFrame: 1724
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1908,8 +1879,8 @@ ModelImporter:
       name: PoleClimb
       takeName: Scene
       internalID: 40938699278998483
-      firstFrame: 1750
-      lastFrame: 1764
+      firstFrame: 1728
+      lastFrame: 1742
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1937,8 +1908,8 @@ ModelImporter:
       name: PoleBalance
       takeName: Scene
       internalID: 213849129347672079
-      firstFrame: 1768
-      lastFrame: 1798
+      firstFrame: 1746
+      lastFrame: 1776
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1966,8 +1937,8 @@ ModelImporter:
       name: PoleDive
       takeName: Scene
       internalID: 304326754279564344
-      firstFrame: 1802
-      lastFrame: 1831
+      firstFrame: 1780
+      lastFrame: 1809
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -1995,8 +1966,8 @@ ModelImporter:
       name: FluteRaise
       takeName: Scene
       internalID: 309341261797258603
-      firstFrame: 1835
-      lastFrame: 1849
+      firstFrame: 1813
+      lastFrame: 1827
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2024,8 +1995,8 @@ ModelImporter:
       name: FluteNote
       takeName: Scene
       internalID: 45368049177681243
-      firstFrame: 1853
-      lastFrame: 1866
+      firstFrame: 1831
+      lastFrame: 1844
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2053,8 +2024,8 @@ ModelImporter:
       name: AnswerBlow
       takeName: Scene
       internalID: 755867236209001809
-      firstFrame: 1870
-      lastFrame: 1883
+      firstFrame: 1848
+      lastFrame: 1861
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2082,8 +2053,8 @@ ModelImporter:
       name: AnswerStamp
       takeName: Scene
       internalID: 1083010918411040553
-      firstFrame: 1887
-      lastFrame: 1900
+      firstFrame: 1865
+      lastFrame: 1878
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2111,8 +2082,8 @@ ModelImporter:
       name: GroundLaugh
       takeName: Scene
       internalID: 917315639159943399
-      firstFrame: 1904
-      lastFrame: 1940
+      firstFrame: 1882
+      lastFrame: 1918
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2140,8 +2111,8 @@ ModelImporter:
       name: Intro
       takeName: Scene
       internalID: 115162322557531733
-      firstFrame: 1944
-      lastFrame: 2139
+      firstFrame: 1922
+      lastFrame: 2117
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2169,8 +2140,8 @@ ModelImporter:
       name: PhaseBow
       takeName: Scene
       internalID: 557375607360596529
-      firstFrame: 2143
-      lastFrame: 2263
+      firstFrame: 2121
+      lastFrame: 2241
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2198,8 +2169,8 @@ ModelImporter:
       name: PhaseForest
       takeName: Scene
       internalID: 1002090882531359692
-      firstFrame: 2267
-      lastFrame: 2417
+      firstFrame: 2245
+      lastFrame: 2395
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2227,8 +2198,8 @@ ModelImporter:
       name: Defeat
       takeName: Scene
       internalID: 196398897069576563
-      firstFrame: 2421
-      lastFrame: 2586
+      firstFrame: 2399
+      lastFrame: 2564
       wrapMode: 0
       orientationOffsetY: 0
       level: 0
@@ -2256,8 +2227,8 @@ ModelImporter:
       name: DefeatIdle
       takeName: Scene
       internalID: 884395473849908584
-      firstFrame: 2590
-      lastFrame: 2650
+      firstFrame: 2568
+      lastFrame: 2628
       wrapMode: 0
       orientationOffsetY: 0
       level: 0

@@ -119,7 +119,8 @@ namespace Nindo
                 {
                     fixedLane = clipT >= aimFix * draw.Seconds;
                     lane = FaceDirFrom(perch.Base);
-                    end = Floor(TargetPos) + lane * 2f;
+                    // adentro de la arena (con Kaito contra la barrera caía afuera y Boss.Update lo traía de un tirón)
+                    end = grove.FlingLanding(Floor(TargetPos), lane, 2f);
                     perchFaceDir = lane;
                     perchFaceLock = fixedLane;
                 }
@@ -184,7 +185,7 @@ namespace Nindo
             lastTala = Time.time;
             vuln = Vuln.Tickle;
             var c = ChikuoTimings.TalaShot;
-            const float fixAt = 0.65f, impact = 1.10f;
+            float fixAt = BambooMasterMoves.TalaFix, impact = BambooMasterMoves.TalaImpact;
             var def = BambooMasterMoves.Held("La Tala", c, AttackKind.Unblockable, impact, BambooMasterMoves.Dmg(BambooMasterMoves.Move.Tala, phaseIdx), BambooMasterMoves.Tala);
             if (!StartMove(def)) yield break;
             Play(c, 0.1f);

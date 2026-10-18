@@ -29,7 +29,8 @@ namespace Nindo
         IEnumerator GroundBrain()
         {
             if (body != Body.Ground) Landed(transform.position, transform.forward);
-            EnterGroundAI(0.35f);
+            // (el Paso del Ermitaño ya entró con su AfterFlip: no se le pisa con la pausa larga)
+            if (!groundAI) EnterGroundAI(0.35f);
             float now = Time.time;
             if (nextPoleAt < 0f) nextPoleAt = now + Random.Range(BambooMasterMoves.PoleFirst.x, BambooMasterMoves.PoleFirst.y);
             if (nextQaAt < 0f) nextQaAt = now + Random.Range(BambooMasterMoves.QaFirst.x, BambooMasterMoves.QaFirst.y);
@@ -37,19 +38,22 @@ namespace Nindo
             {
                 bool idle = State == EnemyState.Chase || State == EnemyState.Strafe;
                 if (phaseIdx != 1 && HasFreeStalk() && idle) { LeaveGroundAI(); yield break; }
+                // el próximo se agenda ANTES de arrancar: la contra de Kaito (el latigazo a la pértiga, el desafinado) corta
+                // esta corrutina con Run y, agendado después, el especial volvía apenas se levantaba (y el reintento abría con
+                // el reloj viejo). Igual que en chikuo_v2_check.py
                 if (idle && Time.time >= nextPoleAt)
                 {
+                    nextPoleAt = Time.time + Random.Range(BambooMasterMoves.PoleEvery.x, BambooMasterMoves.PoleEvery.y);
                     LeaveGroundAI();
                     yield return PoleCraneAct();
-                    nextPoleAt = Time.time + Random.Range(BambooMasterMoves.PoleEvery.x, BambooMasterMoves.PoleEvery.y);
                     EnterGroundAI(0.35f);
                     continue;
                 }
                 if (idle && phaseIdx == 1 && Time.time >= nextQaAt)
                 {
+                    nextQaAt = Time.time + Random.Range(BambooMasterMoves.QaEvery.x, BambooMasterMoves.QaEvery.y);
                     LeaveGroundAI();
                     yield return QuestionAnswer();
-                    nextQaAt = Time.time + Random.Range(BambooMasterMoves.QaEvery.x, BambooMasterMoves.QaEvery.y);
                     EnterGroundAI(0.35f);
                     continue;
                 }
@@ -80,14 +84,26 @@ namespace Nindo
 
         /// <summary>
         /// El Paso del Ermitaño en lugar de la guardia: el corte en neutral le entra a x0.6 (lo roza mientras se va) y se va
-        /// de una voltereta 2.5 m (0.35 s invulnerable); 0.25 s después arranca una tanda.
+        /// de una voltereta 2.5 m (invulnerable entera); 0.25 s después arranca una tanda. Una voltereta cada FlipEvery s: si
+        /// Kaito lo persigue con el dash y le vuelve a pegar, no se va otra vez (eso lo trababa sin atacar nunca): aguanta el
+        /// corte y le contesta con una tanda ya, con la armadura.
         /// </summary>
         HitResult NeutralHit(in DamageInfo info)
         {
             var r = ApplyDamage(info, BambooMasterMoves.NeutralMul);
-            if (r == HitResult.Hit && !phaseChanging) Run(HermitStep());
+            if (r != HitResult.Hit || phaseChanging) return r;
+            if (Time.time - lastFlip < BambooMasterMoves.FlipEvery)
+            {
+                look.Jangle(CutDirection(info) * 4f + Vector3.up);
+                nextAttackTime = Time.time;
+                return r;
+            }
+            lastFlip = Time.time;
+            Run(HermitStep());
             return r;
         }
+
+        float lastFlip = -9f;
 
         IEnumerator HermitStep()
         {
@@ -96,11 +112,9 @@ namespace Nindo
             Face(TargetPos, 99f, 1f);
             var c = ChikuoTimings.BackFlip;
             Play(c, 0.05f);
-            float inv = 0.35f;
             while (!ClipDone)
             {
                 ClipTravel(c);
-                if (inv > 0f && clipT >= inv) vuln = Vuln.Neutral;
                 yield return null;
             }
             EnterGroundAI(BambooMasterMoves.AfterFlip);
@@ -250,7 +264,7 @@ namespace Nindo
             var dive = ChikuoTimings.PoleDive;
             float plantT = plant.Event("Plant") * plant.Seconds;
             // de que clava: 0.45-1.40 cargado, sale a 1.40 y pega 0.93 s después (el Contact de PoleDive)
-            const float loadFrom = 0.45f, leaveAt = 1.40f;
+            float loadFrom = BambooMasterMoves.PoleLoadFrom, leaveAt = BambooMasterMoves.PoleLeaveAt;
             float strike = plantT + leaveAt + dive.Contact * dive.Seconds;
             var def = BambooMasterMoves.Held("Picada de la Pértiga", plant, AttackKind.Unblockable, strike, BambooMasterMoves.Dmg(BambooMasterMoves.Move.PoleDive, phaseIdx), BambooMasterMoves.PoleDive, dive.RingM);
             if (!StartMove(def)) yield break;

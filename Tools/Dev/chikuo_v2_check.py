@@ -80,7 +80,7 @@ P = dict(
     gates=[1.0, 0.65, 0.40, 0.0],       # pisos de cada fase: la 1 es el 35 %, la 2 (el piso) el 25 %, la 3 el 40 %
     trans=[4.0, 5.0], heal=30.0, spirit_gift=30.0,
     # --- arriba ---------------------------------------------------------------------------------------------------
-    breath=[(0.25, 0.45), None, (0.12, 0.25)],        # respiro posado entre acciones (s); nunca quieto (PerchIdle)
+    breath=[(0.25, 0.45), None, (0.10, 0.20)],        # respiro posado entre acciones (s); nunca quieto (PerchIdle)
     react_dist=4.5,                                   # Kaito cerca de la base y él sin cargar: contesta
     react_mix=dict(colgado=0.30, barrido=0.20, picada=0.15, baston=0.15, salto=0.20),
     camp_dist=2.5, camp_time=0.6,                     # plantado al pie de la caña: barrido de caña
@@ -89,11 +89,19 @@ P = dict(
     whistle_speed=22.0, whistle_lane=1.0,
     leap_crouch=[0.22, 0.22, 0.14], leap_base=0.30, leap_per_m=0.035, leap_k=[1.0, 1.0, 0.85], leap_grab=0.20,
     leap_dest=[(4.5, 8.0), None, (4.0, 7.0)],
-    catch_window=0.45,                                # caída del cielo: el corte a la caña de destino en los últimos 0.45 s
+    catch_window=[0.45, 0.45, 0.60],                  # caída del cielo: el corte a la caña de destino en los últimos s
+    leap_look=[0.0, 0.0, 0.25],                       # fase 3: mira la caña de destino antes de agacharse
     pingpong=0.30,
+    last_song=0.20,                                   # la Última Canción: salta después de cada acción
+    signature_first=(5.0, 7.0), signature_every=(9.0, 12.0),   # fase 3: tala, catapulta o la ráfaga de cuatro
+    catapult=dict(min_dist=4.0, every=6.0, w=1.0),
+    hang_near_lead=0.35,                              # colgado con Kaito al pie: la carga prende 0.35 s antes del dardo
+    # la vuelta de un hueco: lejos (>= 6 m) un salto común; si no garrocha / agachado cortable / dos bastonazos y trepa
+    recover=dict(leap_dist=6.0, vault=0.45, crouch=0.30, tanda_dist=4.0),
+    flip_every=1.5,                                   # una voltereta del Paso del Ermitaño cada 1.5 s como mucho
     # --- los huecos ---------------------------------------------------------------------------------------------------
     # (vuelo hasta que se lo puede cortar, cuánto dura, tope de cortes, multiplicador, daño de la caída)
-    revolcon=(0.55, 1.6, 3, 1.0, 12.0),
+    revolcon=(0.55, 2.2, 5, 1.0, 12.0),
     estampado=(1.00, 2.2, 4, 1.2, 24.0),
     caida=(0.45, 3.0, 5, 1.25, 36.0),
     resbalon=(0.30, 1.0, 2, 1.0, 6.0),
@@ -103,19 +111,19 @@ P = dict(
     pies=(0.0, 1.6, 3, 1.0, 0.0),                     # pies enterrados: esquiva perfecta de la picada
     clavado=(0.0, 1.1, 2, 1.0, 0.0),                  # bastón clavado: esquiva perfecta de la barrida
     landing=(0.0, 0.45, 1, 1.0, 0.0),                 # aterriza de la picada
-    stamp_range=6.0, stamp_angle=20.0, revolcon_m=3.2,
-    getup=0.40,                                       # se levanta de un salto, invulnerable
+    stamp_range=6.0, stamp_angle=26.0, revolcon_m=3.2,
+    getup=0.25,                                       # se levanta de un salto, invulnerable (GetUp a x1.6)
     recoil=0.40, recoil_perfect=0.60,                 # retroceso del parry a un golpe suyo de piso
     # --- el piso (fase 2) ---------------------------------------------------------------------------------------------
     gap=(0.35, 0.6), ground_speed=5.5, backflip=2.5, backflip_inv=0.35, armor_mul=0.35, neutral_mul=0.6,
-    open_p3=dict(revolcon=(0.55, 1.4, 3, 1.0, 12.0), estampado=(1.00, 2.0, 3, 1.2, 24.0)),
+    open_p3=dict(revolcon=(0.55, 2.0, 5, 1.0, 12.0), estampado=(1.00, 2.0, 3, 1.2, 24.0)),
     pertiga_every=(8.0, 11.0), pertiga_loaded=(0.45, 1.40), qa_every=(18.0, 24.0), note_gap=0.44,
     # --- daño a Kaito (de 100) -----------------------------------------------------------------------------------------
     # el más liviano por golpe del juego ("pica como un mosquito"): lo que lo hace exigente es la densidad
     dmg=dict(dart=[2.5, 2.5, 2.5], whistle=[5.0, 5.0, 5.0], dive=[5.0, 5.0, 5.0], staff=[5.0, 5.0, 4.5],
              sweep=[4.0, 4.0, 4.0], revancha=[3.5, 3.5, 4.0], ground=[3.5, 3.5, 4.0], lowsweep=[4.5, 4.5, 5.0],
              sprout=[4.0, 4.0, 4.5], catapult=[6.5, 6.5, 6.5], tala=[5.5, 5.5, 5.5]),
-    dmg_scale=1.0,
+    dmg_scale=0.9,
     # --- el bot de AutoPilot y el gancho del latigazo (Input/AutoPilot.cs, sección 13 del doc) -------------------------
     notice={"experto": 0.95, "bueno": 0.75, "promedio": 0.55},     # ve las campanas blancas de lejos y va
     notice_near=3.0,                                               # al pie: como cualquier aviso
@@ -142,7 +150,6 @@ PERCH_ACTS = {
     "colgado": dict(dur=1.45, releases=[0.65, 0.95], loaded=(0.00, 1.25), hang=True),
     "risa": dict(dur=1.20, releases=[], loaded=(0.00, 1.20)),
     "risa_maestro": dict(dur=2.00, releases=[], loaded=(0.00, 2.00)),
-    "ermitanos": dict(dur=0.60, releases=[], loaded=None),
 }
 
 
@@ -185,7 +192,6 @@ def use_clips(path=SIDECAR):
     c = sec("LeapCrouch")
     P["leap_crouch"] = [c, c, c / 1.57]
     P["leap_grab"] = sec("LeapGrab")
-    P["getup"] = sec("GetUp")
     return True
 
 
@@ -398,11 +404,12 @@ def fair_report():
             dash = 2.6 + 6.5 + run_dist(t - 0.26) if t > 0.26 else 2.6
             row.append("reacción %.2f: corriendo %4.1f m, con el dash %4.1f m" % (rt, run, dash))
         print("  %-28s blanco %.2f-%.2f s  %s" % (name, a, b, " | ".join(row)))
-    print("\n== caída del cielo: corte a la caña de destino en los últimos %.2f s del vuelo" % P["catch_window"])
+    print("\n== caída del cielo: corte a la caña de destino en los últimos %.2f / %.2f s del vuelo (fases 1 / 3)" % (
+        P["catch_window"][0], P["catch_window"][2]))
     for ph in (0, 2):
         for d in (5.0, 7.0, 9.0):
             fl = (P["leap_base"] + P["leap_per_m"] * d) * P["leap_k"][ph]
-            total = P["leap_crouch"][ph] + fl
+            total = P["leap_look"][ph] + P["leap_crouch"][ph] + fl
             row = []
             for k_d in (4.5, 6.0, 8.0):
                 t = total - 0.30 - 0.133
@@ -622,6 +629,8 @@ class Fight:
         self.inv_until = -1.0
         self.visit_cut_ok = True                       # la vuelta del piso se puede cortar una vez por bajada
         self.next_pertiga = self.next_qa = 0.0
+        self.next_sig = None
+        self.last_flip = -9.0
         self.tells, self.rings = [], []
         self.threats, self.phase_t, self.up_t, self.acts = [0, 0, 0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0, 0, 0]
         self.open_t = [0.0, 0.0, 0.0]
@@ -738,6 +747,20 @@ class Fight:
         if self.near_since is not None and t - self.near_since >= P["camp_time"] and self.cd_ok("barrido", 5.0):
             self.cd["barrido"] = t
             return self.stalk_sweep()
+        if ph == 2:
+            # la firma de la fase 3 (BambooMasterBoss.Decide, regla 3b)
+            if self.next_sig is None:
+                self.next_sig = t + self.rng.uniform(*P["signature_first"])
+            elif t >= self.next_sig:
+                self.next_sig = t + self.rng.uniform(*P["signature_every"])
+                self.S("firmas")
+                if self.tala_target() is not None:
+                    self.cd["tala"] = t
+                    return self.tala()
+                if dK >= P["catapult"]["min_dist"]:
+                    self.cd["catapulta"] = t
+                    return self.catapult()
+                return self.perch_act("cuatro_notas")
         if dK <= P["react_dist"]:
             # Kaito debajo y él sin cargar: se cuelga a soplarle de cerca (cargado), barre con la caña, baja a pegarle o se va
             r = self.rng.random() * sum(P["react_mix"].values())
@@ -765,7 +788,7 @@ class Fight:
             self.act_laugh = False
             self.S("risa")
             return self.perch_act("risa")
-        cap = 1 if (ph == 2 and self.hp <= 0.12 * P["health"]) else P["max_on_stalk"][ph]
+        cap = 1 if (ph == 2 and self.hp <= P["last_song"] * P["health"]) else P["max_on_stalk"][ph]
         if self.on_stalk >= cap and self.pick_dest() is not None:
             return self.start_leap()
         hp01 = self.hp / P["health"]
@@ -783,8 +806,8 @@ class Fight:
         if self.cd_ok("baston", 5.0):
             opts.append(("baston", 0.3))
         if ph == 2:
-            if dK >= 5.0 and self.cd_ok("catapulta", 8.0):
-                opts.append(("catapulta", 0.6))
+            if dK >= P["catapult"]["min_dist"] and self.cd_ok("catapulta", P["catapult"]["every"]):
+                opts.append(("catapulta", P["catapult"]["w"]))
             if self.tala_target() is not None and self.cd_ok("tala", 7.0):
                 opts.append(("tala", 0.9))
         r = self.rng.random() * sum(w for _, w in opts)
@@ -794,7 +817,7 @@ class Fight:
                 break
         if name == "leap":
             return self.start_leap() if self.pick_dest() is not None else self.perch_act("dardo")
-        if name in ("picada", "baston", "catapulta", "tala", "ermitanos"):
+        if name in ("picada", "baston", "catapulta", "tala"):
             self.cd[name] = t
         if name == "picada":
             return self.dive()
@@ -824,6 +847,9 @@ class Fight:
             a["releases"] = [r + 0.6 for r in a["releases"]]
             a["dur"] += 0.6
         a["name"], a["t0"] = name, t0
+        if a.get("hang") and dist(self.k.pos, self.root) <= P["react_dist"]:
+            # con Kaito al pie la carga prende 0.35 s antes del primer dardo (BambooMasterBoss.HangAct 'near')
+            a["loaded"] = (max(0.0, a["releases"][0] - P["hang_near_lead"]), a["loaded"][1])
         self.set_mode("perch")
         self.act = a
         self.on_stalk += 1
@@ -956,7 +982,7 @@ class Fight:
         t, ph = self.t, self.ph
         src = None if from_ground else STALKS[self.stalk]["pos"]
         start = self.gpos if from_ground else src
-        c = 0.0 if from_ground else P["leap_crouch"][ph]
+        c = 0.0 if from_ground else P["leap_look"][ph] + P["leap_crouch"][ph]
         d = dist(start, STALKS[dest]["pos"])
         fl = (P["leap_base"] + P["leap_per_m"] * d) * P["leap_k"][ph]
         if vault:
@@ -1230,12 +1256,52 @@ class Fight:
             return self.go(self.t + P["getup"], self.gdecide)
         if self.ph == 2 and self.last_open in ("estampado", "caida"):
             return self.go(self.t + P["getup"], self.revancha)
-        self.go(self.t + P["getup"], self.return_up)
+        self.go(self.t + P["getup"], self.recover)
 
     def revancha(self):
         if dist(self.k.pos, self.gpos) <= 3.0:
-            return self.gstrike("revancha", 0.60, "revancha", last=True, then=self.return_up)
-        self.return_up()
+            return self.gstrike("revancha", 0.60, "revancha", last=True, then=self.recover)
+        self.recover()
+
+    def recover(self):
+        """Cómo vuelve arriba después de un hueco (BambooMasterBoss.ReturnUp): lejos de Kaito un salto común (atajable); si
+        no, la garrocha, el agachado cortable o dos bastonazos (el segundo, desviado, abre la Contra) y trepa sin carga."""
+        R = P["recover"]
+        dK = dist(self.k.pos, self.gpos)
+        r = self.rng.random()
+        if dK >= R["leap_dist"] or R["vault"] <= r < R["vault"] + R["crouch"]:
+            self.S("vuelta_agachado")
+            self.visit_cut_ok = True
+            self.set_mode("crouch")
+            self.trace("se agacha para saltar (vuelta de un hueco)")
+            return self.go(self.t + 0.30, self.start_leap, False, True)
+        if r >= R["vault"] + R["crouch"] and dK <= R["tanda_dist"]:
+            self.S("vuelta_tanda")
+            self.trace("vuelta con bastón (dos golpes)")
+            return self.run_combo([("gold", 0.50, "ground"), ("gold", 0.42, "ground")], self.climb_safe)
+        self.S("vuelta_garrocha")
+        self.start_leap(from_ground=True, vault=True)
+
+    def vault_up(self):
+        """El Tropiezo no pasa por el kip-up (BambooMasterBoss.SimpleHole): se levanta y se va con la garrocha."""
+        if self.ph == 1:
+            return self.gdecide()
+        self.start_leap(from_ground=True, vault=True)
+
+    def climb_safe(self):
+        """Después de la tanda de la vuelta: trepa (o se agacha y salta) sin que se lo pueda cortar."""
+        if self.ph == 1:
+            return self.gdecide()
+        t = self.t
+        near = [s for s in STALKS if self.perchable(s) and dist(STALKS[s]["pos"], self.gpos) <= 1.5]
+        if near:
+            sid = near[0]
+            self.set_mode("climb_safe")
+            self.stalk, self.root = sid, STALKS[sid]["pos"]
+            self.S("trepadas")
+            return self.go(t + 0.80, self.climb_done)
+        self.set_mode("crouch_safe")
+        self.go(t + 0.30, self.start_leap, False, True)
 
     def whip(self, frm, sid, how):
         """El corte a la caña cargada: la caña lo despide por la línea Kaito -> caña."""
@@ -1298,7 +1364,7 @@ class Fight:
             return self.S("corte_a_la_cana")
         if m == "leap" and self.leap is not None:
             dest = STALKS[self.leap["dest"]]["pos"]
-            if dist(frm, dest) <= 3.2 and self.leap["grab"] - P["catch_window"] <= t < self.leap["grab"]:
+            if dist(frm, dest) <= 3.2 and self.leap["grab"] - P["catch_window"][self.ph] <= t < self.leap["grab"]:
                 k.on_dealt(t)
                 self.k.goal = None
                 return self.whip(frm, self.leap["dest"], "caida")
@@ -1320,7 +1386,7 @@ class Fight:
             return self.opening("desafinado", self.gpos, t, then=self.gdecide)
         if m == "crouch":
             k.on_dealt(t)
-            return self.opening("tropiezo", self.gpos, t)
+            return self.opening("tropiezo", self.gpos, t, then=self.vault_up)
         if m == "open" and self.open is not None and self.open["t0"] <= t <= self.open["t1"]:
             o = self.open
             if o["cuts"] <= 0:
@@ -1331,7 +1397,7 @@ class Fight:
             if o["cuts"] <= 0 and self.mode == "open":
                 # el último corte del tope lo tira lejos: se levanta enseguida
                 o["t1"] = min(o["t1"], t + 0.25)
-                nxt = self.getup if o["kind"] not in ("landing", "desafinado", "contra") else \
+                nxt = self.vault_up if o["kind"] == "tropiezo" else self.getup if o["kind"] not in ("landing", "desafinado", "contra") else \
                     self.ground_after_landing if o["kind"] == "landing" else self.gdecide if self.ph == 1 else self.return_up
                 self.go(o["t1"], self.close_open, nxt)
             return
@@ -1347,6 +1413,13 @@ class Fight:
             self.damage_boss(dmg_base * k.mul(t) * P["neutral_mul"], "neutral")
             if self.mode not in ("ground", "gstrike"):
                 return
+            if t - self.last_flip < P["flip_every"]:
+                # (BambooMasterBoss.NeutralHit) ya se fue de una voltereta hace poco: aguanta y contesta con una tanda
+                self.S("sin_voltereta")
+                if self.ph == 1 and self.mode == "ground":
+                    return self.run_combo(list(self.rng.choice(self.COMBOS)[2]), self.gap_then_decide)
+                return
+            self.last_flip = t
             self.S("volteretas")
             self.inv_until = t + P["backflip_inv"]
             d = norm(v2(frm, self.gpos))
@@ -1663,17 +1736,16 @@ def knobs_report(runs, seed, factors=(1.0, 1.15, 1.3, 1.42)):
     global KAITO_DMG
     import copy
     base = copy.deepcopy(P)
-    cap2 = dict(revolcon=(0.55, 1.6, 2, 1.0, 12.0), open_p3=dict(revolcon=(0.55, 1.4, 2, 1.0, 12.0), estampado=(1.00, 2.0, 3, 1.2, 24.0)))
-    cap4 = dict(revolcon=(0.55, 1.6, 4, 1.0, 12.0), open_p3=dict(revolcon=(0.55, 1.4, 4, 1.0, 12.0), estampado=(1.00, 2.0, 3, 1.2, 24.0)))
-    half = dict(revolcon=(0.55, 1.6, 3, 1.0, 6.0), estampado=(1.00, 2.2, 4, 1.2, 12.0), caida=(0.45, 3.0, 5, 1.25, 18.0),
-                open_p3=dict(revolcon=(0.55, 1.4, 3, 1.0, 6.0), estampado=(1.00, 2.0, 3, 1.2, 12.0)))
-    long4 = dict(revolcon=(0.55, 2.0, 4, 1.0, 12.0), open_p3=dict(revolcon=(0.55, 1.8, 4, 1.0, 12.0), estampado=(1.00, 2.0, 3, 1.2, 24.0)))
-    more = dict(revolcon=(0.55, 1.6, 3, 1.0, 18.0), estampado=(1.00, 2.2, 4, 1.2, 36.0), caida=(0.45, 3.0, 5, 1.25, 54.0),
-                open_p3=dict(revolcon=(0.55, 1.4, 3, 1.0, 18.0), estampado=(1.00, 2.0, 3, 1.2, 36.0)))
-    rows = [("hoy", {}), ("tope del revolcón 3 -> 2", cap2), ("tope del revolcón 3 -> 4", cap4),
-            ("revolcón de 2.0 s con tope 4", long4), ("caídas a la mitad (6 / 12 / 18)", half),
-            ("caídas x1.5 (18 / 36 / 54)", more), ("daño a Kaito x1.1", dict(dmg_scale=1.1)),
-            ("daño a Kaito x0.9", dict(dmg_scale=0.9))]
+    E3 = (1.00, 2.0, 3, 1.2, 24.0)
+    cap4 = dict(revolcon=(0.55, 2.0, 4, 1.0, 12.0), open_p3=dict(revolcon=(0.55, 1.8, 4, 1.0, 12.0), estampado=E3))
+    old3 = dict(revolcon=(0.55, 1.6, 3, 1.0, 12.0), open_p3=dict(revolcon=(0.55, 1.4, 3, 1.0, 12.0), estampado=E3))
+    half = dict(revolcon=(0.55, 2.2, 5, 1.0, 6.0), estampado=(1.00, 2.2, 4, 1.2, 12.0), caida=(0.45, 3.0, 5, 1.25, 18.0),
+                open_p3=dict(revolcon=(0.55, 2.0, 5, 1.0, 6.0), estampado=(1.00, 2.0, 3, 1.2, 12.0)))
+    more = dict(revolcon=(0.55, 2.2, 5, 1.0, 18.0), estampado=(1.00, 2.2, 4, 1.2, 36.0), caida=(0.45, 3.0, 5, 1.25, 54.0),
+                open_p3=dict(revolcon=(0.55, 2.0, 5, 1.0, 18.0), estampado=(1.00, 2.0, 3, 1.2, 36.0)))
+    rows = [("hoy", {}), ("revolcón 2.0 s con tope 4", cap4), ("revolcón 1.6 s con tope 3 (el de antes)", old3),
+            ("caídas a la mitad (6 / 12 / 18)", half), ("caídas x1.5 (18 / 36 / 54)", more),
+            ("daño a Kaito x1.0", dict(dmg_scale=1.0)), ("daño a Kaito x0.8", dict(dmg_scale=0.8))]
     print("== perillas (%d peleas por nivel; minutos del PlayClock y muertes medias)" % runs)
     for F in factors:
         for label, mods in rows:

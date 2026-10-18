@@ -1,8 +1,9 @@
 """Herramientas de malla del Chikuō ermitaño: un MeshBuilder por pieza (un hueso, o varios con pesos) con primitivas
 facetadas para un personaje de tela, piel, pelo y hojas.
 
-Parte del kit del Chikuō anterior (bosses/bamboo_master/master_kit.py: tubos de sección propia, cintas con espesor,
-cajas orientadas, pesos repartidos en las articulaciones) y suma lo que pide el ermitaño:
+Parte del kit del Chikuō anterior (bosses/bamboo_master/master_kit.py, borrado en C4: queda en la historia de git;
+tubos de sección propia, cintas con espesor, cajas orientadas, pesos repartidos en las articulaciones) y suma lo que
+pide el ermitaño:
   * hojas de bambú cerradas (una pirámide baja arriba y una cara plana abajo: CharacterLit descarta las caras de atrás,
     así que una hoja de una sola cara desaparecía al mirarla desde abajo o de canto);
   * púas (las cejas salvajes, los mechones de las sienes, el moño facetado);

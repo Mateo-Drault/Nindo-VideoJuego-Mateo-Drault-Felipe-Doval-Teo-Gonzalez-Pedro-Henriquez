@@ -87,17 +87,19 @@ def idle():
     círculo chico con la punta, mira a un lado y al otro con la sonrisa pícara, tamborilea los dedos de la izquierda y
     parpadea; los cascabeles se mecen con cada rebote. La pose madre del piso (READY): f0 = f48."""
     P = READY
-    bob = lambda dz, dy=0.0: dict(hips=(0.0, -0.02 + dy, -0.17 + dz))
+    # el rebote: 8 cm de cadera (antes 3.5: a 1:1 eran 2 px y la guardia parecía quieta) con el peso que pasa de un pie
+    # al otro cada dos rebotes; la cabeza y los hombros llegan tarde (el lag del clip), la punta dibuja un círculo de ~30 cm
+    bob = lambda dz, dy=0.0, dx=0.0: dict(hips=(dx, -0.02 + dy, -0.17 + dz))
     st = lambda dx, dz: staff_world((-0.40 + dx * 0.3, 0.21, 0.97 + dz * 0.5), unit((0.40 + dx, -0.83, 0.39 + dz)), (0, -0.3, 1))
     keys = [
         K(0, P),
-        K(6, P, bob(-0.035, 0.01), st(0.0, -0.03), dict(spine2=(6, 0, 4), head=(-2, 0, 4)), ease="sine"),
-        K(12, P, bob(0.0), st(0.03, 0.0), dict(spine2=(4, 0, 6), neck=(-4, 0, 6), head=(-4, 4, 12)), ease="sine"),
-        K(18, P, bob(-0.035, 0.01), st(0.0, 0.03), dict(spine2=(6, 0, 6), neck=(-4, 0, 6), head=(-2, 4, 14)), ease="sine"),
-        K(24, P, bob(0.0), st(-0.03, 0.0), dict(spine2=(4, 0, 2), head=(-4, 0, 2)), ease="sine"),
-        K(30, P, bob(-0.035, 0.01), st(0.0, -0.03), dict(spine2=(6, 0, 0), neck=(-4, 0, -2), head=(-2, -4, -8)), ease="sine"),
-        K(36, P, bob(0.0), st(0.03, 0.0), dict(spine2=(4, 0, 0), neck=(-4, 0, -2), head=(-4, -4, -8)), ease="sine"),
-        K(42, P, bob(-0.035, 0.01), st(0.0, 0.03), dict(spine2=(6, 0, 3), head=(-2, 0, 0)), ease="sine"),
+        K(6, P, bob(-0.08, 0.015, -0.03), st(0.0, -0.12), dict(spine2=(8, 0, 4), head=(-2, 0, 4)), ease="sine"),
+        K(12, P, bob(0.0, 0.0, -0.04), st(0.12, 0.0), dict(spine2=(4, 0, 6), neck=(-4, 0, 6), head=(-4, 4, 12)), ease="sine"),
+        K(18, P, bob(-0.08, 0.015, -0.03), st(0.0, 0.12), dict(spine2=(8, 0, 6), neck=(-4, 0, 6), head=(-2, 4, 14)), ease="sine"),
+        K(24, P, bob(0.0), st(-0.12, 0.0), dict(spine2=(4, 0, 2), head=(-4, 0, 2)), ease="sine"),
+        K(30, P, bob(-0.08, 0.015, 0.03), st(0.0, -0.12), dict(spine2=(8, 0, 0), neck=(-4, 0, -2), head=(-2, -4, -8)), ease="sine"),
+        K(36, P, bob(0.0, 0.0, 0.04), st(0.12, 0.0), dict(spine2=(4, 0, 0), neck=(-4, 0, -2), head=(-4, -4, -8)), ease="sine"),
+        K(42, P, bob(-0.08, 0.015, 0.03), st(0.0, 0.12), dict(spine2=(8, 0, 3), head=(-2, 0, 0)), ease="sine"),
         K(48, P, ease="sine"),
     ]
     tap = [K(0, fing_l="grip_staff"), K(30, fing_l="grip_staff"), K(32, fing_l="grip_stalk"), K(34, fing_l="grip_staff"),
@@ -236,13 +238,15 @@ def ground_laugh():
     feet = legs((-0.22, 0.04, 0.115), (0.22, -0.06, 0.115), rr=(0, 0, -14), rl=(0, 0, 14), kr=(-0.3, -1, 0), kl=(0.3, -1, 0))
     base = merge(cane, feet, dict(hips=(0, 0.0, -0.10), hips_rot=(0, 0, 0), spine=(2, 0, 0), spine1=(2, 0, 0), spine2=(4, 0, 0),
                                   neck=(-6, 0, 0), head=(-14, 0, 0), face="laugh"))
-    up = dict(hips=(0, 0.03, -0.09), spine=(-6, 0, 0), spine1=(-6, 0, 0), spine2=(-4, 0, 0), neck=(-10, 0, 0), head=(-22, 0, 0))
-    fold = dict(hips=(0, 0.06, -0.16), hips_rot=(10, 0, 0), spine=(10, 0, 0), spine1=(12, 0, 4), spine2=(16, 0, 4), neck=(4, 0, 0),
-                head=(-6, 0, 6))
+    # la cabeza bien atrás (la carcajada del concepto, la cara a la cámara alta) y el doblez para adelante cortito: doblado
+    # del todo la cámara veía la coronilla y la capa, nunca la boca abierta
+    up = dict(hips=(0, 0.03, -0.09), spine=(-8, 0, 0), spine1=(-8, 0, 0), spine2=(-8, 0, 0), neck=(-14, 0, 0), head=(-30, 0, 0))
+    fold = dict(hips=(0, 0.05, -0.14), hips_rot=(6, 0, 0), spine=(4, 0, 0), spine1=(5, 0, 4), spine2=(6, 0, 4), neck=(-4, 0, 0),
+                head=(-14, 0, 6))
 
     def slap(f):
         return [K(f - 4, base, fold, free("l", (0.40, -0.40, 1.05), elbow=(1, 0.3, -0.3), fing="open")),
-                K(f, base, dict(fold, spine2=(20, 0, 4)), free("l", (0.34, -0.30, 0.78), elbow=(1, 0.3, -0.3), fing="open"), ease="snap")]
+                K(f, base, dict(fold, spine2=(10, 0, 4)), free("l", (0.34, -0.28, 0.86), elbow=(1, 0.3, -0.3), fing="open"), ease="snap")]
     keys = [K(0, base, up, free("l", (0.44, -0.10, 1.10), elbow=(1, 0.2, -0.6), fing="relaxed"))]
     keys += slap(10) + [K(16, base, up, free("l", (0.46, -0.16, 1.16), elbow=(1, 0.2, -0.6), fing="relaxed"))]
     keys += slap(28) + [K(36, base, up, free("l", (0.44, -0.10, 1.10), elbow=(1, 0.2, -0.6), fing="relaxed"))]

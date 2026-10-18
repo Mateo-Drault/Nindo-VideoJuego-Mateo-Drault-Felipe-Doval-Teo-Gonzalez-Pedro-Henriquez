@@ -362,8 +362,6 @@ def write_sidecar(ranges, baked, data, tris, bh, fails=()):
                            "enciende por nombre con CharacterGlint.SetGlow (dorado = parry, rojo = dash, blanco = la caña "
                            "cargada). Ninguno se llama 'Glint': Enemy no prende nada solo."},
         "material_rgb": {n: [round(c, 4) for c in rgb] for n, rgb in CM.MAT_RGB.items()},
-        "extra_materials": {CM.DECOY_MAT: {"rgb": list(CM.DECOY_RGB), "smoothness": 0.05,
-                                           "use": "el señuelo de hojas: la misma malla con todos los slots en este material"}},
         "chains": {"runtime": ["Acc_TasselBeard", "Acc_LeafKnot", "Acc_TieSashA", "Acc_TieSashB"] +
                               [n for n, *_ in CR.chimes_full()],
                    "colliders": [n for n, *_ in CR.collider_specs()],
