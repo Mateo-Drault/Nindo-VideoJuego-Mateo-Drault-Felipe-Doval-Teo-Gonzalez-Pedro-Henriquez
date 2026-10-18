@@ -248,6 +248,9 @@ namespace Nindo
             if (look == null) { base.Update(); return; }
             // la pelea arrancó (BossIntroRoutine llamó BeginFight): antes que Enemy, que en Chase ya buscaría un patrón del piso
             if (Fighting && !begun && IsAlive) BeginMine();
+            // Kaito cayó: deja lo que hacía y se ríe hasta que la arena lo reinicia (Enemy, con su blanco muerto, lo pasaba a
+            // Idle y le tocaba la locomoción arriba de la caña)
+            if (Fighting && begun && !kaitoDown && target != null && !target.IsAlive) { kaitoDown = true; Run(KaitoDown()); }
             TrackKaito();
             base.Update();
             float dt = Time.deltaTime;
@@ -270,9 +273,20 @@ namespace Nindo
             UpdateCamera();
         }
 
+        bool kaitoDown;
+
+        IEnumerator KaitoDown()
+        {
+            vuln = Vuln.None;
+            if (body == Body.Carried) Landed(transform.position, transform.forward);
+            Play(body == Body.Perch ? ChikuoTimings.PerchLaugh : ChikuoTimings.GroundLaugh, 0.2f);
+            while (true) yield return null;
+        }
+
         void BeginMine()
         {
             begun = true;
+            kaitoDown = false;
             if (!EnsureGrove()) return;
             phaseIdx = Mathf.Clamp(retryPhase, 0, 2);
             if (phaseIdx >= 1)
@@ -472,6 +486,10 @@ namespace Nindo
 
         /// <summary>Las marcas de la UI (fijado, peligro) arriba de su cabeza, esté donde esté (no a 2.7 m de la base).</summary>
         public override Vector3 HeadPoint => look != null && look.Head != null && body != Body.Ground ? look.Head.position + Vector3.up * 0.45f : base.HeadPoint;
+
+        /// <summary>En plena pelea se lo puede fijar siempre: casi todo lo hace en el estado Scripted de Enemy (lo coreografía el
+        /// jefe), que para un enemigo común es "en una escena, no fijable".</summary>
+        public override bool Targetable => IsAlive && gameObject.activeInHierarchy && (Fighting || State != EnemyState.Scripted);
 
         /// <summary>El imán y el fijado de Kaito apuntan a la base de su caña (la raíz); en el salto, a la caña de destino
         /// (el imán gira hacia ella: la caída del cielo se apunta sola).</summary>
@@ -916,12 +934,18 @@ namespace Nindo
             tipHideAt = Time.unscaledTime + TipSeconds;
         }
 
-        /// <summary>Un sonido de la pelea; si la clave nueva (sección 18 del diseño) no está en NindoContent, la de respaldo.</summary>
+        /// <summary>
+        /// Un sonido de la pelea (Tools/Audio/sfx_chikuo.py); si la clave no está en NindoContent, la de respaldo. Los
+        /// cascabeles y la flauta están afinados a la pentatónica del tema: sin variación de altura, y en la fase 3 (el
+        /// tema sube medio tono) su versión '_p3'.
+        /// </summary>
         void Sfx(string key, string fallback, Vector3 pos, float volume = 1f)
         {
             var content = Game.LoadContent();
-            if (content != null && content.Sfx(key) == null) key = fallback;
-            if (!string.IsNullOrEmpty(key)) Game.Audio?.Play(key, pos, volume, 0.06f);
+            bool tonal = key.StartsWith("tell_chime") || key.StartsWith("chime") || key.StartsWith("flute_n");
+            if (tonal && phaseIdx >= 2 && content != null && content.Sfx(key + "_p3") != null) key += "_p3";
+            else if (content != null && content.Sfx(key) == null) key = fallback;
+            if (!string.IsNullOrEmpty(key)) Game.Audio?.Play(key, pos, volume, tonal ? 0f : 0.06f);
         }
 
         static string PhaseSubtitle(int phase) => phase <= 0 ? null : phase == 1 ? "El Baile de la Flauta" : "Todo el Bosque Canta";

@@ -442,8 +442,8 @@ namespace Nindo
 
         void PlayNote(bool high, int i)
         {
-            // la escala del tema: agudas y graves con su altura (sin las notas sintetizadas, el ping y el toc de madera)
-            Sfx("flute_note_" + (high ? 4 + i % 2 : 1 + i % 2), high ? "pearl_ping" : "step_wood", Voice, 0.8f);
+            // la pentatónica del tema (Tools/Audio/sfx_chikuo.py): agudas y graves con su altura
+            Sfx("flute_n" + (high ? 4 + i % 2 : 1 + i % 2), high ? "pearl_ping" : "step_wood", Voice, 0.8f);
         }
 
         /// <summary>Los brotes por salir: el disco sigue a Kaito hasta 0.45 s antes y queda fijo; el "¡ya!" de cada uno.</summary>

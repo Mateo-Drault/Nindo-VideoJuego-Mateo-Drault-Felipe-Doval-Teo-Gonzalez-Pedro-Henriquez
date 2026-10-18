@@ -1,9 +1,10 @@
-"""Modelo de diseño de Chikuō v2 (fase C4): los números de Docs/handoff/diseno/chikuo_v2.md, chequeados sin Unity.
+"""Modelo de Chikuō v2 (fase C4): la pelea de Docs/handoff/diseno/chikuo_v2.md y de BambooMasterBoss, chequeada sin Unity.
 
-Es el contrato en Python, no el port del código: cuando BambooMasterBoss esté reescrito y los clips existan, la
-simulación de balance de verdad es sim_bamboo_master.py portado a esta pelea (con los tiempos del sidecar). Mientras
-tanto esto dice si el diseño cierra: si los avisos se leen, si el latigazo se alcanza, si la cámara encuadra y cuánto
-dura la pelea contra el bot de AutoPilot.
+Es el sucesor de sim_bamboo_master.py (el del Chikuō viejo, la guardia y la postura): con los clips exportados toma sus
+tiempos del sidecar (Art/Characters/BambooMaster/BambooMaster.fbx.json, los mismos que lee el código por
+ChikuoTimings.cs): la duración de cada acción posado, sus soplidos y su carga, el golpe de la picada, del bastón que cae y
+del barrido de caña, el agachado del salto. Sin el sidecar (--design) quedan los números redondos del diseño. Dice si
+los avisos se leen, si el latigazo se alcanza, si la cámara encuadra y cuánto dura la pelea contra el bot de AutoPilot.
 
 Partes (se pueden pedir de a una):
   --layout   las cañas de la arena (centro 124, 162): distancias entre ellas, al camino de la entrada (el arco de 116,
@@ -121,6 +122,8 @@ P = dict(
     catch={"experto": 0.25, "bueno": 0.06, "promedio": 0.02},      # va a la caña de destino de un salto (a <= 7 m)
     hook_dash=3.7,
 )
+# los tres golpes posado con su propio clip (el golpe en s desde que arranca: el Contact del sidecar)
+STRIKE = dict(dive=0.95, staff=0.85, sweep=0.85, sweep_len=1.35)
 DEATH_AND_RETRY = 3.6 + 3.0       # como sim_bamboo_master: reaparece en el santuario y camina a la arena
 REINTRO = 2.0
 KAITO_DMG = 1.0                   # --calib
@@ -141,6 +144,49 @@ PERCH_ACTS = {
     "risa_maestro": dict(dur=2.00, releases=[], loaded=(0.00, 2.00)),
     "ermitanos": dict(dur=0.60, releases=[], loaded=None),
 }
+
+
+SIDECAR = os.path.join(HERE, "..", "..", "Nindo", "Assets", "Nindo", "Art", "Characters", "BambooMaster", "BambooMaster.fbx.json")
+
+
+def use_clips(path=SIDECAR):
+    """Los tiempos de los clips exportados (lo que de verdad toca BambooMasterBoss) en lugar de los redondos del diseño."""
+    if not os.path.exists(path):
+        return False
+    clips = json.load(open(path, encoding="utf8"))["clips"]
+
+    def sec(name):
+        return clips[name]["seconds"]
+
+    def ev(name, key):
+        c = clips[name]
+        return [e["frame"] / 30.0 for e in c.get("events", []) if e.get("fn") == key]
+
+    def act(name, rate=1.0):
+        rel = [x / rate for x in ev(name, "DartSpawn")]
+        ld, ul = ev(name, "Load"), ev(name, "Unload")
+        loaded = (ld[0] / rate, ul[0] / rate) if ld and ul else None
+        return dict(dur=sec(name) / rate, releases=rel, loaded=loaded)
+
+    PERCH_ACTS["dardo"] = act("PerchDart")
+    PERCH_ACTS["dos_dardos"] = act("PerchDart2")
+    PERCH_ACTS["tres_notas"] = act("PerchVolley")
+    PERCH_ACTS["cuatro_notas"] = act("PerchVolley4")
+    PERCH_ACTS["silbador"] = dict(act("PerchWhistle"), whistle=True)
+    PERCH_ACTS["silbador3"] = dict(act("PerchWhistle", 1.125), whistle=True)
+    drop, blow, up = sec("HangDrop"), sec("HangDart2"), sec("HangClimb")
+    PERCH_ACTS["colgado"] = dict(dur=drop + blow + up, releases=[drop + x for x in ev("HangDart2", "DartSpawn")],
+                                 loaded=(0.0, drop + blow + ev("HangClimb", "Unload")[0]), hang=True)
+    PERCH_ACTS["risa"] = dict(dur=sec("PerchLaugh"), releases=[], loaded=(0.0, sec("PerchLaugh")))
+    STRIKE["dive"] = ev("Dive", "Contact")[0]
+    STRIKE["staff"] = ev("StaffDrop", "Contact")[0]
+    STRIKE["sweep"] = ev("StalkSweep", "Contact")[0]
+    STRIKE["sweep_len"] = sec("StalkSweep")
+    c = sec("LeapCrouch")
+    P["leap_crouch"] = [c, c, c / 1.57]
+    P["leap_grab"] = sec("LeapGrab")
+    P["getup"] = sec("GetUp")
+    return True
 
 
 def v2(a, b):
@@ -741,8 +787,6 @@ class Fight:
                 opts.append(("catapulta", 0.6))
             if self.tala_target() is not None and self.cd_ok("tala", 7.0):
                 opts.append(("tala", 0.9))
-            if self.cd_ok("ermitanos", 22.0):
-                opts.append(("ermitanos", 0.3))
         r = self.rng.random() * sum(w for _, w in opts)
         for name, w in opts:
             r -= w
@@ -912,7 +956,7 @@ class Fight:
         t, ph = self.t, self.ph
         src = None if from_ground else STALKS[self.stalk]["pos"]
         start = self.gpos if from_ground else src
-        c = 0.0 if chained or from_ground else P["leap_crouch"][ph]
+        c = 0.0 if from_ground else P["leap_crouch"][ph]
         d = dist(start, STALKS[dest]["pos"])
         fl = (P["leap_base"] + P["leap_per_m"] * d) * P["leap_k"][ph]
         if vault:
@@ -969,9 +1013,10 @@ class Fight:
         self.act, self.loaded = dict(name="picada", t0=t), None
         self.S("acc_picada")
         self.trace("picada")
-        T = t + 0.95
+        T = t + STRIKE["dive"]
         self.show(T, "red")
-        self.go(t + 0.50, self.dive_fix, T, "picada", 1.6, "dive")
+        # el disco queda fijo a 0.50 s del golpe (BambooMasterMoves.DiveFix)
+        self.go(T - 0.50, self.dive_fix, T, "picada", 1.6, "dive")
 
     def dive_fix(self, T, src, radius, key):
         spot = tuple(self.k.pos)
@@ -995,7 +1040,7 @@ class Fight:
         self.act, self.loaded = dict(name="baston", t0=t), None
         self.S("acc_baston")
         self.trace("bastón que cae")
-        T = t + 0.85
+        T = t + STRIKE["staff"]
         self.show(T, "gold")
         self.go(t + 0.40, self.drop_aim, T)
 
@@ -1046,12 +1091,12 @@ class Fight:
         self.act, self.loaded = dict(name="barrido", t0=t), None
         self.S("acc_barrido")
         self.trace("barrido de caña")
-        T = t + 0.85
+        T = t + STRIKE["sweep"]
         self.show(T, "red")
         zone = ("disc", self.root, 3.6 + 0.35)
         self.at(T - TICK["red"], self.cue_if, T, "red", zone)
         self.at(T, self.strike_kaito, "red", self.dmg("sweep"), zone, "barrido")
-        self.go(t + 1.35, self.end_act, False)
+        self.go(t + STRIKE["sweep_len"], self.end_act, False)
 
     def catapult(self):
         """Catapulta (fase 3): tensa la caña como un arco (cargada) y sale con la patada voladora por un carril rojo."""
@@ -1114,7 +1159,7 @@ class Fight:
         if self.ph == 1:
             return self.gdecide()
         if dist(self.k.pos, self.gpos) <= 3.0 and self.rng.random() < 0.5:
-            return self.gstrike("revancha", 0.55, "revancha", last=True, then=self.return_up)
+            return self.gstrike("revancha", 0.55, "bastonazo", last=True, then=self.return_up)
         self.return_up()
 
     def return_up(self):
@@ -1663,7 +1708,10 @@ def main():
     ap.add_argument("--knobs", action="store_true", help="la tabla de las perillas del balance (tarda: 8 x 2 x --runs peleas por factor)")
     ap.add_argument("--factors", default="1.0,1.15,1.3,1.42", help="con --knobs: los factores real/simulado a probar")
     ap.add_argument("--trace", type=float, default=0.0, help="imprime los primeros N s de una pelea del nivel --skill")
+    ap.add_argument("--design", action="store_true", help="los tiempos redondos del diseño en lugar de los del sidecar")
     a = ap.parse_args()
+    if not a.design and not use_clips():
+        print("(sin el sidecar de BambooMaster.fbx: tiempos del diseño)")
     if a.p:
         for k, v in json.loads(a.p).items():
             if k not in P:

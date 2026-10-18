@@ -29,8 +29,9 @@ namespace Nindo
         {
             while (IsAlive && Fighting)
             {
-                if (phaseIdx == 1 || !HasFreeStalk()) { yield return GroundBrain(); continue; }
-                if (body != Body.Perch || perch == null || !perch.Standing)
+                bool up = body == Body.Perch && perch != null && perch.Standing;
+                if (phaseIdx == 1 || !up && !HasFreeStalk()) { yield return GroundBrain(); continue; }
+                if (!up)
                 {
                     // (una acción cortada en el aire, o su caña ya no está): al piso y de vuelta arriba
                     if (body != Body.Ground) Landed((perch != null ? perch.Base : transform.position) + FaceDirFrom(transform.position) * 1.2f, FaceDirFrom(transform.position));
@@ -43,10 +44,14 @@ namespace Nindo
             }
         }
 
+        /// <summary>¿Tiene una caña adonde subir? En pie y sin Kaito al pie (con todas quebradas, o Kaito debajo de la única
+        /// que queda, pelea en el piso: la coda de la fase 3).</summary>
         bool HasFreeStalk()
         {
             if (grove == null) return false;
-            foreach (var s in grove.All) if (BambooGrove.Perchable(s, phaseIdx)) return true;
+            Vector3 k = TargetPos;
+            foreach (var s in grove.All)
+                if (BambooGrove.Perchable(s, phaseIdx) && (s.Base - k).Flat().magnitude >= BambooMasterMoves.PerchMinDist) return true;
             return false;
         }
 

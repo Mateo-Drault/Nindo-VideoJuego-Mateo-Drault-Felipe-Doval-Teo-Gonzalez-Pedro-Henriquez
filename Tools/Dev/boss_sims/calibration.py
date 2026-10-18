@@ -38,21 +38,28 @@ MEASURED = {
     "mizuchi": dict(real_bueno=[(169, 0)], real_promedio=[(207, 1)], sim_bueno=142.2, sim_promedio=(307.2, 2.02)),
     "kokuyo": dict(real_bueno=[(108, 0)], real_promedio=[(146, 0)], sim_bueno=117.6, sim_promedio=(363.6, 3.23)),
     "chikuo": dict(real_bueno=[(361, 0)], real_promedio=[(950, 4)], sim_bueno=254.0, sim_promedio=(400.0, 1.00)),
+    # el Chikuō ermitaño de la fase C4 (las cañas y el latigazo): sin medir todavía. La simulación cruda es
+    # chikuo_v2_check.py --runs 400 (los tiempos del sidecar); el diseño espera F 1.2-1.4. Pegar acá las líneas del PlayClock
+    "chikuo_v2": dict(real_bueno=[], real_promedio=[], sim_bueno=226.0, sim_promedio=(268.0, 0.40)),
 }
 
 
 def factor(boss):
     """Tiempo real / simulado del bot bueno (la media de lo medido)."""
     m = MEASURED[boss]
+    if not m["real_bueno"]:
+        return None   # sin medir
     real = sum(t for t, _ in m["real_bueno"]) / len(m["real_bueno"])
     return real / m["sim_bueno"]
 
 
 def damage_mul(boss):
     """El daño de Kaito en la simulación calibrada: 1/F."""
-    return 1.0 / factor(boss)
+    f = factor(boss)
+    return 1.0 / f if f else 1.0
 
 
 if __name__ == "__main__":
     for b in MEASURED:
-        print("%-8s F = %.2f (daño de Kaito x%.2f)" % (b, factor(b), damage_mul(b)))
+        f = factor(b)
+        print("%-10s F = %.2f (daño de Kaito x%.2f)" % (b, f, damage_mul(b)) if f else "%-10s sin medir" % b)

@@ -1090,6 +1090,44 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
+  - key: bamboo_break
+    clips:
+    - {fileID: 8300000, guid: 8a7a3d04b494583ce5ef03f128450009, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_crack
+    clips:
+    - {fileID: 8300000, guid: b34df104afd467eb83549d9c53a047b7, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_fall
+    clips:
+    - {fileID: 8300000, guid: f34dc02dbd0dd15c02d2128fc92d7466, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_slam
+    clips:
+    - {fileID: 8300000, guid: ccf307216596e1916ba961805e48ea0f, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_thok
+    clips:
+    - {fileID: 8300000, guid: a3167016aec97f68c197ee7a8a74fc4c, type: 3}
+    - {fileID: 8300000, guid: 9916f0ced27fc5f007ff171ed8c73107, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: bamboo_whip
+    clips:
+    - {fileID: 8300000, guid: 640728f5498503d59eefe3ccd4de1cb4, type: 3}
+    - {fileID: 8300000, guid: c84a081a2500911de3a8cc5a52f3d3ce, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: bandana_charge
     clips:
     - {fileID: 8300000, guid: a5b14aa03a37c453ebfee56e43c51569, type: 3}
@@ -1160,6 +1198,20 @@ MonoBehaviour:
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
+  - key: chime_jangle
+    clips:
+    - {fileID: 8300000, guid: 6d31e5a2a1f762a88a6b2638bbcbbc7d, type: 3}
+    - {fileID: 8300000, guid: 67778c3d4b99bbff7085243509b6001c, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: chime_jangle_p3
+    clips:
+    - {fileID: 8300000, guid: cf81753bb4b2489789b065b062471775, type: 3}
+    - {fileID: 8300000, guid: 5a2949a88b6f2227105a58ec781efbf5, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: clang
     clips:
     - {fileID: 8300000, guid: 3996a0f0dbc6cce48be0e5ec2f1e88a3, type: 3}
@@ -1173,6 +1225,26 @@ MonoBehaviour:
   - key: danger
     clips:
     - {fileID: 8300000, guid: 9b03f4897382411e160b7b6dbfdaab1f, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_blow
+    clips:
+    - {fileID: 8300000, guid: a46fde13e841e0b02395dcbf7b3189e6, type: 3}
+    - {fileID: 8300000, guid: fe8c9cc960ecfce128e609f10c149ba3, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_thunk
+    clips:
+    - {fileID: 8300000, guid: acddebe1c2717361a23041a2028e69ec, type: 3}
+    - {fileID: 8300000, guid: 5a353bdd894a7c3ea87304d14c3df497, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: dart_whistle
+    clips:
+    - {fileID: 8300000, guid: 3c8aff3af3d3d875019d1346b2f4b7d4, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
@@ -1268,6 +1340,84 @@ MonoBehaviour:
   - key: finisher_start
     clips:
     - {fileID: 8300000, guid: 91615328d14b0df9a1855c0e4491f60e, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n1
+    clips:
+    - {fileID: 8300000, guid: 2f237a35206d4d61e1913009c5c3c286, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n1_p3
+    clips:
+    - {fileID: 8300000, guid: fe039215c86c98c035519e1a57d724a5, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n2
+    clips:
+    - {fileID: 8300000, guid: bd1b737586d0c7e27728d870de4916ff, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n2_p3
+    clips:
+    - {fileID: 8300000, guid: 439fb4367712f34dd3fca8935dbff3f3, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n3
+    clips:
+    - {fileID: 8300000, guid: 37343e371b90150cc8662513d17d0010, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n3_p3
+    clips:
+    - {fileID: 8300000, guid: 84c34bc3c9a4665734f3376c014a17cd, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n4
+    clips:
+    - {fileID: 8300000, guid: 528d394badf2bdd41b876a2cd574fb9b, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n4_p3
+    clips:
+    - {fileID: 8300000, guid: e7984f6061e00ac69eb90b4f9a06a833, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n5
+    clips:
+    - {fileID: 8300000, guid: 8de48849a8f5efc849e2112b645f8af6, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_n5_p3
+    clips:
+    - {fileID: 8300000, guid: d1afd00f2b9f088c9ecc983ec0d66682, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_phrase_forest
+    clips:
+    - {fileID: 8300000, guid: c661c7a441aaeed6594cdd3799dd0729, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_phrase_intro
+    clips:
+    - {fileID: 8300000, guid: 6b6ef89447315d8355db680b4c3ad715, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: flute_squeak
+    clips:
+    - {fileID: 8300000, guid: cb45b5d698abd1a8f81e78f537c98ae8, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1
@@ -1514,6 +1664,24 @@ MonoBehaviour:
     volume: 0.5
     pitchVariance: 0.06
     spatial: 1
+  - key: stalk_bow
+    clips:
+    - {fileID: 8300000, guid: ed081db5498606c4fae040a6c4880298, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: stalk_grow
+    clips:
+    - {fileID: 8300000, guid: 1171e59f549ed3e1d8db8481b78d3660, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: stalk_whoosh
+    clips:
+    - {fileID: 8300000, guid: 72b763c786072daeae0378cfab49463b, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
   - key: step
     clips:
     - {fileID: 8300000, guid: 5b996a9a4db8e5e88459e886e861ec16, type: 3}
@@ -1587,6 +1755,60 @@ MonoBehaviour:
   - key: teleport
     clips:
     - {fileID: 8300000, guid: f2d1d8523a1b2aaa667645c549630a8d, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_cascade
+    clips:
+    - {fileID: 8300000, guid: 1bd364acc100fb02ab72043a625b5051, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_cascade_p3
+    clips:
+    - {fileID: 8300000, guid: 9eadeef148c8e785aac2c9d94b8fca2d, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_hi
+    clips:
+    - {fileID: 8300000, guid: 7cca34afdfc4dac665e910f74b494295, type: 3}
+    - {fileID: 8300000, guid: 5a659829c8dd74c9d90ea4ab5f47f626, type: 3}
+    - {fileID: 8300000, guid: d2b168aeb06595bf053e02c218b60807, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_hi_p3
+    clips:
+    - {fileID: 8300000, guid: 2c31802e4c533fb41298322e81c7abca, type: 3}
+    - {fileID: 8300000, guid: 9be05b04f56589fd95941e8a32adbd53, type: 3}
+    - {fileID: 8300000, guid: 93ccfa5ae648e3f24d19f135e0df7a87, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_lo
+    clips:
+    - {fileID: 8300000, guid: c91a129eb46af2dd2ac58de87e404f30, type: 3}
+    - {fileID: 8300000, guid: c03ff4f37d1c6042cce3503287ad9478, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_lo_p3
+    clips:
+    - {fileID: 8300000, guid: d462099932879aeb86e306c1c5a515c2, type: 3}
+    - {fileID: 8300000, guid: da79b4e51ac67b07f3d7e890e78b88fa, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_shimmer
+    clips:
+    - {fileID: 8300000, guid: 4a5e8598de06417a5fc0182386e6bd72, type: 3}
+    volume: 1.0
+    pitchVariance: 0.06
+    spatial: 1
+  - key: tell_chime_shimmer_p3
+    clips:
+    - {fileID: 8300000, guid: 262e92c078edf90138ac0d20f1ce7869, type: 3}
     volume: 1.0
     pitchVariance: 0.06
     spatial: 1

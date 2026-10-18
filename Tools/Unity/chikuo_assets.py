@@ -3,8 +3,10 @@ otros): los .mat propios y el .meta de BambooMaster.fbx (generate_assets.bamboo_
 (bamboo_master_controller) y su fila en Resources/NindoContent.asset (alto de bind, brillo de los materiales, estados y
 duraciones). Todo sale del sidecar BambooMaster.fbx.json que escribe Tools/Blender/bosses/chikuo_v2/build_chikuo.py.
 
-  python Tools/Unity/chikuo_assets.py [--prune]
+  python Tools/Unity/chikuo_assets.py [--prune] [--sfx]
     --prune   borra los .mat (con su .meta) de la carpeta BambooMaster que el sidecar ya no nombra (los del Chikuō viejo)
+    --sfx     además rehace la lista de efectos de NindoContent (con los de Tools/Audio/sfx_chikuo.py): la arma
+              generate_assets.audio_entries con los .wav de Audio/Sfx, igual que generate_assets entero
 """
 import os, re, sys
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -45,6 +47,12 @@ def main():
     m = re.search(r"^  - id: bamboo_master\n(?:    .*\n)*", txt, re.M)
     assert m, "NindoContent.asset no tiene la fila de bamboo_master"
     txt = txt[:m.start()] + content_row(res, info) + txt[m.end():]
+    if "--sfx" in sys.argv:
+        # solo el bloque de efectos (de '  sfx:' a '  music:'): el resto de NindoContent no se toca
+        sfx = G.audio_entries()[0]
+        a, b = txt.index("\n  sfx:"), txt.index("\n  music:")
+        txt = txt[:a] + "\n  sfx:" + G.yaml_entries_audio(sfx).rstrip("\n") + txt[b:]
+        print("sfx:", len(sfx), "claves")
     with open(path, "w", encoding="utf-8", newline="\n") as fh:
         fh.write(txt)
     if "--prune" in sys.argv:
