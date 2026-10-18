@@ -25,7 +25,74 @@ de bambú con cascabeles de caña, gi salvia con ribete de paja, la flauta-bast�
   cuatro; dos latigazos a una caña la rajan y la quiebran; la Última Canción desde el 20 %).
 * Se mantienen: 1900 de vida, id `bamboo_master`, arquetipo y bossId `ozeki`, `SealId.Bambu`, `boss_bamboo` en tres fases.
 
-## 2. Lo que hizo esta ronda (los cuatro revisores)
+## 2. Segunda ronda de arreglos (lo que quedaba abierto)
+
+Commits db6443d, d30e737, eb9c75a, 15a2038 y 952ec8a. Nada se probó en Unity: compile_check, el lint de
+los clips, check_chikuo_fbx, la ida y vuelta del FBX y la simulación.
+
+**La capa (D1, D3)**
+* La cáscara era una sola pieza de 20x7: cuando los paños se separaban (golpes, saltos, colgado) se estiraba en una lona
+  plana más ancha que el cuerpo. Ahora son doce paños sueltos (uno por hueso de la capa, con una ranura de 1.6° y pesados
+  enteros a su hueso), dos hojas largas tapan cada ranura y la cara de adentro va en el verde medio (`moss`).
+* En el horneado (chikuo_anim): el levante de un paño llega a 35° (era 65°) y dos paños vecinos no se apartan más de 25°
+  entre sí (`clamp_cloak`). Donde la capa toca el piso (sentado, tirado, caído) se hornea de nuevo con el tope de 65° y
+  sin el tope entre vecinos: si no, el piso y el tope se peleaban y la capa se metía en el piso o saltaba.
+* Colgado (HangDrop, HangDart2, HangClimb, la clave nueva `cloak_free`): cada paño cuelga solo hacia el piso. Con el giro
+  común de la capa los tramos del yugo, que salen de costado, giraban sobre su eje y quedaban en horizontal: el disco
+  de la crítica. Ahora la capa cae (clip_HangDart2.png); la barba blanca se ve al costado de la cerbatana.
+
+**Los cascabeles y la espalda (D6)**: la tabla `CHIMES` va en racimos de dos y tres, los agudos en dos racimos por hombro
+(1.64-1.86 m) y los graves por toda la espalda (0.98-1.85 m), con huecos de 9 a 22° y tubos de 0.16 a 0.30 m. La espalda
+se abre hacia abajo como una parva (el perfil de 135° llega a r 0.44 y el de atrás a 0.37 en z 0.45) y las hojas van por
+pisos, de claro arriba a oscuro abajo, menos y más grandes. La capa quedó en 2478 triángulos (el presupuesto es 2500).
+
+**El salto y la catapulta (D11)**
+* `AIR` (la pose del salto entre cañas) va abierta de piernas: la rodilla izquierda alta adelante, la derecha estirada atrás
+  con la rodilla abajo. LeapAir pedalea 10 cm y la capa flamea hacia atrás (horneada a 0.25 m por cuadro y con la tela
+  arrastrada al 55 %: antes colgaba a plomo).
+* CatapultKick: de f5 a f11 la patada voladora del concepto (`dive_kick`): echado atrás 56° en línea con la pierna derecha,
+  que va por el carril con la punta a ~1.05 m delante de la cadera, los brazos atrás y el cuerpo girado 25° para la cámara.
+  En f13 recoge y en f15 toca de talón como pide DiveLand (en el Contact la punta queda a 0.9 m, no a 1.0: la pose la
+  comparte el aterrizaje).
+
+**Colgado que sopla (D2)**: el vaivén es de ±16 cm y ±16°; antes de cada dardo toma aire (f7-f8 y f16-f17: la cabeza a
+-32/-34°, el pecho atrás, los cachetes inflados, la punta sube 6-7°), sopla de golpe (f9 y f18) y la punta patea 11° (f10).
+En las puntas del vaivén la cerbatana va con el cuerpo (-16° y +20°: quieta en el mundo doblaba la muñeca). No se tocó el
+plan del giro de la izquierda.
+
+**Los avisos (D5)**
+* El Bastón que Cae tiene la flauta parada sobre la cabeza desde f14 hasta f20 (el aviso: una línea vertical contra el
+  piso, desde la cámara alta); la echa atrás en f21, pasa por adelante en f23 y pega en f26. Antes la tenía tendida detrás
+  de la cabeza hasta f24 y del aviso al golpe giraba 84° en un cuadro.
+* La cerbatana posada: mientras sopla (desde TellStart de PerchDart, Dart2, Volley, Volley4 y Whistle) el cuerpo gira sobre
+  los pies hasta 20° hacia el lado de la pantalla al que ya apunta, según cuánto mira hacia la cámara
+  (`BambooMasterBoss.AimYaw`, `BambooMasterMoves.AimYaw`); el dardo igual sale a Kaito. La hoja de avisos lo copia: la punta
+  queda a 60-75 px del culmo (tells_blowpipe.png).
+
+**Los clips (D4 / T2)**
+* La flauta que pasa de un agarre a otro girando sobre el puño era la causa de casi todos los tirones grandes. Ahora la
+  tira y la ataja (`tossed` en chikuo_clips, con `arc` para que pase por afuera del cuerpo): la picada desde la pértiga
+  (la patea con los dedos del pie y la ataja en los hombros), la garrocha (clavada 1.2 m adelante y menos tendida; suelta
+  primero la derecha, la izquierda la arranca del piso), los Pies Enterrados al salir, el aterrizaje de la picada, colgarse
+  y descolgarse, el agarre del salto, el agachado de la vuelta arriba y el resbalón. El mortal cruza la flauta delante del
+  pecho (la de la guardia se clavaba 17 cm en el piso). La barrida de bastón gira pareja (~33° por cuadro) y la pierna
+  vuelve a la guardia rodeando el pie de apoyo. El kip-up cae con la flauta ya en el ángulo de la guardia.
+* El IK del brazo no confía en el lado del codo con el brazo casi estirado (daba vuelta el brazo 126° en un cuadro), y
+  `Kit` mide cada pose sin lo que el solver recordaba de la medida anterior (las flautas tiradas apuntaban a medio camino).
+* El lint mide la flauta también contra el pecho (en un mortal gira con él: no es un tirón).
+* Resultado: 141 fallas -> 115 (tirones 34 -> 29, sin clases nuevas). De la lista de la crítica quedaron arreglados PoleDive
+  (154°, la mano a 24 cm), FeetStuck (127°), Vault (121°, la flauta 14 cm en el pecho), LowSweep (103°, 12 cm), StaffDrop
+  (84°), HangDrop (92°), JumpCrouch (90°), LeapGrab (87° -> 62°), GetUp (84° -> 57°), Slip (90° -> 46°), BackFlip, HopBack
+  y DiveLand.
+
+**La fase 3 (F2)**: los dardos posados van a x1.2 (`PerchRate`), un soplido de cada dos sale en abanico (dos dardos más a
+1.6 m del de Kaito, de costado: `Fan`, `FanM`, `FireDart(fan)`) y la firma de la ráfaga de cuatro con Kaito a 7 m o menos
+sigue sin respiro con la Picada (`SignatureChain`). La simulación copia las tres cosas.
+
+**F6 (Kokuyō el más largo)**: sigue siendo decisión del lead. Medido: el revolcón a 2.4 s solo baja el bueno 4 s (4.8 min),
+no es la perilla; las otras de la tabla `--knobs` siguen valiendo.
+
+## 3. Primera ronda de arreglos (los cuatro revisores)
 
 Verifiqué cada hallazgo contra el código, el sidecar y la simulación. Arreglados:
 
@@ -91,76 +158,112 @@ Verifiqué cada hallazgo contra el código, el sidecar y la simulación. Arregla
 * T5 (la compresión de animación): el .meta ya usa errores de 0.05° / 0.05 % (diez veces más finos que el 0.5 de Unity
   que supuso el revisor): 0.05 % de 3.6 m son 1.8 mm, no 1.8 cm. Queda como está.
 
-## 3. Números
+## 4. Números
 
-`python Tools/Dev/chikuo_v2_check.py --runs 400 --seed 7 --calib F` (lo que mide el PlayClock):
+`python Tools/Dev/chikuo_v2_check.py --runs 400 --seed 7 --calib F` (lo que mide el PlayClock), después de la segunda ronda:
 
 | F | bueno | promedio | experto |
 |---|---|---|---|
-| 1.41 (el Chikuō viejo, el único medido) | 4.9 min (p10 4.3, p90 5.5), 0.01 muertes | 7.3 min (p10 5.3, p90 10.0), 1.20 muertes, 15 % sin morir | 4.5 min |
-| 1.30 | 4.6 min | 6.7 min, 0.94 muertes | 4.3 min |
-| 1.0 (cruda: `calibration.py` MEASURED['chikuo_v2']) | 3.6 min | 4.3 min, 0.33 | |
+| 1.41 (el Chikuō viejo, el único medido) | 4.9 min (p10 4.3, p90 5.5), 0.00 muertes | 7.3 min (p10 5.5, p90 10.3), 1.23 muertes, 12 % sin morir | 4.6 min |
+| 1.0 (cruda: `calibration.py` MEASURED['chikuo_v2']) | 3.6 min (213 s) | 4.3 min (255 s), 0.32 | |
 
-Con F 1.41: fases del bueno 119 / 43 / 128 s; un latigazo cada 13 / 15 / 12 s (revolcón 12.7, estampado 5.0, caída del
-cielo 0.5 por pelea); 38 / 48 / 37 amenazas por minuto fuera de los huecos; 18 % de tiempo muerto, el tramo más largo 1.65 s.
-Las muertes del promedio caen casi todas en la fase 3 (0.94 de 1.20). El objetivo del lead (bueno 4.5-5, promedio 1-2
-muertes en 7-9 min) se cumple con F 1.41; con 1.3 el promedio queda corto (0.94 muertes, 6.7 min).
+Con F 1.41: fases del bueno 119 / 44 / 131 s; amenazas por minuto fuera de los huecos 37 / 48 / 54 (promedio 37 / 50 / 52,
+experto 40 / 48 / 58): la fase 3 ya es la más densa (era 37 / 48 / 37). Ojo: los dos dardos de costado del abanico cuentan
+como amenazas aunque casi nunca pegan (el bot está donde apunta el del medio): lo que hacen es no dejar esquivar corto
+hacia el costado; por eso el tiempo y las muertes casi no cambiaron. 18 % de tiempo muerto, el tramo más largo 1.67 s. Las
+muertes del promedio caen casi todas en la fase 3 (0.91 de 1.23). El objetivo del lead (bueno 4.5-5, promedio 1-2 muertes
+en 7-9 min) se cumple con F 1.41.
 
-## 4. Contratos
+Lint de los clips (el sidecar los lista en `lint_failures`): 141 -> 115 (muñecas 44, tirones 29, cuerpo contra sí mismo 23,
+culmo 8, piso 4, alcance 3, otros 4).
+
+## 5. Contratos
 
 * **Las cañas** (rama c4/arena): `ArenaStalk.All` / `ArenaStalk.Get("N1"|"N2"|"O1"|"O2"|"E1"|"E2"|"M")`, con `PerchNode`,
   `GripHigh`, `ClimbGrip`, `BaseCut`, `SetBend`, `SetGlint`, `SetCracked`, `SetBroken`, `SetRise`. La pelea las maneja con
   `BambooStalk` (el resorte de 1.4 Hz) y `BambooGrove`.
-* **Los clips**: 74 más BindPose, nombres, cuadros y eventos en el sidecar `BambooMaster.fbx.json` y `ChikuoTimings.cs`
-  (generado por `Tools/Unity/chikuo_timings.py`; nuevo campo `LandN`). El núcleo: PerchIdle 48f; PerchDart 24f DartSpawn@14;
-  PerchVolley 51f Load@3 DartSpawn@17,28,39 Unload@42; HangDrop 11f Hang@10; HangDart2 18f DartSpawn@9,18; HangClimb 15f
-  Unload@8 Perch@15; LeapCrouch 7f; LeapAir 12f loop; LeapGrab 6f; Climb 24f GrabStalk@4 Perch@24; Dive 29f LeaveStalk@10
-  Contact@28; StaffDrop 27f LeaveStalk@6 Land@19 Contact@26; Vault 27f Plant@6 LeaveStalk@9 GrabStalk@27.
-* **Perillas**: todas en `BambooMasterMoves` con el mismo nombre que en el `P` de `chikuo_v2_check.py`. Nuevas:
-  `SignatureFirst/Every`, `CatapultMinDist/Every/Weight`, `HangNearLoadLead`, `CatchWindow[]`, `LeapLook[]`, `GetUpTime`,
-  `RecoverLeapDist/Vault/Crouch/TandaDist`, `RecoveryTanda()`, `FlipEvery`, `RevolconOpen[]`, `RevolconCap`, `PoleLoadFrom`,
-  `PoleLeaveAt`, `TalaFix`, `TalaImpact`. `DamageScale` 0.9, `LastSong` 0.20, `StampAngle` 26.
-* **Enemy**: `public virtual Vector3 TellCenter` (nuevo) y `HeadPoint` (de la ronda anterior).
+* **Los clips**: 74 más BindPose; nombres, cuadros y eventos sin cambios en esta ronda (sidecar `BambooMaster.fbx.json` y
+  `ChikuoTimings.cs`, generado por `Tools/Unity/chikuo_timings.py`; cambiaron los `RootOffset` de LeapCrouch, LeapGrab, Vault,
+  JumpCrouch y PhaseForest y el avance de Vault). El núcleo: PerchIdle 48f; PerchDart 24f DartSpawn@14; PerchVolley 51f
+  Load@3 DartSpawn@17,28,39 Unload@42; HangDrop 11f Hang@10; HangDart2 18f DartSpawn@9,18; HangClimb 15f Unload@8 Perch@15;
+  LeapCrouch 7f; LeapAir 12f loop; LeapGrab 6f; Climb 24f GrabStalk@4 Perch@24; Dive 29f LeaveStalk@10 Contact@28;
+  StaffDrop 27f LeaveStalk@6 Land@19 Contact@26 (apex f20); Vault 27f Plant@6 LeaveStalk@9 GrabStalk@27; CatapultKick 15f
+  Contact@15.
+* **Perillas** (`BambooMasterMoves`, el mismo nombre en el `P` de `chikuo_v2_check.py`). De esta ronda: `AimYaw` 20 (no está
+  en la simulación: no cambia tiempos), `SignatureChain` 7 m (`signature_chain`), `PerchRate` {1, 1, 1.2} (`perch_rate`),
+  `Fan` {no, no, sí} y `FanM` 1.6 m (`fan`, `fan_m`). De la primera: `SignatureFirst/Every`, `CatapultMinDist/Every/Weight`,
+  `HangNearLoadLead`, `CatchWindow[]`, `LeapLook[]`, `GetUpTime`, `RecoverLeapDist/Vault/Crouch/TandaDist`,
+  `RecoveryTanda()`, `FlipEvery`, `RevolconOpen[]`, `RevolconCap`, `PoleLoadFrom`, `PoleLeaveAt`, `TalaFix`, `TalaImpact`,
+  `DamageScale` 0.9, `LastSong` 0.20, `StampAngle` 26.
+* **El código**: `FireDart(bool fan = false)` (el abanico: dos dardos más sin aviso propio), `FirePerchDart()` (DartAct:
+  alterna el abanico en la fase 3), `AimYaw()` en `PlaceModel`, `chainDive` (la firma encadenada, después de `DoPerch` en
+  `PerchTurn`; se limpia en `ResetEnemy` junto con `fanFlip`).
+* **Enemy**: `public virtual Vector3 TellCenter` y `HeadPoint` (rondas anteriores).
+* **La tubería de Blender**: la clave de clip `cloak_free` (cada paño de la capa cuelga solo); `CLOAK_LIFT` 35°,
+  `CLOAK_PAIR` 25°, `CLOAK_FLOOR_LIFT` 65° y `clamp_cloak` en chikuo_anim; `tossed(kit, A, B, t, lift, side_of_b, arc)` y
+  `spine_mix(a, b, t)` en chikuo_clips; el ruedo de la capa se le pide al piso 0.33 m debajo de la cola del último tramo; el
+  lint mide la flauta contra la raíz y contra el pecho; las hojas de avisos giran la cerbatana posada como el código.
 * **AutoPilot**: `chikuo fase N | cana ID | salto ID | mov dardo|dos|notas|silbador|colgado|risa|picada|baston|barrido|
   catapulta|tala|pertiga|pregunta|soplo | abrir revolcon|estampado|caida|resbalon|afinado|pies | canas [reset]`.
 * **Sonido**: `dart_snap` (2 variantes) se suma a las 35 claves de `sfx_chikuo.py`.
 
-## 5. Lo que sigue débil (dicho de frente)
+## 6. Lo que sigue débil (dicho de frente)
 
 * **Nada se corrió en Unity.** El factor real/simulado de esta pelea no se conoce: el balance vale lo que valga suponer
-  el 1.41 del Chikuō viejo.
+  el 1.41 del Chikuō viejo. El giro de la cerbatana (`AimYaw`), el abanico y la firma encadenada están compilados y
+  simulados, no vistos; el aplomado del colgado alrededor de las rodillas tampoco se vio en movimiento.
 * **Más largo que Kokuyō**: con F 1.41 el bueno tarda 4.9 min y `calibration.py` espera ~4.4 para Kokuyō, que tiene que ser
-  el más largo. Si manda eso y no el objetivo de 4.5-5 min: el revolcón 2.4 s o las caídas x1.5 (tabla `--knobs`).
-* **141 chequeos de clips siguen fallando** (eran 144; el sidecar los lista en `lint_failures`). Los que más se van a ver:
-  PoleDive (la flauta pasa del pie a la mano con un giro de 154° en f13: `chikuo mov pertiga`), los tirones de 90-127° del
-  puño en FeetStuck f40, Vault f11, LowSweep f31, Detuned f8, HangDrop f9, Slip f10; la flauta 14 cm adentro del cuerpo en
-  Vault f5 y PhaseForest f119; las canillas adentro del culmo colgado (hasta 9 cm). No los toqué: cada uno pide rehacer el
-  manejo de la flauta del clip (D4 / T2).
-* **Sin rehacer** (los hallazgos de modelo y de clips que piden un paso de animación propio): la cáscara de la capa sigue
-  siendo una sola pieza (D1: partirla por paneles y limitar el ángulo entre paneles), las poses de aviso que no muestran el
-  arma desde la cámara (D5: el Bastón que Cae levanta el bastón recién en f24; la cerbatana se proyecta sobre el culmo), los
-  cascabeles en filas (D6), la cabeza de perfil (D7), el ribete en "A" y el pantalón en cuadrícula (D8), LeapAir y la
-  patada de la catapulta (D11), los dedos en la flauta (D12), los zapatos chicos (D15). Hit y HitHeavy siguen sin usarse
-  (la armadura no tiene capa de torso en el controller).
-* Colgado: de frente la capa todavía se abre como un disco; de perfil ya cae. Y el aplomado alrededor de las rodillas
-  está calculado sin verlo: mirar que no salte al entrar o salir del colgado.
-* El gi teal y la cáscara verde se eligieron por el diseño (sección 14) y no se compararon con el arena de noche en una
-  imagen del juego.
+  el más largo. Es decisión del lead; el revolcón a 2.4 s no alcanza (4.8 min), quedan las caídas x1.5 o el daño de
+  Kaito (tabla `--knobs`).
+* **115 chequeos de clips siguen fallando.** Los tirones más grandes que quedan: Intro (la capa 177° en f157, una vez por
+  pelea), PhaseForest (la mano 121° en f122) y PhaseBow (el antebrazo 105° en f57), que son escenas de cambio de fase;
+  Detuned (un cascabel 98° en f32), MissGrab (la mano 90° en f11), PoleFall (la tibia 85° en f8), HangClimb (la capa 83° en
+  f9), StaffSpin2 (el brazo 81° en f15 y la muñeca izquierda en 2.1 todo el giro). Las 44 muñecas son en general agarres
+  forzados de 1.4-2.4 (el tope es 1.35). Colgarse y descolgarse siguen con los pies girando 66° en un cuadro (HangDrop f8:
+  la vuelta de 180° sobre el culmo en cuatro cuadros) y las canillas 9 cm adentro del culmo en HangClimb f9.
+* **Colgado desde la cámara del juego**: la capa ya cae, pero la cara todavía queda en parte tapada desde arriba (la
+  cabeza está adentro del cono de hojas). La crítica proponía girar la cabeza 15-20° hacia la cámara: no lo hice.
+* **Sin rehacer** (hallazgos del modelo que no estaban en esta ronda): la cabeza de perfil (D7), el ribete en "A" y el
+  pantalón en cuadrícula (D8), los dedos en la flauta (D12), los zapatos chicos (D15). Hit y HitHeavy siguen sin usarse.
+* El gi teal y la cáscara verde no se compararon con el arena de noche en una imagen del juego (las hojas de avisos usan
+  un fondo gris).
 * La simulación nunca vio la vuelta con dos bastonazos terminar en la Contra con garrocha (el código hace eso; la
   simulación trepa): diferencia chica.
 
-## 6. Plan de prueba en Play (para el lead)
+## 7. Plan de prueba en Play (para el lead)
 
 Antes: copiar `%USERPROFILE%/AppData/LocalLow/DefaultCompany/Nindo/nindo_save.json` aparte, reimportar
-`BambooMaster.fbx` y el controller (cambió: 81 estados, sin DecoySpin), cargar `Docs/handoff/partidas/prueba_bambu.json`,
-Play, `Nindo.AutoPilot.Run("wait 0.5; tap Submit")`, Kaito a (122, 2, 150) y
+`BambooMaster.fbx` y el controller (81 estados), cargar `Docs/handoff/partidas/prueba_bambu.json`, Play,
+`Nindo.AutoPilot.Run("wait 0.5; tap Submit")`, Kaito a (122, 2, 150) y
 `Nindo.AutoPilot.Run("goto 124 156 20; talk 40; waitcontrol 30")`. Consola sin errores ni "falta Seg_".
 
+Lo nuevo de la segunda ronda (A-G), después lo de la primera (1-11):
+
+* A. **La capa**: escala normal, sin x100. En los golpes y los saltos la capa se abre en paños con hojas en las ranuras,
+  sin una lona plana más ancha que el cuerpo; quieto, de espaldas, no se ven agujeros entre paños; los cascabeles de la
+  espalda cuelgan en racimos a distintas alturas.
+* B. **Colgado**: `chikuo mov colgado` en O1 y O2: la capa cae hacia el piso paño por paño (no un disco); antes de cada
+  dardo echa la cabeza atrás e infla los cachetes, sopla de golpe y la punta patea.
+* C. **La cerbatana posada**: `chikuo mov dardo`, `dos` y `notas` con Kaito al sur de la caña (hacia la cámara): el cuerpo
+  gira ~17° y la cerbatana se despega del culmo en pantalla; el dardo igual va a Kaito. Con Kaito al este u oeste no gira.
+* D. **El Bastón que Cae**: `chikuo mov baston`: la flauta parada sobre la cabeza desde el aire hasta que pisa, la echa
+  atrás y baja en cinco cuadros.
+* E. **La picada desde la pértiga**: `chikuo fase 2` y `chikuo mov pertiga`: patea la flauta con el pie, da vuelta en el
+  aire y la ataja en los hombros; la mano no gira sobre el caño.
+* F. **Las vueltas de un hueco**: `chikuo abrir revolcon` varias veces, cerca y lejos: la garrocha (clava 1.2 m adelante,
+  suelta primero la derecha, arranca la flauta con la izquierda, la revolea y la ataja alzada), el agachado (revolea la
+  flauta por arriba del hombro derecho), el kip-up. `chikuo abrir pies` y `chikuo abrir resbalon`: sale de los pies
+  enterrados tirando la flauta por arriba del hombro; en el resbalón la flauta salta de la espalda y cae en la derecha.
+* G. **Fase 3**: `chikuo fase 3`: la catapulta se ve como una patada voladora de perfil; los saltos entre cañas van
+  abiertos de piernas con la capa hacia atrás; un soplido de cada dos sale en abanico (tres dardos; los de costado sin
+  anillo propio); con Kaito a 7 m o menos, la ráfaga de cuatro de la firma sigue sin respiro con la Picada; los dardos
+  posados van más rápido que en la fase 1. Con `bot on promedio`, mirar que las muertes en la fase 3 no suban.
+
 1. **Tamaño y colores**: Chikuō a escala normal, sin x100. El gi tiene que leerse verde (no gris azulado) contra el piso
-   del claro; la capa abierta (golpes, saltos) no puede verse como una lona oscura.
+   del claro.
 2. **Colgado**: `Nindo.AutoPilot.Run("chikuo mov colgado")` en O1 y en O2. Cuelga a plomo (no torcido 30°), se hamaca de
-   costado, la cabeza va y viene con cada soplido, la capa cae. Al entrar y salir del colgado el cuerpo no salta. Con Kaito
-   a 2 m de la base: el círculo blanco prende recién justo antes del primer dardo (cortar antes da "¡Cosquillas!").
+   costado. Al entrar y salir del colgado el cuerpo no salta. Con Kaito a 2 m de la base: el círculo blanco prende recién
+   justo antes del primer dardo (cortar antes da "¡Cosquillas!").
 3. **Trepar en todas las cañas**: `chikuo cana N2`, después un hueco (`chikuo abrir revolcon`) cerca de O2/E2: si trepa, los
    pies arrancan en el piso y las manos en el culmo (no 40 cm arriba).
 4. **La vuelta de un hueco**: varias veces `chikuo abrir revolcon` con Kaito cerca y lejos: se levanta rápido y vuelve de
@@ -178,12 +281,16 @@ Play, `Nindo.AutoPilot.Run("wait 0.5; tap Submit")`, Kaito a (122, 2, 150) y
 10. **El piso**: en la fase 2, perseguirlo con dash después de cada corte: una sola voltereta cada 1.5 s, después aguanta y
     contesta. Los cortes que no valen (levantándose) suenan a cascabel; los de la armadura se notan.
 11. **Balance**: `bot on bueno` y `bot on promedio`, tres peleas cada uno; pegar las líneas `[Nindo] Chikuō vencido en` en
-    `Tools/Dev/boss_sims/calibration.py` MEASURED['chikuo_v2'] (la simulación cruda ya está: 214 s y 255 s con 0.33) y
+    `Tools/Dev/boss_sims/calibration.py` MEASURED['chikuo_v2'] (la simulación cruda ya está: 213 s y 255 s con 0.32) y
     correr `python Tools/Dev/chikuo_v2_check.py --runs 400 --calib F`. Objetivo: bueno 4.5-5 min, promedio 1-2 muertes en
     7-9 min; si hay que tocar, la tabla `--knobs`. Restaurar el save del usuario al final.
 
-## 7. Hunks en archivos compartidos (esta ronda)
+## 8. Hunks en archivos compartidos
 
+Segunda ronda:
+* `Tools/Dev/boss_sims/calibration.py`: los números crudos de `chikuo_v2` (213 s, 255 s con 0.32 muertes).
+
+Primera ronda:
 * `Enemies/Enemy.cs`: `public virtual Vector3 TellCenter => transform.position;` (2 líneas, debajo de `HeadPoint`).
 * `FX/CombatTelegraphs.cs`: `t.center = e.TellCenter;` (1 línea).
 * `Story/StoryText.cs`: la pista `bamboo_deny` dice "el círculo blanco" en vez de "el ensō blanco".
