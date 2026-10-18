@@ -104,7 +104,7 @@ P = dict(
     flip_every=1.5,                                   # una voltereta del Paso del Ermitaño cada 1.5 s como mucho
     # --- los huecos ---------------------------------------------------------------------------------------------------
     # (vuelo hasta que se lo puede cortar, cuánto dura, tope de cortes, multiplicador, daño de la caída)
-    revolcon=(0.55, 2.2, 5, 1.0, 12.0),
+    revolcon=(0.55, 2.2, 2, 1.0, 12.0),
     estampado=(1.00, 2.2, 4, 1.2, 24.0),
     caida=(0.45, 3.0, 5, 1.25, 36.0),
     resbalon=(0.30, 1.0, 2, 1.0, 6.0),
@@ -126,7 +126,7 @@ P = dict(
     dmg=dict(dart=[2.5, 2.5, 2.5], whistle=[5.0, 5.0, 5.0], dive=[5.0, 5.0, 5.0], staff=[5.0, 5.0, 4.5],
              sweep=[4.0, 4.0, 4.0], revancha=[3.5, 3.5, 4.0], ground=[3.5, 3.5, 4.0], lowsweep=[4.5, 4.5, 5.0],
              sprout=[4.0, 4.0, 4.5], catapult=[6.5, 6.5, 6.5], tala=[5.5, 5.5, 5.5]),
-    dmg_scale=0.9,
+    dmg_scale=1.0,
     # --- el bot de AutoPilot y el gancho del latigazo (Input/AutoPilot.cs, sección 13 del doc) -------------------------
     notice={"experto": 0.95, "bueno": 0.75, "promedio": 0.55},     # ve las campanas blancas de lejos y va
     notice_near=3.0,                                               # al pie: como cualquier aviso

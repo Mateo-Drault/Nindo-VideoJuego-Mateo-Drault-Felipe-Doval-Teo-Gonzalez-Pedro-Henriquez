@@ -92,9 +92,11 @@ namespace Nindo
         }
 
         public static Hole Revolcon(int phase) => phase >= 2 ? new Hole(0.55f, RevolconOpen[2], RevolconCap, 1f, 12f) : new Hole(0.55f, RevolconOpen[0], RevolconCap, 1f, 12f);
-        /// <summary>El revolcón, el resultado más común del latigazo: abierto y tope de cortes (la perilla de la duración).</summary>
+        /// <summary>El revolcón, el resultado más común del latigazo: abierto y tope de cortes (la perilla de la duración). Medido en
+        /// Unity el 18 de octubre con tope 5 y daño x0.9: bueno 3:50 y promedio 4:44, los dos sin morir (factor real/simulado
+        /// ~1.1); con tope 2 y daño x1.0 la simulación da 4.6 min y 6.6 min con 1.5 muertes.</summary>
         public static readonly float[] RevolconOpen = { 2.2f, 2.2f, 2.0f };
-        public const int RevolconCap = 5;
+        public const int RevolconCap = 2;
         public static Hole Estampado(int phase) => phase >= 2 ? new Hole(1.0f, 2.0f, 3, 1.2f, 24f) : new Hole(1.0f, 2.2f, 4, 1.2f, 24f);
         public static readonly Hole Caida = new Hole(0.45f, 3.0f, 5, 1.25f, 36f);
         public static readonly Hole Resbalon = new Hole(0.30f, 1.0f, 2, 1f, 6f);
@@ -153,7 +155,7 @@ namespace Nindo
         public const float AimYaw = 20f;
 
         /// <summary>Todo lo que pega a Kaito se multiplica por esto (la perilla de las muertes: 0.9 o 1.1, sección 12.3).</summary>
-        public const float DamageScale = 0.9f;
+        public const float DamageScale = 1.0f;
 
         /// <summary>Daño a Kaito (de 100) por fase (0..2). Pica como un mosquito: lo que exige es la densidad.</summary>
         public static float Dmg(Move m, int phase)
