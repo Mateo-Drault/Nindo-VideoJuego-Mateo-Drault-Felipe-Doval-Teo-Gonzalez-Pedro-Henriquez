@@ -315,21 +315,28 @@ def vault(kit):
                        "el arco como en LeapAir: root_offset_m), GrabStalk f27 (sigue LeapGrab)")
 
 
-def jump_crouch():
-    """El agachado de la vuelta arriba (cortable: Tropiezo): mira la caña (la cabeza gira primero), se hunde, alza la flauta
-    y salta (LeaveStalk f9: sigue LeapAir)."""
+def jump_crouch(kit):
+    """El agachado de la vuelta arriba (cortable: Tropiezo): mira la caña (la cabeza gira primero), se hunde, revolea la
+    flauta para arriba y la ataja alzada mientras salta (LeaveStalk f9: sigue LeapAir). Pasarla de la guardia a la alzada
+    deslizándola por el puño giraba el antebrazo 90° en un cuadro."""
     deep = merge(READY, dict(hips=(0.0, 0.0, -0.46), hips_rot=(20, 0, -8), spine2=(12, 0, 0), neck=(-6, 0, 6), head=(-6, 0, 12)))
+    catch = merge(deep, AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.4)), free("l", (0.50, -0.20, 0.80), elbow=(1, 0.4, -0.2), fing="claw"))
+    A, B = kit.staff(deep), kit.staff(catch)
+
+    def toss(t):
+        # por arriba y por afuera del hombro derecho (en línea recta de adelante a atrás le cruzaba el pecho y la cabeza)
+        return tossed(kit, A, B, t, 0.40, arc=(-0.30, 0.0, 0.0))
     keys = [
         K(0, READY),
         K(3, deep, dict(hips=(0.0, 0.0, -0.36)), ease="inout"),
-        # la flauta sube horizontal hacia adelante, entre la guardia y la alzada del salto (parada, la daba vuelta 120° y
-        # el puño giraba 130° en un cuadro)
-        K(5, deep, staff_at((-0.40, -0.05, 1.45), unit((0.20, -0.95, 0.0)), 0.80), grip("r", 0.80, dors=(-0.5, 0, 0.85), elbow=(-1, 0.4, -0.5)),
-          free("l", (0.40, -0.36, 1.10), elbow=(1, 0.3, -0.4), fing="open"), ease="inout"),
-        K(7, deep, AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.4)), free("l", (0.50, -0.20, 0.80), elbow=(1, 0.4, -0.2), fing="open"),
-          ease="inout"),
+        K(4, deep, dict(hips=(0.0, 0.0, -0.40)), toss(0.15), free("r", (-0.40, -0.10, 1.20), elbow=(-1, 0.4, -0.5), fing="open"),
+          free("l", (0.40, -0.36, 1.10), elbow=(1, 0.3, -0.4), fing="open"), ease="out"),
+        K(6, deep, toss(0.75), free("r", (-0.44, 0.10, 1.62), elbow=(-1, 0.4, -0.4), fing="open"),
+          free("l", (0.46, -0.28, 0.95), elbow=(1, 0.4, -0.2), fing="open"), ease="inout"),
+        K(7, catch, ease="out"),
+        # despega con las puntas estiradas (las del empuje): con el pie para arriba el tobillo giraba 88° en un cuadro
         K(9, merge(AIR, dict(hips=(0, -0.05, -0.18), hips_rot=(6, 0, 0))),
-          legs((-0.18, 0.10, 0.20), (0.18, -0.20, 0.30), rr=(-30, 0, -10), rl=(-40, 0, 10), kr=(-0.2, -1, 0), kl=(0.2, -1, 0.3)),
+          legs((-0.18, 0.10, 0.20), (0.18, -0.20, 0.30), rr=(10, 0, -10), rl=(6, 0, 10), kr=(-0.2, -1, 0), kl=(0.2, -1, 0.3)),
           ease="in"),
     ]
     r0, l0 = READY_R, READY_L
@@ -344,4 +351,4 @@ def jump_crouch():
 
 
 def clips(kit):
-    return [dive(), dive_land(kit), feet_stuck(kit), staff_drop(), staff_drop_recover(), vault(kit), jump_crouch()]
+    return [dive(), dive_land(kit), feet_stuck(kit), staff_drop(), staff_drop_recover(), vault(kit), jump_crouch(kit)]

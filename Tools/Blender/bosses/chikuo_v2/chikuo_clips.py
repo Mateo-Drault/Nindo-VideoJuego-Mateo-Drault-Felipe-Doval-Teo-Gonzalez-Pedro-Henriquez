@@ -200,9 +200,10 @@ def feet_track(keys, frames, plan, lift=0.12, swing_pitch=-12.0):
 
 
 # ============================================================================ la flauta suelta y entre dos agarres
-def tossed(kit, A, B, t, lift, side_of_b=False):
+def tossed(kit, A, B, t, lift, side_of_b=False, arc=(0.0, 0.0, 0.0)):
     """La flauta suelta en el aire entre dos claves de la flauta (A y B, como las da Kit.staff): el giro va de A a B por el
-    camino corto y el centro sube 'lift' metros en arco sobre la recta (la tiró para arriba). side_of_b: el eje gira de A a
+    camino corto y el centro sube 'lift' metros en arco sobre la recta (la tiró para arriba) y se corre 'arc' a mitad del
+    vuelo (por afuera del cuerpo: en línea recta de la espalda al frente lo cruzaba). side_of_b: el eje gira de A a
     B y el lado de los agujeros es siempre el de B (la ataja pegada al pecho, que pide ese lado: girando también el lado la
     flauta daba más vuelta que la del eje y llegaba atrasada)."""
     qa, qb = (basis_yz(Vector(m[1]), Vector(m[2])).to_quaternion() for m in (A, B))
@@ -213,7 +214,7 @@ def tossed(kit, A, B, t, lift, side_of_b=False):
         d = Vector(A[1]).normalized().slerp(Vector(B[1]).normalized(), t)
         R = basis_yz(d, Vector(B[2]))
     ca, cb = (Vector(m[0]) + Vector(m[1]) * (CR.STAFF_LEN * 0.5) for m in (A, B))
-    c = ca.lerp(cb, t) + Vector((0.0, 0.0, lift * math.sin(math.pi * t)))
+    c = ca.lerp(cb, t) + (Vector((0.0, 0.0, lift)) + Vector(arc)) * math.sin(math.pi * t)
     return staff_world(tuple(c - R.col[1] * (CR.STAFF_LEN * 0.5)), tuple(R.col[1]), tuple(R.col[2]))
 
 

@@ -176,7 +176,7 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "PERCH", "AIR", 0.0f, 0.08f, new Vector3(-0.0f, -0.02f, 0.15f), new[] { "LeaveStalk" }, new[] { 1.0f });
+            "PERCH", "AIR", 0.0f, 0.08f, new Vector3(-0.0f, -0.04f, 0.15f), new[] { "LeaveStalk" }, new[] { 1.0f });
         public static readonly ChikuoClip LeapAir = new ChikuoClip("LeapAir", 12, 0.4f, true, 2, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -186,7 +186,7 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "AIR", "PERCH", 0.08f, 0.0f, new Vector3(-0.45f, -0.02f, -0.35f), new[] { "GrabStalk", "Perch" }, new[] { 0.0f, 1.0f });
+            "AIR", "PERCH", 0.08f, 0.0f, new Vector3(-0.45f, -0.04f, -0.35f), new[] { "GrabStalk", "Perch" }, new[] { 0.0f, 1.0f });
         public static readonly ChikuoClip Climb = new ChikuoClip("Climb", 24, 0.8f, false, 1, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.1667f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -220,13 +220,13 @@ namespace Nindo
         public static readonly ChikuoClip Vault = new ChikuoClip("Vault", 27, 0.9f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.3333f, 1.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            new[] { 0.0f, 0.0389f, 0.1111f, 0.15f, 0.2556f, 0.2944f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f },
-            "READY", "AIR", 0.0f, 0.0f, new Vector3(-0.0f, 0.4f, 0.35f), new[] { "Plant", "LeaveStalk", "GrabStalk" }, new[] { 0.2222f, 0.3333f, 1.0f });
+            new[] { 0.0f, 0.0389f, 0.1111f, 0.15f, 0.1889f, 0.2611f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f, 0.3f },
+            "READY", "AIR", 0.0f, 0.0f, new Vector3(-0.0f, 0.26f, 0.21f), new[] { "Plant", "LeaveStalk", "GrabStalk" }, new[] { 0.2222f, 0.3333f, 1.0f });
         public static readonly ChikuoClip JumpCrouch = new ChikuoClip("JumpCrouch", 9, 0.3f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "READY", "AIR", 0.0f, 0.08f, new Vector3(-0.0f, 0.12f, 0.1f), new[] { "LeaveStalk" }, new[] { 1.0f });
+            "READY", "AIR", 0.0f, 0.08f, new Vector3(-0.0f, 0.1f, 0.1f), new[] { "LeaveStalk" }, new[] { 1.0f });
         public static readonly ChikuoClip FlungAir = new ChikuoClip("FlungAir", 12, 0.4f, true, 2, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
@@ -456,7 +456,7 @@ namespace Nindo
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.8f, 1.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
             null,
-            "READY", "AIR", 0.0f, 0.0f, new Vector3(-0.0f, 0.4f, 0.35f), new[] { "Note", "Note", "LeaveStalk", "GrabStalk" }, new[] { 0.4f, 0.6f, 0.8f, 1.0f });
+            "READY", "AIR", 0.0f, 0.0f, new Vector3(-0.0f, 0.38f, 0.35f), new[] { "Note", "Note", "LeaveStalk", "GrabStalk" }, new[] { 0.4f, 0.6f, 0.8f, 1.0f });
         public static readonly ChikuoClip Defeat = new ChikuoClip("Defeat", 165, 5.5f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
