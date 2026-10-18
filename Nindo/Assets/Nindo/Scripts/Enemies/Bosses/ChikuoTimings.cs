@@ -307,7 +307,7 @@ namespace Nindo
         public static readonly ChikuoClip StaffStuck = new ChikuoClip("StaffStuck", 33, 1.1f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 0.0f, 0.0f, new string[0],
-            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.2111f, -0.2889f, -0.3f, -0.3259f, -0.3741f, -0.4f, -0.4f, -0.4f, -0.4f },
+            new[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, -0.1407f, -0.1926f, -0.2f, -0.25f, -0.3f, -0.35f, -0.4f, -0.4f, -0.4f, -0.4f, -0.4f, -0.4f, -0.4f },
             "READY", "READY", 0.1f, 0.0f, new Vector3(0.0f, 0.0f, 0.0f), new string[0], new float[0]);
         public static readonly ChikuoClip Hit = new ChikuoClip("Hit", 10, 0.3333f, false, 0, 0,
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f,

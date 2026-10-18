@@ -246,6 +246,20 @@ class CClip(NA.Clip):
         for k in keys:
             k.ctrl = prep_ctrl(k.ctrl)
         super().__init__(name, frames, keys, loop=loop, lag=lag, timing=timing, events=events, notes=notes, root_vel=root_vel)
+        # el marco de la mano suelta (hpp_s) se toma de las claves donde está suelta: una clave agarrada que pide el codo en
+        # el marco del clip (hsp 0) junto a una suelta con el pecho (hsp 1) mezclaba la posición autorada en el reposo con
+        # la del pecho y la muñeca saltaba 60 cm en el cuadro de la suelta (HangClimb)
+        for s in "rl":
+            free_ks = [k for k in self.keys if "hsp_" + s in k.ctrl and
+                       (k.ctrl.get("gw_" + s) or 0.0) + (k.ctrl.get("cw_" + s) or 0.0) < 1.0]
+            for k in self.keys:
+                if "hsp_" + s not in k.ctrl:
+                    continue
+                if k in free_ks or not free_ks:
+                    k.ctrl["hpp_" + s] = k.ctrl["hsp_" + s]
+                else:
+                    near = min(free_ks, key=lambda q: (abs(q.frame - k.frame), q.frame < k.frame))
+                    k.ctrl["hpp_" + s] = near.ctrl["hsp_" + s]
         self.tracks = []
         for tk in tracks:
             for k in tk:
@@ -270,6 +284,15 @@ class CClip(NA.Clip):
             va = vb if va is None else va
             vb = va if vb is None else vb
             return tuple(x + (y - x) * s for x, y in zip(va, vb))
+        # dos claves seguidas con la misma posición son un sostén: el Catmull-Rom de nindo_anim igual las curvaba con las
+        # vecinas (el bastón clavado se hundía 8 cm entre dos tirones con la flauta quieta en las claves)
+        ks = self.keys
+        ff = max(0.0, min(float(self.frames), f))
+        i = self._seg(ff)
+        va, vb = ks[i].ctrl.get(channel), ks[i + 1].ctrl.get(channel)
+        if isinstance(va, (tuple, Vector)) and isinstance(vb, (tuple, Vector)) and len(va) == 3 and len(vb) == 3 and \
+                max(abs(x - y) for x, y in zip(va, vb)) < 1e-6:
+            return V(va)
         return super().sample(f, channel)
 
     def controls(self, f):
@@ -776,7 +799,7 @@ class Solver(CR.Poser):
         if fw > 1e-4 and c.get("hand_" + s) is not None:
             pos = V(c["hand_" + s])
             hd, hu = V(g("hand_%s_dir" % s, (0, 0, -1))), V(g("hand_%s_up" % s, (-sg, 0, 0)))
-            hs = max(0.0, min(1.0, g("hsp_" + s, 0.0)))
+            hs = max(0.0, min(1.0, g("hpp_" + s, g("hsp_" + s, 0.0))))
             if hs > 1e-4:
                 # la mano autorada en el marco del pecho en reposo (se va con el tronco: vuelos, volteretas)
                 M = pose.get("Spine2") @ self.rig.rest_inv["Spine2"]

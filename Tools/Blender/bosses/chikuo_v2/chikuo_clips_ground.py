@@ -744,15 +744,15 @@ def pole_climb():
         K(2, POLE, grip("r", 1.05, elbow=(-1, 0.2, -0.6)), grip("l", 1.40, elbow=(1, 0.2, -0.6)), READY_FEET,
           dict(hips=(0.0, 0.04, -0.34), hips_rot=(14, 0, -8), spine2=(8, 0, 0), head=(-8, 0, 0)), ease="inout"),
         K(5, POLE, grip("r", 1.55, elbow=(-1, 0.3, -0.5)), grip("l", 1.85, elbow=(1, 0.3, -0.5)),
-          dict(hips=(0.0, -0.10, 0.30), hips_rot=(20, 0, 0), spine2=(8, 0, 0), head=(-14, 0, 0)),
+          dict(hips=(0.0, 0.02, 0.30), hips_rot=(20, 0, 0), spine2=(8, 0, 0), head=(-14, 0, 0)),
           legs((-0.10, -0.36, 0.75), (0.12, -0.38, 1.05), rr=(-40, 0, 0), rl=(-40, 0, 0), kr=(-0.6, -1, 0), kl=(0.6, -1, 0)), ease="out"),
         K(8, POLE, grip("r", 1.85, elbow=(-1, 0.3, 0.2)), grip("l", 1.95, elbow=(1, 0.3, 0.2)),
-          dict(hips=(0.0, -0.30, 0.90), hips_rot=(30, 0, 0), spine=(10, 0, 0), spine2=(10, 0, 0), head=(-20, 0, 0)),
+          dict(hips=(0.0, -0.16, 0.90), hips_rot=(30, 0, 0), spine=(10, 0, 0), spine2=(10, 0, 0), head=(-20, 0, 0)),
           legs((-0.08, -0.42, 1.55), (0.12, -0.44, 1.60), rr=(-30, 0, 0), rl=(-30, 0, 0), kr=(-0.6, -1, 0.4), kl=(0.6, -1, 0.4)),
           ease="inout"),
         K(11, BALANCE, dict(hips=(0.06, -0.46, POLE_TOP + 0.80 - 1.06), hips_rot=(10, 0, 0)),
-          free("r", (-0.60, -0.40, POLE_TOP + 0.50), elbow=(-0.4, 0.5, -0.6), fing="open"),
-          free("l", (0.62, -0.46, POLE_TOP + 0.55), elbow=(0.4, 0.5, -0.6), fing="open"), ease="out"),
+          free("r", (-0.60, -0.40, POLE_TOP + 1.05), elbow=(-0.4, 0.5, -0.6), fing="open"),
+          free("l", (0.62, -0.46, POLE_TOP + 1.10), elbow=(0.4, 0.5, -0.6), fing="open"), ease="out"),
         K(14, BALANCE, ease="inout"),
     ]
     r0, l0 = READY_R, READY_L
@@ -860,7 +860,8 @@ def flute_raise():
         K(5, READY, dict(hips=(0.0, 0.0, -0.16), spine2=(2, 0, 2), head=(-4, 0, 4)),
           staff_at((-0.30, -0.30, 1.30), unit((0.70, -0.30, 0.65)), 0.30), grip("r", 0.30, elbow=(-1, 0.3, -0.6)),
           free("l", (0.30, -0.40, 1.40), elbow=(1, 0.2, -0.6), fing="relaxed"), ease="inout"),
-        K(10, FLUTE, staff_lips(FLUTE_AT, unit((0.95, 0.15, 0.25)), (0, -1, 0.2)), dict(head=(-4, 0, 6)), ease="out"),
+        # la flauta llega abierta hacia atrás como en la pose (más de costado el antebrazo izquierdo cruzaba el pecho)
+        K(10, FLUTE, staff_lips(FLUTE_AT, unit((0.90, 0.36, 0.22)), (0, -1, 0.2)), dict(head=(-4, 0, 6)), ease="out"),
         K(14, FLUTE, ease="inout"),
     ]
     r0, l0 = READY_R, READY_L

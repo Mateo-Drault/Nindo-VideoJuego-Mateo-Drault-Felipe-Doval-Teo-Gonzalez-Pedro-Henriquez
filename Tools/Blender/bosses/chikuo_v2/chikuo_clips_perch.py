@@ -273,7 +273,9 @@ def hang_swap(w_lips, grip_l, free_r, extra=None):
     dos modos) y la derecha está suelta al lado de la cara."""
     return merge(hang_pipe(extra), STAFF_SHOULDERS, hang_pipe(extra), dict(sw_spine=1.0 - w_lips, sw_lips=w_lips),
                  grip("l", grip_l, elbow=(1, -0.2, 0.6)),
-                 free("r", free_r, elbow=(-1, -0.2, 0.6), fing="open", chest=True))
+                 # el codo en el marco del pecho, que colgado está dado vuelta: el mismo lado que el (-1, -0.2, 0.6) del clip
+                 # en hang_pipe (pedido igual en los dos marcos, el polo pasaba por cero al mezclarlos y el brazo daba vuelta)
+                 free("r", free_r, elbow=(1, -0.2, -0.6), fing="open", chest=True))
 
 
 def hang_drop():
@@ -613,36 +615,47 @@ def climb():
     F0 = -4.4                                # el piso en el clip (la caña de adentro: posado a 4.4 m)
     hip = lambda z: z - 1.06                 # de la altura de la cadera en el clip al control 'hips'
 
-    def wall(zr, zl, rot_l=(-40, 25, 10)):
-        return legs((0.17, -0.02, zr), (0.36, -0.20, zl), rr=(-10, 70, 0), rl=rot_l, kr=(-0.2, -1, 0.5), kl=(0.4, -1, 0.6))
+    # la suela derecha apoyada de canto contra el culmo (el tobillo más cerca se metía en la caña)
+    def wall(zr, zl, rot_l=(-40, 25, 10), rot_r=(-10, 70, 0)):
+        return legs((0.23, -0.02, zr), (0.36, -0.20, zl), rr=rot_r, rl=rot_l, kr=(-0.2, -1, 0.5), kl=(0.4, -1, 0.6))
 
     def body(x, y, z, rx=10.0, rz=8.0, head=(-16, 0, -8)):
         return dict(hips=(x, y, hip(z)), hips_rot=(rx, 0, rz), spine2=(2, 0, 0), head=head)
     keys = [
+        # agachado para el salto con los brazos atrás (la anticipación: con la derecha a la altura del hombro el brazo
+        # quedaba plegado sobre sí mismo y daba media vuelta al estirarse hacia ClimbGrip)
         K(0, back_staff, body(0.30, -0.02, F0 + 0.78, 16.0, 10.0, (-16, 0, -10)),
-          free("r", (0.14, -0.22, F0 + 1.30), elbow=(-1, 0.3, -0.5), fing="open"),
-          free("l", (0.62, -0.22, F0 + 1.02), elbow=(1, 0.3, -0.5), fing="relaxed"),
+          free("r", (0.22, 0.24, F0 + 0.82), elbow=(-1, 0.3, -0.5), fing="open"),
+          free("l", (0.66, 0.10, F0 + 0.78), elbow=(1, 0.3, -0.5), fing="relaxed"),
           legs((0.14, -0.10, F0 + 0.115), (0.50, 0.10, F0 + 0.115), rr=(0, 0, -20), rl=(0, 0, 10), kr=(-0.3, -1, 0), kl=(0.3, -1, 0))),
+        # los brazos pasan por delante del pecho en el impulso (en línea recta de la cadera a ClimbGrip la mano cruzaba el
+        # hombro y el brazo daba media vuelta)
+        K(2, back_staff, body(0.34, -0.03, F0 + 0.95, 10.0, 10.0, (-20, 0, -11)),
+          free("r", (0.12, -0.42, F0 + 1.55), elbow=(-1, 0.3, -0.5), fing="open"),
+          free("l", (0.62, -0.12, F0 + 1.20), elbow=(1, 0.3, -0.5), fing="open"),
+          legs((0.16, -0.08, F0 + 0.25), (0.46, 0.0, F0 + 0.115), rr=(-5, 35, -10), rl=(0, 0, 10), kr=(-0.3, -1, 0.15), kl=(0.35, -1, 0.15)),
+          ease="in"),
         # la derecha alcanza ClimbGrip estirado (2.2 m: a la altura de su cabeza), el pie derecho sube al culmo
-        K(4, back_staff, body(0.30, -0.04, F0 + 1.08, 4.0, 10.0, (-22, 0, -12)),
+        K(4, back_staff, body(0.38, -0.04, F0 + 1.08, 4.0, 10.0, (-22, 0, -12)),
           culm("r", gz, 95.0, elbow=(-0.4, -0.4, -1)), free("l", (0.58, -0.22, F0 + 1.40), elbow=(1, 0.3, -0.5), fing="open"),
-          legs((0.17, -0.02, F0 + 0.45), (0.42, -0.10, F0 + 0.115), rr=(-10, 70, 0), rl=(0, 0, 10), kr=(-0.2, -1, 0.3), kl=(0.4, -1, 0.3)),
+          legs((0.23, -0.02, F0 + 0.45), (0.42, -0.10, F0 + 0.115), rr=(-10, 70, 0), rl=(0, 0, 10), kr=(-0.2, -1, 0.3), kl=(0.4, -1, 0.3)),
           ease="out"),
-        K(7, back_staff, body(0.29, -0.05, -2.95), culm("r", gz, 95.0, elbow=(-0.6, -0.4, -0.8)),
-          free("l", (0.40, -0.30, -1.20), elbow=(1, -0.2, -0.4), fing="open"), wall(-3.55, -3.30)),
-        # tirón 1: empuja con las piernas contra el culmo y tira; la izquierda agarra arriba de la cabeza
-        K(10, back_staff, body(0.28, -0.06, -2.40), culm("r", gz, 95.0, elbow=(-0.8, -0.4, -0.6)),
-          culm("l", -0.80, 70.0, elbow=(1, -0.3, -0.6)), wall(-3.00, -2.85), ease="inout"),
+        K(7, back_staff, body(0.41, -0.02, -2.95), culm("r", gz, 95.0, elbow=(-0.6, -0.4, -0.8)),
+          free("l", (0.40, -0.26, -1.75), elbow=(1, -0.2, -0.4), fing="open"), wall(-3.55, -3.30)),
+        # tirón 1: empuja con las piernas contra el culmo y tira; la izquierda agarra arriba de la cabeza, al alcance del brazo
+        # (más arriba no llegaba por 20 cm)
+        K(10, back_staff, body(0.40, 0.02, -2.40), culm("r", gz, 95.0, elbow=(-0.8, -0.4, -0.6)),
+          culm("l", -1.25, 70.0, elbow=(1, -0.3, -0.6)), wall(-3.00, -2.85), ease="inout"),
         # la derecha suelta y sube
-        K(12, back_staff, body(0.27, -0.07, -1.95), free("r", (0.05, -0.32, -0.95), elbow=(-1, -0.2, -0.4), fing="open"),
-          culm("l", -0.80, 70.0, elbow=(1, -0.3, -0.6)), wall(-2.60, -2.35)),
-        K(15, back_staff, body(0.26, -0.08, -1.40, 12.0, 6.0, (-14, 0, -6)), culm("r", 0.40, 100.0, elbow=(-0.8, -0.4, -0.6)),
-          culm("l", -0.80, 70.0, elbow=(1, -0.3, -0.8)), wall(-2.05, -1.85), ease="inout"),
+        K(12, back_staff, body(0.38, 0.08, -1.95), free("r", (0.05, -0.32, -0.95), elbow=(-1, -0.2, -0.4), fing="open"),
+          culm("l", -1.25, 70.0, elbow=(1, -0.3, -0.6)), wall(-2.60, -2.35)),
+        K(15, back_staff, body(0.36, 0.08, -1.40, 12.0, 6.0, (-14, 0, -6)), culm("r", -0.15, 75.0, elbow=(-0.8, -0.4, -0.6)),
+          culm("l", -1.25, 70.0, elbow=(1, -0.3, -0.8)), wall(-2.05, -1.85), ease="inout"),
         # la izquierda suelta y va al nudo de arriba
-        K(17, back_staff, body(0.24, -0.09, -1.00, 12.0, 6.0, (-12, 0, -6)), culm("r", 0.40, 100.0, elbow=(-0.8, -0.4, -0.6)),
+        K(17, back_staff, body(0.42, 0.04, -1.00, 12.0, 6.0, (-12, 0, -6)), culm("r", -0.15, 75.0, elbow=(-0.8, -0.4, -0.6)),
           free("l", (0.36, -0.30, 0.55), elbow=(1, -0.2, -0.4), fing="open"), wall(-1.60, -1.40)),
-        K(20, back_staff, body(0.18, -0.12, -0.10, 16.0, 4.0, (-6, 0, -2)), culm("r", 0.40, 100.0, elbow=(-1, -0.3, -0.4)),
-          culm("l", 1.12, 80.0, elbow=(1, 0.3, -0.4)), wall(-0.62, -0.45, (-60, 20, 10)), ease="inout"),
+        K(20, back_staff, body(0.32, -0.04, -0.10, 16.0, 4.0, (-6, 0, -2)), free("r", (0.06, -0.36, 0.95), elbow=(-1, 0.2, -0.5), fing="open"),
+          culm("l", 1.12, 80.0, elbow=(1, 0.3, -0.4)), wall(-0.62, -0.45, (-60, 20, 10), (-6, 35, -15)), ease="inout"),
         # se monta en el nudo pasando adelante del culmo; la derecha suelta y va a la flauta
         K(22, merge(STAFF_SHOULDERS), dict(hips=(0.06, -0.20, hip(0.38)), hips_rot=(14, 0, 2), spine2=(10, 0, 0), head=(4, 0, 0)),
           free("r", (-0.40, -0.30, 1.30), elbow=(-1, 0, -0.5), fing="open"), release_left((0.42, -0.28, 1.30)),

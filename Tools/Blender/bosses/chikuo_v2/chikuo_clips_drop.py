@@ -126,8 +126,9 @@ def feet_stuck():
         K(29, base, pull, ease="inout"),
         K(33, base, pull, dict(hips=(0.04, 0.0, -0.42), head=(-30, 0, 0)), ease="sine"),
         K(37, base, pull, dict(hips=(0.04, -0.02, -0.48)), ease="sine"),
-        K(41, base, dict(hips=(0.04, -0.04, -0.40)), ease="inout"),
-        # salta afuera: la flauta pasa por delante del hombro a la guardia
+        K(39, base, dict(hips=(0.04, -0.04, -0.40)), ease="inout"),
+        # salta afuera: la flauta pasa por delante del hombro a la guardia (en tres cuadros: en uno, de la espalda adelante
+        # el puño giraba 147°)
         K(42, base, dict(hips=(0.04, -0.03, -0.30)), staff_at((-0.42, 0.0, 1.40), unit((0.30, -0.60, 0.74)), 0.60),
           grip("r", 0.60, elbow=(-1, 0.4, -0.5)), free("l", (0.40, -0.30, 1.30), elbow=(1, 0.3, -0.4), fing="open"), ease="out"),
         K(44, READY, dict(hips=(0.02, 0.0, -0.06), hips_rot=(-4, 0, -12)),
@@ -149,9 +150,11 @@ def staff_drop():
     P = merge(PERCH, shoulders_hold())
     lift = lambda dz: merge(staff_spine((-1.00, 0.06, 1.95 + dz), (1, 0, 0.03), (0, -0.3, 1)), grip("r", R_SH, elbow=(-0.6, -0.2, -1)),
                             grip("l", L_SH, elbow=(0.6, -0.2, -1)))
-    over = lambda: merge(staff_spine((0.0, 0.10, 2.55), unit((0.10, 0.62, 0.78)), (1, 0, 0)), grip("r", 0.20, elbow=(-1, -0.2, 0.3)),
+    # arriba con las dos manos sobre la frente y la flauta tendida atrás de la cabeza (más alta y parada, las manos quedaban
+    # a 0.9 y 1.3 m de los hombros: los brazos no llegaban)
+    over = lambda: merge(staff_spine((-0.07, -0.24, 2.18), unit((0.10, 0.80, 0.30)), (1, 0, 0)), grip("r", 0.20, elbow=(-1, -0.2, 0.3)),
                          grip("l", 0.62, elbow=(1, -0.2, 0.3)))
-    one = lambda: merge(staff_spine((-0.30, 0.00, 2.45), unit((0.30, 0.55, 0.78)), (1, 0, 0)), grip("r", 0.28, elbow=(-1, -0.2, 0.3)),
+    one = lambda: merge(staff_spine((-0.30, 0.00, 2.10), unit((0.30, 0.55, 0.78)), (1, 0, 0)), grip("r", 0.28, elbow=(-1, -0.2, 0.3)),
                         free("l", (0.66, -0.10, 2.05), elbow=(0.6, -0.2, -0.6), fing="open", chest=True))
     land_up = merge(READY, over(), dict(hips=(0.0, 0.0, -0.36), hips_rot=(4, 0, -6), spine=(-4, 0, 0), spine1=(-6, 0, 0),
                                         spine2=(-4, 0, 0), neck=(-6, 0, 0), head=(-12, 0, 0)))
@@ -162,7 +165,7 @@ def staff_drop():
     keys = [
         K(0, P),
         K(3, P, lift(0.40), dict(hips=(0, -0.36, -0.66), hips_rot=(14, 0, 0), spine2=(4, 0, 0), head=(-6, 0, 0)), ease="inout"),
-        K(6, lift(0.62), dict(hips=(0, -0.20, -0.40), hips_rot=(10, 0, 0), spine=(-4, 0, 0), spine2=(-2, 0, 0), head=(-10, 0, 0)),
+        K(6, lift(0.46), dict(hips=(0, -0.20, -0.40), hips_rot=(10, 0, 0), spine=(-4, 0, 0), spine2=(-2, 0, 0), head=(-10, 0, 0)),
           legs((-0.14, -0.06, 0.14), (0.14, -0.06, 0.14), rr=(-20, 0, -20), rl=(-20, 0, 20), kr=(-0.5, -1, 0.3), kl=(0.5, -1, 0.3)),
           ease="in"),
         K(10, one(), dict(hips=(0, 0.0, -0.20), hips_rot=(-6, 0, 0), spine=(-6, 0, 0), spine2=(-4, 0, 0), head=(-14, 0, 0)),
@@ -223,7 +226,10 @@ def vault():
         K(3, READY, dict(hips=(0.0, -0.10, -0.22), hips_rot=(10, 0, -8)), staff_at((-0.20, -0.30, 1.30), unit((0.10, -0.80, 0.40)), 0.80),
           grip("r", 0.80, elbow=(-1, 0.3, -0.5)), grip("l", 1.20, elbow=(1, 0.3, -0.5)), travel=0.15),
         K(6, plant, grip("r", 1.30, elbow=(-1, 0.3, -0.5)), grip("l", 1.62, elbow=(1, 0.3, -0.5)),
-          dict(hips=(0.0, -0.20, -0.30), hips_rot=(16, 0, 0), spine2=(8, 0, 0), head=(-10, 0, 0)), READY_FEET, travel=0.30, ease="out"),
+          dict(hips=(0.0, -0.20, -0.30), hips_rot=(16, 0, 0), spine2=(8, 0, 0), head=(-10, 0, 0)),
+          # el pie derecho ya despegó (suelto desde f5): en el lugar de la guardia y con el avance del código patinaba 30 cm
+          legs((-0.26, 0.10, 0.34), (0.24, -0.30, 0.115), rr=(-40, 0, -30), rl=(0, 0, 8), kr=(-0.5, -1, 0.3), kl=(0.3, -1, 0)),
+          travel=0.30, ease="out"),
         K(9, plant, grip("r", 1.30, elbow=(-1, 0.3, 0.2)), grip("l", 1.62, elbow=(1, 0.3, 0.2)),
           dict(hips=(0.0, -0.30, 0.10), hips_rot=(30, 0, 0), spine=(10, 0, 0), spine2=(10, 0, 0), head=(-14, 0, 0)),
           legs((-0.14, -0.10, 0.40), (0.14, -0.30, 0.60), rr=(-30, 0, 0), rl=(-30, 0, 0), kr=(-0.3, -1, 0.3), kl=(0.3, -1, 0.3)),
@@ -257,10 +263,12 @@ def jump_crouch():
     keys = [
         K(0, READY),
         K(3, deep, dict(hips=(0.0, 0.0, -0.36)), ease="inout"),
-        K(5, deep, staff_at((-0.40, -0.10, 1.40), unit((0.10, -0.30, 0.95)), 0.70), grip("r", 0.70, elbow=(-1, 0.4, -0.5)),
+        # la flauta sube horizontal hacia adelante, entre la guardia y la alzada del salto (parada, la daba vuelta 120° y
+        # el puño giraba 130° en un cuadro)
+        K(5, deep, staff_at((-0.40, -0.05, 1.45), unit((0.20, -0.95, 0.0)), 0.80), grip("r", 0.80, dors=(-0.5, 0, 0.85), elbow=(-1, 0.4, -0.5)),
           free("l", (0.40, -0.36, 1.10), elbow=(1, 0.3, -0.4), fing="open"), ease="inout"),
         K(7, deep, AIR_STAFF, grip("r", 0.95, elbow=(-1, 0.4, -0.4)), free("l", (0.50, -0.20, 0.80), elbow=(1, 0.4, -0.2), fing="open"),
-          ease="out"),
+          ease="inout"),
         K(9, merge(AIR, dict(hips=(0, -0.05, -0.18), hips_rot=(6, 0, 0))),
           legs((-0.18, 0.10, 0.20), (0.18, -0.20, 0.30), rr=(-30, 0, -10), rl=(-40, 0, 10), kr=(-0.2, -1, 0), kl=(0.2, -1, 0.3)),
           ease="in"),

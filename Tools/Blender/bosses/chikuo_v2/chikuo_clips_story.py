@@ -6,7 +6,7 @@ from chikuo_anim import CClip, merge, free, grip, legs, staff_world, staff_lips
 from chikuo_clips import K, PERCH, HANG, HANG_Z, READY, AIR, AIR_STAFF, feet_track, READY_R, READY_L
 from chikuo_clips_perch import shoulders_hold, hang_pipe, aim_dir, FACE_PUFF, FACE_BLOWN
 from chikuo_clips_ground import (FLUTE, FLUTE_AT, staff_at, unit, face_track, E, plants, FACE_FOCUS)
-from chikuo_clips_react import DAZED_SIT, DAZED_LIE, OUCH
+from chikuo_clips_react import DAZED_SIT, DAZED_LIE, OUCH, held_r
 
 UP = 1.0                                          # colgado de la presentación: un metro más arriba que HANG
 
@@ -88,8 +88,11 @@ def phase_bow():
     """El cambio 1 (4.0 s): cae sentado riéndose (lo bajaron del bambú), se saca una hoja de la barba y la mira, se levanta de
     un salto, se lleva la flauta de costado y toca tres notas (Note f70, f85, f100: en la tercera las cañas se inclinan) y
     vuelve a la guardia."""
+    # la carcajada sentado: echado atrás con la izquierda palmeándose el muslo (en la rodilla, con el tronco atrás, la
+    # mano no llegaba por 21 cm)
+    slap = lambda a: free("l", (0.34, -0.40 - 0.04 * a, 0.70 + 0.10 * a), elbow=(1, 0.3, -0.4), fing="open")
     laugh = merge(DAZED_SIT, dict(face="laugh", hips_rot=(-30, 0, 0), spine=(6, 0, 0), spine1=(4, 0, 0), spine2=(0, 0, 0),
-                                  neck=(-10, 0, 0), head=(-20, 0, 0)))
+                                  neck=(-10, 0, 0), head=(-20, 0, 0)), slap(0.0))
     leaf = merge(DAZED_SIT, dict(face="grin", hips_rot=(-20, 0, 0), spine=(10, 0, 0), spine1=(8, 0, 0), spine2=(6, 0, 0), neck=(4, 0, 0),
                                  head=(16, 0, -6)),
                  free("l", (0.06, -0.40, 1.42), (-0.2, -0.6, 0.8), (0.9, -0.3, 0.2), elbow=(1, 0.2, -0.6), fing="relaxed"))
@@ -102,18 +105,26 @@ def phase_bow():
             K(3, DAZED_SIT, dict(hips=(0.0, 0.08, 0.20 - 1.06), face=OUCH), ease="in"),
             K(7, laugh, ease="out")]
     for f in range(12, 37, 6):
-        keys.append(K(f, laugh, dict(spine2=(4 if (f // 6) % 2 else -4, 0, 0), head=(-24 if (f // 6) % 2 else -16, 0, 0)), ease="sine"))
+        up_ = (f // 6) % 2
+        keys.append(K(f, laugh, slap(1.0 if up_ else 0.0), dict(spine2=(4 if up_ else -4, 0, 0), head=(-24 if up_ else -16, 0, 0)),
+                      ease="sine"))
     keys += [K(42, leaf, ease="inout"), K(46, leaf, dict(head=(18, 0, -4)), ease="inout"), K(52, look, ease="inout"),
              K(56, look, free("l", (0.50, -0.70, 1.30), elbow=(1, 0.3, -0.5), fing="open"), ease="snap"),
-             K(61, READY, dict(hips=(0.0, 0.02, -0.40), hips_rot=(16, 0, -10), face="grin"), ease="out"),
-             K(66, FLUTE, staff_lips(FLUTE_AT, unit((0.95, 0.15, 0.25)), (0, -1, 0.2)), ease="inout"),
+             # se levanta de un salto: recoge los pies (en el aire: arrastrarlos por el piso hasta la guardia era patinar un
+             # metro), la cadera salta adelante y la flauta sube girando de los muslos a la guardia
+             K(59, READY, dict(hips=(0.0, -0.06, 0.62 - 1.06), hips_rot=(30, 0, -6), spine=(10, 0, 0), spine2=(8, 0, 0), face="laugh"),
+               legs((-0.24, -0.34, 0.36), (0.24, -0.30, 0.30), rr=(-30, 0, -20), rl=(-30, 0, 10), kr=(-0.6, -1, 0.3), kl=(0.5, -1, 0.3)),
+               held_r((-0.42, -0.46, 0.92), (0.75, -0.45, 0.40), elbow=(-1, 0.3, -0.5), chest=False, at=0.60),
+               free("l", (0.46, -0.50, 1.10), elbow=(1, 0.3, -0.5), fing="open"), ease="out"),
+             K(62, READY, dict(hips=(0.0, 0.02, -0.40), hips_rot=(16, 0, -10), face="grin"), ease="in"),
+             K(67, FLUTE, staff_lips(FLUTE_AT, unit((0.90, 0.36, 0.22)), (0, -1, 0.2)), ease="inout"),
              K(69, FLUTE, ease="inout")]
     for f in (70, 85, 100):
         keys += note(f)
     keys += [K(110, FLUTE, ease="inout"), K(120, READY, ease="inout")]
     r0, l0 = READY_R, READY_L
-    plan = {"r": plants({"free": (0, 58)}, (61, 112, -0.22, 0.10, -16.0), (116, 120, r0[0], r0[1], r0[2])),
-            "l": plants({"free": (0, 58)}, (61, 120, l0[0], l0[1], l0[2]))}
+    plan = {"r": plants({"free": (0, 61)}, (62, 112, -0.22, 0.10, -16.0), (116, 120, r0[0], r0[1], r0[2])),
+            "l": plants({"free": (0, 61)}, (62, 120, l0[0], l0[1], l0[2]))}
     feet = feet_track(keys, 120, plan, lift=0.06)
     faces = face_track((0, "surprise"), (3, OUCH), (7, "laugh"), (38, "laugh"), (42, "grin"), (64, "grin"), (68, "flute"),
                        (112, "flute"), (116, "grin"), (120, "grin"))
@@ -195,12 +206,15 @@ def defeat():
                       dict(head=(10, 0, 0) if (f // 6) % 2 else (2, 0, 0)), ease="sine"))
     sit = merge(CROSS, dict(face="laugh", head=(-12, 0, 0), neck=(-6, 0, 0)))
     wipe = merge(CROSS, dict(face=dict(CR.FACES["grin"], lids=0.7), head=(4, 0, 8)),
-                 free("l", (0.06, -0.42, 1.92), (-0.5, -0.3, 0.8), (0.4, -0.8, 0.2), elbow=(1, 0.2, -0.6), fing="fist"))
+                 # el nudillo en el ojo izquierdo (sentado la cabeza está a 1.2 m: a 1.9 la mano no llegaba por 17 cm)
+                 free("l", (0.09, -0.30, 1.40), (-0.5, -0.3, 0.8), (0.4, -0.8, 0.2), elbow=(1, 0.2, -0.6), fing="fist"))
     bow = merge(CROSS, dict(hips_rot=(10, 0, 0), spine=(14, 0, 0), spine1=(12, 0, 0), spine2=(10, 0, 0), neck=(10, 0, 0), head=(14, 0, 0)),
                 free("r", (-0.30, -0.56, 0.46), (0.2, -0.6, -0.8), (-0.4, -0.7, 0.4), elbow=(-1, 0.3, -0.5), fing="relaxed"),
                 free("l", (0.30, -0.56, 0.46), (-0.2, -0.6, -0.8), (0.4, -0.7, 0.4), elbow=(1, 0.3, -0.5), fing="relaxed"))
     keys += [K(62, lie, ease="inout"),
-             K(72, sit, dict(hips_rot=(-30, 0, 0), spine=(10, 0, 0)), ease="inout"),
+             # se sienta con la flauta en el puño derecho y recién sentado la deja sobre las rodillas (soltarla mientras se
+             # levantaba mezclaba el agarre de tirado con la mano apoyada y el puño quedaba a 19 cm de la flauta)
+             K(72, sit, grip("r", 0.72, elbow=(-1, 0.3, -0.5)), dict(hips_rot=(-30, 0, 0), spine=(10, 0, 0)), ease="inout"),
              K(82, sit, ease="out")]
     for f in range(88, 101, 6):
         keys.append(K(f, sit, dict(head=(-8 if (f // 6) % 2 else -14, 0, 0)), ease="sine"))

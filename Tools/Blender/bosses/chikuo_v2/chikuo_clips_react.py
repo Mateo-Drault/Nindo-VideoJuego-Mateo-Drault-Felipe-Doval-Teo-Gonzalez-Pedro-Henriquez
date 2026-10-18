@@ -81,12 +81,20 @@ def flung_air():
 
 def flung_land():
     """Toca el piso: cae de cola, rebota con las piernas para arriba y queda sentado mareado (sigue DazedSit)."""
+    # cae de cola con las piernas arriba (viene dando vueltas para atrás): la flauta alzada al costado en la derecha, fuera
+    # de las piernas que suben (cruzada sobre los muslos la atravesaban)
     hit = merge(DAZED_SIT, dict(hips=(0.0, 0.10, 0.26 - 1.06), hips_rot=(-40, 0, 0), spine=(20, 0, 0), spine1=(16, 0, 0),
                                 spine2=(12, 0, 0), head=(16, 0, 0), face=OUCH),
-                legs((-0.30, -0.60, 0.60), (0.30, -0.50, 0.70), rr=(-20, 0, -20), rl=(-20, 0, 20), kr=(-0.5, -0.5, 1.0), kl=(0.5, -0.5, 1.0)))
+                legs((-0.30, -0.60, 0.60), (0.30, -0.50, 0.70), rr=(-20, 0, -20), rl=(-20, 0, 20), kr=(-0.5, -0.5, 1.0), kl=(0.5, -0.5, 1.0)),
+                held_r((-0.62, -0.28, 0.80), (0.55, -0.45, 0.70), elbow=(-1, 0.3, -0.4), chest=False),
+                free("l", (0.58, -0.08, 0.62), elbow=(1, 0.3, -0.4), fing="open"))
+    # el primer cuadro: la vuelta del revolcón con la cola a medio metro del piso (el código ya puso la raíz en el piso)
+    # y las rodillas recogidas adelante, en el marco de la cadera como en el vuelo
     keys = [
-        K(0, FLUNG, dict(hips=(0.0, 0.0, -0.30), hips_rot=(-20, 0, 0))),
-        K(3, hit, ease="in"),
+        K(0, FLUNG, dict(hips=(0.0, 0.04, -0.48), hips_rot=(-48, 0, 0)),
+          legs((-0.24, -0.42, 0.42), (0.24, -0.36, 0.50), rr=(8, 0, -10), rl=(10, 0, 10), kr=(-0.4, -1, 0.3), kl=(0.4, -1, 0.3),
+               hips=True)),
+        K(3, hit, ease="lin"),
         K(6, hit, dict(hips=(0.0, 0.08, 0.38 - 1.06), hips_rot=(-30, 0, 0)), ease="out"),
         K(9, DAZED_SIT, dict(hips=(0.0, 0.06, 0.26 - 1.06)), ease="in"),
         K(11, DAZED_SIT, ease="out"),
@@ -195,8 +203,8 @@ def slide_down():
             K(10, slide, dict(hips=(0.0, CULM_Y - 0.28, -0.08)), ease="sine"),
             K(13, slide, dict(hips=(0.0, CULM_Y - 0.24, -0.06)), legs((-0.22, -0.30, 0.12), (0.24, -0.28, 0.14), rr=(-30, 0, -10),
                                                                       rl=(-30, 0, 10), kr=(-0.4, -1, 0.3), kl=(0.4, -1, 0.3)),
-              held_r((-0.42, -0.36, 0.90), (1.0, 0.02, 0.15), elbow=(-1, 0.2, -0.4), chest=False),
-              free("l", (0.42, -0.10, 1.10), elbow=(1, 0.2, -0.4), fing="open"), ease="in"),
+              held_r((-0.42, -0.24, 1.32), (1.0, 0.02, 0.30), elbow=(-1, 0.2, -0.4), chest=False),
+              free("l", (0.42, -0.10, 1.40), elbow=(1, 0.2, -0.4), fing="open"), ease="lin"),
             K(16, DAZED_SIT, dict(hips=(0.0, 0.06, 0.22 - 1.06), face=OUCH), ease="in"),
             K(18, DAZED_SIT, ease="out")]
     return CClip("SlideDown", 18, keys, lag={"head": 1.0},
@@ -247,10 +255,18 @@ def slip():
             K(4, cling, dict(hips=(0.0, 0.14, -0.26), hips_rot=(-20, 0, 0), spine2=(-6, 0, 0), head=(-8, 0, 0), face="surprise"),
               free("r", (-0.26, 0.12, 2.20), elbow=(-1, 0.3, -0.3), fing="open", chest=True),
               free("l", (0.70, -0.10, 1.70), elbow=(0.5, 0.5, -0.5), fing="open", chest=True), ease="out"),
-            K(6, back, grip("r", 1.95, elbow=(-1, 0.3, -0.3)), dict(hips=(0.0, 0.18, -0.36), hips_rot=(-28, 0, 0), face="surprise"),
+            # el puño con el dorso pedido en la sacada (el plan lo daba vuelta 100° en un cuadro al pasar al mundo)
+            K(5, back, grip("r", 1.95, dors=(0, 1, 0.2), elbow=(-1, 0.3, -0.3)), dict(hips=(0.0, 0.17, -0.32), hips_rot=(-26, 0, 0),
+                                                                                    face="surprise"),
               free("l", (0.70, -0.10, 1.70), elbow=(0.5, 0.5, -0.5), fing="open", chest=True)),
-            # la saca por arriba de la cabeza (horizontal, adelante) antes de caer sentado
-            K(8, staff_world((0.80, -0.45, 1.62), unit((-1.0, 0.05, 0.05)), (0, -0.3, 1)), grip("r", 1.60, elbow=(-1, 0.3, -0.3)),
+            # la flauta sale de la espalda por arriba del hombro derecho, cruzada atrás (de la espalda directo adelante la mano
+            # saltaba 80 cm en un cuadro y la flauta atravesaba la cara)
+            K(6, staff_world((1.23, 0.92, 0.72), unit((-1.30, -0.35, 1.25)), (0, -1, 0)), grip("r", 1.95, dors=(0, 0.7, 0.7), elbow=(-1, 0.3, -0.3)),
+              dict(hips=(0.0, 0.16, -0.42), hips_rot=(-27, 0, 0), spine=(4, 0, 0), spine2=(2, 0, 0), face="surprise"),
+              free("l", (0.66, -0.20, 1.45), elbow=(0.5, 0.5, -0.5), fing="open"), ease="inout"),
+            # horizontal adelante a la altura del pecho que cae antes de caer sentado: en tres cuadros desde la espalda (en dos
+            # el brazo giraba 118° en uno) y al alcance (más alta faltaban 20 cm)
+            K(8, staff_world((1.15, -0.48, 1.17), unit((-1.0, 0.05, 0.05)), (0, -0.3, 1)), grip("r", 1.60, dors=(0, 0, 1), elbow=(-1, 0.3, -0.3)),
               dict(hips=(0.0, 0.12, -0.60), hips_rot=(-26, 0, 0), spine=(8, 0, 0), spine2=(6, 0, 0), face="surprise"),
               free("l", (0.60, -0.30, 1.20), elbow=(0.5, 0.5, -0.5), fing="open"), ease="inout"),
             K(10, DAZED_SIT, dict(hips=(0.0, 0.08, 0.24 - 1.06), face=OUCH), ease="in"),
@@ -324,9 +340,12 @@ def pole_fall():
 def get_up():
     """De un salto (kip-up, invulnerable): de espaldas se hamaca atrás con las rodillas al pecho, patea al cielo, arquea la
     espalda y cae parado agachado; a la guardia."""
-    rock = merge(DAZED_LIE, dict(hips=(0.0, 0.20, 0.30 - 1.06), hips_rot=(-120, 0, 0), spine=(10, 0, 0), spine2=(10, 0, 0),
+    # se hamaca sobre los omóplatos: la cadera arriba (a 0.30 la espalda se metía 22 cm en el piso), la flauta sube con
+    # la derecha al costado del cuerpo
+    rock = merge(DAZED_LIE, dict(hips=(0.0, 0.22, 0.52 - 1.06), hips_rot=(-118, 0, 0), spine=(8, 0, 0), spine2=(6, 0, 0),
                                  neck=(24, 0, 0), head=(20, 0, 0), face="grin"),
-                 legs((-0.16, 0.10, 0.80), (0.16, 0.10, 0.84), rr=(-60, 0, -10), rl=(-60, 0, 10), kr=(-0.3, 0.3, 1.0), kl=(0.3, 0.3, 1.0)),
+                 legs((-0.16, 0.06, 0.96), (0.16, 0.06, 1.00), rr=(-60, 0, -10), rl=(-60, 0, 10), kr=(-0.3, 0.3, 1.0), kl=(0.3, 0.3, 1.0)),
+                 held_r((-0.46, 0.24, 0.40), (-0.30, -0.20, 0.93), elbow=(-1, 0.3, 0.3), chest=False, at=0.30, up=(0, -1, 0)),
                  free("l", (0.36, 0.70, 0.30), elbow=(1, 0.3, 0.3), fing="open"))
     kip = merge(READY, dict(hips=(0.0, 0.10, 0.62 - 1.06), hips_rot=(-30, 0, 0), spine=(-14, 0, 0), spine1=(-10, 0, 0), spine2=(-8, 0, 0),
                             neck=(-10, 0, 0), head=(-14, 0, 0), face="laugh"),
@@ -336,8 +355,8 @@ def get_up():
     land = merge(READY, dict(hips=(0.0, 0.02, -0.46), hips_rot=(20, 0, -14), spine2=(10, 0, 0), face="grin"),
                  free("l", (0.30, -0.42, 1.10), elbow=(1, 0.2, -0.6), fing="open"))
     keys = [K(0, DAZED_LIE),
-            K(3, rock, ease="out"),
-            K(6, kip, ease="in"),
+            K(3, rock, ease="inout"),
+            K(6, kip, ease="lin"),
             K(9, land, ease="out"),
             K(12, READY, ease="inout")]
     r0, l0 = READY_R, READY_L
@@ -395,21 +414,34 @@ def tuned():
 def staff_stuck():
     """El Bastón Clavado: la flauta se le clavó en el piso en la barrida; tira de ella con las dos manos echado atrás y los
     pies afirmados, tres tirones; al tercero sale, trastabilla para atrás y vuelve a la guardia."""
-    stuck = staff_world((0.10, -0.95, -0.14), unit((-0.05, 0.35, 0.94)), (0, -1, 0))
-    pull = lambda a: merge(READY, stuck, grip("r", 1.20, elbow=(-1, 0.3, -0.6)), grip("l", 1.55, elbow=(1, 0.3, -0.6)),
-                           dict(hips=(0.0, 0.10 + 0.05 * a, -0.30 - 0.04 * a), hips_rot=(-6 - 8 * a, 0, -10), spine=(-4 * a, 0, 0),
-                                spine2=(-4 - 4 * a, 0, 0), neck=(-4, 0, 0), head=(-6 - 8 * a, 0, 0), face=FACE_EFFORT if a else "surprise"))
-    keys = [K(0, READY, travel=0.0), K(3, pull(0.0), travel=0.0, ease="inout")]
-    for f in (7, 14, 21):
+    # el bastón clavado delante de él con la punta de arriba hacia su pecho, las dos manos a la altura del pecho con los
+    # antebrazos casi horizontales: con las manos en la faja el antebrazo bajaba 45° y la muñeca se doblaba 62° hacia el
+    # pulgar para seguir la flauta; con la flauta más cerca y la cadera atrás los brazos quedaban estirados y el codo,
+    # sin plano, daba vuelta en cada tirón
+    stuck = staff_world((0.04, -0.86, -0.12), unit((-0.04, 0.30, 0.95)), (0, -1, 0))
+    pull = lambda a: merge(READY, stuck, grip("r", 1.32, elbow=(-1, 0.2, -0.7)), grip("l", 1.66, elbow=(1, 0.2, -0.7)),
+                           dict(hips=(0.0, 0.02 + 0.03 * a, -0.30 - 0.05 * a), hips_rot=(-4 - 6 * a, 0, -10), spine=(2 - 4 * a, 0, 0),
+                                spine2=(-2 - 4 * a, 0, 0), neck=(-4, 0, 0), head=(-6 - 8 * a, 0, 0), face=FACE_EFFORT if a else "surprise"))
+    keys = [K(0, READY, travel=0.0), K(4, pull(0.0), travel=0.0, ease="inout")]
+    for f in (8, 14):
         keys += [K(f, pull(1.0), travel=0.0, ease="in"), K(f + 3, pull(0.2), travel=0.0, ease="out")]
-    keys += [K(27, READY, staff_at((-0.06, -0.46, 1.24), unit((0.10, -0.40, 0.91)), 1.20), grip("r", 1.20, elbow=(-1, 0.3, -0.6)),
-               grip("l", 1.55, elbow=(1, 0.3, -0.6)), dict(hips=(0.0, 0.20, -0.24), hips_rot=(-12, 0, -10), face="surprise"),
-               travel=-0.30, ease="out"),
-             K(30, READY, dict(hips=(0.0, 0.08, -0.22)), travel=-0.40, ease="inout"),
+    # el tercer tirón la saca: la flauta sube por delante del pecho, él se va para atrás dos pasos y la deja caer entre
+    # los puños hasta el vendado (la guardia)
+    keys += [K(20, pull(1.0), travel=0.0, ease="in"),
+             K(23, READY, staff_at((-0.06, -0.58, 1.30), unit((0.0, 0.10, 0.99)), 1.32), grip("r", 1.32, elbow=(-1, 0.2, -0.7)),
+               grip("l", 1.66, elbow=(1, 0.2, -0.7)), dict(hips=(0.0, 0.14, -0.24), hips_rot=(-10, 0, -10), face="surprise"),
+               travel=-0.20, ease="out"),
+             # la deja correr entre los puños en dos tiempos (de golpe, el brazo derecho giraba 133° en un cuadro)
+             K(25, READY, staff_at((-0.12, -0.50, 1.16), unit((0.10, -0.22, 0.97)), 1.00), grip("r", 1.00, elbow=(-1, 0.25, -0.65)),
+               grip("l", 1.38, elbow=(1, 0.2, -0.7)), dict(hips=(0.0, 0.11, -0.23), hips_rot=(-6, 0, -12), face="surprise"),
+               travel=-0.30, ease="inout"),
+             K(27, READY, staff_at((-0.24, -0.48, 1.10), unit((0.20, -0.40, 0.89)), 0.70), grip("r", 0.70, elbow=(-1, 0.3, -0.6)),
+               grip("l", 1.10, elbow=(1, 0.2, -0.7)), dict(hips=(0.0, 0.08, -0.22), hips_rot=(-2, 0, -14), face="grin"),
+               travel=-0.40, ease="inout"),
              K(33, READY, travel=-0.40, ease="inout")]
     r0, l0 = READY_R, READY_L
-    plan = {"r": plants((0, 25, r0[0], r0[1], r0[2]), (28, 33, r0[0], r0[1] + 0.40, r0[2])),
-            "l": plants((0, 26, l0[0], l0[1], l0[2]), (30, 33, l0[0], l0[1] + 0.40, l0[2]))}
+    plan = {"r": plants((0, 21, r0[0], r0[1], r0[2]), (25, 33, r0[0], r0[1] + 0.40, r0[2])),
+            "l": plants((0, 23, l0[0], l0[1], l0[2]), (27, 33, l0[0], l0[1] + 0.40, l0[2]))}
     feet = feet_track(keys, 33, plan)
     return CClip("StaffStuck", 33, keys, tracks=[feet], lag={"head": 1.0},
                  timing=dict(space="ground", open=[0, 33], chain_from="READY", chain_to="READY", fade_from=0.1, staff_in_floor=0.15),
