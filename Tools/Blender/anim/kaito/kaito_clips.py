@@ -812,7 +812,8 @@ def _arm_back(hit, u):
     return {k: m[k] for k in ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l", "fingers_l")}
 
 
-_hb_rec = feet(mod(READY, hips=(0.0, 0.0, -0.12), spine=(10.0, 0.0, -6.0), head=(-10.0, 0.0, -2.0), **_arm_back(_hb2, 0.4)),
+# (el brazo a un cuarto de su vuelta en f6: con 0.4 la mano izquierda giraba 62° entre f4 y f5)
+_hb_rec = feet(mod(READY, hips=(0.0, 0.0, -0.12), spine=(10.0, 0.0, -6.0), head=(-10.0, 0.0, -2.0), **_arm_back(_hb2, 0.25)),
                r=flat("R", *R_FOOT), l=flat("L", *L_FOOT))
 add("HitBack", 11, [(0, READY, "lin"), (1, _hb, "snap"), (3, _hb2, "lin"), (6, _hb_rec, "sine"), (11, READY, "sine")],
     timing={"impact": 1, "slide_ok": True},
@@ -1491,8 +1492,13 @@ _pi_k1 = feet(mod(READY, hips=(0.0, 0.1, -0.34), hips_rot=(4.0, 0.0, 0.0), spine
                   kat_pos=PI_KAT, kat_blade=PI_KAT_BLADE, kat_edge=PI_KAT_EDGE,
                   hand_r=(-0.62, -0.3, 0.22), hand_r_dir=(0.0, -1.0, -0.3), hand_r_up=(0.0, 0.3, 1.0)),
               r=flat("R", *R_FOOT), l=_PI_L)
+# la rodilla toca el piso y el peso termina de bajar: la cadera 1.5 cm más abajo, el pecho y la cabeza siguen un poco
+# (sin este asiento llegaba a la rodilla y se clavaba)
+_pi_settle = mod(_pi_k1, hips=(0.0, 0.1, -0.355), spine=(8.0, 0.0, 0.0), head=(12.0, 0.0, 0.0), breath=0.6)
 # se inclina hacia su derecha y apoya la katana (la mano izquierda en el muslo sostiene el peso)
-_pi_lean = mod(_pi_k1, hips=(-0.04, 0.12, -0.36), hips_rot=(30.0, -10.0, -12.0), spine=(22.0, -8.0, -8.0), head=(6.0, 6.0, 6.0),
+# (26° de cadera y 17° de espalda, con la cabeza mirando la hoja: con 30 + 22 la cabeza quedaba por debajo de los hombros y
+# se leía como desplomarse, no como dejar algo con cuidado)
+_pi_lean = mod(_pi_k1, hips=(-0.04, 0.12, -0.365), hips_rot=(26.0, -10.0, -12.0), spine=(17.0, -8.0, -8.0), head=(16.0, 8.0, 10.0),
                grip=(-0.66, -0.31, 0.26), blade=(-0.48, -0.87, -0.06), edge=perp((-0.48, -0.87, -0.06), (-1.0, 0.0, 0.0)),
                elbow_r=(-0.8, 0.5, 0.2), hand_l=(0.3, -0.36, 0.66))
 # La katana se da vuelta a su pose del piso (plana) EN EL AIRE, 7 cm arriba del piso (la mano no llega a ponerla plana:
@@ -1539,20 +1545,26 @@ _pi_carry = mod(KIZA, hips=(0.0, 0.16, -0.360), hips_rot=(16.0, 0.0, 0.0), spine
 _pi_place = mod(_pi_carry, hips=(0.0, 0.12, -0.360), hips_rot=(22.0, 0.0, 0.0), spine=(18.0, 0.0, 0.0), head=(22.0, 0.0, 0.0),
                 hand_r=(-0.03, -0.9, 0.5), hand_l=(0.07, -0.74, 0.46))
 _pi_after = mod(_pi_place, fingers_r=0.3, hand_r=(-0.07, -0.82, 0.7))
-# gassho: las palmas juntas delante del pecho, los dedos arriba y los codos doblados (más adelante los brazos quedaban
-# estirados del todo y se plegaban de golpe al soltarlas)
-_pi_palms = mod(KIZA, hips=(0.0, 0.22, -0.385), hips_rot=(2.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(10.0, 0.0, 0.0),
-                hand_r=(-0.05, -0.42, 1.0), hand_r_dir=(0.0, -0.15, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0,
-                hand_l=(0.05, -0.42, 1.0), hand_l_dir=(0.0, -0.15, 1.0), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.5),
-                fingers_l=0.0)
-_pi_bow = mod(_pi_palms, breath=1.0, hips=(0.0, 0.2, -0.390), hips_rot=(10.0, 0.0, 0.0), spine=(16.0, 0.0, 0.0), head=(24.0, 0.0, 0.0))
-_pi_bow2 = mod(_pi_bow, breath=0.2, head=(27.0, 0.0, 0.0), hips=(0.0, 0.2, -0.395))
+# gassho: las palmas juntas frente al esternón, a un palmo del pecho, los dedos arriba apenas inclinados hacia adelante y
+# los codos bajos y un poco abiertos (el usuario: las manos a la altura del mentón y 42 cm adelante se leían como sostener
+# algo, no como rezar). Los codos doblados: estirados del todo se plegaban de golpe al soltarlas
+_GASSHO = dict(hand_r_dir=(0.0, -0.25, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0, elbow_r=(-0.7, 0.15, -0.7),
+               hand_l_dir=(0.0, -0.25, 1.0), hand_l_up=(1.0, 0.0, 0.0), fingers_l=0.0, elbow_l=(0.7, 0.15, -0.7))
+_pi_palms = mod(KIZA, hips=(0.0, 0.22, -0.385), hips_rot=(2.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(14.0, 0.0, 0.0),
+                hand_r=(-0.03, -0.31, 0.85), hand_l=(0.03, -0.31, 0.85), **_GASSHO)
+# en la reverencia las manos van con el pecho (quietas en el espacio del cuerpo el pecho se les metía encima)
+_pi_bow = mod(_pi_palms, breath=1.0, hips=(0.0, 0.2, -0.390), hips_rot=(10.0, 0.0, 0.0), spine=(16.0, 0.0, 0.0), head=(24.0, 0.0, 0.0),
+              hand_r=(-0.03, -0.38, 0.77), hand_l=(0.03, -0.38, 0.77))
+_pi_bow2 = mod(_pi_bow, breath=0.2, head=(27.0, 0.0, 0.0), hips=(0.0, 0.2, -0.395), hand_r=(-0.03, -0.39, 0.75),
+               hand_l=(0.03, -0.39, 0.75))
 _pi_lift = mod(_pi_palms, head=(4.0, 0.0, 0.0))
 # (la mano izquierda baja de las palmas al muslo por delante del cuerpo y pareja: con la curva del tramo el codo se doblaba 46°
 # en el cuadro del medio)
 _PQ_ARM_L = {ch: "lin" for ch in ("hand_l", "hand_l_dir", "hand_l_up", "elbow_l")}
 # vuelve a tomar la katana: se inclina, la mano derecha va al puño, la toma y la levanta
-_pi_grab = feet(mod(_pi_lean, hips=(-0.05, 0.2, -0.37), kat_free=1.0, fingers_r=0.2, hand_r=(-0.64, -0.36, 0.25),
+# (al retomarla vuelve a doblarse como antes, 30° + 22°: con el torso más alto de _pi_lean la mano llegaba al puño con la
+# hoja girada 21° respecto de la autorada)
+_pi_grab = feet(mod(_pi_lean, hips=(-0.05, 0.2, -0.37), hips_rot=(30.0, -10.0, -12.0), spine=(22.0, -8.0, -8.0), head=(10.0, 6.0, 6.0), kat_free=1.0, fingers_r=0.2, hand_r=(-0.64, -0.36, 0.25),
                    hand_l=(0.3, -0.24, 0.6), grip=PI_KAT_UP, blade=PI_KAT_BLADE, edge=PI_KAT_EDGE, knee_r=(-0.15, -1.0, -0.3),
                    knee_l=(0.15, -1.0, -0.3), **_PI_HAND),
                 r=_PI_R, l=_PI_L)
@@ -1597,7 +1609,7 @@ add("PrayIncense", 188, [
     (0, READY, "sine"),
     (6, feet(inter(READY, _pi_k1, 0.45), l=lifted("L", 0.26, 0.4, 0.07, 62.0, 8.0)), "inout"),
     (10, feet(inter(READY, _pi_k1, 0.75), l=knee_up(0.23, 0.37, 7.0)), "inout"), (13, _pi_k1, "in2"),
-    (22, _pi_lean, "inout"), (25, _pi_roll, "inout", _KAT_HAND), (28, _pi_set, "inout"), (31, _pi_let, "sine"), (38, _pi_up, "inout"),
+    (17, _pi_settle, "sine"), (22, _pi_lean, "inout"), (25, _pi_roll, "inout", _KAT_HAND), (28, _pi_set, "inout"), (31, _pi_let, "sine"), (38, _pi_up, "inout"),
 ] + pi_knee_keys((41, 44, 47, 50, 52), _pi_up, KIZA, toe("R", R_FOOT[0], R_FOOT[1], R_FOOT[2], 10.0)) + [
     (54, KIZA, "in2"), (58, _kiza_b, "sine"),
     (66, _pi_reach, "inout"), (70, _pi_take, "sine"),
@@ -1633,13 +1645,16 @@ add("PrayIncense", 188, [
 # paso. 2.3 s
 # (las palmas junto al pecho, los codos doblados: a 30 cm del pecho los dos brazos quedaban estirados del todo y el codo
 # izquierdo se doblaba 66° en un cuadro al soltarlas)
-_pq_palms = mod(_pi_up, hips=(0.0, 0.1, -0.345), hips_rot=(4.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(10.0, 0.0, 0.0),
-                hand_r=(-0.05, -0.45, 1.05), hand_r_dir=(0.0, -0.15, 1.0), hand_r_up=(-1.0, 0.0, 0.0), fingers_r=0.0,
-                hand_l=(0.05, -0.45, 1.05), hand_l_dir=(0.0, -0.15, 1.0), hand_l_up=(1.0, 0.0, 0.0), elbow_l=(0.8, 0.3, -0.5),
-                fingers_l=0.0)
-_pq_bow = mod(_pq_palms, breath=1.0, hips=(0.0, 0.1, -0.35), hips_rot=(10.0, 0.0, 0.0), spine=(14.0, 0.0, 0.0), head=(24.0, 0.0, 0.0))
-_pq_bow2 = mod(_pq_bow, breath=0.3, hips=(0.0, 0.1, -0.355), head=(27.0, 0.0, 0.0))
+_pq_palms = mod(_pi_up, hips=(0.0, 0.1, -0.345), hips_rot=(4.0, 0.0, 0.0), spine=(6.0, 0.0, 0.0), head=(14.0, 0.0, 0.0),
+                hand_r=(-0.03, -0.33, 0.89), hand_l=(0.03, -0.33, 0.89), **_GASSHO)
+_pq_bow = mod(_pq_palms, breath=1.0, hips=(0.0, 0.1, -0.35), hips_rot=(10.0, 0.0, 0.0), spine=(14.0, 0.0, 0.0), head=(24.0, 0.0, 0.0),
+              hand_r=(-0.03, -0.40, 0.81), hand_l=(0.03, -0.40, 0.81))
+_pq_bow2 = mod(_pq_bow, breath=0.3, hips=(0.0, 0.1, -0.355), head=(27.0, 0.0, 0.0), hand_r=(-0.03, -0.41, 0.79),
+               hand_l=(0.03, -0.41, 0.79))
 _pq_lift = mod(_pq_palms, head=(6.0, 0.0, 0.0))
+# el asiento del rezo corto ya va camino a la inclinación (con dos cuadros entre el asiento y _pi_lean los brazos giraban
+# 50-56° en un cuadro)
+_pq_settle = mod(inter(_pi_k1, _pi_lean, 0.35), hips=(-0.014, 0.107, -0.358), breath=0.6)
 # vuelve a la katana (inclinado como al dejarla) y la levanta
 # (la katana se da vuelta en el aire antes de apoyarla y después de levantarla, como en el rezo largo)
 _pq_grab = mod(_pi_let, fingers_r=0.2)
@@ -1652,7 +1667,7 @@ _pq_down = mod(inter(_pq_lift, _pq_grab, 0.4), hand_l=(0.18, -0.45, 0.92))
 add("PrayQuick", 70, [
     (0, READY, "sine"), (5, feet(inter(READY, _pi_k1, 0.45), l=lifted("L", 0.27, 0.4, 0.07, 62.0, 12.0)), "inout"),
     (8, feet(inter(READY, _pi_k1, 0.75), l=knee_up(0.24, 0.37, 10.0)), "inout"), (11, _pi_k1, "in2"),
-    (15, _pi_lean, "inout"), (18, _pi_roll, "inout", _KAT_HAND), (21, _pi_set, "inout"), (23, _pq_let, "sine"),
+    (13, _pq_settle, "sine"), (15, _pi_lean, "inout"), (18, _pi_roll, "inout", _KAT_HAND), (21, _pi_set, "inout"), (23, _pq_let, "sine"),
     (28, _pq_palms, "inout", _PQ_UP),
     # (la reverencia más corta y la mano izquierda baja de las palmas al muslo en 7 cuadros: en 4 giraba 75° en uno)
     (33, _pq_bow, "sine"), (37, _pq_bow2, "sine"), (40, _pq_lift, "sine"),
