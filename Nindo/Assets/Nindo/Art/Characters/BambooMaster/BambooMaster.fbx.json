@@ -4,7 +4,7 @@
  "bind_height": 2.453,
  "bind_height_note": "alto que mide CharacterFactory.NormalizeHeight en la pose por defecto del FBX (el reposo, con la flauta parada a la derecha): con este valor en NindoContent la escala es 1",
  "tris": {
-  "body": 5614,
+  "body": 5774,
   "cloak": 2478,
   "chimes": 1872,
   "staff": 444
@@ -160,7 +160,7 @@
     "snap_deg": [
      40.0,
      "Staff",
-     17
+     5
     ],
     "culm_hands_cm": {
      "R": [
@@ -285,7 +285,7 @@
     "snap_deg": [
      40.0,
      "Staff",
-     27
+     5
     ],
     "culm_hands_cm": {
      "R": [
@@ -584,9 +584,9 @@
      0.0
     ],
     "snap_deg": [
-     40.0,
+     39.7,
      "Staff",
-     41
+     46
     ],
     "culm_hands_cm": {
      "R": [
@@ -960,8 +960,8 @@
      1.3
     ],
     "snap_deg": [
-     65.7,
-     "Foot_R",
+     48.4,
+     "Hips",
      8
     ],
     "culm_hands_cm": {
@@ -985,7 +985,7 @@
      ]
     },
     "chain_from_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
@@ -997,25 +997,25 @@
      0.0
     ],
     "culm_inside_verts": [
-     88,
-     0.1,
+     151,
+     0.103,
      8,
      [
       [
-       "Acc_ChimesLo12_0",
+       "Acc_ChimesLo10_0",
        22
       ],
       [
-       "Cloak_192_2",
+       "Acc_ChimesLo07_0",
+       19
+      ],
+      [
+       "Cloak_168_2",
        18
       ],
       [
        "Cloak_214_2",
        15
-      ],
-      [
-       "Cloak_102_3",
-       9
       ]
      ]
     ]
@@ -1184,9 +1184,9 @@
      0.0
     ],
     "snap_deg": [
-     82.5,
-     "Cloak_080_1",
-     9
+     67.3,
+     "Shin_L",
+     11
     ],
     "culm_hands_cm": {
      "R": [
@@ -1215,13 +1215,13 @@
      0.0
     ],
     "chain_to_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
     ],
     "culm_inside_verts": [
-     141,
+     182,
      0.097,
      9,
      [
@@ -1235,11 +1235,11 @@
       ],
       [
        "Toe_R",
-       27
+       44
       ],
       [
-       "Thigh_R",
-       5
+       "Cloak_192_3",
+       14
       ]
      ]
     ]
@@ -1380,9 +1380,9 @@
      0.0
     ],
     "snap_deg": [
-     42.0,
-     "Ring_L_2",
-     8
+     39.4,
+     "Pinky_L_1",
+     1
     ],
     "culm_hands_cm": {
      "R": [
@@ -1405,13 +1405,13 @@
      ]
     },
     "chain_from_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
     ],
     "chain_to_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
@@ -1541,8 +1541,8 @@
       0
      ],
      "L": [
-      0.0,
-      35
+      15.88,
+      32
      ]
     },
     "node_feet_cm": {
@@ -1556,13 +1556,13 @@
      ]
     },
     "chain_from_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
     ],
     "chain_to_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
@@ -1705,23 +1705,23 @@
      ]
     },
     "chain_from_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
     ],
     "culm_inside_verts": [
-     22,
+     28,
      0.089,
      30,
      [
       [
        "Foot_R",
-       5
+       8
       ],
       [
        "Foot_L",
-       5
+       8
       ],
       [
        "Skirt_220",
@@ -1828,9 +1828,9 @@
      0.0
     ],
     "snap_deg": [
-     56.8,
-     "UpperArm_R",
-     3
+     45.4,
+     "Thigh_L",
+     7
     ],
     "culm_hands_cm": {
      "R": [
@@ -1853,7 +1853,7 @@
      ]
     },
     "chain_from_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
@@ -1865,10 +1865,14 @@
      87.0
     ],
     "culm_inside_verts": [
-     42,
+     55,
      0.091,
      7,
      [
+      [
+       "Foot_R",
+       16
+      ],
       [
        "Hips",
        13
@@ -1878,12 +1882,8 @@
        9
       ],
       [
-       "Foot_R",
+       "Foot_L",
        8
-      ],
-      [
-       "Spine1",
-       5
       ]
      ]
     ]
@@ -1916,7 +1916,7 @@
     ],
     "loop_seam_deg": [
      0.0,
-     0.286
+     0.285
     ],
     "snap_deg": [
      32.0,
@@ -1984,9 +1984,9 @@
      0.0
     ],
     "snap_deg": [
-     62.3,
-     "Forearm_L",
-     1
+     44.9,
+     "Thigh_L",
+     3
     ],
     "culm_hands_cm": {
      "R": [
@@ -1994,8 +1994,8 @@
       0
      ],
      "L": [
-      0.0,
-      1
+      17.34,
+      3
      ]
     },
     "node_feet_cm": {
@@ -2021,25 +2021,25 @@
      3.0
     ],
     "culm_inside_verts": [
-     95,
-     0.097,
-     1,
+     107,
+     0.09,
+     3,
      [
       [
-       "Shin_R",
-       32
+       "Acc_ChimesLo08_0",
+       36
       ],
       [
-       "Toe_R",
-       19
+       "Cloak_236_2",
+       15
       ],
       [
-       "Thumb_L_2",
-       8
+       "Index_L_2",
+       10
       ],
       [
-       "Foot_R",
-       6
+       "Cloak_236_3",
+       9
       ]
      ]
     ]
@@ -2116,18 +2116,18 @@
      1.7
     ],
     "snap_deg": [
-     63.6,
-     "Hand_R",
-     8
+     60.7,
+     "Foot_R",
+     21
     ],
     "culm_hands_cm": {
      "R": [
-      0.0,
-      4
+      28.96,
+      10
      ],
      "L": [
-      0.0,
-      12
+      37.13,
+      15
      ]
     },
     "node_feet_cm": {
@@ -2141,31 +2141,31 @@
      ]
     },
     "chain_to_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
     ],
     "culm_inside_verts": [
-     145,
-     0.124,
-     0,
+     165,
+     0.122,
+     5,
      [
       [
        "Acc_ChimesLo08_0",
-       45
+       26
       ],
       [
-       "Foot_R",
-       20
+       "Forearm_R",
+       25
       ],
       [
-       "Cloak_236_2",
-       20
+       "Hand_R",
+       25
       ],
       [
-       "Cloak_236_1",
-       11
+       "Acc_ChimesLo09_0",
+       22
       ]
      ]
     ]
@@ -2253,14 +2253,14 @@
      12
     ],
     "chain_from_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
     ],
     "chain_to_deg": [
-     0.04,
-     "Foot_L",
+     0.0,
+     "",
      0.0,
      0.0
     ]
@@ -2341,8 +2341,8 @@
      ]
     },
     "chain_from_deg": [
-     0.04,
-     "Foot_L",
+     0.0,
+     "",
      0.0,
      0.0
     ],
@@ -2410,8 +2410,8 @@
      ]
     },
     "chain_from_deg": [
-     0.04,
-     "Foot_L",
+     0.0,
+     "",
      0.0,
      0.0
     ],
@@ -2517,12 +2517,12 @@
      0.0
     ],
     "snap_deg": [
-     43.4,
-     "UpperArm_R",
-     12
+     40.0,
+     "Staff",
+     25
     ],
     "chain_from_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
@@ -2580,13 +2580,13 @@
       0.0,
       [
        0,
-       9
+       12
       ]
      ]
     },
     "chain_from_deg": [
      0.04,
-     "Shin_R",
+     "Thigh_R",
      0.0,
      0.0
     ],
@@ -2688,9 +2688,9 @@
      0.0
     ],
     "snap_deg": [
-     44.8,
-     "UpperArm_L",
-     6
+     44.1,
+     "Shin_R",
+     5
     ],
     "sole_slip_cm": {
      "R": [
@@ -2764,9 +2764,9 @@
      0.0
     ],
     "snap_deg": [
-     48.8,
-     "Sleeve_R_1",
-     6
+     42.5,
+     "Foot_L",
+     9
     ],
     "sole_slip_cm": {
      "R": [
@@ -2828,17 +2828,17 @@
      1.6
     ],
     "loop_seam_deg": [
-     0.04,
+     0.056,
      4.997
     ],
     "snap_deg": [
-     72.7,
-     "Hand_R",
-     11
+     35.6,
+     "UpperArm_R",
+     9
     ],
     "chain_from_deg": [
-     0.04,
-     "Hand_R",
+     0.06,
+     "Foot_L",
      0.0,
      0.0
     ]
@@ -2866,16 +2866,16 @@
      0.0
     ],
     "snap_deg": [
-     56.4,
-     "Forearm_R",
+     40.0,
+     "Staff",
      9
     ],
     "sole_slip_cm": {
      "R": [
       0.0,
       [
-       0,
-       0
+       9,
+       11
       ]
      ],
      "L": [
@@ -2899,8 +2899,8 @@
      0.0
     ],
     "mesh_min_z": [
-     -0.024,
-     2
+     -0.156,
+     3
     ]
    }
   },
@@ -3067,9 +3067,9 @@
      0.0
     ],
     "snap_deg": [
-     43.0,
-     "UpperArm_R",
-     3
+     36.6,
+     "Thigh_R",
+     2
     ],
     "chain_from_deg": [
      32.19,
@@ -3107,9 +3107,9 @@
      2.0
     ],
     "snap_deg": [
-     64.1,
-     "UpperArm_R",
-     12
+     40.9,
+     "Shin_R",
+     15
     ],
     "chain_from_deg": [
      0.0,
@@ -3147,9 +3147,9 @@
      0.0
     ],
     "snap_deg": [
-     89.6,
-     "Hand_R",
-     11
+     49.9,
+     "Shin_L",
+     7
     ],
     "chain_from_deg": [
      0.0,
@@ -3194,7 +3194,7 @@
      0.0
     ],
     "loop_seam_deg": [
-     0.04,
+     0.0,
      0.0
     ],
     "snap_deg": [
@@ -3219,8 +3219,8 @@
      ]
     },
     "chain_from_deg": [
-     0.04,
-     "Foot_L",
+     0.0,
+     "",
      0.0,
      0.0
     ],
@@ -3319,9 +3319,9 @@
      0.0
     ],
     "snap_deg": [
-     45.8,
-     "Staff",
-     15
+     39.4,
+     "UpperArm_R",
+     3
     ],
     "chain_to_deg": [
      7.21,
@@ -3369,8 +3369,8 @@
      "R": [
       0.0,
       [
-       6,
-       23
+       0,
+       2
       ]
      ],
      "L": [
@@ -3427,9 +3427,9 @@
      0.0
     ],
     "snap_deg": [
-     85.1,
-     "Shin_L",
-     8
+     42.7,
+     "Staff",
+     12
     ],
     "sole_slip_cm": {
      "R": [
@@ -3448,8 +3448,8 @@
      ]
     },
     "chain_from_deg": [
-     0.04,
-     "Thigh_L",
+     0.0,
+     "",
      0.0,
      0.0
     ],
@@ -3460,8 +3460,8 @@
      201.0
     ],
     "mesh_min_z": [
-     -0.007,
-     6
+     0.001,
+     5
     ]
    },
    "root_offset_m": [
@@ -3505,8 +3505,8 @@
      0.0
     ],
     "snap_deg": [
-     56.7,
-     "Hand_R",
+     42.2,
+     "Hips",
      7
     ],
     "sole_slip_cm": {
@@ -3572,9 +3572,9 @@
      0.0
     ],
     "snap_deg": [
-     97.8,
-     "Acc_ChimesHi04_0",
-     32
+     40.0,
+     "UpperArm_R",
+     20
     ],
     "sole_slip_cm": {
      "R": [
@@ -3588,7 +3588,7 @@
       0.0,
       [
        0,
-       41
+       42
       ]
      ]
     },
@@ -3640,8 +3640,8 @@
      0.0
     ],
     "loop_seam_deg": [
-     0.0,
-     0.0
+     0.056,
+     0.005
     ],
     "snap_deg": [
      4.1,
@@ -3743,9 +3743,9 @@
      0.0
     ],
     "snap_deg": [
-     45.2,
-     "UpperArm_R",
-     2
+     37.6,
+     "Shin_L",
+     21
     ],
     "sole_slip_cm": {
      "R": [
@@ -3825,14 +3825,14 @@
       0.0,
       [
        5,
-       9
+       10
       ]
      ],
      "L": [
       0.0,
       [
        4,
-       9
+       10
       ]
      ]
     },
@@ -3904,14 +3904,14 @@
       0.0,
       [
        8,
-       15
+       16
       ]
      ],
      "L": [
       0.0,
       [
-       0,
-       1
+       6,
+       16
       ]
      ]
     },
@@ -3979,23 +3979,23 @@
      0.0
     ],
     "snap_deg": [
-     40.9,
-     "Hand_R",
-     3
+     40.0,
+     "Staff",
+     8
     ],
     "sole_slip_cm": {
      "R": [
       0.0,
       [
        5,
-       11
+       12
       ]
      ],
      "L": [
       0.0,
       [
-       0,
-       1
+       4,
+       12
       ]
      ]
     },
@@ -4069,23 +4069,23 @@
      0.0
     ],
     "snap_deg": [
-     40.9,
-     "Hand_R",
-     1
+     40.0,
+     "Staff",
+     14
     ],
     "sole_slip_cm": {
      "R": [
       0.0,
       [
        6,
-       14
+       18
       ]
      ],
      "L": [
       0.0,
       [
        4,
-       15
+       18
       ]
      ]
     },
@@ -4140,14 +4140,14 @@
       0.0,
       [
        0,
-       47
+       48
       ]
      ],
      "L": [
       0.0,
       [
        0,
-       46
+       48
       ]
      ]
     },
@@ -4204,7 +4204,7 @@
     ],
     "loop_seam_deg": [
      0.056,
-     0.029
+     0.004
     ],
     "snap_deg": [
      17.7,
@@ -4222,8 +4222,8 @@
      "L": [
       0.0,
       [
-       21,
-       30
+       0,
+       8
       ]
      ]
     },
@@ -4279,8 +4279,8 @@
      0.0
     ],
     "loop_seam_deg": [
-     0.056,
-     0.128
+     0.04,
+     0.127
     ],
     "snap_deg": [
      26.4,
@@ -4299,7 +4299,7 @@
       0.0,
       [
        17,
-       19
+       20
       ]
      ]
     },
@@ -4356,7 +4356,7 @@
     ],
     "loop_seam_deg": [
      0.0,
-     0.111
+     0.099
     ],
     "snap_deg": [
      9.2,
@@ -4375,7 +4375,7 @@
       0.49,
       [
        17,
-       23
+       24
       ]
      ]
     },
@@ -4432,7 +4432,7 @@
     ],
     "loop_seam_deg": [
      0.0,
-     0.26
+     0.262
     ],
     "snap_deg": [
      9.2,
@@ -4508,7 +4508,7 @@
     ],
     "loop_seam_deg": [
      0.0,
-     0.033
+     0.034
     ],
     "snap_deg": [
      10.0,
@@ -4607,8 +4607,8 @@
      "L": [
       0.0,
       [
-       0,
-       2
+       10,
+       12
       ]
      ]
     },
@@ -4824,8 +4824,8 @@
      "L": [
       0.0,
       [
-       0,
-       11
+       14,
+       22
       ]
      ]
     },
@@ -4921,9 +4921,9 @@
      0.0
     ],
     "snap_deg": [
-     80.6,
-     "UpperArm_L",
-     15
+     59.5,
+     "Foot_R",
+     29
     ],
     "sole_slip_cm": {
      "R": [
@@ -5017,16 +5017,16 @@
      0.0
     ],
     "snap_deg": [
-     65.1,
-     "Hand_R",
+     44.4,
+     "Thigh_R",
      6
     ],
     "sole_slip_cm": {
      "R": [
       0.0,
       [
-       0,
-       2
+       24,
+       28
       ]
      ],
      "L": [
@@ -5158,9 +5158,9 @@
      0.0
     ],
     "snap_deg": [
-     41.4,
-     "Forearm_R",
-     17
+     40.0,
+     "Staff",
+     19
     ],
     "sole_slip_cm": {
      "R": [
@@ -5260,9 +5260,9 @@
      0.0
     ],
     "snap_deg": [
-     68.0,
-     "Sleeve_R_1",
-     21
+     51.9,
+     "Thigh_R",
+     34
     ],
     "sole_slip_cm": {
      "R": [
@@ -5351,9 +5351,9 @@
      0.0
     ],
     "snap_deg": [
-     49.1,
+     40.0,
      "Staff",
-     25
+     6
     ],
     "sole_slip_cm": {
      "R": [
@@ -5367,7 +5367,7 @@
       0.0,
       [
        0,
-       24
+       25
       ]
      ]
     },
@@ -5416,9 +5416,9 @@
      0.0
     ],
     "snap_deg": [
-     51.4,
-     "Staff",
-     14
+     40.0,
+     "UpperArm_R",
+     2
     ],
     "sole_slip_cm": {
      "R": [
@@ -5443,8 +5443,8 @@
      0.0
     ],
     "chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "Pinky_L_1",
      0.0,
      0.0
     ],
@@ -5517,8 +5517,8 @@
      0.0
     ],
     "chain_to_deg": [
-     0.0,
-     "",
+     0.04,
+     "UpperArm_L",
      0.0,
      0.0
     ],
@@ -5574,8 +5574,8 @@
      0.0
     ],
     "loop_seam_deg": [
-     0.04,
-     0.064
+     0.0,
+     0.052
     ],
     "snap_deg": [
      8.0,
@@ -5599,8 +5599,8 @@
      ]
     },
     "chain_from_deg": [
-     0.04,
-     "Thigh_L",
+     0.0,
+     "",
      0.0,
      0.0
     ],
@@ -5677,13 +5677,13 @@
      0.0
     ],
     "snap_deg": [
-     44.4,
-     "Shin_R",
+     39.2,
+     "Index_R_1",
      12
     ],
     "chain_from_deg": [
-     0.06,
-     "Shin_L",
+     0.0,
+     "",
      0.0,
      0.0
     ],
@@ -5715,8 +5715,8 @@
      0.0
     ],
     "snap_deg": [
-     40.8,
-     "UpperArm_R",
+     39.4,
+     "UpperArm_L",
      6
     ],
     "sole_slip_cm": {
@@ -5731,7 +5731,7 @@
       0.0,
       [
        0,
-       9
+       10
       ]
      ]
     },
@@ -5795,7 +5795,7 @@
       0.0,
       [
        0,
-       13
+       12
       ]
      ]
     },
@@ -5857,9 +5857,9 @@
      0.0
     ],
     "snap_deg": [
-     51.1,
-     "Clav_R",
-     3
+     38.0,
+     "Pinky_L_1",
+     2
     ],
     "sole_slip_cm": {
      "R": [
@@ -5873,7 +5873,7 @@
       0.0,
       [
        0,
-       5
+       6
       ]
      ]
     },
@@ -5935,9 +5935,9 @@
      0.0
     ],
     "snap_deg": [
-     41.7,
-     "Forearm_L",
-     13
+     40.0,
+     "Staff",
+     4
     ],
     "sole_slip_cm": {
      "R": [
@@ -5951,7 +5951,7 @@
       0.0,
       [
        0,
-       10
+       9
       ]
      ]
     },
@@ -6035,7 +6035,7 @@
       0.0,
       [
        0,
-       34
+       36
       ]
      ]
     },
@@ -6096,9 +6096,9 @@
      0.0
     ],
     "snap_deg": [
-     177.3,
-     "Cloak_236_2",
-     157
+     44.6,
+     "Acc_ChimesLo11_0",
+     160
     ],
     "culm_hands_cm": {
      "R": [
@@ -6121,7 +6121,7 @@
      ]
     },
     "chain_to_deg": [
-     0.57,
+     0.58,
      "Head",
      0.0,
      0.0
@@ -6188,8 +6188,8 @@
      0.0
     ],
     "snap_deg": [
-     104.9,
-     "Forearm_R",
+     51.5,
+     "Shin_R",
      57
     ],
     "sole_slip_cm": {
@@ -6197,14 +6197,14 @@
       0.0,
       [
        62,
-       106
+       111
       ]
      ],
      "L": [
       0.0,
       [
-       0,
-       42
+       62,
+       120
       ]
      ]
     },
@@ -6221,7 +6221,7 @@
      0.0
     ],
     "mesh_min_z": [
-     -0.107,
+     -0.114,
      6
     ]
    }
@@ -6283,9 +6283,9 @@
      0.0
     ],
     "snap_deg": [
-     121.1,
-     "Hand_R",
-     122
+     68.4,
+     "Foot_R",
+     116
     ],
     "sole_slip_cm": {
      "R": [
@@ -6379,7 +6379,7 @@
      0.0
     ],
     "chain_to_deg": [
-     1.79,
+     1.78,
      "UpperArm_R",
      0.0,
      0.0
@@ -6416,7 +6416,7 @@
      0.0
     ],
     "loop_seam_deg": [
-     0.04,
+     0.0,
      0.0
     ],
     "snap_deg": [
@@ -6441,8 +6441,8 @@
      ]
     },
     "chain_from_deg": [
-     0.04,
-     "UpperArm_R",
+     0.0,
+     "",
      0.0,
      0.0
     ],
@@ -6456,102 +6456,88 @@
  "lint_failures": [
   "HangDart2: muñeca R posible (exceso 1.62 en f12: flexión 68°, desvío -51°, agarrada)",
   "HangDart2: muñeca L posible (exceso 1.86 en f18: flexión 56°, desvío 42°, agarrada)",
-  "FlungAir: loop sin costura (pose 0.04°, salto de velocidad 5.00°)",
-  "FlungAir: ningún hueso gira más de 45° en un cuadro (72.7° Hand_R f11)",
+  "FlungAir: loop sin costura (pose 0.06°, salto de velocidad 5.00°)",
   "StaffDropRecover: muñeca L posible (exceso 1.38 en f0: flexión 67°, desvío -40°, agarrada)",
   "StaffDropRecover: flauta / tronco se meten 3.4 cm en f3",
-  "SlideDown: ningún hueso gira más de 45° en un cuadro (64.1° UpperArm_R f12)",
   "SlideDown: muñeca R posible (exceso 2.48 en f2: flexión 85°, desvío -84°, agarrada)",
   "PoleClimb: ningún hueso gira más de 45° en un cuadro (55.6° Foot_L f3)",
   "PoleClimb: muñeca R posible (exceso 2.83 en f8: flexión 36°, desvío 70°, agarrada)",
   "PoleClimb: muñeca L posible (exceso 2.75 en f8: flexión 36°, desvío 68°, agarrada)",
-  "PoleClimb: flauta / tibia R se meten 4.1 cm en f9",
-  "HangDrop: ningún hueso gira más de 45° en un cuadro (65.7° Foot_R f8)",
+  "HangDrop: ningún hueso gira más de 45° en un cuadro (48.4° Hips f8)",
   "HangDrop: muñeca R posible (exceso 1.52 en f11: flexión 66°, desvío -47°, agarrada)",
   "HangDrop: muñeca L posible (exceso 1.84 en f10: flexión 43°, desvío 44°, agarrada)",
   "HangDrop: flauta / cabeza se meten 5.6 cm en f7",
-  "HangClimb: ningún hueso gira más de 45° en un cuadro (82.5° Cloak_080_1 f9)",
+  "HangClimb: ningún hueso gira más de 45° en un cuadro (67.3° Shin_L f11)",
   "HangClimb: muñeca R posible (exceso 2.15 en f8: flexión 45°, desvío 52°, agarrada)",
   "HangClimb: muñeca L posible (exceso 2.18 en f7: flexión 38°, desvío 53°, agarrada)",
   "PerchLaugh: muñeca R posible (exceso 1.09 en f19: flexión -1°, desvío 27°)",
   "StalkSweep: ningún hueso gira más de 45° en un cuadro (58.0° Thigh_L f33)",
-  "StalkSweep: la flauta no atraviesa el culmo (-12.1 cm en f12)",
+  "StalkSweep: la mano L trabada en el culmo con -30° de arco (15.9 cm en f32)",
   "StalkSweep: muñeca L posible (exceso 3.85 en f11: flexión -157°, desvío -114°, agarrada)",
-  "LeapCrouch: ningún hueso gira más de 45° en un cuadro (56.8° UpperArm_R f3)",
-  "LeapGrab: ningún hueso gira más de 45° en un cuadro (62.3° Forearm_L f1)",
+  "LeapCrouch: ningún hueso gira más de 45° en un cuadro (45.4° Thigh_L f7)",
+  "LeapGrab: la mano L trabada en el culmo con 12° de arco (17.3 cm en f3)",
   "LeapGrab: muñeca R posible (exceso 1.53 en f2: flexión -39°, desvío -54°, agarrada)",
   "LeapGrab: muñeca L posible (exceso 2.44 en f3: flexión -83°, desvío -79°, agarrada)",
   "LeapGrab: antebrazo L / tronco se meten 10.9 cm en f2",
-  "Climb: ningún hueso gira más de 45° en un cuadro (63.6° Hand_R f8)",
+  "Climb: ningún hueso gira más de 45° en un cuadro (60.7° Foot_R f21)",
+  "Climb: la mano R trabada en el culmo con 6° de arco (29.0 cm en f10)",
+  "Climb: la mano L trabada en el culmo con 6° de arco (37.1 cm en f15)",
+  "Climb: la flauta no atraviesa el culmo (-1.6 cm en f20)",
   "Climb: muñeca R posible (exceso 1.60 en f12: flexión 52°, desvío -55°)",
   "Climb: muñeca L posible (exceso 1.68 en f15: flexión -33°, desvío 40°, agarrada)",
-  "Climb: flauta / tronco se meten 5.6 cm en f21",
+  "Climb: flauta / tronco se meten 11.9 cm en f23",
   "Climb: antebrazo L / cabeza se meten 4.0 cm en f9",
   "StaffDrop: muñeca L posible (exceso 1.56 en f19: flexión 65°, desvío -49°, agarrada)",
-  "JumpCrouch: ningún hueso gira más de 45° en un cuadro (48.8° Sleeve_R_1 f6)",
-  "FlungLand: ningún hueso gira más de 45° en un cuadro (56.4° Forearm_R f9)",
-  "FlungLand: muñeca R posible (exceso 1.40 en f1: flexión -21°, desvío 34°, agarrada)",
   "Splat: muñeca R posible (exceso 2.02 en f2: flexión -55°, desvío -70°, agarrada)",
-  "MissGrab: ningún hueso gira más de 45° en un cuadro (89.6° Hand_R f11)",
+  "MissGrab: ningún hueso gira más de 45° en un cuadro (49.9° Shin_L f7)",
   "MissGrab: muñeca L posible (exceso 1.03 en f2: flexión -22°, desvío -37°)",
-  "Slip: ningún hueso gira más de 45° en un cuadro (45.8° Staff f15)",
   "Stumble: ningún hueso gira más de 45° en un cuadro (72.0° Foot_R f6)",
   "Stumble: las suelas no se meten en el piso (-2.2 cm en f23)",
   "Stumble: muñeca R posible (exceso 3.43 en f4: flexión 89°, desvío 80°, agarrada)",
   "Stumble: muñeca L posible (exceso 2.48 en f25: flexión -79°, desvío -82°, agarrada)",
-  "PoleFall: ningún hueso gira más de 45° en un cuadro (85.1° Shin_L f8)",
   "PoleFall: muñeca R posible (exceso 1.60 en f10: flexión 30°, desvío -59°, agarrada)",
-  "GetUp: ningún hueso gira más de 45° en un cuadro (56.7° Hand_R f7)",
   "GetUp: la suela apoyada no patina (R: 2.2 cm en f8-12)",
   "GetUp: muñeca R posible (exceso 1.61 en f5: flexión 63°, desvío -52°, agarrada)",
-  "Detuned: ningún hueso gira más de 45° en un cuadro (97.8° Acc_ChimesHi04_0 f32)",
   "Detuned: muñeca R posible (exceso 3.08 en f9: flexión 92°, desvío -108°, agarrada)",
   "Detuned: flauta / cabeza se meten 5.7 cm en f30",
-  "StaffStuck: ningún hueso gira más de 45° en un cuadro (45.2° UpperArm_R f2)",
   "StaffStuck: muñeca R posible (exceso 1.37 en f8: flexión 5°, desvío 34°, agarrada)",
   "HitHeavy: ningún hueso gira más de 45° en un cuadro (51.2° Shin_L f1)",
-  "Parried: muñeca R posible (exceso 1.96 en f2: flexión 39°, desvío 47°, agarrada)",
+  "Parried: muñeca R posible (exceso 1.49 en f1: flexión 20°, desvío 37°, agarrada)",
   "ParriedPerfect: muñeca R posible (exceso 1.95 en f13: flexión -46°, desvío 45°, agarrada)",
   "Thrust: muñeca L posible (exceso 1.40 en f16: flexión 56°, desvío -45°, agarrada)",
-  "StaffSpin2: ningún hueso gira más de 45° en un cuadro (80.6° UpperArm_L f15)",
+  "StaffSpin2: ningún hueso gira más de 45° en un cuadro (59.5° Foot_R f29)",
   "StaffSpin2: muñeca L posible (exceso 2.09 en f16: flexión 36°, desvío -77°, agarrada)",
   "StaffSpin2: antebrazo L / tronco se meten 4.2 cm en f11",
-  "CraneKick: ningún hueso gira más de 45° en un cuadro (65.1° Hand_R f6)",
   "CraneKick: muñeca R posible (exceso 2.00 en f4: flexión -42°, desvío 47°, agarrada)",
   "NoteSmash: muñeca L posible (exceso 1.45 en f6: flexión 46°, desvío -50°, agarrada)",
   "NoteSmash: flauta / tronco se meten 9.1 cm en f24",
   "LowSweep: las manos llegan (faltó 6.4 cm en f8, mano L)",
-  "LowSweep: ningún hueso gira más de 45° en un cuadro (68.0° Sleeve_R_1 f21)",
+  "LowSweep: ningún hueso gira más de 45° en un cuadro (51.9° Thigh_R f34)",
   "LowSweep: muñeca L posible (exceso 1.68 en f8: flexión -26°, desvío -62°, agarrada)",
   "LowSweep: antebrazo R / tronco se meten 3.8 cm en f19",
-  "GroundDart: ningún hueso gira más de 45° en un cuadro (49.1° Staff f25)",
-  "PolePlant: ningún hueso gira más de 45° en un cuadro (51.4° Staff f14)",
   "PolePlant: muñeca R posible (exceso 2.33 en f14: flexión -1°, desvío 58°, agarrada)",
   "FluteRaise: antebrazo L / tronco se meten 4.9 cm en f10",
-  "AnswerBlow: ningún hueso gira más de 45° en un cuadro (51.1° Clav_R f3)",
   "AnswerBlow: muñeca R posible (exceso 2.96 en f3: flexión -25°, desvío 73°, agarrada)",
   "AnswerBlow: flauta / cabeza se meten 5.3 cm en f9",
   "GroundLaugh: muñeca R posible (exceso 2.58 en f9: flexión -82°, desvío -85°, agarrada)",
-  "Intro: ningún hueso gira más de 45° en un cuadro (177.3° Cloak_236_2 f157)",
   "Intro: la flauta no atraviesa el culmo (-1.8 cm en f172)",
   "Intro: muñeca R posible (exceso 3.22 en f61: flexión 21°, desvío 80°, agarrada)",
   "Intro: muñeca L posible (exceso 1.60 en f154: flexión 41°, desvío 38°, agarrada)",
   "Intro: antebrazo R / cabeza se meten 9.2 cm en f162",
   "Intro: tibia R / tibia L se meten 6.3 cm en f156",
-  "Intro: flauta / cabeza se meten 5.9 cm en f121",
+  "Intro: flauta / cabeza se meten 5.8 cm en f122",
   "Intro: antebrazo L / tronco se meten 3.4 cm en f152",
   "PhaseBow: las manos llegan (faltó 10.0 cm en f54, mano L)",
-  "PhaseBow: ningún hueso gira más de 45° en un cuadro (104.9° Forearm_R f57)",
+  "PhaseBow: ningún hueso gira más de 45° en un cuadro (51.5° Shin_R f57)",
   "PhaseBow: muñeca R posible (exceso 1.66 en f62: flexión 61°, desvío 36°, agarrada)",
   "PhaseBow: muñeca L posible (exceso 1.41 en f52: flexión -8°, desvío 35°)",
   "PhaseBow: antebrazo L / tronco se meten 4.6 cm en f67",
-  "PhaseForest: ningún hueso gira más de 45° en un cuadro (121.1° Hand_R f122)",
+  "PhaseForest: ningún hueso gira más de 45° en un cuadro (68.4° Foot_R f116)",
   "PhaseForest: la suela apoyada no patina (R: 7.4 cm en f14-115)",
-  "PhaseForest: muñeca R posible (exceso 6.33 en f123: flexión -144°, desvío 148°, agarrada)",
-  "PhaseForest: muñeca L posible (exceso 3.36 en f121: flexión 79°, desvío 80°, agarrada)",
+  "PhaseForest: muñeca R posible (exceso 5.38 en f122: flexión -155°, desvío 120°, agarrada)",
+  "PhaseForest: muñeca L posible (exceso 2.02 en f122: flexión 39°, desvío 49°)",
   "PhaseForest: flauta / tronco se meten 14.1 cm en f119",
-  "PhaseForest: flauta / cabeza se meten 6.0 cm en f112",
-  "PhaseForest: antebrazo R / cabeza se meten 3.3 cm en f123",
+  "PhaseForest: flauta / cabeza se meten 11.4 cm en f123",
   "Defeat: las manos llegan (faltó 8.9 cm en f67, mano R)",
   "Defeat: ningún hueso gira más de 45° en un cuadro (56.0° Shin_R f10)",
   "Defeat: la suela apoyada no patina (R: 3.1 cm en f0-6)",
@@ -6559,15 +6545,16 @@
   "Defeat: muñeca L posible (exceso 1.62 en f9: flexión -32°, desvío -59°)",
   "Defeat: flauta / tibia R se meten 5.3 cm en f69",
   "Defeat: tibia R / tibia L se meten 4.4 cm en f69",
-  "HangDrop: el cuerpo no atraviesa el culmo (88 vértices a más de 1.5 cm adentro en f8, hasta 10.0 cm: [('Acc_ChimesLo12_0', 22), ('Cloak_192_2', 18), ('Cloak_214_2', 15), ('Cloak_102_3', 9)])",
-  "HangClimb: el cuerpo no atraviesa el culmo (141 vértices a más de 1.5 cm adentro en f9, hasta 9.7 cm: [('Shin_R', 57), ('Shin_L', 46), ('Toe_R', 27), ('Thigh_R', 5)])",
+  "HangDrop: el cuerpo no atraviesa el culmo (151 vértices a más de 1.5 cm adentro en f8, hasta 10.3 cm: [('Acc_ChimesLo10_0', 22), ('Acc_ChimesLo07_0', 19), ('Cloak_168_2', 18), ('Cloak_214_2', 15)])",
+  "HangClimb: el cuerpo no atraviesa el culmo (182 vértices a más de 1.5 cm adentro en f9, hasta 9.7 cm: [('Shin_R', 57), ('Shin_L', 46), ('Toe_R', 44), ('Cloak_192_3', 14)])",
   "StalkSweep: el cuerpo no atraviesa el culmo (57 vértices a más de 1.5 cm adentro en f33, hasta 7.8 cm: [('Acc_ChimesLo02_0', 22), ('Acc_ChimesLo01_0', 14), ('Thumb_L_2', 8), ('Sleeve_L_2', 6)])",
-  "LeapCrouch: el cuerpo no atraviesa el culmo (42 vértices a más de 1.5 cm adentro en f7, hasta 9.1 cm: [('Hips', 13), ('Cloak_168_1', 9), ('Foot_R', 8), ('Spine1', 5)])",
-  "LeapGrab: el cuerpo no atraviesa el culmo (95 vértices a más de 1.5 cm adentro en f1, hasta 9.7 cm: [('Shin_R', 32), ('Toe_R', 19), ('Thumb_L_2', 8), ('Foot_R', 6)])",
-  "Climb: el cuerpo no atraviesa el culmo (145 vértices a más de 1.5 cm adentro en f0, hasta 12.4 cm: [('Acc_ChimesLo08_0', 45), ('Foot_R', 20), ('Cloak_236_2', 20), ('Cloak_236_1', 11)])",
+  "LeapCrouch: el cuerpo no atraviesa el culmo (55 vértices a más de 1.5 cm adentro en f7, hasta 9.1 cm: [('Foot_R', 16), ('Hips', 13), ('Cloak_168_1', 9), ('Foot_L', 8)])",
+  "LeapGrab: el cuerpo no atraviesa el culmo (107 vértices a más de 1.5 cm adentro en f3, hasta 9.0 cm: [('Acc_ChimesLo08_0', 36), ('Cloak_236_2', 15), ('Index_L_2', 10), ('Cloak_236_3', 9)])",
+  "Climb: el cuerpo no atraviesa el culmo (165 vértices a más de 1.5 cm adentro en f5, hasta 12.2 cm: [('Acc_ChimesLo08_0', 26), ('Forearm_R', 25), ('Hand_R', 25), ('Acc_ChimesLo09_0', 22)])",
+  "FlungLand: nada atraviesa el piso (mín -15.6 cm en f3: [('Cloak_168_3', 9), ('Acc_ChimesLo15_0', 8), ('Cloak_192_3', 4)])",
   "GetUp: nada atraviesa el piso (mín -6.1 cm en f2: [('Acc_ChimesLo05_0', 10), ('Spine2', 2)])",
   "HitHeavy: nada atraviesa el piso (mín -6.7 cm en f1: [('Cloak_168_3', 1)])",
-  "PhaseBow: nada atraviesa el piso (mín -10.7 cm en f6: [('Acc_ChimesLo14_0', 12)])",
+  "PhaseBow: nada atraviesa el piso (mín -11.4 cm en f6: [('Acc_ChimesLo14_0', 13)])",
   "Defeat: nada atraviesa el piso (mín -5.1 cm en f153: [('Skirt_320', 4)])"
  ],
  "aliases": {

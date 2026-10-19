@@ -440,6 +440,14 @@ def stalk_sweep():
     # la flauta sigue en los hombros como un yugo en la derecha (de bandera queda a lo largo de la línea de los hombros):
     # sacarla a la mano y volverla a los hombros daba vuelta los brazos
     out_staff = merge(STAFF_SHOULDERS, grip("r", R_SH, elbow=(-0.6, -0.2, -1)))
+    # de bandera el yugo gira 22° alrededor de la nuca: la punta izquierda adelante del culmo y la derecha (con la mano)
+    # atrás. A lo largo de los hombros pasaba 12 cm por adentro de la caña que agarra la izquierda; girada alrededor de la
+    # mano derecha el medio cruzaba la cara, y corrida por la mano seguía adentro
+    fd = (1.0, -0.4, 0.03)
+    fn = math.sqrt(sum(c * c for c in fd))
+    fd = tuple(c / fn for c in fd)
+    flag_staff = merge(staff_spine(tuple(c0 - c * 1.0 for c0, c in zip((0.0, 0.11, 1.98), fd)), fd, (0, -0.3, 1)),
+                       grip("r", R_SH, elbow=(-0.6, -0.2, -1)))
     # la izquierda toma el culmo del costado que da al cuerpo (su derecha) y por encima del hombro: de bandera el brazo
     # llega derecho al culmo y el cuerpo cuelga por debajo (con el agarre a la altura del hombro, al salir para afuera el
     # hombro pasaba a 11 cm de la mano y el codo daba vuelta)
@@ -463,13 +471,13 @@ def stalk_sweep():
           dict(hips=(0, -0.40, -0.60), spine2=(10, 0, 0))),
         K(4, P, out_staff, free("l", (0.40, -0.30, 1.30), elbow=(1, 0.4, -0.2), fing="open"), dict(hips=(-0.06, -0.36, -0.59))),
         K(6, P, out_staff, hold, dict(hips=(-0.30, -0.30, -0.58), hips_rot=(10, 14, 0), spine2=(8, 0, 0))),
-        K(10, out_staff, hold, flag(-0.92, 0.45, 40.0), flag_legs(-0.92, 0.45, 40.0), ease="inout"),
-        K(20, out_staff, hold, flag(-1.22, 0.42, 62.0), flag_legs(-1.22, 0.42, 62.0), ease="out"),
-        K(22, out_staff, hold, flag(-1.23, 0.43, 63.0), flag_legs(-1.23, 0.43, 63.0)),
+        K(10, flag_staff, hold, flag(-0.92, 0.45, 40.0), flag_legs(-0.92, 0.45, 40.0), ease="inout"),
+        K(20, flag_staff, hold, flag(-1.22, 0.42, 62.0), flag_legs(-1.22, 0.42, 62.0), ease="out"),
+        K(22, flag_staff, hold, flag(-1.23, 0.43, 63.0), flag_legs(-1.23, 0.43, 63.0)),
         # el barrido: la caña tira y el cuerpo se estira derecho para afuera
-        K(26, out_staff, hold, flag(-1.38, 0.72, 84.0, -12.0, -0.02), flag_legs(-1.38, 0.72, 84.0, 0.10), ease="in"),
-        K(30, out_staff, hold, flag(-1.10, 0.55, 62.0, -4.0), flag_legs(-1.10, 0.55, 62.0), ease="out"),
-        K(35, P, out_staff, hold, dict(hips=(-0.30, -0.32, -0.58), hips_rot=(10, 14, 0), spine2=(10, 0, 0)), PERCH_FEET, ease="inout"),
+        K(26, flag_staff, hold, flag(-1.38, 0.72, 84.0, -12.0, -0.02), flag_legs(-1.38, 0.72, 84.0, 0.10), ease="in"),
+        K(30, flag_staff, hold, flag(-1.10, 0.55, 62.0, -4.0), flag_legs(-1.10, 0.55, 62.0), ease="out"),
+        K(35, P, flag_staff, hold, dict(hips=(-0.30, -0.32, -0.58), hips_rot=(10, 14, 0), spine2=(10, 0, 0)), PERCH_FEET, ease="inout"),
         K(37, P, out_staff, free("l", (0.40, -0.30, 1.30), elbow=(1, 0.4, -0.2), fing="open"), dict(hips=(-0.06, -0.36, -0.59))),
         K(39, P, out_staff, free("l", (0.58, -0.12, 1.72), elbow=(0.6, -0.2, -1), fing="open"), dict(hips=(0, -0.39, -0.59))),
         K(41, P, ease="inout"),

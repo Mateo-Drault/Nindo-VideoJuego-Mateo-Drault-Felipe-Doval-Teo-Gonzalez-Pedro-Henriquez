@@ -491,11 +491,12 @@ def build_brows_hair(kits):
                 ups=[m((0, -0.4, 1))] * 5, phase=math.pi / 5, ring_colors=[C["white2"], C["white"], C["white"], C["white2"]])
         # las púas: anchas en la base (4-5 cm en el modelo), de 6 a 10 cm, de casi paradas sobre el ojo a la de afuera que
         # apunta a la sien; se pisan entre sí como lenguas de una llama
-        spikes = [((-0.024, -0.108, 2.180), (-0.036, -0.122, 2.262), 0.017),
-                  ((-0.046, -0.104, 2.192), (-0.080, -0.114, 2.286), 0.020),
-                  ((-0.068, -0.094, 2.202), (-0.124, -0.094, 2.276), 0.020),
-                  ((-0.086, -0.082, 2.207), (-0.160, -0.066, 2.246), 0.018),
-                  ((-0.094, -0.072, 2.200), (-0.168, -0.046, 2.190), 0.015)]
+        # (inclinadas hacia afuera y atrás ~40°: casi paradas, de perfil eran una cresta sobre la frente, no dos cejas)
+        spikes = [((-0.024, -0.108, 2.180), (-0.052, -0.104, 2.244), 0.017),
+                  ((-0.046, -0.104, 2.192), (-0.104, -0.088, 2.258), 0.020),
+                  ((-0.068, -0.094, 2.202), (-0.144, -0.070, 2.250), 0.020),
+                  ((-0.086, -0.082, 2.207), (-0.172, -0.044, 2.228), 0.018),
+                  ((-0.094, -0.072, 2.200), (-0.176, -0.026, 2.184), 0.015)]
         # y entre cada dos, una púa corta que llena el hueco: la llama es una masa dentada, no rayos sueltos
         mids = [(a[0].lerp(b[0], 0.5), a[0].lerp(b[0], 0.5) + ((a[1] - a[0]) + (b[1] - b[0])) * 0.30, 0.016)
                 for a, b in zip([(Vector(p), Vector(q), r) for p, q, r in spikes][:-1],
@@ -505,10 +506,11 @@ def build_brows_hair(kits):
             kb.spike(m(b), m(t), r, C["white"] if i % 2 == 0 else C["white2"], sides=4, side_hint=(0, -1, 0.15), flat=0.45,
                      phase=0.0)
         # mechones de las sienes (salen sobre la oreja hacia afuera y atrás) y la patilla: un mechón fino que baja de la
-        # sien delante de la oreja hasta la barba (de frente enmarca la cara, como en la hoja)
+        # sien delante de la oreja hasta la barba (de frente enmarca la cara, como en la hoja; de 2.4 cm de ancho eran dos
+        # paneles blancos al costado de la cara)
         kh = kits["Hair"]
         kh.strip([m((-0.074, -0.052, 2.204)), m((-0.086, -0.040, 2.160)), m((-0.088, -0.044, 2.112)), m((-0.084, -0.052, 2.070))],
-                 [0.022, 0.024, 0.022, 0.018], [m((-1, -0.35, 0))] * 4, C["white"], thick=0.010)
+                 [0.012, 0.013, 0.011, 0.008], [m((-1, -0.35, 0))] * 4, C["white"], thick=0.007)
         for b, t, r in (((-0.090, -0.010, 2.206), (-0.150, 0.020, 2.236), 0.014), ((-0.092, 0.024, 2.180), (-0.146, 0.064, 2.176), 0.014)):
             kh.spike(m(b), m(t), r, C["white"], sides=4, side_hint=(0, 0, 1), flat=0.6, phase=math.pi / 4)
 
@@ -518,13 +520,15 @@ TK_SRC = CR.head_t_inv(CR.TOPKNOT_BASE)
 
 
 def build_hair(kits):
-    """El pelo blanco de los costados y la nuca peinado hacia el moño: mechas que nacen en la línea del pelo (la sien,
-    detrás de la oreja, la nuca) y suben pegadas al cráneo (a lo sumo 1.5 cm encima) hasta juntarse en la base del moño,
-    con un lomo cada dos (las facetas convergen en el moño, como en la espalda del concepto); la calva queda adelante
-    arriba, en punta de pala hasta el cordón."""
+    """El pelo blanco de los costados y la nuca peinado hacia el moño: mechas que nacen en la línea del pelo (detrás de
+    la sien, detrás de la oreja, la nuca) y suben pegadas al cráneo (a lo sumo 1 cm encima) hasta juntarse en la base del
+    moño, con un lomo cada dos (las facetas convergen en el moño, como en la espalda del concepto); la calva queda adelante
+    arriba, del entrecejo al cordón, y se ve de frente y de perfil."""
     k = kits["Hair"] = Kit("part_Hair", "Head", weights=lambda co: {"Head": 1.0} if co.z > 2.06 else {"Head": 0.6, "Neck": 0.4})
     # la línea del pelo: (ángulo, altura) de la sien derecha por detrás de la oreja y la nuca a la sien izquierda
-    line = [(-24.0, 2.252), (-36.0, 2.232), (-50.0, 2.212), (-66.0, 2.194), (-82.0, 2.172), (-96.0, 2.120), (-106.0, 2.072),
+    # (la línea arranca a 52° de la cara, detrás de la sien: desde 24° el pelo tapaba la coronilla de frente y de perfil, un
+    # casco blanco; en el concepto la calva se ve del entrecejo al moño)
+    line = [(-52.0, 2.232), (-60.0, 2.214), (-68.0, 2.198), (-78.0, 2.180), (-88.0, 2.156), (-98.0, 2.116), (-108.0, 2.072),
             (-122.0, 2.060), (-142.0, 2.054), (-162.0, 2.050), (180.0, 2.048)]
     line = line + [(-a, z) for a, z in reversed(line[:-1])]
     cols = len(line)
@@ -550,7 +554,7 @@ def build_hair(kits):
             # el pelo de las sienes peinado hacia arriba hace bulto sobre la calva: de frente sube en dos alas blancas hasta
             # el cordón y de perfil tapa la coronilla (la hoja de perfil)
             if abs(a) < 95.0:
-                bulk += 0.016 * math.sin(math.pi * min(1.0, max(0.0, (t - 0.2) / 0.75)))
+                bulk += 0.005 * math.sin(math.pi * min(1.0, max(0.0, (t - 0.2) / 0.75)))
             else:
                 # en la coronilla de atrás las mechas se juntan sobre un cráneo muy curvo: un poco más de volumen para que
                 # las caras planas no lo dejen asomar
@@ -691,9 +695,11 @@ def build_beard(kits):
         return wch(co)
     k = kits["Beard"] = Kit("part_Beard", "Jaw", weights=w_beard)
     # (z, centro y, medio ancho, frente, atrás, cuánto sube el borde por la quijada): la de arriba abraza el mentón
-    rows = [(2.042, -0.124, 0.098, 0.030, 0.050, 0.070), (2.004, -0.148, 0.094, 0.040, 0.044, 0.024),
-            (1.952, -0.166, 0.093, 0.040, 0.036, 0.0), (1.882, -0.178, 0.080, 0.036, 0.030, 0.0),
-            (1.812, -0.182, 0.063, 0.031, 0.026, 0.0), (1.762, -0.181, 0.048, 0.027, 0.023, 0.0),
+    # (de perfil una cuña: 14 cm de fondo bajo el mentón que se afinan hacia el nudo, con la parte de atrás llenando
+    # hasta el cuello; con 7-8 cm era un colmillo curvo despegado de la quijada y se veía el cuello detrás)
+    rows = [(2.042, -0.112, 0.098, 0.034, 0.074, 0.070), (2.004, -0.134, 0.096, 0.050, 0.086, 0.024),
+            (1.952, -0.152, 0.094, 0.052, 0.070, 0.0), (1.882, -0.166, 0.082, 0.046, 0.052, 0.0),
+            (1.812, -0.176, 0.064, 0.036, 0.036, 0.0), (1.762, -0.180, 0.048, 0.028, 0.026, 0.0),
             (1.740, -0.180, 0.038, 0.024, 0.021, 0.0)]
     rings = []
     n = 12
@@ -1159,9 +1165,10 @@ def build_leg_r(kits):
 
 
 def build_foot_r(kits):
-    """Sandalia-zapato (la hoja de detalles): el zapato negro facetado hasta el tobillo (material que brilla en las
-    patadas), ancho (el pie grande del que trepa), la suela gruesa de paja con canto, una sola tira tostada en diagonal
-    sobre el empeine y el talón; la punta dobla en la bola del pie (Toe_R)."""
+    """Sandalia-zapato (la hoja de detalles): el zapato negro facetado y robusto hasta el tobillo (material que brilla
+    en las patadas), ancho (el pie grande del que trepa), sobre una plataforma de paja con canto; la puntera y el talón de
+    paja y dos tiras tostadas que se cruzan sobre el empeine; la punta dobla en la bola del pie (Toe_R). (Antes una
+    zapatilla fina sobre una tabla: a 1:1 se leía como ojotas.)"""
     A, B = CR.ANKLE, CR.BALL
     fwd2 = Vector((B.x - A.x, B.y - A.y)).normalized()     # la punta, apenas hacia afuera
     lat2 = Vector((fwd2.y, -fwd2.x))                        # hacia afuera del pie derecho (-X)
@@ -1192,23 +1199,33 @@ def build_foot_r(kits):
     hw = [(-heel, 0.072), (-0.04, 0.088), (0.06, 0.100), (ball_y, 0.108), (0.24, 0.096), (toe - 0.025, 0.066), (toe, 0.026)]
     poly = [(p.x, p.y) for p in [F(w, y, 0) for y, w in hw] + [F(-w, y, 0) for y, w in reversed(hw)]]
     area = sum(x0 * y1 - x1 * y0 for (x0, y0), (x1, y1) in zip(poly, poly[1:] + poly[:1]))
-    k.extrude_polygon(poly if area > 0 else list(reversed(poly)), 0.0, 0.034, C["sole2"], top_color=C["sole"])
+    SOLE = 0.046
+    k.extrude_polygon(poly if area > 0 else list(reversed(poly)), 0.0, SOLE, C["sole2"], top_color=C["sole"])
     # zapato
     # el zapato: sube hasta el tobillo (el cuello del zapato abraza la polaina), negro entero
-    rings = [(-heel + 0.014, 0.064, 0.082, 0.060), (-0.03, 0.080, 0.100, 0.072), (0.07, 0.092, 0.088, 0.054),
-             (ball_y, 0.096, 0.072, 0.038), (0.25, 0.084, 0.058, 0.030), (toe - 0.02, 0.052, 0.050, 0.017)]
+    # (1.25 veces más alto y un poco más ancho que antes, sobre la plataforma más gruesa)
+    rings = [(-heel + 0.014, 0.068, 0.100, 0.075), (-0.03, 0.086, 0.122, 0.090), (0.07, 0.098, 0.106, 0.068),
+             (ball_y, 0.102, 0.086, 0.048), (0.25, 0.090, 0.070, 0.038), (toe - 0.02, 0.056, 0.060, 0.022)]
     pts = [F(0, y, z) for y, _, z, _ in rings]
     fwd = (pts[-1] - pts[0]).normalized()
     k.tube(pts, [(w, h) for _, w, _, h in rings], 8, "black", ups=[(0, 0, 1)] * len(rings), phase=math.pi / 8, power=2.4,
            slot=SLOT_FOOT_R)
-    k.tube([F(0, -0.004, 0.120), F(0, -0.002, 0.168)], [(0.068, 0.066), (0.056, 0.055)], 8, "black", phase=math.pi / 8, cap0=False,
+    k.tube([F(0, -0.004, 0.138), F(0, -0.002, 0.182)], [(0.072, 0.070), (0.058, 0.057)], 8, "black", phase=math.pi / 8, cap0=False,
            cap1=False, slot=SLOT_FOOT_R)
+    # la puntera y el talón de paja (en el concepto el negro solo queda en el empeine y el costado)
+    k.tube([F(0, ball_y + 0.012, 0.080), F(0, toe - 0.016, 0.062)], [(0.106, 0.052), (0.062, 0.026)], 8, C["strap"],
+           ups=[(0, 0, 1)] * 2, phase=math.pi / 8, power=2.4, cap0=False)
+    k.tube([F(0, -heel + 0.004, 0.084), F(0, -heel + 0.060, 0.090)], [(0.074, 0.040), (0.090, 0.046)], 8, C["strap"],
+           ups=[(0, 0, 1)] * 2, phase=math.pi / 8, power=2.4, cap1=False)
     # la tira tostada: una sola, en diagonal sobre el empeine, de la suela de adentro junto a los dedos al tobillo de
     # afuera; y el talón
-    pts = [F(-0.100, 0.215, 0.040), F(-0.070, 0.180, 0.090), F(0.0, 0.110, 0.128), F(0.064, 0.050, 0.140), F(0.090, 0.000, 0.110)]
-    nr = [(p - F(0, y, z0)).normalized() for p, y, z0 in zip(pts, (0.2, 0.17, 0.112, 0.05, 0.0), (0.03, 0.06, 0.08, 0.08, 0.08))]
-    k.strip(pts, [0.034] * 5, nr, C["strap"], thick=0.012)
-    k.strip([F(0, -heel + 0.008, 0.034), F(0, -heel + 0.002, 0.110)], [0.056, 0.048], [(-fwd.x, -fwd.y, 0)] * 2, C["strap"],
+    # dos tiras que se cruzan sobre el empeine (en la hoja de detalles, una X de paja)
+    for sx in (1.0, -1.0):
+        pts = [F(-0.104 * sx, 0.200, 0.052), F(-0.074 * sx, 0.166, 0.106), F(0.0, 0.104, 0.150), F(0.068 * sx, 0.046, 0.160),
+               F(0.094 * sx, 0.000, 0.126)]
+        nr = [(p - F(0, y, z0)).normalized() for p, y, z0 in zip(pts, (0.19, 0.16, 0.104, 0.046, 0.0), (0.04, 0.07, 0.09, 0.09, 0.09))]
+        k.strip(pts, [0.030] * 5, nr, C["strap"], thick=0.012)
+    k.strip([F(0, -heel + 0.008, SOLE), F(0, -heel + 0.002, 0.128)], [0.056, 0.048], [(-fwd.x, -fwd.y, 0)] * 2, C["strap"],
             thick=0.012)
 
 

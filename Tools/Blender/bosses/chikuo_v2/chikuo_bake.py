@@ -6,7 +6,7 @@ los tiempos en cuadros y normalizados, los eventos, el avance del transform y el
 """
 import math, os, time
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Matrix
 import nindo_anim as NA
 import chikuo_anim as CA
 import chikuo_lint as LT
@@ -45,6 +45,108 @@ def frame_label(clip, f):
     return f"f{f}" + (" " + "/".join(tags[:2]) if tags else "")
 
 
+# un punto de la suela más bajo que esto (m sobre el piso del clip) es un pie apoyado o por apoyar
+PLANTED_Z = 0.06
+
+
+def down(W, side, soles):
+    """El pie apoyado o por apoyar: algún punto de su suela (los de chikuo_lint) cerca del piso. Con el tobillo solo no
+    alcanzaba: sentado sobre el talón o arrodillado en punta el tobillo queda alto con el pie en el piso."""
+    return any((W[bn] @ q).z < PLANTED_Z for bn in ("Foot_" + side, "Toe_" + side) for q in soles[bn])
+
+
+def leg_side(n):
+    """'R' o 'L' si el hueso es de la pierna (muslo, canilla, pie, dedos), si no None."""
+    for part in ("Thigh_", "Shin_", "Foot_", "Toe_"):
+        if n.startswith(part):
+            return n[len(part):len(part) + 1]
+    return None
+
+
+def despike(rig, frames, cuts=(), limit=40.0, widest=6):
+    """Reparte los tirones de un cuadro: si un hueso gira más de 'limit' grados entre dos cuadros seguidos (fuera de los
+    cortes declarados), su giro contra el padre se reparte parejo en una ventana de 2 a 'widest' cuadros a cada lado
+    (slerp lineal entre las puntas: con smoothstep el cuadro del medio giraba 1.5 veces el promedio y el tirón volvía), y el mundo se rearma de la raíz para abajo: los hijos siguen con su pose contra el padre.
+    Casi todos los que quedaban eran la flauta pasando de un modo de agarre a otro (clavada, en la mano, en los labios):
+    el puño saltaba de un tope de giro al otro en un cuadro. Lo secundario (capa, cascabeles, mangas) se mide como en
+    chikuo_lint.snaps: solo si también gira de golpe en el mundo. Devuelve (frames nuevos, cuántos tirones repartió)."""
+    n_fr = len(frames)
+    order = []
+    for r in [n for n in rig.names if rig.parent[n] is None]:
+        order += rig.subtree(r)
+
+    def base(W, n):
+        p = rig.parent[n]
+        return (W[p] @ rig.rel[n]).inverted() @ W[n] if p else rig.rest_inv[n] @ W[n]
+    B = [{n: base(W, n) for n in order} for W in frames]
+    wq = [{n: W[n].to_quaternion() for n in order} for W in frames]
+    for W, q in zip(frames, wq):
+        q["Staff"] = (W["Spine2"].inverted() @ W["Staff"]).to_quaternion()
+    cuts = set(cuts)
+    soles = LT.sole_points(rig)
+    hip_line = set()
+    for leg in ("Thigh_R", "Thigh_L"):
+        p = rig.parent[leg]
+        while p:
+            hip_line.add(p)
+            p = rig.parent[p]
+    fixed = 0
+    for n in order:
+        if n.startswith("Lid_"):
+            continue
+        spring = n.startswith(LT.SPRING_PREFIX) or n == "Staff"
+        i = 1
+        while i < n_fr:
+            if i in cuts or (i - 1) in cuts:
+                i += 1
+                continue
+            d = NA.quat_angle_deg(B[i - 1][n].to_quaternion(), B[i][n].to_quaternion())
+            if spring and d > limit:
+                d = min(d, NA.quat_angle_deg(wq[i - 1][n], wq[i][n]))
+            if d <= limit:
+                i += 1
+                continue
+            done = False
+            for w in range(2, widest + 1):
+                a, b = max(0, i - w), min(n_fr - 1, i - 1 + w)
+                if any(k in cuts for k in range(a + 1, b + 1)):
+                    break
+                la, ra, sa = B[a][n].decompose()
+                lb, rb, sb = B[b][n].decompose()
+                if NA.quat_angle_deg(ra, rb) / (b - a) > min(limit, LT.SNAP_DEG * 0.95):
+                    continue
+                # la pierna de un pie apoyado no se toca: el pie patinaba o se metía en el piso
+                # (tres cuadros más a cada lado: el pie que recién se despega todavía cuenta como apoyado para el lint)
+                near = range(max(0, a - 3), min(n_fr, b + 4))
+                side = leg_side(n)
+                # (el pie y los dedos solo miran los cuadros que cambian: girarlos rueda la suela alrededor del tobillo, que
+                # no se mueve; en el aire o en la caña se alisan aunque el pie apoye justo antes o después)
+                if side and n.startswith(("Foot_", "Toe_")):
+                    near = range(a + 1, b)
+                if side and any(down(frames[k], side, soles) for k in near):
+                    break
+                # ni lo que lleva las dos piernas (la raíz, la cadera) con algún pie apoyado
+                if n in hip_line and any(down(frames[k], sd, soles) for k in near for sd in "RL"):
+                    break
+                for k in range(a + 1, b):
+                    t = (k - a) / (b - a)
+                    B[k][n] = Matrix.LocRotScale(la.lerp(lb, t), ra.slerp(rb, t), sa.lerp(sb, t))
+                fixed += 1
+                i = b + 1
+                done = True
+                break
+            if not done:
+                i += 1
+    out = []
+    for k in range(n_fr):
+        W = {}
+        for n in order:
+            p = rig.parent[n]
+            W[n] = (W[p] @ rig.rel[n] @ B[k][n]) if p else (rig.rest[n] @ B[k][n])
+        out.append(W)
+    return out, fixed
+
+
 def bake_all(rig, clips, check):
     """{clip: {frames, ctrls, roots, misses, report}} con las mediciones y los chequeos de cada clip."""
     solver = CA.Solver(rig)
@@ -77,6 +179,12 @@ def bake_all(rig, clips, check):
         pf = None if t.get("fade_from") else ref_grips.get((rf, wf))
         pt = None if t.get("fade_to") else ref_grips.get((rt, wt))
         frames, ctrls, roots, misses = CA.bake(rig, clip, solver, cols, pin_from=pf, pin_to=pt)
+        frames, spikes = despike(rig, frames, clip.cuts)
+        # una segunda pasada: repartir un hueso mueve un poco a sus hijos y alguno queda apenas arriba del tope
+        frames, more = despike(rig, frames, clip.cuts)
+        spikes += more
+        if spikes:
+            print(f"   {clip.name}: {spikes} tirones repartidos")
         if clip.name in refs:
             ref_grips[(clip.name, 0)] = clip.grips["first"]
             ref_grips[(clip.name, -1)] = clip.grips["last"]

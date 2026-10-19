@@ -62,8 +62,9 @@ FBX = os.path.join(OUT_DIR, "BambooMaster.fbx")
 # adentro de la capa (colgado y con los brazos arriba no se ve la cáscara), las dos coronas del cuello (lo que ve la
 # cámara alta) y 26 cascabeles con nudo, lazo y agujeros redondos: ~10.4k, un 13 % más que Mizuchi (un jefe solo en
 # pantalla). Por grupo, lo que costó llegar al concepto
-BUDGET = {"body": 5650, "cloak": 2500, "chimes": 1900, "staff": 480}
-TOTAL_BUDGET = 10450
+# (el cuerpo sube 150: los zapatos robustos de la hoja de detalles, con puntera, talón y dos tiras, piden ~120 más)
+BUDGET = {"body": 5800, "cloak": 2500, "chimes": 1900, "staff": 480}
+TOTAL_BUDGET = 10600
 HOLD = 20                   # cuadros de cada pose en PoseTest (--model-only)
 GAP = 4                     # cuadros vacíos entre clips en la toma única (Unity corta por cuadros: no se mezclan)
 # huesos de los que dependen el código y los pasos que siguen (animación, pelea): si falta uno, no se exporta
