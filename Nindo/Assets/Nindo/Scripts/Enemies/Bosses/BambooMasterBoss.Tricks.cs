@@ -109,8 +109,11 @@ namespace Nindo
             float t0 = Time.time;
             bool fixedLane = false;
             Vector3 end = Vector3.zero;
+            var stalk = perch;
             while (!ClipDone)
             {
+                // otra rutina se lo llevó de la caña en medio del arco (dos NullReference en la fase 3, probando con el bot)
+                if (perch != stalk) yield break;
                 // ETA hasta el golpe: lo que falta del arco más la patada
                 heldStrikeAt = 1f;
                 heldTravel = kick.Contact * kick.Seconds;
@@ -127,6 +130,7 @@ namespace Nindo
                 SetLaneArea(perch.Base, lane, (end - perch.Base).Flat().magnitude + 0.5f, 1.8f);
                 yield return null;
             }
+            if (perch != stalk) yield break;
             // la caña lo dispara: sale por el carril
             perch.Whip();
             Sfx("bamboo_whip", "fin_whoosh", perch.Base + Vector3.up * 3f, 0.9f);

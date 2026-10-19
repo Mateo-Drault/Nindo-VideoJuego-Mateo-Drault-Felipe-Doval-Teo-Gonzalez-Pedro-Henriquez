@@ -25,6 +25,35 @@ de bambú con cascabeles de caña, gi salvia con ribete de paja, la flauta-bast�
   cuatro; dos latigazos a una caña la rajan y la quiebran; la Última Canción desde el 20 %).
 * Se mantienen: 1900 de vida, id `bamboo_master`, arquetipo y bossId `ozeki`, `SealId.Bambu`, `boss_bamboo` en tres fases.
 
+## 1b. Tercera ronda (18 de octubre, pedido del usuario después de probarlo)
+
+Commits 2c3a2bb, 2db4160, 58d364b, a6c0f14 y 775ac72, probados en Unity.
+
+* **Reintento desde cero en todos los jefes** (2c3a2bb): morir en la fase 2 o 3 ya no retoma esa fase. Gorō no vuelve
+  armado, Mizuchi, Kokuyō y Chikuō no guardan la fase o el acto; solo cambia la frase de bienvenida de Chikuō por
+  intento. Visto en Unity: Chikuō muerto en la fase 2 (1431/2200), la revancha arranca en la fase 1 con 2200/2200.
+* **La fase 3 sube de verdad** (2db4160): dardos posados x1.45 y a 21 m/s, menos ping-pong entre cañas. Amenazas por
+  minuto fuera de los huecos, con el bot bueno: 38 / 49 / 59 (antes la 3 casi igual a la 1). El promedio con el
+  reintento desde cero: 5:02 sin morir.
+* **Tirones de los clips** (775ac72): después del horneado se reparte cada giro de más de 40° entre dos cuadros en una
+  ventana de hasta 6 cuadros a cada lado (slerp lineal del giro contra el padre, y el mundo se rearma de la raíz para
+  abajo). La pierna de un pie apoyado (y la cadera) no se toca, para que no patine. Avisos: 115 -> 102; tirones de 24 a
+  14 clips y el peor de 177° (la capa en el Intro) a 72° (Stumble, el pie). Los que quedan son la rodilla dándose vuelta
+  con el pie apoyado (PhaseForest f116, StaffSpin2 f29, HangClimb, Climb): eso se arregla en el IK del horneado, no
+  alisando después. StalkSweep: en la bandera el yugo gira 22° alrededor de la nuca y ya no atraviesa la caña (-12 cm ->
+  +4 cm); quedan dos roces de menos de 2 cm (Climb f20, Intro f172). Siguen las 43 muñecas forzadas de los agarres.
+* **Cabeza y zapatos** (775ac72): la línea del pelo arranca detrás de la sien (la calva se ve de frente y de perfil, no
+  un casco blanco), las cejas salen hacia afuera y atrás, la barba es una cuña de 14 cm pegada a la quijada; el zapato
+  es robusto sobre una plataforma de paja de 4.6 cm, con puntera, talón y dos tiras en X (antes se leía como ojotas).
+  Presupuesto: cuerpo 5800, total 10600 (usa 10568).
+* **La capa al colgarse**: no se resolvió. Probé girar la cabeza (HANG_FACE 12-24°) y la inclinación del colgado: la cara
+  sigue adentro del cono de hojas del cuello (las coronas de hojas cuelgan alrededor de la cabeza cabeza abajo) y los
+  chequeos empeoraban. El arreglo pide un hueso propio para el cuello de hojas en el rig (que se doble hacia la espalda
+  al colgar), no un ajuste de pose.
+* **Kaito al rezar** (a6c0f14): gassho frente al esternón con los codos bajos (antes a la altura del mentón y con los
+  brazos estirados), en la reverencia las manos van con el pecho, el peso asienta al llegar a la rodilla y se dobla menos
+  al dejar la katana. La build arma una tira de primeros planos (`--strip N`, 58d364b) para juzgar los clips lentos.
+
 ## 2. Segunda ronda de arreglos (lo que quedaba abierto)
 
 Commits db6443d, d30e737, eb9c75a, 15a2038 y 952ec8a. Nada se probó en Unity: compile_check, el lint de
